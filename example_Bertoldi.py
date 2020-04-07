@@ -1,14 +1,14 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-03-25 10:39:35
-Python 3.7.3
+Last modified on 2020-04-07 16:07:56
+Python 2.7.16
 v0.1
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
 Main goal
 ---------
-Show how to generate a 2d RVE.
+Show how to generate a 2d RVE (in particular, Bertoldi's RVE).
 '''
 
 
@@ -18,7 +18,7 @@ Show how to generate a 2d RVE.
 from abaqus import mdb, backwardCompatibility
 
 # local library
-from src.geometry.rve import BertoldiExampleRVE
+from src.abq.geometry.rve import BertoldiExampleRVE
 
 
 #%% initialization
