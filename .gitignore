@@ -1,0 +1,25 @@
+# ignore the files with these extensions
+*.pickle
+*.csv
+*.xlsx
+*.gif
+*.inp
+*.odb
+*.rec
+*.cae
+*.pac
+*.stt
+*.prt
+*.mdl
+*.abq
+*.mdl
+*.pyc
+*.rpy
+*.rpy.*
+*.log
+*.dmp
+
+# ignore all the directories __pychache__
+**/__pycache__/
+.idea/
+src/steps_summary.txt
