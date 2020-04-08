@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-07 16:21:24
-Last modified on 2020-04-07 17:10:41
+Last modified on 2020-04-08 11:56:59
 Python 3.7.3
 v0.1
 
@@ -12,7 +12,7 @@ Show that the square root of a matrix is working properly.
 
 Notes
 -----
--scipy coulb be used in the scripts, but it does not exist in Abaqus.
+-scipy could be used in the scripts, but it does not exist in Abaqus.
 '''
 
 
