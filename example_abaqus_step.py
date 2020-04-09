@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 15:42:58
-Last modified on 2020-04-08 15:58:09
+Last modified on 2020-04-09 15:33:28
 Python 2.7.16
 v0.1
 
@@ -18,7 +18,7 @@ Show how to create step using the classes defined in abaqus.modelling
 from abaqus import mdb, backwardCompatibility
 
 # local library
-from src.abq.modelling.step import BuckleStep
+from src.abaqus.modelling.step import BuckleStep
 
 
 #%% initialization

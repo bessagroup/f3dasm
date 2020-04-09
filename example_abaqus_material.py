@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 13:57:51
-Last modified on 2020-04-08 14:16:51
+Last modified on 2020-04-09 15:33:22
 Python 2.7.16
 v0.1
 
@@ -18,8 +18,8 @@ Show how to create material using the classes defined in abq.material
 from abaqus import mdb, backwardCompatibility
 
 # local library
-from src.abq.material.abaqus_materials import IsotropicMaterial
-from src.abq.material.abaqus_materials import LaminaMaterial
+from src.abaqus.material.abaqus_materials import IsotropicMaterial
+from src.abaqus.material.abaqus_materials import LaminaMaterial
 
 
 #%% initialization

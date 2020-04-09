@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 18:34:34
-Last modified on 2020-04-07 16:06:56
+Last modified on 2020-04-09 15:33:57
 Python 2.7.16
 v0.1
 
@@ -17,7 +17,7 @@ Show how to use TRAC boom class.
 from abaqus import mdb, backwardCompatibility
 
 # local library
-from src.abq.geometry.structures import TRACBOOM
+from src.abaqus.geometry.structures import TRACBOOM
 
 
 #%% initialization
