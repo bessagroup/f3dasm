@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-07 17:45:52
+Last modified on 2020-04-09 21:12:13
 Python 2.7.16
 v0.1
 
@@ -99,14 +99,15 @@ class TRACBOOM(object):
         # create required sets and surfaces
         self._create_sets()
 
+        # assign material and material orientation
+        self._assign_material(model)
+        self._create_material_orientation()
+
         # make partitions for meshing purposes
         self._make_partitions()
 
         # generate mesh
         self._generate_mesh()
-
-        # assign material orientation
-        self._create_material_orientation()
 
     def create_instance(self, model):
 
@@ -210,6 +211,7 @@ class TRACBOOM(object):
         self.part.Surface(side1Faces=doubleLaminate, name='DOUBLE_LAMINATE_BOTTOM_SURF')
 
     def _create_ref_points(self, model):
+        # TODO: choice of nodal degree of freedom depends on the bcs
 
         # initialization
         modelAssembly = model.rootAssembly
@@ -253,7 +255,7 @@ class TRACBOOM(object):
             primaryAxisRegion = self.part.sets[primaryAxisRegion_name]
 
             self.part.MaterialOrientation(
-                region=region, orientationType=DISCRETE,
+                region=region, orientationType=DISCRETE, axis=AXIS_3,
                 normalAxisDefinition=SURFACE, normalAxisRegion=normalAxisRegion,
                 flipNormalDirection=False, normalAxisDirection=AXIS_3,
                 primaryAxisDefinition=EDGE, primaryAxisRegion=primaryAxisRegion,
@@ -280,7 +282,6 @@ class TRACBOOM(object):
         self.part.generateMesh()
 
     def _assign_material(self, model):
-        # TODO: creation of the material must have an if to create section
 
         # initialization
         section_names = ['SINGLE_LAMINATE', 'DOUBLE_LAMINATE']
@@ -295,8 +296,9 @@ class TRACBOOM(object):
 
         # assign sections
         for name, region, offset_type in zip(section_names, regions, offset_types):
+            region_ = self.part.sets[region]
             self.part.SectionAssignment(
-                region=region, sectionName=name, offset=0.0,
+                region=region_, sectionName=name, offset=0.0,
                 offsetType=offset_type, offsetField='',
                 thicknessAssignment=FROM_SECTION)
 
@@ -305,13 +307,13 @@ class TRACBOOM(object):
         for i, name in enumerate(names):
             j = i + 1
             model.HomogeneousShellSection(
-                name, material=self.material, thicknessType=UNIFORM,
+                name, material=self.material.name, thicknessType=UNIFORM,
                 thickness=j * self.thickness)
 
     def _create_composite_sections(self, model, names):
 
         # create composite plies
-        plies = self._create_composite_plies(self)
+        plies = self._create_composite_plies()
 
         # create composite shells sections
         for name, layup in zip(names, plies):
@@ -340,10 +342,12 @@ class TRACBOOM(object):
         return leaf_composite_plies, double_composite_plies
 
     def _define_ply(self, ply_name, i, orientation, ply_thickness):
-        section.SectionLayer(
+        sec = section.SectionLayer(
             material=self.material.name, thickness=ply_thickness,
-            orientAngle=orientation, numIntPoints=3,
+            orientAngle=orientation, numIntPts=3,
             plyName='%s_%i' % (ply_name, i))
+
+        return sec
 
     def _get_ref_point_name(self, position):
 
