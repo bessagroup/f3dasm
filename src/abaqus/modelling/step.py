@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:55:21
-Last modified on 2020-04-08 16:53:25
+Last modified on 2020-04-09 17:02:14
 Python 2.7.16
 v0.1
 
@@ -35,16 +35,20 @@ import abc
 class Step(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, previous):
+    def __init__(self, name, previous, model=None):
         '''
         Parameters
         ----------
         name : str
         previous : str
             Previous step
+        model : abaqus mdb object
         '''
         self.name = name
         self.previous = previous
+        # computations
+        if model:
+            self.create_step(model)
 
     def create_step(self, model):
 
@@ -52,17 +56,16 @@ class Step(object):
         create_step = getattr(model, self.method_name)
 
         # create step
-        create_step(self.name, self.previous, **self.args)
+        create_step(name=self.name, previous=self.previous, **self.args)
 
 
 #%% particular step definition
-
 
 class StaticStep(Step):
 
     method_name = 'StaticStep'
 
-    def __init__(self, name, previous='Initial', description='',
+    def __init__(self, name, previous='Initial', model=None, description='',
                  timePeriod=1., nlgeom=OFF, stabilizationMethod=NONE,
                  stabilizationMagnitude=2e-4, adiabatic=OFF,
                  timeIncrementationMethod=AUTOMATIC, maxNumInc=100,
@@ -139,8 +142,6 @@ class StaticStep(Step):
         -----
         -for further informations see p49-134 of [1].
         '''
-        # initialize parent
-        Step.__init__(self, name, previous)
         # computations
         initialInc = timePeriod if initialInc is None else initialInc
         minInc = min(initialInc, timePeriod * 1e-5) if minInc is None else minInc
@@ -170,15 +171,17 @@ class StaticStep(Step):
                      'convertSDI': convertSDI,
                      'adaptiveDampingRatio': adaptiveDampingRatio,
                      'continueDampingFactors': continueDampingFactors}
+        # initialize parent
+        Step.__init__(self, name, previous, model=model)
 
 
 class BuckleStep(Step):
 
     method_name = 'BuckleStep'
 
-    def __init__(self, name, previous='Initial', numEigen=20, description='',
-                 eigensolver=LANCZOS, minEigen=None, maxEigen=None,
-                 vectors=None, maxIterations=30, blockSize=DEFAULT,
+    def __init__(self, name, previous='Initial', model=None, numEigen=20,
+                 description='', eigensolver=LANCZOS, minEigen=None,
+                 maxEigen=None, vectors=None, maxIterations=30, blockSize=DEFAULT,
                  maxBlocks=DEFAULT, matrixStorage=SOLVER_DEFAULT,
                  maintainAttributes=False):
         '''
@@ -212,8 +215,6 @@ class BuckleStep(Step):
         -----
         -for further informations see p49-10 of [1].
         '''
-        # initialize parent
-        Step.__init__(self, name, previous)
         # computations
         vectors = min(2 * numEigen, numEigen * 8) if vectors is None else vectors
         # create arg dict
@@ -228,3 +229,5 @@ class BuckleStep(Step):
                      'maxBlocks': maxBlocks,
                      'matrixStorage': matrixStorage,
                      'maintainAttributes': maintainAttributes}
+        # initialize parent
+        Step.__init__(self, name, previous, model=model)
