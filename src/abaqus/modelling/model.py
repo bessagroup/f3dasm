@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-15 12:25:48
+Last modified on 2020-04-15 15:10:24
 Python 2.7.16
 v0.1
 
@@ -46,6 +46,9 @@ class BasicModel:
 
     def create_model(self):
 
+        # create materials
+        self._create_materials()
+
         # create parts
         self._create_parts()
 
@@ -57,6 +60,10 @@ class BasicModel:
 
         # create boundary conditions
         self._create_bcs()
+
+    def _create_materials(self):
+        for material in self.materials:
+            material.create_material(self.model)
 
     def _create_parts(self):
         for obj in self.geometry_objects:
