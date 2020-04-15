@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 11:26:39
-Last modified on 2020-04-15 14:21:29
+Last modified on 2020-04-15 16:15:08
 Python 2.7.16
 v0.1
 
@@ -23,6 +23,9 @@ Structures 139-140: 174-188.
 # abaqus library
 from abaqusConstants import BUCKLING_MODES
 
+# third-party
+import numpy as np
+
 # local library
 from ..geometry.structures import TRACBoom
 from ..material.abaqus_materials import LaminaMaterial
@@ -30,11 +33,13 @@ from ..modelling.model import BasicModel
 from ..modelling.step import BuckleStep
 from ..modelling.bcs import DisplacementBC
 from ..modelling.bcs import Moment
+from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
 
 
 #%% TRAC boom model
 
 # TODO: assemble puzzle will have to be automatically performed when init
+
 
 class TRACBoomModel(BasicModel):
 
@@ -97,3 +102,35 @@ class TRACBoomModel(BasicModel):
         # apply boundary conditions
         bcs = self._apply_bcs(trac_boom, step_name)
         self.bcs.extend(bcs)
+
+    def post_processing(self, odb):
+        '''
+        Parameters
+        ----------
+        odb : Abaqus odb object
+        '''
+
+        # initialization
+        step = odb.steps[odb.steps.keys()[-1]]
+        frames = step.frames
+
+        # get maximum displacements
+        variable = 'U'
+        directions = [1, 2, 3]
+        nodeSets = [odb.rootAssembly.nodeSets[' ALL NODES']]
+        values = get_ydata_from_nodeSets_field_output(odb, nodeSets, variable,
+                                                      directions=directions,
+                                                      frames=frames)
+        max_disps = []
+        for value in values:
+            max_disp = np.max(np.abs(np.array(value)))
+            max_disps.append(max_disp)
+
+        # get eigenvalue
+        eigenvalue = float(frames[1].description.split('EigenValue =')[1])
+
+        # write output
+        data = {'max_disp': max_disps,
+                'critical_moment': eigenvalue}
+
+        return data
