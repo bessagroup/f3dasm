@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-09 21:12:13
+Last modified on 2020-04-15 13:51:15
 Python 2.7.16
 v0.1
 
@@ -38,10 +38,10 @@ import numpy as np
 
 #%% Bessa, 2018 (TRAC boom)
 
-class TRACBOOM(object):
+class TRACBoom(object):
 
     def __init__(self, height, radius, theta, thickness, length, material,
-                 width=0., name='TRACBOOM', layup=None):
+                 name='TRACBOOM', layup=None):
         '''
         Parameters
         ----------
@@ -57,20 +57,16 @@ class TRACBOOM(object):
             Length of the structure (z-direction)
         material : instance of any abaqus_materials module class
             Material of the ply.
-        width : float
-            Width of the connectors between the booms
         layup : array-like
             List of angles (degrees) from concave to convex face. It assumes
             both leafs have the same material and layup. If None, then it
             considers an HomogeneousShellSection.
         '''
-        # ???: clarify use of width (it seems to apply only a translation); I think it should be deleted
         self.height = height
         self.radius = radius
         self.theta = theta * np.pi / 180.
         self.thickness = thickness
         self.length = length
-        self.width = width
         self.material = material
         self.layup = layup
         self.name = name
@@ -124,26 +120,25 @@ class TRACBOOM(object):
     def _create_geometry(self, model):
 
         # initialization
-        w_h = -self.width - self.height
         gamma = np.pi / 2 - self.theta
 
         # create sketch
-        sheet_size = 3 * (2 * self.height + 2 * self.width + 2 * self.radius)
+        sheet_size = 3 * (2 * self.height + 2 * self.radius)
         s = model.ConstrainedSketch(name=self.name + '_PROFILE',
                                     sheetSize=sheet_size)
 
         # draw on sketch
-        s.Line(point1=(w_h, 0.0),
-               point2=(-self.width, 0.0))  # connection region (thickness 2*t)
+        s.Line(point1=(-self.height, 0.),
+               point2=(0., 0.))  # connection region (thickness 2*t)
         s.ArcByCenterEnds(
-            center=(w_h, self.radius),
-            point1=(w_h, 0.0),
-            point2=(w_h - self.radius * np.cos(gamma), self.radius * (1 - np.sin(gamma))),
+            center=(-self.height, self.radius),
+            point1=(-self.height, 0.0),
+            point2=(-self.height - self.radius * np.cos(gamma), self.radius * (1 - np.sin(gamma))),
             direction=CLOCKWISE)  # upper leaf of boom
         s.ArcByCenterEnds(
-            center=(w_h, -self.radius),
-            point1=(w_h - self.radius * np.cos(gamma), self.radius * (-1 + np.sin(gamma))),
-            point2=(w_h, 0.0), direction=CLOCKWISE)  # lower leaf of boom
+            center=(-self.height, -self.radius),
+            point1=(-self.height - self.radius * np.cos(gamma), self.radius * (-1 + np.sin(gamma))),
+            point2=(-self.height, 0.0), direction=CLOCKWISE)  # lower leaf of boom
 
         # extrude sketch
         self.part = model.Part(name=self.name, dimensionality=THREE_D,
@@ -155,39 +150,38 @@ class TRACBOOM(object):
         # initialization
         delta = self.mesh_size / 10.
         gamma = np.pi / 2 - self.theta
-        w_h = -self.width - self.height
 
         # edges
         e = self.part.edges
         # all edges in Z plus
-        edges = e.getByBoundingBox(-self.radius + w_h - delta, -2 * self.radius - delta,
-                                   self.length - delta, self.radius - w_h + delta,
+        edges = e.getByBoundingBox(-self.radius - self.height - delta, -2 * self.radius - delta,
+                                   self.length - delta, self.radius +self.height + delta,
                                    2 * self.radius + delta, self.length + delta)
         self.part.Set(edges=edges, name='ZPLUS_EDGES')
         # all edges in Z minus
-        edges = e.getByBoundingBox(-self.radius + w_h - delta, -2 * self.radius - delta,
-                                   - delta, self.radius - w_h + delta, 2 * self.radius + delta,
+        edges = e.getByBoundingBox(-self.radius  -self.height - delta, -2 * self.radius - delta,
+                                   - delta, self.radius +self.height + delta, 2 * self.radius + delta,
                                    delta)
         self.part.Set(edges=edges, name='ZMINUS_EDGES')
         # edge of the upper leaf
-        edges = e.getByBoundingBox(-self.radius * np.cos(gamma) + w_h - delta,
+        edges = e.getByBoundingBox(-self.radius * np.cos(gamma)  -self.height - delta,
                                    self.radius * (1 - np.sin(gamma)) - delta, - delta,
-                                   -self.radius * np.cos(gamma) + w_h + delta,
+                                   -self.radius * np.cos(gamma)  -self.height + delta,
                                    self.radius * (1 - np.sin(gamma)) + delta,
                                    self.length + delta)
         self.part.Set(edges=edges, name='UPPER_LEAF_EDGE')
         # edge of the lower leaf
-        edges = e.getByBoundingBox(-self.radius * np.cos(gamma) + w_h - delta,
+        edges = e.getByBoundingBox(-self.radius * np.cos(gamma)  -self.height - delta,
                                    self.radius * (-1 + np.sin(gamma)) - delta, - delta,
-                                   -self.radius * np.cos(gamma) + w_h + delta,
+                                   -self.radius * np.cos(gamma)  -self.height + delta,
                                    self.radius * (-1 + np.sin(gamma)) + delta, self.length + delta)
         self.part.Set(edges=edges, name='LOWER_LEAF_EDGE')
 
         # faces
         f = self.part.faces
         # upper and lower leafs
-        pt1 = [w_h, self.radius, -delta]
-        pt2 = [w_h, self.radius, self.length + delta]
+        pt1 = [-self.height, self.radius, -delta]
+        pt2 = [-self.height, self.radius, self.length + delta]
         # upper
         upperLeaf = f.getByBoundingCylinder(pt1, pt2, self.radius + delta)
         self.part.Set(faces=upperLeaf, name='UPPER_LEAF_FACE')
@@ -203,8 +197,8 @@ class TRACBOOM(object):
         facesLeafs = upperLeaf + lowerLeaf
         self.part.Set(faces=facesLeafs, name='LEAFS_FACES')
         # double laminate
-        doubleLaminate = f.getByBoundingBox(w_h - delta, -delta, - delta,
-                                            -self.width + delta, delta,
+        doubleLaminate = f.getByBoundingBox(-self.height - delta, -delta, - delta,
+                                            delta, delta,
                                             self.length + delta)
         self.part.Set(faces=doubleLaminate, name='DOUBLE_LAMINATE_FACE')
         self.part.Surface(side2Faces=doubleLaminate, name='DOUBLE_LAMINATE_TOP_SURF')
