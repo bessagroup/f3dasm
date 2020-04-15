@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-15 13:51:15
+Last modified on 2020-04-15 13:58:20
 Python 2.7.16
 v0.1
 
@@ -41,7 +41,7 @@ import numpy as np
 class TRACBoom(object):
 
     def __init__(self, height, radius, theta, thickness, length, material,
-                 name='TRACBOOM', layup=None):
+                 name='TRACBOOM', layup=None, rotation_axis=1):
         '''
         Parameters
         ----------
@@ -61,6 +61,8 @@ class TRACBoom(object):
             List of angles (degrees) from concave to convex face. It assumes
             both leafs have the same material and layup. If None, then it
             considers an HomogeneousShellSection.
+        rotation_axis : int. possible values = 1 or 2
+            Axis about which moment will be applied.
         '''
         self.height = height
         self.radius = radius
@@ -69,6 +71,7 @@ class TRACBoom(object):
         self.length = length
         self.material = material
         self.layup = layup
+        self.rotation_axis = rotation_axis
         self.name = name
         # variable initialization
         self.part = None
@@ -155,25 +158,25 @@ class TRACBoom(object):
         e = self.part.edges
         # all edges in Z plus
         edges = e.getByBoundingBox(-self.radius - self.height - delta, -2 * self.radius - delta,
-                                   self.length - delta, self.radius +self.height + delta,
+                                   self.length - delta, self.radius + self.height + delta,
                                    2 * self.radius + delta, self.length + delta)
         self.part.Set(edges=edges, name='ZPLUS_EDGES')
         # all edges in Z minus
-        edges = e.getByBoundingBox(-self.radius  -self.height - delta, -2 * self.radius - delta,
-                                   - delta, self.radius +self.height + delta, 2 * self.radius + delta,
+        edges = e.getByBoundingBox(-self.radius - self.height - delta, -2 * self.radius - delta,
+                                   - delta, self.radius + self.height + delta, 2 * self.radius + delta,
                                    delta)
         self.part.Set(edges=edges, name='ZMINUS_EDGES')
         # edge of the upper leaf
-        edges = e.getByBoundingBox(-self.radius * np.cos(gamma)  -self.height - delta,
+        edges = e.getByBoundingBox(-self.radius * np.cos(gamma) - self.height - delta,
                                    self.radius * (1 - np.sin(gamma)) - delta, - delta,
-                                   -self.radius * np.cos(gamma)  -self.height + delta,
+                                   -self.radius * np.cos(gamma) - self.height + delta,
                                    self.radius * (1 - np.sin(gamma)) + delta,
                                    self.length + delta)
         self.part.Set(edges=edges, name='UPPER_LEAF_EDGE')
         # edge of the lower leaf
-        edges = e.getByBoundingBox(-self.radius * np.cos(gamma)  -self.height - delta,
+        edges = e.getByBoundingBox(-self.radius * np.cos(gamma) - self.height - delta,
                                    self.radius * (-1 + np.sin(gamma)) - delta, - delta,
-                                   -self.radius * np.cos(gamma)  -self.height + delta,
+                                   -self.radius * np.cos(gamma) - self.height + delta,
                                    self.radius * (-1 + np.sin(gamma)) + delta, self.length + delta)
         self.part.Set(edges=edges, name='LOWER_LEAF_EDGE')
 
@@ -217,9 +220,10 @@ class TRACBoom(object):
                               name=self._get_ref_point_name(position))
 
         # add equation to relate the reference points
+        dof = 3 + self.rotation_axis
         model.Equation(name='RELATE_RPS',
-                       terms=((1.0, self._get_ref_point_name(self.ref_point_positions[0]), 4),
-                              (1.0, self._get_ref_point_name(self.ref_point_positions[-1]), 4)))
+                       terms=((1.0, self._get_ref_point_name(self.ref_point_positions[0]), dof),
+                              (1.0, self._get_ref_point_name(self.ref_point_positions[-1]), dof)))
 
     def _create_coupling_constraints(self, model):
 

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 11:26:39
-Last modified on 2020-04-15 12:24:04
+Last modified on 2020-04-15 14:21:29
 Python 2.7.16
 v0.1
 
@@ -34,39 +34,47 @@ from ..modelling.bcs import Moment
 
 #%% TRAC boom model
 
+# TODO: assemble puzzle will have to be automatically performed when init
+
 class TRACBoomModel(BasicModel):
 
     def __init__(self, name, job_name, job_description=''):
         # initialize parent
         BasicModel.__init__(self, name, job_name, job_description)
         # specific variables
+        self.applied_moment = 2.
 
     def _apply_bcs(self, trac_boom, step_name):
+        # TODO: bcs change regarding the type of simulation
+
+        # initialization
+        kwargs_disp = {'ur%i' % (1 + int(not (trac_boom.rotation_axis - 1))): 0}
+        kwargs_moment = {'cm%i' % trac_boom.rotation_axis: self.applied_moment}
 
         # fix ref point minus
         position = trac_boom.ref_point_positions[0]
         region_name = trac_boom._get_ref_point_name(position)
         fix_1 = DisplacementBC('BC_ZMINUS', createStepName=step_name,
-                               region=region_name, u1=0., u2=0., u3=0., ur2=0,
-                               ur3=0, buckleCase=BUCKLING_MODES)
+                               region=region_name, u1=0., u2=0., u3=0., ur3=0,
+                               buckleCase=BUCKLING_MODES, **kwargs_disp)
 
         # fix ref point plus
         position = trac_boom.ref_point_positions[-1]
         region_name = trac_boom._get_ref_point_name(position)
         fix_2 = DisplacementBC('BC_ZPLUS', createStepName=step_name,
-                               region=region_name, u1=0., u2=0., ur2=0, ur3=0,
-                               buckleCase=BUCKLING_MODES)
+                               region=region_name, u1=0., u2=0., ur3=0,
+                               buckleCase=BUCKLING_MODES, **kwargs_disp)
 
         # apply moment
         position = trac_boom.ref_point_positions[-1]
         region_name = trac_boom._get_ref_point_name(position)
         moment = Moment('APPLIED_MOMENT', createStepName=step_name,
-                        region=region_name, cm1=2.)
+                        region=region_name, **kwargs_moment)
 
         return fix_1, fix_2, moment
 
     def assemble_puzzle(self, height, radius, theta, thickness, length,
-                        material_name, layup=None):
+                        material_name, layup=None, rotation_axis=1):
 
         # TODO: extend to different materials (geometry already prepared)
 
@@ -77,7 +85,8 @@ class TRACBoomModel(BasicModel):
         # define objects
         # set TRAC boom
         trac_boom = TRACBoom(height, radius, theta, thickness, length, material,
-                             layup=layup, name='TRACBOOM')
+                             layup=layup, rotation_axis=rotation_axis,
+                             name='TRACBOOM')
         self.geometry_objects.append(trac_boom)
 
         # set step

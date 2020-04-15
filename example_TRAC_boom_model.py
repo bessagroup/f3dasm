@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 12:09:08
-Last modified on 2020-04-15 12:30:58
+Last modified on 2020-04-15 14:08:54
 Python 2.7.16
 v0.1
 
@@ -37,6 +37,9 @@ length = 5.04000e-01
 material_name = 't800_17GSM_120'
 layup = [0., 90., 90., 0.]
 
+# boundary conditions
+rotation_axis = 2
+
 
 #%% create model
 
@@ -45,7 +48,7 @@ model = TRACBoomModel(model_name, job_name, job_description=job_description)
 
 # assemble puzzle
 model.assemble_puzzle(height, radius, theta, thickness, length,
-                      material_name, layup=layup)
+                      material_name, layup=layup, rotation_axis=rotation_axis)
 
 # create model
 model.create_model()
