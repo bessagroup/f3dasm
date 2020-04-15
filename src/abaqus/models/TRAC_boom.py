@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 11:26:39
-Last modified on 2020-04-15 16:15:08
+Last modified on 2020-04-15 19:16:54
 Python 2.7.16
 v0.1
 
@@ -33,6 +33,7 @@ from ..modelling.model import BasicModel
 from ..modelling.step import BuckleStep
 from ..modelling.bcs import DisplacementBC
 from ..modelling.bcs import Moment
+from ..modelling.misc import AddToInp
 from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
 
 
@@ -102,6 +103,10 @@ class TRACBoomModel(BasicModel):
         # apply boundary conditions
         bcs = self._apply_bcs(trac_boom, step_name)
         self.bcs.extend(bcs)
+
+        # add text to inp
+        text = ['*NODE FILE, frequency=1', 'U']
+        self.inp_additions.append(AddToInp(text, self.job_name, section='OUTPUT REQUESTS'))
 
     def post_processing(self, odb):
         '''

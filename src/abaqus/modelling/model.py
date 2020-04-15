@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-15 15:10:24
+Last modified on 2020-04-15 18:25:17
 Python 2.7.16
 v0.1
 
@@ -43,6 +43,7 @@ class BasicModel:
         self.materials = []
         self.steps = ['Initial']
         self.bcs = []
+        self.inp_additions = []
 
     def create_model(self):
 
@@ -60,6 +61,17 @@ class BasicModel:
 
         # create boundary conditions
         self._create_bcs()
+
+    def write_inp(self):
+
+        # create inp
+        modelJob = mdb.Job(name=self.job_name, model=self.name,
+                           description=self.job_description)
+        modelJob.writeInput(consistencyChecking=OFF)
+
+        # add lines to inp
+        for inp_addition in self.inp_additions:
+            inp_addition.write_text()
 
     def _create_materials(self):
         for material in self.materials:
@@ -80,11 +92,5 @@ class BasicModel:
     def _create_bcs(self):
         for bc in self.bcs:
             bc.apply_bc(self.model)
-
-    def write_inp(self):
-
-        modelJob = mdb.Job(name=self.job_name, model=self.name,
-                           description=self.job_description)
-        modelJob.writeInput(consistencyChecking=OFF)
 
     # TODO: add possibility to dump model
