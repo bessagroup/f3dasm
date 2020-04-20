@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:55:21
-Last modified on 2020-04-15 13:04:29
+Last modified on 2020-04-15 20:01:27
 Python 2.7.16
 v0.1
 
@@ -258,7 +258,6 @@ class StaticRiksStep(Step):
                      'nodeOn': nodeOn,
                      'maximumDisplacement': maximumDisplacement,
                      'dof': dof,
-                     'region': region,
                      'timeIncrementationMethod': timeIncrementationMethod,
                      'maxNumInc': maxNumInc,
                      'totalArcLength': totalArcLength,
@@ -273,6 +272,9 @@ class StaticRiksStep(Step):
                      'useLongTermSolution': useLongTermSolution,
                      'convertSDI': convertSDI,
                      }
+        if nodeOn is ON and region:
+            self.args['region'] = region
+
         # initialize parent
         Step.__init__(self, name, previous, model=model)
 
