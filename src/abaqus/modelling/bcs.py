@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 16:52:37
-Last modified on 2020-04-09 18:30:48
+Last modified on 2020-04-20 21:46:22
 Python 2.7.16
 v0.1
 
@@ -116,6 +116,49 @@ class DisplacementBC(BoundaryCondition):
                      'distributionType': distributionType,
                      'localCsys': localCsys,
                      'buckleCase': buckleCase}
+        # initialize parent
+        BoundaryCondition.__init__(self, name, createStepName, region,
+                                   model=model)
+
+
+class ConcentratedForce(BoundaryCondition):
+
+    method_name = 'ConcentratedForce'
+
+    def __init__(self, name, createStepName, region, model=None,
+                 cf1=UNSET, cf2=UNSET, cf3=UNSET, amplitude=UNSET,
+                 follower=OFF, distributionType=UNIFORM, localCsys=None,
+                 field=''):
+        '''
+        Parameters
+        ----------
+        cf1, cf2, cf3 : float or complex
+            Load component in the i-direction (i=1, 2, 3).
+        amplitude : str or abaqus constant
+            Name of the amplitude reference.
+        follower : bool
+            Whether the direction of the force rotates with the rotation of the
+            node.
+        distributionType : abaqus constant
+            How the boundary condition is distributed spacially.
+        localCsys : None or DatumCsys abaqus object
+            Local coordinate system of the boundary condition's degrees of
+            freedom.
+        field : str
+            Name of the AnalyticalField or DiscreteField object associated with
+            this boundary condition. Applicable if distributionType=FIELD.
+
+        Notes
+        -----
+        -for further informations see p27-43 of [1].
+        '''
+        # create args dict
+        self.args = {'cf1': cf1, 'cf2': cf2, 'cf3': cf3,
+                     'amplitude': amplitude,
+                     'follower': follower,
+                     'distributionType': distributionType,
+                     'localCsys': localCsys,
+                     'field': field}
         # initialize parent
         BoundaryCondition.__init__(self, name, createStepName, region,
                                    model=model)
