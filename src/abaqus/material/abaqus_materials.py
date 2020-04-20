@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 12:03:11
-Last modified on 2020-04-08 14:10:24
+Last modified on 2020-04-20 22:50:02
 Python 2.7.16
 v0.1
 
@@ -14,6 +14,9 @@ Main goal
 Define classes to create materials in Abaqus using information from the
 material database.
 '''
+
+
+# TODO: concept of material behaviour?
 
 
 #%% imports
@@ -50,13 +53,11 @@ class AbaqusMaterial(object):
         self.material = material
         self.name = material.name.upper() if name is None else name.upper()
         self.create_section = create_section
-        # initialize variables
-        self.abaqusMaterial = None
         # computations
         if model:
             self.create_material(model)
 
-    def _add_density(self):
+    def _add_density(self, abaqusMaterial):
         # TODO: expand to deal with tabular data
 
         # verify if density info is available
@@ -65,7 +66,7 @@ class AbaqusMaterial(object):
 
         # add density
         rho = self.material.get_value('density')
-        self.abaqusMaterial.Density(table=((rho, ),))
+        abaqusMaterial.Density(table=((rho, ),))
 
     def _verify_existing_material(self, model):
         '''
@@ -75,13 +76,8 @@ class AbaqusMaterial(object):
         defined material.
         '''
 
-        # verify if method was already called
-        if self.abaqusMaterial is not None:
-            return True
-
         # verify existing material
         if self.name in model.materials.keys():
-            self.abaqusMaterial = model.materials[self.name]
             return True
 
         return False
@@ -110,12 +106,12 @@ class ElasticMaterial(AbaqusMaterial):
                                 for name in self.required_mechanical_constants]
 
         # create material
-        self.abaqusMaterial = model.Material(name=self.name)
+        abaqusMaterial = model.Material(name=self.name)
 
         # define properties
-        self.abaqusMaterial.Elastic(
+        abaqusMaterial.Elastic(
             type=self.elastic_type, table=(mechanical_constants,))
-        self._add_density()
+        self._add_density(abaqusMaterial)
 
         # define section
         if self.create_section:

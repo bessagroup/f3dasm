@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 18:34:34
-Last modified on 2020-04-15 12:29:57
+Last modified on 2020-04-20 22:51:25
 Python 2.7.16
 v0.1
 
@@ -17,6 +17,8 @@ Show how to use TRAC boom class (geometry).
 # abaqus
 from abaqus import mdb, backwardCompatibility
 
+# standard library
+import pickle
 
 # local library
 from src.abaqus.geometry.structures import TRACBoom
@@ -28,8 +30,6 @@ from src.abaqus.material.abaqus_materials import LaminaMaterial
 backwardCompatibility.setValues(reportDeprecated=False)
 
 model_name = 'TRACBOOM'
-job_name = 'Sim_' + model_name
-job_description = ''
 
 # geometry
 height = 2.48450e-03
@@ -69,3 +69,14 @@ trac_boom.create_part(model)
 
 # create assembly
 trac_boom.create_instance(model)
+
+
+#%% dump object
+
+data = {'TRACBOOM': trac_boom}
+filename = 'TRACBOOM.pickle'
+with open(filename, 'wb') as f:
+    pickle.dump(data, f)
+
+# with open(filename, 'rb') as f:
+#     data = pickle.load(f)

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 12:38:43
-Last modified on 2020-04-20 22:18:17
+Last modified on 2020-04-20 22:51:20
 Python 2.7.16
 v0.1
 
@@ -14,12 +14,11 @@ Show how to use supercompressible (geometry).
 
 #%% imports
 
-# standard library
-import pickle
-
 # abaqus
 from abaqus import mdb, backwardCompatibility
 
+# standard library
+import pickle
 
 # local library
 from src.abaqus.geometry.structures import Supercompressible
@@ -71,7 +70,10 @@ supercompressible.create_instance(model)
 
 #%% dump object
 
-data = {'geometry': supercompressible}
-filename = 'test.pickle'
+data = {'supercompressible': supercompressible}
+filename = 'supercompressible.pickle'
 with open(filename, 'wb') as f:
     pickle.dump(data, f)
+
+# with open(filename, 'rb') as f:
+#     data = pickle.load(f)

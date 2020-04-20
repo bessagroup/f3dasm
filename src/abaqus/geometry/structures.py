@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-20 18:45:12
+Last modified on 2020-04-20 22:45:22
 Python 2.7.16
 v0.1
 
@@ -79,8 +79,6 @@ class TRACBoom(object):
         self.layup = layup
         self.rotation_axis = rotation_axis
         self.name = name
-        # variable initialization
-        self.part = None
         # mesh definitions
         self.mesh_size = min(1.0e-3, (self.theta * self.radius + self.height) / 30.)
         self.mesh_deviation_factor = .4
@@ -99,25 +97,28 @@ class TRACBoom(object):
     def create_part(self, model):
 
         # create geometry
-        self._create_geometry(model)
+        part = self._create_geometry(model)
 
         # create required sets and surfaces
-        self._create_sets()
+        self._create_sets(part)
 
         # assign material and material orientation
-        self._assign_material(model)
-        self._create_material_orientation()
+        self._assign_material(model, part)
+        self._create_material_orientation(part)
 
         # make partitions for meshing purposes
-        self._make_partitions()
+        self._make_partitions(part)
 
         # generate mesh
-        self._generate_mesh()
+        self._generate_mesh(part)
 
     def create_instance(self, model):
 
+        # initialization
+        part = model.parts[self.name]
+
         # create instance
-        model.rootAssembly.Instance(name=self.name, part=self.part,
+        model.rootAssembly.Instance(name=self.name, part=part,
                                     dependent=ON)
 
         # create reference points for boundary conditions
@@ -150,68 +151,70 @@ class TRACBoom(object):
             point2=(-self.height, 0.0), direction=CLOCKWISE)  # lower leaf of boom
 
         # extrude sketch
-        self.part = model.Part(name=self.name, dimensionality=THREE_D,
-                               type=DEFORMABLE_BODY)
-        self.part.BaseShellExtrude(sketch=s, depth=self.length)
+        part = model.Part(name=self.name, dimensionality=THREE_D,
+                          type=DEFORMABLE_BODY)
+        part.BaseShellExtrude(sketch=s, depth=self.length)
 
-    def _create_sets(self):
+        return part
+
+    def _create_sets(self, part):
 
         # initialization
         delta = self.mesh_size / 10.
         gamma = np.pi / 2 - self.theta
 
         # edges
-        e = self.part.edges
+        e = part.edges
         # all edges in Z plus
         edges = e.getByBoundingBox(-self.radius - self.height - delta, -2 * self.radius - delta,
                                    self.length - delta, self.radius + self.height + delta,
                                    2 * self.radius + delta, self.length + delta)
-        self.part.Set(edges=edges, name='ZPLUS_EDGES')
+        part.Set(edges=edges, name='ZPLUS_EDGES')
         # all edges in Z minus
         edges = e.getByBoundingBox(-self.radius - self.height - delta, -2 * self.radius - delta,
                                    - delta, self.radius + self.height + delta, 2 * self.radius + delta,
                                    delta)
-        self.part.Set(edges=edges, name='ZMINUS_EDGES')
+        part.Set(edges=edges, name='ZMINUS_EDGES')
         # edge of the upper leaf
         edges = e.getByBoundingBox(-self.radius * np.cos(gamma) - self.height - delta,
                                    self.radius * (1 - np.sin(gamma)) - delta, - delta,
                                    -self.radius * np.cos(gamma) - self.height + delta,
                                    self.radius * (1 - np.sin(gamma)) + delta,
                                    self.length + delta)
-        self.part.Set(edges=edges, name='UPPER_LEAF_EDGE')
+        part.Set(edges=edges, name='UPPER_LEAF_EDGE')
         # edge of the lower leaf
         edges = e.getByBoundingBox(-self.radius * np.cos(gamma) - self.height - delta,
                                    self.radius * (-1 + np.sin(gamma)) - delta, - delta,
                                    -self.radius * np.cos(gamma) - self.height + delta,
                                    self.radius * (-1 + np.sin(gamma)) + delta, self.length + delta)
-        self.part.Set(edges=edges, name='LOWER_LEAF_EDGE')
+        part.Set(edges=edges, name='LOWER_LEAF_EDGE')
 
         # faces
-        f = self.part.faces
+        f = part.faces
         # upper and lower leafs
         pt1 = [-self.height, self.radius, -delta]
         pt2 = [-self.height, self.radius, self.length + delta]
         # upper
         upperLeaf = f.getByBoundingCylinder(pt1, pt2, self.radius + delta)
-        self.part.Set(faces=upperLeaf, name='UPPER_LEAF_FACE')
-        self.part.Surface(side2Faces=upperLeaf, name='UPPER_LEAF_CONCAVE_SURF')
-        self.part.Surface(side1Faces=upperLeaf, name='UPPER_LEAF_CONVEX_SURF')
+        part.Set(faces=upperLeaf, name='UPPER_LEAF_FACE')
+        part.Surface(side2Faces=upperLeaf, name='UPPER_LEAF_CONCAVE_SURF')
+        part.Surface(side1Faces=upperLeaf, name='UPPER_LEAF_CONVEX_SURF')
         # lower
         pt1[1] = pt2[1] = -self.radius
         lowerLeaf = f.getByBoundingCylinder(pt1, pt2, self.radius + delta)
-        self.part.Set(faces=lowerLeaf, name='LOWER_LEAF_FACE')
-        self.part.Surface(side2Faces=lowerLeaf, name='LOWER_LEAF_CONCAVE_SURF')
-        self.part.Surface(side1Faces=lowerLeaf, name='LOWER_LEAF_CONVEX_SURF')
+        part.Set(faces=lowerLeaf, name='LOWER_LEAF_FACE')
+        part.Surface(side2Faces=lowerLeaf, name='LOWER_LEAF_CONCAVE_SURF')
+        part.Surface(side1Faces=lowerLeaf, name='LOWER_LEAF_CONVEX_SURF')
         # both
         facesLeafs = upperLeaf + lowerLeaf
-        self.part.Set(faces=facesLeafs, name='LEAFS_FACES')
+        part.Set(faces=facesLeafs, name='LEAFS_FACES')
         # double laminate
         doubleLaminate = f.getByBoundingBox(-self.height - delta, -delta, - delta,
                                             delta, delta,
                                             self.length + delta)
-        self.part.Set(faces=doubleLaminate, name='DOUBLE_LAMINATE_FACE')
-        self.part.Surface(side2Faces=doubleLaminate, name='DOUBLE_LAMINATE_TOP_SURF')
-        self.part.Surface(side1Faces=doubleLaminate, name='DOUBLE_LAMINATE_BOTTOM_SURF')
+        part.Set(faces=doubleLaminate, name='DOUBLE_LAMINATE_FACE')
+        part.Surface(side2Faces=doubleLaminate, name='DOUBLE_LAMINATE_TOP_SURF')
+        part.Surface(side1Faces=doubleLaminate, name='DOUBLE_LAMINATE_BOTTOM_SURF')
 
     def _create_ref_points(self, model):
 
@@ -235,13 +238,13 @@ class TRACBoom(object):
         # create coupling constraints
         for position in self.ref_point_positions[::2]:
             region1 = model.rootAssembly.sets[self._get_ref_point_name(position)]
-            region2 = model.rootAssembly.instances[self.part.name].sets['Z%s_EDGES' % position]
+            region2 = model.rootAssembly.instances[self.name].sets['Z%s_EDGES' % position]
 
             model.Coupling(name='CONSTRAINT-Z%s' % position, controlPoint=region1,
                            surface=region2, influenceRadius=WHOLE_SURFACE, couplingType=KINEMATIC,
                            localCsys=None, u1=ON, u2=ON, u3=ON, ur1=ON, ur2=ON, ur3=ON)
 
-    def _create_material_orientation(self):
+    def _create_material_orientation(self, part):
 
         # define regions
         regions = ['UPPER_LEAF_FACE', 'LOWER_LEAF_FACE', 'DOUBLE_LAMINATE_FACE']
@@ -253,38 +256,38 @@ class TRACBoom(object):
         for region_name, normalAxisRegion_name, primaryAxisRegion_name in zip(
                 regions, normal_axis_regions, primary_axis_regions):
 
-            region = self.part.sets[region_name]
-            normalAxisRegion = self.part.surfaces[normalAxisRegion_name]
-            primaryAxisRegion = self.part.sets[primaryAxisRegion_name]
+            region = part.sets[region_name]
+            normalAxisRegion = part.surfaces[normalAxisRegion_name]
+            primaryAxisRegion = part.sets[primaryAxisRegion_name]
 
-            self.part.MaterialOrientation(
+            part.MaterialOrientation(
                 region=region, orientationType=DISCRETE, axis=AXIS_3,
                 normalAxisDefinition=SURFACE, normalAxisRegion=normalAxisRegion,
                 flipNormalDirection=False, normalAxisDirection=AXIS_3,
                 primaryAxisDefinition=EDGE, primaryAxisRegion=primaryAxisRegion,
                 primaryAxisDirection=AXIS_1, flipPrimaryDirection=False)
 
-    def _make_partitions(self):
+    def _make_partitions(self, part):
 
         # create reference plane
-        refPlane = self.part.DatumPlaneByPrincipalPlane(principalPlane=XYPLANE,
-                                                        offset=self.length / 2.)
+        refPlane = part.DatumPlaneByPrincipalPlane(principalPlane=XYPLANE,
+                                                   offset=self.length / 2.)
 
         # make partition
-        self.part.PartitionFaceByDatumPlane(datumPlane=self.part.datums[refPlane.id],
-                                            faces=self.part.faces)
+        part.PartitionFaceByDatumPlane(datumPlane=part.datums[refPlane.id],
+                                       faces=part.faces)
 
-    def _generate_mesh(self):
+    def _generate_mesh(self, part):
 
         # seed part
-        self.part.seedPart(size=self.mesh_size,
-                           deviationFactor=self.mesh_deviation_factor,
-                           minSizeFactor=self.mesh_min_size_factor)
+        part.seedPart(size=self.mesh_size,
+                      deviationFactor=self.mesh_deviation_factor,
+                      minSizeFactor=self.mesh_min_size_factor)
 
         # generate mesh
-        self.part.generateMesh()
+        part.generateMesh()
 
-    def _assign_material(self, model):
+    def _assign_material(self, model, part):
 
         # initialization
         section_names = ['SINGLE_LAMINATE', 'DOUBLE_LAMINATE']
@@ -299,8 +302,8 @@ class TRACBoom(object):
 
         # assign sections
         for name, region, offset_type in zip(section_names, regions, offset_types):
-            region_ = self.part.sets[region]
-            self.part.SectionAssignment(
+            region_ = part.sets[region]
+            part.SectionAssignment(
                 region=region_, sectionName=name, offset=0.0,
                 offsetType=offset_type, offsetField='',
                 thicknessAssignment=FROM_SECTION)
@@ -419,8 +422,6 @@ class Supercompressible(object):
         self.z_spacing = z_spacing
         self.power = power
         # initialization
-        self.part_surf = None
-        self.part_longerons = None
         self.joints = np.zeros((self.n_storeys + 1, self.n_vertices_polygon, 3))
         self.longeron_points = []
         # computations
@@ -447,24 +448,28 @@ class Supercompressible(object):
     def create_part(self, model):
 
         # create geometry
-        self._create_geometry(model)
+        part_longerons, part_surf = self._create_geometry(model)
 
         # create required sets and surfaces
-        self._create_sets()
+        self._create_sets(part_longerons, part_surf)
 
         # create section and assign orientation
-        self._create_beam_section(model)
+        self._create_beam_section(model, part_longerons)
 
         # generate mesh
-        self._generate_mesh()
+        self._generate_mesh(part_longerons)
 
     def create_instance(self, model):
 
+        # initialization
+        part_longerons = model.parts[self.longerons_name]
+        part_surf = model.parts[self.surface_name]
+
         # create instances
         model.rootAssembly.Instance(name=self.longerons_name,
-                                    part=self.part_longerons, dependent=ON)
+                                    part=part_longerons, dependent=ON)
         model.rootAssembly.Instance(name=self.surface_name,
-                                    part=self.part_surf, dependent=ON)
+                                    part=part_surf, dependent=ON)
 
         # rotate surface
         model.rootAssembly.rotate(instanceList=(self.surface_name, ),
@@ -483,10 +488,12 @@ class Supercompressible(object):
         self._create_joints()
 
         # create longerons
-        self._create_geometry_longerons(model)
+        part_longerons = self._create_geometry_longerons(model)
 
         # create surface
-        self._create_geometry_surf(model)
+        part_surf = self._create_geometry_surf(model)
+
+        return part_longerons, part_surf
 
     def _create_joints(self):
 
@@ -521,8 +528,8 @@ class Supercompressible(object):
     def _create_geometry_longerons(self, model):
 
         # create part
-        self.part_longerons = model.Part(self.longerons_name, dimensionality=THREE_D,
-                                         type=DEFORMABLE_BODY)
+        part_longerons = model.Part(self.longerons_name, dimensionality=THREE_D,
+                                    type=DEFORMABLE_BODY)
 
         # create datum and white
         for i_vertex in range(0, self.n_vertices_polygon):
@@ -531,8 +538,10 @@ class Supercompressible(object):
             self.longeron_points.append([self.joints[i_storey, i_vertex, :] for i_storey in range(0, self.n_storeys + 1)])
 
             # create wires
-            self.part_longerons.WirePolyLine(points=self.longeron_points[-1],
-                                             mergeType=IMPRINT, meshable=ON)
+            part_longerons.WirePolyLine(points=self.longeron_points[-1],
+                                        mergeType=IMPRINT, meshable=ON)
+
+        return part_longerons
 
     def _create_geometry_surf(self, model):
 
@@ -545,20 +554,22 @@ class Supercompressible(object):
                point2=(0.0, self.mast_radius * 1.1))
 
         # extrude sketch
-        self.part_surf = model.Part(name=self.surface_name, dimensionality=THREE_D,
-                                    type=ANALYTIC_RIGID_SURFACE)
-        self.part_surf.AnalyticRigidSurfExtrude(sketch=s,
-                                                depth=self.mast_radius * 2.2)
+        part_surf = model.Part(name=self.surface_name, dimensionality=THREE_D,
+                               type=ANALYTIC_RIGID_SURFACE)
+        part_surf.AnalyticRigidSurfExtrude(sketch=s,
+                                           depth=self.mast_radius * 2.2)
 
-    def _create_sets(self):
+        return part_surf
+
+    def _create_sets(self, part_longerons, part_surf):
 
         # surface
-        self.part_surf.Surface(side1Faces=self.part_surf.faces,
-                               name=self.surface_name)
+        part_surf.Surface(side1Faces=part_surf.faces,
+                          name=self.surface_name)
 
         # longeron
-        edges = self.part_longerons.edges
-        vertices = self.part_longerons.vertices
+        edges = part_longerons.edges
+        vertices = part_longerons.vertices
 
         # individual sets
         all_edges = []
@@ -570,16 +581,16 @@ class Supercompressible(object):
 
             # individual sets
             long_name = self._get_longeron_name(i_vertex)
-            self.part_longerons.Set(edges=all_edges[-1], name=long_name)
+            part_longerons.Set(edges=all_edges[-1], name=long_name)
 
             # joints
             for i_storey, vertex in enumerate(selected_vertices):
                 joint_name = self._get_joint_name(i_storey, i_vertex)
-                self.part_longerons.Set(vertices=vertex, name=joint_name)
+                part_longerons.Set(vertices=vertex, name=joint_name)
         name = 'ALL_LONGERONS'
-        self.part_longerons.Set(edges=all_edges, name=name)
+        part_longerons.Set(edges=all_edges, name=name)
         name = 'ALL_LONGERONS_SURF'
-        self.part_longerons.Surface(circumEdges=all_edges, name=name)
+        part_longerons.Surface(circumEdges=all_edges, name=name)
 
         # joint sets
         selected_vertices = []
@@ -587,16 +598,16 @@ class Supercompressible(object):
             selected_vertices.append([])
             for i_vertex in range(0, self.n_vertices_polygon):
                 name = self._get_joint_name(i_storey, i_vertex)
-                selected_vertices[-1].append(self.part_longerons.sets[name].vertices)
+                selected_vertices[-1].append(part_longerons.sets[name].vertices)
         name = 'BOTTOM_JOINTS'
-        self.part_longerons.Set(name=name, vertices=selected_vertices[0])
+        part_longerons.Set(name=name, vertices=selected_vertices[0])
         name = 'TOP_JOINTS'
-        self.part_longerons.Set(name=name, vertices=selected_vertices[-1])
+        part_longerons.Set(name=name, vertices=selected_vertices[-1])
         name = 'ALL_JOINTS'
         all_vertices = list(itertools.chain(*selected_vertices))
-        self.part_longerons.Set(name=name, vertices=all_vertices)
+        part_longerons.Set(name=name, vertices=all_vertices)
 
-    def _create_beam_section(self, model):
+    def _create_beam_section(self, model, part_longerons):
 
         # create profile
         profile_name = 'LONGERONS_PROFILE'
@@ -622,33 +633,33 @@ class Supercompressible(object):
                           consistentMassMatrix=False)
 
         # section assignment
-        self.part_longerons.SectionAssignment(
+        part_longerons.SectionAssignment(
             offset=0.0, offsetField='', offsetType=MIDDLE_SURFACE,
-            region=self.part_longerons.sets['ALL_LONGERONS'],
+            region=part_longerons.sets['ALL_LONGERONS'],
             sectionName=section_name, thicknessAssignment=FROM_SECTION)
 
         # section orientation
         for i_vertex, pts in enumerate(self.longeron_points):
             dir_vec_n1 = np.array(pts[0]) - (0., 0., 0.)
             longeron_name = self._get_longeron_name(i_vertex)
-            region = self.part_longerons.sets[longeron_name]
-            self.part_longerons.assignBeamSectionOrientation(
+            region = part_longerons.sets[longeron_name]
+            part_longerons.assignBeamSectionOrientation(
                 region=region, method=N1_COSINES, n1=dir_vec_n1)
 
-    def _generate_mesh(self):
+    def _generate_mesh(self, part_longerons):
 
         # seed part
-        self.part_longerons.seedPart(
+        part_longerons.seedPart(
             size=self.mesh_size, deviationFactor=self.mesh_deviation_factor,
             minSizeFactor=self.mesh_min_size_factor, constraint=FINER)
 
         # assign element type
         elem_type_longerons = mesh.ElemType(elemCode=self.element_code)
-        self.part_longerons.setElementType(regions=(self.part_longerons.edges,),
-                                           elemTypes=(elem_type_longerons,))
+        part_longerons.setElementType(regions=(part_longerons.edges,),
+                                      elemTypes=(elem_type_longerons,))
 
         # generate mesh
-        self.part_longerons.generateMesh()
+        part_longerons.generateMesh()
 
     def _create_ref_points(self, model):
 
@@ -678,7 +689,7 @@ class Supercompressible(object):
                         surfaceRegion=surf)
 
         # create local datums
-        datums = self._create_local_datums()
+        datums = self._create_local_datums(model)
 
         # create coupling constraints
         for i_vertex in range(self.n_vertices_polygon):
@@ -694,10 +705,13 @@ class Supercompressible(object):
                                couplingType=KINEMATIC, localCsys=datum, u1=ON,
                                u2=ON, u3=ON, ur1=OFF, ur2=ON, ur3=ON)
 
-    def _create_local_datums(self):
+    def _create_local_datums(self, model):
         '''
         Create local coordinate system (useful for future constraints, etc.).
         '''
+
+        # initialization
+        part_longerons = model.parts[self.longerons_name]
 
         datums = []
         for i_vertex in range(0, self.n_vertices_polygon):
@@ -705,7 +719,7 @@ class Supercompressible(object):
             origin = self.joints[0, i_vertex, :]
             point2 = self.joints[0, i_vertex - 1, :]
             name = self._get_local_datum_name(i_vertex)
-            datums.append(self.part_longerons.DatumCsysByThreePoints(
+            datums.append(part_longerons.DatumCsysByThreePoints(
                 origin=origin, point2=point2, name=name, coordSysType=CARTESIAN,
                 point1=(0.0, 0.0, 0.0)))
 

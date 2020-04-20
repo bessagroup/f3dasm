@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 13:57:51
-Last modified on 2020-04-09 15:33:22
+Last modified on 2020-04-20 22:54:32
 Python 2.7.16
 v0.1
 
@@ -16,6 +16,9 @@ Show how to create material using the classes defined in abq.material
 
 # abaqus
 from abaqus import mdb, backwardCompatibility
+
+# standard library
+import pickle
 
 # local library
 from src.abaqus.material.abaqus_materials import IsotropicMaterial
@@ -49,3 +52,14 @@ isotropic_material = IsotropicMaterial(isotropic_material_name, model=model,
                                        create_section=True)
 lamina_material = LaminaMaterial(lamina_material_name, model=model,
                                  create_section=False)
+
+
+#%% dump object
+
+data = {'material': lamina_material}
+filename = 'test.pickle'
+with open(filename, 'wb') as f:
+    pickle.dump(data, f)
+
+# with open(filename, 'rb') as f:
+#     data = pickle.load(f)
