@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-15 13:58:20
+Last modified on 2020-04-20 18:45:12
 Python 2.7.16
 v0.1
 
@@ -28,9 +28,15 @@ from abaqusConstants import (CLOCKWISE, THREE_D, DEFORMABLE_BODY, ON, OFF,
                              DISCRETE, SURFACE, AXIS_1, AXIS_3, EDGE,
                              WHOLE_SURFACE, KINEMATIC, XYPLANE, UNIFORM,
                              GRADIENT, NO_IDEALIZATION, DEFAULT, SIMPSON,
-                             TOP_SURFACE, MIDDLE_SURFACE, FROM_SECTION)
+                             TOP_SURFACE, MIDDLE_SURFACE, FROM_SECTION,
+                             CARTESIAN, IMPRINT, CONSTANT, BEFORE_ANALYSIS,
+                             N1_COSINES, B31, FINER, ANALYTIC_RIGID_SURFACE)
 import section
+from part import EdgeArray
+import mesh
 
+# standard library
+import itertools
 
 # third-party
 import numpy as np
@@ -208,7 +214,6 @@ class TRACBoom(object):
         self.part.Surface(side1Faces=doubleLaminate, name='DOUBLE_LAMINATE_BOTTOM_SURF')
 
     def _create_ref_points(self, model):
-        # TODO: choice of nodal degree of freedom depends on the bcs
 
         # initialization
         modelAssembly = model.rootAssembly
@@ -346,6 +351,374 @@ class TRACBoom(object):
             plyName='%s_%i' % (ply_name, i))
 
         return sec
+
+    def _get_ref_point_name(self, position):
+
+        return 'Z%s_REF_POINT' % position
+
+
+#%% Bessa, 2019 (supercompressible metamaterial)
+
+class Supercompressible(object):
+
+    def __init__(self, n_vertices_polygon, mast_diameter, mast_pitch,
+                 cone_slope, young_modulus, shear_modulus, density, Ixx, Iyy,
+                 J, area, twist_angle=0., transition_length_ratio=1.,
+                 n_storeys=1, z_spacing='uni', power=1.,
+                 name='SUPERCOMPRESSIBLE'):
+        '''
+        Parameters
+        ----------
+        n_vertices_polygon : int
+        mast_diameter : float
+            Radius of the cicumscribing circle of the polygon.
+        mast_pitch : float
+            Pitch length of the structure.
+        cone_slope : float
+            Slope of the longerons (0 = straight, <0 = larger at the top,
+            >0 larger at the bottom).
+        young_modulus, shear_modulus : float
+            Material properties.
+        density : float
+            Material density.
+        Ixx, Iyy, J, area : float
+            Cross-section geometric properties.
+        twist_angle : float
+            Longerongs twisting angle.
+        transition_length_ratio = float
+            Transition zone for the longerons.
+        n_storeys : int
+            Number of stories in half of the structure.
+        z_spacing : str
+            How to compute spacing between storeys. Possible values are 'uni',
+            'power_rotating', 'power_fixed', 'exponential'.
+        power : float
+            Value for the exponent of the power law if z_spacing is
+            'power_rotationg' or 'power_fixed'.
+
+        Notes
+        -----
+        -it is not required to create a material (as is normal for similar
+        classes) because the beam section receives directly material properties.
+        '''
+        # store variables
+        self.n_vertices_polygon = n_vertices_polygon
+        self.mast_diameter = mast_diameter
+        self.mast_pitch = mast_pitch
+        self.cone_slope = cone_slope
+        self.young_modulus = young_modulus
+        self.shear_modulus = shear_modulus
+        self.density = density
+        self.Ixx = Ixx
+        self.Iyy = Iyy
+        self.J = J
+        self.area = area
+        self.twist_angle = twist_angle
+        self.transition_length_ratio = transition_length_ratio
+        self.n_storeys = n_storeys
+        self.z_spacing = z_spacing
+        self.power = power
+        # initialization
+        self.part_surf = None
+        self.part_longerons = None
+        self.joints = np.zeros((self.n_storeys + 1, self.n_vertices_polygon, 3))
+        self.longeron_points = []
+        # computations
+        self.mast_radius = self.mast_diameter / 2.
+        self.mast_height = n_storeys * mast_pitch
+        # mesh definitions
+        self.mesh_size = min(self.mast_radius, self.mast_pitch) / 300.
+        self.mesh_deviation_factor = .04
+        self.mesh_min_size_factor = .001
+        self.element_code = B31
+        # additional variables
+        self.longerons_name = 'LONGERONS'
+        self.surface_name = 'ANALYTICAL_SURF'
+        self.ref_point_positions = ['BOTTOM', 'TOP']
+
+    def change_mesh_definitions(self, **kwargs):
+        '''
+        See mesh definition at __init__ to find out the variables that can be
+        changed.
+        '''
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def create_part(self, model):
+
+        # create geometry
+        self._create_geometry(model)
+
+        # create required sets and surfaces
+        self._create_sets()
+
+        # create section and assign orientation
+        self._create_beam_section(model)
+
+        # generate mesh
+        self._generate_mesh()
+
+    def create_instance(self, model):
+
+        # create instances
+        model.rootAssembly.Instance(name=self.longerons_name,
+                                    part=self.part_longerons, dependent=ON)
+        model.rootAssembly.Instance(name=self.surface_name,
+                                    part=self.part_surf, dependent=ON)
+
+        # rotate surface
+        model.rootAssembly.rotate(instanceList=(self.surface_name, ),
+                                  axisPoint=(0., 0., 0.),
+                                  axisDirection=(0., 1., 0.), angle=90.)
+
+        # create reference points for boundary conditions
+        self._create_ref_points(model)
+
+        # add constraints for loading
+        self._create_constraints(model)
+
+    def _create_geometry(self, model):
+
+        # create joints
+        self._create_joints()
+
+        # create longerons
+        self._create_geometry_longerons(model)
+
+        # create surface
+        self._create_geometry_surf(model)
+
+    def _create_joints(self):
+
+        for i_storey in range(0, self.n_storeys + 1, 1):
+            zcoord = self._get_zcoord(i_storey)
+            aux1 = 2.0 * np.pi / self.n_vertices_polygon
+            aux2 = self.twist_angle * min(zcoord / self.mast_height / self.transition_length_ratio, 1.0)
+            for i_vertex in range(0, self.n_vertices_polygon):
+                aux3 = aux1 * i_vertex + aux2
+                xcoord = self.mast_radius * np.cos(aux3)
+                ycoord = self.mast_radius * np.sin(aux3)
+                self.joints[i_storey, i_vertex, :] = (xcoord * (1.0 - min(zcoord, self.transition_length_ratio * self.mast_height) / self.mast_height * self.cone_slope), ycoord * (1.0 - min(zcoord, self.transition_length_ratio * self.mast_height) / self.mast_height * self.cone_slope), zcoord)
+
+    def _get_zcoord(self, i_storey):
+
+        # get spacing for selected distribution
+        if self.z_spacing == 'uni':
+            # constant spacing between each storey (linear evolution):
+            zcoord = self.mast_height / self.n_storeys * i_storey
+        elif self.z_spacing == 'power_rotating':
+            # power-law spacing between each storey (more frequent at the rotating end):
+            zcoord = -self.mast_height / (float(self.n_storeys)**self.power) * (float(self.n_storeys - i_storey)**self.power) + self.mast_height
+        elif self.z_spacing == 'power_fixed':
+            # power-law spacing between each storey (more frequent at the fixed end):
+            zcoord = self.mast_height * (float(i_storey) / float(self.n_storeys))**self.power
+        elif self.z_spacing == 'exponential':
+            # exponential spacing between each storey
+            zcoord = (self.mast_height + 1.0) / np.exp(float(self.n_storeys)) * np.exp(float(i_storey))
+
+        return zcoord
+
+    def _create_geometry_longerons(self, model):
+
+        # create part
+        self.part_longerons = model.Part(self.longerons_name, dimensionality=THREE_D,
+                                         type=DEFORMABLE_BODY)
+
+        # create datum and white
+        for i_vertex in range(0, self.n_vertices_polygon):
+
+            # get required points
+            self.longeron_points.append([self.joints[i_storey, i_vertex, :] for i_storey in range(0, self.n_storeys + 1)])
+
+            # create wires
+            self.part_longerons.WirePolyLine(points=self.longeron_points[-1],
+                                             mergeType=IMPRINT, meshable=ON)
+
+    def _create_geometry_surf(self, model):
+
+        # create sketch
+        s = model.ConstrainedSketch(name='SURFACE_SKETCH',
+                                    sheetSize=self.mast_radius * 3.0)
+
+        # draw on sketch
+        s.Line(point1=(0.0, -self.mast_radius * 1.1),
+               point2=(0.0, self.mast_radius * 1.1))
+
+        # extrude sketch
+        self.part_surf = model.Part(name=self.surface_name, dimensionality=THREE_D,
+                                    type=ANALYTIC_RIGID_SURFACE)
+        self.part_surf.AnalyticRigidSurfExtrude(sketch=s,
+                                                depth=self.mast_radius * 2.2)
+
+    def _create_sets(self):
+
+        # surface
+        self.part_surf.Surface(side1Faces=self.part_surf.faces,
+                               name=self.surface_name)
+
+        # longeron
+        edges = self.part_longerons.edges
+        vertices = self.part_longerons.vertices
+
+        # individual sets
+        all_edges = []
+        for i_vertex, long_pts in enumerate(self.longeron_points):
+
+            # get vertices and edges
+            selected_vertices = [vertices.findAt((pt,)) for pt in long_pts]
+            all_edges.append(EdgeArray([edges.findAt(pt) for pt in long_pts]))
+
+            # individual sets
+            long_name = self._get_longeron_name(i_vertex)
+            self.part_longerons.Set(edges=all_edges[-1], name=long_name)
+
+            # joints
+            for i_storey, vertex in enumerate(selected_vertices):
+                joint_name = self._get_joint_name(i_storey, i_vertex)
+                self.part_longerons.Set(vertices=vertex, name=joint_name)
+        name = 'ALL_LONGERONS'
+        self.part_longerons.Set(edges=all_edges, name=name)
+        name = 'ALL_LONGERONS_SURF'
+        self.part_longerons.Surface(circumEdges=all_edges, name=name)
+
+        # joint sets
+        selected_vertices = []
+        for i_storey in range(0, self.n_storeys + 1):
+            selected_vertices.append([])
+            for i_vertex in range(0, self.n_vertices_polygon):
+                name = self._get_joint_name(i_storey, i_vertex)
+                selected_vertices[-1].append(self.part_longerons.sets[name].vertices)
+        name = 'BOTTOM_JOINTS'
+        self.part_longerons.Set(name=name, vertices=selected_vertices[0])
+        name = 'TOP_JOINTS'
+        self.part_longerons.Set(name=name, vertices=selected_vertices[-1])
+        name = 'ALL_JOINTS'
+        all_vertices = list(itertools.chain(*selected_vertices))
+        self.part_longerons.Set(name=name, vertices=all_vertices)
+
+    def _create_beam_section(self, model):
+
+        # create profile
+        profile_name = 'LONGERONS_PROFILE'
+        model.GeneralizedProfile(name=profile_name,
+                                 area=self.area, i11=self.Ixx,
+                                 i12=0., i22=self.Iyy, j=self.J, gammaO=0.,
+                                 gammaW=0.)
+
+        # access material properties
+        # nu = self.young_modulus / (2 * self.shear_modulus) - 1
+        # TODO: use right nu
+        nu = .31
+
+        # create section
+        section_name = 'LONGERONS_SECTION'
+        model.BeamSection(name=section_name, integration=BEFORE_ANALYSIS,
+                          beamShape=CONSTANT, profile=profile_name, thermalExpansion=OFF,
+                          temperatureDependency=OFF, dependencies=0,
+                          table=((self.young_modulus, self.shear_modulus),),
+                          poissonRatio=nu, density=self.density,
+                          alphaDamping=0.0, betaDamping=0.0, compositeDamping=0.0,
+                          centroid=(0.0, 0.0), shearCenter=(0.0, 0.0),
+                          consistentMassMatrix=False)
+
+        # section assignment
+        self.part_longerons.SectionAssignment(
+            offset=0.0, offsetField='', offsetType=MIDDLE_SURFACE,
+            region=self.part_longerons.sets['ALL_LONGERONS'],
+            sectionName=section_name, thicknessAssignment=FROM_SECTION)
+
+        # section orientation
+        for i_vertex, pts in enumerate(self.longeron_points):
+            dir_vec_n1 = np.array(pts[0]) - (0., 0., 0.)
+            longeron_name = self._get_longeron_name(i_vertex)
+            region = self.part_longerons.sets[longeron_name]
+            self.part_longerons.assignBeamSectionOrientation(
+                region=region, method=N1_COSINES, n1=dir_vec_n1)
+
+    def _generate_mesh(self):
+
+        # seed part
+        self.part_longerons.seedPart(
+            size=self.mesh_size, deviationFactor=self.mesh_deviation_factor,
+            minSizeFactor=self.mesh_min_size_factor, constraint=FINER)
+
+        # assign element type
+        elem_type_longerons = mesh.ElemType(elemCode=self.element_code)
+        self.part_longerons.setElementType(regions=(self.part_longerons.edges,),
+                                           elemTypes=(elem_type_longerons,))
+
+        # generate mesh
+        self.part_longerons.generateMesh()
+
+    def _create_ref_points(self, model):
+
+        # initialization
+        modelAssembly = model.rootAssembly
+
+        # create reference points
+        for i, position in enumerate(self.ref_point_positions):
+            sign = 1 if i else -1
+            rp = modelAssembly.ReferencePoint(
+                point=(0., 0., i * self.mast_height + sign * 1.1 * self.mast_radius))
+            modelAssembly.Set(referencePoints=(modelAssembly.referencePoints[rp.id],),
+                              name=self._get_ref_point_name(position))
+
+    def _create_constraints(self, model):
+
+        # initialization
+        modelAssembly = model.rootAssembly
+        instance_longerons = modelAssembly.instances[self.longerons_name]
+        instance_surf = modelAssembly.instances[self.surface_name]
+        ref_points = [modelAssembly.sets[self._get_ref_point_name(position)]
+                      for position in self.ref_point_positions]
+
+        # bottom point and analytic surface
+        surf = instance_surf.surfaces[self.surface_name]
+        model.RigidBody('CONSTRAINT-RIGID_BODY-BOTTOM', refPointRegion=ref_points[0],
+                        surfaceRegion=surf)
+
+        # create local datums
+        datums = self._create_local_datums()
+
+        # create coupling constraints
+        for i_vertex in range(self.n_vertices_polygon):
+            datum = instance_longerons.datums[datums[i_vertex].id]
+            for i, i_storey in enumerate([0, self.n_storeys]):
+                joint_name = self._get_joint_name(i_storey, i_vertex)
+                slave_region = instance_longerons.sets[joint_name]
+                master_region = ref_points[i]
+                constraint_name = 'CONSTRAINT-%s-%i-%i' % (self._get_ref_point_name(self.ref_point_positions[i]),
+                                                           i_storey, i_vertex)
+                model.Coupling(name=constraint_name, controlPoint=master_region,
+                               surface=slave_region, influenceRadius=WHOLE_SURFACE,
+                               couplingType=KINEMATIC, localCsys=datum, u1=ON,
+                               u2=ON, u3=ON, ur1=OFF, ur2=ON, ur3=ON)
+
+    def _create_local_datums(self):
+        '''
+        Create local coordinate system (useful for future constraints, etc.).
+        '''
+
+        datums = []
+        for i_vertex in range(0, self.n_vertices_polygon):
+
+            origin = self.joints[0, i_vertex, :]
+            point2 = self.joints[0, i_vertex - 1, :]
+            name = self._get_local_datum_name(i_vertex)
+            datums.append(self.part_longerons.DatumCsysByThreePoints(
+                origin=origin, point2=point2, name=name, coordSysType=CARTESIAN,
+                point1=(0.0, 0.0, 0.0)))
+
+        return datums
+
+    def _get_local_datum_name(self, i_vertex):
+        return 'LOCAL_DATUM_%i' % i_vertex
+
+    def _get_longeron_name(self, i_vertex):
+        return 'LONGERON-%i' % i_vertex
+
+    def _get_joint_name(self, i_storey, i_vertex):
+        return 'JOINT-%i-%i' % (i_storey, i_vertex)
 
     def _get_ref_point_name(self, position):
 
