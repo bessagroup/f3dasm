@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 12:09:08
-Last modified on 2020-04-15 14:08:54
+Last modified on 2020-04-20 23:03:50
 Python 2.7.16
 v0.1
 
@@ -16,6 +16,9 @@ Show how to use TRAC boom model.
 
 #%% imports
 
+# standard library
+import pickle
+
 # local library
 from src.abaqus.models.TRAC_boom import TRACBoomModel
 
@@ -23,7 +26,8 @@ from src.abaqus.models.TRAC_boom import TRACBoomModel
 #%% initialization
 
 model_name = 'TRACBOOM'
-job_name = 'Sim_' + model_name
+sim_type = 'lin_buckle'
+job_name = 'Sim_%s_%s' % (model_name, sim_type)
 job_description = ''
 
 # geometry
@@ -38,20 +42,24 @@ material_name = 't800_17GSM_120'
 layup = [0., 90., 90., 0.]
 
 # boundary conditions
-rotation_axis = 2
+rotation_axis = 1
 
 
 #%% create model
 
 # create object
-model = TRACBoomModel(model_name, job_name, job_description=job_description)
+model = TRACBoomModel(model_name, sim_type, job_name, height, radius, theta,
+                      thickness, length, material_name, layup=layup,
+                      rotation_axis=rotation_axis, job_description=job_description)
 
 # assemble puzzle
-model.assemble_puzzle(height, radius, theta, thickness, length,
-                      material_name, layup=layup, rotation_axis=rotation_axis)
+model.assemble_puzzle()
 
 # create model
 model.create_model()
 
 # write inp
 model.write_inp()
+
+# dump model
+model.dump()

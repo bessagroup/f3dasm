@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-15 18:25:17
+Last modified on 2020-04-20 23:09:01
 Python 2.7.16
 v0.1
 
@@ -21,6 +21,9 @@ Notes
 # abaqus
 from abaqus import mdb, backwardCompatibility
 from abaqusConstants import OFF
+
+# standard library
+import pickle
 
 
 #%% object definition
@@ -73,6 +76,20 @@ class BasicModel:
         for inp_addition in self.inp_additions:
             inp_addition.write_text()
 
+    def dump(self, create_file=True):
+
+        # stop storing model
+        self.model = None
+
+        # create file
+        if create_file:
+            data = {'model': self}
+            filename = '%s.pickle' % self.job_description
+            with open(filename, 'wb') as f:
+                pickle.dump(data, f)
+
+        return self
+
     def _create_materials(self):
         for material in self.materials:
             material.create_material(self.model)
@@ -92,5 +109,3 @@ class BasicModel:
     def _create_bcs(self):
         for bc in self.bcs:
             bc.apply_bc(self.model)
-
-    # TODO: add possibility to dump model
