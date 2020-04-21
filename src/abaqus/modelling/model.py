@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-20 23:09:01
+Last modified on 2020-04-21 15:23:32
 Python 2.7.16
 v0.1
 
@@ -46,6 +46,8 @@ class BasicModel:
         self.materials = []
         self.steps = ['Initial']
         self.bcs = []
+        self.contact_properties = []
+        self.interactions = []
         self.inp_additions = []
 
     def create_model(self):
@@ -61,6 +63,12 @@ class BasicModel:
 
         # create steps
         self._create_steps()
+
+        # create contact properties
+        self._create_contact_properties()
+
+        # create interactions
+        self._create_interactions()
 
         # create boundary conditions
         self._create_bcs()
@@ -84,7 +92,7 @@ class BasicModel:
         # create file
         if create_file:
             data = {'model': self}
-            filename = '%s.pickle' % self.job_description
+            filename = '%s.pickle' % self.job_name
             with open(filename, 'wb') as f:
                 pickle.dump(data, f)
 
@@ -109,3 +117,11 @@ class BasicModel:
     def _create_bcs(self):
         for bc in self.bcs:
             bc.apply_bc(self.model)
+
+    def _create_contact_properties(self):
+        for contact_property in self.contact_properties:
+            contact_property.create_contact_property(self.model)
+
+    def _create_interactions(self):
+        for interaction in self.interactions:
+            interaction.create_interaction(self.model)
