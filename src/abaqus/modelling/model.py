@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-21 18:58:39
+Last modified on 2020-04-21 21:53:58
 Python 2.7.16
 v0.1
 
@@ -27,8 +27,6 @@ import pickle
 
 
 #%% object definition
-
-# TODO: add fieldOutputs and historyOutputs
 
 class BasicModel:
 
@@ -149,3 +147,10 @@ class BasicModel:
             del self.model.historyOutputRequests['H-Output-1']
         if create_field:
             del self.model.fieldOutputRequests['F-Output-1']
+
+    def _update_list(self, variable, new_value):
+
+        if type(new_value) is list or type(new_value) is tuple:
+            variable.extend(new_value)
+        else:
+            variable.append(new_value)

@@ -1,0 +1,308 @@
+'''
+Created on 2020-04-20 19:18:16
+Last modified on 2020-04-21 22:39:24
+Python 2.7.16
+v0.1
+
+@author: L. F. Pereira (lfpereira@fe.up.pt)
+
+Main goal
+---------
+Modelling supercompressible metamaterial.
+'''
+
+
+#%% imports
+
+# abaqus library
+from abaqus import session
+from abaqusConstants import (BUCKLING_MODES, ON, HARD, OFF, FINITE)
+
+# third-party
+import numpy as np
+
+# local library
+from ..modelling.model import BasicModel
+from ..geometry.structures import Supercompressible
+from ..modelling.step import BuckleStep
+from ..modelling.step import StaticRiksStep
+from ..modelling.bcs import DisplacementBC
+from ..modelling.bcs import ConcentratedForce
+from ..modelling.misc import AddToInp
+from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
+from ..modelling.interaction_properties import ContactProperty
+from ..modelling.interaction_properties import NormalBehavior
+from ..modelling.interaction_properties import GeometricProperties
+from ..modelling.interactions import SurfaceToSurfaceContactStd
+from ..modelling.outputs import HistoryOutputRequest
+
+
+#%% supercompressible metamaterial
+
+# TODO: create a model common to TRAC boom (it is the same strategy); ImperfectionModel
+
+class SupercompressibleModel(BasicModel):
+
+    def __init__(self, name, sim_type, job_name, n_vertices_polygon,
+                 mast_diameter, mast_pitch, cone_slope, young_modulus,
+                 shear_modulus, density, Ixx, Iyy, J, area, twist_angle=0.,
+                 transition_length_ratio=1., n_storeys=1, z_spacing='uni',
+                 power=1., job_description='', previous_model=None,
+                 previous_model_results=None, mode_amplitudes=()):
+        # initialize parent
+        BasicModel.__init__(self, name, job_name, job_description)
+        # specific variables
+        self.applied_load = -1.
+        # store variables
+        self.sim_type = sim_type
+        self.n_vertices_polygon = n_vertices_polygon
+        self.mast_diameter = mast_diameter
+        self.mast_pitch = mast_pitch
+        self.cone_slope = cone_slope
+        self.young_modulus = young_modulus
+        self.shear_modulus = shear_modulus
+        self.density = density
+        self.Ixx = Ixx
+        self.Iyy = Iyy
+        self.J = J
+        self.area = area
+        self.twist_angle = twist_angle
+        self.transition_length_ratio = transition_length_ratio
+        self.n_storeys = n_storeys
+        self.z_spacing = z_spacing
+        self.power = power
+        self.previous_model = previous_model
+        self.previous_model_results = previous_model_results
+        self.mode_amplitudes = mode_amplitudes
+
+    def assemble_puzzle(self):
+
+        # create objects
+        supercompressible = Supercompressible(
+            self.n_vertices_polygon, self.mast_diameter, self.mast_pitch,
+            self.cone_slope, self.young_modulus, self.shear_modulus, self.density,
+            self.Ixx, self.Iyy, self.J, self.area, twist_angle=self.twist_angle,
+            transition_length_ratio=self.transition_length_ratio,
+            n_storeys=self.n_storeys, z_spacing=self.z_spacing,
+            power=self.power)
+        self._update_list(self.geometry_objects, supercompressible)
+
+        # set step
+        step = self._set_step()
+        self._update_list(self.steps, step)
+
+        # apply boundary conditions
+        bcs = self._set_bcs(supercompressible, step.name)
+        self._update_list(self.bcs, bcs)
+
+        # set contact
+        contact, interaction = self._set_contact(supercompressible)
+        self._update_list(self.contact_properties, contact)
+        self._update_list(self.interactions, interaction)
+
+        # create outputs
+        outputs = self._set_outputs(supercompressible, step)
+        self._update_list(self.output_requests, outputs)
+
+        # add text to inp
+        inp_additions = self._set_inp_additions()
+        self._update_list(self.inp_additions, inp_additions)
+
+    def perform_post_processing(self, *args):
+        fnc = getattr(self, '_perform_post_processing_%s' % self.sim_type)
+        return fnc(*args)
+
+    def _set_step(self):
+        fnc = getattr(self, '_set_step_%s' % self.sim_type)
+        return fnc()
+
+    def _set_step_lin_buckle(self):
+        step_name = 'BUCKLE_STEP'
+        buckle_step = BuckleStep(step_name, minEigen=0.)
+
+        return buckle_step
+
+    def _set_step_riks(self):
+        step_name = 'RIKS_STEP'
+        riks_step = StaticRiksStep(step_name, nlgeom=ON, maxNumInc=400,
+                                   initialArcInc=5e-2, maxArcInc=0.5)
+
+        return riks_step
+
+    def _set_bcs(self, supercompressible, step_name):
+
+        # initialization
+        bcs = []
+
+        # displacement bcs
+        bcs.extend(self._set_disp_bcs(supercompressible, step_name))
+
+        # load bcs
+        bcs.extend(self._set_load_bcs(supercompressible, step_name))
+
+        return bcs
+
+    def _set_disp_bcs(self, supercompressible, step_name):
+
+        # initialization
+        disp_bcs = []
+
+        # fix ref point minus
+        position = supercompressible.ref_point_positions[0]
+        region_name = supercompressible._get_ref_point_name(position)
+        disp_bcs.append(DisplacementBC('BC_FIX', createStepName=step_name,
+                                       region=region_name, u1=0., u2=0., u3=0.,
+                                       ur1=0., ur2=0., ur3=0., buckleCase=BUCKLING_MODES))
+
+        # displacement
+        if self.sim_type == 'riks':
+            vert_disp = - self.mast_pitch
+            position = supercompressible.ref_point_positions[-1]
+            region_name = supercompressible._get_ref_point_name(position)
+            disp_bcs.append(DisplacementBC('DISPLACEMENT', createStepName=step_name,
+                                           region=region_name, u3=vert_disp,
+                                           buckleCase=BUCKLING_MODES))
+
+        return disp_bcs
+
+    def _set_load_bcs(self, supercompressible, step_name):
+
+        if self.sim_type != 'lin_buckle':
+            return []
+
+        # apply moment
+        position = supercompressible.ref_point_positions[-1]
+        region_name = supercompressible._get_ref_point_name(position)
+        moment = ConcentratedForce('APPLIED_FORCE', createStepName=step_name,
+                                   region=region_name, cf3=self.applied_load)
+
+        return [moment]
+
+    def _set_contact(self, *args):
+
+        if hasattr(self, '_set_contact_%s' % self.sim_type):
+            fnc = getattr(self, '_set_contact_%s' % self.sim_type)
+        else:
+            return [[], []]
+        return fnc(*args)
+
+    def _set_contact_riks(self, supercompressible):
+
+        # add contact properties
+        # contact behaviour
+        normal_beh = NormalBehavior(allowSeparation=OFF, pressureOverclosure=HARD)
+        geom_prop = GeometricProperties(contactArea=1.)
+        # contact property
+        contact = ContactProperty('IMP_TARG', behaviors=[normal_beh, geom_prop])
+
+        # create interaction
+        master = '%s.%s' % (supercompressible.surface_name, supercompressible.surface_name)
+        slave = '%s.ALL_LONGERONS_SURF' % supercompressible.longerons_name
+        interaction = SurfaceToSurfaceContactStd(
+            name='IMP_TARG', createStepName='Initial', master=master,
+            slave=slave, sliding=FINITE, interactionProperty=contact.name,
+            thickness=OFF)
+
+        return contact, interaction
+
+    def _set_outputs(self, *args):
+        if hasattr(self, '_set_outputs_%s' % self.sim_type):
+            fnc = getattr(self, '_set_outputs_%s' % self.sim_type)
+        else:
+            return []
+        return fnc(*args)
+
+    def _set_outputs_riks(self, supercompressible, step):
+
+        history_outputs = [HistoryOutputRequest(
+            name='ENERGIES', createStepName=step.name, variables=('ALLEN',))]
+
+        for position in supercompressible.ref_point_positions:
+            region = supercompressible._get_ref_point_name(position)
+            name = 'RP_%s' % position
+            history_outputs.append(HistoryOutputRequest(
+                name=name, createStepName=step.name,
+                region=region, variables=('U', 'RF')))
+
+        return history_outputs
+
+    def _set_inp_additions(self):
+        fnc = getattr(self, '_set_inp_additions_%s' % self.sim_type)
+        return fnc()
+
+    def _set_inp_additions_lin_buckle(self):
+        text = ['*NODE FILE, frequency=1', 'U']
+        return AddToInp(text, self.job_name, section='OUTPUT REQUESTS')
+
+    def _set_inp_additions_riks(self):
+
+        # initialization
+        previous_file_name = self.previous_model.job_name
+        text = ['*IMPERFECTION, FILE=%s, STEP=1' % (previous_file_name)]
+
+        # get amplification factors
+        max_disps = self._get_disps_for_riks()
+        amp_factors = []
+        for amp, max_disp in zip(self.mode_amplitudes, max_disps[1:]):
+
+            amp_factors.append(amp / max_disp)
+
+        # add imperfection values
+        for i, amp_factor in enumerate(amp_factors):
+            text.append('%i, %f' % (i + 1, amp_factor))
+
+        return AddToInp(text, self.job_name, section='INTERACTIONS')
+
+    def _get_disps_for_riks(self):
+        '''
+        Notes
+        -----
+        -Assumes odb of the previous simulation is available in the working
+        directory.
+        '''
+
+        # access odb
+        odb_name = '%s.odb' % self.previous_model.job_name
+        odb = session.openOdb(name=odb_name)
+
+        # get results
+        if self.previous_model_results is None:
+            self.previous_model_results = self.previous_model.perform_post_processing(odb)
+
+        return self.previous_model_results['max_disps']
+
+    def _perform_post_processing_lin_buckle(self, odb):
+        '''
+        Parameters
+        ----------
+        odb : Abaqus odb object
+        '''
+
+        # initialization
+        step = odb.steps[odb.steps.keys()[-1]]
+        frames = step.frames
+
+        # get maximum displacements
+        variable = 'UR'
+        directions = [1, 2, 3]
+        nodeSets = [odb.rootAssembly.nodeSets[' ALL NODES']]
+        values = get_ydata_from_nodeSets_field_output(odb, nodeSets, variable,
+                                                      directions=directions,
+                                                      frames=frames)
+        max_disps = []
+        # TODO: verify if Miguel wants abs max
+        for value in values:
+            max_disp = np.max(np.abs(np.array(value)))
+            max_disps.append(max_disp)
+
+        # get eigenvalue
+        # TODO: create function
+        eigenvalues = [float(frame.description.split('EigenValue =')[1]) for frame in list(frames)[1:]]
+
+        # write output
+        # TODO: verify need of coilable
+        # TODO: add coilable
+        data = {'max_disps': max_disps,
+                'loads': eigenvalues}
+
+        return data
