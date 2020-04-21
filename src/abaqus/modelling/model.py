@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-21 15:23:32
+Last modified on 2020-04-21 18:58:39
 Python 2.7.16
 v0.1
 
@@ -48,6 +48,7 @@ class BasicModel:
         self.bcs = []
         self.contact_properties = []
         self.interactions = []
+        self.output_requests = []
         self.inp_additions = []
 
     def create_model(self):
@@ -64,14 +65,17 @@ class BasicModel:
         # create steps
         self._create_steps()
 
+        # create boundary conditions
+        self._create_bcs()
+
         # create contact properties
         self._create_contact_properties()
 
         # create interactions
         self._create_interactions()
 
-        # create boundary conditions
-        self._create_bcs()
+        # create outputs
+        self._create_outputs()
 
     def write_inp(self):
 
@@ -125,3 +129,23 @@ class BasicModel:
     def _create_interactions(self):
         for interaction in self.interactions:
             interaction.create_interaction(self.model)
+
+    def _create_outputs(self):
+
+        # initialization
+        create_field = False
+        create_history = False
+
+        # create requested field outputs
+        for output in self.output_requests:
+            output.create_output(self.model)
+            if output.method_name == 'HistoryOutputRequest' and output.name != 'H-Output-1':
+                create_history = True
+            elif output.method_name == 'FieldOutputRequest' and output.name != 'F-Output-1':
+                create_field = True
+
+        # delete existing fields
+        if create_history:
+            del self.model.historyOutputRequests['H-Output-1']
+        if create_field:
+            del self.model.fieldOutputRequests['F-Output-1']
