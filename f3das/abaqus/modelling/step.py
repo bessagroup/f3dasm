@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:55:21
-Last modified on 2020-04-15 20:01:27
+Last modified on 2020-04-22 16:06:23
 Python 2.7.16
 v0.1
 
@@ -245,7 +245,6 @@ class StaticRiksStep(Step):
         -----
         -for further informations see p49-128 of [1].
         '''
-
         # computations
         initialArcInc = totalArcLength if initialArcInc is None else initialArcInc
         minArcInc = min(initialArcInc, 1e-5 * totalArcLength) if minArcInc is None else minArcInc

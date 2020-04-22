@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-07 16:21:24
-Last modified on 2020-04-08 11:56:59
+Last modified on 2020-04-22 22:15:24
 Python 3.7.3
 v0.1
 
@@ -22,8 +22,8 @@ Notes
 import numpy as np
 
 # local library
-from src.misc.linalg import symmetricize_vector
-from src.misc.linalg import sqrtm
+from f3das.misc.linalg import symmetricize_vector
+from f3das.misc.linalg import sqrtm
 
 
 #%% initialization

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:43:42
-Last modified on 2020-04-22 21:46:08
+Last modified on 2020-04-22 22:20:11
 Python 3.7.3
 v0.1
 
@@ -22,7 +22,7 @@ import pickle
 #%% initialization
 
 filename = 'simul.pkl'
-gui = True
+gui = False
 
 # geometry
 n_vertices_polygon = 3
@@ -42,7 +42,7 @@ mode_amplitude = 7.85114e-02
 #%% create and dump data
 
 # create data
-data = {'abstract_model': 'src.abaqus.models.supercompressible.SupercompressibleModel',
+data = {'abstract_model': 'f3das.abaqus.models.supercompressible.SupercompressibleModel',
         'data': {'n_vertices_polygon': n_vertices_polygon,
                  'mast_diameter': mast_diameter,
                  'mast_pitch': mast_pitch,
@@ -74,7 +74,7 @@ with open(filename, 'wb') as file:
 
 # create run filename
 run_filename = 'run.py'
-module_name = 'src.abaqus.run.run_model'
+module_name = 'f3das.abaqus.run.run_model'
 lines = ['import runpy',
          "runpy.run_module('%s', run_name='__main__')" % module_name]
 with open(run_filename, 'w') as f:

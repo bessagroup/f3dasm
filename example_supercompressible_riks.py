@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-22 15:47:45
+Last modified on 2020-04-22 22:15:59
 Python 2.7.16
 v0.1
 
@@ -18,7 +18,7 @@ Show how to use supercompressible model (Riks analysis).
 import pickle
 
 # local library
-from src.abaqus.models.supercompressible import SupercompressibleModel
+from f3das.abaqus.models.supercompressible import SupercompressibleModel
 
 
 #%% initialization

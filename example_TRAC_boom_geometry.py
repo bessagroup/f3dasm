@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 18:34:34
-Last modified on 2020-04-20 22:51:25
+Last modified on 2020-04-22 22:16:13
 Python 2.7.16
 v0.1
 
@@ -21,8 +21,8 @@ from abaqus import mdb, backwardCompatibility
 import pickle
 
 # local library
-from src.abaqus.geometry.structures import TRACBoom
-from src.abaqus.material.abaqus_materials import LaminaMaterial
+from f3das.abaqus.geometry.structures import TRACBoom
+from f3das.abaqus.material.abaqus_materials import LaminaMaterial
 
 
 #%% initialization

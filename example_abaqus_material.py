@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 13:57:51
-Last modified on 2020-04-20 22:54:32
+Last modified on 2020-04-22 22:15:00
 Python 2.7.16
 v0.1
 
@@ -21,8 +21,8 @@ from abaqus import mdb, backwardCompatibility
 import pickle
 
 # local library
-from src.abaqus.material.abaqus_materials import IsotropicMaterial
-from src.abaqus.material.abaqus_materials import LaminaMaterial
+from f3das.abaqus.material.abaqus_materials import IsotropicMaterial
+from f3das.abaqus.material.abaqus_materials import LaminaMaterial
 
 
 #%% initialization

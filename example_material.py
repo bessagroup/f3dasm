@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 11:56:46
-Last modified on 2020-04-20 22:53:20
+Last modified on 2020-04-22 22:15:16
 Python 3.7.3
 v0.1
 
@@ -18,7 +18,7 @@ Verify that material subpackage is working properly.
 import pickle
 
 # local library
-from src.material.material import Material
+from f3das.material.material import Material
 
 
 #%% initialization

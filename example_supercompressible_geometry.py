@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 12:38:43
-Last modified on 2020-04-20 22:51:20
+Last modified on 2020-04-22 22:15:33
 Python 2.7.16
 v0.1
 
@@ -21,7 +21,7 @@ from abaqus import mdb, backwardCompatibility
 import pickle
 
 # local library
-from src.abaqus.geometry.structures import Supercompressible
+from f3das.abaqus.geometry.structures import Supercompressible
 
 
 #%% initialization
