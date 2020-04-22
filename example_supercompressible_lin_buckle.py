@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-20 23:17:48
+Last modified on 2020-04-22 19:13:14
 Python 2.7.16
 v0.1
 
@@ -47,14 +47,12 @@ model = SupercompressibleModel(model_name, sim_type, job_name, n_vertices_polygo
                                shear_modulus, density, Ixx, Iyy, J, area,
                                job_description=job_description)
 
-# assemble puzzle
-model.assemble_puzzle()
 
 # create model
 model.create_model()
 
 # write inp
-model.write_inp()
+model.write_inp(submit=True)
 
 # dump model
 model.dump()

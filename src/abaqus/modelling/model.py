@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-22 15:38:47
+Last modified on 2020-04-22 19:12:04
 Python 2.7.16
 v0.1
 
@@ -51,6 +51,9 @@ class BasicModel:
 
     def create_model(self):
 
+        # assemble puzzle
+        self._assemble_puzzle()
+
         # create materials
         self._create_materials()
 
@@ -93,6 +96,7 @@ class BasicModel:
                 modelJob = mdb.JobFromInputFile(name=self.job_name,
                                                 inputFileName=filename)
             modelJob.submit(consistencyChecking=OFF)
+            modelJob.waitForCompletion()
 
     def dump(self, create_file=True):
 

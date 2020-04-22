@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-22 14:31:04
+Last modified on 2020-04-22 16:06:34
 Python 2.7.16
 v0.1
 
@@ -51,7 +51,7 @@ class SupercompressibleModel(BasicModel):
                  shear_modulus, density, Ixx, Iyy, J, area, twist_angle=0.,
                  transition_length_ratio=1., n_storeys=1, z_spacing='uni',
                  power=1., job_description='', previous_model=None,
-                 previous_model_results=None, mode_amplitudes=()):
+                 previous_model_results=None, mode_amplitude=None):
         # initialize parent
         BasicModel.__init__(self, name, job_name, job_description)
         # specific variables
@@ -76,9 +76,13 @@ class SupercompressibleModel(BasicModel):
         self.power = power
         self.previous_model = previous_model
         self.previous_model_results = previous_model_results
-        self.mode_amplitudes = mode_amplitudes
+        self.mode_amplitudes = [mode_amplitude]
 
-    def assemble_puzzle(self):
+    def perform_post_processing(self, *args):
+        fnc = getattr(self, '_perform_post_processing_%s' % self.sim_type)
+        return fnc(*args)
+
+    def _assemble_puzzle(self):
 
         # create objects
         supercompressible = Supercompressible(
@@ -110,10 +114,6 @@ class SupercompressibleModel(BasicModel):
         # add text to inp
         inp_additions = self._set_inp_additions()
         self._update_list(self.inp_additions, inp_additions)
-
-    def perform_post_processing(self, *args):
-        fnc = getattr(self, '_perform_post_processing_%s' % self.sim_type)
-        return fnc(*args)
 
     def _set_step(self):
         fnc = getattr(self, '_set_step_%s' % self.sim_type)

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-21 10:44:59
+Last modified on 2020-04-22 15:47:45
 Python 2.7.16
 v0.1
 
@@ -14,11 +14,12 @@ Show how to use supercompressible model (Riks analysis).
 
 #%% imports
 
+# standard library
+import pickle
+
 # local library
 from src.abaqus.models.supercompressible import SupercompressibleModel
 
-# standard library
-import pickle
 
 #%% initialization
 
@@ -36,7 +37,7 @@ previous_model_file = 'Simul_SUPERCOMPRESSIBLE_lin_buckle.pickle'
 with open(previous_model_file, 'rb') as f:
     data = pickle.load(f)
 previous_model = data['model']
-mode_amplitudes = [7.85114e-02]
+mode_amplitude = 7.85114e-02
 
 # geometry
 n_vertices_polygon = previous_model.n_vertices_polygon
@@ -60,10 +61,7 @@ model = SupercompressibleModel(model_name, sim_type, job_name, n_vertices_polygo
                                shear_modulus, density, Ixx, Iyy, J, area,
                                job_description=job_description,
                                previous_model=previous_model,
-                               mode_amplitudes=mode_amplitudes)
-
-# assemble puzzle
-model.assemble_puzzle()
+                               mode_amplitude=mode_amplitude)
 
 # create model
 model.create_model()
