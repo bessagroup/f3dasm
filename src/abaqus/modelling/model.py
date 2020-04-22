@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-21 21:53:58
+Last modified on 2020-04-22 15:38:47
 Python 2.7.16
 v0.1
 
@@ -75,7 +75,7 @@ class BasicModel:
         # create outputs
         self._create_outputs()
 
-    def write_inp(self):
+    def write_inp(self, submit=False):
 
         # create inp
         modelJob = mdb.Job(name=self.job_name, model=self.name,
@@ -85,6 +85,14 @@ class BasicModel:
         # add lines to inp
         for inp_addition in self.inp_additions:
             inp_addition.write_text()
+
+        # submit
+        if submit:
+            if len(self.inp_additions):
+                filename = '%s.inp' % self.job_name
+                modelJob = mdb.JobFromInputFile(name=self.job_name,
+                                                inputFileName=filename)
+            modelJob.submit(consistencyChecking=OFF)
 
     def dump(self, create_file=True):
 
