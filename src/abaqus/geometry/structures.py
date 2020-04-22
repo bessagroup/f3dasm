@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-20 22:45:22
+Last modified on 2020-04-22 20:44:24
 Python 2.7.16
 v0.1
 
@@ -24,6 +24,7 @@ Structures 139-140: 174-188.
 #%% imports
 
 # abaqus
+from caeModules import *  # allow noGui
 from abaqusConstants import (CLOCKWISE, THREE_D, DEFORMABLE_BODY, ON, OFF,
                              DISCRETE, SURFACE, AXIS_1, AXIS_3, EDGE,
                              WHOLE_SURFACE, KINEMATIC, XYPLANE, UNIFORM,
@@ -34,6 +35,7 @@ from abaqusConstants import (CLOCKWISE, THREE_D, DEFORMABLE_BODY, ON, OFF,
 import section
 from part import EdgeArray
 import mesh
+
 
 # standard library
 import itertools
