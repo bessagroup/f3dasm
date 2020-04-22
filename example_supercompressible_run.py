@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:43:42
-Last modified on 2020-04-22 22:20:11
+Last modified on 2020-04-22 22:56:05
 Python 3.7.3
 v0.1
 
@@ -21,8 +21,9 @@ import pickle
 
 #%% initialization
 
-filename = 'simul.pkl'
 gui = False
+dir_name = os.path.join(os.getcwd(), 'test')
+filename = 'simul.pkl'
 
 # geometry
 n_vertices_polygon = 3
@@ -64,9 +65,11 @@ data = {'abstract_model': 'f3das.abaqus.models.supercompressible.Supercompressib
                                   'job_name': 'Simul_supercompressible_riks',
                                   'job_description': ''}})}
 
-# create pickle
+# create directory
+os.mkdir(dir_name)
 
-with open(filename, 'wb') as file:
+# create pickle
+with open(os.path.join(dir_name, filename), 'wb') as file:
     pickle.dump(data, file, protocol=2)
 
 
@@ -76,7 +79,13 @@ with open(filename, 'wb') as file:
 run_filename = 'run.py'
 module_name = 'f3das.abaqus.run.run_model'
 lines = ['import runpy',
-         "runpy.run_module('%s', run_name='__main__')" % module_name]
+         'import os',
+         'import sys',
+         'initial_wd = os.getcwd()',
+         'sys.path.append(initial_wd)',
+         "os.chdir(r'%s')" % dir_name,
+         "runpy.run_module('%s', run_name='__main__')" % module_name,
+         'os.chdir(initial_wd)']
 with open(run_filename, 'w') as f:
     for line in lines:
         f.write(line + '\n')
