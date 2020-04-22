@@ -1,7 +1,7 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-03-25 14:50:06
-Python 3.7.3
+Last modified on 2020-04-22 16:04:34
+Python 2.7.16
 v0.1
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -13,6 +13,11 @@ Create an RVE class from which more useful classes can inherit.
 Notes
 -----
 -Based on code developed by M. A. Bessa.
+
+References
+----------
+1. van der Sluis, O., et al. (2000). Mechanics of Materials 32(8): 449-462.
+2. Melro, A. R. (2011). PhD thesis. University of Porto.
 '''
 
 
@@ -28,6 +33,8 @@ import numpy as np
 # local library
 from .common import transform_point
 from .common import get_orientations_360
+from ...misc.linalg.matrix import symmetricize_vector
+from ...misc.linalg.matrix import sqrtm
 
 
 #%% 2d RVE
@@ -35,6 +42,14 @@ from .common import get_orientations_360
 class RVE2D:
 
     def __init__(self, length, width, center, name='RVE'):
+        '''
+        Notes
+        -----
+        -1st reference point represents the difference between right bottom
+        and left bottom vertices.
+        -2nd reference point represents the difference between left top
+        and left bottom vertices.
+        '''
         self.length = length
         self.width = width
         self.center = center
@@ -42,7 +57,6 @@ class RVE2D:
         # variable initialization
         self.sketch = None
         self.part = None
-        self.instance = None
         # mesh definitions
         self.mesh_size = .02
         self.mesh_tol = 1e-5
@@ -82,8 +96,8 @@ class RVE2D:
     def create_instance(self, model):
 
         # create instance
-        self.instance = model.rootAssembly.Instance(name=self.name,
-                                                    part=self.part, dependent=ON)
+        model.rootAssembly.Instance(name=self.name,
+                                    part=self.part, dependent=ON)
 
     def generate_mesh(self):
 
@@ -171,7 +185,6 @@ class RVE2D:
         lr_ref_point, tb_ref_point = self._get_all_ref_points(only_names=True)
 
         # apply vertex constraints
-        # TODO: verify value and sign of ref points coeffs
         for ndof in range(1, 3):
             # right-top and left-bottom nodes
             model.Equation(name='Constraint-RT-LB-V-%i' % ndof,
@@ -223,7 +236,31 @@ class RVE2D:
                                       (-1.0, bottom_set_name, ndof),
                                       (-1.0, tb_ref_point, ndof)))
 
-        # TODO: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
+        # ???: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
+
+    def apply_bcs_displacement(self, model, epsilon_11, epsilon_22, epsilon_12,
+                               green_lagrange_strain=True):
+
+        # initialization
+        epsilon = symmetricize_vector([epsilon_11, epsilon_12, epsilon_22])
+
+        # TODO: receive only small deformations
+        # create strain matrix
+        if green_lagrange_strain:
+            epsilon = self._compute_small_strain(epsilon)
+
+        # apply displacement
+        # TODO: continue here
+
+        # TODO: fix left bottom node
+
+    @staticmethod
+    def _compute_small_strain(epsilon_lagrange):
+
+        identity = np.identity(2)
+        def_grad = sqrtm(2 * epsilon_lagrange + identity)
+
+        return 1 / 2 * (def_grad + np.transpose(def_grad)) - identity
 
     def _create_RVE_geometry(self, model):
 
