@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-21 22:39:24
+Last modified on 2020-04-22 14:31:04
 Python 2.7.16
 v0.1
 
@@ -29,12 +29,15 @@ from ..modelling.step import StaticRiksStep
 from ..modelling.bcs import DisplacementBC
 from ..modelling.bcs import ConcentratedForce
 from ..modelling.misc import AddToInp
-from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
 from ..modelling.interaction_properties import ContactProperty
 from ..modelling.interaction_properties import NormalBehavior
 from ..modelling.interaction_properties import GeometricProperties
 from ..modelling.interactions import SurfaceToSurfaceContactStd
 from ..modelling.outputs import HistoryOutputRequest
+from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
+from ..post_processing.get_data import get_xydata_from_nodes_history_output
+from ..post_processing.get_data import get_eigenvalues
+from ..post_processing.nodes_and_elements import get_nodes_given_set_names
 
 
 #%% supercompressible metamaterial
@@ -92,16 +95,16 @@ class SupercompressibleModel(BasicModel):
         self._update_list(self.steps, step)
 
         # apply boundary conditions
-        bcs = self._set_bcs(supercompressible, step.name)
+        bcs = self._set_bcs(step.name)
         self._update_list(self.bcs, bcs)
 
         # set contact
-        contact, interaction = self._set_contact(supercompressible)
+        contact, interaction = self._set_contact()
         self._update_list(self.contact_properties, contact)
         self._update_list(self.interactions, interaction)
 
         # create outputs
-        outputs = self._set_outputs(supercompressible, step)
+        outputs = self._set_outputs(step)
         self._update_list(self.output_requests, outputs)
 
         # add text to inp
@@ -129,10 +132,11 @@ class SupercompressibleModel(BasicModel):
 
         return riks_step
 
-    def _set_bcs(self, supercompressible, step_name):
+    def _set_bcs(self, step_name):
 
         # initialization
         bcs = []
+        supercompressible = self.geometry_objects[0]
 
         # displacement bcs
         bcs.extend(self._set_disp_bcs(supercompressible, step_name))
@@ -178,15 +182,18 @@ class SupercompressibleModel(BasicModel):
 
         return [moment]
 
-    def _set_contact(self, *args):
+    def _set_contact(self):
 
         if hasattr(self, '_set_contact_%s' % self.sim_type):
             fnc = getattr(self, '_set_contact_%s' % self.sim_type)
         else:
             return [[], []]
-        return fnc(*args)
+        return fnc()
 
-    def _set_contact_riks(self, supercompressible):
+    def _set_contact_riks(self):
+
+        # initialization
+        supercompressible = self.geometry_objects[0]
 
         # add contact properties
         # contact behaviour
@@ -212,7 +219,9 @@ class SupercompressibleModel(BasicModel):
             return []
         return fnc(*args)
 
-    def _set_outputs_riks(self, supercompressible, step):
+    def _set_outputs_riks(self, step):
+
+        supercompressible = self.geometry_objects[0]
 
         history_outputs = [HistoryOutputRequest(
             name='ENERGIES', createStepName=step.name, variables=('ALLEN',))]
@@ -272,11 +281,6 @@ class SupercompressibleModel(BasicModel):
         return self.previous_model_results['max_disps']
 
     def _perform_post_processing_lin_buckle(self, odb):
-        '''
-        Parameters
-        ----------
-        odb : Abaqus odb object
-        '''
 
         # initialization
         step = odb.steps[odb.steps.keys()[-1]]
@@ -284,11 +288,12 @@ class SupercompressibleModel(BasicModel):
 
         # get maximum displacements
         variable = 'UR'
-        directions = [1, 2, 3]
-        nodeSets = [odb.rootAssembly.nodeSets[' ALL NODES']]
-        values = get_ydata_from_nodeSets_field_output(odb, nodeSets, variable,
+        directions = (1, 2, 3)
+        nodeSet = odb.rootAssembly.nodeSets[' ALL NODES']
+        values = get_ydata_from_nodeSets_field_output(odb, nodeSet, variable,
                                                       directions=directions,
                                                       frames=frames)
+
         max_disps = []
         # TODO: verify if Miguel wants abs max
         for value in values:
@@ -296,13 +301,45 @@ class SupercompressibleModel(BasicModel):
             max_disps.append(max_disp)
 
         # get eigenvalue
-        # TODO: create function
-        eigenvalues = [float(frame.description.split('EigenValue =')[1]) for frame in list(frames)[1:]]
+        eigenvalues = get_eigenvalues(odb, frames=frames)
+
+        # get top ref point info
+        supercompressible = self.geometry_objects[0]
+        position = supercompressible.ref_point_positions[-1]
+        ztop_set_name = supercompressible._get_ref_point_name(position)
+        ztop_set = odb.rootAssembly.nodeSets[ztop_set_name]
+
+        # is coilable?
+        # ???: why this is the criteria for coilability?
+        ztop_ur = get_ydata_from_nodeSets_field_output(odb, ztop_set, 'UR',
+                                                       directions=(3,),
+                                                       frames=list(frames)[1:])
+        ztop_u = get_ydata_from_nodeSets_field_output(odb, ztop_set, 'U',
+                                                      directions=(1, 2,),
+                                                      frames=list(frames)[1:])
+        coilable = [int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
+                    for ur, u in zip(ztop_ur, ztop_u)]
 
         # write output
-        # TODO: verify need of coilable
-        # TODO: add coilable
         data = {'max_disps': max_disps,
-                'loads': eigenvalues}
+                'loads': eigenvalues,
+                'coilable': coilable}
+
+        return data
+
+    def _perform_post_processing_riks(self, odb):
+
+        # initialization
+        supercompressible = self.geometry_objects[0]
+        position = supercompressible.ref_point_positions[-1]
+        variables = ['U', 'UR', 'RF', 'RM']
+        set_names = [supercompressible._get_ref_point_name(position)]
+        nodes = get_nodes_given_set_names(odb, set_names)
+
+        # get variables
+        data = {}
+        for variable in variables:
+            data[variable] = get_xydata_from_nodes_history_output(
+                odb, nodes, variable)[0]
 
         return data
