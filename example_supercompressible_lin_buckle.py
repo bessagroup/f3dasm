@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-25 19:41:13
+Last modified on 2020-04-26 00:13:10
 Python 2.7.16
 v0.1
 
@@ -24,25 +24,26 @@ model_name = 'SUPERCOMPRESSIBLE'
 sim_type = 'lin_buckle'
 job_name = 'Simul_%s_%s' % (model_name, sim_type)
 job_description = ''
+submit = True
 
-# geometry
-n_vertices_polygon = 3
-mast_diameter = 100.
-mast_pitch = 115.223
-cone_slope = 1.75806e-01
-young_modulus = 3.50000e+03
-shear_modulus = 1.38631e+03
-Ixx = 6.12244e+01
-Iyy = 1.26357e+01
-J = 2.10974e+02
-area = 1.54038e+01
+# variable definition
+n_longerons = 3
+bottom_diameter = 100.
+top_diameter = 82.42
+pitch = 1.15223e2
+young_modulus = 3.5e3
+shear_modulus = 1.38631e3
+Ixx = 6.12244e1
+Iyy = 1.26357e1
+J = 2.10974e2
+area = 1.54038e1
 
 
 #%% create model
 
 # create object
-model = SupercompressibleModel(model_name, sim_type, job_name, n_vertices_polygon,
-                               mast_diameter, mast_pitch, cone_slope, young_modulus,
+model = SupercompressibleModel(model_name, sim_type, job_name, n_longerons,
+                               bottom_diameter, top_diameter, pitch, young_modulus,
                                shear_modulus, Ixx, Iyy, J, area,
                                job_description=job_description)
 
@@ -51,7 +52,7 @@ model = SupercompressibleModel(model_name, sim_type, job_name, n_vertices_polygo
 model.create_model()
 
 # write inp
-model.write_inp(submit=True)
+model.write_inp(submit=submit)
 
 # dump model
 model.dump()

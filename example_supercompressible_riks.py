@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-25 19:41:39
+Last modified on 2020-04-25 23:25:03
 Python 2.7.16
 v0.1
 
@@ -27,8 +27,8 @@ model_name = 'SUPERCOMPRESSIBLE'
 sim_type = 'riks'
 job_name = 'Simul_%s_%s' % (model_name, sim_type)
 job_description = ''
-
 previous_model_file = 'Simul_SUPERCOMPRESSIBLE_lin_buckle.pickle'
+submit = True
 
 
 #%% access previous model
@@ -37,36 +37,36 @@ previous_model_file = 'Simul_SUPERCOMPRESSIBLE_lin_buckle.pickle'
 with open(previous_model_file, 'rb') as f:
     data = pickle.load(f)
 previous_model = data['model']
-mode_amplitude = 7.85114e-02
 
-# geometry
-n_vertices_polygon = previous_model.n_vertices_polygon
-mast_diameter = previous_model.mast_diameter
-mast_pitch = previous_model.mast_pitch
-cone_slope = previous_model.cone_slope
+# variable definition
+n_longerons = previous_model.n_longerons
+bottom_diameter = previous_model.bottom_diameter
+top_diameter = previous_model.top_diameter
+pitch = previous_model.pitch
 young_modulus = previous_model.young_modulus
 shear_modulus = previous_model.shear_modulus
 Ixx = previous_model.Ixx
 Iyy = previous_model.Iyy
 J = previous_model.J
 area = previous_model.area
+imperfection = 7.85114e-02
 
 
 #%% create model
 
 # create object
-model = SupercompressibleModel(model_name, sim_type, job_name, n_vertices_polygon,
-                               mast_diameter, mast_pitch, cone_slope, young_modulus,
+model = SupercompressibleModel(model_name, sim_type, job_name, n_longerons,
+                               bottom_diameter, top_diameter, pitch, young_modulus,
                                shear_modulus, Ixx, Iyy, J, area,
                                job_description=job_description,
                                previous_model=previous_model,
-                               mode_amplitude=mode_amplitude)
+                               imperfection=imperfection)
 
 # create model
 model.create_model()
 
 # write inp
-model.write_inp()
+model.write_inp(submit=submit)
 
 # dump model
 model.dump()

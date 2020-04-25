@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-25 19:39:03
+Last modified on 2020-04-26 00:33:55
 Python 2.7.16
 v0.1
 
@@ -13,6 +13,8 @@ Modelling supercompressible metamaterial.
 
 
 #%% imports
+
+from __future__ import division
 
 # abaqus library
 from abaqus import session
@@ -46,22 +48,22 @@ from ..post_processing.nodes_and_elements import get_nodes_given_set_names
 
 class SupercompressibleModel(BasicModel):
 
-    def __init__(self, name, sim_type, job_name, n_vertices_polygon,
-                 mast_diameter, mast_pitch, cone_slope, young_modulus,
+    def __init__(self, name, sim_type, job_name, n_longerons,
+                 bottom_diameter, top_diameter, pitch, young_modulus,
                  shear_modulus, Ixx, Iyy, J, area, twist_angle=0.,
                  transition_length_ratio=1., n_storeys=1, z_spacing='uni',
                  power=1., job_description='', previous_model=None,
-                 previous_model_results=None, mode_amplitude=None):
+                 previous_model_results=None, imperfection=None):
         # initialize parent
         BasicModel.__init__(self, name, job_name, job_description)
         # specific variables
         self.applied_load = -1.
         # store variables
         self.sim_type = sim_type
-        self.n_vertices_polygon = n_vertices_polygon
-        self.mast_diameter = mast_diameter
-        self.mast_pitch = mast_pitch
-        self.cone_slope = cone_slope
+        self.n_longerons = n_longerons
+        self.bottom_diameter = bottom_diameter
+        self.top_diameter = top_diameter
+        self.pitch = pitch
         self.young_modulus = young_modulus
         self.shear_modulus = shear_modulus
         self.Ixx = Ixx
@@ -75,7 +77,7 @@ class SupercompressibleModel(BasicModel):
         self.power = power
         self.previous_model = previous_model
         self.previous_model_results = previous_model_results
-        self.mode_amplitudes = [mode_amplitude]
+        self.mode_amplitudes = [imperfection]
 
     def perform_post_processing(self, *args):
         fnc = getattr(self, '_perform_post_processing_%s' % self.sim_type)
@@ -85,8 +87,8 @@ class SupercompressibleModel(BasicModel):
 
         # create objects
         supercompressible = Supercompressible(
-            self.n_vertices_polygon, self.mast_diameter, self.mast_pitch,
-            self.cone_slope, self.young_modulus, self.shear_modulus,
+            self.n_longerons, self.bottom_diameter, self.top_diameter,
+            self.pitch, self.young_modulus, self.shear_modulus,
             self.Ixx, self.Iyy, self.J, self.area, twist_angle=self.twist_angle,
             transition_length_ratio=self.transition_length_ratio,
             n_storeys=self.n_storeys, z_spacing=self.z_spacing,
@@ -159,7 +161,7 @@ class SupercompressibleModel(BasicModel):
 
         # displacement
         if self.sim_type == 'riks':
-            vert_disp = - self.mast_pitch
+            vert_disp = - self.pitch
             position = supercompressible.ref_point_positions[-1]
             region_name = supercompressible._get_ref_point_name(position)
             disp_bcs.append(DisplacementBC('DISPLACEMENT', createStepName=step_name,
