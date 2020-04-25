@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-22 20:44:24
+Last modified on 2020-04-25 19:34:05
 Python 2.7.16
 v0.1
 
@@ -367,7 +367,7 @@ class TRACBoom(object):
 class Supercompressible(object):
 
     def __init__(self, n_vertices_polygon, mast_diameter, mast_pitch,
-                 cone_slope, young_modulus, shear_modulus, density, Ixx, Iyy,
+                 cone_slope, young_modulus, shear_modulus, Ixx, Iyy,
                  J, area, twist_angle=0., transition_length_ratio=1.,
                  n_storeys=1, z_spacing='uni', power=1.,
                  name='SUPERCOMPRESSIBLE'):
@@ -384,8 +384,6 @@ class Supercompressible(object):
             >0 larger at the bottom).
         young_modulus, shear_modulus : float
             Material properties.
-        density : float
-            Material density.
         Ixx, Iyy, J, area : float
             Cross-section geometric properties.
         twist_angle : float
@@ -413,7 +411,6 @@ class Supercompressible(object):
         self.cone_slope = cone_slope
         self.young_modulus = young_modulus
         self.shear_modulus = shear_modulus
-        self.density = density
         self.Ixx = Ixx
         self.Iyy = Iyy
         self.J = J
@@ -618,18 +615,13 @@ class Supercompressible(object):
                                  i12=0., i22=self.Iyy, j=self.J, gammaO=0.,
                                  gammaW=0.)
 
-        # access material properties
-        # nu = self.young_modulus / (2 * self.shear_modulus) - 1
-        # TODO: use right nu
-        nu = .31
-
         # create section
         section_name = 'LONGERONS_SECTION'
         model.BeamSection(name=section_name, integration=BEFORE_ANALYSIS,
                           beamShape=CONSTANT, profile=profile_name, thermalExpansion=OFF,
                           temperatureDependency=OFF, dependencies=0,
                           table=((self.young_modulus, self.shear_modulus),),
-                          poissonRatio=nu, density=self.density,
+                          poissonRatio=.31,
                           alphaDamping=0.0, betaDamping=0.0, compositeDamping=0.0,
                           centroid=(0.0, 0.0), shearCenter=(0.0, 0.0),
                           consistentMassMatrix=False)

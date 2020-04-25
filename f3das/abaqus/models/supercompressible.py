@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-22 16:06:34
+Last modified on 2020-04-25 19:39:03
 Python 2.7.16
 v0.1
 
@@ -48,7 +48,7 @@ class SupercompressibleModel(BasicModel):
 
     def __init__(self, name, sim_type, job_name, n_vertices_polygon,
                  mast_diameter, mast_pitch, cone_slope, young_modulus,
-                 shear_modulus, density, Ixx, Iyy, J, area, twist_angle=0.,
+                 shear_modulus, Ixx, Iyy, J, area, twist_angle=0.,
                  transition_length_ratio=1., n_storeys=1, z_spacing='uni',
                  power=1., job_description='', previous_model=None,
                  previous_model_results=None, mode_amplitude=None):
@@ -64,7 +64,6 @@ class SupercompressibleModel(BasicModel):
         self.cone_slope = cone_slope
         self.young_modulus = young_modulus
         self.shear_modulus = shear_modulus
-        self.density = density
         self.Ixx = Ixx
         self.Iyy = Iyy
         self.J = J
@@ -87,7 +86,7 @@ class SupercompressibleModel(BasicModel):
         # create objects
         supercompressible = Supercompressible(
             self.n_vertices_polygon, self.mast_diameter, self.mast_pitch,
-            self.cone_slope, self.young_modulus, self.shear_modulus, self.density,
+            self.cone_slope, self.young_modulus, self.shear_modulus,
             self.Ixx, self.Iyy, self.J, self.area, twist_angle=self.twist_angle,
             transition_length_ratio=self.transition_length_ratio,
             n_storeys=self.n_storeys, z_spacing=self.z_spacing,
@@ -221,17 +220,20 @@ class SupercompressibleModel(BasicModel):
 
     def _set_outputs_riks(self, step):
 
+        # initialization
         supercompressible = self.geometry_objects[0]
 
+        # energy outputs
         history_outputs = [HistoryOutputRequest(
             name='ENERGIES', createStepName=step.name, variables=('ALLEN',))]
 
-        for position in supercompressible.ref_point_positions:
-            region = supercompressible._get_ref_point_name(position)
-            name = 'RP_%s' % position
-            history_outputs.append(HistoryOutputRequest(
-                name=name, createStepName=step.name,
-                region=region, variables=('U', 'RF')))
+        # load-disp outputs
+        position = supercompressible.ref_point_positions[-1]
+        region = supercompressible._get_ref_point_name(position)
+        name = 'RP_%s' % position
+        history_outputs.append(HistoryOutputRequest(
+            name=name, createStepName=step.name,
+            region=region, variables=('U', 'RF')))
 
         return history_outputs
 
@@ -295,7 +297,6 @@ class SupercompressibleModel(BasicModel):
                                                       frames=frames)
 
         max_disps = []
-        # TODO: verify if Miguel wants abs max
         for value in values:
             max_disp = np.max(np.abs(np.array(value)))
             max_disps.append(max_disp)
@@ -310,7 +311,6 @@ class SupercompressibleModel(BasicModel):
         ztop_set = odb.rootAssembly.nodeSets[ztop_set_name]
 
         # is coilable?
-        # ???: why this is the criteria for coilability?
         ztop_ur = get_ydata_from_nodeSets_field_output(odb, ztop_set, 'UR',
                                                        directions=(3,),
                                                        frames=list(frames)[1:])
