@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:43:42
-Last modified on 2020-04-25 19:32:14
+Last modified on 2020-04-26 01:30:33
 Python 3.7.3
 v0.1
 
@@ -11,6 +11,7 @@ Main goal
 Show how the code to run one DoE point works.
 '''
 
+
 #%% imports
 
 # standard library
@@ -20,6 +21,7 @@ import pickle
 
 # local library
 from f3das.misc.file_handling import verify_existing_name
+from f3das.design_of_experiments.convert_inputs import convert_supercompressible
 
 
 #%% initialization
@@ -28,35 +30,49 @@ gui = False
 dir_name = os.path.join(os.getcwd(), verify_existing_name('test'))
 filename = 'simul.pkl'
 
-# geometry
-n_vertices_polygon = 3
-mast_diameter = 100.
-mast_pitch = 115.223
-cone_slope = 1.75806e-01
-young_modulus = 3.50000e+03
-shear_modulus = 1.38631e+03
-Ixx = 6.12244e+01
-Iyy = 1.26357e+01
-J = 2.10974e+02
-area = 1.54038e+01
-mode_amplitude = 7.85114e-02
+# variable definition
+inputs_type = 'circular'  # choose inputs
+variables = {'normal': {'n_longerons': 3,
+                        'bottom_diameter': 100.,
+                        'young_modulus': 1826.,
+                        'ratio_top_diameter': 0.78,
+                        'pitch': 70.,
+                        'ratio_shear_modulus': .43,
+                        'Ixx': 119.1,
+                        'Iyy': 139.3,
+                        'J': 58.2,
+                        'area': 70.,
+                        'imperfection': 7.85114e-2},
+             'ratio': {'n_longerons': 3,
+                       'bottom_diameter': 100.,
+                       'young_modulus': 1826.,
+                       'ratio_area': 0.001,
+                       'ratio_shear_modulus': .36,
+                       'ratio_Ixx': 7.5e-7,
+                       'ratio_Iyy': 1e-6,
+                       'ratio_J': 2e-6,
+                       'ratio_pitch': .66,
+                       'ratio_top_diameter': 4.72e-6,
+                       'imperfection': 7.85114e-2},
+             'circular': {'n_longerons': 10,
+                          'bottom_diameter': 100.,
+                          'young_modulus': 3500.,
+                          'shear_modulus': 1287.,
+                          'cross_section_diameter': 1.68,
+                          'pitch': 66.,
+                          'ratio_top_diameter': .2,
+                          'imperfection': 7.85114e-2}, }
 
 
 #%% create and dump data
 
+section = inputs_type if inputs_type == 'circular' else ''
+variables = convert_supercompressible(variables[inputs_type], section=section)
+print(variables)
+
 # create data
 data = OrderedDict({'abstract_model': 'f3das.abaqus.models.supercompressible.SupercompressibleModel',
-                    'data': {'n_vertices_polygon': n_vertices_polygon,
-                             'mast_diameter': mast_diameter,
-                             'mast_pitch': mast_pitch,
-                             'cone_slope': cone_slope,
-                             'young_modulus': young_modulus,
-                             'shear_modulus': shear_modulus,
-                             'Ixx': Ixx,
-                             'Iyy': Iyy,
-                             'J': J,
-                             'area': area,
-                             'mode_amplitude': mode_amplitude, },
+                    'variables': variables,
                     'sim_info': OrderedDict({'SUPERCOMPRESSIBLE_LIN_BUCKLE':
                                              {'sim_type': 'lin_buckle',
                                               'job_name': 'Simul_supercompressible_lin_buckle',
@@ -77,7 +93,7 @@ with open(os.path.join(dir_name, filename), 'wb') as file:
 #%% run abaqus
 
 # create run filename
-run_filename = verify_existing_name('run.py')
+run_filename = verify_existing_name('_temp.py')
 module_name = 'f3das.abaqus.run.run_model'
 lines = ['import runpy',
          'import os',

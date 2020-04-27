@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 16:16:45
-Last modified on 2020-04-25 18:47:33
+Last modified on 2020-04-26 01:40:51
 Python 3.7.3
 v0.1
 
@@ -28,7 +28,7 @@ from f3das.misc.file_handling import get_sorted_by_time
 
 #%% initialization
 
-dir_name = os.path.join(os.getcwd(), get_sorted_by_time('test')[-1])
+dir_name = os.path.join(os.getcwd(), get_sorted_by_time('test')[-2])
 filename = 'simul.pkl'
 
 
@@ -39,8 +39,9 @@ with open(os.path.join(dir_name, filename), 'rb') as file:
     data = pickle.load(file, encoding='latin1')
 sim_info = data['sim_info']
 post_proc_data = data['post-processing']
-mast_pitch = data['data']['mast_pitch']
-mast_diameter = data['data']['mast_diameter']
+pitch = data['variables']['pitch']
+bottom_diameter = data['variables']['bottom_diameter']
+bottom_area = np.pi * bottom_diameter**2 / 4
 time = data['time']
 
 print('time:', time)
@@ -55,7 +56,7 @@ p_crit = buck_results['loads'][0]
 coilable = buck_results['coilable'][0]
 
 # print results
-print('P_crit, sigma_crit, coilable:', p_crit, p_crit / mast_diameter, coilable)
+print('P_crit, sigma_crit, coilable:', p_crit, p_crit / bottom_area, coilable)
 
 
 #%% explore riks data
@@ -75,7 +76,7 @@ plt.ylabel('Force /N')
 
 # stress-strain
 plt.figure()
-plt.plot(u_3 / mast_pitch, rf_3 / mast_diameter * 1e3)
+plt.plot(u_3 / pitch, rf_3 / bottom_area * 1e3)
 plt.xlabel('Strain')
 plt.ylabel('Stress /kPa')
 
