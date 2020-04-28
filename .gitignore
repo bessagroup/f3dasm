@@ -22,3 +22,4 @@
 # ignore all the directories __pychache__
 **/__pycache__/
 example_supercompressible
+example_supercompressible_7d

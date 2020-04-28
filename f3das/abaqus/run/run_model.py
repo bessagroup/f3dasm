@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-04-25 16:33:23
+Last modified on 2020-04-28 16:38:16
 Python 2.7.16
 v0.1
 
@@ -58,9 +58,11 @@ class RunModel(object):
         self.pickle_dict = data
         # store variables
         self.abstract_model = self._import_abstract_model(data['abstract_model'])
-        self.data = data['data']
+        self.variables = data['variables']
         self.sim_info = data['sim_info']
         self.init_time = time.time()
+        self.run_time = None
+        self.post_processing_time = None
         # initialize variables
         self.models = OrderedDict()
         self.post_processing = OrderedDict()
@@ -68,10 +70,14 @@ class RunModel(object):
     def execute(self):
 
         # run models
+        run_time_init = time.time()
         self._run_models()
+        self.run_time = time.time() - run_time_init
 
         # post-processing
+        pp_time_init = time.time()
         self._perform_post_processing()
+        self.post_processing_time = time.time() - pp_time_init
 
         # dump results
         self._dump_results()
@@ -102,7 +108,7 @@ class RunModel(object):
         for i, (model_name, info) in enumerate(self.sim_info.items()):
 
             # get args
-            args = self.data.copy()
+            args = self.variables.copy()
             args.update(info)
 
             # instantiate model
@@ -140,7 +146,9 @@ class RunModel(object):
 
         # results readable outside abaqus
         self.pickle_dict['post-processing'] = self.post_processing
-        self.pickle_dict['time'] = time.time() - self.init_time
+        self.pickle_dict['time'] = {'total_time': time.time() - self.init_time,
+                                    'run_time': self.run_time,
+                                    'post_processing_time': self.post_processing_time}
         with open(self.filename, 'wb') as file:
             pickle.dump(self.pickle_dict, file, protocol=2)
 
@@ -152,8 +160,12 @@ class RunModel(object):
 
 if __name__ == '__main__':
 
-    # create run model
-    run_model = RunModel()
+    try:  # to avoid to stop running due to one simulation error
+        # create run model
+        run_model = RunModel()
 
-    # run models
-    run_model.execute()
+        # run models
+        run_model.execute()
+
+    except:
+        pass
