@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-04-25 17:39:36
+Last modified on 2020-05-07 16:06:48
 Python 3.7.3
 v0.1
 
@@ -16,12 +16,71 @@ Define functions used to manipulate files.
 
 # standard library
 import os
+import glob
 
 # third-party
 import numpy as np
 
+# local library
+from .misc import get_int_number_from_str
+
 
 #%% function definition
+
+def collect_folder_names(sim_dir, sim_numbers=None):
+    '''
+    Collect simulation folders.
+
+    Parameters
+    ----------
+    sim_dir : str
+        Analyses directory.
+    sim_numbers : array-like
+        Number of the simulations that must be considered. If None, all the
+        folders are considered.
+
+    Notes
+    -----
+    -Directory must contain only folders related with simulations.
+    '''
+    # TODO: generalize for other kinds of files
+
+    folder_names_temp = [name for name in os.listdir(sim_dir)
+                         if os.path.isdir(os.path.join(sim_dir, name))]
+    existing_sim_numbers = [get_int_number_from_str(folder_name)
+                            for folder_name in folder_names_temp]
+    indices = sorted(range(len(existing_sim_numbers)), key=existing_sim_numbers.__getitem__)
+    if not sim_numbers:
+        sim_numbers = existing_sim_numbers
+        sim_numbers.sort()
+    folder_names = [folder_names_temp[index] for index in indices
+                    if existing_sim_numbers[index] in sim_numbers]
+
+    return folder_names
+
+
+def get_unique_file_by_ext(dir_name=None, ext='.pkl'):
+    '''
+    Get name of a file.
+
+    Notes
+    -----
+    -Assumes there's only one file with the given extension in the directory.
+    '''
+
+    # initialization
+    if not dir_name:
+        dir_name = os.getcwd()
+
+    # get file name
+    for fname in os.listdir(dir_name):
+        if fname.endswith(ext):
+            break
+    else:
+        raise Exception('File not found')
+
+    return fname
+
 
 def verify_existing_name(name_init):
     try:
@@ -33,7 +92,7 @@ def verify_existing_name(name_init):
     i = 1
     while os.path.exists(filename):
         i += 1
-        filename = name + '(%s)' % str(i) + ext
+        filename = name + '_%s' % str(i) + ext
 
     return filename
 
@@ -63,3 +122,29 @@ def get_sorted_by_time(parcial_name, dir_path=None, ext=None):
     filenames = [potential_file_names[index] for index in indices]
 
     return filenames
+
+
+def clean_abaqus_dir(ext2rem=('.abq', '.com', '.dat', '.log', '.mdl', '.msg',
+                              '.pac', '.prt', '.res', '.rpy', '.sel', '.stt'),
+                     dir_path=None):
+
+    # local functions
+    def rmfile(ftype):
+        file_list = glob.glob(os.path.join(dir_path, '*' + ftype))
+        for file in file_list:
+            try:
+                os.remove(file)
+            except:
+                pass
+
+    # initialization
+    dir_path = os.getcwd() if dir_path is None else dir_path
+
+    # deleting files
+    for ftype in ext2rem:
+        rmfile(ftype)
+
+    # delete another .rpy
+    if '.rpy' in ext2rem:
+        ftype = 'rpy.*'
+        rmfile(ftype)
