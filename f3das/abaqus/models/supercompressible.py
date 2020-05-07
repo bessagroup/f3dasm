@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-26 00:33:55
+Last modified on 2020-04-29 12:23:37
 Python 2.7.16
 v0.1
 
@@ -274,13 +274,13 @@ class SupercompressibleModel(BasicModel):
         directory.
         '''
 
-        # access odb
-        odb_name = '%s.odb' % self.previous_model.job_name
-        odb = session.openOdb(name=odb_name)
-
         # get results
         if self.previous_model_results is None:
+            # access odb
+            odb_name = '%s.odb' % self.previous_model.job_name
+            odb = session.openOdb(name=odb_name)
             self.previous_model_results = self.previous_model.perform_post_processing(odb)
+            odb.close()
 
         return self.previous_model_results['max_disps']
 

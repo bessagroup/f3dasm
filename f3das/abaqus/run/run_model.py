@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-04-28 16:38:16
+Last modified on 2020-05-07 16:22:25
 Python 2.7.16
 v0.1
 
@@ -25,6 +25,7 @@ from abaqus import session
 
 # standard library
 import os
+import glob
 import pickle
 import importlib
 from collections import OrderedDict
@@ -32,6 +33,7 @@ import time
 
 # local library
 from .misc import convert_dict_unicode_str
+from f3das.misc.file_handling import get_unique_file_by_ext
 
 
 #%% object definition
@@ -53,7 +55,6 @@ class RunModel(object):
         sequence.
         '''
         # read data
-        self.filename = filename
         data = self._read_data(filename)
         self.pickle_dict = data
         # store variables
@@ -82,14 +83,13 @@ class RunModel(object):
         # dump results
         self._dump_results()
 
+        # delete unnecessary files
+        self._clean_dir()
+
     def _read_data(self, filename):
 
         # get pickle filename
-        if not filename:
-            for fname in os.listdir(os.getcwd()):
-                if fname.endswith('.pkl'):
-                    self.filename = fname
-                    break
+        self.filename = filename if filename else get_unique_file_by_ext(ext='.pkl')
 
         # read file
         with open(self.filename, 'rb') as file:
@@ -136,6 +136,7 @@ class RunModel(object):
             odb_name = '%s.odb' % model.job_name
             odb = session.openOdb(name=odb_name)
             self.post_processing[model_name] = model.perform_post_processing(odb)
+            odb.close()
 
             # save post-processing of previous model (if applicable)
             if model.previous_model_results is not None and model.previous_model.name not in self.post_processing.keys():
@@ -156,6 +157,17 @@ class RunModel(object):
         self.pickle_dict['models'] = self.models
         with open('%s_abaqus' % self.filename, 'wb') as file:
             pickle.dump(self.pickle_dict, file, protocol=2)
+
+    def _clean_dir(self):
+
+        job_names = [model.job_name for model in self.models.values()]
+        for name in job_names:
+            for filename in glob.glob('%s*' % name):
+                if not filename.endswith('.pkl') and not filename.endswith('.pkl_abaqus'):
+                    try:
+                        os.remove(filename)
+                    except:
+                        pass
 
 
 if __name__ == '__main__':

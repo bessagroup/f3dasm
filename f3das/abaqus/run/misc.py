@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-04-28 17:04:02
+Last modified on 2020-04-28 18:55:22
 Python 2.7.16
 v0.1
 
@@ -17,7 +17,6 @@ Create auxiliar functions.
 # standard library
 import os
 from collections import OrderedDict
-import subprocess
 import time
 
 # local library
@@ -27,8 +26,7 @@ from ...misc.file_handling import verify_existing_name
 #%% run abaqus
 
 def run_simuls_sequentially(example_name, simuls_dir_name, points, wait_time=0,
-                            run_module_name='f3das.abaqus.run.run_model',
-                            open_shell=True):
+                            run_module_name='f3das.abaqus.run.run_model'):
 
     # initialization
     time.sleep(wait_time)
@@ -52,10 +50,9 @@ def run_simuls_sequentially(example_name, simuls_dir_name, points, wait_time=0,
 
     # open abaqus and run module
     command = 'abaqus cae noGUI=%s ' % run_filename
-    # subprocess.check_output(command, shell=open_shell)
     os.system(command)
 
-    # clear direction
+    # clear temporary run file
     os.remove(run_filename)
 
 
