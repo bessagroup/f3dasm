@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 19:45:52
-Last modified on 2020-04-27 22:26:22
+Last modified on 2020-05-07 21:45:13
 Python 3.7.3
 v0.1
 
@@ -26,26 +26,26 @@ from SALib.sample import sobol_sequence
 import pandas as pd
 
 # local library
-from f3das.design_of_experiments.convert_inputs import convert_supercompressible
+from f3das.design_of_experiments.transform_inputs import transform_inputs_supercompressible
 
 
 #%% initialization
 
 seed = 1
 np.random.seed(seed)
-example_name = 'example_supercompressible'
+example_name = 'example_supercompressible_3d_circular'
 simuls_dir_name = 'analyses'
 simul_pkl_name = 'simul'
 
-n = 10  # number of points
-doe_variables = OrderedDict({'ratio_cross_section_diameter': [0.004, 0.073],
+n = 10000  # number of points
+doe_variables = OrderedDict({'ratio_d': [0.004, 0.073],
                              'ratio_pitch': [.25, 1.5],
                              'ratio_top_diameter': [0., 0.8]})
 fixed_variables = {'n_longerons': 3,
                    'bottom_diameter': 100.,
                    'young_modulus': 3500.,
-                   'shear_modulus': 1287.}
-section = 'circular'
+                   'shear_modulus': 1287.,
+                   'section': 'circular', }
 
 # imperfections
 deg2rad = np.pi / 180
@@ -88,7 +88,7 @@ data = {'doe_variables': doe_variables,
         'fixed_variables': fixed_variables,
         'imperfections': {'dist': imperfection_dist,
                           'imperfections': imperfections},
-        'section': section}
+        'seed': seed}
 with open(os.path.join(example_name, 'DoE.pkl'), 'wb') as file:
     pickle.dump(data, file)
 
@@ -106,6 +106,8 @@ sim_info = OrderedDict({'SUPERCOMPRESSIBLE_LIN_BUCKLE':
                          'job_name': 'Simul_supercompressible_riks',
                          'job_description': ''}})
 
+# TODO: add information to perform automatic post-processing
+
 # populate folders
 for i in range(n):
 
@@ -116,7 +118,7 @@ for i in range(n):
     variables = {name: float(value) for name, value in zip(doe_variables_ls, points_sobol[i, :])}
     variables.update(fixed_variables)
     variables['imperfection'] = float(imperfections[i])
-    variables = convert_supercompressible(variables, section=section)
+    variables = transform_inputs_supercompressible(variables)
 
     # create dict and dump dict
     data = OrderedDict({'abstract_model': abstract_model,

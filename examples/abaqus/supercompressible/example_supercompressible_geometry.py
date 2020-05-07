@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 12:38:43
-Last modified on 2020-04-25 22:14:52
+Last modified on 2020-05-07 20:02:06
 Python 2.7.16
 v0.1
 
@@ -35,12 +35,13 @@ n_longerons = 3
 bottom_diameter = 100.
 top_diameter = 82.4
 pitch = 115.22
+# cross_section_props = {
+#     'type': 'generalized',
+#     'Ixx': 6.12244e1, 'Iyy': 1.26357e1, 'J': 2.10974e2, 'area': 1.54038e1}
+cross_section_props = {'type': 'circular',
+                       'd': 10}
 young_modulus = 3.5e3
 shear_modulus = 1.38631e3
-Ixx = 6.12244e1
-Iyy = 1.26357e1
-J = 2.10974e2
-area = 1.54038e1
 
 
 #%% create model
@@ -56,7 +57,7 @@ if 'Model-1' in mdb.models.keys():
 supercompressible = Supercompressible(n_longerons, bottom_diameter,
                                       top_diameter, pitch,
                                       young_modulus, shear_modulus,
-                                      Ixx, Iyy, J, area)
+                                      cross_section_props)
 
 
 #%% create part and assembly

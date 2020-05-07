@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 12:03:11
-Last modified on 2020-04-20 22:50:02
+Last modified on 2020-05-07 20:03:15
 Python 2.7.16
 v0.1
 
@@ -22,7 +22,7 @@ material database.
 #%% imports
 
 # abaqus
-from abaqusConstants import (ENGINEERING_CONSTANTS, LAMINA)
+from abaqusConstants import (ISOTROPIC, ENGINEERING_CONSTANTS, LAMINA)
 
 # standard library
 import abc
@@ -124,7 +124,7 @@ class ElasticMaterial(AbaqusMaterial):
 class IsotropicMaterial(ElasticMaterial):
 
     req_material_orientation = False
-    elastic_type = ENGINEERING_CONSTANTS
+    elastic_type = ISOTROPIC
     required_mechanical_constants = ['E', 'nu']
 
     def __init__(self, material, name=None, model=None, create_section=True):

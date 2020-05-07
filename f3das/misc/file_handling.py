@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-05-07 16:06:48
+Last modified on 2020-05-07 18:03:23
 Python 3.7.3
 v0.1
 
@@ -124,8 +124,8 @@ def get_sorted_by_time(parcial_name, dir_path=None, ext=None):
     return filenames
 
 
-def clean_abaqus_dir(ext2rem=('.abq', '.com', '.dat', '.log', '.mdl', '.msg',
-                              '.pac', '.prt', '.res', '.rpy', '.sel', '.stt'),
+def clean_abaqus_dir(ext2rem=('.abq', '.com', '.log', '.mdl', '.pac', '.rpy',
+                              '.sel', '.stt'),
                      dir_path=None):
 
     # local functions

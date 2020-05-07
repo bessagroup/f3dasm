@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 22:16:33
-Last modified on 2020-04-26 01:51:08
+Last modified on 2020-05-07 21:44:29
 Python 3.7.3
 v0.1
 
@@ -12,15 +12,9 @@ Manipute inputs.
 '''
 
 
-#%% imports
-
-# local library
-from ..misc.physics import get_circular_section_props
-
-
 #%% function definition
 
-def convert_supercompressible(inputs, section=''):
+def transform_inputs_supercompressible(inputs):
     '''
     Parameters
     ----------
@@ -29,9 +23,10 @@ def convert_supercompressible(inputs, section=''):
     section : str
         Cross-section geometry. Possible values are 'circular'
     '''
+    # TODO: generalize?
 
     # initialization
-    normalize_by_diameter = ['pitch', 'cross_section_diameter']
+    normalize_by_diameter = ['pitch', 'd']
     normalize_by_diameter2 = ['area']
     normalize_by_diameter4 = ['Ixx', 'Iyy', 'J']
     normalize_by_diameter_diff = ['top_diameter']
@@ -42,6 +37,9 @@ def convert_supercompressible(inputs, section=''):
     young_modulus = inputs['young_modulus']
     new_inputs = {}
     for var_name, variable in inputs.items():
+
+        if var_name == 'section':
+            continue
 
         if var_name[0:5] == 'ratio':
 
@@ -60,18 +58,20 @@ def convert_supercompressible(inputs, section=''):
         new_inputs[var_name] = variable
 
     # add section variables
-    if section == 'circular':
-        # get diam
-        d = new_inputs['cross_section_diameter']
-        del new_inputs['cross_section_diameter']
+    if inputs['section'] == 'circular':
+        new_inputs['cross_section_props'] = {'type': inputs['section'],
+                                             'd': new_inputs['d']}
+        del new_inputs['d']
 
-        # get variables
-        Ixx, Iyy, J, area = get_circular_section_props(d)
-
-        # save variables
-        new_inputs['Ixx'] = Ixx
-        new_inputs['Iyy'] = Iyy
-        new_inputs['J'] = J
-        new_inputs['area'] = area
+    else:
+        new_inputs['cross_section_props'] = {'type': inputs['section'],
+                                             'Ixx': new_inputs['Ixx'],
+                                             'Iyy': new_inputs['Iyy'],
+                                             'J': new_inputs['J'],
+                                             'area': new_inputs['area']}
+        del new_inputs['Ixx']
+        del new_inputs['Iyy']
+        del new_inputs['J']
+        del new_inputs['area']
 
     return new_inputs

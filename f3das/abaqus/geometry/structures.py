@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-04-26 00:34:05
+Last modified on 2020-05-07 20:34:21
 Python 2.7.16
 v0.1
 
@@ -33,7 +33,8 @@ from abaqusConstants import (CLOCKWISE, THREE_D, DEFORMABLE_BODY, ON, OFF,
                              GRADIENT, NO_IDEALIZATION, DEFAULT, SIMPSON,
                              TOP_SURFACE, MIDDLE_SURFACE, FROM_SECTION,
                              CARTESIAN, IMPRINT, CONSTANT, BEFORE_ANALYSIS,
-                             N1_COSINES, B31, FINER, ANALYTIC_RIGID_SURFACE)
+                             N1_COSINES, B31, FINER, ANALYTIC_RIGID_SURFACE,
+                             LINEAR, DURING_ANALYSIS)
 import section
 from part import EdgeArray
 import mesh
@@ -44,6 +45,10 @@ import itertools
 
 # third-party
 import numpy as np
+
+# local library
+from f3das.material.material import Material
+from f3das.abaqus.material.abaqus_materials import IsotropicMaterial
 
 
 #%% Bessa, 2018 (TRAC boom)
@@ -369,10 +374,9 @@ class TRACBoom(object):
 class Supercompressible(object):
 
     def __init__(self, n_longerons, bottom_diameter, top_diameter, pitch,
-                 young_modulus, shear_modulus, Ixx, Iyy,
-                 J, area, twist_angle=0., transition_length_ratio=1.,
-                 n_storeys=1, z_spacing='uni', power=1.,
-                 name='SUPERCOMPRESSIBLE'):
+                 young_modulus, shear_modulus, cross_section_props,
+                 twist_angle=0., transition_length_ratio=1., n_storeys=1,
+                 z_spacing='uni', power=1., name='SUPERCOMPRESSIBLE'):
         '''
         Parameters
         ----------
@@ -384,10 +388,15 @@ class Supercompressible(object):
             Radius of the cicumscribing circle of the polygon (top).
         pitch : float
             Pitch length of the structure.
+        cross_section_props : dict
+            Stores the information about the cross-section. Specify the type
+            of the cross section using 'type'. An empty 'type' will be
+            understood as generalized cross section. Different types of
+            sections are allowed:
+                -'circular': requires 'd'
+                -'generalized': requires 'Ixx', 'Iyy', 'J', 'area'
         young_modulus, shear_modulus : float
             Material properties.
-        Ixx, Iyy, J, area : float
-            Cross-section geometric properties.
         twist_angle : float
             Longerongs twisting angle.
         transition_length_ratio = float
@@ -413,10 +422,7 @@ class Supercompressible(object):
         self.pitch = pitch
         self.young_modulus = young_modulus
         self.shear_modulus = shear_modulus
-        self.Ixx = Ixx
-        self.Iyy = Iyy
-        self.J = J
-        self.area = area
+        self.cross_section_props = cross_section_props
         self.twist_angle = twist_angle
         self.transition_length_ratio = transition_length_ratio
         self.n_storeys = n_storeys
@@ -611,23 +617,19 @@ class Supercompressible(object):
 
     def _create_beam_section(self, model, part_longerons):
 
-        # create profile
+        # initialization
         profile_name = 'LONGERONS_PROFILE'
-        model.GeneralizedProfile(name=profile_name,
-                                 area=self.area, i11=self.Ixx,
-                                 i12=0., i22=self.Iyy, j=self.J, gammaO=0.,
-                                 gammaW=0.)
-
-        # create section
         section_name = 'LONGERONS_SECTION'
-        model.BeamSection(name=section_name, integration=BEFORE_ANALYSIS,
-                          beamShape=CONSTANT, profile=profile_name, thermalExpansion=OFF,
-                          temperatureDependency=OFF, dependencies=0,
-                          table=((self.young_modulus, self.shear_modulus),),
-                          poissonRatio=.31,
-                          alphaDamping=0.0, betaDamping=0.0, compositeDamping=0.0,
-                          centroid=(0.0, 0.0), shearCenter=(0.0, 0.0),
-                          consistentMassMatrix=False)
+
+        # assign the right method for the creation of the beam section
+        # TODO: add more particular sections
+        # TODO: make generalized section default
+        create_beam_section = {'generalized': self._create_generalized_beam_section,
+                               'circular': self._create_circular_section}
+
+        # create profile and beam section
+        create_beam_section[self.cross_section_props['type']](
+            model, profile_name, section_name)
 
         # section assignment
         part_longerons.SectionAssignment(
@@ -642,6 +644,52 @@ class Supercompressible(object):
             region = part_longerons.sets[longeron_name]
             part_longerons.assignBeamSectionOrientation(
                 region=region, method=N1_COSINES, n1=dir_vec_n1)
+
+    def _create_circular_section(self, model, profile_name, section_name):
+
+        # initialization
+        r = self.cross_section_props['d'] / 2.
+
+        # TODO: improve material objects
+        # create material
+        material_name = 'LONGERON_MATERIAL'
+        material = Material(name=material_name, read=False)
+        material.add_prop('E', self.young_modulus)
+        material.add_prop('nu', self.young_modulus / (2 * self.shear_modulus) - 1)
+        IsotropicMaterial(material, material_name, model, create_section=False)
+
+        # create profile
+        model.CircularProfile(name=profile_name, r=r)
+
+        # create profile
+        model.BeamSection(consistentMassMatrix=False, integration=DURING_ANALYSIS,
+                          material=material_name, name=section_name,
+                          poissonRatio=0.31, profile=profile_name,
+                          temperatureVar=LINEAR)
+
+    def _create_generalized_beam_section(self, model, profile_name, section_name):
+
+        # initialization
+        Ixx = self.cross_section_props['Ixx']
+        Iyy = self.cross_section_props['Iyy']
+        area = self.cross_section_props['area']
+        J = self.cross_section_props['J']
+
+        # create profile
+        model.GeneralizedProfile(name=profile_name,
+                                 area=area, i11=Ixx,
+                                 i12=0., i22=Iyy, j=J, gammaO=0.,
+                                 gammaW=0.)
+
+        # create section
+        model.BeamSection(name=section_name, integration=BEFORE_ANALYSIS,
+                          beamShape=CONSTANT, profile=profile_name, thermalExpansion=OFF,
+                          temperatureDependency=OFF, dependencies=0,
+                          table=((self.young_modulus, self.shear_modulus),),
+                          poissonRatio=.31,
+                          alphaDamping=0.0, betaDamping=0.0, compositeDamping=0.0,
+                          centroid=(0.0, 0.0), shearCenter=(0.0, 0.0),
+                          consistentMassMatrix=False)
 
     def _generate_mesh(self, part_longerons):
 

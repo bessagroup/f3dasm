@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-04-29 12:23:37
+Last modified on 2020-05-07 21:26:15
 Python 2.7.16
 v0.1
 
@@ -50,7 +50,7 @@ class SupercompressibleModel(BasicModel):
 
     def __init__(self, name, sim_type, job_name, n_longerons,
                  bottom_diameter, top_diameter, pitch, young_modulus,
-                 shear_modulus, Ixx, Iyy, J, area, twist_angle=0.,
+                 shear_modulus, cross_section_props, twist_angle=0.,
                  transition_length_ratio=1., n_storeys=1, z_spacing='uni',
                  power=1., job_description='', previous_model=None,
                  previous_model_results=None, imperfection=None):
@@ -66,10 +66,7 @@ class SupercompressibleModel(BasicModel):
         self.pitch = pitch
         self.young_modulus = young_modulus
         self.shear_modulus = shear_modulus
-        self.Ixx = Ixx
-        self.Iyy = Iyy
-        self.J = J
-        self.area = area
+        self.cross_section_props = cross_section_props
         self.twist_angle = twist_angle
         self.transition_length_ratio = transition_length_ratio
         self.n_storeys = n_storeys
@@ -89,7 +86,7 @@ class SupercompressibleModel(BasicModel):
         supercompressible = Supercompressible(
             self.n_longerons, self.bottom_diameter, self.top_diameter,
             self.pitch, self.young_modulus, self.shear_modulus,
-            self.Ixx, self.Iyy, self.J, self.area, twist_angle=self.twist_angle,
+            self.cross_section_props, twist_angle=self.twist_angle,
             transition_length_ratio=self.transition_length_ratio,
             n_storeys=self.n_storeys, z_spacing=self.z_spacing,
             power=self.power)
@@ -332,16 +329,26 @@ class SupercompressibleModel(BasicModel):
     def _perform_post_processing_riks(self, odb):
 
         # initialization
+        data = {}
         supercompressible = self.geometry_objects[0]
+
+        # reference points data
         position = supercompressible.ref_point_positions[-1]
         variables = ['U', 'UR', 'RF', 'RM']
         set_names = [supercompressible._get_ref_point_name(position)]
         nodes = get_nodes_given_set_names(odb, set_names)
-
         # get variables
-        data = {}
         for variable in variables:
             data[variable] = get_xydata_from_nodes_history_output(
                 odb, nodes, variable)[0]
+
+        # add information if not generalized section
+        if supercompressible.cross_section_props['type'] != 'generalized':
+            step = odb.steps[odb.steps.keys()[-1]]
+            frames = step.frames
+            elemSet = odb.rootAssembly.elementSets[' ALL ELEMENTS']
+            data['E'] = get_ydata_from_nodeSets_field_output(odb, elemSet, 'E',
+                                                             directions=(1, 3,),
+                                                             frames=frames)
 
         return data
