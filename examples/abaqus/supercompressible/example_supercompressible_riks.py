@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-04-25 23:25:03
+Last modified on 2020-05-08 13:54:09
 Python 2.7.16
 v0.1
 
@@ -45,10 +45,7 @@ top_diameter = previous_model.top_diameter
 pitch = previous_model.pitch
 young_modulus = previous_model.young_modulus
 shear_modulus = previous_model.shear_modulus
-Ixx = previous_model.Ixx
-Iyy = previous_model.Iyy
-J = previous_model.J
-area = previous_model.area
+cross_section_props = previous_model.cross_section_props
 imperfection = 7.85114e-02
 
 
@@ -57,7 +54,7 @@ imperfection = 7.85114e-02
 # create object
 model = SupercompressibleModel(model_name, sim_type, job_name, n_longerons,
                                bottom_diameter, top_diameter, pitch, young_modulus,
-                               shear_modulus, Ixx, Iyy, J, area,
+                               shear_modulus, cross_section_props,
                                job_description=job_description,
                                previous_model=previous_model,
                                imperfection=imperfection)

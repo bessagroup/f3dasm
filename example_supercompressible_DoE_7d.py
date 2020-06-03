@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-28 00:23:38
-Last modified on 2020-04-28 02:33:49
+Last modified on 2020-05-07 14:54:58
 Python 3.7.3
 v0.1
 
@@ -32,7 +32,7 @@ from f3das.design_of_experiments.convert_inputs import convert_supercompressible
 
 seed = 1
 np.random.seed(seed)
-example_name = 'example_supercompressible_7d'
+example_name = 'example_supercompressible_test'
 simuls_dir_name = 'analyses'
 simul_pkl_name = 'simul'
 
@@ -90,7 +90,8 @@ data = {'doe_variables': doe_variables,
         'fixed_variables': fixed_variables,
         'imperfections': {'dist': imperfection_dist,
                           'imperfections': imperfections},
-        'section': section}
+        'section': section,
+        'seed': seed}
 with open(os.path.join(example_name, 'DoE.pkl'), 'wb') as file:
     pickle.dump(data, file)
 

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:43:42
-Last modified on 2020-04-26 01:30:33
+Last modified on 2020-05-11 19:43:40
 Python 3.7.3
 v0.1
 
@@ -21,7 +21,7 @@ import pickle
 
 # local library
 from f3das.misc.file_handling import verify_existing_name
-from f3das.design_of_experiments.convert_inputs import convert_supercompressible
+from f3das.design_of_experiments.transform_inputs import transform_inputs_supercompressible
 
 
 #%% initialization
@@ -31,18 +31,19 @@ dir_name = os.path.join(os.getcwd(), verify_existing_name('test'))
 filename = 'simul.pkl'
 
 # variable definition
-inputs_type = 'circular'  # choose inputs
+inputs_type = 'normal'  # choose inputs
 variables = {'normal': {'n_longerons': 3,
                         'bottom_diameter': 100.,
-                        'young_modulus': 1826.,
-                        'ratio_top_diameter': 0.78,
-                        'pitch': 70.,
-                        'ratio_shear_modulus': .43,
-                        'Ixx': 119.1,
-                        'Iyy': 139.3,
-                        'J': 58.2,
-                        'area': 70.,
-                        'imperfection': 7.85114e-2},
+                        'young_modulus': 3500.0,
+                        'top_diameter': 83.75,
+                        'pitch': 120.703125,
+                        'shear_modulus': 1287.0,
+                        'Ixx': 14.891743763069467,
+                        'Iyy': 14.891743763069467,
+                        'J': 29.783487526138934,
+                        'area': 13.679735787682546,
+                        'imperfection': 0.052175599251571225,
+                        'section': 'generalized'},
              'ratio': {'n_longerons': 3,
                        'bottom_diameter': 100.,
                        'young_modulus': 1826.,
@@ -53,21 +54,22 @@ variables = {'normal': {'n_longerons': 3,
                        'ratio_J': 2e-6,
                        'ratio_pitch': .66,
                        'ratio_top_diameter': 4.72e-6,
-                       'imperfection': 7.85114e-2},
-             'circular': {'n_longerons': 10,
-                          'bottom_diameter': 100.,
-                          'young_modulus': 3500.,
-                          'shear_modulus': 1287.,
-                          'cross_section_diameter': 1.68,
-                          'pitch': 66.,
-                          'ratio_top_diameter': .2,
-                          'imperfection': 7.85114e-2}, }
+                       'imperfection': 7.85114e-2,
+                       'section': 'generalized'},
+             'circular': {'n_longerons': 3,
+                          'bottom_diameter': 100.0,
+                          'young_modulus': 3500.0,
+                          'shear_modulus': 1287.0,
+                          'd': 4.173437499999999,
+                          'pitch': 120.703125,
+                          'top_diameter': 83.75,
+                          'imperfection': 0.052175599251571225,
+                          'section': 'circular'}, }
 
 
 #%% create and dump data
 
-section = inputs_type if inputs_type == 'circular' else ''
-variables = convert_supercompressible(variables[inputs_type], section=section)
+variables = transform_inputs_supercompressible(variables[inputs_type])
 print(variables)
 
 # create data

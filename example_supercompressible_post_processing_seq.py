@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 20:07:00
-Last modified on 2020-05-07 15:04:21
+Last modified on 2020-05-11 16:38:24
 Python 3.7.3
 v0.1
 
@@ -24,6 +24,7 @@ import numpy as np
 
 # local library
 from f3das.misc.file_handling import collect_folder_names
+from f3das.misc.misc import get_int_number_from_str
 from f3das.post_processing.common import get_results
 from f3das.post_processing.supercompressible import get_results_lin_buckle
 from f3das.post_processing.supercompressible import read_and_clean_results_riks
@@ -34,20 +35,43 @@ from f3das.post_processing.supercompressible import read_and_clean_results_riks
 example_name = 'example_supercompressible_3d'
 sim_dir = 'analyses'
 pkl_filename = 'DoE.pkl'
-n_std_cleaning = None  # None if you don't want to "clean" data
+pkl_filename_output = 'DoE_results_2.pkl'
+max_strain = 0.02
+
+
+#%% get current pandas
+
+# read file
+with open(os.path.join(example_name, pkl_filename), 'rb') as file:
+    global_data = pickle.load(file)
+
+points = global_data['points']
+n_pts = len(points)
 
 
 #%% get results
+
+# name of the outputs
+var_names = ['coilable', 'sigma_crit', 'energy']
+
+# initialize arrays
+results = {}
+for name in var_names:
+    if name == 'coilable':
+        results[name] = [None for _ in range(n_pts)]
+    else:
+        results[name] = np.empty(n_pts) * np.nan
 
 # colect folder names
 dir_name = os.path.join(example_name, sim_dir)
 folder_names = collect_folder_names(dir_name)
 
 # get values
-coilable_values = []
-sigma_crit_values = []
-energy_values = []
 for folder_name in folder_names:
+
+    # number
+    i = get_int_number_from_str(folder_name)
+    print(i)
 
     # get data
     data = get_results(dir_name, folder_name)
@@ -56,43 +80,33 @@ for folder_name in folder_names:
     coilable, sigma_crit = get_results_lin_buckle(data)
 
     # get data (Riks)
-    _, (strain, stress), (energy, (x, y)) = read_and_clean_results_riks(
+    _, (strain, stress), (energy, (x, y)), E_max = read_and_clean_results_riks(
         data, get_energy=True)
 
+    # update coilability
+    if coilable and E_max is not np.nan and E_max > max_strain:
+        coilable = 2
+
     # save data
-    coilable_values.append(coilable)
-    sigma_crit_values.append(sigma_crit)
-    energy_values.append(energy)
-
-
-#%% post-process data before storing it
-
-# delete outliers
-if n_std_cleaning:
-    y_temp = np.array([yy for yy in energy_values if yy is not None])
-    y_mean = np.mean(y_temp)
-    y_std = np.std(y_temp)
-    y_thresh = y_mean + n_std_cleaning * y_std
-    for i, yy in enumerate(energy_values):
-        if yy is not None and yy > y_thresh:
-            energy_values[i] = None
+    results['coilable'][i] = coilable
+    results['sigma_crit'][i] = sigma_crit
+    results['energy'][i] = energy
 
 
 #%% store results
 
 # create new panda frame
-results = pd.DataFrame({'coilable': coilable_values,
-                        'sigma_crit': sigma_crit_values,
-                        'energy': energy_values})
-
-# read file
-with open(os.path.join(example_name, pkl_filename), 'rb') as file:
-    data = pickle.load(file)
+results = pd.DataFrame(results)
 
 # append results to panda frame
-data['points'] = data['points'].join(results)
+column_names = list(points.columns.values)
+for name in var_names:
+    if name in column_names:
+        points.update(results)
+        break
+else:
+    global_data['points'] = points.join(results)
 
 # create new pickle file
-new_filename = '%s_results.pkl' % pkl_filename.split('.')[0]
-with open(os.path.join(example_name, new_filename), 'wb') as file:
-    pickle.dump(data, file)
+with open(os.path.join(example_name, pkl_filename_output), 'wb') as file:
+    pickle.dump(global_data, file)

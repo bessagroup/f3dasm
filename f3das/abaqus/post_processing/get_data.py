@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 14:50:02
-Last modified on 2020-04-22 13:18:52
+Last modified on 2020-05-07 21:21:10
 Python 2.7.16
 v0.1
 
@@ -79,7 +79,8 @@ def get_ydata_from_nodeSets_field_output(odb, nodeSet, variable,
     variable : str
         It only works for vector-like variables. e.g. 'U' and 'RF'
     directions : array
-        Directions for which to extract values.
+        Directions for which to extract values. The value will be subtracted
+        by 1 when accessing abaqus data.
     frames : array-like of Abaqus OdbFrame objects
         If frames are available from outside, use it because it may significantly
         decreases the computational time.
@@ -92,6 +93,7 @@ def get_ydata_from_nodeSets_field_output(odb, nodeSet, variable,
     '''
 
     # TODO: extend to scalar and tensor like variables
+    # TODO: change name to accept also elements (position should be an input)
 
     # access frames
     if not frames:

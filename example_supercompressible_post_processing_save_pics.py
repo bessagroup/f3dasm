@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-04 18:35:56
-Last modified on 2020-05-05 19:27:56
+Last modified on 2020-05-11 19:59:45
 Python 3.7.3
 v0.1
 
@@ -24,18 +24,19 @@ from matplotlib import pyplot as plt
 from f3das.misc.misc import get_int_number_from_str
 from f3das.misc.file_handling import collect_folder_names
 from f3das.post_processing.supercompressible import read_and_clean_results_riks
+from f3das.post_processing.common import get_results
 
-
- # TODO: update
+# TODO: update
 
 
 #%% initialization
 
 # pics to save
-sim_numbers = None  # None means all
+# sim_numbers = list(range(10))  # None means all
+sim_numbers = [0, 11, 12, 14, 16, 28, 36, 40, 60, 68, 72, 88, 96, 108, 112]
 
 # pics folder
-pics_dir = 'example_supercompressible_3d_pics'
+pics_dir = 'example_supercompressible_3d_pics_error'
 
 # results folder structure
 example_name = 'example_supercompressible_3d'
@@ -57,7 +58,9 @@ for folder_name in folder_names:
     sim_num = get_int_number_from_str(folder_name)
 
     # get data
-    u_3, rf_3, strain, stress, _, _ = read_and_clean_results_riks(dir_name, folder_name)
+    data = get_results(dir_name, folder_name)
+    (u_3, rf_3), (strain, stress), _, _ = read_and_clean_results_riks(
+        data, get_energy=False)
 
     # force-displacement
     plt.figure()

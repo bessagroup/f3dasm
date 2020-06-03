@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-05-07 16:19:54
+Last modified on 2020-05-11 17:01:55
 Python 3.7.3
 v0.1
 
@@ -27,7 +27,7 @@ def get_results_lin_buckle(data, job_name='SUPERCOMPRESSIBLE_LIN_BUCKLE'):
     results = data['post-processing'][job_name]
 
     # coilability and P_crit
-    coilable = results['coilable'][0]
+    coilable = int(results['coilable'][0])
     try:
         # get load
         load = results['loads'][0]
@@ -55,6 +55,9 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
 
     # get data
     results = data['post-processing'][job_name]
+
+    # verify if has info about max strain
+    E_max = np.max(np.abs(np.array(results.get('E', [np.nan]))))
 
     # get geometric parameters
     pitch = data['variables']['pitch']
@@ -92,7 +95,7 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
                 stress = stress[:-1]
 
     if not get_energy or not acceptable_curve:
-        return (u_3, rf_3), (strain, stress), (None, (None, None))
+        return (u_3, rf_3), (strain, stress), (None, (None, None)), E_max
 
     # is it possible to compute energy?
     success = False
@@ -102,7 +105,7 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
             success = True
 
     if not success:
-        return (u_3, rf_3), (strain, stress), (None, (None, None))
+        return (u_3, rf_3), (strain, stress), (None, (None, None)), E_max
 
     # compute energy
     # append point
@@ -118,4 +121,4 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
     # compute energy
     energy = integrate.simps(y, x=x)
 
-    return (u_3, rf_3), (strain, stress), (energy, (x, y))
+    return (u_3, rf_3), (strain, stress), (energy, (x, y)), E_max
