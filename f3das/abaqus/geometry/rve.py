@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-04-22 16:04:34
+Last modified on 2020-07-02 18:01:43
 Python 2.7.16
 v0.1
 
@@ -33,8 +33,8 @@ import numpy as np
 # local library
 from .common import transform_point
 from .common import get_orientations_360
-from ...misc.linalg.matrix import symmetricize_vector
-from ...misc.linalg.matrix import sqrtm
+from ...misc.linalg import symmetricize_vector
+from ...misc.linalg import sqrtm
 
 
 #%% 2d RVE
@@ -42,6 +42,9 @@ from ...misc.linalg.matrix import sqrtm
 class RVE2D:
 
     def __init__(self, length, width, center, name='RVE'):
+        # TODO: generalize length and width to dims
+        # TODO: is center really required?
+        # TODO: inherit from a simply Python RVE?
         '''
         Notes
         -----
