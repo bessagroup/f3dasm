@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-05-07 16:22:25
+Last modified on 2020-09-08 09:14:30
 Python 2.7.16
 v0.1
 
@@ -30,37 +30,37 @@ import pickle
 import importlib
 from collections import OrderedDict
 import time
+import traceback
 
 # local library
-from .misc import convert_dict_unicode_str
+from .run_utils import convert_dict_unicode_str
 from f3das.misc.file_handling import get_unique_file_by_ext
 
 
 #%% object definition
 
+# TODO: add error file
+
+
 class RunModel(object):
 
-    def __init__(self, filename=''):
+    def __init__(self):
         '''
-
-        Parameters
-        ----------
-        filename : str
-            Pickle filename. If empty, then assumes there's only one pickle
-            file in the directory.
-
         Notes
         -----
         -assumes the same data is required to instantiate each model of the
         sequence.
         '''
         # read data
-        data = self._read_data(filename)
+        data = self._read_data()
         self.pickle_dict = data
         # store variables
+        # TODO: transform inputs here?
         self.abstract_model = self._import_abstract_model(data['abstract_model'])
         self.variables = data['variables']
         self.sim_info = data['sim_info']
+        self.keep_odb = data['keep_odb']
+        self.dump_py_objs = data['dump_py_objs']
         self.init_time = time.time()
         self.run_time = None
         self.post_processing_time = None
@@ -86,10 +86,10 @@ class RunModel(object):
         # delete unnecessary files
         self._clean_dir()
 
-    def _read_data(self, filename):
+    def _read_data(self):
 
         # get pickle filename
-        self.filename = filename if filename else get_unique_file_by_ext(ext='.pkl')
+        self.filename = get_unique_file_by_ext(ext='.pkl')
 
         # read file
         with open(self.filename, 'rb') as file:
@@ -150,20 +150,24 @@ class RunModel(object):
         self.pickle_dict['time'] = {'total_time': time.time() - self.init_time,
                                     'run_time': self.run_time,
                                     'post_processing_time': self.post_processing_time}
+        self.pickle_dict['success'] = True
         with open(self.filename, 'wb') as file:
             pickle.dump(self.pickle_dict, file, protocol=2)
 
         # more complete results readable within abaqus
-        self.pickle_dict['models'] = self.models
-        with open('%s_abaqus' % self.filename, 'wb') as file:
-            pickle.dump(self.pickle_dict, file, protocol=2)
+        if self.dump_py_objs:
+            with open('%s_abq' % self.filename, 'wb') as file:
+                pickle.dump(self.models, file, protocol=2)
 
     def _clean_dir(self):
+        # return if is to keep odb
+        if self.keep_odb:
+            return
 
         job_names = [model.job_name for model in self.models.values()]
         for name in job_names:
             for filename in glob.glob('%s*' % name):
-                if not filename.endswith('.pkl') and not filename.endswith('.pkl_abaqus'):
+                if not filename.endswith(('.pkl', '.pkl_abq')):
                     try:
                         os.remove(filename)
                     except:
@@ -180,4 +184,13 @@ if __name__ == '__main__':
         run_model.execute()
 
     except:
-        pass
+
+        # create error file
+        with open('error.txt', 'w') as file:
+            traceback.print_exc(file=file)
+
+        # update success flag
+        filename = get_unique_file_by_ext(ext='.pkl')
+        run_model.pickle_dict['success'] = False
+        with open(filename, 'wb') as file:
+            data = pickle.dump(run_model.pickle_dict, file, protocol=2)
