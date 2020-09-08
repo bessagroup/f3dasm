@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-08 10:32:31
+Last modified on 2020-09-08 10:45:04
 Python 2.7.16
 v0.1
 
@@ -319,37 +319,6 @@ def get_updated_simuls_state(example_name, simuls_dir_name, points):
             error_simuls.append(point)
 
     return error_simuls, successful_simuls
-
-
-def get_missing_simuls_abq(example_name, simuls_dir_name, points=None):
-    '''
-    Get missing simulation numbers based on the existance of '.pkl_abq' file.
-    It considers only already created folders. Depending on the call time, it
-    may mean unsuccessful simulations.
-
-    Parameters
-    ----------
-    points : array
-        If None, considers all available simulations.
-    '''
-
-    # TODO: delete functions
-
-    # initialization
-    dir_path = os.path.join(example_name, simuls_dir_name)
-    if points is None:
-        points = [int(folder_name[len(folder_name.rstrip('0123456789')):])
-                  for folder_name in os.listdir(dir_path)]
-
-    # getting missing simuls
-    missing_simuls = []
-    for point in points:
-        folder_path = os.path.join('DoE_point{}'.format(point))
-        exists = os.path.exists(folder_path)
-        if (exists and 'simul.pkl_abq' not in os.listdir(folder_path)) or not exists:
-            missing_simuls.append(point)
-
-    return sorted(missing_simuls)
 
 
 def get_simuls_info(example_name, pkl_filename='DoE.pkl',
