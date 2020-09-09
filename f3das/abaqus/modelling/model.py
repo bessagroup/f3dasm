@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-04-22 19:12:04
+Last modified on 2020-07-13 18:18:56
 Python 2.7.16
 v0.1
 
@@ -30,10 +30,13 @@ import pickle
 
 class BasicModel:
 
-    def __init__(self, name, job_name, job_description):
+    def __init__(self, name, job_name, job_description, n_cpus=1,
+                 user_subroutine=''):
         self.name = name
         self.job_name = job_name
         self.job_description = job_description
+        self.n_cpus = n_cpus
+        self.user_subroutine = user_subroutine
         # create model
         self.model = mdb.Model(name=self.name)
         backwardCompatibility.setValues(reportDeprecated=False)
@@ -82,7 +85,9 @@ class BasicModel:
 
         # create inp
         modelJob = mdb.Job(name=self.job_name, model=self.name,
-                           description=self.job_description)
+                           description=self.job_description,
+                           numCpus=self.n_cpus,
+                           userSubroutine=self.user_subroutine)
         modelJob.writeInput(consistencyChecking=OFF)
 
         # add lines to inp
@@ -166,3 +171,9 @@ class BasicModel:
             variable.extend(new_value)
         else:
             variable.append(new_value)
+
+
+class AssembleFunctions:
+
+    def write_inp(self, *args, **kwargs):
+        pass

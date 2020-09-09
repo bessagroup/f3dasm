@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-08 10:45:04
+Last modified on 2020-09-08 16:49:52
 Python 2.7.16
 v0.1
 
@@ -83,7 +83,8 @@ def create_main_file(example_name, data, pkl_filename='DoE.pkl'):
 def run_simuls(example_name, n_simuls=None, n_cpus=1,
                points=None, pkl_filename='DoE.pkl', simuls_dir_name='analyses',
                run_module_name='f3das.abaqus.run.run_model',
-               keep_odb=True, dump_py_objs=False, abaqus_path='abaqus'):
+               keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
+               gui=False):
     '''
     IMPORTANT: if number cpus>1 (parallel simulations, not simulation in
     parallel), function must be inside "if __name__='__main__':" in the script.
@@ -179,7 +180,7 @@ def run_simuls(example_name, n_simuls=None, n_cpus=1,
             _run_simuls_sequentially(example_name, points,
                                      run_module_name=run_module_name,
                                      simuls_dir_name=simuls_dir_name,
-                                     abaqus_path=abaqus_path)
+                                     abaqus_path=abaqus_path, gui=gui)
     except:
         traceback.print_exc()
 
@@ -252,7 +253,8 @@ def _create_DoE_sim_info(example_name, points, simuls_dir_name='analyses',
 
 def _run_simuls_sequentially(example_name, points, wait_time=0,
                              run_module_name='f3das.abaqus.run.run_model',
-                             simuls_dir_name='analyses', abaqus_path='abaqus'):
+                             simuls_dir_name='analyses', abaqus_path='abaqus',
+                             gui=False):
     '''
 
     Parameters
@@ -282,7 +284,8 @@ def _run_simuls_sequentially(example_name, points, wait_time=0,
             f.write(line + '\n')
 
     # open abaqus and run module
-    command = '{} cae noGUI={}'.format(abaqus_path, run_filename)
+    gui_ = 'script' if gui else 'noGUI'
+    command = '{} cae {}={}'.format(abaqus_path, gui_, run_filename)
     os.system(command)
 
     # clear temporary run file
