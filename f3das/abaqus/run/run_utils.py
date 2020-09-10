@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-08 16:49:52
+Last modified on 2020-09-10 11:23:13
 Python 2.7.16
 v0.1
 
@@ -72,6 +72,7 @@ def create_main_file(example_name, data, pkl_filename='DoE.pkl'):
     data['sim_info'] = sim_info
 
     # create directory and save pkl file
+    # TODO: force error if name already exists
     example_name = verify_existing_name(example_name)
     os.mkdir(example_name)
     with open(os.path.join(example_name, pkl_filename), 'wb') as file:
@@ -96,10 +97,9 @@ def run_simuls(example_name, n_simuls=None, n_cpus=1,
         'missing_simuls' in the main file are considered here. Runs all the
         missing simulations if None. Order of 'missing_simuls' is considered.
     n_cpus : int
-        Number of simultaneous processes. If 'n_cpus_sim'>1, it is automatically
+        Number of simultaneous processes. If job's 'n_cpus'>1, it is automatically
         set to 1 (for now, it is not possible to run several multi-process
-        simulations simultaneously). It is assumed that 'n_cpus_sim' is defined
-        inside sim_info if different than 1 (as 'n_cpus').
+        simulations simultaneously).
     points : array or None
         DoE points to run. If None, 'n_simuls' are run. Simulations with
         folders already created are run again (so, be careful!).
@@ -145,7 +145,7 @@ def run_simuls(example_name, n_simuls=None, n_cpus=1,
 
         # run in parallel?
         sim_info = data['sim_info']['sim_info']
-        n_cpus_sim = np.array([sim.get('n_cpus', 1) for sim in sim_info.values()])
+        n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
         n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
 
         # create pkl for each doe
@@ -216,8 +216,8 @@ def _create_DoE_sim_info(example_name, points, simuls_dir_name='analyses',
     datapoints = data['points']
     sim_info = data['sim_info']
     transform_inputs = sim_info.get('transform_inputs', None)
-    fixed_variables = data['fixed_variables']
-    additional_variables = data['additional_variables']
+    fixed_variables = data.get('fixed_variables', {})
+    additional_variables = data.get('additional_variables', {})
 
     # variables to save
     abstract_model = sim_info['abstract_model']

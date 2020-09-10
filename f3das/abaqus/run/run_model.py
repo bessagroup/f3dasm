@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-08 09:14:30
+Last modified on 2020-09-10 11:38:34
 Python 2.7.16
 v0.1
 
@@ -34,12 +34,17 @@ import traceback
 
 # local library
 from .run_utils import convert_dict_unicode_str
+from ..modelling.model import BasicModel
+from ..modelling.model import WrapperModel
 from f3das.misc.file_handling import get_unique_file_by_ext
 
 
 #%% object definition
 
 # TODO: add error file
+
+# TODO: run model that takes into account F3DAS and non-F3DAS scripts
+# TODO: need to understand where to put non-F3DAS scripts due to F3DAS installation
 
 
 class RunModel(object):
@@ -51,24 +56,34 @@ class RunModel(object):
         -assumes the same data is required to instantiate each model of the
         sequence.
         '''
+        # performance related
+        self.init_time = time.time()
+        self.run_time = None
+        self.post_processing_time = None
         # read data
         data = self._read_data()
         self.pickle_dict = data
         # store variables
         # TODO: transform inputs here?
-        self.abstract_model = self._import_abstract_model(data['abstract_model'])
         self.variables = data['variables']
         self.sim_info = data['sim_info']
         self.keep_odb = data['keep_odb']
         self.dump_py_objs = data['dump_py_objs']
-        self.init_time = time.time()
-        self.run_time = None
-        self.post_processing_time = None
+        n_sims = len(self.sim_info)
+        self.abstract_models = self._import_abstract_models(
+            data['abstract_model'], n_sims)
+        self.post_processing_fncs = self._import_post_processing_fncs(
+            data.get('post_processing_fnc', None), n_sims)
         # initialize variables
         self.models = OrderedDict()
         self.post_processing = OrderedDict()
 
     def execute(self):
+
+        # TODO: better control of running time
+
+        # instantiate models
+        self._instantiate_models()
 
         # run models
         run_time_init = time.time()
@@ -97,32 +112,60 @@ class RunModel(object):
 
         return data
 
-    def _import_abstract_model(self, abstract_model):
+    def _import_abstract_models(self, abstract_models, n_sims):
 
-        module_name, method_name = abstract_model.rsplit('.', 1)
-        module = importlib.import_module(module_name)
-        return getattr(module, method_name)
+        if type(abstract_models) is str:
+            abstract_models = [abstract_models] * n_sims
 
-    def _run_models(self):
+        abstract_models_ = []
+        for abstract_model in abstract_models:
+            module_name, method_name = abstract_model.rsplit('.', 1)
+            module = importlib.import_module(module_name)
+            abstract_models_.append(getattr(module, method_name))
 
-        for i, (model_name, info) in enumerate(self.sim_info.items()):
+        return abstract_models_
+
+    def _import_post_processing_fncs(self, post_processing_fncs, n_sims):
+
+        if post_processing_fncs is None:
+            return [None] * n_sims
+
+        if type(post_processing_fncs) is str:
+            post_processing_fncs = [post_processing_fncs] * n_sims
+
+        post_processing_fncs_ = []
+        for post_processing_fnc in post_processing_fncs:
+            module_name, method_name = post_processing_fnc.rsplit('.', 1)
+            module = importlib.import_module(module_name)
+            post_processing_fncs_.append(getattr(module, method_name))
+
+        return post_processing_fncs_
+
+    def _instantiate_models(self):
+
+        for i, (abstract_model, (model_name, info)) in enumerate(zip(self.abstract_models, self.sim_info.items())):
 
             # get args
             args = self.variables.copy()
             args.update(info)
 
             # instantiate model
-            previous_model = list(self.models.values())[i - 1] if i else None
-            model = self.abstract_model(name=model_name,
-                                        previous_model=previous_model, **args)
+            if i:
+                args.update({'previous_model': list(self.models.values())[i - 1]})
+            if issubclass(abstract_model, BasicModel):
+                model = abstract_model(name=model_name, **args)
+            else:
+                model = WrapperModel(name=model_name, abstract_model=abstract_model,
+                                     post_processing_fnc=self.post_processing_fncs[i],
+                                     **args)
 
-            # create and run model
+            self.models[model_name] = model
+
+    def _run_models(self):
+
+        for model in self.models.values():
             model.create_model()
             model.write_inp(submit=True)
-
-            # dump and save model
-            model.dump(create_file=False)
-            self.models[model_name] = model
 
     def _perform_post_processing(self):
 
@@ -133,10 +176,14 @@ class RunModel(object):
                 continue
 
             # do post-processing of current model
-            odb_name = '%s.odb' % model.job_name
-            odb = session.openOdb(name=odb_name)
-            self.post_processing[model_name] = model.perform_post_processing(odb)
-            odb.close()
+            if isinstance(model, WrapperModel) and not callable(model.post_processing_fnc):
+                self.post_processing[model_name] = None
+            else:
+
+                odb_name = '%s.odb' % model.job_info['name']
+                odb = session.openOdb(name=odb_name)
+                self.post_processing[model_name] = model.perform_post_processing(odb)
+                odb.close()
 
             # save post-processing of previous model (if applicable)
             if model.previous_model_results is not None and model.previous_model.name not in self.post_processing.keys():
@@ -156,6 +203,10 @@ class RunModel(object):
 
         # more complete results readable within abaqus
         if self.dump_py_objs:
+            # prepare models to be dumped
+            for model in self.models.values():
+                model.dump(create_file=False)
+            # dump models
             with open('%s_abq' % self.filename, 'wb') as file:
                 pickle.dump(self.models, file, protocol=2)
 

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-07-13 18:18:56
+Last modified on 2020-09-10 11:35:50
 Python 2.7.16
 v0.1
 
@@ -24,19 +24,53 @@ from abaqusConstants import OFF
 
 # standard library
 import pickle
+import abc
 
 
 #%% object definition
 
-class BasicModel:
+class AbstractModel(object):
+    __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, job_name, job_description, n_cpus=1,
-                 user_subroutine=''):
+    def __init__(self, name, job_info):
         self.name = name
-        self.job_name = job_name
-        self.job_description = job_description
-        self.n_cpus = n_cpus
-        self.user_subroutine = user_subroutine
+        self.job_info = job_info
+
+    @abc.abstractmethod
+    def create_model(self):
+        pass
+
+    @abc.abstractmethod
+    def write_inp(self, submit=True):
+        pass
+
+    @abc.abstractmethod
+    def perform_post_processing(self, odb):
+        pass
+
+    def dump(self, create_file=True):
+
+        # stop storing model
+        self.model = None
+
+        # create file
+        if create_file:
+            data = {'model': self}
+            filename = '%s.pickle' % self.job_info['name']
+            with open(filename, 'wb') as f:
+                pickle.dump(data, f)
+
+
+class BasicModel(AbstractModel):
+
+    def __init__(self, name, job_info):
+        '''
+        Parameters
+        ----------
+        job_info: dict
+            Must contain at least `name`.
+        '''
+        AbstractModel.__init__(self, name, job_info)
         # create model
         self.model = mdb.Model(name=self.name)
         backwardCompatibility.setValues(reportDeprecated=False)
@@ -84,10 +118,7 @@ class BasicModel:
     def write_inp(self, submit=False):
 
         # create inp
-        modelJob = mdb.Job(name=self.job_name, model=self.name,
-                           description=self.job_description,
-                           numCpus=self.n_cpus,
-                           userSubroutine=self.user_subroutine)
+        modelJob = mdb.Job(model=self.name, **self.job_info)
         modelJob.writeInput(consistencyChecking=OFF)
 
         # add lines to inp
@@ -97,25 +128,12 @@ class BasicModel:
         # submit
         if submit:
             if len(self.inp_additions):
-                filename = '%s.inp' % self.job_name
-                modelJob = mdb.JobFromInputFile(name=self.job_name,
-                                                inputFileName=filename)
+                filename = '%s.inp' % self.job_info['name']
+                job_info = {key: value for key, value in self.job_info.items() if key != 'description'}
+                modelJob = mdb.JobFromInputFile(inputFileName=filename,
+                                                **job_info)
             modelJob.submit(consistencyChecking=OFF)
             modelJob.waitForCompletion()
-
-    def dump(self, create_file=True):
-
-        # stop storing model
-        self.model = None
-
-        # create file
-        if create_file:
-            data = {'model': self}
-            filename = '%s.pickle' % self.job_name
-            with open(filename, 'wb') as f:
-                pickle.dump(data, f)
-
-        return self
 
     def _create_materials(self):
         for material in self.materials:
@@ -173,7 +191,29 @@ class BasicModel:
             variable.append(new_value)
 
 
-class AssembleFunctions:
+class WrapperModel(AbstractModel):
 
-    def write_inp(self, *args, **kwargs):
-        pass
+    def __init__(self, name, job_info, abstract_model, post_processing_fnc=None,
+                 previous_model=None, previous_model_results=None, **kwargs):
+        AbstractModel.__init__(self, name, job_info)
+        self.abstract_model = abstract_model
+        self.post_processing_fnc = post_processing_fnc
+        self.previous_model = previous_model
+        self.previous_model_results = previous_model_results
+        self.kwargs = kwargs
+
+    def create_model(self):
+        self.abstract_model(**self.kwargs)
+
+    def write_inp(self, submit=False):
+        # create inp
+        modelJob = mdb.Job(model=self.name, **self.job_info)
+        modelJob.writeInput(consistencyChecking=OFF)
+
+        # submit
+        if submit:
+            modelJob.submit(consistencyChecking=OFF)
+            modelJob.waitForCompletion()
+
+    def perform_post_processing(self, odb):
+        return self.post_processing_fnc(odb)

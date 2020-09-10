@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-05-07 21:26:15
+Last modified on 2020-09-09 10:12:28
 Python 2.7.16
 v0.1
 
@@ -12,7 +12,7 @@ Modelling supercompressible metamaterial.
 '''
 
 
-#%% imports
+# imports
 
 from __future__ import division
 
@@ -42,20 +42,20 @@ from ..post_processing.get_data import get_eigenvalues
 from ..post_processing.nodes_and_elements import get_nodes_given_set_names
 
 
-#%% supercompressible metamaterial
+# supercompressible metamaterial
 
 # TODO: create a model common to TRAC boom (it is the same strategy); ImperfectionModel
 
 class SupercompressibleModel(BasicModel):
 
-    def __init__(self, name, sim_type, job_name, n_longerons,
+    def __init__(self, name, job_info, sim_type, n_longerons,
                  bottom_diameter, top_diameter, pitch, young_modulus,
                  shear_modulus, cross_section_props, twist_angle=0.,
                  transition_length_ratio=1., n_storeys=1, z_spacing='uni',
-                 power=1., job_description='', previous_model=None,
+                 power=1., previous_model=None,
                  previous_model_results=None, imperfection=None):
         # initialize parent
-        BasicModel.__init__(self, name, job_name, job_description)
+        BasicModel.__init__(self, name, job_info)
         # specific variables
         self.applied_load = -1.
         # store variables
@@ -76,9 +76,9 @@ class SupercompressibleModel(BasicModel):
         self.previous_model_results = previous_model_results
         self.mode_amplitudes = [imperfection]
 
-    def perform_post_processing(self, *args):
+    def perform_post_processing(self, odb):
         fnc = getattr(self, '_perform_post_processing_%s' % self.sim_type)
-        return fnc(*args)
+        return fnc(odb)
 
     def _assemble_puzzle(self):
 
@@ -242,12 +242,12 @@ class SupercompressibleModel(BasicModel):
 
     def _set_inp_additions_lin_buckle(self):
         text = ['*NODE FILE, frequency=1', 'U']
-        return AddToInp(text, self.job_name, section='OUTPUT REQUESTS')
+        return AddToInp(text, self.job_info['name'], section='OUTPUT REQUESTS')
 
     def _set_inp_additions_riks(self):
 
         # initialization
-        previous_file_name = self.previous_model.job_name
+        previous_file_name = self.previous_model.job_info['name']
         text = ['*IMPERFECTION, FILE=%s, STEP=1' % (previous_file_name)]
 
         # get amplification factors
@@ -261,7 +261,7 @@ class SupercompressibleModel(BasicModel):
         for i, amp_factor in enumerate(amp_factors):
             text.append('%i, %f' % (i + 1, amp_factor))
 
-        return AddToInp(text, self.job_name, section='INTERACTIONS')
+        return AddToInp(text, self.job_info['name'], section='INTERACTIONS')
 
     def _get_disps_for_riks(self):
         '''
@@ -274,7 +274,7 @@ class SupercompressibleModel(BasicModel):
         # get results
         if self.previous_model_results is None:
             # access odb
-            odb_name = '%s.odb' % self.previous_model.job_name
+            odb_name = '%s.odb' % self.previous_model.job_info['name']
             odb = session.openOdb(name=odb_name)
             self.previous_model_results = self.previous_model.perform_post_processing(odb)
             odb.close()
