@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-11 17:03:32
+Last modified on 2020-09-11 17:14:33
 Python 2.7.16
 v0.1
 
@@ -33,7 +33,7 @@ import time
 import traceback
 
 # local library
-from .run_utils import convert_dict_unicode_str
+from .utils import convert_dict_unicode_str
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
 from f3das.utils.file_handling import get_unique_file_by_ext
