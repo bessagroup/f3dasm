@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-05-11 17:01:55
+Last modified on 2020-09-11 15:36:02
 Python 3.7.3
 v0.1
 
@@ -20,6 +20,24 @@ from scipy import interpolate, integrate, signal
 
 
 #%% function definition
+
+def get_results(data, max_strain=.02, additional_strain_thresh=.05,
+                n_interpolation=10000):
+
+    # get data (linear buckling)
+    coilable, sigma_crit = get_results_lin_buckle(data)
+
+    # get data (Riks)
+    _, (strain, stress), (energy, (x, y)), E_max = read_and_clean_results_riks(
+        data, additional_strain_thresh=additional_strain_thresh,
+        n_interpolation=n_interpolation, get_energy=True)
+
+    # update coilability
+    if coilable and E_max is not np.nan and E_max > max_strain:
+        coilable = 2
+
+    return coilable, sigma_crit, energy
+
 
 def get_results_lin_buckle(data, job_name='SUPERCOMPRESSIBLE_LIN_BUCKLE'):
 
@@ -85,6 +103,7 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
 
     # if last value is max, it is not considered
     diff = np.diff(strain)
+    # TODO: verify if this is required
     acceptable_curve = np.size(np.where(diff < 0)) == 0
     if acceptable_curve:
         i_stress_local_maxs = signal.argrelextrema(stress, np.greater)
