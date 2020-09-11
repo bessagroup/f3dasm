@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-11 09:57:42
+Last modified on 2020-09-11 17:03:56
 Python 2.7.16
 v0.1
 
@@ -23,11 +23,12 @@ import shutil
 import numpy as np
 
 # local library
-from f3das.misc.file_handling import verify_existing_name
-from f3das.misc.file_handling import get_unique_file_by_ext
+from f3das.utils.file_handling import verify_existing_name
+from f3das.utils.file_handling import get_unique_file_by_ext
 
 
 # TODO: interrupt simulations
+# TODO: change name to utils
 
 # create main file
 

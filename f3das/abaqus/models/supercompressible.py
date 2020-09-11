@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-09 10:12:28
+Last modified on 2020-09-11 17:02:19
 Python 2.7.16
 v0.1
 
@@ -30,7 +30,7 @@ from ..modelling.step import BuckleStep
 from ..modelling.step import StaticRiksStep
 from ..modelling.bcs import DisplacementBC
 from ..modelling.bcs import ConcentratedForce
-from ..modelling.misc import AddToInp
+from ..modelling.utils import AddToInp
 from ..modelling.interaction_properties import ContactProperty
 from ..modelling.interaction_properties import NormalBehavior
 from ..modelling.interaction_properties import GeometricProperties

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 11:26:39
-Last modified on 2020-04-22 16:06:45
+Last modified on 2020-09-11 17:02:32
 Python 2.7.16
 v0.1
 
@@ -35,7 +35,7 @@ from ..modelling.step import BuckleStep
 from ..modelling.step import StaticRiksStep
 from ..modelling.bcs import DisplacementBC
 from ..modelling.bcs import Moment
-from ..modelling.misc import AddToInp
+from ..modelling.utils import AddToInp
 from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
 
 

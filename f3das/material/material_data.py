@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 10:27:22
-Last modified on 2020-04-08 14:16:02
+Last modified on 2020-09-11 17:06:44
 Python 3.7.3
 v0.1
 
@@ -33,7 +33,7 @@ used.
 #%% imports
 
 # local library
-from .common import Property
+from .utils import Property
 
 
 #%% create materials

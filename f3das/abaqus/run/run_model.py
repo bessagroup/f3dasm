@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-10 11:38:34
+Last modified on 2020-09-11 17:03:32
 Python 2.7.16
 v0.1
 
@@ -36,7 +36,7 @@ import traceback
 from .run_utils import convert_dict_unicode_str
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
-from f3das.misc.file_handling import get_unique_file_by_ext
+from f3das.utils.file_handling import get_unique_file_by_ext
 
 
 #%% object definition
@@ -197,6 +197,7 @@ class RunModel(object):
         self.pickle_dict['time'] = {'total_time': time.time() - self.init_time,
                                     'run_time': self.run_time,
                                     'post_processing_time': self.post_processing_time}
+        # TODO: update success to be less permissive (e.g. subroutine location)
         self.pickle_dict['success'] = True
         with open(self.filename, 'wb') as file:
             pickle.dump(self.pickle_dict, file, protocol=2)

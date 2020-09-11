@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-07-02 18:01:43
+Last modified on 2020-09-11 17:00:17
 Python 2.7.16
 v0.1
 
@@ -31,10 +31,10 @@ from mesh import MeshNodeArray
 import numpy as np
 
 # local library
-from .common import transform_point
-from .common import get_orientations_360
-from ...misc.linalg import symmetricize_vector
-from ...misc.linalg import sqrtm
+from .utils import transform_point
+from .utils import get_orientations_360
+from ...utils.linalg import symmetricize_vector
+from ...utils.linalg import sqrtm
 
 
 #%% 2d RVE

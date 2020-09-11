@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 10:34:36
-Last modified on 2020-04-08 14:09:39
+Last modified on 2020-09-11 17:06:31
 Python 3.7.3
 v0.1
 
@@ -18,7 +18,7 @@ Define a general class for material and other classes.
 #%% imports
 
 # local library
-from .common import Property
+from .utils import Property
 from . import material_data  # it is used within eval
 
 

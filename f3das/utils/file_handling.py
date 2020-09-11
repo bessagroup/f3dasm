@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-05-07 18:03:23
+Last modified on 2020-09-11 17:04:47
 Python 3.7.3
 v0.1
 
@@ -22,7 +22,7 @@ import glob
 import numpy as np
 
 # local library
-from .misc import get_int_number_from_str
+from .utils import get_int_number_from_str
 
 
 #%% function definition
