@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-10 11:23:13
+Last modified on 2020-09-11 09:57:42
 Python 2.7.16
 v0.1
 
@@ -17,6 +17,7 @@ import time
 import pickle
 import multiprocessing as mp
 import traceback
+import shutil
 
 # third party
 import numpy as np
@@ -113,7 +114,6 @@ def run_simuls(example_name, n_simuls=None, n_cpus=1,
         Specially useful for debugging.
     '''
 
-    # TODO: add iteration possibility: rerun error_simuls?
     # TODO: zip odb
 
     # create analyses dir
@@ -222,6 +222,16 @@ def _create_DoE_sim_info(example_name, points, simuls_dir_name='analyses',
     # variables to save
     abstract_model = sim_info['abstract_model']
 
+    # deal with subroutines
+    subroutine_names = []
+    for sim_info_ in sim_info['sim_info'].values():
+        subroutine_name = sim_info_['job_info'].get('userSubroutine', None)
+        if subroutine_name:
+            subroutine_loc_ls = subroutine_name.split('.')
+            subroutine_loc = '{}.{}'.format(os.path.join(*subroutine_loc_ls[:-1]), subroutine_loc_ls[-1])
+            subroutine_names.append((subroutine_loc, '.'.join(subroutine_loc_ls[-2::])))
+            sim_info_['job_info']['userSubroutine'] = subroutine_names[-1][1]
+
     # create pkl files
     dir_full_path = os.path.join(example_name, simuls_dir_name)
     for point in points:
@@ -249,6 +259,11 @@ def _create_DoE_sim_info(example_name, points, simuls_dir_name='analyses',
 
         with open(os.path.join(doe_dir_name, 'simul.pkl'), 'wb') as file:
             pickle.dump(data, file, protocol=2)
+
+        # copy subroutine
+        if subroutine_names:
+            for subroutine_name in subroutine_names:
+                shutil.copyfile(subroutine_name[0], os.path.join(doe_dir_name, subroutine_name[1]))
 
 
 def _run_simuls_sequentially(example_name, points, wait_time=0,
@@ -395,6 +410,7 @@ def convert_dict_unicode_str(pickled_dict):
     for key, value in pickled_dict.items():
         value = _set_converter_flow(value)
         new_dict[str(key)] = value
+        print(key, value)
 
     return new_dict
 
@@ -420,6 +436,6 @@ def _set_converter_flow(value):
     elif type(value) in [OrderedDict, dict]:
         value = convert_dict_unicode_str(value)
     elif type(value) in [list, tuple, set]:
-        value = convert_iterable_unicode_str(iter)
+        value = convert_iterable_unicode_str(value)
 
     return value
