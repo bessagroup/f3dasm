@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-11 17:14:33
+Last modified on 2020-09-15 09:40:47
 Python 2.7.16
 v0.1
 
@@ -18,7 +18,7 @@ is low).
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqus import session
@@ -39,13 +39,7 @@ from ..modelling.model import WrapperModel
 from f3das.utils.file_handling import get_unique_file_by_ext
 
 
-#%% object definition
-
-# TODO: add error file
-
-# TODO: run model that takes into account F3DAS and non-F3DAS scripts
-# TODO: need to understand where to put non-F3DAS scripts due to F3DAS installation
-
+# object definition
 
 class RunModel(object):
 
@@ -61,7 +55,7 @@ class RunModel(object):
         self.run_time = None
         self.post_processing_time = None
         # read data
-        data = self._read_data()
+        self.filename, data = _read_data()
         self.pickle_dict = data
         # store variables
         # TODO: transform inputs here?
@@ -100,17 +94,6 @@ class RunModel(object):
 
         # delete unnecessary files
         self._clean_dir()
-
-    def _read_data(self):
-
-        # get pickle filename
-        self.filename = get_unique_file_by_ext(ext='.pkl')
-
-        # read file
-        with open(self.filename, 'rb') as file:
-            data = convert_dict_unicode_str(pickle.load(file))
-
-        return data
 
     def _import_abstract_models(self, abstract_models, n_sims):
 
@@ -225,6 +208,17 @@ class RunModel(object):
                     except:
                         pass
 
+def _read_data():
+
+    # get pickle filename
+    filename = get_unique_file_by_ext(ext='.pkl')
+
+    # read file
+    with open(filename, 'rb') as file:
+        data = convert_dict_unicode_str(pickle.load(file))
+
+    return filename, data
+
 
 if __name__ == '__main__':
 
@@ -242,7 +236,9 @@ if __name__ == '__main__':
             traceback.print_exc(file=file)
 
         # update success flag
-        filename = get_unique_file_by_ext(ext='.pkl')
-        run_model.pickle_dict['success'] = False
+        filename, data = _read_data()
+        with open(filename, 'rb') as file:
+            data = pickle.load(file)
+        data['success'] = False
         with open(filename, 'wb') as file:
-            data = pickle.dump(run_model.pickle_dict, file, protocol=2)
+            data = pickle.dump(data, file, protocol=2)
