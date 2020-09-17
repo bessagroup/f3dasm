@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-15 09:40:47
+Last modified on 2020-09-16 14:38:41
 Python 2.7.16
 v0.1
 
@@ -34,6 +34,7 @@ import traceback
 
 # local library
 from .utils import convert_dict_unicode_str
+from .stats import get_wait_time_from_log
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
 from f3das.utils.file_handling import get_unique_file_by_ext
@@ -52,13 +53,14 @@ class RunModel(object):
         '''
         # performance related
         self.init_time = time.time()
-        self.run_time = None
-        self.post_processing_time = None
+        self.time = OrderedDict([('total', None),
+                                 ('running', OrderedDict()),
+                                 ('waiting', OrderedDict()),
+                                 ('post_processing', None)])
         # read data
         self.filename, data = _read_data()
         self.pickle_dict = data
         # store variables
-        # TODO: transform inputs here?
         self.variables = data['variables']
         self.sim_info = data['sim_info']
         self.keep_odb = data['keep_odb']
@@ -74,20 +76,16 @@ class RunModel(object):
 
     def execute(self):
 
-        # TODO: better control of running time
-
         # instantiate models
         self._instantiate_models()
 
         # run models
-        run_time_init = time.time()
         self._run_models()
-        self.run_time = time.time() - run_time_init
 
         # post-processing
-        pp_time_init = time.time()
+        start_time = time.time()
         self._perform_post_processing()
-        self.post_processing_time = time.time() - pp_time_init
+        self.time['post_processing'] = time.time() - start_time
 
         # dump results
         self._dump_results()
@@ -147,8 +145,16 @@ class RunModel(object):
     def _run_models(self):
 
         for model in self.models.values():
+            start_time = time.time()
+
+            # run and create model
             model.create_model()
             model.write_inp(submit=True)
+
+            # store times
+            wait_time = get_wait_time_from_log(model.job_info['name'])
+            self.time['running'][model.name] = time.time() - start_time - wait_time
+            self.time['waiting'][model.name] = wait_time
 
     def _perform_post_processing(self):
 
@@ -177,11 +183,10 @@ class RunModel(object):
 
         # results readable outside abaqus
         self.pickle_dict['post-processing'] = self.post_processing
-        self.pickle_dict['time'] = {'total_time': time.time() - self.init_time,
-                                    'run_time': self.run_time,
-                                    'post_processing_time': self.post_processing_time}
         # TODO: update success to be less permissive (e.g. subroutine location)
         self.pickle_dict['success'] = True
+        self.time['total'] = time.time() - self.init_time
+        self.pickle_dict['time'] = self.time
         with open(self.filename, 'wb') as file:
             pickle.dump(self.pickle_dict, file, protocol=2)
 
