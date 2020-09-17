@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-09-11 17:04:47
+Last modified on 2020-09-15 17:28:50
 Python 3.7.3
 v0.1
 
@@ -17,6 +17,7 @@ Define functions used to manipulate files.
 # standard library
 import os
 import glob
+from collections import OrderedDict
 
 # third-party
 import numpy as np
@@ -148,3 +149,59 @@ def clean_abaqus_dir(ext2rem=('.abq', '.com', '.log', '.mdl', '.pac', '.rpy',
     if '.rpy' in ext2rem:
         ftype = 'rpy.*'
         rmfile(ftype)
+
+
+class InfoReport(object):
+
+    def __init__(self, sections=None):
+        self.sections = OrderedDict()
+        if sections is not None:
+            for section in sections:
+                if type(section) is str:
+                    self.add_section(section)
+                else:
+                    self.add_section(section[0], section[1])
+
+    class Section(object):
+
+        def __init__(self, name, header=''):
+            self.name = name
+            self.header = header
+            self.info = []
+
+        def add_info(self, info):
+            self.info.append(info)
+
+    def __getitem__(self, attr):
+        return self.sections[attr]
+
+    def append(self, other):
+        for section_name in self.sections.keys():
+            if section_name in other.sections.keys():
+                raise Exception('Sections have the same name')
+
+        self.sections.update(other.sections)
+
+    def add_section(self, name, header=None):
+        self.sections[name] = self.Section(name, header)
+
+    def add_info(self, section, info):
+        self.sections[section].add_info(info)
+
+    def print_info(self, print_headers=True, sections_split='\n'):
+        for i, section in enumerate(self.sections.values()):
+            if print_headers:
+                print(section.header)
+            for info in section.info:
+                print(info)
+            if sections_split and i < len(self.sections) - 1:
+                print(sections_split)
+
+    def write_report(self, file, print_headers=True, sections_split='\n'):
+        for i, section in enumerate(self.sections.values()):
+            if print_headers:
+                file.write('{}\n'.format(section.header))
+            for info in section.info:
+                file.write('{}\n'.format(info))
+            if sections_split and i < len(self.sections) - 1:
+                file.write(sections_split)
