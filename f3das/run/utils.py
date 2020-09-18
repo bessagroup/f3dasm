@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-18 09:06:47
+Last modified on 2020-09-18 09:21:48
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -12,6 +12,7 @@ import os
 import pickle
 
 # local library
+import f3das
 from f3das.utils.file_handling import get_unique_file_by_ext
 from f3das.utils.file_handling import InfoReport
 
@@ -54,8 +55,6 @@ def create_main_file(example_name, doe_variables, points, sim_info,
         Name of main file.
     '''
 
-    # TODO: append F3DAS version
-
     # create data dictionary with required information
     data = {'doe_variables': doe_variables,
             'points': points,
@@ -63,7 +62,8 @@ def create_main_file(example_name, doe_variables, points, sim_info,
             'run_info': {'missing_sims': list(range(len(points))),
                          'running_sims': [],
                          'error_sims': [],
-                         'successful_sims': []}}
+                         'successful_sims': []},
+            'version': f3das.__version__}
 
     # add facultative information
     if fixed_variables is not None:
