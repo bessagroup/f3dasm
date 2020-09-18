@@ -1,14 +1,10 @@
 '''
 Created on 2020-05-05 16:28:59
-Last modified on 2020-09-17 11:38:56
+Last modified on 2020-09-18 08:24:16
 Python 3.7.3
 v0.1
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
-
-Main goal
----------
-
 '''
 
 
@@ -27,6 +23,7 @@ import pandas as pd
 from f3das.utils.file_handling import get_unique_file_by_ext
 from f3das.utils.file_handling import collect_folder_names
 from f3das.utils.utils import get_int_number_from_str
+from f3das.utils.utils import read_pkl_file
 
 # TODO: possibility of entering abaqus for post-processing
 
@@ -122,12 +119,7 @@ def concatenate_data(example_name, pkl_filename='DoE.pkl',
 
     # verify if file already exists
     if os.path.exists(os.path.join(example_name, dict_filename)):
-        try:
-            with gzip.open(os.path.join(example_name, dict_filename), 'rb') as file:
-                data = pickle.load(file)
-        except UnpicklingError:
-            with open(os.path.join(example_name, dict_filename), 'rb') as file:
-                data = pickle.load(file)
+        data = read_pkl_file(os.path.join(example_name, dict_filename))
         data['doe'] = doe
     else:
         data = {'doe': doe,

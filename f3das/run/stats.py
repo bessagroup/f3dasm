@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-17 18:48:40
+Last modified on 2020-09-18 08:25:12
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -21,6 +21,7 @@ import pandas as pd
 from f3das.utils.file_handling import get_unique_file_by_ext
 from f3das.utils.file_handling import InfoReport
 from f3das.utils.plot import BarPlot
+from f3das.utils.utils import read_pkl_file
 
 
 # object definition
@@ -149,8 +150,7 @@ def collect_times(example_name, pkl_filename='DoE.pkl',
 
     # collect times
     if raw_data is not None:
-        with open(os.path.join(example_name, raw_data), 'rb') as file:
-            data = pickle.load(file)
+        data = read_pkl_file(os.path.join(example_name, raw_data))
         data_ = data['raw_data']
         times_sim = pd.Series(
             [value['time'] for value in raw_data.loc[successful_sims].values],
