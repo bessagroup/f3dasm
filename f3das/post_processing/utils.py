@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:28:59
-Last modified on 2020-09-18 08:24:16
+Last modified on 2020-09-18 09:38:18
 Python 3.7.3
 v0.1
 
@@ -32,7 +32,7 @@ from f3das.utils.utils import read_pkl_file
 
 def post_process_sims(pp_fnc, output_variables, example_name,
                       sims_dir_name='analyses', pkl_filename='DoE.pkl',
-                      create_new_file=''):
+                      create_new_file='', raw_data=''):
     '''
     Parameters
     ----------
@@ -58,19 +58,26 @@ def post_process_sims(pp_fnc, output_variables, example_name,
             points.insert(loc=len(column_names), value=None, column=variable)
 
     # get available simulations
-    dir_name = os.path.join(example_name, sims_dir_name)
-    folder_names = collect_folder_names(dir_name)
+    if raw_data:
+        data = read_pkl_file(os.path.join(example_name, raw_data))['raw_data']
+        for i, data_sim in data.iteritems():
+            # get results
+            points.loc[i, output_variables] = pp_fnc(data_sim)
 
-    # get results
-    for folder_name in folder_names:
-        # simulation number
-        i = get_int_number_from_str(folder_name)
-
-        # get data
-        data = get_data(dir_name, folder_name)
+    else:
+        dir_name = os.path.join(example_name, sims_dir_name)
+        folder_names = collect_folder_names(dir_name)
 
         # get results
-        points.loc[i, output_variables] = pp_fnc(data)
+        for folder_name in folder_names:
+            # simulation number
+            i = get_int_number_from_str(folder_name)
+
+            # get data
+            data_sim = get_data(dir_name, folder_name)
+
+            # get results
+            points.loc[i, output_variables] = pp_fnc(data_sim)
 
     # create new pickle file
     pkl_filename_output = create_new_file if create_new_file else pkl_filename

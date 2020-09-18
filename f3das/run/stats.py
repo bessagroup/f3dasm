@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-18 09:07:35
+Last modified on 2020-09-18 09:26:40
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -28,7 +28,7 @@ from f3das.run.utils import get_sims_info
 # object definition
 
 def analyze_times(example_name, pkl_filename='DoE.pkl',
-                  sims_dir_name='analyses', raw_data=None, print_info=True,
+                  sims_dir_name='analyses', raw_data='', print_info=True,
                   report='', show_figures=False):
     '''
     Collects times and performs a simple analsis.
@@ -132,12 +132,12 @@ def analyze_times(example_name, pkl_filename='DoE.pkl',
 
 
 def collect_times(example_name, pkl_filename='DoE.pkl',
-                  sims_dir_name='analyses', raw_data=None):
+                  sims_dir_name='analyses', raw_data=''):
     '''
     Parameters
     ----------
     raw_data : str
-        Name of the concatenated dict file. If not None, then times will be
+        Name of the concatenated dict file. If empty, then times will be
         collected from the raw data pickle file.
 
     Notes
@@ -151,7 +151,7 @@ def collect_times(example_name, pkl_filename='DoE.pkl',
     successful_sims = data['run_info']['successful_sims']
 
     # collect times
-    if raw_data is not None:
+    if raw_data:
         data = read_pkl_file(os.path.join(example_name, raw_data))
         data_ = data['raw_data']
         times_sim = pd.Series(
