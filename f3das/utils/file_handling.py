@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-09-15 17:28:50
+Last modified on 2020-09-18 09:11:37
 Python 3.7.3
 v0.1
 
@@ -190,7 +190,7 @@ class InfoReport(object):
 
     def print_info(self, print_headers=True, sections_split='\n'):
         for i, section in enumerate(self.sections.values()):
-            if print_headers:
+            if print_headers and section.header:
                 print(section.header)
             for info in section.info:
                 print(info)
@@ -199,7 +199,7 @@ class InfoReport(object):
 
     def write_report(self, file, print_headers=True, sections_split='\n'):
         for i, section in enumerate(self.sections.values()):
-            if print_headers:
+            if print_headers and section.header:
                 file.write('{}\n'.format(section.header))
             for info in section.info:
                 file.write('{}\n'.format(info))

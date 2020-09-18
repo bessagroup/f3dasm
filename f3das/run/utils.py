@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-18 08:12:07
+Last modified on 2020-09-18 09:06:47
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -13,6 +13,7 @@ import pickle
 
 # local library
 from f3das.utils.file_handling import get_unique_file_by_ext
+from f3das.utils.file_handling import InfoReport
 
 
 # object definition
@@ -59,7 +60,7 @@ def create_main_file(example_name, doe_variables, points, sim_info,
     data = {'doe_variables': doe_variables,
             'points': points,
             'sim_info': sim_info,
-            'run_info': {'missing_sims': list(range(len('points'))),
+            'run_info': {'missing_sims': list(range(len(points))),
                          'running_sims': [],
                          'error_sims': [],
                          'successful_sims': []}}
@@ -111,11 +112,11 @@ def get_updated_sims_state(example_name, points, sims_dir_name='analyses'):
 
 
 def get_sims_info(example_name, pkl_filename='DoE.pkl',
-                  sims_dir_name='analyses', print_info=True,
-                  report=''):
+                  sims_dir_name='analyses', print_info=True, report=''):
 
     # initialization
-    # TODO: print info and report
+    info = InfoReport(sections=['run_info'])
+    run_info_sec = info['run_info']
 
     # access data
     with open(os.path.join(example_name, pkl_filename), 'rb') as file:
@@ -137,16 +138,28 @@ def get_sims_info(example_name, pkl_filename='DoE.pkl',
 
     # compute information
     if n_running_sims:
-        print('Missing simulations (running): {}/{} ({:.1f}%)'.format(
-            n_running_sims_miss, n_running_sims,
-            n_running_sims_miss / n_running_sims * 100))
-    print('Missing simulations (total): {}/{} ({:.1f}%)'.format(
+        run_info_sec.add_info(
+            'Missing simulations (running): {}/{} ({:.1f}%)'.format(
+                n_running_sims_miss, n_running_sims,
+                n_running_sims_miss / n_running_sims * 100))
+    run_info_sec.add_info('Missing simulations (total): {}/{} ({:.1f}%)'.format(
         n_missing_sims, n_total, n_missing_sims / n_total * 100))
     if n_run:
-        print('With errors: {}/{} ({:.1f}%)'.format(
+        run_info_sec.add_info('With errors: {}/{} ({:.1f}%)'.format(
             n_error_sims, n_run, n_error_sims / n_run * 100))
-        print('Successful: {}/{} ({:.1f}%)'.format(
+        run_info_sec.add_info('Successful: {}/{} ({:.1f}%)'.format(
             n_successful_sims, n_run, n_successful_sims / n_run * 100))
+
+    # print information
+    if print_info:
+        info.print_info(print_headers=False)
+
+    # create report
+    if report:
+        with open(report, 'w') as file:
+            info.write_report(file, print_headers=False)
+
+    return info
 
 
 def update_run_info(example_name, pkl_filename='DoE.pkl',

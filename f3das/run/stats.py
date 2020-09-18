@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-18 08:25:12
+Last modified on 2020-09-18 09:07:35
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -22,6 +22,7 @@ from f3das.utils.file_handling import get_unique_file_by_ext
 from f3das.utils.file_handling import InfoReport
 from f3das.utils.plot import BarPlot
 from f3das.utils.utils import read_pkl_file
+from f3das.run.utils import get_sims_info
 
 
 # object definition
@@ -37,13 +38,14 @@ def analyze_times(example_name, pkl_filename='DoE.pkl',
     show_figures : bool
         It does not work if code runs from a notebook.
     '''
-    # TODO: add info success
 
     # initialization
-    info = InfoReport(sections=[('time', 'Time-related information:')])
     figs = []
 
     # running information
+    info = get_sims_info(example_name, pkl_filename=pkl_filename,
+                         sims_dir_name=sims_dir_name, print_info=False, report='')
+    info.append(InfoReport(sections=[('time', 'Time-related information:')]))
 
     # collect times
     times_df, nested_times_df = collect_times(
@@ -153,7 +155,7 @@ def collect_times(example_name, pkl_filename='DoE.pkl',
         data = read_pkl_file(os.path.join(example_name, raw_data))
         data_ = data['raw_data']
         times_sim = pd.Series(
-            [value['time'] for value in raw_data.loc[successful_sims].values],
+            [value['time'] for value in data_.loc[successful_sims].values],
             index=successful_sims)
     else:
         times_sim = pd.Series(dtype=object, index=successful_sims)
