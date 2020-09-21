@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-10 15:36:46
-Last modified on 2020-09-10 17:56:40
+Last modified on 2020-09-21 08:18:25
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 
@@ -15,6 +15,9 @@ directory, then problems may arise due to version conflicts, because Python
 will use the version on the running directory (even if setup in Python was
 done), whereas Abaqus will use the version installed there. If both versions
 are equal, it will work properly.
+4. The Abaqus uninstall requires the manual removal of the created files. Go to
+"C:\SIMULIA\CAE\2017\win_b64\tools\SMApy\python2.7\Lib\site-packages" (or
+equivalent) and remove f3das-related files.
 
 References
 ----------
@@ -45,6 +48,5 @@ def find_packages(path, prefix):
 
 setup(name='f3das',
       author='L. F. Pereira',
-      version='0.0.1',
-      packages=list(find_packages(f3das.__path__, f3das.__name__)),
-      )
+      version=f3das.__version__,
+      packages=list(find_packages(f3das.__path__, f3das.__name__)),)
