@@ -1,8 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-05-07 16:06:20
-Python 3.7.3
-v0.1
+Last modified on 2020-09-21 11:49:00
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -19,7 +17,7 @@ to get access to f3das).
 '''
 
 
-#%% imports
+# imports
 
 # standard library
 import os
@@ -27,11 +25,12 @@ import argparse
 from itertools import chain
 
 # local library
-from f3das.misc.file_handling import verify_existing_name
-from f3das.misc.file_handling import clean_abaqus_dir
+from f3das.utils.file_handling import verify_existing_name
+from f3das.utils.file_handling import clean_abaqus_dir
+from f3das.utils.file_handling import get_sorted_by_time
 
 
-#%% parse arguments
+# parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument('example_name', type=str,
@@ -39,11 +38,14 @@ parser.add_argument('example_name', type=str,
 parser.add_argument('--gui',
                     action='store_true',
                     help='Abaqus cae interface is opened')
+parser.add_argument('--same_dir',
+                    action='store_true',
+                    help='Uses most recent `simulation` dir as simulation directory')
 
 args = parser.parse_args()
 
 
-#%% find example in subfolders
+# find example in subfolders
 
 folder_names = ['examples']
 example_name = os.path.splitext(args.example_name)[0] + '.py'
@@ -55,25 +57,38 @@ for path, _, filenames in chain.from_iterable([os.walk(folder_name) for folder_n
             break
 
 
-#%%  generate run file
+# create simul dir
+simul_dir_name = 'simulation' if not args.same_dir else get_sorted_by_time('simulation')[-1]
+if not args.same_dir or not os.path.exists(simul_dir_name):
+    simul_dir_name = verify_existing_name(simul_dir_name)
+    os.mkdir(simul_dir_name)
 
-run_filename = verify_existing_name('run.py')
+
+# generate run file
+
+run_filename = verify_existing_name('_temp.py')
 module_name = '.'.join(os.path.normpath(name).split(os.sep))
 lines = ['import runpy',
-         "runpy.run_module('%s', run_name='__main__')" % module_name]
+         'import os',
+         'import sys',
+         'initial_wd = os.getcwd()',
+         'sys.path.append(initial_wd)',
+         "os.chdir('%s')" % simul_dir_name,
+         "runpy.run_module('%s', run_name='__main__')" % module_name,
+         'os.chdir(initial_wd)']
 with open(run_filename, 'w') as f:
     for line in lines:
         f.write(line + '\n')
 
 
-#%% generate example
+# generate example
 
 interface_cmd = 'SCRIPT' if args.gui else 'noGUI'
 command = 'abaqus cae ' + interface_cmd + '=%s' % run_filename
 fail = os.system(command)
 
 
-#%% clean abaqus dir and finalize script
+# clean abaqus dir and finalize script
 
 clean_abaqus_dir()
 os.remove(run_filename)
