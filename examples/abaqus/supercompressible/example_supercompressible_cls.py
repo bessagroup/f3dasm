@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-07 18:04:04
-Last modified on 2020-09-21 11:39:17
+Last modified on 2020-09-21 17:05:59
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -19,9 +19,6 @@ from f3das.abaqus.models.supercompressible import SupercompressibleModel
 
 model_name = 'SUPERCOMPRESSIBLE'
 
-submit = True
-perform_post_processing = False  # gui must be open
-
 # variable definition
 n_longerons = 3
 bottom_diameter = 100.
@@ -29,8 +26,12 @@ top_diameter = 82.42
 pitch = 1.15223e2
 young_modulus = 3.5e3
 shear_modulus = 1.38631e3
-cross_section_props = {'type': 'circular',
-                       'd': 10}
+# cross_section_props = {'type': 'circular',
+#                        'd': 10}
+cross_section_props = {'area': 1.00004e+01,
+                       'Ixx': 5.24157e+01,
+                       'Iyy': 7.50000e+01,
+                       'J': 2.50000e+02}
 imperfection = 7.85114e-02
 
 
@@ -70,14 +71,13 @@ riks_model.write_inp(submit=True)
 
 # post-processing (gui must be opened)
 
-if perform_post_processing:
-    # buckling results
-    print('Linear buckling results')
-    print(riks_model.previous_model_results)
+# buckling results
+print('\nLinear buckling results')
+print(riks_model.previous_model_results)
 
-    # riks results
-    print('\n\nRiks results')
-    odb_name = '%s.odb' % riks_model.job_name
-    odb = session.openOdb(name=odb_name)
-    riks_results = riks_model.perform_post_processing(odb)
-    print(riks_results)
+# riks results
+print('\nRiks results')
+odb_name = '%s.odb' % riks_model.job_info['name']
+odb = session.openOdb(name=odb_name)
+riks_results = riks_model.perform_post_processing(odb)
+print(riks_results)
