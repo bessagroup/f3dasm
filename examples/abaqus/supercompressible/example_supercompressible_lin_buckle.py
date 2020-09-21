@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-20 21:34:22
-Last modified on 2020-05-08 13:52:56
-Python 2.7.16
-v0.1
+Last modified on 2020-09-21 11:33:28
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -12,7 +10,7 @@ Show how to use supercompressible model (linear buckle analysis).
 '''
 
 
-#%% imports
+# imports
 
 # local library
 from f3das.abaqus.models.supercompressible import SupercompressibleModel
@@ -22,8 +20,9 @@ from f3das.abaqus.models.supercompressible import SupercompressibleModel
 
 model_name = 'SUPERCOMPRESSIBLE'
 sim_type = 'lin_buckle'
-job_name = 'Simul_%s_%s' % (model_name, sim_type)
-job_description = ''
+
+job_info = {'name': 'Simul_{}_{}'.format(model_name, sim_type),
+            'description': ''}
 submit = True
 
 # variable definition
@@ -38,13 +37,12 @@ cross_section_props = {'type': 'circular',
 imperfection = 7.85114e-02
 
 
-#%% create model
+# create model
 
 # create object
-model = SupercompressibleModel(model_name, sim_type, job_name, n_longerons,
+model = SupercompressibleModel(model_name, job_info, sim_type, n_longerons,
                                bottom_diameter, top_diameter, pitch, young_modulus,
-                               shear_modulus, cross_section_props,
-                               job_description=job_description)
+                               shear_modulus, cross_section_props)
 
 
 # create model
