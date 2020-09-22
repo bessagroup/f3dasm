@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-21 11:55:42
-Last modified on 2020-09-21 18:58:47
+Last modified on 2020-09-22 07:57:56
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 
@@ -40,7 +40,7 @@ import numpy as np
 def lin_buckle(name, job_name, n_longerons, bottom_diameter, top_diameter,
                pitch, young_modulus, shear_modulus, cross_section_props,
                twist_angle=0., transition_length_ratio=1., n_storeys=1,
-               power=1., include_name='include_mesh'):
+               power=1., include_name='include_mesh', **kwargs):
 
     # create model
     model = mdb.Model(name=name)
@@ -129,10 +129,10 @@ def post_process_lin_buckle(odb):
     #
     if isinstance(UR_SubField.values[0].data, float):
         # Then variable is a scalar
-        max_UR = np.ones((numFrames)) * (-1e20)
+        max_UR = np.zeros((numFrames))
     else:
         # Variable is an array
-        max_UR = np.ones((numFrames, len(UR_SubField.values[0].data))) * (-1e20)
+        max_UR = np.zeros((numFrames, len(UR_SubField.values[0].data)))
 
     for iFrame_step in range(numFrames):
         # Read frame
@@ -144,14 +144,14 @@ def post_process_lin_buckle(odb):
         if isinstance(UR_SubField.values[0].data, float):
             # Then variable is a scalar:
             for strainValue in UR_SubField.values:
-                if (strainValue.data > max_UR[iFrame_step]):
+                if abs(strainValue.data) > abs(max_UR[iFrame_step]):
                     max_UR[iFrame_step] = abs(strainValue.data[0])
                 #
         else:
             # Variable is an array:
             for strainValue in UR_SubField.values:
                 for j in range(0, len(UR_SubField.values[0].data)):
-                    if (strainValue.data[j] > max_UR[iFrame_step, j]):
+                    if abs(strainValue.data[j]) > abs(max_UR[iFrame_step, j]):
                         max_UR[iFrame_step, j] = abs(strainValue.data[j])
                         max_UR[iFrame_step, j] = abs(strainValue.data[j])
         maxDisp[iFrame_step] = max(max_UR[iFrame_step, :])

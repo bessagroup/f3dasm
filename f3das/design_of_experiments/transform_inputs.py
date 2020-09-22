@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 22:16:33
-Last modified on 2020-09-07 09:04:33
+Last modified on 2020-09-22 07:18:03
 Python 3.7.3
 v0.1
 
@@ -58,13 +58,13 @@ def transform_inputs_supercompressible(inputs):
         new_inputs[var_name] = variable
 
     # add section variables
-    if inputs['section'] == 'circular':
+    if inputs.get('section', 'generalized') == 'circular':
         new_inputs['cross_section_props'] = {'type': inputs['section'],
                                              'd': new_inputs['d']}
         del new_inputs['d']
 
     else:
-        new_inputs['cross_section_props'] = {'type': inputs['section'],
+        new_inputs['cross_section_props'] = {'type': inputs.get('section', 'generalized'),
                                              'Ixx': new_inputs['Ixx'],
                                              'Iyy': new_inputs['Iyy'],
                                              'J': new_inputs['J'],

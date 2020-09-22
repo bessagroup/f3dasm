@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-18 12:30:35
+Last modified on 2020-09-22 07:43:42
 Python 2.7.16
 v0.1
 
@@ -172,6 +172,7 @@ def _create_DoE_sim_info(example_name, points, sims_dir_name='analyses',
 
     # variables to save
     abstract_model = sim_info['abstract_model']
+    post_processing_fnc = sim_info.get('post_processing_fnc', None)
 
     # deal with subroutines
     subroutine_names = []
@@ -206,6 +207,7 @@ def _create_DoE_sim_info(example_name, points, sims_dir_name='analyses',
 
         # create and dump dict
         data = OrderedDict({'abstract_model': abstract_model,
+                            'post_processing_fnc': post_processing_fnc,
                             'variables': variables,
                             'sim_info': sim_info['sim_info'],
                             'keep_odb': keep_odb,

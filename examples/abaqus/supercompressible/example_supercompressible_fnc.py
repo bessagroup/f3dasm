@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-21 13:50:32
-Last modified on 2020-09-21 19:01:40
+Last modified on 2020-09-22 07:10:38
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -53,6 +53,7 @@ modelJob.waitForCompletion()
 odb_name = '%s.odb' % job_info['name']
 odb = session.openOdb(name=odb_name)
 data_lin_buckle = post_process_lin_buckle(odb)
+print('\nLinear buckling results')
 print(data_lin_buckle)
 
 
@@ -71,4 +72,5 @@ modelJob.waitForCompletion()
 odb_name = '%s.odb' % job_info['name']
 odb = session.openOdb(name=odb_name)
 data_riks = post_process_riks(odb)
+print('\nRiks results')
 print(data_riks)

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-09-21 16:31:37
+Last modified on 2020-09-22 07:33:06
 Python 2.7.16
 v0.1
 
@@ -21,6 +21,7 @@ Notes
 # abaqus
 from abaqus import mdb, backwardCompatibility
 from abaqusConstants import OFF
+from abaqus import session
 
 # standard library
 import os
@@ -204,8 +205,10 @@ class WrapperModel(AbstractModel):
         self.previous_model = previous_model
         self.previous_model_results = previous_model_results
         self.kwargs = kwargs
-        if job_name in inspect.getfullargspec(abstract_model).args:
+        if 'job_name' in inspect.getargspec(abstract_model).args:
             self.kwargs['job_name'] = self.job_info['name']
+        if 'name' in inspect.getargspec(abstract_model).args:
+            self.kwargs['name'] = name
 
     def create_model(self):
         # get previous model results
@@ -223,9 +226,10 @@ class WrapperModel(AbstractModel):
     def write_inp(self, submit=False):
         # create inp
         if os.path.exists('{}.inp'.format(self.job_info['name'])):
+            job_info = {key: value for key, value in self.job_info.items() if key != 'description'}
             modelJob = mdb.JobFromInputFile(
                 inputFileName='{}.inp'.format(self.job_info['name']),
-                **self.job_info)
+                **job_info)
         else:
             modelJob = mdb.Job(model=self.name, **self.job_info)
             modelJob.writeInput(consistencyChecking=OFF)
