@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-09-18 09:11:37
-Python 3.7.3
-v0.1
+Last modified on 2020-09-18 17:14:01
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -12,9 +10,10 @@ Define functions used to manipulate files.
 '''
 
 
-#%% imports
+# imports
 
 # standard library
+from __future__ import print_function
 import os
 import glob
 from collections import OrderedDict
@@ -26,7 +25,7 @@ import numpy as np
 from .utils import get_int_number_from_str
 
 
-#%% function definition
+# function definition
 
 def collect_folder_names(sim_dir, sim_numbers=None):
     '''

@@ -1,6 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-09-21 11:49:00
+Last modified on 2020-09-21 12:00:21
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -58,7 +58,7 @@ for path, _, filenames in chain.from_iterable([os.walk(folder_name) for folder_n
 
 
 # create simul dir
-simul_dir_name = 'simulation' if not args.same_dir else get_sorted_by_time('simulation')[-1]
+simul_dir_name = 'simulation' if not args.same_dir or not os.path.exists('simulation') else get_sorted_by_time('simulation')[-1]
 if not args.same_dir or not os.path.exists(simul_dir_name):
     simul_dir_name = verify_existing_name(simul_dir_name)
     os.mkdir(simul_dir_name)

@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-05-07 20:34:21
-Python 2.7.16
-v0.1
+Last modified on 2020-09-21 15:24:16
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,7 +19,7 @@ Structures 139-140: 174-188.
 '''
 
 
-#%% imports
+# imports
 
 from __future__ import division
 
@@ -51,7 +49,7 @@ from f3das.material.material import Material
 from f3das.abaqus.material.abaqus_materials import IsotropicMaterial
 
 
-#%% Bessa, 2018 (TRAC boom)
+# Bessa, 2018 (TRAC boom)
 
 class TRACBoom(object):
 
@@ -369,7 +367,7 @@ class TRACBoom(object):
         return 'Z%s_REF_POINT' % position
 
 
-#%% Bessa, 2019 (supercompressible metamaterial)
+# Bessa, 2019 (supercompressible metamaterial)
 
 class Supercompressible(object):
 
@@ -623,12 +621,11 @@ class Supercompressible(object):
 
         # assign the right method for the creation of the beam section
         # TODO: add more particular sections
-        # TODO: make generalized section default
         create_beam_section = {'generalized': self._create_generalized_beam_section,
                                'circular': self._create_circular_section}
 
         # create profile and beam section
-        create_beam_section[self.cross_section_props['type']](
+        create_beam_section[self.cross_section_props.get('type', 'generalized')](
             model, profile_name, section_name)
 
         # section assignment

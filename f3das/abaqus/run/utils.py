@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-18 08:10:47
+Last modified on 2020-09-18 12:30:35
 Python 2.7.16
 v0.1
 
@@ -269,7 +269,6 @@ def convert_dict_unicode_str(pickled_dict):
     for key, value in pickled_dict.items():
         value = _set_converter_flow(value)
         new_dict[str(key)] = value
-        print(key, value)
 
     return new_dict
 

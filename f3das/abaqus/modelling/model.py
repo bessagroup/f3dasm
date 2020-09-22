@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-09-10 11:35:50
+Last modified on 2020-09-21 16:31:37
 Python 2.7.16
 v0.1
 
@@ -23,11 +23,13 @@ from abaqus import mdb, backwardCompatibility
 from abaqusConstants import OFF
 
 # standard library
+import os
 import pickle
 import abc
+import inspect
 
 
-#%% object definition
+# object definition
 
 class AbstractModel(object):
     __metaclass__ = abc.ABCMeta
@@ -56,7 +58,7 @@ class AbstractModel(object):
         # create file
         if create_file:
             data = {'model': self}
-            filename = '%s.pickle' % self.job_info['name']
+            filename = '%s.pkl' % self.job_info['name']
             with open(filename, 'wb') as f:
                 pickle.dump(data, f)
 
@@ -194,21 +196,39 @@ class BasicModel(AbstractModel):
 class WrapperModel(AbstractModel):
 
     def __init__(self, name, job_info, abstract_model, post_processing_fnc=None,
-                 previous_model=None, previous_model_results=None, **kwargs):
+                 previous_model=None, previous_model_results=None,
+                 **kwargs):
         AbstractModel.__init__(self, name, job_info)
         self.abstract_model = abstract_model
         self.post_processing_fnc = post_processing_fnc
         self.previous_model = previous_model
         self.previous_model_results = previous_model_results
         self.kwargs = kwargs
+        if job_name in inspect.getfullargspec(abstract_model).args:
+            self.kwargs['job_name'] = self.job_info['name']
 
     def create_model(self):
+        # get previous model results
+        if self.previous_model_results is None and self.previous_model:
+            # access odb
+            odb_name = '%s.odb' % self.previous_model.job_info['name']
+            odb = session.openOdb(name=odb_name)
+            self.previous_model_results = self.previous_model.perform_post_processing(odb)
+            odb.close()
+            self.kwargs['previous_model_results'] = self.previous_model_results
+
+        # create model
         self.abstract_model(**self.kwargs)
 
     def write_inp(self, submit=False):
         # create inp
-        modelJob = mdb.Job(model=self.name, **self.job_info)
-        modelJob.writeInput(consistencyChecking=OFF)
+        if os.path.exists('{}.inp'.format(self.job_info['name'])):
+            modelJob = mdb.JobFromInputFile(
+                inputFileName='{}.inp'.format(self.job_info['name']),
+                **self.job_info)
+        else:
+            modelJob = mdb.Job(model=self.name, **self.job_info)
+            modelJob.writeInput(consistencyChecking=OFF)
 
         # submit
         if submit:
