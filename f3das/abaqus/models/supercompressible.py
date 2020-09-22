@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-11 17:02:19
+Last modified on 2020-09-21 17:12:03
 Python 2.7.16
 v0.1
 
@@ -24,8 +24,8 @@ from abaqusConstants import (BUCKLING_MODES, ON, HARD, OFF, FINITE)
 import numpy as np
 
 # local library
-from ..modelling.model import BasicModel
 from ..geometry.structures import Supercompressible
+from ..modelling.model import BasicModel
 from ..modelling.step import BuckleStep
 from ..modelling.step import StaticRiksStep
 from ..modelling.bcs import DisplacementBC
@@ -45,6 +45,7 @@ from ..post_processing.nodes_and_elements import get_nodes_given_set_names
 # supercompressible metamaterial
 
 # TODO: create a model common to TRAC boom (it is the same strategy); ImperfectionModel
+# TODO: if not coilable, then do not perform riks?
 
 class SupercompressibleModel(BasicModel):
 
@@ -343,7 +344,7 @@ class SupercompressibleModel(BasicModel):
                 odb, nodes, variable)[0]
 
         # add information if not generalized section
-        if supercompressible.cross_section_props['type'] != 'generalized':
+        if supercompressible.cross_section_props.get('type', 'generalized') != 'generalized':
             step = odb.steps[odb.steps.keys()[-1]]
             frames = step.frames
             elemSet = odb.rootAssembly.elementSets[' ALL ELEMENTS']

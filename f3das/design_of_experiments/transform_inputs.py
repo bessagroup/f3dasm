@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 22:16:33
-Last modified on 2020-05-07 21:44:29
+Last modified on 2020-09-07 09:04:33
 Python 3.7.3
 v0.1
 
@@ -8,7 +8,7 @@ v0.1
 
 Main goal
 ---------
-Manipute inputs.
+Manipulate inputs.
 '''
 
 
@@ -21,7 +21,7 @@ def transform_inputs_supercompressible(inputs):
     inputs : dict
         Inputs.
     section : str
-        Cross-section geometry. Possible values are 'circular'
+        Cross-section geometry. Possible values are 'circular'.
     '''
     # TODO: generalize?
 
