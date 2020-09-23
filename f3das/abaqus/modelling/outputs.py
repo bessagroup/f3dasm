@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 18:00:10
-Last modified on 2020-04-21 18:47:32
+Last modified on 2020-09-22 14:45:29
 Python 2.7.16
 v0.1
 
@@ -53,8 +53,8 @@ class Output(object):
 
         set_name_split = set_name.split('.')
         if len(set_name_split) > 1:
-            instace_name, set_name = set_name_split
-            abaqusSet = model.rootAssembly.instances[instace_name].sets[set_name]
+            instance_name, set_name = set_name_split
+            abaqusSet = model.rootAssembly.instances[instance_name].sets[set_name]
         else:
             abaqusSet = model.rootAssembly.sets[set_name]
 

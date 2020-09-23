@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-09-11 15:36:02
+Last modified on 2020-09-22 16:25:07
 Python 3.7.3
 v0.1
 
@@ -12,14 +12,14 @@ Main goal
 '''
 
 
-#%% imports
+# imports
 
 # third-party
 import numpy as np
 from scipy import interpolate, integrate, signal
 
 
-#%% function definition
+# function definition
 
 def get_results(data, max_strain=.02, additional_strain_thresh=.05,
                 n_interpolation=10000):

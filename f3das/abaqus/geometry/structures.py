@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-09-21 15:24:16
+Last modified on 2020-09-22 13:22:04
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -768,14 +768,13 @@ class Supercompressible(object):
         return datums
 
     def _get_local_datum_name(self, i_vertex):
-        return 'LOCAL_DATUM_%i' % i_vertex
+        return 'LOCAL_DATUM_{}'.format(i_vertex)
 
     def _get_longeron_name(self, i_vertex):
-        return 'LONGERON-%i' % i_vertex
+        return 'LONGERON-{}'.format(i_vertex)
 
     def _get_joint_name(self, i_storey, i_vertex):
-        return 'JOINT-%i-%i' % (i_storey, i_vertex)
+        return 'JOINT-{}-{}'.format(i_storey, i_vertex)
 
     def _get_ref_point_name(self, position):
-
-        return 'Z%s_REF_POINT' % position
+        return 'Z{}_REF_POINT'.format(position)

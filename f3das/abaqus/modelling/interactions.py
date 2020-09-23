@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-21 11:11:26
-Last modified on 2020-04-21 16:07:13
+Last modified on 2020-09-22 14:35:15
 Python 2.7.16
 v0.1
 
@@ -49,8 +49,8 @@ class Interaction(object):
 
         surf_name_split = surf_name.split('.')
         if len(surf_name_split) > 1:
-            instace_name, surf_name = surf_name_split
-            surf = model.rootAssembly.instances[instace_name].surfaces[surf_name]
+            instance_name, surf_name = surf_name_split
+            surf = model.rootAssembly.instances[instance_name].surfaces[surf_name]
         else:
             surf = model.rootAssembly.surfaces[surf_name]
 

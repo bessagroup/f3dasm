@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-21 17:12:03
+Last modified on 2020-09-22 16:17:46
 Python 2.7.16
 v0.1
 
@@ -249,18 +249,17 @@ class SupercompressibleModel(BasicModel):
 
         # initialization
         previous_file_name = self.previous_model.job_info['name']
-        text = ['*IMPERFECTION, FILE=%s, STEP=1' % (previous_file_name)]
+        text = ['*IMPERFECTION, FILE={}, STEP=1'.format(previous_file_name)]
 
         # get amplification factors
         max_disps = self._get_disps_for_riks()
         amp_factors = []
         for amp, max_disp in zip(self.mode_amplitudes, max_disps[1:]):
-
             amp_factors.append(amp / max_disp)
 
         # add imperfection values
         for i, amp_factor in enumerate(amp_factors):
-            text.append('%i, %f' % (i + 1, amp_factor))
+            text.append('{}, {}'.format(i + 1, amp_factor))
 
         return AddToInp(text, self.job_info['name'], section='INTERACTIONS')
 
@@ -333,7 +332,7 @@ class SupercompressibleModel(BasicModel):
         data = {}
         supercompressible = self.geometry_objects[0]
 
-        # reference points data
+        # reference point data
         position = supercompressible.ref_point_positions[-1]
         variables = ['U', 'UR', 'RF', 'RM']
         set_names = [supercompressible._get_ref_point_name(position)]

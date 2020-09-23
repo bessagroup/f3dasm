@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 18:01:32
-Last modified on 2020-04-15 18:44:38
+Last modified on 2020-09-22 14:59:16
 Python 2.7.16
 v0.1
 
@@ -40,7 +40,7 @@ class AddToInp(object):
 
         # insert text
         for line in reversed(self.text):
-            lines.insert(insert_line, '%s\n' % line)
+            lines.insert(insert_line, '{}\n'.format(line))
 
         # write text
         with open(self.filename, 'w') as f:
@@ -53,7 +53,7 @@ class AddToInp(object):
             lines = f.readlines()
 
         # find section line
-        line_cmp = '** %s\n' % self.section.upper()
+        line_cmp = '** {}\n'.format(self.section.upper())
         for i, line in reversed(list(enumerate(lines))):
             if line == line_cmp:
                 break

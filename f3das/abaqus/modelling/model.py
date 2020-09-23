@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-09-22 07:33:06
+Last modified on 2020-09-23 07:02:48
 Python 2.7.16
 v0.1
 
@@ -205,20 +205,39 @@ class WrapperModel(AbstractModel):
         self.previous_model = previous_model
         self.previous_model_results = previous_model_results
         self.kwargs = kwargs
-        if 'job_name' in inspect.getargspec(abstract_model).args:
+        # deal with model and job names
+        self.abstract_model_args = inspect.getargspec(abstract_model).args
+        if 'job_name' in self.abstract_model_args:
             self.kwargs['job_name'] = self.job_info['name']
-        if 'name' in inspect.getargspec(abstract_model).args:
+        if 'name' in self.abstract_model_args:
             self.kwargs['name'] = name
+        elif 'model_name' in self.abstract_model_args:
+            self.kwargs['model_name'] = name
+        # avoid errors due to excessive arg definition
+        for key, value in self.kwargs.items():
+            if key not in self.abstract_model_args:
+                del self.kwargs[key]
 
     def create_model(self):
+        '''
+        Notes
+        -----
+        * Results of previous models (cases for which there's consecutive
+        simulations) can be passed with the argument `previous_model_results`.
+        Additionally, you can pass the previous model job name using
+        `previous_model_job_name`.
+        '''
         # get previous model results
         if self.previous_model_results is None and self.previous_model:
             # access odb
-            odb_name = '%s.odb' % self.previous_model.job_info['name']
+            odb_name = '{}.odb'.format(self.previous_model.job_info['name'])
             odb = session.openOdb(name=odb_name)
             self.previous_model_results = self.previous_model.perform_post_processing(odb)
             odb.close()
             self.kwargs['previous_model_results'] = self.previous_model_results
+            # verify if previous model job name should be passed
+            if 'previous_model_job_name' in self.abstract_model_args:
+                self.kwargs['previous_model_job_name'] = self.previous_model.job_info['name']
 
         # create model
         self.abstract_model(**self.kwargs)
