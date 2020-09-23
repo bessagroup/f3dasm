@@ -1,17 +1,8 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-21 08:16:08
+Last modified on 2020-09-23 17:07:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
-
-Notes
------
-1. See notes in `setup_abaqus.py`.
-2. Prefer the use of environments, instead of installing in your main Python
-installation.
-2. The uninstall requires the manual remove of the created files. Go to your
-Python installation (env folder if the case) and remove f3das folder. Open
-'easy-install.pth' and delete any reference to f3das.
 '''
 
 # imports
@@ -34,7 +25,7 @@ setup(
     version=f3das.__version__,
     author="L. F. Pereira",
     author_email="lfpereira@fe.up.pt",
-    packages=find_packages(exclude=['abaqus_scripts*', 'examples*']),
+    packages=find_packages(include=['f3das', 'f3das.*']),
     install_requires=install_requires,
     description="Framework for Data-Driven Design and Analysis of Structures.",
     classifiers=["Programming Language :: Python :: 3",
