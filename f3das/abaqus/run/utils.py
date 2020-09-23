@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-22 07:43:42
+Last modified on 2020-09-23 17:45:06
 Python 2.7.16
 v0.1
 
@@ -23,6 +23,7 @@ import shutil
 import numpy as np
 
 # local library
+import f3das
 from f3das.utils.file_handling import verify_existing_name
 from f3das.run.utils import get_updated_sims_state
 
@@ -91,20 +92,25 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
     with open(os.path.join(example_name, pkl_filename), 'wb') as file:
         pickle.dump(data, file)
 
+    # create _temp folder and copy f3das
+    temp_dir_name = '_temp'
+    _create_temp_dir(temp_dir_name)
+
+    # run in parallel?
+    sim_info = data['sim_info']['sim_info']
+    n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
+    n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
+
+    # create pkl for each doe
+    _create_DoE_sim_info(example_name, points, sims_dir_name=sims_dir_name,
+                         pkl_filename=pkl_filename, keep_odb=keep_odb,
+                         dump_py_objs=dump_py_objs)
+
     try:
-
-        # run in parallel?
-        sim_info = data['sim_info']['sim_info']
-        n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
-        n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
-
-        # create pkl for each doe
-        _create_DoE_sim_info(example_name, points, sims_dir_name=sims_dir_name,
-                             pkl_filename=pkl_filename, keep_odb=keep_odb,
-                             dump_py_objs=dump_py_objs)
-
+        # TODO: find a way to verify license and don't use try
         # run
         if n_cpus > 1:
+            # TODO: move inside a function
 
             # distribute points
             points = sorted(points)
@@ -116,12 +122,13 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
             pool = mp.Pool(n_cpus)
 
             # run sims
+            # TODO: pool reserve cpus?
             for i, points in enumerate(points_cpus):
                 wait_time = i * 5
                 pool.apply_async(_run_sims_sequentially,
                                  args=(example_name, points, wait_time,
                                        run_module_name, sims_dir_name,
-                                       abaqus_path, gui))
+                                       abaqus_path, gui, temp_dir_name))
             # close pool and wait process completion
             pool.close()
             pool.join()
@@ -130,11 +137,16 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
             _run_sims_sequentially(example_name, points,
                                    run_module_name=run_module_name,
                                    sims_dir_name=sims_dir_name,
-                                   abaqus_path=abaqus_path, gui=gui)
+                                   abaqus_path=abaqus_path, gui=gui,
+                                   temp_dir_name=temp_dir_name)
     except:
         traceback.print_exc()
 
     finally:
+
+        # delete _temp dir
+        shutil.rmtree(temp_dir_name)
+
         # based on points, reupdate data['run_info']
         error_sims_, successful_sims_ = get_updated_sims_state(
             example_name, points, sims_dir_name)
@@ -226,7 +238,7 @@ def _create_DoE_sim_info(example_name, points, sims_dir_name='analyses',
 def _run_sims_sequentially(example_name, points, wait_time=0,
                            run_module_name='f3das.abaqus.run.run_model',
                            sims_dir_name='analyses', abaqus_path='abaqus',
-                           gui=False):
+                           gui=False, temp_dir_name='_temp'):
     '''
 
     Parameters
@@ -245,6 +257,7 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
              'import sys',
              'initial_wd = os.getcwd()',
              'sys.path.append(initial_wd)',
+             "sys.path.append(os.path.join(initial_wd, '%s'))" % temp_dir_name,
              'points = %s' % points,
              "sim_dir = r'%s'" % os.path.join(example_name, sims_dir_name),
              'for point in points:',
@@ -265,6 +278,15 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
 
 
 # function definition
+
+def _create_temp_dir(temp_dir_name='_temp'):
+    if not os.path.exists(temp_dir_name):
+        os.mkdir(temp_dir_name)
+    new_f3das_dir = os.path.join(temp_dir_name, 'f3das')
+    if os.path.exists(new_f3das_dir):
+        shutil.rmtree(new_f3das_dir)
+    shutil.copytree(f3das.__path__[0], new_f3das_dir)
+
 
 def convert_dict_unicode_str(pickled_dict):
     new_dict = OrderedDict() if type(pickled_dict) is OrderedDict else {}
