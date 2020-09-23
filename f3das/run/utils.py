@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-18 09:21:48
+Last modified on 2020-09-23 07:48:10
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -40,10 +40,12 @@ def create_main_file(example_name, doe_variables, points, sim_info,
             * 'abstract_model': class that must be called inside the run model.
             * 'sim_info': OrderedDict with all the information required to
             instantiate a model (but that is not a model geometric or material
-            variable)
+            variable, i.e. not in `doe_variables`, `fixed_variables` or
+             `additional_variables`).
             * 'transform_inputs': function that takes DoE point, fixed variables
             and additional variables and create a dictionary that is used as
             input of the model instance.
+        In order to avoid errors, `create_sim_info` can be used.
     fixed_variables : dict
         Model input variables that are kept fix during the design of experiments.
     additional_variables: dict
@@ -77,6 +79,43 @@ def create_main_file(example_name, doe_variables, points, sim_info,
     os.mkdir(example_name)
     with open(os.path.join(example_name, pkl_filename), 'wb') as file:
         pickle.dump(data, file)
+
+
+def create_sim_info(abstract_model, sim_info, post_processing_fnc=None,
+                    transform_inputs=None):
+    '''
+    It shows all the keys that can be used when creating simulation information.
+
+    Parameters
+    ----------
+    abstract_model : str or array of str
+        Objects used to create numerical models.
+    sim_info : dict
+        OrderedDict with all the information required to instantiate a model
+        (but that is not a model geometric or material variable, i.e. not in
+        `doe_variables`, `fixed_variables` or `additional_variables`).
+        `job_info` is mandatory (minimum information required: 'name').
+    post_processing_fnc : str or array of str
+        Objects used to post-process numerical models.
+    transform_inputs : fnc
+        Interface function to transform inputs from raw to the name required
+        by the model.
+    '''
+
+    # verification of job info
+    for value in sim_info.values():
+        if 'job_info' not in value.keys():
+            raise Exception('Add job info to simulation information')
+        if 'name' not in value['job_info'].keys():
+            raise Exception('job info must contain at least `name`')
+
+    # create dict
+    sim_info = {'abstract_model': abstract_model,
+                'sim_info': sim_info,
+                'post_processing_fnc': post_processing_fnc,
+                'transform_inputs': transform_inputs}
+
+    return sim_info
 
 
 def get_updated_sims_state(example_name, points, sims_dir_name='analyses'):
