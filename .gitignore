@@ -23,5 +23,6 @@
 # ignore all the directories __pychache__
 **/__pycache__/
 simulation*/
+**/example_*
 library_UDG_INEGI
 **/*.ipynb_checkpoints
