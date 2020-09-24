@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-22 16:17:46
-Python 2.7.16
-v0.1
+Last modified on 2020-09-24 12:22:02
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -24,22 +22,22 @@ from abaqusConstants import (BUCKLING_MODES, ON, HARD, OFF, FINITE)
 import numpy as np
 
 # local library
-from ..geometry.structures import Supercompressible
-from ..modelling.model import BasicModel
-from ..modelling.step import BuckleStep
-from ..modelling.step import StaticRiksStep
-from ..modelling.bcs import DisplacementBC
-from ..modelling.bcs import ConcentratedForce
-from ..modelling.utils import AddToInp
-from ..modelling.interaction_properties import ContactProperty
-from ..modelling.interaction_properties import NormalBehavior
-from ..modelling.interaction_properties import GeometricProperties
-from ..modelling.interactions import SurfaceToSurfaceContactStd
-from ..modelling.outputs import HistoryOutputRequest
-from ..post_processing.get_data import get_ydata_from_nodeSets_field_output
-from ..post_processing.get_data import get_xydata_from_nodes_history_output
-from ..post_processing.get_data import get_eigenvalues
-from ..post_processing.nodes_and_elements import get_nodes_given_set_names
+from f3das.abaqus.geometry.structures import Supercompressible
+from f3das.abaqus.modelling.model import BasicModel
+from f3das.abaqus.modelling.step import BuckleStep
+from f3das.abaqus.modelling.step import StaticRiksStep
+from f3das.abaqus.modelling.bcs import DisplacementBC
+from f3das.abaqus.modelling.bcs import ConcentratedForce
+from f3das.abaqus.modelling.utils import AddToInp
+from f3das.abaqus.modelling.interaction_properties import ContactProperty
+from f3das.abaqus.modelling.interaction_properties import NormalBehavior
+from f3das.abaqus.modelling.interaction_properties import GeometricProperties
+from f3das.abaqus.modelling.interactions import SurfaceToSurfaceContactStd
+from f3das.abaqus.modelling.outputs import HistoryOutputRequest
+from f3das.abaqus.post_processing.get_data import get_ydata_from_nodeSets_field_output
+from f3das.abaqus.post_processing.get_data import get_xydata_from_nodes_history_output
+from f3das.abaqus.post_processing.get_data import get_eigenvalues
+from f3das.abaqus.post_processing.nodes_and_elements import get_nodes_given_set_names
 
 
 # supercompressible metamaterial

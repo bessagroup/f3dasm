@@ -1,18 +1,12 @@
 '''
 Created on 2020-04-25 22:16:33
-Last modified on 2020-09-22 07:18:03
-Python 3.7.3
-v0.1
+Last modified on 2020-09-24 12:22:21
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
-
-Main goal
----------
-Manipulate inputs.
 '''
 
 
-#%% function definition
+# function definition
 
 def transform_inputs_supercompressible(inputs):
     '''

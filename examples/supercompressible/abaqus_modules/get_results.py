@@ -1,8 +1,14 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-09-24 12:23:30
+Last modified on 2020-09-22 16:25:07
+Python 3.7.3
+v0.1
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
+
+Main goal
+---------
+
 '''
 
 
