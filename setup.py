@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-23 17:07:39
+Last modified on 2020-09-24 13:07:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -29,6 +29,6 @@ setup(
     install_requires=install_requires,
     description="Framework for Data-Driven Design and Analysis of Structures.",
     classifiers=["Programming Language :: Python :: 3",
-                 "License :: OSI Approved :: MIT License",
+                 "License :: OSI Approved :: BSD License",
                  "Operating System :: OS Independent", ],
     python_requires='>=3.6',)
