@@ -22,11 +22,6 @@
 
 # ignore all the directories __pychache__
 **/__pycache__/
-example_supercompressible_3d/analyses
-example_supercompressible_3d_circular/analyses
-example_supercompressible_7d/analyses
-example_*/
 simulation*/
 library_UDG_INEGI
-trash
 **/*.ipynb_checkpoints
