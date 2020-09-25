@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-16 14:38:41
+Last modified on 2020-09-25 11:22:17
 Python 2.7.16
 v0.1
 
@@ -27,7 +27,6 @@ from abaqus import session
 import os
 import glob
 import pickle
-import importlib
 from collections import OrderedDict
 import time
 import traceback
@@ -38,6 +37,7 @@ from .stats import get_wait_time_from_log
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
 from f3das.utils.file_handling import get_unique_file_by_ext
+from f3das.utils.utils import import_abstract_obj
 
 
 # object definition
@@ -65,11 +65,6 @@ class RunModel(object):
         self.sim_info = data['sim_info']
         self.keep_odb = data['keep_odb']
         self.dump_py_objs = data['dump_py_objs']
-        n_sims = len(self.sim_info)
-        self.abstract_models = self._import_abstract_models(
-            data['abstract_model'], n_sims)
-        self.post_processing_fncs = self._import_post_processing_fncs(
-            data.get('post_processing_fnc', None), n_sims)
         # initialize variables
         self.models = OrderedDict()
         self.post_processing = OrderedDict()
@@ -93,38 +88,14 @@ class RunModel(object):
         # delete unnecessary files
         self._clean_dir()
 
-    def _import_abstract_models(self, abstract_models, n_sims):
-
-        if type(abstract_models) is str:
-            abstract_models = [abstract_models] * n_sims
-
-        abstract_models_ = []
-        for abstract_model in abstract_models:
-            module_name, method_name = abstract_model.rsplit('.', 1)
-            module = importlib.import_module(module_name)
-            abstract_models_.append(getattr(module, method_name))
-
-        return abstract_models_
-
-    def _import_post_processing_fncs(self, post_processing_fncs, n_sims):
-
-        if post_processing_fncs is None:
-            return [None] * n_sims
-
-        if type(post_processing_fncs) is str:
-            post_processing_fncs = [post_processing_fncs] * n_sims
-
-        post_processing_fncs_ = []
-        for post_processing_fnc in post_processing_fncs:
-            module_name, method_name = post_processing_fnc.rsplit('.', 1)
-            module = importlib.import_module(module_name)
-            post_processing_fncs_.append(getattr(module, method_name))
-
-        return post_processing_fncs_
-
     def _instantiate_models(self):
 
-        for i, (abstract_model, (model_name, info)) in enumerate(zip(self.abstract_models, self.sim_info.items())):
+        for i, (model_name, info) in enumerate(self.sim_info.items()):
+
+            # abstract objects
+            abstract_model = import_abstract_obj(info['abstract_model'])
+            pp_fnc_loc = info.get('post_processing_fnc', None)
+            post_processing_fnc = import_abstract_obj(pp_fnc_loc) if pp_fnc_loc is not None else None
 
             # get args
             args = self.variables.copy()
@@ -137,7 +108,7 @@ class RunModel(object):
                 model = abstract_model(name=model_name, **args)
             else:
                 model = WrapperModel(name=model_name, abstract_model=abstract_model,
-                                     post_processing_fnc=self.post_processing_fncs[i],
+                                     post_processing_fnc=post_processing_fnc,
                                      **args)
 
             self.models[model_name] = model
@@ -212,6 +183,7 @@ class RunModel(object):
                         os.remove(filename)
                     except:
                         pass
+
 
 def _read_data():
 

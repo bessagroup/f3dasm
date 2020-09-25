@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-18 09:26:40
+Last modified on 2020-09-24 16:29:36
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -27,9 +27,9 @@ from f3das.run.utils import get_sims_info
 
 # object definition
 
-def analyze_times(example_name, pkl_filename='DoE.pkl',
-                  sims_dir_name='analyses', raw_data='', print_info=True,
-                  report='', show_figures=False):
+def analyze_times(example_name, data_filename='DoE.pkl',
+                  sims_dir_name='analyses', raw_data_filename='raw_data.pkl',
+                  print_info=True, report='', show_figures=False):
     '''
     Collects times and performs a simple analsis.
 
@@ -43,14 +43,14 @@ def analyze_times(example_name, pkl_filename='DoE.pkl',
     figs = []
 
     # running information
-    info = get_sims_info(example_name, pkl_filename=pkl_filename,
+    info = get_sims_info(example_name, data_filename=data_filename,
                          sims_dir_name=sims_dir_name, print_info=False, report='')
     info.append(InfoReport(sections=[('time', 'Time-related information:')]))
 
     # collect times
     times_df, nested_times_df = collect_times(
-        example_name, pkl_filename=pkl_filename,
-        sims_dir_name=sims_dir_name, raw_data=raw_data)
+        example_name, data_filename=data_filename,
+        sims_dir_name=sims_dir_name, raw_data_filename=raw_data_filename)
 
     # total times
     time_info = info['time']
@@ -131,12 +131,12 @@ def analyze_times(example_name, pkl_filename='DoE.pkl',
     return info, figs
 
 
-def collect_times(example_name, pkl_filename='DoE.pkl',
-                  sims_dir_name='analyses', raw_data=''):
+def collect_times(example_name, data_filename='DoE.pkl',
+                  sims_dir_name='analyses', raw_data_filename='raw_data.pkl'):
     '''
     Parameters
     ----------
-    raw_data : str
+    raw_data_filename raw_data.pkl: str
         Name of the concatenated dict file. If empty, then times will be
         collected from the raw data pickle file.
 
@@ -146,13 +146,13 @@ def collect_times(example_name, pkl_filename='DoE.pkl',
     '''
 
     # get successful simulations
-    with open(os.path.join(example_name, pkl_filename), 'rb') as file:
+    with open(os.path.join(example_name, data_filename), 'rb') as file:
         data = pickle.load(file)
     successful_sims = data['run_info']['successful_sims']
 
     # collect times
-    if raw_data:
-        data = read_pkl_file(os.path.join(example_name, raw_data))
+    if raw_data_filename:
+        data = read_pkl_file(os.path.join(example_name, raw_data_filename))
         data_ = data['raw_data']
         times_sim = pd.Series(
             [value['time'] for value in data_.loc[successful_sims].values],

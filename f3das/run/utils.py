@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-23 07:48:10
+Last modified on 2020-09-25 11:09:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -10,18 +10,20 @@ Last modified on 2020-09-23 07:48:10
 # standard library
 import os
 import pickle
+from collections import OrderedDict
 
 # local library
 import f3das
-from f3das.utils.file_handling import get_unique_file_by_ext
 from f3das.utils.file_handling import InfoReport
+from f3das.post_processing import collect_raw_data
 
 
 # object definition
 
 def create_main_file(example_name, doe_variables, points, sim_info,
                      fixed_variables=None, additional_variables=None,
-                     additional_info=None, pkl_filename='DoE.pkl'):
+                     additional_info=None, transform_inputs=None,
+                     data_filename='DoE.pkl',):
     '''
     Create file where all the information required to run simulations is
     contained.
@@ -35,17 +37,9 @@ def create_main_file(example_name, doe_variables, points, sim_info,
         and upper bounds.
     points: pandas.DataFrame
         Design of experiments points.
-    sim_info : dict
-        All the information required to create each simulation. In particular:
-            * 'abstract_model': class that must be called inside the run model.
-            * 'sim_info': OrderedDict with all the information required to
-            instantiate a model (but that is not a model geometric or material
-            variable, i.e. not in `doe_variables`, `fixed_variables` or
-             `additional_variables`).
-            * 'transform_inputs': function that takes DoE point, fixed variables
-            and additional variables and create a dictionary that is used as
-            input of the model instance.
-        In order to avoid errors, `create_sim_info` can be used.
+    sim_info : dict or list of dict
+        All the information required to create each simulation. If sequential
+        simulations, then use a list of dicts.
     fixed_variables : dict
         Model input variables that are kept fix during the design of experiments.
     additional_variables: dict
@@ -53,72 +47,86 @@ def create_main_file(example_name, doe_variables, points, sim_info,
         the design of experiments.
     additional_info : dict
         Information about the problem to store for later use.
-    pkl_filename : str
+    transform_inputs : fnc
+        Interface function to transform inputs from raw to the name required
+        by the model.
+    data_filename : str
         Name of main file.
     '''
+
+    # manipulate sim_info
+    sim_info_dict = OrderedDict()
+    if type(sim_info) is list:
+        for sim_info_ in sim_info:
+            name, sinfo = _manipulate_sim_dict(sim_info_)
+            sim_info_dict[name] = sinfo
+    else:
+        name, sinfo = _manipulate_sim_dict(sim_info)
+        sim_info_dict[name] = sinfo
 
     # create data dictionary with required information
     data = {'doe_variables': doe_variables,
             'points': points,
-            'sim_info': sim_info,
-            'run_info': {'missing_sims': list(range(len(points))),
-                         'running_sims': [],
-                         'error_sims': [],
-                         'successful_sims': []},
+            'sim_info': sim_info_dict,
+            'run_info': {'missing_sims': set(range(len(points))),
+                         'running_sims': set(),
+                         'error_sims': set(),
+                         'successful_sims': set()},
             'version': f3das.__version__}
 
     # add facultative information
-    if fixed_variables is not None:
-        data['fixed_variables'] = fixed_variables
-    if additional_variables is not None:
-        data['additional_variables'] = additional_variables
-    if additional_info is not None:
-        data['additional_info'] = additional_info
+    facultative_vars = ['fixed_variables', 'additional_variables',
+                        'transform_inputs', 'additional_info']
+    for var in facultative_vars:
+        if var is not None:
+            data[var] = eval(var)
 
     # create directory and save pkl file
     os.mkdir(example_name)
-    with open(os.path.join(example_name, pkl_filename), 'wb') as file:
+    with open(os.path.join(example_name, data_filename), 'wb') as file:
         pickle.dump(data, file)
 
 
-def create_sim_info(abstract_model, sim_info, post_processing_fnc=None,
-                    transform_inputs=None):
+def create_sim_info(name, abstract_model, job_info, post_processing_fnc=None,
+                    **kwargs):
     '''
     It shows all the keys that can be used when creating simulation information.
 
     Parameters
     ----------
-    abstract_model : str or array of str
+    # TODO: finish docstrings
+    abstract_model : str
         Objects used to create numerical models.
+
+    post_processing_fnc : str or array of str
+        Objects used to post-process numerical models, if `abstract_model` does
+        is not a child of `f3das.abaqus.modelling.model.BasicModel`
+
+    # TODO: change place
     sim_info : dict
         OrderedDict with all the information required to instantiate a model
         (but that is not a model geometric or material variable, i.e. not in
         `doe_variables`, `fixed_variables` or `additional_variables`).
         `job_info` is mandatory (minimum information required: 'name').
-    post_processing_fnc : str or array of str
-        Objects used to post-process numerical models.
-    transform_inputs : fnc
-        Interface function to transform inputs from raw to the name required
-        by the model.
+
     '''
 
     # verification of job info
-    for value in sim_info.values():
-        if 'job_info' not in value.keys():
-            raise Exception('Add job info to simulation information')
-        if 'name' not in value['job_info'].keys():
-            raise Exception('job info must contain at least `name`')
+    if 'name' not in job_info.keys():
+        raise Exception('job info must contain at least `name`')
 
     # create dict
-    sim_info = {'abstract_model': abstract_model,
-                'sim_info': sim_info,
-                'post_processing_fnc': post_processing_fnc,
-                'transform_inputs': transform_inputs}
+    sim_info = {'name': name,
+                'abstract_model': abstract_model,
+                'job_info': job_info,
+                'post_processing_fnc': post_processing_fnc}
+    sim_info.update(kwargs)
 
     return sim_info
 
 
-def get_updated_sims_state(example_name, points, sims_dir_name='analyses'):
+def get_updated_sims_state(example_name, points, sims_dir_name='analyses',
+                           raw_data_filename='raw_data.pkl'):
     '''
     Parameters
     ----------
@@ -126,39 +134,34 @@ def get_updated_sims_state(example_name, points, sims_dir_name='analyses'):
         If None, considers all created simulation folders.
     '''
 
-    # initialization
-    dir_path = os.path.join(example_name, sims_dir_name)
+    # get raw data
+    raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
+                                sim_numbers=points, delete=False,
+                                raw_data_filename=raw_data_filename)
 
     # getting sims state
     error_sims = []
     successful_sims = []
-    for point in points:
-        folder_path = os.path.join(dir_path, 'DoE_point{}'.format(point))
-        if not os.path.exists(folder_path):
-            continue
-
-        filename = get_unique_file_by_ext(folder_path, ext='.pkl')
-        with open(os.path.join(folder_path, filename), 'rb') as file:
-            data = pickle.load(file, encoding='latin1')
-        success = data['success']
-
+    for point, data_sim in raw_data.iteritems():
+        success = data_sim.get('success', None)
         if success:
             successful_sims.append(point)
         elif success is False:
             error_sims.append(point)
 
-    return error_sims, successful_sims
+    return set(error_sims), set(successful_sims)
 
 
-def get_sims_info(example_name, pkl_filename='DoE.pkl',
+def get_sims_info(example_name, data_filename='DoE.pkl',
                   sims_dir_name='analyses', print_info=True, report=''):
+    # TODO: review
 
     # initialization
     info = InfoReport(sections=['run_info'])
     run_info_sec = info['run_info']
 
     # access data
-    with open(os.path.join(example_name, pkl_filename), 'rb') as file:
+    with open(os.path.join(example_name, data_filename), 'rb') as file:
         data = pickle.load(file)
 
     # running simulations
@@ -201,16 +204,17 @@ def get_sims_info(example_name, pkl_filename='DoE.pkl',
     return info
 
 
-def update_run_info(example_name, pkl_filename='DoE.pkl',
+def update_run_info(example_name, data_filename='DoE.pkl',
                     sims_dir_name='analyses'):
     '''
     Updates information about simulations. Assumes simulations are not being
     ran. It is supposed to correct possible outdated files due to running of
     simulations in different machines.
     '''
+    # TODO: review
 
     # access data
-    with open(os.path.join(example_name, pkl_filename), 'rb') as file:
+    with open(os.path.join(example_name, data_filename), 'rb') as file:
         data = pickle.load(file)
 
     # compute information
@@ -224,5 +228,12 @@ def update_run_info(example_name, pkl_filename='DoE.pkl',
     data['run_info']['running_sims'] = []
     data['run_info']['error_sims'] = error_sims
     data['run_info']['successful_sims'] = successful_sims
-    with open(os.path.join(example_name, pkl_filename), 'wb') as file:
+    with open(os.path.join(example_name, data_filename), 'wb') as file:
         pickle.dump(data, file)
+
+
+def _manipulate_sim_dict(sim_dict):
+    name = sim_dict['name']
+    del sim_dict['name']
+
+    return name, sim_dict

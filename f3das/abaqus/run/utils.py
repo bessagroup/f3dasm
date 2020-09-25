@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-23 17:45:06
-Python 2.7.16
-v0.1
+Last modified on 2020-09-25 14:24:27
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -26,6 +24,7 @@ import numpy as np
 import f3das
 from f3das.utils.file_handling import verify_existing_name
 from f3das.run.utils import get_updated_sims_state
+from f3das.utils.utils import import_abstract_obj
 
 
 # TODO: interrupt simulations
@@ -34,8 +33,8 @@ from f3das.run.utils import get_updated_sims_state
 # run abaqus
 
 def run_sims(example_name, n_sims=None, n_cpus=1,
-             points=None, pkl_filename='DoE.pkl', sims_dir_name='analyses',
-             run_module_name='f3das.abaqus.run.run_model',
+             points=None, data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
+             sims_dir_name='analyses', run_module_name='f3das.abaqus.run.run_model',
              keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
              gui=False):
     '''
@@ -55,7 +54,7 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
     points : array or None
         DoE points to run. If None, 'n_sims' are run. Simulations with
         folders already created are run again (so, be careful!).
-    pkl_filename : str
+    data_filename : str
         Main file name.
     keep_odb : bool
         Keep odb after simulation? If yes, make sure you have enough storage.
@@ -67,71 +66,54 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
 
     # TODO: possibility of zipping odb
     # TODO: verify licences
+    # TODO: `raw_data_filename` and `create_new_file`
+
+    # get data
+    with open(os.path.join(example_name, data_filename), 'rb') as file:
+        data = pickle.load(file)
+
+    # points or n_sims?
+    if points is not None:
+        points = set(points)
+        for key, value in data['run_info'].items():
+            if key != 'running_sims':
+                value.difference_update(points)
+    else:
+        n_sims = len(data['run_info']['missing_sims']) if n_sims is None else n_sims
+        points = set(list(data['run_info']['missing_sims'])[:n_sims])
+        data['run_info']['missing_sims'].difference_update(points)
+    data['run_info']['running_sims'].intersection_update(points)
 
     # create analyses dir
     dir_full_path = os.path.join(example_name, sims_dir_name)
     if not os.path.exists(dir_full_path):
         os.mkdir(dir_full_path)
 
-    # get data
-    with open(os.path.join(example_name, pkl_filename), 'rb') as file:
-        data = pickle.load(file)
+    # create pkl for each doe
+    _create_DoE_sim_info(example_name, data, points, sims_dir_name=sims_dir_name,
+                         keep_odb=keep_odb, dump_py_objs=dump_py_objs,)
 
-    # points or n_sims?
-    if points is not None:
-        for key, value in data['run_info'].items():
-            if key != 'running_sims':
-                data['run_info'][key] = [point for point in value if point not in points]
-    else:
-        n_sims = len(data['run_info']['missing_sims']) if n_sims is None else n_sims
-        points = data['run_info']['missing_sims'][:n_sims]
-        data['run_info']['missing_sims'] = data['run_info']['missing_sims'][n_sims:]
-
-    # update data temporarily
-    data['run_info']['running_sims'].extend(points)
-    with open(os.path.join(example_name, pkl_filename), 'wb') as file:
-        pickle.dump(data, file)
+    # run in parallel? (restriction due to no control of cpu allocation)
+    sim_info = data['sim_info']
+    n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
+    n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
 
     # create _temp folder and copy f3das
     temp_dir_name = '_temp'
     _create_temp_dir(temp_dir_name)
 
-    # run in parallel?
-    sim_info = data['sim_info']['sim_info']
-    n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
-    n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
-
-    # create pkl for each doe
-    _create_DoE_sim_info(example_name, points, sims_dir_name=sims_dir_name,
-                         pkl_filename=pkl_filename, keep_odb=keep_odb,
-                         dump_py_objs=dump_py_objs)
+    # update data temporarily (due to run_info)
+    with open(os.path.join(example_name, data_filename), 'wb') as file:
+        pickle.dump(data, file)
 
     try:
         # TODO: find a way to verify license and don't use try
         # run
         if n_cpus > 1:
-            # TODO: move inside a function
-
-            # distribute points
-            points = sorted(points)
-            points_cpus = []
-            for i in range(n_cpus):
-                points_cpus.append(points[i::n_cpus])
-
-            # start pool
-            pool = mp.Pool(n_cpus)
-
-            # run sims
-            # TODO: pool reserve cpus?
-            for i, points in enumerate(points_cpus):
-                wait_time = i * 5
-                pool.apply_async(_run_sims_sequentially,
-                                 args=(example_name, points, wait_time,
-                                       run_module_name, sims_dir_name,
-                                       abaqus_path, gui, temp_dir_name))
-            # close pool and wait process completion
-            pool.close()
-            pool.join()
+            _run_sims_in_parallel(example_name, points, n_cpus,
+                                  run_module_name=run_module_name,
+                                  sims_dir_name=sims_dir_name, abaqus_path=abaqus_path,
+                                  gui=gui, temp_dir_name=temp_dir_name)
 
         else:
             _run_sims_sequentially(example_name, points,
@@ -147,54 +129,24 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
         # delete _temp dir
         shutil.rmtree(temp_dir_name)
 
-        # based on points, reupdate data['run_info']
-        error_sims_, successful_sims_ = get_updated_sims_state(
-            example_name, points, sims_dir_name)
+        # TODO: concatenate data
 
-        points_ = list(set(points) - set(error_sims_) - set(successful_sims_))
-        data['run_info']['missing_sims'].extend(points_)
-        data['run_info']['missing_sims'].sort()
-
-        data['run_info']['error_sims'].extend(error_sims_)
-        data['run_info']['error_sims'].sort()
-
-        data['run_info']['successful_sims'].extend(successful_sims_)
-        data['run_info']['successful_sims'].sort()
-
-        running_sims = data['run_info']['running_sims']
-        data['run_info']['running_sims'] = sorted(list(set(running_sims).difference(set(points))))
-
-        with open(os.path.join(example_name, pkl_filename), 'wb') as file:
-            pickle.dump(data, file)
+        # TODO: UPDATE
+        _update_sims_state()
 
 
-def _create_DoE_sim_info(example_name, points, sims_dir_name='analyses',
-                         pkl_filename='DoE.pkl', keep_odb=True,
-                         dump_py_objs=False,):
-
+def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
+                         keep_odb=True, dump_py_objs=False,):
     # get data
-    with open(os.path.join(example_name, pkl_filename), 'rb') as file:
-        data = pickle.load(file)
     doe_variables = data['doe_variables']
     datapoints = data['points']
     sim_info = data['sim_info']
-    transform_inputs = sim_info.get('transform_inputs', None)
+    transform_inputs = data.get('transform_inputs', None)
     fixed_variables = data.get('fixed_variables', {})
     additional_variables = data.get('additional_variables', {})
 
-    # variables to save
-    abstract_model = sim_info['abstract_model']
-    post_processing_fnc = sim_info.get('post_processing_fnc', None)
-
     # deal with subroutines
-    subroutine_names = []
-    for sim_info_ in sim_info['sim_info'].values():
-        subroutine_name = sim_info_['job_info'].get('userSubroutine', None)
-        if subroutine_name:
-            subroutine_loc_ls = subroutine_name.split('.')
-            subroutine_loc = '{}.{}'.format(os.path.join(*subroutine_loc_ls[:-1]), subroutine_loc_ls[-1])
-            subroutine_names.append((subroutine_loc, '.'.join(subroutine_loc_ls[-2::])))
-            sim_info_['job_info']['userSubroutine'] = subroutine_names[-1][1]
+    copy_subroutines_fncs = _get_copy_subroutines(sim_info)
 
     # create pkl files
     dir_full_path = os.path.join(example_name, sims_dir_name)
@@ -206,33 +158,30 @@ def _create_DoE_sim_info(example_name, points, sims_dir_name='analyses',
 
         # dict with all the variables
         variables = datapoints.loc[point, doe_variables.keys()].to_dict()
+        variables.update(fixed_variables)
+        for key, value in additional_variables.items():
+            variables[key] = value[point]
         for key, value in variables.items():
             if type(value) is np.float64:
                 variables[key] = float(value)
-        variables.update(fixed_variables)
-        for key, value in additional_variables.items():
-            variables[key] = float(value[point])
 
         # if required, transform inputs
-        if callable(transform_inputs):
+        if transform_inputs is not None:
+            transform_inputs = import_abstract_obj(transform_inputs)
             variables = transform_inputs(variables)
 
         # create and dump dict
-        data = OrderedDict({'abstract_model': abstract_model,
-                            'post_processing_fnc': post_processing_fnc,
-                            'variables': variables,
-                            'sim_info': sim_info['sim_info'],
+        data = OrderedDict({'variables': variables,
+                            'sim_info': sim_info,
                             'keep_odb': keep_odb,
-                            'dump_py_objs': dump_py_objs,
-                            'success': None})
+                            'dump_py_objs': dump_py_objs, })
 
         with open(os.path.join(doe_dir_name, 'sim.pkl'), 'wb') as file:
             pickle.dump(data, file, protocol=2)
 
         # copy subroutine
-        if subroutine_names:
-            for subroutine_name in subroutine_names:
-                shutil.copyfile(subroutine_name[0], os.path.join(doe_dir_name, subroutine_name[1]))
+        for copy_subroutines_fnc in copy_subroutines_fncs:
+            copy_subroutines_fnc(doe_dir_name)
 
 
 def _run_sims_sequentially(example_name, points, wait_time=0,
@@ -277,7 +226,32 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
     os.remove(run_filename)
 
 
-# function definition
+def _run_sims_in_parallel(example_name, points, n_cpus,
+                          run_module_name='f3das.abaqus.run.run_model',
+                          sims_dir_name='analyses', abaqus_path='abaqus',
+                          gui=False, temp_dir_name='_temp'):
+
+    # distribute points
+    points = sorted(points)
+    points_cpus = []
+    for i in range(n_cpus):
+        points_cpus.append(points[i::n_cpus])
+
+    # start pool
+    pool = mp.Pool(n_cpus)
+
+    # run sims
+    # TODO: pool reserve cpus?
+    for i, points in enumerate(points_cpus):
+        wait_time = i * 5
+        pool.apply_async(_run_sims_sequentially,
+                         args=(example_name, points, wait_time,
+                               run_module_name, sims_dir_name,
+                               abaqus_path, gui, temp_dir_name))
+    # close pool and wait process completion
+    pool.close()
+    pool.join()
+
 
 def _create_temp_dir(temp_dir_name='_temp'):
     if not os.path.exists(temp_dir_name):
@@ -286,6 +260,50 @@ def _create_temp_dir(temp_dir_name='_temp'):
     if os.path.exists(new_f3das_dir):
         shutil.rmtree(new_f3das_dir)
     shutil.copytree(f3das.__path__[0], new_f3das_dir)
+
+
+def _update_sims_state(example_name, points,
+                       sims_dir_name='analyses',):
+
+    # based on points, reupdate data['run_info']
+    error_sims_, successful_sims_ = get_updated_sims_state(
+        example_name, points, sims_dir_name)
+
+    points_ = list(set(points) - set(error_sims_) - set(successful_sims_))
+    data['run_info']['missing_sims'].extend(points_)
+    data['run_info']['missing_sims'].sort()
+
+    data['run_info']['error_sims'].extend(error_sims_)
+    data['run_info']['error_sims'].sort()
+
+    data['run_info']['successful_sims'].extend(successful_sims_)
+    data['run_info']['successful_sims'].sort()
+
+    running_sims = data['run_info']['running_sims']
+    data['run_info']['running_sims'] = sorted(list(set(running_sims).difference(set(points))))
+
+    with open(os.path.join(example_name, data_filename), 'wb') as file:
+        pickle.dump(data, file)
+
+
+def _get_copy_subroutines(sim_info):
+    # input DoE dir name
+    subroutine_copy_fncs = []
+    for sim_info_ in sim_info.values():
+        subroutine_name = sim_info_['job_info'].get('userSubroutine', None)
+        if subroutine_name:
+            subroutine_loc_ls = subroutine_name.split('.')
+            subroutine_loc = '{}.{}'.format(os.path.join(*subroutine_loc_ls[:-1]), subroutine_loc_ls[-1])
+            subroutine_name = '.'.join(subroutine_loc_ls[-2::])
+            sim_info_['job_info']['userSubroutine'] = subroutine_name
+
+            def fnc(doe_dir_name, subroutine_loc=subroutine_loc, subroutine_name=subroutine_name):
+                return shutil.copy(subroutine_loc, os.path.join(doe_dir_name, subroutine_name))
+        else:
+            def fnc(doe_dir_name): pass
+        subroutine_copy_fncs.append(fnc)
+
+    return subroutine_copy_fncs
 
 
 def convert_dict_unicode_str(pickled_dict):

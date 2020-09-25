@@ -1,14 +1,8 @@
 '''
 Created on 2020-05-05 13:51:00
-Last modified on 2020-09-18 08:23:29
-Python 3.7.3
-v0.1
+Last modified on 2020-09-25 11:22:05
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
-
-Main goal
----------
-Define additional functions.
 '''
 
 # imports
@@ -16,6 +10,7 @@ Define additional functions.
 # standard library
 import gzip
 import pickle
+import importlib
 
 
 # object definition
@@ -40,3 +35,10 @@ def read_pkl_file(filename):
             data = pickle.load(file)
 
     return data
+
+
+def import_abstract_obj(fnc_loc):
+    module_name, method_name = fnc_loc.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+
+    return getattr(module, method_name)
