@@ -34,6 +34,11 @@ shear_modulus = 1.38631e3
 d = 10.
 imperfection = 7.85114e-02
 
+
+# abort if not coilable
+if not int(previous_model_results['coilable'][0]):
+    raise Exception('Non-coilable geometry')
+
 # variables with defaults
 n_storeys = 1
 twist_angle = 0.

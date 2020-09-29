@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-23 07:11:15
+Last modified on 2020-09-29 11:23:36
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -363,6 +363,10 @@ previous_model_results = buckling_results
 previous_model_job_name = job_name
 model_name = 'SUPERCOMPRESSIBLE_RIKS'
 job_name = 'Simul_SUPERCOMPRESSIBLE_RIKS'
+
+# abort if not coilable
+if not int(previous_model_results['coilable'][0]):
+    raise Exception('Non-coilable geometry')
 
 # variables with defaults
 n_storeys = 1

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-24 12:22:02
+Last modified on 2020-09-29 10:52:51
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -80,6 +80,13 @@ class SupercompressibleModel(BasicModel):
         return fnc(odb)
 
     def _assemble_puzzle(self):
+
+        # verify coilability
+        if self.sim_type == 'riks':
+            coilable = self._verify_coilability()
+
+            if not coilable:
+                return True
 
         # create objects
         supercompressible = Supercompressible(
@@ -261,15 +268,14 @@ class SupercompressibleModel(BasicModel):
 
         return AddToInp(text, self.job_info['name'], section='INTERACTIONS')
 
-    def _get_disps_for_riks(self):
+    def _verify_coilability(self):
         '''
         Notes
         -----
         -Assumes odb of the previous simulation is available in the working
         directory.
         '''
-
-        # get results
+        # TODO: coilable as integer
         if self.previous_model_results is None:
             # access odb
             odb_name = '%s.odb' % self.previous_model.job_info['name']
@@ -277,6 +283,11 @@ class SupercompressibleModel(BasicModel):
             self.previous_model_results = self.previous_model.perform_post_processing(odb)
             odb.close()
 
+        return int(self.previous_model_results['coilable'][0])
+
+    def _get_disps_for_riks(self):
+
+        # get results
         return self.previous_model_results['max_disps']
 
     def _perform_post_processing_lin_buckle(self, odb):

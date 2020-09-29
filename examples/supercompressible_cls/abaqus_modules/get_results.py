@@ -1,12 +1,15 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-09-24 12:23:30
+Last modified on 2020-09-29 10:44:59
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
 
 
 # imports
+
+# standard library
+from collections import OrderedDict
 
 # third-party
 import numpy as np
@@ -22,15 +25,18 @@ def get_results(data, max_strain=.02, additional_strain_thresh=.05,
     coilable, sigma_crit = get_results_lin_buckle(data)
 
     # get data (Riks)
-    _, (strain, stress), (energy, (x, y)), E_max = read_and_clean_results_riks(
-        data, additional_strain_thresh=additional_strain_thresh,
-        n_interpolation=n_interpolation, get_energy=True)
+    if coilable:
+        _, _, (energy, _), E_max = read_and_clean_results_riks(
+            data, additional_strain_thresh=additional_strain_thresh,
+            n_interpolation=n_interpolation, get_energy=True)
+    else:
+        energy = None
 
     # update coilability
     if coilable and E_max is not np.nan and E_max > max_strain:
         coilable = 2
 
-    return coilable, sigma_crit, energy
+    return OrderedDict([('coilable', coilable), ('sigma_crit', sigma_crit), ('energy', energy)])
 
 
 def get_results_lin_buckle(data, job_name='SUPERCOMPRESSIBLE_LIN_BUCKLE'):

@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-23 07:11:20
+Last modified on 2020-09-29 11:22:12
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -372,6 +372,11 @@ def post_process_lin_buckle(odb):
 def riks(model_name, job_name, n_longerons, bottom_diameter, top_diameter,
          pitch, young_modulus, shear_modulus, d, imperfection,
          previous_model_results, previous_model_job_name):
+
+    # abort if not coilable
+    if not int(previous_model_results['coilable'][0]):
+        return True
+
     # variables with defaults
     n_storeys = 1
     twist_angle = 0.
