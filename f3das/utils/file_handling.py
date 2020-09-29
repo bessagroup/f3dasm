@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-25 15:56:27
-Last modified on 2020-09-18 17:14:01
+Last modified on 2020-09-29 09:06:04
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -50,7 +50,7 @@ def collect_folder_names(sim_dir, sim_numbers=None):
     existing_sim_numbers = [get_int_number_from_str(folder_name)
                             for folder_name in folder_names_temp]
     indices = sorted(range(len(existing_sim_numbers)), key=existing_sim_numbers.__getitem__)
-    if not sim_numbers:
+    if sim_numbers is None:
         sim_numbers = existing_sim_numbers
         sim_numbers.sort()
     folder_names = [folder_names_temp[index] for index in indices
