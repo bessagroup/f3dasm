@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-25 14:41:47
+Last modified on 2020-09-29 10:42:42
 Python 2.7.16
 v0.1
 
@@ -125,7 +125,7 @@ class RunModel(object):
             model.write_inp(submit=True)
 
             # store times
-            wait_time = get_wait_time_from_log(model.job_info['name'])
+            wait_time = get_wait_time_from_log(model.job_info['name']) if not model.abort else 0.
             self.time['running'][model.name] = time.time() - start_time - wait_time
             self.time['waiting'][model.name] = wait_time
 
@@ -138,7 +138,7 @@ class RunModel(object):
                 continue
 
             # do post-processing of current model
-            if isinstance(model, WrapperModel) and not callable(model.post_processing_fnc):
+            if isinstance(model, WrapperModel) and not callable(model.post_processing_fnc) or model.abort:
                 self.post_processing[model_name] = None
             else:
 

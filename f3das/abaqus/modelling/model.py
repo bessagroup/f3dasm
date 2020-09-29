@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-09-23 07:02:48
+Last modified on 2020-09-29 10:35:08
 Python 2.7.16
 v0.1
 
@@ -80,6 +80,7 @@ class BasicModel(AbstractModel):
         if 'Model-1' in mdb.models.keys():
             del mdb.models['Model-1']
         # initialize variables
+        self.abort = None
         self.geometry_objects = []
         self.materials = []
         self.steps = ['Initial']
@@ -92,7 +93,11 @@ class BasicModel(AbstractModel):
     def create_model(self):
 
         # assemble puzzle
-        self._assemble_puzzle()
+        self.abort = self._assemble_puzzle()
+
+        # if order to abort from `_assemble_puzzle`, then it stops
+        if self.abort:
+            return
 
         # create materials
         self._create_materials()
@@ -119,6 +124,10 @@ class BasicModel(AbstractModel):
         self._create_outputs()
 
     def write_inp(self, submit=False):
+
+        # abort if model was not created
+        if self.abort:
+            return
 
         # create inp
         modelJob = mdb.Job(model=self.name, **self.job_info)
@@ -217,6 +226,8 @@ class WrapperModel(AbstractModel):
         for key, value in self.kwargs.items():
             if key not in self.abstract_model_args:
                 del self.kwargs[key]
+        # initialize variables
+        self.abort = None
 
     def create_model(self):
         '''
@@ -240,9 +251,14 @@ class WrapperModel(AbstractModel):
                 self.kwargs['previous_model_job_name'] = self.previous_model.job_info['name']
 
         # create model
-        self.abstract_model(**self.kwargs)
+        self.abort = self.abstract_model(**self.kwargs)
 
     def write_inp(self, submit=False):
+
+        # abort if model was not created
+        if self.abort:
+            return
+
         # create inp
         if os.path.exists('{}.inp'.format(self.job_info['name'])):
             job_info = {key: value for key, value in self.job_info.items() if key != 'description'}
@@ -259,4 +275,5 @@ class WrapperModel(AbstractModel):
             modelJob.waitForCompletion()
 
     def perform_post_processing(self, odb):
+
         return self.post_processing_fnc(odb)
