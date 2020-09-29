@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-28 18:04:42
+Last modified on 2020-09-29 09:37:07
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -27,7 +27,6 @@ from ..utils.file_handling import verify_existing_name
 from ..utils.utils import import_abstract_obj
 from ..post_processing import post_process_sims
 from ..post_processing import concatenate_raw_data
-from ..post_processing import update_raw_data
 from ..post_processing import collect_raw_data
 
 
@@ -138,20 +137,20 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
 
         # concatenate (and/or collect) data
         if raw_data_filename:
-            raw_data_full = concatenate_raw_data(
+            raw_data = concatenate_raw_data(
                 example_name, data_filename=data_filename,
                 raw_data_filename=raw_data_filename, sims_dir_name=sims_dir_name,
-                delete=delete, compress=True, sim_numbers=points)
-            raw_data = raw_data_full['raw_data'].loc[points]
+                delete=delete, compress=True, sim_numbers=points).loc[points]
         else:
             raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
-                                        delete=delete, raw_data_filename='',
+                                        delete=False, raw_data_filename='',
                                         sim_numbers=points)
 
         # update sims state
         successful_sims = _update_sims_state(data, points, raw_data)
 
         # automatic post-processing
+        # TODO: pp if only one variable
         if pp_fnc is not None and len(successful_sims):
             data = post_process_sims(pp_fnc, example_name,
                                      sim_numbers=successful_sims,
@@ -163,12 +162,6 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
         # store data with updated `run_info`
         with open(os.path.join(example_name, data_filename), 'wb') as file:
             pickle.dump(data, file)
-
-        # update data within concatenate data
-        # TODO: delete
-        if raw_data_filename and not create_new_file:
-            update_raw_data(example_name, data_filename=data_filename,
-                            raw_data_filename=raw_data_filename, compress=True)
 
 
 def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',

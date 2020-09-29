@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:28:59
-Last modified on 2020-09-29 09:02:02
+Last modified on 2020-09-29 09:22:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -134,58 +134,29 @@ def concatenate_raw_data(example_name, data_filename='DoE.pkl',
     # initialization
     open_file = gzip.open if compress else open
 
-    # load doe
-    with open(os.path.join(example_name, data_filename), 'rb') as file:
-        doe = pickle.load(file, encoding='latin1')
-
     # verify if file already exists
     if os.path.exists(os.path.join(example_name, raw_data_filename)):
-        data = read_pkl_file(os.path.join(example_name, raw_data_filename))
-        data['doe'] = doe
+        raw_data = read_pkl_file(os.path.join(example_name, raw_data_filename))
     else:
-        data = {'doe': doe,
-                'raw_data': pd.Series(dtype=object)}
+        raw_data = pd.Series(dtype=object)
 
     # get available simulations
-    raw_data = collect_raw_data_from_folders(example_name,
-                                             sims_dir_name=sims_dir_name,
-                                             sim_numbers=sim_numbers, delete=delete)
-    data['raw_data'] = raw_data.combine_first(data['raw_data']).sort_index()
+    new_raw_data = collect_raw_data_from_folders(example_name,
+                                                 sims_dir_name=sims_dir_name,
+                                                 sim_numbers=sim_numbers, delete=delete)
+    raw_data = new_raw_data.combine_first(raw_data).sort_index()
 
     # save file
     with open_file(os.path.join(example_name, raw_data_filename), 'wb') as file:
-        pickle.dump(data, file)
-
-    return data
-
-
-def update_raw_data(example_name, data_filename='DoE.pkl',
-                    raw_data_filename='raw_data.pkl', compress=True):
-    '''
-    Updates non-raw data within raw data dictionary file.
-    '''
-    # TODO: delete!
-
-    # initialization
-    open_file = gzip.open if compress else open
-
-    # load both data
-    with open(os.path.join(example_name, data_filename), 'rb') as file:
-        doe = pickle.load(file, encoding='latin1')
-    raw_data = read_pkl_file(os.path.join(example_name, raw_data_filename))
-
-    # update raw data
-    raw_data['doe'] = doe
-
-    # store raw data
-    with open_file(os.path.join(example_name, raw_data_filename), 'wb') as file:
         pickle.dump(raw_data, file)
+
+    return raw_data
 
 
 def collect_raw_data(example_name, sims_dir_name='analyses', sim_numbers=None,
                      delete=False, raw_data_filename='raw_data.pkl'):
     if raw_data_filename:
-        raw_data = read_pkl_file(os.path.join(example_name, raw_data_filename))['raw_data']
+        raw_data = read_pkl_file(os.path.join(example_name, raw_data_filename))
         if sim_numbers is not None:
             raw_data = raw_data.loc[sim_numbers]
     else:
