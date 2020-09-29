@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-09-29 10:52:51
+Last modified on 2020-09-29 14:37:56
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -43,7 +43,6 @@ from f3das.abaqus.post_processing.nodes_and_elements import get_nodes_given_set_
 # supercompressible metamaterial
 
 # TODO: create a model common to TRAC boom (it is the same strategy); ImperfectionModel
-# TODO: if not coilable, then do not perform riks?
 
 class SupercompressibleModel(BasicModel):
 
@@ -283,7 +282,7 @@ class SupercompressibleModel(BasicModel):
             self.previous_model_results = self.previous_model.perform_post_processing(odb)
             odb.close()
 
-        return int(self.previous_model_results['coilable'][0])
+        return int(self.previous_model_results['coilable'])
 
     def _get_disps_for_riks(self):
 
@@ -325,8 +324,9 @@ class SupercompressibleModel(BasicModel):
         ztop_u = get_ydata_from_nodeSets_field_output(odb, ztop_set, 'U',
                                                       directions=(1, 2,),
                                                       frames=list(frames)[1:])
-        coilable = [int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
-                    for ur, u in zip(ztop_ur, ztop_u)]
+        ur = ztop_ur[0]
+        u = ztop_u[0]
+        coilable = int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
 
         # write output
         data = {'max_disps': max_disps,

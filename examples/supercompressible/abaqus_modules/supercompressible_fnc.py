@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-29 11:22:12
+Last modified on 2020-09-29 14:41:58
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -348,8 +348,9 @@ def post_process_lin_buckle(odb):
             output_frame.append([output.data[direction - 1] for output in outputs])
         ztop_u.append(output_frame)
 
-    coilable = [int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
-                for ur, u in zip(ztop_ur, ztop_u)]
+    ur = ztop_ur[0]
+    u = ztop_u[0]
+    coilable = int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
 
     buckling_results = {'max_disps': max_disps,
                         'loads': eigenvalues,
@@ -374,7 +375,7 @@ def riks(model_name, job_name, n_longerons, bottom_diameter, top_diameter,
          previous_model_results, previous_model_job_name):
 
     # abort if not coilable
-    if not int(previous_model_results['coilable'][0]):
+    if not int(previous_model_results['coilable']):
         return True
 
     # variables with defaults

@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 15:35:10
-Last modified on 2020-09-23 07:11:00
+Last modified on 2020-09-29 14:42:51
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -68,8 +68,9 @@ for frame in list(frames)[1:]:
         output_frame.append([output.data[direction - 1] for output in outputs])
     ztop_u.append(output_frame)
 
-coilable = [int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
-            for ur, u in zip(ztop_ur, ztop_u)]
+ur = ztop_ur[0]
+u = ztop_u[0]
+coilable = int(abs(ur[0][0]) > 1.0e-4 and abs(u[0][0]) < 1.0e-4 and abs(u[1][0]) < 1.0e-4)
 
 buckling_results = {'max_disps': max_disps,
                     'loads': eigenvalues,

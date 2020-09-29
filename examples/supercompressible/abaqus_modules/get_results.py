@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-09-29 10:44:59
+Last modified on 2020-09-29 14:28:19
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -45,7 +45,7 @@ def get_results_lin_buckle(data, job_name='SUPERCOMPRESSIBLE_LIN_BUCKLE'):
     results = data['post-processing'][job_name]
 
     # coilability and P_crit
-    coilable = int(results['coilable'][0])
+    coilable = results['coilable']
     try:
         # get load
         load = results['loads'][0]

@@ -36,7 +36,7 @@ imperfection = 7.85114e-02
 
 
 # abort if not coilable
-if not int(previous_model_results['coilable'][0]):
+if not int(previous_model_results['coilable']):
     raise Exception('Non-coilable geometry')
 
 # variables with defaults
