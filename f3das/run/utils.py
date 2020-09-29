@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-25 11:09:43
+Last modified on 2020-09-29 09:04:14
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -125,19 +125,27 @@ def create_sim_info(name, abstract_model, job_info, post_processing_fnc=None,
     return sim_info
 
 
-def get_updated_sims_state(example_name, points, sims_dir_name='analyses',
-                           raw_data_filename='raw_data.pkl'):
+def get_updated_sims_state(raw_data=None, example_name=None,
+                           points=None, sims_dir_name='analyses',):
     '''
     Parameters
     ----------
+    raw_data : pd.Series or str or None.
+        Data is gatherer according to `raw_data` type. The possibilities are:
+            None: simulation folders
+            str: raw data file
+            pandas.Series: uses itself.
     points : array
-        If None, considers all created simulation folders.
+        If None, considers all created simulation folders or folders available
+        in `raw_data` file. Only applicable if `raw_data` is a path to a file
+        or None.
     '''
 
     # get raw data
-    raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
-                                sim_numbers=points, delete=False,
-                                raw_data_filename=raw_data_filename)
+    if type(raw_data) is str or raw_data is None:
+        raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
+                                    sim_numbers=points, delete=False,
+                                    raw_data_filename=raw_data)
 
     # getting sims state
     error_sims = []
@@ -154,7 +162,7 @@ def get_updated_sims_state(example_name, points, sims_dir_name='analyses',
 
 def get_sims_info(example_name, data_filename='DoE.pkl',
                   sims_dir_name='analyses', print_info=True, report=''):
-    # TODO: review
+    # TODO: move to stats?
 
     # initialization
     info = InfoReport(sections=['run_info'])
@@ -167,9 +175,10 @@ def get_sims_info(example_name, data_filename='DoE.pkl',
     # running simulations
     running_sims = data['run_info']['running_sims']
     error_sims_, successful_sims_ = get_updated_sims_state(
-        example_name, running_sims, sims_dir_name)
+        example_name=example_name, points=running_sims,
+        sims_dir_name=sims_dir_name, raw_data=None,)
     n_running_sims = len(running_sims)
-    n_running_sims_miss = len(list(set(running_sims) - set(error_sims_) - set(successful_sims_)))
+    n_running_sims_miss = len(set(running_sims) - error_sims_ - successful_sims_)
 
     # other simulations
     n_missing_sims = len(data['run_info']['missing_sims']) + n_running_sims_miss

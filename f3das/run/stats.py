@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-24 16:29:36
+Last modified on 2020-09-29 09:12:17
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -18,11 +18,10 @@ from matplotlib import pyplot as plt
 import pandas as pd
 
 # local library
-from f3das.utils.file_handling import get_unique_file_by_ext
-from f3das.utils.file_handling import InfoReport
-from f3das.utils.plot import BarPlot
-from f3das.utils.utils import read_pkl_file
 from f3das.run.utils import get_sims_info
+from ..utils.file_handling import InfoReport
+from ..utils.plot import BarPlot
+from ..post_processing import collect_raw_data
 
 
 # object definition
@@ -136,7 +135,7 @@ def collect_times(example_name, data_filename='DoE.pkl',
     '''
     Parameters
     ----------
-    raw_data_filename raw_data.pkl: str
+    raw_data_filename: str
         Name of the concatenated dict file. If empty, then times will be
         collected from the raw data pickle file.
 
@@ -150,24 +149,15 @@ def collect_times(example_name, data_filename='DoE.pkl',
         data = pickle.load(file)
     successful_sims = data['run_info']['successful_sims']
 
+    # get raw_data
+    raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
+                                sim_numbers=successful_sims, delete=False,
+                                raw_data_filename=raw_data_filename)
+
     # collect times
-    if raw_data_filename:
-        data = read_pkl_file(os.path.join(example_name, raw_data_filename))
-        data_ = data['raw_data']
-        times_sim = pd.Series(
-            [value['time'] for value in data_.loc[successful_sims].values],
-            index=successful_sims)
-    else:
-        times_sim = pd.Series(dtype=object, index=successful_sims)
-        for sim in successful_sims:
-            dir_name = os.path.join(example_name, sims_dir_name,
-                                    'DoE_point{}'.format(sim))
-            filename = get_unique_file_by_ext(dir_name, ext='.pkl')
-
-            with open(os.path.join(dir_name, filename), 'rb') as file:
-                data_ = pickle.load(file, encoding='latin1')
-
-            times_sim[sim] = data_['time']
+    times_sim = pd.Series(
+        [value['time'] for value in raw_data.loc[successful_sims].values],
+        index=successful_sims)
 
     # reorganize times
     times_df, nested_times_df = _reorganize_times(times_sim)

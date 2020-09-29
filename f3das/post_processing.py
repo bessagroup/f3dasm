@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:28:59
-Last modified on 2020-09-25 09:35:12
+Last modified on 2020-09-29 09:02:02
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -28,48 +28,75 @@ from f3das.utils.utils import read_pkl_file
 
 # function definition
 
-def post_process_sims(pp_fnc, output_variables, example_name, sim_numbers=None,
+def post_process_sims(pp_fnc, example_name, sim_numbers=None,
                       sims_dir_name='analyses', data_filename='DoE.pkl',
-                      raw_data_filename='raw_data.pkl', create_new_file=''):
+                      data=None, raw_data='raw_data.pkl', create_new_file='',
+                      pp_fnc_kwargs=None):
     '''
     Parameters
     ----------
     create_new_file : str
         If not empty, then a new file is created containing the information
         in `data_filename` plus the treated outputs.
+    data_filename : str
+        If `data` is given and `data_filename` is empty, then an updated file
+        will not be stored.
+    data : dict
+        If given, `data_filename` will be ignored during data reading.
+    raw_data : pd.Series or str or None.
+        Data is gatherer according to `raw_data` type. The possibilities are:
+            None: simulation folders
+            str: raw data file
+            pandas.Series: uses itself.
+
     Notes
     -----
     1. If the output variables already exist in 'points', their values are
     updated only if the post-processing data for the given point is available
     in `sims_dir_name`. Otherwise, older values are kept.
     '''
-    # TODO: pass args to post-processing sim
-    # TODO: verify if pp_fnc is callable
+
+    # initialization
+    pp_fnc_kwargs = {} if pp_fnc_kwargs is None else pp_fnc_kwargs
 
     # get current pandas
-    with open(os.path.join(example_name, data_filename), 'rb') as file:
-        global_data = pickle.load(file)
-    points = global_data['points']
+    if data is None:
+        with open(os.path.join(example_name, data), 'rb') as file:
+            data = pickle.load(file)
+    points = data['points']
 
-    # add outputs
+    # get available simulations
+    if type(raw_data) is str or raw_data is None:
+        raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
+                                    sim_numbers=sim_numbers, delete=False,
+                                    raw_data_filename=raw_data)
+
+    # add outputs to pd.Dataframe (also post-processes 1st simulation)
     column_names = list(points.columns.values)
+    sim_numbers = list(raw_data.keys()) if sim_numbers is None else list(sim_numbers)
+    sim_number = sim_numbers.pop(0)
+    data_sim = raw_data.loc[sim_number]
+    results_sim = pp_fnc(data_sim, **pp_fnc_kwargs)
+    output_variables = list(results_sim.keys())
     for variable in output_variables[::-1]:
         if variable not in column_names:
             points.insert(loc=len(column_names), value=None, column=variable)
+    for key, value in results_sim.items():
+        points.loc[sim_number, key] = value
 
-    # get available simulations
-    data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
-                            sim_numbers=sim_numbers, delete=False,
-                            raw_data_filename=raw_data_filename)
-
-    for i, data_sim in data.iteritems():
-        # get results
-        points.loc[i, output_variables] = pp_fnc(data_sim)
+    # get results for each simulation
+    for sim_number, data_sim in raw_data.loc[sim_numbers].iteritems():
+        results_sim = pp_fnc(data_sim, **pp_fnc_kwargs)
+        for key, value in results_sim.items():
+            points.loc[sim_number, key] = value
 
     # create new pickle file
     data_filename_output = create_new_file if create_new_file else data_filename
-    with open(os.path.join(example_name, data_filename_output), 'wb') as file:
-        pickle.dump(global_data, file)
+    if data_filename_output:
+        with open(os.path.join(example_name, data_filename_output), 'wb') as file:
+            pickle.dump(data, file)
+
+    return data
 
 
 def get_sim_data(dir_name, folder_name):
@@ -86,9 +113,9 @@ def get_sim_data(dir_name, folder_name):
     return data
 
 
-def concatenate_data(example_name, data_filename='DoE.pkl',
-                     raw_data_filename='raw_data.pkl', sims_dir_name='analyses',
-                     delete=False, compress=True, sim_numbers=None):
+def concatenate_raw_data(example_name, data_filename='DoE.pkl',
+                         raw_data_filename='raw_data.pkl', sims_dir_name='analyses',
+                         delete=False, compress=True, sim_numbers=None):
     '''
     Creates an unique file that contains all the information of the problem.
 
@@ -128,6 +155,31 @@ def concatenate_data(example_name, data_filename='DoE.pkl',
     # save file
     with open_file(os.path.join(example_name, raw_data_filename), 'wb') as file:
         pickle.dump(data, file)
+
+    return data
+
+
+def update_raw_data(example_name, data_filename='DoE.pkl',
+                    raw_data_filename='raw_data.pkl', compress=True):
+    '''
+    Updates non-raw data within raw data dictionary file.
+    '''
+    # TODO: delete!
+
+    # initialization
+    open_file = gzip.open if compress else open
+
+    # load both data
+    with open(os.path.join(example_name, data_filename), 'rb') as file:
+        doe = pickle.load(file, encoding='latin1')
+    raw_data = read_pkl_file(os.path.join(example_name, raw_data_filename))
+
+    # update raw data
+    raw_data['doe'] = doe
+
+    # store raw data
+    with open_file(os.path.join(example_name, raw_data_filename), 'wb') as file:
+        pickle.dump(raw_data, file)
 
 
 def collect_raw_data(example_name, sims_dir_name='analyses', sim_numbers=None,

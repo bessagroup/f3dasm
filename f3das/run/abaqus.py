@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-25 14:29:58
+Last modified on 2020-09-28 18:04:42
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -22,9 +22,13 @@ import numpy as np
 
 # local library
 import f3das
-from f3das.utils.file_handling import verify_existing_name
-from f3das.run.utils import get_updated_sims_state
-from f3das.utils.utils import import_abstract_obj
+from .utils import get_updated_sims_state
+from ..utils.file_handling import verify_existing_name
+from ..utils.utils import import_abstract_obj
+from ..post_processing import post_process_sims
+from ..post_processing import concatenate_raw_data
+from ..post_processing import update_raw_data
+from ..post_processing import collect_raw_data
 
 
 # TODO: interrupt simulations
@@ -32,11 +36,12 @@ from f3das.utils.utils import import_abstract_obj
 
 # run abaqus
 
-def run_sims(example_name, n_sims=None, n_cpus=1,
-             points=None, data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
+def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
+             data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
              sims_dir_name='analyses', run_module_name='f3das.abaqus.run.run_model',
              keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
-             gui=False):
+             gui=False, delete=False, pp_fnc=None, pp_fnc_kwargs=None,
+             create_new_file='',):
     '''
     IMPORTANT: if number cpus>1 (parallel simulations, not simulation in
     parallel), function must be inside "if __name__='__main__':" in the script.
@@ -62,11 +67,12 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
         Store Python objects that were used to create and run the numerical
         simulations? If yes, a file with extension 'pkl_abq' is created.
         Specially useful for debugging.
+
+    # TODO: complete docstrings
     '''
 
     # TODO: possibility of zipping odb
     # TODO: verify licences
-    # TODO: `raw_data_filename` and `create_new_file`
 
     # get data
     with open(os.path.join(example_name, data_filename), 'rb') as file:
@@ -82,7 +88,7 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
         n_sims = len(data['run_info']['missing_sims']) if n_sims is None else n_sims
         points = set(list(data['run_info']['missing_sims'])[:n_sims])
         data['run_info']['missing_sims'].difference_update(points)
-    data['run_info']['running_sims'].intersection_update(points)
+    data['run_info']['running_sims'].update(points)
 
     # create analyses dir
     dir_full_path = os.path.join(example_name, sims_dir_name)
@@ -112,8 +118,9 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
         if n_cpus > 1:
             _run_sims_in_parallel(example_name, points, n_cpus,
                                   run_module_name=run_module_name,
-                                  sims_dir_name=sims_dir_name, abaqus_path=abaqus_path,
-                                  gui=gui, temp_dir_name=temp_dir_name)
+                                  sims_dir_name=sims_dir_name,
+                                  abaqus_path=abaqus_path, gui=gui,
+                                  temp_dir_name=temp_dir_name)
 
         else:
             _run_sims_sequentially(example_name, points,
@@ -129,10 +136,39 @@ def run_sims(example_name, n_sims=None, n_cpus=1,
         # delete _temp dir
         shutil.rmtree(temp_dir_name)
 
-        # TODO: concatenate data
+        # concatenate (and/or collect) data
+        if raw_data_filename:
+            raw_data_full = concatenate_raw_data(
+                example_name, data_filename=data_filename,
+                raw_data_filename=raw_data_filename, sims_dir_name=sims_dir_name,
+                delete=delete, compress=True, sim_numbers=points)
+            raw_data = raw_data_full['raw_data'].loc[points]
+        else:
+            raw_data = collect_raw_data(example_name, sims_dir_name=sims_dir_name,
+                                        delete=delete, raw_data_filename='',
+                                        sim_numbers=points)
 
-        # TODO: UPDATE
-        _update_sims_state()
+        # update sims state
+        successful_sims = _update_sims_state(data, points, raw_data)
+
+        # automatic post-processing
+        if pp_fnc is not None and len(successful_sims):
+            data = post_process_sims(pp_fnc, example_name,
+                                     sim_numbers=successful_sims,
+                                     data_filename='', data=data,
+                                     raw_data=raw_data.loc[successful_sims],
+                                     pp_fnc_kwargs=pp_fnc_kwargs,
+                                     create_new_file=create_new_file)
+
+        # store data with updated `run_info`
+        with open(os.path.join(example_name, data_filename), 'wb') as file:
+            pickle.dump(data, file)
+
+        # update data within concatenate data
+        # TODO: delete
+        if raw_data_filename and not create_new_file:
+            update_raw_data(example_name, data_filename=data_filename,
+                            raw_data_filename=raw_data_filename, compress=True)
 
 
 def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
@@ -147,6 +183,10 @@ def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
 
     # deal with subroutines
     copy_subroutines_fncs = _get_copy_subroutines(sim_info)
+
+    # manipulate transform inputs
+    if transform_inputs is not None:
+        transform_inputs = import_abstract_obj(transform_inputs)
 
     # create pkl files
     dir_full_path = os.path.join(example_name, sims_dir_name)
@@ -167,7 +207,6 @@ def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
 
         # if required, transform inputs
         if transform_inputs is not None:
-            transform_inputs = import_abstract_obj(transform_inputs)
             variables = transform_inputs(variables)
 
         # create and dump dict
@@ -262,28 +301,18 @@ def _create_temp_dir(temp_dir_name='_temp'):
     shutil.copytree(f3das.__path__[0], new_f3das_dir)
 
 
-def _update_sims_state(example_name, points,
-                       sims_dir_name='analyses',):
+def _update_sims_state(data, points, raw_data):
 
     # based on points, reupdate data['run_info']
-    error_sims_, successful_sims_ = get_updated_sims_state(
-        example_name, points, sims_dir_name)
+    error_sims_, successful_sims_ = get_updated_sims_state(raw_data=raw_data)
 
-    points_ = list(set(points) - set(error_sims_) - set(successful_sims_))
-    data['run_info']['missing_sims'].extend(points_)
-    data['run_info']['missing_sims'].sort()
+    points_ = points - error_sims_ - successful_sims_
+    data['run_info']['missing_sims'].update(points_)
+    data['run_info']['error_sims'].update(error_sims_)
+    data['run_info']['successful_sims'].update(successful_sims_)
+    data['run_info']['running_sims'].difference_update(points)
 
-    data['run_info']['error_sims'].extend(error_sims_)
-    data['run_info']['error_sims'].sort()
-
-    data['run_info']['successful_sims'].extend(successful_sims_)
-    data['run_info']['successful_sims'].sort()
-
-    running_sims = data['run_info']['running_sims']
-    data['run_info']['running_sims'] = sorted(list(set(running_sims).difference(set(points))))
-
-    with open(os.path.join(example_name, data_filename), 'wb') as file:
-        pickle.dump(data, file)
+    return successful_sims_
 
 
 def _get_copy_subroutines(sim_info):

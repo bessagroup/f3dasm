@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-25 11:22:17
+Last modified on 2020-09-25 14:41:47
 Python 2.7.16
 v0.1
 
@@ -96,6 +96,8 @@ class RunModel(object):
             abstract_model = import_abstract_obj(info['abstract_model'])
             pp_fnc_loc = info.get('post_processing_fnc', None)
             post_processing_fnc = import_abstract_obj(pp_fnc_loc) if pp_fnc_loc is not None else None
+            for key in ['abstract_model', 'post_processing_fnc']:
+                info.pop(key, None)
 
             # get args
             args = self.variables.copy()
