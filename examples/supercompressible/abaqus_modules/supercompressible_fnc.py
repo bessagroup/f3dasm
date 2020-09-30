@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-30 07:41:13
+Last modified on 2020-09-30 11:05:25
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -28,17 +28,17 @@ import itertools
 import numpy as np
 
 
-# variable definition
+# # variable definition
 # model_name = 'SUPERCOMPRESSIBLE_LIN_BUCKLE'
 # job_name = 'Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'
 # n_longerons = 3
 # bottom_diameter = 100.
-# top_diameter = 82.42
-# pitch = 1.15223e2
 # young_modulus = 3.5e3
-# shear_modulus = 1.38631e3
-# d = 10.
-# imperfection = 7.85114e-02  # only needed for riks
+# shear_modulus = 1287.
+# ratio_d = 0.004000
+# ratio_pitch = 0.250000
+# ratio_top_diameter = 0.00
+# imperfection = 0.094633  # only needed for riks
 
 
 # linear buckle
