@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-30 07:59:06
+Last modified on 2020-09-30 08:40:00
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -38,7 +38,7 @@ shear_modulus = 1287.
 ratio_d = 0.004000
 ratio_pitch = 0.250000
 ratio_top_diameter = 0.00
-imperfection = 7.85114e-02  # only needed for riks
+imperfection = 0.094633  # only needed for riks
 
 
 # linear buckle

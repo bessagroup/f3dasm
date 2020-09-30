@@ -32,7 +32,7 @@ shear_modulus = 1287.
 ratio_d = 0.004000
 ratio_pitch = 0.250000
 ratio_top_diameter = 0.00
-imperfection = 7.85114e-02
+imperfection = 0.094633
 
 
 # abort if not coilable
