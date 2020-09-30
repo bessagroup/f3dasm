@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-24 13:07:43
+Last modified on 2020-09-30 08:05:08
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -16,8 +16,7 @@ import f3das
 
 # setup
 
-install_requires = ['numpy', 'matplotlib', 'pandas', 'salib',
-                    'scipy']
+install_requires = ['numpy', 'matplotlib', 'pandas', 'salib', ]
 
 
 setup(
