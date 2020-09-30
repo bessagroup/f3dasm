@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-29 11:08:58
+Last modified on 2020-09-30 11:39:22
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -13,9 +13,9 @@ import pickle
 from collections import OrderedDict
 
 # local library
-import f3das
-from f3das.utils.file_handling import InfoReport
-from f3das.post_processing import collect_raw_data
+import f3dasm
+from ..utils.file_handling import InfoReport
+from ..post_processing import collect_raw_data
 
 
 # object definition
@@ -72,7 +72,7 @@ def create_main_file(example_name, doe_variables, points, sim_info,
                          'running_sims': set(),
                          'error_sims': set(),
                          'successful_sims': set()},
-            'version': f3das.__version__}
+            'version': f3dasm.__version__}
 
     # add facultative information
     facultative_vars = ['fixed_variables', 'additional_variables',
@@ -100,7 +100,7 @@ def create_sim_info(name, abstract_model, job_info, post_processing_fnc=None,
 
     post_processing_fnc : str or array of str
         Objects used to post-process numerical models, if `abstract_model` does
-        is not a child of `f3das.abaqus.modelling.model.BasicModel`
+        is not a child of `f3dasm.abaqus.modelling.model.BasicModel`
 
     # TODO: change place
     sim_info : dict

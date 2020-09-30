@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:28:59
-Last modified on 2020-09-29 09:22:43
+Last modified on 2020-09-30 11:42:01
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -18,10 +18,10 @@ import shutil
 import pandas as pd
 
 # local library
-from f3das.utils.file_handling import get_unique_file_by_ext
-from f3das.utils.file_handling import collect_folder_names
-from f3das.utils.utils import get_int_number_from_str
-from f3das.utils.utils import read_pkl_file
+from .utils.file_handling import get_unique_file_by_ext
+from .utils.file_handling import collect_folder_names
+from .utils.utils import get_int_number_from_str
+from .utils.utils import read_pkl_file
 
 # TODO: possibility of entering abaqus for post-processing
 

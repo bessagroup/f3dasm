@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-30 11:09:12
-Last modified on 2020-09-30 11:12:58
+Last modified on 2020-09-30 11:43:36
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -14,10 +14,10 @@ from collections import OrderedDict
 
 # third-party
 import numpy as np
-from f3das.run.utils import create_main_file
-from f3das.run.utils import create_sim_info
-from f3das.run.abaqus import run_sims
-from f3das.design_of_experiments import create_doe
+from f3dasm.run.utils import create_main_file
+from f3dasm.run.utils import create_sim_info
+from f3dasm.run.abaqus import run_sims
+from f3dasm.design_of_experiments import create_doe
 
 # local library
 from abaqus_modules.get_results import get_results

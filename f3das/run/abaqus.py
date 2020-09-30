@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-30 07:30:59
+Last modified on 2020-09-30 11:41:45
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -21,7 +21,7 @@ import shutil
 import numpy as np
 
 # local library
-import f3das
+import f3dasm
 from .utils import get_updated_sims_state
 from ..utils.file_handling import verify_existing_name
 from ..utils.utils import import_abstract_obj
@@ -37,7 +37,7 @@ from ..post_processing import collect_raw_data
 
 def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
              data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
-             sims_dir_name='analyses', run_module_name='f3das.abaqus.run.run_model',
+             sims_dir_name='analyses', run_module_name='f3dasm.abaqus.run.run_model',
              keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
              gui=False, delete=False, pp_fnc=None, pp_fnc_kwargs=None,
              create_new_file='',):
@@ -103,7 +103,7 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
     n_cpus_sim = np.array([sim['job_info'].get('n_cpus', 1) for sim in sim_info.values()])
     n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
 
-    # create _temp folder and copy f3das
+    # create _temp folder and copy f3dasm
     temp_dir_name = '_temp'
     _create_temp_dir(temp_dir_name)
 
@@ -217,7 +217,7 @@ def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
 
 
 def _run_sims_sequentially(example_name, points, wait_time=0,
-                           run_module_name='f3das.abaqus.run.run_model',
+                           run_module_name='f3dasm.abaqus.run.run_model',
                            sims_dir_name='analyses', abaqus_path='abaqus',
                            gui=False, temp_dir_name='_temp'):
     '''
@@ -259,7 +259,7 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
 
 
 def _run_sims_in_parallel(example_name, points, n_cpus,
-                          run_module_name='f3das.abaqus.run.run_model',
+                          run_module_name='f3dasm.abaqus.run.run_model',
                           sims_dir_name='analyses', abaqus_path='abaqus',
                           gui=False, temp_dir_name='_temp'):
 
@@ -288,10 +288,10 @@ def _run_sims_in_parallel(example_name, points, n_cpus,
 def _create_temp_dir(temp_dir_name='_temp'):
     if not os.path.exists(temp_dir_name):
         os.mkdir(temp_dir_name)
-    new_f3das_dir = os.path.join(temp_dir_name, 'f3das')
+    new_f3das_dir = os.path.join(temp_dir_name, 'f3dasm')
     if os.path.exists(new_f3das_dir):
         shutil.rmtree(new_f3das_dir)
-    shutil.copytree(f3das.__path__[0], new_f3das_dir)
+    shutil.copytree(f3dasm.__path__[0], new_f3das_dir)
 
 
 def _update_sims_state(data, points, raw_data):

@@ -1,6 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-09-21 12:00:21
+Last modified on 2020-09-30 11:36:59
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -13,7 +13,7 @@ Notes
 -to run in the cmd: >>> abaqus python run_abaqus_example.py <example_name> --gui
 -if --gui is not added to cmd, then it runs without gui
 -Abaqus work directory will be the one that contains this file (this file needs
-to get access to f3das).
+to get access to f3dasm).
 '''
 
 
@@ -24,10 +24,10 @@ import os
 import argparse
 from itertools import chain
 
-# local library
-from f3das.utils.file_handling import verify_existing_name
-from f3das.utils.file_handling import clean_abaqus_dir
-from f3das.utils.file_handling import get_sorted_by_time
+# third-party
+from f3dasm.utils.file_handling import verify_existing_name
+from f3dasm.utils.file_handling import clean_abaqus_dir
+from f3dasm.utils.file_handling import get_sorted_by_time
 
 
 # parse arguments

@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-08 11:56:46
-Last modified on 2020-04-22 22:15:16
-Python 3.7.3
-v0.1
+Last modified on 2020-09-30 11:37:28
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -17,16 +15,16 @@ Verify that material subpackage is working properly.
 # standard library
 import pickle
 
-# local library
-from f3das.material.material import Material
+# third-party
+from f3dasm.material.material import Material
 
 
-#%% initialization
+# initialization
 
 material_name = 't800_17GSM_120'
 
 
-#%% create material and print properties
+# create material and print properties
 
 material = Material(material_name, read=True)
 property_values = {key: value.value for key, value in material.props.items()}
@@ -34,7 +32,7 @@ property_values = {key: value.value for key, value in material.props.items()}
 print(property_values)
 
 
-#%% dump object
+# dump object
 
 data = {'material': material}
 filename = 'test.pickle'

@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 12:09:08
-Last modified on 2020-04-22 22:16:20
+Last modified on 2020-09-30 11:45:12
 Python 2.7.16
 v0.1
 
@@ -19,8 +19,8 @@ Show how to use TRAC boom model.
 # standard library
 import pickle
 
-# local library
-from f3das.abaqus.models.TRAC_boom import TRACBoomModel
+# third-party
+from f3dasm.abaqus.models.TRAC_boom import TRACBoomModel
 
 
 #%% initialization

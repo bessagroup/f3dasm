@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-30 11:18:00
-Last modified on 2020-09-30 11:21:34
+Last modified on 2020-09-30 11:43:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -8,7 +8,7 @@ Last modified on 2020-09-30 11:21:34
 # imports
 
 # third-party
-from f3das.run.abaqus import run_sims
+from f3dasm.run.abaqus import run_sims
 
 # local library
 from abaqus_modules.get_results import get_results

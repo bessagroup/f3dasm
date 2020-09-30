@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-06 18:34:34
-Last modified on 2020-04-22 22:16:13
-Python 2.7.16
-v0.1
+Last modified on 2020-09-30 11:45:00
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -20,9 +18,9 @@ from abaqus import mdb, backwardCompatibility
 # standard library
 import pickle
 
-# local library
-from f3das.abaqus.geometry.structures import TRACBoom
-from f3das.abaqus.material.abaqus_materials import LaminaMaterial
+# third-party
+from f3dasm.abaqus.geometry.structures import TRACBoom
+from f3dasm.abaqus.material.abaqus_materials import LaminaMaterial
 
 
 #%% initialization

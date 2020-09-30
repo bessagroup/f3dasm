@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-09-22 13:22:04
+Last modified on 2020-09-30 11:52:02
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -45,8 +45,8 @@ import itertools
 import numpy as np
 
 # local library
-from f3das.material.material import Material
-from f3das.abaqus.material.abaqus_materials import IsotropicMaterial
+from ..material.material import Material
+from ..material.abaqus_materials import IsotropicMaterial
 
 
 # Bessa, 2018 (TRAC boom)

@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-07 18:04:04
-Last modified on 2020-09-22 16:50:48
+Last modified on 2020-09-30 11:44:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -11,8 +11,8 @@ Last modified on 2020-09-22 16:50:48
 #  abaqus
 from abaqus import session
 
-# local library
-from f3das.abaqus.models.supercompressible import SupercompressibleModel
+# third-party
+from f3dasm.abaqus.models.supercompressible import SupercompressibleModel
 
 
 # initialization

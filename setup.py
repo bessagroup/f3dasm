@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-30 08:05:08
+Last modified on 2020-09-30 11:36:40
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -11,7 +11,7 @@ Last modified on 2020-09-30 08:05:08
 from setuptools import setup, find_packages
 
 # local library
-import f3das
+import f3dasm
 
 
 # setup
@@ -20,11 +20,11 @@ install_requires = ['numpy', 'matplotlib', 'pandas', 'salib', ]
 
 
 setup(
-    name="f3das",
-    version=f3das.__version__,
+    name="f3dasm",
+    version=f3dasm.__version__,
     author="L. F. Pereira",
     author_email="lfpereira@fe.up.pt",
-    packages=find_packages(include=['f3das', 'f3das.*']),
+    packages=find_packages(include=['f3dasm', 'f3dasm.*']),
     install_requires=install_requires,
     description="Framework for Data-Driven Design and Analysis of Structures.",
     classifiers=["Programming Language :: Python :: 3",

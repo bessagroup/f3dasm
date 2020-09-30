@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-29 10:56:14
+Last modified on 2020-09-30 11:40:17
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -18,7 +18,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 
 # local library
-from f3das.run.utils import get_sims_info
+from .utils import get_sims_info
 from ..utils.file_handling import InfoReport
 from ..utils.plot import BarPlot
 from ..post_processing import collect_raw_data

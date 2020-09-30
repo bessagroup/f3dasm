@@ -1,5 +1,5 @@
-# F3DAS
-Framework for Data-Driven Design and Analysis of Structures (F3DAS)
+# F3DASM
+Framework for Data-Driven Design and Analysis of Structures and Materials (F3DASM)
 
 Created by M.A. Bessa (M.A.Bessa@tudelft.nl)
 

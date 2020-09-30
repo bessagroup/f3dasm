@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 14:53:01
-Last modified on 2020-09-29 10:42:42
+Last modified on 2020-09-30 11:52:16
 Python 2.7.16
 v0.1
 
@@ -36,8 +36,8 @@ from .utils import convert_dict_unicode_str
 from .stats import get_wait_time_from_log
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
-from f3das.utils.file_handling import get_unique_file_by_ext
-from f3das.utils.utils import import_abstract_obj
+from ..utils.file_handling import get_unique_file_by_ext
+from ..utils.utils import import_abstract_obj
 
 
 # object definition

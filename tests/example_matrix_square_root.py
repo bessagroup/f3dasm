@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-07 16:21:24
-Last modified on 2020-04-22 22:15:24
-Python 3.7.3
-v0.1
+Last modified on 2020-09-30 11:35:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,23 +14,21 @@ Notes
 '''
 
 
-#%% imports
+# imports
 
 # third-party
 import numpy as np
-
-# local library
-from f3das.misc.linalg import symmetricize_vector
-from f3das.misc.linalg import sqrtm
+from f3dasm.misc.linalg import symmetricize_vector
+from f3dasm.misc.linalg import sqrtm
 
 
-#%% initialization
+# initialization
 
 a = [1.831, 0.731, 0.985]
 b = [2.031, 0.162, 2.021, 1.245, 0, 2.561]
 
 
-#%% computations
+# computations
 
 # get matrices
 A = symmetricize_vector(a)
@@ -43,7 +39,7 @@ A_sqrt = sqrtm(A)
 B_sqrt = sqrtm(B)
 
 
-#%% print results
+# print results
 
 print('2D:')
 print('A:', A)

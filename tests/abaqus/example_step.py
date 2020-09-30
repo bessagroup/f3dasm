@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-08 15:42:58
-Last modified on 2020-04-22 22:15:07
-Python 2.7.16
-v0.1
+Last modified on 2020-09-30 11:37:54
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -12,16 +10,16 @@ Show how to create step using the classes defined in abaqus.modelling
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqus import mdb, backwardCompatibility
 
-# local library
-from f3das.abaqus.modelling.step import BuckleStep
+# third-party
+from f3dasm.abaqus.modelling.step import BuckleStep
 
 
-#%% initialization
+# initialization
 
 backwardCompatibility.setValues(reportDeprecated=False)
 
@@ -33,7 +31,7 @@ job_description = ''
 step_name = 'TEST_STEP'
 
 
-#%% create model
+# create model
 
 model = mdb.Model(name=model_name)
 
@@ -41,7 +39,7 @@ if 'Model-1' in mdb.models.keys():
     del mdb.models['Model-1']
 
 
-#%% create step
+# create step
 
 new_step = BuckleStep(step_name)
 new_step.create_step(model)

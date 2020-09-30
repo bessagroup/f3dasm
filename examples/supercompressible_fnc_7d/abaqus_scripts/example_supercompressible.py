@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-21 13:50:32
-Last modified on 2020-09-22 07:10:38
+Last modified on 2020-09-30 14:27:45
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -13,11 +13,11 @@ from abaqus import mdb
 from abaqusConstants import OFF
 from abaqus import session
 
-# local library
-from f3das.abaqus.models.supercompressible_fnc import lin_buckle
-from f3das.abaqus.models.supercompressible_fnc import post_process_lin_buckle
-from f3das.abaqus.models.supercompressible_fnc import riks
-from f3das.abaqus.models.supercompressible_fnc import post_process_riks
+# third-party
+from f3dasm.abaqus.models.supercompressible_fnc import lin_buckle
+from f3dasm.abaqus.models.supercompressible_fnc import post_process_lin_buckle
+from f3dasm.abaqus.models.supercompressible_fnc import riks
+from f3dasm.abaqus.models.supercompressible_fnc import post_process_riks
 
 
 # initialization
