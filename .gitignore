@@ -18,7 +18,6 @@
 *.log
 *.dmp
 *.rar
-*.pkl
 
 # ignore all the directories __pychache__
 **/__pycache__/
