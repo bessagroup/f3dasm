@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-29 09:04:14
+Last modified on 2020-09-29 11:08:58
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -47,7 +47,7 @@ def create_main_file(example_name, doe_variables, points, sim_info,
         the design of experiments.
     additional_info : dict
         Information about the problem to store for later use.
-    transform_inputs : fnc
+    transform_inputs : str
         Interface function to transform inputs from raw to the name required
         by the model.
     data_filename : str

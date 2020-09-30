@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-15 11:09:06
-Last modified on 2020-09-29 09:12:17
+Last modified on 2020-09-29 10:56:14
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -37,6 +37,7 @@ def analyze_times(example_name, data_filename='DoE.pkl',
     show_figures : bool
         It does not work if code runs from a notebook.
     '''
+    # TODO: expand
 
     # initialization
     figs = []

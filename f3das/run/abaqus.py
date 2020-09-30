@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-29 09:37:07
+Last modified on 2020-09-30 07:30:59
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -150,8 +150,8 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
         successful_sims = _update_sims_state(data, points, raw_data)
 
         # automatic post-processing
-        # TODO: pp if only one variable
         if pp_fnc is not None and len(successful_sims):
+            # TODO: variant of pp_fnc when user defines variable; how to have both ways of defining variables?
             data = post_process_sims(pp_fnc, example_name,
                                      sim_numbers=successful_sims,
                                      data_filename='', data=data,
