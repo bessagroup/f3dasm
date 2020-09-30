@@ -27,17 +27,22 @@ previous_model_job_name = 'Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'
 previous_model_results = buckling_results
 n_longerons = 3
 bottom_diameter = 100.
-top_diameter = 82.42
-pitch = 1.15223e2
 young_modulus = 3.5e3
-shear_modulus = 1.38631e3
-d = 10.
+shear_modulus = 1287.
+ratio_d = 0.004000
+ratio_pitch = 0.250000
+ratio_top_diameter = 0.00
 imperfection = 7.85114e-02
 
 
 # abort if not coilable
 if not int(previous_model_results['coilable']):
     raise Exception('Non-coilable geometry')
+
+# variables from ratios
+d = ratio_d * bottom_diameter
+pitch = ratio_pitch * bottom_diameter
+top_diameter = bottom_diameter * (1. - ratio_top_diameter)
 
 # variables with defaults
 n_storeys = 1

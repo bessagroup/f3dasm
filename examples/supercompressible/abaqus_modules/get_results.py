@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 16:14:14
-Last modified on 2020-09-29 14:28:19
+Last modified on 2020-09-30 07:51:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -78,9 +78,9 @@ def read_and_clean_results_riks(data, job_name='SUPERCOMPRESSIBLE_RIKS',
     E_max = np.max(np.abs(np.array(results.get('E', [np.nan]))))
 
     # get geometric parameters
-    pitch = data['variables']['pitch']
     bottom_diameter = data['variables']['bottom_diameter']
     bottom_area = np.pi * bottom_diameter**2 / 4
+    pitch = data['variables']['ratio_pitch'] * bottom_diameter
 
     # get load-displacement
     u_3 = np.abs(np.array(results['U'][-1]))

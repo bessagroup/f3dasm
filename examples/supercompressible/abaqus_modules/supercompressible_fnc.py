@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-22 12:07:10
-Last modified on 2020-09-29 14:41:58
+Last modified on 2020-09-30 07:41:13
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -43,8 +43,15 @@ import numpy as np
 
 # linear buckle
 
-def lin_buckle(model_name, job_name, n_longerons, bottom_diameter, top_diameter,
-               pitch, young_modulus, shear_modulus, d):
+def lin_buckle(model_name, job_name, n_longerons, bottom_diameter,
+               young_modulus, shear_modulus, ratio_top_diameter, ratio_pitch,
+               ratio_d):
+
+    # variables from ratios
+    d = ratio_d * bottom_diameter
+    pitch = ratio_pitch * bottom_diameter
+    top_diameter = bottom_diameter * (1. - ratio_top_diameter)
+
     # variables with defaults
     n_storeys = 1
     twist_angle = 0.
@@ -370,13 +377,18 @@ def post_process_lin_buckle(odb):
 # TODO: pass
 
 
-def riks(model_name, job_name, n_longerons, bottom_diameter, top_diameter,
-         pitch, young_modulus, shear_modulus, d, imperfection,
-         previous_model_results, previous_model_job_name):
+def riks(model_name, job_name, n_longerons, bottom_diameter,
+         young_modulus, shear_modulus, ratio_top_diameter, ratio_pitch,
+         ratio_d, imperfection, previous_model_results, previous_model_job_name):
 
     # abort if not coilable
     if not int(previous_model_results['coilable']):
         return True
+
+    # variables from ratios
+    d = ratio_d * bottom_diameter
+    pitch = ratio_pitch * bottom_diameter
+    top_diameter = bottom_diameter * (1 - ratio_top_diameter)
 
     # variables with defaults
     n_storeys = 1
