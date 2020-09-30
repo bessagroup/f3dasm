@@ -24,5 +24,6 @@
 **/__pycache__/
 simulation*/
 **/example_*
+!**/example_*.py
 library_UDG_INEGI
 **/*.ipynb_checkpoints
