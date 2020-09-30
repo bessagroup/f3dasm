@@ -21,7 +21,8 @@
 
 # ignore all the directories __pychache__
 **/__pycache__/
-simulation*/
+build/
+dist/
 **/example_*
 !**/example_*.py
 library_UDG_INEGI
