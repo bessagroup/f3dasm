@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-30 11:09:12
-Last modified on 2020-09-30 11:43:36
+Last modified on 2020-09-30 16:15:58
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -50,6 +50,7 @@ s = 1.2 * deg2rad  # std
 sigma = np.sqrt(np.log(s**2 / m**2 + 1))
 mu = np.log((m**2) / np.sqrt(s**2 + m**2))
 imperfection_dist = {'mean': mu, 'sigma': sigma}
+np.random.seed(seed)
 imperfections = np.random.lognormal(size=n_pts, **imperfection_dist)
 
 additional_variables = {'imperfection': imperfections}
