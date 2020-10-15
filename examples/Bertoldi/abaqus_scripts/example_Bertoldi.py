@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-09-30 14:26:00
+Last modified on 2020-10-15 08:50:19
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -10,16 +10,16 @@ Show how to generate a 2d RVE (in particular, Bertoldi's RVE).
 '''
 
 
-#%% imports
+# imports
 
 # abaqus library
 from abaqus import mdb, backwardCompatibility
 
-# third-party
-from f3dasm.abaqus.geometry.rve import BertoldiExampleRVE
+# local library
+from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiRVE
 
 
-#%% initialization
+# initialization
 
 backwardCompatibility.setValues(reportDeprecated=False)
 
@@ -38,7 +38,7 @@ c_1 = 2.98642006e-01
 c_2 = 1.37136137e-01
 
 
-#%% create model
+# create model
 
 model = mdb.Model(name=model_name)
 
@@ -46,13 +46,13 @@ if 'Model-1' in mdb.models.keys():
     del mdb.models['Model-1']
 
 
-#%% define objects
+# define objects
 
-rve = BertoldiExampleRVE(length, width, center, r_0, c_1, c_2,
-                         n_points=100, name='BERTOLDI_RVE')
+rve = BertoldiRVE(length, width, center, r_0, c_1, c_2,
+                  n_points=100, name='BERTOLDI_RVE')
 
 
-#%% create part and assembly
+# create part and assembly
 
 # create part and generate mesh
 rve.create_part(model)

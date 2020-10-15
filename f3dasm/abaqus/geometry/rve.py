@@ -1,8 +1,7 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-09-11 17:00:17
-Python 2.7.16
-v0.1
+Last modified on 2020-10-15 08:55:44
+
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,7 +20,7 @@ References
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (TWO_D_PLANAR, DEFORMABLE_BODY, ON, FIXED)
@@ -37,7 +36,7 @@ from ...utils.linalg import symmetricize_vector
 from ...utils.linalg import sqrtm
 
 
-#%% 2d RVE
+# 2d RVE
 
 class RVE2D:
 
@@ -390,36 +389,3 @@ class RVE2D:
     @staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
-
-
-class BertoldiExampleRVE(RVE2D):
-
-    def __init__(self, length, width, center, r_0, c_1, c_2,
-                 n_points=100, name='BERTOLDI_RVE'):
-
-        # instantiate parent class
-        RVE2D.__init__(self, length, width, center, name=name)
-
-        # store vars
-        self.r_0 = r_0
-        self.c_1 = c_1
-        self.c_2 = c_2
-        self.n_points = n_points
-
-    def _create_inner_geometry(self, model):
-        '''
-        Creates particular geometry of this example, i.e. internal pores.
-        '''
-
-        # initialization
-        thetas = np.linspace(0., 2 * np.pi, self.n_points)
-
-        # get points for spline
-        points = []
-        for theta in thetas:
-            rr = self.r_0 * (1. + self.c_1 * np.cos(4. * theta) + self.c_2 * np.cos(8. * theta))
-            points.append(transform_point((rr * np.cos(theta), rr * np.sin(theta)),
-                                          origin_translation=self.center))
-
-        # generate spline
-        self.sketch.Spline(points=points)
