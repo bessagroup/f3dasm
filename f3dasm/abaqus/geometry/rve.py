@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-10-21 11:03:26
+Last modified on 2020-10-27 18:30:27
 
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -627,9 +627,10 @@ class RVE3D(object):
         face_name = self._get_face_name(pos)
         nodes = self.part.sets[face_name].nodes
         if sort_direction_i is not None and sort_direction_j is not None:
+            d = self._get_decimal_places()
             nodes = sorted(nodes, key=lambda node: (
-                self._get_node_coordinate(node, i=sort_direction_i),
-                self._get_node_coordinate(node, i=sort_direction_j),))
+                self._get_node_coordinate_with_tol(node, i=sort_direction_i, decimal_places=d),
+                self._get_node_coordinate_with_tol(node, i=sort_direction_j, decimal_places=d),))
 
         return nodes
 
@@ -694,7 +695,9 @@ class RVE3D(object):
         '''
         Notes
         -----
-        1. the sort method may not be robust enough.
+        1. the sort method is less robust to due rounding errors. `mesh_tol`
+        is used to increase its robustness, but find by closest should be
+        preferred.
         '''
         for i, (pos_i, pos_j) in enumerate(zip(self.face_positions[::2], self.face_positions[1::2])):
 
@@ -837,14 +840,27 @@ class RVE3D(object):
 
         return face_name, var_name, dim
 
-    @ staticmethod
+    @staticmethod
     def _get_edge_name(pos_i, pos_j):
         return 'EDGE_{}{}'.format(pos_i, pos_j)
 
-    @ staticmethod
+    @staticmethod
     def _get_face_name(position):
         return 'FACE_{}'.format(position)
 
-    @ staticmethod
+    @staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
+
+    @staticmethod
+    def _get_node_coordinate_with_tol(node, i, decimal_places):
+        return round(node.coordinates[i], decimal_places)
+
+    def _get_decimal_places(self):
+        d = 0
+        aux = 1
+        while aux > self.mesh_tol:
+            d += 1
+            aux = 10**(-d)
+
+        return d
