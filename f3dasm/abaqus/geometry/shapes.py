@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-10-20 20:00:20
+Last modified on 2020-10-27 18:24:51
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -59,15 +59,24 @@ class Sphere(object):
 
         return exists
 
+    def _is_inside(self, center, dims):
+        dist_squared = self.r**2
+        for (c, dim) in zip(center, dims):
+            if c < 0.:
+                dist_squared -= c**2
+            elif c > dim:
+                dist_squared -= (c - dim)**2
+
+        return dist_squared > 0
+
     def add_center(self, center, dims=None):
-        if self._center_exists(center):
+        if self._center_exists(center) or (dims is not None and not self._is_inside(center, dims)):
             return
         else:
             self.centers.append(center)
             if not self.periodic or dims is None:
                 return
 
-        # TODO: solve bug
         for i, (pos_center, dim) in enumerate(zip(center, dims)):
             if (pos_center + self.r) > dim:
                 new_center = copy.copy(center)
