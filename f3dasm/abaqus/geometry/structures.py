@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-09-30 11:52:02
+Last modified on 2020-11-02 12:07:44
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -45,9 +45,10 @@ import itertools
 import numpy as np
 
 # local library
-from ..material.material import Material
-from ..material.abaqus_materials import IsotropicMaterial
+from ..material.abaqus_materials import AbaqusMaterial
 
+
+# TODO: create general object and move this structures outside
 
 # Bessa, 2018 (TRAC boom)
 
@@ -647,13 +648,11 @@ class Supercompressible(object):
         # initialization
         r = self.cross_section_props['d'] / 2.
 
-        # TODO: improve material objects
         # create material
         material_name = 'LONGERON_MATERIAL'
-        material = Material(name=material_name, read=False)
-        material.add_prop('E', self.young_modulus)
-        material.add_prop('nu', self.young_modulus / (2 * self.shear_modulus) - 1)
-        IsotropicMaterial(material, material_name, model, create_section=False)
+        props = {'E': self.young_modulus,
+                 'nu': self.young_modulus / (2 * self.shear_modulus) - 1}
+        AbaqusMaterial(name=material_name, props=props, create_section=False)
 
         # create profile
         model.CircularProfile(name=profile_name, r=r)
