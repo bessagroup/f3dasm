@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-10-27 18:24:51
+Last modified on 2020-11-02 09:03:28
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -93,7 +93,7 @@ class Sphere(object):
             name = '{}_{}'.format(self.name, i)
             self._create_part_by_center(model, center, name, rve)
 
-    def _create_part_by_center(self, model, center, name, rve):
+    def _create_part_by_center(self, model, center, name, rve,):
         a, b = center[1] + self.r, center[1] - self.r
 
         # sketch
@@ -119,9 +119,9 @@ class Sphere(object):
 
     def _create_partitions(self, center, part):
         planes = [YZPLANE, XZPLANE, XYPLANE]
-        for i, c in enumerate(center):
-            offset = c if i != 2 else 0.
-            feature = part.DatumPlaneByPrincipalPlane(principalPlane=planes[i],
+        for c, plane in zip(center, planes):
+            offset = c if plane is not XYPLANE else 0.
+            feature = part.DatumPlaneByPrincipalPlane(principalPlane=plane,
                                                       offset=offset)
             datum = part.datums[feature.id]
             part.PartitionCellByDatumPlane(datumPlane=datum, cells=part.cells)
