@@ -1,6 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-09-30 11:36:59
+Last modified on 2020-11-02 11:28:37
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -47,7 +47,7 @@ args = parser.parse_args()
 
 # find example in subfolders
 
-folder_names = ['examples']
+folder_names = ['examples', 'tests']
 example_name = os.path.splitext(args.example_name)[0] + '.py'
 
 for path, _, filenames in chain.from_iterable([os.walk(folder_name) for folder_name in folder_names]):

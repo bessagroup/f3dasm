@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 10:27:22
-Last modified on 2020-11-02 09:39:27
+Last modified on 2020-11-02 12:03:08
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -25,11 +25,11 @@ t800_17GSM_120 = {
     'G12': 7.5e+09,
     'G13': 7.5e+09,
     'G23': 7.5e+09,
-    'density': 1.0,
+    'rho': 1.0,
 }
 
 steel_elastic = {
     'E': 210e9,
     'nu': .32,
-    'density': 7.8e3,
+    'rho': 7.8e3,
 }

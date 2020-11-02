@@ -1,12 +1,10 @@
 '''
 Created on 2020-04-08 12:03:11
-Last modified on 2020-05-07 20:03:15
-Python 2.7.16
-v0.1
+Last modified on 2020-11-02 11:59:58
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
-@collaborators:
+@contributors:
     Rodrigo Tavares (em10140@fe.up.pt)
 
 Main goal
@@ -16,10 +14,7 @@ material database.
 '''
 
 
-# TODO: concept of material behaviour?
-
-
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (ISOTROPIC, ENGINEERING_CONSTANTS, LAMINA)
@@ -27,52 +22,44 @@ from abaqusConstants import (ISOTROPIC, ENGINEERING_CONSTANTS, LAMINA)
 # standard library
 import abc
 
-# local library
-from ...material.material import Material
 
-
-#%% abstract classes
+# abaqus material classe
 
 class AbaqusMaterial(object):
-    __metaclass__ = abc.ABCMeta
 
-    def __init__(self, material, name, model, create_section):
+    def __init__(self, name, info=None, create_section=True, props=None,
+                 material_behaviors=None, model=None):
         '''
         Parameters
         ----------
-        material : instance of the class Material or str
-            If str, it reads material from database.
         name : str
             If None, it uses material name.
+        props : dict
+        material_behaviors: array-like
+            If None, then the behaviors are automatically found out based on
+            the available properties.
         model : abaqus mdb object
         create_section : bool
             If an homogeneous section is created.
         '''
-        if isinstance(material, str):
-            material = Material(material, read=True)
-        self.material = material
-        self.name = material.name.upper() if name is None else name.upper()
+        self.name = name
+        self.info = info
+        self.material_behaviors = material_behaviors
         self.create_section = create_section
-        # computations
+        self.props = props
+        # deal with behaviors
+        if material_behaviors is None:
+            self.material_behaviors = self._find_material_behaviors()
+        else:
+            self.material_behaviors = material_behaviors
         if model:
             self.create_material(model)
-
-    def _add_density(self, abaqusMaterial):
-        # TODO: expand to deal with tabular data
-
-        # verify if density info is available
-        if not self.material.has_prop('density'):
-            return
-
-        # add density
-        rho = self.material.get_value('density')
-        abaqusMaterial.Density(table=((rho, ),))
 
     def _verify_existing_material(self, model):
         '''
         Notes
         -----
-        -if name already exists in model materials, then it simply uses the
+        If name already exists in model materials, then it simply uses the
         defined material.
         '''
 
@@ -82,72 +69,127 @@ class AbaqusMaterial(object):
 
         return False
 
-    @abc.abstractmethod
     def create_material(self, model):
-        pass
-
-
-class ElasticMaterial(AbaqusMaterial):
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, material, name, model, create_section):
-        AbaqusMaterial.__init__(self, material, name, model, create_section)
-
-    def create_material(self, model):
-
-        # TODO: expand to deal with tabular data
 
         # verify existing material
         if self._verify_existing_material(model):
             return
 
-        # read required properties
-        mechanical_constants = [self.material.get_value(name)
-                                for name in self.required_mechanical_constants]
-
         # create material
         abaqusMaterial = model.Material(name=self.name)
 
-        # define properties
-        abaqusMaterial.Elastic(
-            type=self.elastic_type, table=(mechanical_constants,))
-        self._add_density(abaqusMaterial)
+        # create material behaviours
+        for material_behavior in self.material_behaviors:
+            if not material_behavior.has_props:
+                material_behavior.get_props_from_dict(self.props)
+            material_behavior.create_behavior(abaqusMaterial)
 
         # define section
         if self.create_section:
             model.HomogeneousSolidSection(name=self.name, material=self.name,
                                           thickness=None)
 
+    def _find_material_behaviors(self):
+        material_behaviors = []
 
-#%% material definiton
+        # add non-exclusive behaviors
+        for av_material_behavior in OTHER_MATERIAL_BEHAVIORS:
+            for prop in av_material_behavior.required_props:
+                if prop not in self.props.keys():
+                    break
+            else:
+                material_behaviors.append(av_material_behavior())
 
-class IsotropicMaterial(ElasticMaterial):
+        # add exclusive behaviors
+        for av_material_behavior in ELASTIC_MATERIAL_BEHAVIORS:
+            for prop in av_material_behavior.required_props:
+                if prop not in self.props.keys():
+                    break
+            else:
+                material_behaviors.append(av_material_behavior())
+                break
 
+        return material_behaviors
+
+
+# material behavior abstract class
+
+class MaterialBehavior(object):
+    '''
+    Notes
+    -----
+    If the material behavior starts without `props`, then AbaqusMaterials must
+    contain the required properties for the behavior.
+    '''
+
+    def __init__(self, props=None):
+        self.props = None if props is None else [props[name] for name in self.required_props]
+
+    def get_props_from_dict(self, props):
+        self.props = [props[name] for name in self.required_props]
+
+    @property
+    def has_props(self):
+        return not (self.props is None)
+
+
+# density
+
+class Density(MaterialBehavior):
+    required_props = ['rho']
+
+    def __init__(self, props=None):
+        MaterialBehavior.__init__(self, props)
+
+    def create_behavior(self, abaqusMaterial):
+        abaqusMaterial.Density(table=((self.props[0], ),))
+
+
+# elastic behavior
+
+class ElasticBehavior(MaterialBehavior):
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, props=None):
+        MaterialBehavior.__init__(self, props)
+
+    def create_behavior(self, abaqusMaterial):
+
+        # define properties
+        abaqusMaterial.Elastic(type=self.elastic_type, table=(self.props,))
+
+
+class IsotropicBehavior(ElasticBehavior):
     req_material_orientation = False
     elastic_type = ISOTROPIC
-    required_mechanical_constants = ['E', 'nu']
+    required_props = ['E', 'nu']
 
-    def __init__(self, material, name=None, model=None, create_section=True):
-        ElasticMaterial.__init__(self, material, name, model, create_section)
-
-
-class OrthotropicMaterial(ElasticMaterial):
-
-    req_material_orientation = True
-    elastic_type = ENGINEERING_CONSTANTS
-    required_mechanical_constants = ['E1', 'E2', 'E3',
-                                     'nu12', 'nu13', 'nu23',
-                                     'G12', 'G13', 'G23']
-
-    def __init__(self, material, name=None, model=None, create_section=True):
-        ElasticMaterial.__init__(self, material, name, model, create_section)
+    def __init__(self, props=None):
+        ElasticBehavior.__init__(self, props)
 
 
-class LaminaMaterial(ElasticMaterial):
+class LaminaBehavior(ElasticBehavior):
     req_material_orientation = True
     elastic_type = LAMINA
-    required_mechanical_constants = ['E1', 'E2', 'nu12',
-                                     'G12', 'G13', 'G23']
+    required_props = ['E1', 'E2', 'nu12',
+                      'G12', 'G13', 'G23']
 
-    def __init__(self, material, name=None, model=None, create_section=False):
-        ElasticMaterial.__init__(self, material, name, model, create_section)
+    def __init__(self, props=None):
+        ElasticBehavior.__init__(self, props)
+
+
+class EngineeringConstantsBehavior(ElasticBehavior):
+    req_material_orientation = True
+    elastic_type = ENGINEERING_CONSTANTS
+    required_props = ['E1', 'E2', 'E3',
+                      'nu12', 'nu13', 'nu23',
+                      'G12', 'G13', 'G23']
+
+    def __init__(self, props=None):
+        ElasticBehavior.__init__(self, props)
+
+
+OTHER_MATERIAL_BEHAVIORS = [Density, ]
+
+ELASTIC_MATERIAL_BEHAVIORS = [EngineeringConstantsBehavior, LaminaBehavior,
+                              IsotropicBehavior, ]  # order by complexity
