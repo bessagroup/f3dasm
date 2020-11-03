@@ -1,8 +1,6 @@
 '''
 Created on 2020-03-30 11:12:12
-Last modified on 2020-04-07 17:04:26
-Python 3.7.3
-v0.1
+Last modified on 2020-11-03 10:40:08
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -18,13 +16,13 @@ Abaqus.
 '''
 
 
-#%% imports
+# imports
 
 # third-party
 import numpy as np
 
 
-#%% function definition
+# function definition
 
 def symmetricize_vector(vec):
     '''
@@ -49,7 +47,7 @@ def symmetricize_vector(vec):
                 matrix[j, i] = matrix[i, j]
             k += 1
 
-    return matrix
+    return np.array(matrix)
 
 
 def sqrtm(matrix):

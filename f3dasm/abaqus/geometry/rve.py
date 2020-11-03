@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-10-27 18:30:27
+Last modified on 2020-11-03 10:46:18
 
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -23,12 +23,15 @@ References
 # imports
 
 # abaqus
+from caeModules import *  # allow noGui
 from abaqusConstants import (TWO_D_PLANAR, DEFORMABLE_BODY, ON, FIXED,
                              THREE_D, DELETE, GEOMETRY, TET, FREE,
                              YZPLANE, XZPLANE, XYPLANE)
 from part import (EdgeArray, FaceArray)
 from mesh import MeshNodeArray
-import regionToolset
+
+# standard
+from abc import ABCMeta
 
 # third-party
 import numpy as np
@@ -37,32 +40,16 @@ import numpy as np
 from .utils import transform_point
 from .utils import get_orientations_360
 from ...utils.linalg import symmetricize_vector
-from ...utils.linalg import sqrtm
+from ...utils.solid_mechanics import compute_small_strains_from_green
 
 
-# 2d RVE
+# object definition
 
-class RVE2D:
+class RVE(object):
+    __metaclass__ = ABCMeta
 
-    def __init__(self, length, width, center, name='RVE'):
-        # TODO: generalize length and width to dims
-        # TODO: is center really required?
-        # TODO: inherit from a simply Python RVE?
-        '''
-        Notes
-        -----
-        -1st reference point represents the difference between right bottom
-        and left bottom vertices.
-        -2nd reference point represents the difference between left top
-        and left bottom vertices.
-        '''
-        self.length = length
-        self.width = width
-        self.center = center
+    def __init__(self, name):
         self.name = name
-        # variable initialization
-        self.sketch = None
-        self.part = None
         # mesh definitions
         self.mesh_size = .02
         self.mesh_tol = 1e-5
@@ -70,10 +57,6 @@ class RVE2D:
         self.mesh_refine_factor = 1.25
         self.mesh_deviation_factor = .4
         self.mesh_min_size_factor = .4
-        # additional variables
-        self.edge_positions = ('RIGHT', 'TOP', 'LEFT', 'BOTTOM')
-        self.vertex_positions = ('RT', 'LT', 'LB', 'RB')
-        self.ref_points_positions = ('LR', 'TB')
 
     def change_mesh_definitions(self, **kwargs):
         '''
@@ -82,6 +65,33 @@ class RVE2D:
         '''
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+
+class RVE2D(RVE):
+
+    def __init__(self, length, width, center, name='RVE'):
+        # TODO: generalize length and width to dims
+        # TODO: is center really required?
+        '''
+        Notes
+        -----
+        -1st reference point represents the difference between right bottom
+        and left bottom vertices.
+        -2nd reference point represents the difference between left top
+        and left bottom vertices.
+        '''
+        RVE.__init__(self, name)
+        self.length = length
+        self.width = width
+        self.center = center
+        self.name = name
+        # variable initialization
+        self.sketch = None
+        self.part = None
+        # additional variables
+        self.edge_positions = ('RIGHT', 'TOP', 'LEFT', 'BOTTOM')
+        self.vertex_positions = ('RT', 'LT', 'LB', 'RB')
+        self.ref_points_positions = ('LR', 'TB')
 
     def create_part(self, model):
 
@@ -149,27 +159,20 @@ class RVE2D:
         immediately stops when a node pair does not respect the tolerance.
         '''
 
-        # initialization
-        success = True
-
         # get nodes
         right_nodes, top_nodes, left_nodes, bottom_nodes = self._get_all_sorted_edge_nodes()
 
         # verify if tolerance is respected (top and bottom)
         for top_node, bottom_node in zip(top_nodes, bottom_nodes):
             if abs(top_node.coordinates[0] - bottom_node.coordinates[0]) > self.mesh_tol:
-                # TODO: return insteads
-                success = False
-                break
+                return False
 
         # verify if tolerance is respected (right and left)
-        if success:
-            for right_node, left_node in zip(right_nodes, left_nodes):
-                if abs(right_node.coordinates[1] - left_node.coordinates[1]) > self.mesh_tol:
-                    success = False
-                    break
+        for right_node, left_node in zip(right_nodes, left_nodes):
+            if abs(right_node.coordinates[1] - left_node.coordinates[1]) > self.mesh_tol:
+                return False
 
-        return success
+        return True
 
     def verify_mesh_for_pbcs_quick(self):
 
@@ -193,6 +196,7 @@ class RVE2D:
         lr_ref_point, tb_ref_point = self._get_all_ref_points(only_names=True)
 
         # apply vertex constraints
+        # TODO: is it possible to refactor the code to be more compact?
         for ndof in range(1, 3):
             # right-top and left-bottom nodes
             model.Equation(name='Constraint-RT-LB-V-%i' % ndof,
@@ -255,20 +259,13 @@ class RVE2D:
         # TODO: receive only small deformations
         # create strain matrix
         if green_lagrange_strain:
-            epsilon = self._compute_small_strain(epsilon)
+            # TODO: move function to solid mechanics
+            epsilon = compute_small_strains_from_green(epsilon)
 
         # apply displacement
         # TODO: continue here
 
         # TODO: fix left bottom node
-
-    @staticmethod
-    def _compute_small_strain(epsilon_lagrange):
-
-        identity = np.identity(2)
-        def_grad = sqrtm(2 * epsilon_lagrange + identity)
-
-        return 1 / 2 * (def_grad + np.transpose(def_grad)) - identity
 
     def _create_RVE_geometry(self, model):
 
@@ -397,31 +394,17 @@ class RVE2D:
         return node.coordinates[i]
 
 
-class RVE3D(object):
+class RVE3D(RVE):
 
     def __init__(self, dims, name='RVE'):
+        RVE.__init__(self, name)
         self.dims = dims
         self.name = name
-        # mesh definitions
-        self.mesh_size = .02
-        self.mesh_tol = 1e-5
-        self.mesh_trial_iter = 1
-        self.mesh_refine_factor = 1.25
-        self.mesh_deviation_factor = .4
-        self.mesh_min_size_factor = .4
         # variable initialization
         self.particles = []
         self.part = None
         # additional variables
         self.face_positions = ('X-', 'X+', 'Y-', 'Y+', 'Z-', 'Z+')
-
-    def change_mesh_definitions(self, **kwargs):
-        '''
-        See mesh definition at __init__ to find out the variables that can be
-        changed.
-        '''
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     def add_particle(self, particle):
         self.particles.append(particle)
