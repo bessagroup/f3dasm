@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-03 15:18:33
+Last modified on 2020-11-03 15:27:56
 
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -67,6 +67,23 @@ class RVE(object):
         '''
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @staticmethod
+    def _get_node_coordinate(node, i):
+        return node.coordinates[i]
+
+    @staticmethod
+    def _get_node_coordinate_with_tol(node, i, decimal_places):
+        return round(node.coordinates[i], decimal_places)
+
+    def _get_decimal_places(self):
+        d = 0
+        aux = 1
+        while aux > self.mesh_tol:
+            d += 1
+            aux = 10**(-d)
+
+        return d
 
 
 class RVE2D(RVE):
@@ -406,11 +423,6 @@ class RVE2D(RVE):
     @staticmethod
     def _get_ref_point_name(position):
         return '%s_REF_POINT' % position
-
-    @staticmethod
-    def _get_node_coordinate(node, i):
-        return node.coordinates[i]
-
 
 class RVE3D(RVE):
 
@@ -848,20 +860,3 @@ class RVE3D(RVE):
     @staticmethod
     def _get_face_name(position):
         return 'FACE_{}'.format(position)
-
-    @staticmethod
-    def _get_node_coordinate(node, i):
-        return node.coordinates[i]
-
-    @staticmethod
-    def _get_node_coordinate_with_tol(node, i, decimal_places):
-        return round(node.coordinates[i], decimal_places)
-
-    def _get_decimal_places(self):
-        d = 0
-        aux = 1
-        while aux > self.mesh_tol:
-            d += 1
-            aux = 10**(-d)
-
-        return d
