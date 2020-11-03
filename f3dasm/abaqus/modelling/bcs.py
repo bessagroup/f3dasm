@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 16:52:37
-Last modified on 2020-04-20 21:46:22
+Last modified on 2020-11-03 15:01:20
 Python 2.7.16
 v0.1
 
@@ -16,7 +16,7 @@ References
 '''
 
 
-#%% imports
+#% imports
 
 # abaqus
 from abaqusConstants import (UNSET, UNIFORM, NOT_APPLICABLE, OFF)
@@ -25,7 +25,7 @@ from abaqusConstants import (UNSET, UNIFORM, NOT_APPLICABLE, OFF)
 import abc
 
 
-#%% abstract classes
+# abstract classes
 
 class BoundaryCondition(object):
     __metaclass__ = abc.ABCMeta
@@ -66,10 +66,10 @@ class BoundaryCondition(object):
 
         # apply bc
         apply_bc(name=self.name, createStepName=self.createStepName,
-                 region=loaded_region, **self.args)
+                 region=loaded_region, **self.kwargs)
 
 
-#%% particular boundary conditions definition
+# particular boundary conditions definition
 
 class DisplacementBC(BoundaryCondition):
 
@@ -108,14 +108,14 @@ class DisplacementBC(BoundaryCondition):
         -for further informations see p9-49 of [1].
         '''
         # create args dict
-        self.args = {'fieldName': fieldName,
-                     'u1': u1, 'u2': u2, 'u3': u3,
-                     'ur1': ur1, 'ur2': ur2, 'ur3': ur3,
-                     'fixed': fixed,
-                     'amplitude': amplitude,
-                     'distributionType': distributionType,
-                     'localCsys': localCsys,
-                     'buckleCase': buckleCase}
+        self.kwargs = {'fieldName': fieldName,
+                       'u1': u1, 'u2': u2, 'u3': u3,
+                       'ur1': ur1, 'ur2': ur2, 'ur3': ur3,
+                       'fixed': fixed,
+                       'amplitude': amplitude,
+                       'distributionType': distributionType,
+                       'localCsys': localCsys,
+                       'buckleCase': buckleCase}
         # initialize parent
         BoundaryCondition.__init__(self, name, createStepName, region,
                                    model=model)
@@ -153,12 +153,12 @@ class ConcentratedForce(BoundaryCondition):
         -for further informations see p27-43 of [1].
         '''
         # create args dict
-        self.args = {'cf1': cf1, 'cf2': cf2, 'cf3': cf3,
-                     'amplitude': amplitude,
-                     'follower': follower,
-                     'distributionType': distributionType,
-                     'localCsys': localCsys,
-                     'field': field}
+        self.kwargs = {'cf1': cf1, 'cf2': cf2, 'cf3': cf3,
+                       'amplitude': amplitude,
+                       'follower': follower,
+                       'distributionType': distributionType,
+                       'localCsys': localCsys,
+                       'field': field}
         # initialize parent
         BoundaryCondition.__init__(self, name, createStepName, region,
                                    model=model)
@@ -196,12 +196,12 @@ class Moment(BoundaryCondition):
         -for further informations see p27-90 of [1].
         '''
         # create args dict
-        self.args = {'cm1': cm1, 'cm2': cm2, 'cm3': cm3,
-                     'amplitude': amplitude,
-                     'follower': follower,
-                     'distributionType': distributionType,
-                     'localCsys': localCsys,
-                     'field': field}
+        self.kwargs = {'cm1': cm1, 'cm2': cm2, 'cm3': cm3,
+                       'amplitude': amplitude,
+                       'follower': follower,
+                       'distributionType': distributionType,
+                       'localCsys': localCsys,
+                       'field': field}
         # initialize parent
         BoundaryCondition.__init__(self, name, createStepName, region,
                                    model=model)

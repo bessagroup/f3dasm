@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-03 10:46:18
+Last modified on 2020-11-03 15:18:33
 
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -21,6 +21,7 @@ References
 
 
 # imports
+from __future__ import division
 
 # abaqus
 from caeModules import *  # allow noGui
@@ -37,6 +38,7 @@ from abc import ABCMeta
 import numpy as np
 
 # local library
+from ..modelling.bcs import DisplacementBC
 from .utils import transform_point
 from .utils import get_orientations_360
 from ...utils.linalg import symmetricize_vector
@@ -250,22 +252,38 @@ class RVE2D(RVE):
 
         # ???: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
 
-    def apply_bcs_displacement(self, model, epsilon_11, epsilon_22, epsilon_12,
-                               green_lagrange_strain=True):
+    def apply_bcs_disp(self, model, step_name, epsilon_11, epsilon_22,
+                       epsilon_12, green_lagrange_strain=True):
+        # TODO: receive epsilon as array-like?
 
         # initialization
-        epsilon = symmetricize_vector([epsilon_11, epsilon_12, epsilon_22])
+        epsilon = [epsilon_11, epsilon_12, epsilon_22]
+        epsilon = symmetricize_vector(epsilon)
 
-        # TODO: receive only small deformations
         # create strain matrix
         if green_lagrange_strain:
-            # TODO: move function to solid mechanics
             epsilon = compute_small_strains_from_green(epsilon)
 
         # apply displacement
-        # TODO: continue here
+        # TODO: transform eps in displacement?
+        disp_bcs = []
+        for k, position in enumerate(self.ref_points_positions):
+            i, j = k % 2, (k + 1) % 2
+            region_name = self._get_ref_point_name(position)
+            applied_disps = {'u{}'.format(i + 1): epsilon[i, i]}
+            disp_bcs.append(DisplacementBC(name='TEST_{}_{},{}'.format(position, i, i),
+                                           region=region_name, createStepName=step_name,
+                                           **applied_disps))
+            applied_disps = {'u{}'.format(j + 1): epsilon[i, j]}
+            disp_bcs.append(DisplacementBC(name='TEST_{}_{},{}'.format(position, i, j),
+                                           region=region_name, createStepName=step_name,
+                                           **applied_disps))
 
-        # TODO: fix left bottom node
+        # TODO: return disp bcs and do apply outside?
+        for disp_bc in disp_bcs:
+            disp_bc.apply_bc(model)
+
+        # TODO: fix left bottom node? I think Miguel does not it (even though he founds out that "support nodes" -> see line 433)
 
     def _create_RVE_geometry(self, model):
 

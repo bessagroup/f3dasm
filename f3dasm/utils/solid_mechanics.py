@@ -1,6 +1,6 @@
 '''
 Created on 2020-11-03 10:40:32
-Last modified on 2020-11-03 10:43:15
+Last modified on 2020-11-03 15:20:55
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -14,6 +14,8 @@ import numpy as np
 from .linalg import sqrtm
 
 
+# TODO: test using abaqus python
+
 # function definition
 
 def compute_small_strains_from_green(epsilon_green):
@@ -22,7 +24,8 @@ def compute_small_strains_from_green(epsilon_green):
     -----
     Assumes R=1.
     '''
-    identity = np.identity(2)
+    n = np.shape(epsilon_green)[0]
+    identity = np.identity(n)
     def_grad = sqrtm(2 * epsilon_green + identity)
 
-    return 1 / 2 * (def_grad + np.transpose(def_grad)) - identity
+    return 1. / 2. * (def_grad + np.transpose(def_grad)) - identity

@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-30 11:12:12
-Last modified on 2020-11-03 10:40:08
+Last modified on 2020-11-03 15:03:06
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,6 +21,7 @@ Abaqus.
 # third-party
 import numpy as np
 
+# TODO: test using abaqus python
 
 # function definition
 
@@ -35,7 +36,7 @@ def symmetricize_vector(vec):
     '''
 
     # compute dimension
-    n = int(1 / 2 * (-1 + np.sqrt(1 + 8 * len(vec))))
+    n = int(1. / 2. * (-1. + np.sqrt(1. + 8. * len(vec))))
 
     # assign variables to the right positions
     matrix = np.empty((n, n))
@@ -70,6 +71,6 @@ def sqrtm(matrix):
     spec_decomp_sqrt = np.sqrt(spec_decomp)
 
     # square root of the original matrix
-    matrix_sqrt = np.matmul(v, np.matmul(spec_decomp_sqrt, v.transpose()))
+    matrix_sqrt = np.dot(v, np.dot(spec_decomp_sqrt, v.transpose()))
 
     return matrix_sqrt

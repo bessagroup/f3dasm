@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-10-15 08:50:19
+Last modified on 2020-11-03 14:48:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -14,6 +14,10 @@ Show how to generate a 2d RVE (in particular, Bertoldi's RVE).
 
 # abaqus library
 from abaqus import mdb, backwardCompatibility
+from abaqusConstants import OFF
+
+# third-party
+from f3dasm.abaqus.modelling.step import StaticStep
 
 # local library
 from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiRVE
@@ -37,6 +41,11 @@ r_0 = 1.
 c_1 = 2.98642006e-01
 c_2 = 1.37136137e-01
 
+# bcs
+eps_11 = 1.
+eps_22 = -0.1
+eps_12 = 0.2
+
 
 # create model
 
@@ -50,6 +59,7 @@ if 'Model-1' in mdb.models.keys():
 
 rve = BertoldiRVE(length, width, center, r_0, c_1, c_2,
                   n_points=100, name='BERTOLDI_RVE')
+rve.change_mesh_definitions(mesh_size=0.05)
 
 
 # create part and assembly
@@ -63,3 +73,19 @@ rve.create_instance(model)
 
 # apply boundary conditions
 rve.apply_pbcs_constraints(model)
+
+# set step
+step_name = "STATIC_STEP"
+static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
+                         minInc=1e-5, maxInc=0.02)
+static_step.create_step(model)
+
+# TODO: add initial conditions
+
+# set boundary condigionts
+rve.apply_bcs_disp(model, step_name, eps_11, eps_22, eps_12)
+
+
+# create inp
+modelJob = mdb.Job(model=model_name, name=job_name)
+modelJob.writeInput(consistencyChecking=OFF)
