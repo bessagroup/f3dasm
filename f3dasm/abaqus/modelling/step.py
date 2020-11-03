@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-08 14:55:21
-Last modified on 2020-04-22 16:06:23
-Python 2.7.16
-v0.1
+Last modified on 2020-11-03 11:56:20
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,7 +14,7 @@ References
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (LANCZOS, DEFAULT, SOLVER_DEFAULT, OFF,
@@ -24,16 +22,16 @@ from abaqusConstants import (LANCZOS, DEFAULT, SOLVER_DEFAULT, OFF,
                              PROPAGATED, LINEAR, ALL, DISPLACEMENT, ON,
                              AC_ON)
 
-# standard library
-import abc
 
-
-#%% abstract classes
+# general step
 
 class Step(object):
-    __metaclass__ = abc.ABCMeta
+    '''
+    It can be thought as an abstract class for particular steps to inherit from
+    or as a general step that can be used e.g. for non yet defined step types.
+    '''
 
-    def __init__(self, name, previous, model=None):
+    def __init__(self, name, previous='Initial', model=None, method_name=None, **kwargs):
         '''
         Parameters
         ----------
@@ -44,6 +42,9 @@ class Step(object):
         '''
         self.name = name
         self.previous = previous
+        if method_name:
+            self.method_name = method_name
+        self.kwargs = kwargs
         # computations
         if model:
             self.create_step(model)
@@ -54,10 +55,10 @@ class Step(object):
         create_step = getattr(model, self.method_name)
 
         # create step
-        create_step(name=self.name, previous=self.previous, **self.args)
+        create_step(name=self.name, previous=self.previous, **self.kwargs)
 
 
-#%% particular step definition
+# particular step definition
 
 class StaticStep(Step):
 
@@ -145,32 +146,33 @@ class StaticStep(Step):
         minInc = min(initialInc, timePeriod * 1e-5) if minInc is None else minInc
         maxInc = timePeriod if maxInc is None else maxInc
         # create args dict
-        self.args = {'description': description,
-                     'timePeriod': timePeriod,
-                     'nlgeom': nlgeom,
-                     'stabilizationMethod': stabilizationMethod,
-                     'stabilizationMagnitude': stabilizationMagnitude,
-                     'adiabatic': adiabatic,
-                     'timeIncrementationMethod': timeIncrementationMethod,
-                     'maxNumInc': maxNumInc,
-                     'initialInc': initialInc,
-                     'minInc': minInc,
-                     'maxInc': maxInc,
-                     'matrixSolver': matrixSolver,
-                     'matrixStorage': matrixStorage,
-                     'amplitude': amplitude,
-                     'extrapolation': extrapolation,
-                     'fullyPlastic': fullyPlastic,
-                     'noStop': noStop,
-                     'maintainAttributes': maintainAttributes,
-                     'useLongTermSolution': useLongTermSolution,
-                     'solutionTechnique': solutionTechnique,
-                     'reformKernel': reformKernel,
-                     'convertSDI': convertSDI,
-                     'adaptiveDampingRatio': adaptiveDampingRatio,
-                     'continueDampingFactors': continueDampingFactors}
+        kwargs = {'description': description,
+                  'timePeriod': timePeriod,
+                  'nlgeom': nlgeom,
+                  'stabilizationMethod': stabilizationMethod,
+                  'adiabatic': adiabatic,
+                  'timeIncrementationMethod': timeIncrementationMethod,
+                  'maxNumInc': maxNumInc,
+                  'initialInc': initialInc,
+                  'minInc': minInc,
+                  'maxInc': maxInc,
+                  'matrixSolver': matrixSolver,
+                  'matrixStorage': matrixStorage,
+                  'amplitude': amplitude,
+                  'extrapolation': extrapolation,
+                  'fullyPlastic': fullyPlastic,
+                  'noStop': noStop,
+                  'maintainAttributes': maintainAttributes,
+                  'useLongTermSolution': useLongTermSolution,
+                  'solutionTechnique': solutionTechnique,
+                  'reformKernel': reformKernel,
+                  'convertSDI': convertSDI,
+                  'adaptiveDampingRatio': adaptiveDampingRatio,
+                  'continueDampingFactors': continueDampingFactors}
+        if stabilizationMethod is not NONE:
+            kwargs['stabilizationMagnitude'] = stabilizationMagnitude
         # initialize parent
-        Step.__init__(self, name, previous, model=model)
+        Step.__init__(self, name, previous=previous, model=model, **kwargs)
 
 
 class StaticRiksStep(Step):
@@ -250,32 +252,32 @@ class StaticRiksStep(Step):
         minArcInc = min(initialArcInc, 1e-5 * totalArcLength) if minArcInc is None else minArcInc
         maxArcInc = totalArcLength if maxArcInc is None else maxArcInc
         # create arg dict
-        self.args = {'description': description,
-                     'nlgeom': nlgeom,
-                     'adiabatic': adiabatic,
-                     'maxLPF': maxLPF,
-                     'nodeOn': nodeOn,
-                     'maximumDisplacement': maximumDisplacement,
-                     'dof': dof,
-                     'timeIncrementationMethod': timeIncrementationMethod,
-                     'maxNumInc': maxNumInc,
-                     'totalArcLength': totalArcLength,
-                     'initialArcInc': initialArcInc,
-                     'minArcInc': minArcInc,
-                     'maxArcInc': maxArcInc,
-                     'matrixStorage': matrixStorage,
-                     'extrapolation': extrapolation,
-                     'fullyPlastic': fullyPlastic,
-                     'noStop': noStop,
-                     'maintainAttributes': maintainAttributes,
-                     'useLongTermSolution': useLongTermSolution,
-                     'convertSDI': convertSDI,
-                     }
+        kwargs = {'description': description,
+                  'nlgeom': nlgeom,
+                  'adiabatic': adiabatic,
+                  'maxLPF': maxLPF,
+                  'nodeOn': nodeOn,
+                  'maximumDisplacement': maximumDisplacement,
+                  'dof': dof,
+                  'timeIncrementationMethod': timeIncrementationMethod,
+                  'maxNumInc': maxNumInc,
+                  'totalArcLength': totalArcLength,
+                  'initialArcInc': initialArcInc,
+                  'minArcInc': minArcInc,
+                  'maxArcInc': maxArcInc,
+                  'matrixStorage': matrixStorage,
+                  'extrapolation': extrapolation,
+                  'fullyPlastic': fullyPlastic,
+                  'noStop': noStop,
+                  'maintainAttributes': maintainAttributes,
+                  'useLongTermSolution': useLongTermSolution,
+                  'convertSDI': convertSDI,
+                  }
         if nodeOn is ON and region:
-            self.args['region'] = region
+            kwargs['region'] = region
 
         # initialize parent
-        Step.__init__(self, name, previous, model=model)
+        Step.__init__(self, name, previous=previous, model=model, **kwargs)
 
 
 class BuckleStep(Step):
@@ -321,19 +323,19 @@ class BuckleStep(Step):
         # computations
         vectors = min(2 * numEigen, numEigen * 8) if vectors is None else vectors
         # create arg dict
-        self.args = {'numEigen': numEigen,
-                     'description': description,
-                     'eigensolver': eigensolver,
-                     'minEigen': minEigen,
-                     'maxEigen': maxEigen,
-                     'vectors': vectors,
-                     'maxIterations': maxIterations,
-                     'blockSize': blockSize,
-                     'maxBlocks': maxBlocks,
-                     'matrixStorage': matrixStorage,
-                     'maintainAttributes': maintainAttributes}
+        kwargs = {'numEigen': numEigen,
+                  'description': description,
+                  'eigensolver': eigensolver,
+                  'minEigen': minEigen,
+                  'maxEigen': maxEigen,
+                  'vectors': vectors,
+                  'maxIterations': maxIterations,
+                  'blockSize': blockSize,
+                  'maxBlocks': maxBlocks,
+                  'matrixStorage': matrixStorage,
+                  'maintainAttributes': maintainAttributes}
         # initialize parent
-        Step.__init__(self, name, previous, model=model)
+        Step.__init__(self, name, previous=previous, model=model, **kwargs)
 
 
 class FrequencyStep(Step):
@@ -432,7 +434,7 @@ class FrequencyStep(Step):
         # computations
         vectors = min(2 * numEigen, numEigen * 8) if vectors is None else vectors
         # create arg dict
-        self.args = {
+        kwargs = {
             'eigensolver': eigensolver,
             'numEigen': numEigen,
             'description': description,
@@ -460,4 +462,4 @@ class FrequencyStep(Step):
             'residualModeDof': residualModeDof,
             'limitSavedEigenVectorRegion': limitSavedEigenVectorRegion}
         # initialize parent
-        Step.__init__(self, name, previous, model=model)
+        Step.__init__(self, name, previous=previous, model=model, **kwargs)
