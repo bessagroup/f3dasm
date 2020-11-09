@@ -35,10 +35,10 @@ n_longerons = 3
 bottom_diameter = 100.
 young_modulus = 3.5e3
 shear_modulus = 1287.
-ratio_d = 0.004000
-ratio_pitch = 0.250000
-ratio_top_diameter = 0.00
-imperfection = 0.094633  # only needed for riks
+ratio_d = 0.02000
+ratio_pitch = 0.750000
+ratio_top_diameter = 0.40
+imperfection = 0.2  # only needed for riks
 
 
 # linear buckle

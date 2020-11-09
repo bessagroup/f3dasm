@@ -34,9 +34,9 @@ n_longerons = 3
 bottom_diameter = 100.
 young_modulus = 3.5e3
 shear_modulus = 1287.
-ratio_d = 0.004000
-ratio_pitch = 0.250000
-ratio_top_diameter = 0.00
+ratio_d = 0.02000
+ratio_pitch = 0.750000
+ratio_top_diameter = 0.40
 
 # variables from ratios
 d = ratio_d * bottom_diameter
