@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-03 15:27:56
+Last modified on 2020-11-09 11:10:25
 
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
@@ -34,13 +34,8 @@ from mesh import MeshNodeArray
 # standard
 from abc import ABCMeta
 
-# third-party
-import numpy as np
-
 # local library
 from ..modelling.bcs import DisplacementBC
-from .utils import transform_point
-from .utils import get_orientations_360
 from ...utils.linalg import symmetricize_vector
 from ...utils.solid_mechanics import compute_small_strains_from_green
 
@@ -50,8 +45,10 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 class RVE(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, name):
+    def __init__(self, name, dims, center):
         self.name = name
+        self.dims = dims
+        self.center = center
         # mesh definitions
         self.mesh_size = .02
         self.mesh_tol = 1e-5
@@ -59,6 +56,19 @@ class RVE(object):
         self.mesh_refine_factor = 1.25
         self.mesh_deviation_factor = .4
         self.mesh_min_size_factor = .4
+        # variable initialization
+        self.part = None
+        self.particles = []
+        self.bounds = []
+        # auxiliar variables
+        self.var_coord_map = {'X': 0, 'Y': 1, 'Z': 2}
+        self.sign_bound_map = {'-': 0, '+': 1}
+        # initial operations
+        self._compute_bounds()
+
+    def _compute_bounds(self):
+        for dim, c in zip(self.dims, self.center):
+            self.bounds.append([c - dim / 2, c + dim / 2])
 
     def change_mesh_definitions(self, **kwargs):
         '''
@@ -67,6 +77,23 @@ class RVE(object):
         '''
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def add_particle(self, particle):
+        self.particles.append(particle)
+
+    def _create_RVE_sketch(self, model):
+
+        # rectangle points
+        pts = []
+        for x1, x2 in zip(self.bounds[0], self.bounds[1]):
+            pts.append([x1, x2])
+
+        # sketch
+        sketch = model.ConstrainedSketch(name=self.name + '_PROFILE',
+                                         sheetSize=2 * self.dims[0])
+        sketch.rectangle(point1=pts[0], point2=pts[1])
+
+        return sketch
 
     @staticmethod
     def _get_node_coordinate(node, i):
@@ -85,12 +112,19 @@ class RVE(object):
 
         return d
 
+    @staticmethod
+    def unnest(array):
+        unnested_array = []
+        for arrays in array:
+            for array_ in arrays:
+                unnested_array.append(array_)
+
+        return unnested_array
+
 
 class RVE2D(RVE):
 
     def __init__(self, length, width, center, name='RVE'):
-        # TODO: generalize length and width to dims
-        # TODO: is center really required?
         '''
         Notes
         -----
@@ -99,32 +133,43 @@ class RVE2D(RVE):
         -2nd reference point represents the difference between left top
         and left bottom vertices.
         '''
-        RVE.__init__(self, name)
-        self.length = length
-        self.width = width
-        self.center = center
-        self.name = name
-        # variable initialization
-        self.sketch = None
-        self.part = None
+        super(RVE2D, self).__init__(name, dims=(length, width), center=center)
         # additional variables
-        self.edge_positions = ('RIGHT', 'TOP', 'LEFT', 'BOTTOM')
-        self.vertex_positions = ('RT', 'LT', 'LB', 'RB')
-        self.ref_points_positions = ('LR', 'TB')
+        self.edge_positions = (('X-', 'X+'), ('Y-', 'Y+'))  # order is relevant
+        self.ref_points_positions = ('X-X+', 'Y-Y+')  # order is relevant
+        # initial operations
+        self._define_vertex_positions()
+
+    def _define_vertex_positions(self):
+        # TODO: move to abstract?
+        # TODO: group similar?
+        def append_positions(vertex, i):
+            if i == len(self.dims):
+                self.vertex_positions.append(vertex)
+            else:
+                for edge in (self.edge_positions[i]):
+                    vertex_ = vertex + edge
+                    append_positions(vertex_, i + 1)
+
+        self.vertex_positions = []
+        vertex = ''
+        append_positions(vertex, 0)
 
     def create_part(self, model):
 
         # create RVE
-        self._create_RVE_geometry(model)
+        sketch = self._create_RVE_sketch(model)
 
         # create particular geometry
-        # TODO: call it add inner sketches
-        self._create_inner_geometry(model)
+        for particle in self.particles:
+            particle.create_inner_geometry(sketch, self)
 
         # create part
         self.part = model.Part(name=self.name, dimensionality=TWO_D_PLANAR,
                                type=DEFORMABLE_BODY)
-        self.part.BaseShell(sketch=self.sketch)
+        self.part.BaseShell(sketch=sketch)
+
+        # TODO: create particles by partitions
 
         # create PBCs sets (here because sets are required for meshing purposes)
         self._create_bounds_sets()
@@ -143,7 +188,8 @@ class RVE2D(RVE):
                            minSizeFactor=self.mesh_min_size_factor)
 
         # seed edges
-        edges = [self.part.sets[self._get_edge_name(position)].edges[0] for position in self.edge_positions]
+        edge_positions = self.unnest(self.edge_positions)
+        edges = [self.part.sets[self._get_edge_name(position)].edges[0] for position in edge_positions]
         self.part.seedEdgeBySize(edges=edges, size=self.mesh_size,
                                  deviationFactor=self.mesh_deviation_factor,
                                  constraint=FIXED)
@@ -151,6 +197,7 @@ class RVE2D(RVE):
         self.part.generateMesh()
 
     def generate_mesh_for_pbcs(self, fast=False):
+        # TODO: generate error file
 
         it = 1
         success = False
@@ -168,7 +215,11 @@ class RVE2D(RVE):
             # prepare next iteration
             it += 1
             if not success:
-                self.mesh_size /= self.mesh_refine_factor
+                if it <= self.mesh_trial_iter:
+                    print('Warning: Failed mesh generation. Mesh size will be decreased')
+                    self.mesh_size /= self.mesh_refine_factor
+                else:
+                    print('Warning: Failed mesh generation')
 
         return success
 
@@ -177,95 +228,81 @@ class RVE2D(RVE):
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
         '''
+        # TODO: create set with all error nodes
 
-        # get nodes
-        right_nodes, top_nodes, left_nodes, bottom_nodes = self._get_all_sorted_edge_nodes()
+        for i, positions in enumerate(self.edge_positions):
 
-        # verify if tolerance is respected (top and bottom)
-        for top_node, bottom_node in zip(top_nodes, bottom_nodes):
-            if abs(top_node.coordinates[0] - bottom_node.coordinates[0]) > self.mesh_tol:
-                return False
+            # perpendicular direction
+            j = (i + 1) % 2
 
-        # verify if tolerance is respected (right and left)
-        for right_node, left_node in zip(right_nodes, left_nodes):
-            if abs(right_node.coordinates[1] - left_node.coordinates[1]) > self.mesh_tol:
-                return False
+            # get sorted nodes
+            nodes = [self._get_edge_nodes(pos, sort_direction=j) for pos in positions]
+
+            # verify if tolerance is respected
+            for node_m, node_p in zip(nodes[0], nodes[1]):
+                if abs(node_m.coordinates[j] - node_p.coordinates[j]) > self.mesh_tol:
+                    return False
 
         return True
 
     def verify_mesh_for_pbcs_quick(self):
 
-        # get nodes
-        right_nodes, top_nodes, left_nodes, bottom_nodes = self._get_all_sorted_edge_nodes()
+        for positions in self.edge_positions:
+            nodes = [self._get_edge_nodes(pos) for pos in positions]
+            if len(nodes[0]) != len(nodes[1]):
+                return False
 
-        return len(top_nodes) == len(bottom_nodes) and len(right_nodes) == len(left_nodes)
+        return True
 
     def apply_pbcs_constraints(self, model):
 
         # create reference points
         self._create_pbcs_ref_points(model)
 
-        # get nodes
-        right_nodes, top_nodes, left_nodes, bottom_nodes = self._get_all_sorted_edge_nodes()
-
         # get vertices
         rt_vertex, lt_vertex, lb_vertex, rb_vertex = self._get_all_vertices(only_names=True)
 
         # get reference points
-        lr_ref_point, tb_ref_point = self._get_all_ref_points(only_names=True)
+        ref_points = self._get_all_ref_points(only_names=True)
 
         # apply vertex constraints
-        # TODO: is it possible to refactor the code to be more compact?
         for ndof in range(1, 3):
             # right-top and left-bottom nodes
-            model.Equation(name='Constraint-RT-LB-V-%i' % ndof,
+            model.Equation(name='CONSTRAINT_X+Y+_X-Y-_V_{}'.format(ndof),
                            terms=((1.0, rt_vertex, ndof),
                                   (-1.0, lb_vertex, ndof),
-                                  (-1.0, lr_ref_point, ndof),
-                                  (-1.0, tb_ref_point, ndof)))
+                                  (-1.0, ref_points[0], ndof),
+                                  (-1.0, ref_points[1], ndof)))
 
-            # left-top and right-bottom nodes
-            model.Equation(name='Constraint-LT-RB-V-%i' % ndof,
+            # left-top and right-bottom nodesL
+            model.Equation(name='CONSTRAINT_X-Y+_X+Y-_V_{}'.format(ndof),
                            terms=((1.0, rb_vertex, ndof),
                                   (-1.0, lt_vertex, ndof),
-                                  (-1.0, lr_ref_point, ndof),
-                                  (1.0, tb_ref_point, ndof)))
+                                  (-1.0, ref_points[0], ndof),
+                                  (1.0, ref_points[1], ndof)))
 
-        # left-right edges constraints
-        for i, (left_node, right_node) in enumerate(zip(left_nodes[1:-1], right_nodes[1:-1])):
+        # edges constraints
+        for i, (positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
 
-            # create set with individual nodes
-            left_node_set_name = 'NODE-L-%i' % i
-            left_set_name = '%s.%s' % (self.name, left_node_set_name)
-            self.part.Set(name=left_node_set_name, nodes=MeshNodeArray((left_node,)))
-            right_node_set_name = 'NODE-R-%i' % i
-            self.part.Set(name=right_node_set_name, nodes=MeshNodeArray((right_node,)))
-            right_set_name = '%s.%s' % (self.name, right_node_set_name)
+            # get sorted nodes
+            j = (i + 1) % 2
+            nodes = [self._get_edge_nodes(pos, sort_direction=j) for pos in positions]
 
-            # create constraint
-            for ndof in range(1, 3):
-                model.Equation(name='Constraint-L-R-%i-%i' % (i, ndof),
-                               terms=((1.0, right_set_name, ndof),
-                                      (-1.0, left_set_name, ndof),
-                                      (-1.0, lr_ref_point, ndof)))
+            for k, nodes_ in enumerate(zip(nodes[0][1:-1], nodes[1][1:-1])):
 
-        # top-bottom edges constraints
-        for i, (top_node, bottom_node) in enumerate(zip(top_nodes[1:-1], bottom_nodes[1:-1])):
+                # create set with individual nodes
+                set_names = []
+                for pos, node in zip(positions, nodes_):
+                    set_name = 'NODE_{}_{}'.format(pos, k)
+                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
+                    set_names.append('{}.{}'.format(self.name, set_name))
 
-            # create set with individual nodes
-            top_node_set_name = 'NODE-T-%i' % i
-            top_set_name = '%s.%s' % (self.name, top_node_set_name)
-            self.part.Set(name=top_node_set_name, nodes=MeshNodeArray((top_node,)))
-            bottom_node_set_name = 'NODE-B-%i' % i
-            self.part.Set(name=bottom_node_set_name, nodes=MeshNodeArray((bottom_node,)))
-            bottom_set_name = '%s.%s' % (self.name, bottom_node_set_name)
-
-            # create constraint
-            for ndof in range(1, 3):
-                model.Equation(name='Constraint-T-B-%i-%i' % (i, ndof),
-                               terms=((1.0, top_set_name, ndof),
-                                      (-1.0, bottom_set_name, ndof),
-                                      (-1.0, tb_ref_point, ndof)))
+                # create constraint
+                for ndof in range(1, 3):
+                    model.Equation(name='CONSTRAINT_{}_{}_{}_{}'.format(positions[0], positions[1], k, ndof),
+                                   terms=((1.0, set_names[1], ndof),
+                                          (-1.0, set_names[0], ndof),
+                                          (-1.0, ref_point, ndof)))
 
         # ???: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
 
@@ -302,54 +339,31 @@ class RVE2D(RVE):
 
         # TODO: fix left bottom node? I think Miguel does not it (even though he founds out that "support nodes" -> see line 433)
 
-    def _create_RVE_geometry(self, model):
-
-        # rectangle points
-        pt1 = transform_point((-self.length / 2., -self.width / 2.),
-                              origin_translation=self.center)
-        pt2 = transform_point((self.length / 2., self.width / 2.),
-                              origin_translation=self.center)
-
-        # sketch
-        self.sketch = model.ConstrainedSketch(name=self.name + '_PROFILE',
-                                              sheetSize=2 * self.length)
-        self.sketch.rectangle(point1=pt1, point2=pt2)
-
     def _create_bounds_sets(self):
 
-        # TODO: update edge finding to be more robust (with bounding box)
+        # create edge sets
+        for bounds, positions in zip(self.bounds, self.edge_positions):
+            for x, pos in zip(bounds, positions):
+                edge_name = self._get_edge_name(pos)
+                var_name = '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
+                kwargs = {var_name: x}
+                edges = self.part.edges.getByBoundingBox(**kwargs)
+                self.part.Set(name=edge_name, edges=edges)
 
-        # create sets
-        r = np.sqrt((self.length / 2.) ** 2 + (self.width / 2.)**2)
-        for i, (edge_position, vertex_position, theta) in enumerate(
-                zip(self.edge_positions, self.vertex_positions, get_orientations_360(0))):
-
-            # find edge
-            pt = transform_point((self.length / 2 * np.cos(theta), self.width / 2 * np.sin(theta), 0.),
-                                 origin_translation=self.center)
-            edge = self.part.edges.findAt((pt,))
-
-            # create edge set
-            edge_set_name = self._get_edge_name(edge_position)
-            self.part.Set(name=edge_set_name, edges=edge)
-
-            # find vertex
-            ratio = self.length / self.width if i % 2 else self.width / self.length
-            alpha = np.arctan(ratio)
-            pt = transform_point((r * np.cos(alpha), r * np.sin(alpha), 0.),
-                                 orientation=theta,
-                                 origin_translation=self.center)
+        # create vertex sets
+        for pos in self.vertex_positions:
+            vertex_name = self._get_vertex_name(pos)
+            i, j = self.var_coord_map[pos[0]], self.var_coord_map[pos[2]]
+            p, q = self.sign_bound_map[pos[1]], self.sign_bound_map[pos[3]]
+            pt = (self.bounds[i][p], self.bounds[j][q], 0.)
             vertex = self.part.vertices.findAt((pt,))
-
-            # create vertex set
-            vertex_set_name = self._get_vertex_name(vertex_position)
-            self.part.Set(name=vertex_set_name, vertices=vertex)
+            self.part.Set(name=vertex_name, vertices=vertex)
 
     def _create_pbcs_ref_points(self, model):
         '''
         Notes
         -----
-        -any coordinate for reference points position works.
+        Any coordinate for reference points position works.
         '''
 
         # initialization
@@ -362,19 +376,6 @@ class RVE2D(RVE):
             modelAssembly.Set(name=self._get_ref_point_name(position),
                               referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
 
-    def _get_all_sorted_edge_nodes(self):
-        '''
-        Notes
-        -----
-        -output is given in the order of position definition.
-        '''
-
-        nodes = []
-        for i, position in enumerate(self.edge_positions):
-            nodes.append(self._get_edge_nodes(position, sort_direction=(i + 1) % 2))
-
-        return nodes
-
     def _get_all_vertices(self, only_names=False):
         '''
         Notes
@@ -383,7 +384,7 @@ class RVE2D(RVE):
         '''
 
         if only_names:
-            vertices = ['%s.%s' % (self.name, self._get_vertex_name(position)) for position in self.vertex_positions]
+            vertices = ['{}.{}'.format(self.name, self._get_vertex_name(position)) for position in self.vertex_positions]
         else:
             vertices = [self.part.sets[self._get_vertex_name(position)] for position in self.vertex_positions]
 
@@ -393,8 +394,8 @@ class RVE2D(RVE):
         '''
         Notes
         -----
-        -output is given in the order of position definition.
-        -model is required if only_names is False.
+        Output is given in the order of position definition.
+        Model is required if only_names is False.
         '''
 
         if only_names:
@@ -412,37 +413,31 @@ class RVE2D(RVE):
 
         return nodes
 
-    @staticmethod
+    @ staticmethod
     def _get_edge_name(position):
-        return '%s_EDGE' % position
+        return 'EDGE_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def _get_vertex_name(position):
-        return 'VERTEX_%s' % position
+        return 'VERTEX_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def _get_ref_point_name(position):
-        return '%s_REF_POINT' % position
+        return 'REF_POINT_{}'.format(position)
+
 
 class RVE3D(RVE):
 
     def __init__(self, dims, name='RVE'):
-        RVE.__init__(self, name)
-        self.dims = dims
-        self.name = name
-        # variable initialization
-        self.particles = []
-        self.part = None
+        super(RVE3D, self).__init__(name, dims, center=(0., 0., 0.))
         # additional variables
+        # TODO: size 3?
         self.face_positions = ('X-', 'X+', 'Y-', 'Y+', 'Z-', 'Z+')
-
-    def add_particle(self, particle):
-        self.particles.append(particle)
 
     def create_part(self, model):
 
         # create RVE
-        sketch = self._create_RVE_geometry(model)
+        sketch = self._create_RVE_sketch(model)
 
         # create particular geometry
         # self._create_inner_geometry(model)
@@ -455,15 +450,6 @@ class RVE3D(RVE):
         # create particles parts
         for particle in self.particles:
             particle.create_part(model, self)
-
-    def _create_RVE_geometry(self, model):
-
-        # sketch
-        sketch = model.ConstrainedSketch(name=self.name + '_PROFILE',
-                                         sheetSize=2 * self.dims[0])
-        sketch.rectangle(point1=(0., 0.), point2=(self.dims[0], self.dims[1]))
-
-        return sketch
 
     def create_instance(self, model):
 
@@ -738,6 +724,8 @@ class RVE3D(RVE):
         -----
         1. at first sight, it appears to be more robust than using sort.
         '''
+        # TODO: create set with all error nodes
+
         for i, (pos_i, pos_j) in enumerate(zip(self.face_positions[::2], self.face_positions[1::2])):
 
             # get nodes
@@ -845,6 +833,7 @@ class RVE3D(RVE):
                 self.part.Set(name=edge_name, edges=edges)
 
     def _get_face_info(self, i, position):
+        # TODO: refactor using bounds
         face_name = self._get_face_name(position)
         sign = 1 if '+' in face_name else 0  # 0 to represent negative face
         face_axis = face_name.split('_')[1][0].lower()

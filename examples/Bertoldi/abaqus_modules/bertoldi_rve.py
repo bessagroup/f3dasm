@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 08:38:20
-Last modified on 2020-10-15 09:00:41
+Last modified on 2020-11-04 16:41:10
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -9,27 +9,22 @@ Last modified on 2020-10-15 09:00:41
 
 # third-party
 import numpy as np
-from f3dasm.abaqus.geometry.rve import RVE2D
+from f3dasm.abaqus.geometry.shapes import Shape
 from f3dasm.abaqus.geometry.utils import transform_point
 
 
 # object definition
 
-class BertoldiRVE(RVE2D):
+class BertoldiPore(Shape):
 
-    def __init__(self, length, width, center, r_0, c_1, c_2,
-                 n_points=100, name='BERTOLDI_RVE'):
-
-        # instantiate parent class
-        RVE2D.__init__(self, length, width, center, name=name)
-
-        # store vars
+    def __init__(self, center, r_0, c_1, c_2, n_points=100):
+        self.center = center
         self.r_0 = r_0
         self.c_1 = c_1
         self.c_2 = c_2
         self.n_points = n_points
 
-    def _create_inner_geometry(self, model):
+    def create_inner_geometry(self, sketch, *args, **kwargs):
         '''
         Creates particular geometry of this example, i.e. internal pores.
         '''
@@ -45,4 +40,4 @@ class BertoldiRVE(RVE2D):
                                           origin_translation=self.center))
 
         # generate spline
-        self.sketch.Spline(points=points)
+        sketch.Spline(points=points)

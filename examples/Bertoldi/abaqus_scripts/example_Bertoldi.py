@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-11-03 14:48:23
+Last modified on 2020-11-09 11:09:41
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -17,10 +17,11 @@ from abaqus import mdb, backwardCompatibility
 from abaqusConstants import OFF
 
 # third-party
+from f3dasm.abaqus.geometry.rve import RVE2D
 from f3dasm.abaqus.modelling.step import StaticStep
 
 # local library
-from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiRVE
+from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiPore
 
 
 # initialization
@@ -57,16 +58,19 @@ if 'Model-1' in mdb.models.keys():
 
 # define objects
 
-rve = BertoldiRVE(length, width, center, r_0, c_1, c_2,
-                  n_points=100, name='BERTOLDI_RVE')
-rve.change_mesh_definitions(mesh_size=0.05)
+rve = RVE2D(length, width, center, name='BERTOLDI_RVE')
+rve.change_mesh_definitions(mesh_size=0.1)
+
+pore = BertoldiPore(center, r_0, c_1, c_2)
+rve.add_particle(pore)
 
 
 # create part and assembly
 
 # create part and generate mesh
 rve.create_part(model)
-rve.generate_mesh_for_pbcs()
+success = rve.generate_mesh_for_pbcs(fast=False)
+print('Mesh generated successfully? {}'.format(success))
 
 # create assembly
 rve.create_instance(model)

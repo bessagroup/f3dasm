@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-02 09:03:28
+Last modified on 2020-11-05 11:01:11
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -16,26 +16,16 @@ from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
 import copy
 
 
-# object definition
+# abstract object
 
-class Sphere(object):
+class Shape(object):
 
-    def __init__(self, r, center=None, periodic=False, tol=1e-4, name='SPHERE',
-                 dims=None):
-        self.r = r
-        self.centers = []
-        self.periodic = periodic
-        self.tol = tol
-        self.name = name
-        # initialize variables
-        self.parts = []
+    def __init__(self, name):
+
         # mesh definitions
         self.mesh_size = .02
         self.mesh_deviation_factor = .4
         self.mesh_min_size_factor = .4
-        # update centers
-        if center is not None:
-            self.add_center(center, dims)
 
     def change_mesh_definitions(self, **kwargs):
         '''
@@ -44,6 +34,33 @@ class Sphere(object):
         '''
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def create_inner_geometry(self, sketch, rve):
+        '''
+        Perform operations in main sketch.
+        '''
+        pass
+
+
+# particular shapes
+
+# TODO: multiple inheritance?
+class Sphere(Shape):
+
+    # TODO: add material
+
+    def __init__(self, r, center=None, periodic=False, tol=1e-4, name='SPHERE',
+                 dims=None):
+        super(Sphere, self).__init__(name)
+        self.r = r
+        self.centers = []
+        self.periodic = periodic
+        self.tol = tol
+        # initialize variables
+        self.parts = []
+        # update centers
+        if center is not None:
+            self.add_center(center, dims)
 
     def _center_exists(self, cmp_center):
         exists = False
