@@ -1,7 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-09 11:10:25
-
+Last modified on 2020-11-09 15:39:11
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -33,6 +32,7 @@ from mesh import MeshNodeArray
 
 # standard
 from abc import ABCMeta
+from collections import OrderedDict
 
 # local library
 from ..modelling.bcs import DisplacementBC
@@ -50,6 +50,7 @@ class RVE(object):
         self.dims = dims
         self.center = center
         # mesh definitions
+        # TODO: base it on characteristic length
         self.mesh_size = .02
         self.mesh_tol = 1e-5
         self.mesh_trial_iter = 1
@@ -61,7 +62,7 @@ class RVE(object):
         self.particles = []
         self.bounds = []
         # auxiliar variables
-        self.var_coord_map = {'X': 0, 'Y': 1, 'Z': 2}
+        self.var_coord_map = OrderedDict([('X', 0), ('Y', 1), ('Z', 2)])
         self.sign_bound_map = {'-': 0, '+': 1}
         # initial operations
         self._compute_bounds()
@@ -95,6 +96,18 @@ class RVE(object):
 
         return sketch
 
+    def _create_bounds_sets(self):
+
+        # vertices
+        self._create_bound_vertices_sets()
+
+        # edges
+        self._create_bound_edges_sets()
+
+        # faces
+        if len(self.dims) > 2:
+            self._create_bound_faces_sets()
+
     @staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
@@ -113,6 +126,38 @@ class RVE(object):
         return d
 
     @staticmethod
+    def _get_edge_name(position):
+        return 'EDGE_{}'.format(position)
+
+    @staticmethod
+    def _get_vertex_name(position):
+        return 'VERTEX_{}'.format(position)
+
+    @staticmethod
+    def _get_face_name(position):
+        return 'FACE_{}'.format(position)
+
+    @staticmethod
+    def _get_ref_point_name(position):
+        return 'REF_POINT_{}'.format(position)
+
+    @staticmethod
+    def _define_positions_by_recursion(ref_positions, d):
+        def append_positions(obj, i):
+            if i == d:
+                positions.append(obj)
+            else:
+                for ref_obj in (ref_positions[i]):
+                    obj_ = obj + ref_obj
+                    append_positions(obj_, i + 1)
+
+        positions = []
+        obj = ''
+        append_positions(obj, 0)
+
+        return positions
+
+    @staticmethod
     def unnest(array):
         unnested_array = []
         for arrays in array:
@@ -120,6 +165,14 @@ class RVE(object):
                 unnested_array.append(array_)
 
         return unnested_array
+
+    @staticmethod
+    def _get_bound_arg_name(pos):
+        return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
+
+    def get_bound(self, pos):
+        i, p = self.var_coord_map[pos[0]], self.sign_bound_map[pos[1]]
+        return self.bounds[i][p]
 
 
 class RVE2D(RVE):
@@ -137,30 +190,18 @@ class RVE2D(RVE):
         # additional variables
         self.edge_positions = (('X-', 'X+'), ('Y-', 'Y+'))  # order is relevant
         self.ref_points_positions = ('X-X+', 'Y-Y+')  # order is relevant
-        # initial operations
-        self._define_vertex_positions()
-
-    def _define_vertex_positions(self):
-        # TODO: move to abstract?
-        # TODO: group similar?
-        def append_positions(vertex, i):
-            if i == len(self.dims):
-                self.vertex_positions.append(vertex)
-            else:
-                for edge in (self.edge_positions[i]):
-                    vertex_ = vertex + edge
-                    append_positions(vertex_, i + 1)
-
-        self.vertex_positions = []
-        vertex = ''
-        append_positions(vertex, 0)
+        # define positions
+        # TODO: group vertices? They don't require verification...
+        self.vertex_positions = self._define_positions_by_recursion(
+            self.edge_positions, len(self.dims))
 
     def create_part(self, model):
+        # TODO: move to parent?
 
         # create RVE
         sketch = self._create_RVE_sketch(model)
 
-        # create particular geometry
+        # create particles geometry in sketch
         for particle in self.particles:
             particle.create_inner_geometry(sketch, self)
 
@@ -339,25 +380,21 @@ class RVE2D(RVE):
 
         # TODO: fix left bottom node? I think Miguel does not it (even though he founds out that "support nodes" -> see line 433)
 
-    def _create_bounds_sets(self):
+    def _create_bounds_vertices_sets(self):
+        for pos in self.vertex_positions:
+            vertex_name = self._get_vertex_name(pos)
+            pt = (self.get_bound(pos[:2]), self.get_bound(pos[2:]), 0.)
+            vertex = self.part.vertices.findAt((pt,))
+            self.part.Set(name=vertex_name, vertices=vertex)
 
-        # create edge sets
+    def _create_bounds_edges_sets(self):
         for bounds, positions in zip(self.bounds, self.edge_positions):
             for x, pos in zip(bounds, positions):
                 edge_name = self._get_edge_name(pos)
-                var_name = '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
+                var_name = self._get_bound_arg_name(pos)
                 kwargs = {var_name: x}
                 edges = self.part.edges.getByBoundingBox(**kwargs)
                 self.part.Set(name=edge_name, edges=edges)
-
-        # create vertex sets
-        for pos in self.vertex_positions:
-            vertex_name = self._get_vertex_name(pos)
-            i, j = self.var_coord_map[pos[0]], self.var_coord_map[pos[2]]
-            p, q = self.sign_bound_map[pos[1]], self.sign_bound_map[pos[3]]
-            pt = (self.bounds[i][p], self.bounds[j][q], 0.)
-            vertex = self.part.vertices.findAt((pt,))
-            self.part.Set(name=vertex_name, vertices=vertex)
 
     def _create_pbcs_ref_points(self, model):
         '''
@@ -382,6 +419,7 @@ class RVE2D(RVE):
         -----
         -output is given in the order of position definition.
         '''
+        # TODO: move to parent?
 
         if only_names:
             vertices = ['{}.{}'.format(self.name, self._get_vertex_name(position)) for position in self.vertex_positions]
@@ -397,6 +435,7 @@ class RVE2D(RVE):
         Output is given in the order of position definition.
         Model is required if only_names is False.
         '''
+        # TODO: move to parent?
 
         if only_names:
             ref_points = [self._get_ref_point_name(position) for position in self.ref_points_positions]
@@ -406,6 +445,7 @@ class RVE2D(RVE):
         return ref_points
 
     def _get_edge_nodes(self, position, sort_direction=None):
+        # TODO: move to parent?
         edge_name = self._get_edge_name(position)
         nodes = self.part.sets[edge_name].nodes
         if sort_direction is not None:
@@ -413,51 +453,74 @@ class RVE2D(RVE):
 
         return nodes
 
-    @ staticmethod
-    def _get_edge_name(position):
-        return 'EDGE_{}'.format(position)
-
-    @ staticmethod
-    def _get_vertex_name(position):
-        return 'VERTEX_{}'.format(position)
-
-    @ staticmethod
-    def _get_ref_point_name(position):
-        return 'REF_POINT_{}'.format(position)
-
 
 class RVE3D(RVE):
 
-    def __init__(self, dims, name='RVE'):
-        super(RVE3D, self).__init__(name, dims, center=(0., 0., 0.))
+    def __init__(self, dims, name='RVE', center=(0., 0., 0.)):
+        super(RVE3D, self).__init__(name, dims, center)
         # additional variables
-        # TODO: size 3?
-        self.face_positions = ('X-', 'X+', 'Y-', 'Y+', 'Z-', 'Z+')
+        self.face_positions = (('X-', 'X+'), ('Y-', 'Y+'), ('Z-', 'Z+'))
+        # define positions
+        self.edge_positions = self._define_edge_positions()
+        # TODO: group vertices?
+        self.vertex_positions = self._define_positions_by_recursion(
+            self.face_positions, len(self.dims))
+
+    def _define_edge_positions(self):
+
+        # define positions
+        positions = []
+        for i, posl in enumerate(self.face_positions[:2]):
+            for posr in self.face_positions[i + 1:]:
+                for posl_ in posl:
+                    for posr_ in posr:
+                        positions.append(posl_ + posr_)
+
+        # reagroup positions
+        edge_positions = []
+        for perp_axis in self.var_coord_map.keys():
+            grouped_edges = []
+            for pos in positions:
+                if perp_axis not in pos:
+                    grouped_edges.append(pos)
+            edge_positions.append(grouped_edges)
+
+        return edge_positions
 
     def create_part(self, model):
 
         # create RVE
         sketch = self._create_RVE_sketch(model)
 
-        # create particular geometry
-        # self._create_inner_geometry(model)
-
-        # create part
-        self.part = model.Part(name=self.name, dimensionality=THREE_D,
-                               type=DEFORMABLE_BODY)
-        self.part.BaseSolidExtrude(sketch=sketch, depth=self.dims[2])
+        # create particles geometry in sketch
+        for particle in self.particles:
+            particle.create_inner_geometry(sketch, self)
 
         # create particles parts
         for particle in self.particles:
             particle.create_part(model, self)
 
-    def create_instance(self, model):
+        # create part
+        part_name = '{}_TMP'.format(self.name) if len(model.parts) > 0 else self.name
+        self.part = model.Part(name=part_name, dimensionality=THREE_D,
+                               type=DEFORMABLE_BODY)
+        self.part.BaseSolidExtrude(sketch=sketch, depth=self.dims[2])
+
+        # create part by merge instances
+        if len(model.parts) > 1:
+            self._create_part_by_merge(model)
+
+        # create PBCs sets (here because sets are required for meshing purposes)
+        self._create_bounds_sets()
+
+    def _create_part_by_merge(self, model):
+        # TODO: make with voids to extend method (base it on the material); make also combined
 
         # initialization
         modelAssembly = model.rootAssembly
 
         # create rve instance
-        modelAssembly.Instance(name=self.name,
+        modelAssembly.Instance(name='{}_TMP'.format(self.name),
                                part=self.part, dependent=ON)
 
         # create particle instances
@@ -465,16 +528,24 @@ class RVE3D(RVE):
             particle.create_instance(model)
 
         # create merged rve
-        new_part_name = '{}_WITH_PARTICLES'.format(self.name)
-        modelAssembly.InstanceFromBooleanMerge(name=new_part_name,
+        modelAssembly.InstanceFromBooleanMerge(name=self.name,
                                                instances=modelAssembly.instances.values(),
                                                keepIntersections=ON,
                                                originalInstances=DELETE,
                                                domain=GEOMETRY)
-        self.part = model.parts[new_part_name]
+        self.part = model.parts[self.name]  # override part
 
-        # create PBCs sets (here because sets are required for meshing purposes)
-        self._create_bounds_sets()
+    def create_instance(self, model):
+
+        # initialization
+        modelAssembly = model.rootAssembly
+
+        # verify if already created (e.g. during _create_part_by_merge)
+        if len(modelAssembly.instances.keys()) > 0:
+            return
+
+        # create assembly
+        modelAssembly.Instance(name=self.name, part=self.part, dependent=ON)
 
     def generate_mesh(self, face_by_closest=True, simple_trial=False):
 
@@ -546,6 +617,8 @@ class RVE3D(RVE):
         self._mesh_half_periodically(k, zp=False)
 
     def _mesh_half_periodically(self, k=0, zp=True):
+        # TODO: need to be tested with the use of bounds
+
         # initialization
         if zp:
             kwargs = {'zMin': self.dims[2] / 2}
@@ -650,6 +723,7 @@ class RVE3D(RVE):
             return self._verify_faces_by_sorting()
 
     def _verify_edges(self):
+        # TODO: simplify
         for i, pos_i in enumerate(zip(self.face_positions[:-2:2], self.face_positions[1:-2:2])):
             for j, pos_j in enumerate(zip(self.face_positions[2 * (i + 1)::2], self.face_positions[(2 * (i + 1) + 1)::2])):
                 # get possible combinations
@@ -757,14 +831,6 @@ class RVE3D(RVE):
 
         return True
 
-    def _get_edge_combinations(self, pos_i, pos_j):
-        comb = []
-        for pos_i_ in pos_i:
-            for pos_j_ in pos_j:
-                comb.append([pos_i_, pos_j_])
-
-        return comb
-
     def _get_edge_sort_direction(self, i, j):
         if 0 not in [i, j]:
             return 0
@@ -782,6 +848,7 @@ class RVE3D(RVE):
             return 0, 1
 
     def _get_exterior_edges(self):
+        # TODO: recode
         exterior_edges = []
         for i, position in enumerate(self.face_positions):
             k = int(i // 2)
@@ -802,50 +869,36 @@ class RVE3D(RVE):
 
         return EdgeArray(unique_exterior_edges)
 
-    def _create_bounds_sets(self):
-
-        # faces
-        self._create_bound_faces_sets()
-
-        # edges
-        self._create_bound_edges_sets()
-
     def _create_bound_faces_sets(self):
 
-        for i, position in enumerate(self.face_positions):
-            k = i // 2
-            face_name, var_name, dim = self._get_face_info(k, position)
-            kwargs = {var_name: dim}
-            faces = self.part.faces.getByBoundingBox(**kwargs)
-            self.part.Set(name=face_name, faces=faces)
-            # self.part.Surface(name='SUR{}'.format(face_name), side1Faces=faces)
+        for bounds, positions in zip(self.bounds, self.face_positions):
+            for x, pos in zip(bounds, positions):
+                face_name = self._get_face_name(pos)
+                var_name = self._get_bound_arg_name(pos)
+                kwargs = {var_name: x}
+                faces = self.part.faces.getByBoundingBox(**kwargs)
+                self.part.Set(name=face_name, faces=faces)
 
     def _create_bound_edges_sets(self):
-        for i, pos_i in enumerate(self.face_positions[:-2]):
-            k_i = i // 2
-            _, var_name_i, dim_i = self._get_face_info(k_i, pos_i)
-            for j, pos_j in enumerate(self.face_positions[2 * (k_i + 1):]):
-                k_j = j // 2
-                _, var_name_j, dim_j = self._get_face_info(k_j, pos_j)
-                edge_name = self._get_edge_name(pos_i, pos_j)
-                kwargs = {var_name_i: dim_i, var_name_j: dim_j}
-                edges = self.part.edges.getByBoundingBox(**kwargs)
-                self.part.Set(name=edge_name, edges=edges)
 
-    def _get_face_info(self, i, position):
-        # TODO: refactor using bounds
-        face_name = self._get_face_name(position)
-        sign = 1 if '+' in face_name else 0  # 0 to represent negative face
-        face_axis = face_name.split('_')[1][0].lower()
-        var_name = '{}Min'.format(face_axis) if sign else '{}Max'.format(face_axis)
-        dim = self.dims[i] * sign
+        for pos in self.unnest(self.edge_positions):
+            edge_name = self._get_edge_name(pos)
+            kwargs = {}
+            for pos_ in [pos[:2], pos[2:]]:
+                var_name = self._get_bound_arg_name(pos_)
+                kwargs[var_name] = self.get_bound(pos_)
 
-        return face_name, var_name, dim
+            edges = self.part.edges.getByBoundingBox(**kwargs)
+            self.part.Set(name=edge_name, edges=edges)
 
-    @staticmethod
-    def _get_edge_name(pos_i, pos_j):
-        return 'EDGE_{}{}'.format(pos_i, pos_j)
+    def _create_bound_vertices_sets(self):
+        for pos in self.vertex_positions:
+            vertex_name = self._get_vertex_name(pos)
+            kwargs = {}
+            for i in range(0, len(pos), 2):
+                pos_ = pos[i:i + 2]
+                var_name = self._get_bound_arg_name(pos_)
+                kwargs[var_name] = self.get_bound(pos_)
 
-    @staticmethod
-    def _get_face_name(position):
-        return 'FACE_{}'.format(position)
+            vertices = self.part.vertices.getByBoundingBox(**kwargs)
+            self.part.Set(name=vertex_name, vertices=vertices)
