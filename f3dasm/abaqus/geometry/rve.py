@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-09 15:39:11
+Last modified on 2020-11-09 15:49:13
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -99,14 +99,38 @@ class RVE(object):
     def _create_bounds_sets(self):
 
         # vertices
-        self._create_bound_vertices_sets()
+        self._create_bound_obj_sets('vertices', self.vertex_positions, self._get_vertex_name)
 
         # edges
-        self._create_bound_edges_sets()
+        self._create_bound_obj_sets('edges', self.unnest(self.edge_positions), self._get_edge_name)
 
         # faces
         if len(self.dims) > 2:
-            self._create_bound_faces_sets()
+            self._create_bound_obj_sets('faces', self.unnest(self.face_positions), self._get_face_name)
+
+    def _create_bound_obj_sets(self, obj, positions, get_name):
+        '''
+        Parameter
+        ---------
+        obj : str
+            Possible values are 'vertices', 'edges', 'faces'
+        '''
+
+        # initialization
+        get_objs = getattr(self.part, obj)
+
+        # create sets
+        for pos in positions:
+            name = get_name(pos)
+            kwargs = {}
+            for i in range(0, len(pos), 2):
+                pos_ = pos[i:i + 2]
+                var_name = self._get_bound_arg_name(pos_)
+                kwargs[var_name] = self.get_bound(pos_)
+
+            objs = get_objs.getByBoundingBox(**kwargs)
+            kwargs = {obj: objs}
+            self.part.Set(name=name, **kwargs)
 
     @staticmethod
     def _get_node_coordinate(node, i):
@@ -379,22 +403,6 @@ class RVE2D(RVE):
             disp_bc.apply_bc(model)
 
         # TODO: fix left bottom node? I think Miguel does not it (even though he founds out that "support nodes" -> see line 433)
-
-    def _create_bounds_vertices_sets(self):
-        for pos in self.vertex_positions:
-            vertex_name = self._get_vertex_name(pos)
-            pt = (self.get_bound(pos[:2]), self.get_bound(pos[2:]), 0.)
-            vertex = self.part.vertices.findAt((pt,))
-            self.part.Set(name=vertex_name, vertices=vertex)
-
-    def _create_bounds_edges_sets(self):
-        for bounds, positions in zip(self.bounds, self.edge_positions):
-            for x, pos in zip(bounds, positions):
-                edge_name = self._get_edge_name(pos)
-                var_name = self._get_bound_arg_name(pos)
-                kwargs = {var_name: x}
-                edges = self.part.edges.getByBoundingBox(**kwargs)
-                self.part.Set(name=edge_name, edges=edges)
 
     def _create_pbcs_ref_points(self, model):
         '''
@@ -868,37 +876,3 @@ class RVE3D(RVE):
                 edge_indices.append(edge.index)
 
         return EdgeArray(unique_exterior_edges)
-
-    def _create_bound_faces_sets(self):
-
-        for bounds, positions in zip(self.bounds, self.face_positions):
-            for x, pos in zip(bounds, positions):
-                face_name = self._get_face_name(pos)
-                var_name = self._get_bound_arg_name(pos)
-                kwargs = {var_name: x}
-                faces = self.part.faces.getByBoundingBox(**kwargs)
-                self.part.Set(name=face_name, faces=faces)
-
-    def _create_bound_edges_sets(self):
-
-        for pos in self.unnest(self.edge_positions):
-            edge_name = self._get_edge_name(pos)
-            kwargs = {}
-            for pos_ in [pos[:2], pos[2:]]:
-                var_name = self._get_bound_arg_name(pos_)
-                kwargs[var_name] = self.get_bound(pos_)
-
-            edges = self.part.edges.getByBoundingBox(**kwargs)
-            self.part.Set(name=edge_name, edges=edges)
-
-    def _create_bound_vertices_sets(self):
-        for pos in self.vertex_positions:
-            vertex_name = self._get_vertex_name(pos)
-            kwargs = {}
-            for i in range(0, len(pos), 2):
-                pos_ = pos[i:i + 2]
-                var_name = self._get_bound_arg_name(pos_)
-                kwargs[var_name] = self.get_bound(pos_)
-
-            vertices = self.part.vertices.getByBoundingBox(**kwargs)
-            self.part.Set(name=vertex_name, vertices=vertices)
