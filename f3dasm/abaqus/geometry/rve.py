@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-09 15:49:13
+Last modified on 2020-11-10 17:59:27
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -40,6 +40,13 @@ from ...utils.linalg import symmetricize_vector
 from ...utils.solid_mechanics import compute_small_strains_from_green
 
 
+# TODO: create a Geometry abstract class
+# TODO: handle warnings and errors using particular class
+# TODO: class apply pbc constraints? In this way, it would be easy to extend; it should also be easy to composite composite properties
+# TODO: class generate mesh?
+# TODO: class verify mesh?
+
+
 # object definition
 
 class RVE(object):
@@ -60,7 +67,8 @@ class RVE(object):
         # variable initialization
         self.part = None
         self.particles = []
-        self.bounds = []
+        # computed variables
+        self.bounds = self._compute_bounds()
         # auxiliar variables
         self.var_coord_map = OrderedDict([('X', 0), ('Y', 1), ('Z', 2)])
         self.sign_bound_map = {'-': 0, '+': 1}
@@ -68,8 +76,11 @@ class RVE(object):
         self._compute_bounds()
 
     def _compute_bounds(self):
+        bounds = []
         for dim, c in zip(self.dims, self.center):
-            self.bounds.append([c - dim / 2, c + dim / 2])
+            bounds.append([c - dim / 2, c + dim / 2])
+
+        return bounds
 
     def change_mesh_definitions(self, **kwargs):
         '''
@@ -97,6 +108,7 @@ class RVE(object):
         return sketch
 
     def _create_bounds_sets(self):
+        # TODO: should it be in an intermediate class?
 
         # vertices
         self._create_bound_obj_sets('vertices', self.vertex_positions, self._get_vertex_name)
@@ -132,6 +144,53 @@ class RVE(object):
             kwargs = {obj: objs}
             self.part.Set(name=name, **kwargs)
 
+    def _verify_edges(self):
+
+        for grouped_positions in self.edge_positions:
+
+            # get sorted nodes for each edge
+            k = self._get_edge_sort_direction(grouped_positions[0])
+            node_lists = [self._get_edge_nodes(pos, sort_direction=k) for pos in grouped_positions]
+
+            # verify sizes
+            sizes = [len(node_list) for node_list in node_lists]
+            if len(set(sizes)) > 1:
+                return False
+
+            # verify if tolerance is respected
+            for node_list in node_lists[1:]:
+                for n, node in enumerate(node_lists[0]):
+                    if not self._verify_tol_edge_nodes(node, node_list[n], k):
+                        return False
+
+        return True
+
+    def _verify_tol_edge_nodes(self, node, node_cmp, k):
+        if abs(node.coordinates[k] - node_cmp.coordinates[k]) > self.mesh_tol:
+            # create set with error nodes
+            set_name = self._verify_set_name('_ERROR_EDGE_NODES')
+            self.part.Set(set_name, nodes=MeshNodeArray(node, node_cmp))
+            return False
+
+        return True
+
+    def _get_edge_sort_direction(self, pos):
+        ls = []
+        for i in range(0, len(pos), 2):
+            ls.append(self.var_coord_map[pos[i]])
+
+        for i in range(3):
+            if i not in ls:
+                return i
+
+    def _get_edge_nodes(self, pos, sort_direction=None):
+        edge_name = self._get_edge_name(pos)
+        nodes = self.part.sets[edge_name].nodes
+        if sort_direction is not None:
+            nodes = sorted(nodes, key=lambda node: self._get_node_coordinate(node, i=sort_direction))
+
+        return nodes
+
     @staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
@@ -164,6 +223,15 @@ class RVE(object):
     @staticmethod
     def _get_ref_point_name(position):
         return 'REF_POINT_{}'.format(position)
+
+    def _verify_set_name(self, name):
+        new_name = name
+        i = 1
+        while new_name in self.part.sets.keys():
+            i += 1
+            new_name = '{}_{}'.format(new_name, i)
+
+        return new_name
 
     @staticmethod
     def _define_positions_by_recursion(ref_positions, d):
@@ -261,7 +329,7 @@ class RVE2D(RVE):
         # generate mesh
         self.part.generateMesh()
 
-    def generate_mesh_for_pbcs(self, fast=False):
+    def generate_mesh_for_pbcs(self):
         # TODO: generate error file
 
         it = 1
@@ -272,10 +340,7 @@ class RVE2D(RVE):
             self.generate_mesh()
 
             # verify generated mesh
-            if fast:
-                success = self.verify_mesh_for_pbcs_quick()
-            else:
-                success = self.verify_mesh_for_pbcs()
+            success = self.verify_mesh_for_pbcs()
 
             # prepare next iteration
             it += 1
@@ -293,31 +358,7 @@ class RVE2D(RVE):
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
         '''
-        # TODO: create set with all error nodes
-
-        for i, positions in enumerate(self.edge_positions):
-
-            # perpendicular direction
-            j = (i + 1) % 2
-
-            # get sorted nodes
-            nodes = [self._get_edge_nodes(pos, sort_direction=j) for pos in positions]
-
-            # verify if tolerance is respected
-            for node_m, node_p in zip(nodes[0], nodes[1]):
-                if abs(node_m.coordinates[j] - node_p.coordinates[j]) > self.mesh_tol:
-                    return False
-
-        return True
-
-    def verify_mesh_for_pbcs_quick(self):
-
-        for positions in self.edge_positions:
-            nodes = [self._get_edge_nodes(pos) for pos in positions]
-            if len(nodes[0]) != len(nodes[1]):
-                return False
-
-        return True
+        return self._verify_edges()
 
     def apply_pbcs_constraints(self, model):
 
@@ -347,6 +388,7 @@ class RVE2D(RVE):
                                   (1.0, ref_points[1], ndof)))
 
         # edges constraints
+        # TODO: can robustness be increased to avoid order dependency?
         for i, (positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
 
             # get sorted nodes
@@ -451,15 +493,6 @@ class RVE2D(RVE):
             ref_points = [model.rootAssembly.sets[self._get_ref_point_name(position)] for position in self.ref_points_positions]
 
         return ref_points
-
-    def _get_edge_nodes(self, position, sort_direction=None):
-        # TODO: move to parent?
-        edge_name = self._get_edge_name(position)
-        nodes = self.part.sets[edge_name].nodes
-        if sort_direction is not None:
-            nodes = sorted(nodes, key=lambda node: self._get_node_coordinate(node, i=sort_direction))
-
-        return nodes
 
 
 class RVE3D(RVE):
@@ -695,14 +728,6 @@ class RVE3D(RVE):
                                   nodes=nodes,
                                   coordinates=coords)
 
-    def _get_edge_nodes(self, pos_i, pos_j, sort_direction=None):
-        edge_name = self._get_edge_name(pos_i, pos_j)
-        nodes = self.part.sets[edge_name].nodes
-        if sort_direction is not None:
-            nodes = sorted(nodes, key=lambda node: self._get_node_coordinate(node, i=sort_direction))
-
-        return nodes
-
     def _get_face_nodes(self, pos, sort_direction_i=None, sort_direction_j=None):
         face_name = self._get_face_name(pos)
         nodes = self.part.sets[face_name].nodes
@@ -719,6 +744,7 @@ class RVE3D(RVE):
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
         '''
+        # TODO: create get all error nodes
 
         # verify edges
         if not self._verify_edges():
@@ -730,60 +756,20 @@ class RVE3D(RVE):
         else:
             return self._verify_faces_by_sorting()
 
-    def _verify_edges(self):
-        # TODO: simplify
-        for i, pos_i in enumerate(zip(self.face_positions[:-2:2], self.face_positions[1:-2:2])):
-            for j, pos_j in enumerate(zip(self.face_positions[2 * (i + 1)::2], self.face_positions[(2 * (i + 1) + 1)::2])):
-                # get possible combinations
-                pos_comb = self._get_edge_combinations(pos_i, pos_j)
-                n_comb = len(pos_comb)
-
-                # get sorted nodes for each edge
-                nodes = []
-                k = self._get_edge_sort_direction(i, i + j + 1)
-                for (pos_i_, pos_j_) in pos_comb:
-                    nodes.append(self._get_edge_nodes(pos_i_, pos_j_,
-                                                      sort_direction=k))
-
-                # verify sizes
-                sizes = [len(node_list) for node_list in nodes]
-                if len(set(sizes)) > 1:
-                    return False
-
-                # verify if tolerance is respected
-                for n, node in enumerate(nodes[0]):
-                    for m in range(1, n_comb):
-                        if abs(node.coordinates[k] - nodes[m][n].coordinates[k]) > self.mesh_tol:
-                            # create set with error nodes
-                            nodes_ = [node_list[n] for node_list in nodes]
-                            set_name = self._verify_set_name('_ERROR_EDGE_NODES')
-                            self.part.Set(set_name,
-                                          nodes=MeshNodeArray(nodes_))
-                            return False
-
-        return True
-
-    def _verify_set_name(self, name):
-        new_name = name
-        i = 1
-        while new_name in self.part.sets.keys():
-            i += 1
-            new_name = '{}_{}'.format(new_name, i)
-
-        return new_name
-
     def _verify_faces_by_sorting(self):
         '''
         Notes
         -----
-        1. the sort method is less robust to due rounding errors. `mesh_tol`
+        1. the sort method is less robust due to rounding errors. `mesh_tol`
         is used to increase its robustness, but find by closest should be
         preferred.
         '''
-        for i, (pos_i, pos_j) in enumerate(zip(self.face_positions[::2], self.face_positions[1::2])):
+
+        for grouped_positions in self.face_positions:
 
             # get nodes
-            j, k = self._get_face_sort_directions(i)
+            pos_i, pos_j = grouped_positions
+            j, k = self._get_face_sort_directions(pos_i)
             nodes_i = self._get_face_nodes(pos_i, j, k)
             nodes_j = self._get_face_nodes(pos_j, j, k)
 
@@ -801,17 +787,12 @@ class RVE3D(RVE):
         return True
 
     def _verify_faces_by_closest(self):
-        '''
-        Notes
-        -----
-        1. at first sight, it appears to be more robust than using sort.
-        '''
-        # TODO: create set with all error nodes
 
-        for i, (pos_i, pos_j) in enumerate(zip(self.face_positions[::2], self.face_positions[1::2])):
+        for grouped_positions in self.face_positions:
 
             # get nodes
-            j, k = self._get_face_sort_directions(i)
+            pos_i, pos_j = grouped_positions
+            j, k = self._get_face_sort_directions(pos_i)
             nodes_i = self._get_face_nodes(pos_i)
             nodes_j = self._get_face_nodes(pos_j)
 
@@ -839,40 +820,26 @@ class RVE3D(RVE):
 
         return True
 
-    def _get_edge_sort_direction(self, i, j):
-        if 0 not in [i, j]:
-            return 0
-        elif 1 not in [i, j]:
-            return 1
-        else:
-            return 2
+    def _get_face_sort_directions(self, pos):
+        k = self.var_coord_map[pos[0]]
+        return [i for i in range(3) if i != k]
 
-    def _get_face_sort_directions(self, i):
-        if i == 0:
-            return 1, 2
-        elif i == 1:
-            return 0, 2
-        else:
-            return 0, 1
+    def _get_exterior_edges(self, allow_repetitions=True):
 
-    def _get_exterior_edges(self):
-        # TODO: recode
         exterior_edges = []
-        for i, position in enumerate(self.face_positions):
-            k = int(i // 2)
-            face_name = self._get_face_name(position)
-            sign = 1 if '+' in face_name else 0  # 0 to represent negative face
-            face_axis = face_name.split('_')[1][0].lower()
-            var_name = '{}Min'.format(face_axis) if sign else '{}Max'.format(face_axis)
-            kwargs = {var_name: self.dims[k] * sign}
+        for face_position in self.unnest(self.face_positions):
+            kwargs = {self._get_bound_arg_name(face_position): self.get_bound(face_position)}
             edges = self.part.edges.getByBoundingBox(**kwargs)
             exterior_edges.extend(edges)
 
         # unique edges
-        edge_indices, unique_exterior_edges = [], []
-        for edge in exterior_edges:
-            if edge.index not in edge_indices:
-                unique_exterior_edges.append(edge)
-                edge_indices.append(edge.index)
+        if allow_repetitions:
+            return EdgeArray(exterior_edges)
+        else:
+            edge_indices, unique_exterior_edges = [], []
+            for edge in exterior_edges:
+                if edge.index not in edge_indices:
+                    unique_exterior_edges.append(edge)
+                    edge_indices.append(edge.index)
 
-        return EdgeArray(unique_exterior_edges)
+            return EdgeArray(unique_exterior_edges)
