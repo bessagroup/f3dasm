@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-11 17:27:06
+Last modified on 2020-11-11 19:10:11
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -84,6 +84,14 @@ class RVE(object):
 
         return bounds
 
+    def _define_primary_positions(self):
+        '''
+        Notes
+        -----
+        Primary positions are edges for 2D and faces for 3d.
+        '''
+        return [('{}-'.format(var), '{}+'.format(var)) for _, var in zip(self.dims, self.var_coord_map)]
+
     def _define_ref_points(self):
         return ['{}-{}+'.format(var, var) for _, var in zip(self.dims, self.var_coord_map)]
 
@@ -116,7 +124,7 @@ class RVE(object):
             epsilon = compute_small_strains_from_green(epsilon)
 
         # fix left bottom node
-        position = ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
+        position = self._get_fixed_vertex_position()
         region_name = '{}.{}'.format(self.name, self._get_vertex_name(position))
         disp_bcs.append(DisplacementBC(
             name='FIXED_NODE', region=region_name, createStepName=step_name,
@@ -135,6 +143,9 @@ class RVE(object):
         # TODO: return disp bcs and do apply outside?
         for disp_bc in disp_bcs:
             disp_bc.apply_bc(model)
+
+    def _get_fixed_vertex_position(self):
+        return ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
 
     def _create_RVE_sketch(self, model):
 
@@ -187,6 +198,81 @@ class RVE(object):
             kwargs = {obj: objs}
             self.part.Set(name=name, **kwargs)
 
+    def _create_pbcs_ref_points(self, model):
+        '''
+        Notes
+        -----
+        Any coordinate for reference points position works.
+        '''
+
+        # initialization
+        modelAssembly = model.rootAssembly
+
+        # create reference points
+        coord = list(self.center)
+        if len(coord) == 2:
+            coord += [0.]
+        for position in self.ref_points_positions:
+            ref_point = modelAssembly.ReferencePoint(point=coord)
+            modelAssembly.Set(name=self._get_ref_point_name(position),
+                              referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
+
+    def _apply_vertices_pbcs_constraints(self, model):
+        '''
+        Notes
+        -----
+        The implementation is based on the patterns found on equations (that
+        result from the fact that we relate opposite vertices).
+        '''
+
+        # local functions
+        def get_compl_signs(signs):
+            c_signs = []
+            for sign in signs:
+                if sign == '+':
+                    c_signs.append('-')
+                else:
+                    c_signs.append('+')
+            return c_signs
+
+        def get_ref_points_coeff(signs):
+            coeffs = []
+            for sign in signs:
+                if sign == '+':
+                    coeffs.append(-1.0)
+                else:
+                    coeffs.append(1.0)
+            return coeffs
+
+        # initialization
+        d = len(self.dims)
+        ref_points = self._get_all_ref_points(only_names=True)
+        fixed_pos = self._get_fixed_vertex_position()
+
+        # apply kinematic constraints
+        for k in range((d - 1) * 2):
+            name = 'VERTEX_CONSTRAINT_'
+            signs = ['+' for _ in self.dims]
+            if k < (d - 1) * 2 - 1:  # in one time all the signs are positive
+                signs[-(k + 1)] = '-'
+
+            terms_no_dof = []
+            for i, signs_ in enumerate([signs, get_compl_signs(signs)]):
+                pos = ''.join(['{}{}'.format(var, sign) for var, sign in zip(self.var_coord_map.keys(), signs_)])
+                if pos != fixed_pos:
+                    # TODO: correct name for 3d case
+                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self._get_vertex_name(pos)), ])
+                    name += pos
+            for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
+                terms_no_dof.append([coeff, ref_point])
+
+            for ndof in range(1, d + 1):
+                terms = []
+                for term in terms_no_dof:
+                    terms.append(term + [ndof])
+                model.Equation(name='{}{}'.format(name, ndof),
+                               terms=terms)
+
     def _verify_edges(self):
 
         for grouped_positions in self.edge_positions:
@@ -234,11 +320,11 @@ class RVE(object):
 
         return nodes
 
-    @staticmethod
+    @ staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
 
-    @staticmethod
+    @ staticmethod
     def _get_node_coordinate_with_tol(node, i, decimal_places):
         return round(node.coordinates[i], decimal_places)
 
@@ -251,21 +337,36 @@ class RVE(object):
 
         return d
 
-    @staticmethod
+    @ staticmethod
     def _get_edge_name(position):
         return 'EDGE_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def _get_vertex_name(position):
         return 'VERTEX_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def _get_face_name(position):
         return 'FACE_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def _get_ref_point_name(position):
         return 'REF_POINT_{}'.format(position)
+
+    def _get_all_ref_points(self, model=None, only_names=False):
+        '''
+        Notes
+        -----
+        Output is given in the order of position definition.
+        Model is required if `only_names` is False.
+        '''
+
+        if only_names:
+            ref_points = [self._get_ref_point_name(position) for position in self.ref_points_positions]
+        else:
+            ref_points = [model.rootAssembly.sets[self._get_ref_point_name(position)] for position in self.ref_points_positions]
+
+        return ref_points
 
     def _verify_set_name(self, name):
         new_name = name
@@ -276,7 +377,7 @@ class RVE(object):
 
         return new_name
 
-    @staticmethod
+    @ staticmethod
     def _define_positions_by_recursion(ref_positions, d):
         def append_positions(obj, i):
             if i == d:
@@ -292,7 +393,7 @@ class RVE(object):
 
         return positions
 
-    @staticmethod
+    @ staticmethod
     def _unnest(array):
         unnested_array = []
         for arrays in array:
@@ -301,7 +402,7 @@ class RVE(object):
 
         return unnested_array
 
-    @staticmethod
+    @ staticmethod
     def _get_bound_arg_name(pos):
         return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
 
@@ -313,19 +414,10 @@ class RVE(object):
 class RVE2D(RVE):
 
     def __init__(self, length, width, center, name='RVE'):
-        '''
-        Notes
-        -----
-        -1st reference point represents the difference between right bottom
-        and left bottom vertices.
-        -2nd reference point represents the difference between left top
-        and left bottom vertices.
-        '''
         super(RVE2D, self).__init__(name, dims=(length, width), center=center)
         # additional variables
-        self.edge_positions = (('X-', 'X+'), ('Y-', 'Y+'))  # order is relevant
+        self.edge_positions = self._define_primary_positions()
         # define positions
-        # TODO: group vertices? They don't require verification...
         self.vertex_positions = self._define_positions_by_recursion(
             self.edge_positions, len(self.dims))
 
@@ -403,36 +495,21 @@ class RVE2D(RVE):
         return self._verify_edges()
 
     def apply_pbcs_constraints(self, model):
-        # TODO: force VERTEX_X-Y- to be fixed
+        # TODO: split in several functions
+
+        # initialization
+        d = len(self.dims)
 
         # create reference points
         self._create_pbcs_ref_points(model)
 
-        # get vertices
-        rt_vertex, lt_vertex, lb_vertex, rb_vertex = self._get_all_vertices(only_names=True)
-
-        # get reference points
-        ref_points = self._get_all_ref_points(only_names=True)
-
         # apply vertex constraints
-        for ndof in range(1, 3):
-            # TODO: correct here
-            # right-top and left-bottom nodes
-            model.Equation(name='CONSTRAINT_X+Y+_X-Y-_V_{}'.format(ndof),
-                           terms=((1.0, rt_vertex, ndof),
-                                  (-1.0, lb_vertex, ndof),
-                                  (-1.0, ref_points[0], ndof),
-                                  (-1.0, ref_points[1], ndof)))
-
-            # left-top and right-bottom nodes
-            model.Equation(name='CONSTRAINT_X-Y+_X+Y-_V_{}'.format(ndof),
-                           terms=((1.0, rb_vertex, ndof),
-                                  (-1.0, lt_vertex, ndof),
-                                  (-1.0, ref_points[0], ndof),
-                                  (1.0, ref_points[1], ndof)))
+        self._apply_vertices_pbcs_constraints(model)
 
         # edges constraints
-        # TODO: can robustness be increased to avoid order dependency?
+        # TODO: get reference points
+        # TODO: face constraints work in similar way in 3d (some adaptations needed)
+        ref_points = self._get_all_ref_points(only_names=True)
         for i, (positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
 
             # get sorted nodes
@@ -449,61 +526,12 @@ class RVE2D(RVE):
                     set_names.append('{}.{}'.format(self.name, set_name))
 
                 # create constraint
-                for ndof in range(1, 3):
+                for ndof in range(1, d + 1):
                     model.Equation(name='CONSTRAINT_{}_{}_{}_{}'.format(positions[0], positions[1], k, ndof),
                                    terms=((1.0, set_names[1], ndof),
                                           (-1.0, set_names[0], ndof),
                                           (-1.0, ref_point, ndof)))
-
-        # ???: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
-
-    def _create_pbcs_ref_points(self, model):
-        '''
-        Notes
-        -----
-        Any coordinate for reference points position works.
-        '''
-
-        # initialization
-        modelAssembly = model.rootAssembly
-
-        # create reference points
-        coord = list(self.center) + [0.]
-        for position in self.ref_points_positions:
-            ref_point = modelAssembly.ReferencePoint(point=coord)
-            modelAssembly.Set(name=self._get_ref_point_name(position),
-                              referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
-
-    def _get_all_vertices(self, only_names=False):
-        '''
-        Notes
-        -----
-        -output is given in the order of position definition.
-        '''
         # TODO: move to parent?
-
-        if only_names:
-            vertices = ['{}.{}'.format(self.name, self._get_vertex_name(position)) for position in self.vertex_positions]
-        else:
-            vertices = [self.part.sets[self._get_vertex_name(position)] for position in self.vertex_positions]
-
-        return vertices
-
-    def _get_all_ref_points(self, model=None, only_names=False):
-        '''
-        Notes
-        -----
-        Output is given in the order of position definition.
-        Model is required if only_names is False.
-        '''
-        # TODO: move to parent?
-
-        if only_names:
-            ref_points = [self._get_ref_point_name(position) for position in self.ref_points_positions]
-        else:
-            ref_points = [model.rootAssembly.sets[self._get_ref_point_name(position)] for position in self.ref_points_positions]
-
-        return ref_points
 
 
 class RVE3D(RVE):
@@ -511,7 +539,7 @@ class RVE3D(RVE):
     def __init__(self, dims, name='RVE', center=(0., 0., 0.)):
         super(RVE3D, self).__init__(name, dims, center)
         # additional variables
-        self.face_positions = (('X-', 'X+'), ('Y-', 'Y+'), ('Z-', 'Z+'))
+        self.face_positions = self._define_primary_positions()
         # define positions
         self.edge_positions = self._define_edge_positions()
         # TODO: group vertices?
@@ -529,6 +557,7 @@ class RVE3D(RVE):
                         positions.append(posl_ + posr_)
 
         # reagroup positions
+        # TODO: grouping would have to be different
         edge_positions = []
         for perp_axis in self.var_coord_map.keys():
             grouped_edges = []
@@ -613,6 +642,9 @@ class RVE3D(RVE):
 
             # verify mesh
             success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
+
+        # TODO: delete
+        return success
 
         # retry meshing if unsuccessful
         if not simple_trial or not success:
@@ -854,3 +886,15 @@ class RVE3D(RVE):
                     edge_indices.append(edge.index)
 
             return EdgeArray(unique_exterior_edges)
+
+    def apply_pbcs_constraints(self, model):
+        # TODO: move to parent?
+
+        # initialization
+        d = len(self.dims)
+
+        # create reference points
+        self._create_pbcs_ref_points(model)
+
+        # apply vertex constraints
+        self._apply_vertices_pbcs_constraints(model)
