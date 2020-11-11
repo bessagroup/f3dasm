@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-10 17:59:27
+Last modified on 2020-11-11 17:27:06
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -72,6 +72,8 @@ class RVE(object):
         # auxiliar variables
         self.var_coord_map = OrderedDict([('X', 0), ('Y', 1), ('Z', 2)])
         self.sign_bound_map = {'-': 0, '+': 1}
+        # additional variables
+        self.ref_points_positions = self._define_ref_points()
         # initial operations
         self._compute_bounds()
 
@@ -81,6 +83,9 @@ class RVE(object):
             bounds.append([c - dim / 2, c + dim / 2])
 
         return bounds
+
+    def _define_ref_points(self):
+        return ['{}-{}+'.format(var, var) for _, var in zip(self.dims, self.var_coord_map)]
 
     def change_mesh_definitions(self, **kwargs):
         '''
@@ -92,6 +97,44 @@ class RVE(object):
 
     def add_particle(self, particle):
         self.particles.append(particle)
+
+    def apply_bcs_disp(self, model, step_name, epsilon,
+                       green_lagrange_strain=False):
+        '''
+        Parameters
+        ----------
+        epsilon : vector
+            Order of elements based on triangular superior strain matrix.
+        '''
+
+        # initialization
+        disp_bcs = []
+        epsilon = symmetricize_vector(epsilon)
+
+        # create strain matrix
+        if green_lagrange_strain:
+            epsilon = compute_small_strains_from_green(epsilon)
+
+        # fix left bottom node
+        position = ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
+        region_name = '{}.{}'.format(self.name, self._get_vertex_name(position))
+        disp_bcs.append(DisplacementBC(
+            name='FIXED_NODE', region=region_name, createStepName=step_name,
+            u1=0, u2=0, u3=0))
+
+        # apply displacement
+        for k, (position, dim) in enumerate(zip(self.ref_points_positions, self.dims)):
+            region_name = self._get_ref_point_name(position)
+            applied_disps = {}
+            for i in range(len(self.dims)):
+                applied_disps['u{}'.format(i + 1)] = dim * epsilon[i, k]
+            disp_bcs.append(DisplacementBC(
+                name='{}'.format(position), region=region_name,
+                createStepName=step_name, **applied_disps))
+
+        # TODO: return disp bcs and do apply outside?
+        for disp_bc in disp_bcs:
+            disp_bc.apply_bc(model)
 
     def _create_RVE_sketch(self, model):
 
@@ -114,11 +157,11 @@ class RVE(object):
         self._create_bound_obj_sets('vertices', self.vertex_positions, self._get_vertex_name)
 
         # edges
-        self._create_bound_obj_sets('edges', self.unnest(self.edge_positions), self._get_edge_name)
+        self._create_bound_obj_sets('edges', self._unnest(self.edge_positions), self._get_edge_name)
 
         # faces
         if len(self.dims) > 2:
-            self._create_bound_obj_sets('faces', self.unnest(self.face_positions), self._get_face_name)
+            self._create_bound_obj_sets('faces', self._unnest(self.face_positions), self._get_face_name)
 
     def _create_bound_obj_sets(self, obj, positions, get_name):
         '''
@@ -138,7 +181,7 @@ class RVE(object):
             for i in range(0, len(pos), 2):
                 pos_ = pos[i:i + 2]
                 var_name = self._get_bound_arg_name(pos_)
-                kwargs[var_name] = self.get_bound(pos_)
+                kwargs[var_name] = self._get_bound(pos_)
 
             objs = get_objs.getByBoundingBox(**kwargs)
             kwargs = {obj: objs}
@@ -250,7 +293,7 @@ class RVE(object):
         return positions
 
     @staticmethod
-    def unnest(array):
+    def _unnest(array):
         unnested_array = []
         for arrays in array:
             for array_ in arrays:
@@ -262,7 +305,7 @@ class RVE(object):
     def _get_bound_arg_name(pos):
         return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
 
-    def get_bound(self, pos):
+    def _get_bound(self, pos):
         i, p = self.var_coord_map[pos[0]], self.sign_bound_map[pos[1]]
         return self.bounds[i][p]
 
@@ -281,7 +324,6 @@ class RVE2D(RVE):
         super(RVE2D, self).__init__(name, dims=(length, width), center=center)
         # additional variables
         self.edge_positions = (('X-', 'X+'), ('Y-', 'Y+'))  # order is relevant
-        self.ref_points_positions = ('X-X+', 'Y-Y+')  # order is relevant
         # define positions
         # TODO: group vertices? They don't require verification...
         self.vertex_positions = self._define_positions_by_recursion(
@@ -321,7 +363,7 @@ class RVE2D(RVE):
                            minSizeFactor=self.mesh_min_size_factor)
 
         # seed edges
-        edge_positions = self.unnest(self.edge_positions)
+        edge_positions = self._unnest(self.edge_positions)
         edges = [self.part.sets[self._get_edge_name(position)].edges[0] for position in edge_positions]
         self.part.seedEdgeBySize(edges=edges, size=self.mesh_size,
                                  deviationFactor=self.mesh_deviation_factor,
@@ -361,6 +403,7 @@ class RVE2D(RVE):
         return self._verify_edges()
 
     def apply_pbcs_constraints(self, model):
+        # TODO: force VERTEX_X-Y- to be fixed
 
         # create reference points
         self._create_pbcs_ref_points(model)
@@ -373,6 +416,7 @@ class RVE2D(RVE):
 
         # apply vertex constraints
         for ndof in range(1, 3):
+            # TODO: correct here
             # right-top and left-bottom nodes
             model.Equation(name='CONSTRAINT_X+Y+_X-Y-_V_{}'.format(ndof),
                            terms=((1.0, rt_vertex, ndof),
@@ -380,7 +424,7 @@ class RVE2D(RVE):
                                   (-1.0, ref_points[0], ndof),
                                   (-1.0, ref_points[1], ndof)))
 
-            # left-top and right-bottom nodesL
+            # left-top and right-bottom nodes
             model.Equation(name='CONSTRAINT_X-Y+_X+Y-_V_{}'.format(ndof),
                            terms=((1.0, rb_vertex, ndof),
                                   (-1.0, lt_vertex, ndof),
@@ -412,39 +456,6 @@ class RVE2D(RVE):
                                           (-1.0, ref_point, ndof)))
 
         # ???: need to create fixed nodes? why to not apply bcs e.g. LB and RB?
-
-    def apply_bcs_disp(self, model, step_name, epsilon_11, epsilon_22,
-                       epsilon_12, green_lagrange_strain=True):
-        # TODO: receive epsilon as array-like?
-
-        # initialization
-        epsilon = [epsilon_11, epsilon_12, epsilon_22]
-        epsilon = symmetricize_vector(epsilon)
-
-        # create strain matrix
-        if green_lagrange_strain:
-            epsilon = compute_small_strains_from_green(epsilon)
-
-        # apply displacement
-        # TODO: transform eps in displacement?
-        disp_bcs = []
-        for k, position in enumerate(self.ref_points_positions):
-            i, j = k % 2, (k + 1) % 2
-            region_name = self._get_ref_point_name(position)
-            applied_disps = {'u{}'.format(i + 1): epsilon[i, i]}
-            disp_bcs.append(DisplacementBC(name='TEST_{}_{},{}'.format(position, i, i),
-                                           region=region_name, createStepName=step_name,
-                                           **applied_disps))
-            applied_disps = {'u{}'.format(j + 1): epsilon[i, j]}
-            disp_bcs.append(DisplacementBC(name='TEST_{}_{},{}'.format(position, i, j),
-                                           region=region_name, createStepName=step_name,
-                                           **applied_disps))
-
-        # TODO: return disp bcs and do apply outside?
-        for disp_bc in disp_bcs:
-            disp_bc.apply_bc(model)
-
-        # TODO: fix left bottom node? I think Miguel does not it (even though he founds out that "support nodes" -> see line 433)
 
     def _create_pbcs_ref_points(self, model):
         '''
@@ -827,8 +838,8 @@ class RVE3D(RVE):
     def _get_exterior_edges(self, allow_repetitions=True):
 
         exterior_edges = []
-        for face_position in self.unnest(self.face_positions):
-            kwargs = {self._get_bound_arg_name(face_position): self.get_bound(face_position)}
+        for face_position in self._unnest(self.face_positions):
+            kwargs = {self._get_bound_arg_name(face_position): self._get_bound(face_position)}
             edges = self.part.edges.getByBoundingBox(**kwargs)
             exterior_edges.extend(edges)
 
