@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-11-09 11:09:41
+Last modified on 2020-11-11 17:13:12
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -46,7 +46,7 @@ c_2 = 1.37136137e-01
 eps_11 = 1.
 eps_22 = -0.1
 eps_12 = 0.2
-
+epsilon = [eps_11, eps_12, eps_22]
 
 # create model
 
@@ -69,7 +69,7 @@ rve.add_particle(pore)
 
 # create part and generate mesh
 rve.create_part(model)
-success = rve.generate_mesh_for_pbcs(fast=False)
+success = rve.generate_mesh_for_pbcs()
 print('Mesh generated successfully? {}'.format(success))
 
 # create assembly
@@ -87,9 +87,10 @@ static_step.create_step(model)
 # TODO: add initial conditions
 
 # set boundary condigionts
-rve.apply_bcs_disp(model, step_name, eps_11, eps_22, eps_12)
+rve.apply_bcs_disp(model, step_name, epsilon,
+                   green_lagrange_strain=False)
 
 
 # create inp
-modelJob = mdb.Job(model=model_name, name=job_name)
-modelJob.writeInput(consistencyChecking=OFF)
+# modelJob = mdb.Job(model=model_name, name=job_name)
+# modelJob.writeInput(consistencyChecking=OFF)
