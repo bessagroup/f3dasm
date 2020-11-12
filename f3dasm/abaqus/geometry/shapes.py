@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-05 11:01:11
+Last modified on 2020-11-09 11:16:08
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -21,6 +21,7 @@ import copy
 class Shape(object):
 
     def __init__(self, name):
+        self.name = name
 
         # mesh definitions
         self.mesh_size = .02
