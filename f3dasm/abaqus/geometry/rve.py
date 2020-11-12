@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-11 19:10:11
+Last modified on 2020-11-12 13:19:40
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -226,15 +226,6 @@ class RVE(object):
         '''
 
         # local functions
-        def get_compl_signs(signs):
-            c_signs = []
-            for sign in signs:
-                if sign == '+':
-                    c_signs.append('-')
-                else:
-                    c_signs.append('+')
-            return c_signs
-
         def get_ref_points_coeff(signs):
             coeffs = []
             for sign in signs:
@@ -257,10 +248,9 @@ class RVE(object):
                 signs[-(k + 1)] = '-'
 
             terms_no_dof = []
-            for i, signs_ in enumerate([signs, get_compl_signs(signs)]):
-                pos = ''.join(['{}{}'.format(var, sign) for var, sign in zip(self.var_coord_map.keys(), signs_)])
+            for i, signs_ in enumerate([signs, self._get_compl_signs(signs)]):
+                pos = self._get_position_from_signs(signs_)
                 if pos != fixed_pos:
-                    # TODO: correct name for 3d case
                     terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self._get_vertex_name(pos)), ])
                     name += pos
             for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
@@ -272,6 +262,31 @@ class RVE(object):
                     terms.append(term + [ndof])
                 model.Equation(name='{}{}'.format(name, ndof),
                                terms=terms)
+
+    def _get_position_from_signs(self, signs, c_vars=None):
+
+        if c_vars is None:
+            pos = ''.join(['{}{}'.format(var, sign) for var, sign in zip(self.var_coord_map.keys(), signs)])
+        else:
+            pos = ''.join(['{}{}'.format(var, sign) for var, sign in zip(c_vars, signs)])
+
+        return pos
+
+    def _get_opposite_position(self, position):
+        signs = [sign for sign in position[1::2]]
+        opp_signs = self._get_compl_signs(signs)
+        c_vars = [var for var in position[::2]]
+        return self._get_position_from_signs(opp_signs, c_vars)
+
+    @staticmethod
+    def _get_compl_signs(signs):
+        c_signs = []
+        for sign in signs:
+            if sign == '+':
+                c_signs.append('-')
+            else:
+                c_signs.append('+')
+        return c_signs
 
     def _verify_edges(self):
 
@@ -395,6 +410,7 @@ class RVE(object):
 
     @ staticmethod
     def _unnest(array):
+        # TODO: unnest more levels?
         unnested_array = []
         for arrays in array:
             for array_ in arrays:
@@ -495,6 +511,7 @@ class RVE2D(RVE):
         return self._verify_edges()
 
     def apply_pbcs_constraints(self, model):
+        # TODO: move to parent?
         # TODO: split in several functions
 
         # initialization
@@ -507,9 +524,16 @@ class RVE2D(RVE):
         self._apply_vertices_pbcs_constraints(model)
 
         # edges constraints
-        # TODO: get reference points
+        self._apply_edges_pbcs_constraints(model)
+
+    def _apply_edges_pbcs_constraints(self, model):
         # TODO: face constraints work in similar way in 3d (some adaptations needed)
+
+        # initialization
+        d = len(self.dims)
         ref_points = self._get_all_ref_points(only_names=True)
+
+        # apply constraints
         for i, (positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
 
             # get sorted nodes
@@ -521,17 +545,16 @@ class RVE2D(RVE):
                 # create set with individual nodes
                 set_names = []
                 for pos, node in zip(positions, nodes_):
-                    set_name = 'NODE_{}_{}'.format(pos, k)
+                    set_name = 'EDGE_NODE_{}_{}'.format(pos, k)
                     self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
                     set_names.append('{}.{}'.format(self.name, set_name))
 
                 # create constraint
                 for ndof in range(1, d + 1):
-                    model.Equation(name='CONSTRAINT_{}_{}_{}_{}'.format(positions[0], positions[1], k, ndof),
+                    model.Equation(name='EDGE_CONSTRAINT_{}_{}_{}_{}'.format(positions[0], positions[1], k, ndof),
                                    terms=((1.0, set_names[1], ndof),
                                           (-1.0, set_names[0], ndof),
                                           (-1.0, ref_point, ndof)))
-        # TODO: move to parent?
 
 
 class RVE3D(RVE):
@@ -542,7 +565,6 @@ class RVE3D(RVE):
         self.face_positions = self._define_primary_positions()
         # define positions
         self.edge_positions = self._define_edge_positions()
-        # TODO: group vertices?
         self.vertex_positions = self._define_positions_by_recursion(
             self.face_positions, len(self.dims))
 
@@ -557,14 +579,14 @@ class RVE3D(RVE):
                         positions.append(posl_ + posr_)
 
         # reagroup positions
-        # TODO: grouping would have to be different
+        added_positions = []
         edge_positions = []
-        for perp_axis in self.var_coord_map.keys():
-            grouped_edges = []
-            for pos in positions:
-                if perp_axis not in pos:
-                    grouped_edges.append(pos)
-            edge_positions.append(grouped_edges)
+        for edge in positions:
+            if edge in added_positions:
+                continue
+            opp_edge = self._get_opposite_position(edge)
+            edge_positions.append((edge, opp_edge))
+            added_positions.append(edge)
 
         return edge_positions
 
@@ -614,6 +636,8 @@ class RVE3D(RVE):
                                                keepIntersections=ON,
                                                originalInstances=DELETE,
                                                domain=GEOMETRY)
+        modelAssembly.features.changeKey(fromName='{}-1'.format(self.name),
+                                         toName='RVE')
         self.part = model.parts[self.name]  # override part
 
     def create_instance(self, model):
@@ -644,6 +668,7 @@ class RVE3D(RVE):
             success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
 
         # TODO: delete
+        print('Mesh correcly generated? {}'.format(success))
         return success
 
         # retry meshing if unsuccessful
@@ -771,9 +796,21 @@ class RVE3D(RVE):
                                   nodes=nodes,
                                   coordinates=coords)
 
-    def _get_face_nodes(self, pos, sort_direction_i=None, sort_direction_j=None):
-        face_name = self._get_face_name(pos)
-        nodes = self.part.sets[face_name].nodes
+    def _get_face_nodes(self, face_position, sort_direction_i=None, sort_direction_j=None,
+                        include_edges=False):
+
+        # get all nodes
+        face_name = self._get_face_name(face_position)
+        nodes = list(self.part.sets[face_name].nodes)
+
+        # remove edge nodes
+        if not include_edges:
+            edge_nodes = self._get_face_edges_nodes(face_position)
+            for node in nodes[::-1]:
+                if node in edge_nodes:
+                    nodes.remove(node)
+
+        # sort nodes
         if sort_direction_i is not None and sort_direction_j is not None:
             d = self._get_decimal_places()
             nodes = sorted(nodes, key=lambda node: (
@@ -867,6 +904,23 @@ class RVE3D(RVE):
         k = self.var_coord_map[pos[0]]
         return [i for i in range(3) if i != k]
 
+    def _get_face_edge_positions_names(self, face_position):
+        edge_positions = []
+        for edge_position in self._unnest(self.edge_positions):
+            if face_position in edge_position:
+                edge_positions.append(edge_position)
+
+        return edge_positions
+
+    def _get_face_edges_nodes(self, face_position):
+        edge_positions = self._get_face_edge_positions_names(face_position)
+        edges_nodes = []
+        for edge_position in edge_positions:
+            edge_name = self._get_edge_name(edge_position)
+            edges_nodes.extend(self.part.sets[edge_name].nodes)
+
+        return edges_nodes
+
     def _get_exterior_edges(self, allow_repetitions=True):
 
         exterior_edges = []
@@ -890,6 +944,8 @@ class RVE3D(RVE):
     def apply_pbcs_constraints(self, model):
         # TODO: move to parent?
 
+        # TODO: give ref points and dim to all as input?
+
         # initialization
         d = len(self.dims)
 
@@ -898,3 +954,79 @@ class RVE3D(RVE):
 
         # apply vertex constraints
         self._apply_vertices_pbcs_constraints(model)
+
+        # apply edge constraints
+        self._apply_edges_pbcs_constraints(model)
+
+        # apply face constraints
+        self._apply_face_constraints(model)
+
+    def _apply_edges_pbcs_constraints(self, model):
+        # TODO: there's space for generalization
+
+        # initialization
+        d = len(self.dims)
+
+        for grouped_positions in self.edge_positions:
+
+            # get sorted nodes for each edge
+            # TODO: create get sorted edges, since code repeat...
+            k = self._get_edge_sort_direction(grouped_positions[0])
+            node_lists = [self._get_edge_nodes(pos, sort_direction=k) for pos in grouped_positions]
+
+            # get ref_points terms
+            ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
+            sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
+            ref_point_terms_no_def = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
+                                      [sign, self._get_ref_point_name(ref_point_positions[1])]]
+
+            for i, nodes_ in enumerate(zip(node_lists[0][1:-1], node_lists[1][1:-1])):
+
+                # create set with individual nodes
+                set_names = []
+                for pos, node in zip(grouped_positions, nodes_):
+                    set_name = 'EDGE_NODE_{}_{}'.format(pos, i)
+                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
+                    set_names.append('{}.{}'.format(self.name, set_name))
+
+                # create constraint
+                for ndof in range(1, d + 1):
+                    terms = [(1.0, set_names[1], ndof),
+                             (-1.0, set_names[0], ndof), ]
+                    for ref_point_term in ref_point_terms_no_def:
+                        terms.append(ref_point_term + [ndof])
+
+                    model.Equation(
+                        name='EDGE_CONSTRAINT_{}_{}_{}_{}'.format(grouped_positions[1], grouped_positions[0], i, ndof),
+                        terms=terms)
+
+    def _apply_face_constraints(self, model):
+        # TODO: there's space for generalization with 2d edges
+
+        # initialization
+        d = len(self.dims)
+        ref_points = self._get_all_ref_points(only_names=True)
+
+        # apply constraints
+        for ref_point, grouped_positions in zip(ref_points, self.face_positions):
+
+            # get nodes
+            j, k = self._get_face_sort_directions(grouped_positions[0])
+            node_list = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+
+            for i, nodes_ in enumerate(zip(node_list[0], node_list[1])):
+
+                # create set with individual nodes
+                set_names = []
+                for pos, node in zip(grouped_positions, nodes_):
+                    set_name = 'FACE_NODE_{}_{}'.format(pos, i)
+                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
+                    set_names.append('{}.{}'.format(self.name, set_name))
+
+                # creeate constraint
+                for ndof in range(1, d + 1):
+                    model.Equation(
+                        name='FACE_CONSTRAINT_{}_{}_{}_{}'.format(grouped_positions[1], grouped_positions[0], i, ndof),
+                        terms=((1.0, set_names[1], ndof),
+                               (-1.0, set_names[0], ndof),
+                               (-1.0, ref_point, ndof)))
