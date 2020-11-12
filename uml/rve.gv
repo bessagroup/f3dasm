@@ -1,0 +1,20 @@
+digraph RVE {
+
+    node[shape=record, style=rounded]
+    RVE[label = "{RVE}"]
+    RVE2D[label = "{RVE2D}"]
+    RVE3D[label = "{RVE3D}"]
+
+    // generalizations
+    edge[dir=back, arrowtail=empty, style=normal]
+    RVE->RVE2D
+    RVE->RVE3D
+
+    // dependencies
+    edge[dir=normal, arrowhead=normal, style=dashed]
+
+    // compositions
+    edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
+
+
+}
