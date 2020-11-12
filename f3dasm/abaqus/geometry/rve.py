@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-12 13:19:40
+Last modified on 2020-11-12 15:55:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -207,17 +207,21 @@ class RVE(object):
 
         # initialization
         modelAssembly = model.rootAssembly
-
-        # create reference points
+        names = []
         coord = list(self.center)
         if len(coord) == 2:
             coord += [0.]
+
+        # create reference points
         for position in self.ref_points_positions:
+            names.append(self._get_ref_point_name(position))
             ref_point = modelAssembly.ReferencePoint(point=coord)
-            modelAssembly.Set(name=self._get_ref_point_name(position),
+            modelAssembly.Set(name=names[-1],
                               referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
 
-    def _apply_vertices_pbcs_constraints(self, model):
+        return names
+
+    def _apply_vertices_pbcs_constraints(self, model, dim, ref_points):
         '''
         Notes
         -----
@@ -236,15 +240,13 @@ class RVE(object):
             return coeffs
 
         # initialization
-        d = len(self.dims)
-        ref_points = self._get_all_ref_points(only_names=True)
         fixed_pos = self._get_fixed_vertex_position()
 
         # apply kinematic constraints
-        for k in range((d - 1) * 2):
+        for k in range((dim - 1) * 2):
             name = 'VERTEX_CONSTRAINT_'
             signs = ['+' for _ in self.dims]
-            if k < (d - 1) * 2 - 1:  # in one time all the signs are positive
+            if k < (dim - 1) * 2 - 1:  # in one time all the signs are positive
                 signs[-(k + 1)] = '-'
 
             terms_no_dof = []
@@ -256,7 +258,7 @@ class RVE(object):
             for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
                 terms_no_dof.append([coeff, ref_point])
 
-            for ndof in range(1, d + 1):
+            for ndof in range(1, dim + 1):
                 terms = []
                 for term in terms_no_dof:
                     terms.append(term + [ndof])
@@ -294,7 +296,7 @@ class RVE(object):
 
             # get sorted nodes for each edge
             k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self._get_edge_nodes(pos, sort_direction=k) for pos in grouped_positions]
+            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
 
             # verify sizes
             sizes = [len(node_list) for node_list in node_lists]
@@ -327,19 +329,37 @@ class RVE(object):
             if i not in ls:
                 return i
 
-    def _get_edge_nodes(self, pos, sort_direction=None):
+    def _get_edge_nodes(self, pos, sort_direction=None, include_vertices=False):
+
+        # get nodes
         edge_name = self._get_edge_name(pos)
         nodes = self.part.sets[edge_name].nodes
+
+        # sort nodes
         if sort_direction is not None:
             nodes = sorted(nodes, key=lambda node: self._get_node_coordinate(node, i=sort_direction))
 
+            # remove vertices
+            if not include_vertices:
+                nodes = nodes[1:-1]
+
+        # remove vertices if not sorted
+        if sort_direction is None and not include_vertices:
+            j = self._get_edge_sort_direction(pos)
+            x = [self._get_node_coordinate(node, j) for node in nodes]
+            f = lambda i: x[i]
+            idx_min = min(range(len(x)), key=f)
+            idx_max = max(range(len(x)), key=f)
+            for index in sorted([idx_min, idx_max], reverse=True):
+                del nodes[index]
+
         return nodes
 
-    @ staticmethod
+    @staticmethod
     def _get_node_coordinate(node, i):
         return node.coordinates[i]
 
-    @ staticmethod
+    @staticmethod
     def _get_node_coordinate_with_tol(node, i, decimal_places):
         return round(node.coordinates[i], decimal_places)
 
@@ -352,19 +372,19 @@ class RVE(object):
 
         return d
 
-    @ staticmethod
+    @staticmethod
     def _get_edge_name(position):
         return 'EDGE_{}'.format(position)
 
-    @ staticmethod
+    @staticmethod
     def _get_vertex_name(position):
         return 'VERTEX_{}'.format(position)
 
-    @ staticmethod
+    @staticmethod
     def _get_face_name(position):
         return 'FACE_{}'.format(position)
 
-    @ staticmethod
+    @staticmethod
     def _get_ref_point_name(position):
         return 'REF_POINT_{}'.format(position)
 
@@ -392,7 +412,7 @@ class RVE(object):
 
         return new_name
 
-    @ staticmethod
+    @staticmethod
     def _define_positions_by_recursion(ref_positions, d):
         def append_positions(obj, i):
             if i == d:
@@ -408,7 +428,7 @@ class RVE(object):
 
         return positions
 
-    @ staticmethod
+    @staticmethod
     def _unnest(array):
         # TODO: unnest more levels?
         unnested_array = []
@@ -418,13 +438,55 @@ class RVE(object):
 
         return unnested_array
 
-    @ staticmethod
+    @staticmethod
     def _get_bound_arg_name(pos):
         return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
 
     def _get_bound(self, pos):
         i, p = self.var_coord_map[pos[0]], self.sign_bound_map[pos[1]]
         return self.bounds[i][p]
+
+    def _apply_node_to_node_constraint(self, model, grouped_positions, node_lists,
+                                       ref_points_terms_no_dof, constraint_type, dim):
+
+        for i, nodes in enumerate(zip(node_lists[0], node_lists[1])):
+
+            # create set with individual nodes
+            set_names = []
+            for pos, node in zip(grouped_positions, nodes):
+                set_name = '{}_NODE_{}_{}'.format(constraint_type, pos, i)
+                self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
+                set_names.append('{}.{}'.format(self.name, set_name))
+
+            # create constraint
+            for ndof in range(1, dim + 1):
+                terms = [(1.0, set_names[1], ndof),
+                         (-1.0, set_names[0], ndof), ]
+                for term in ref_points_terms_no_dof:
+                    terms.append(term + [ndof])
+
+                model.Equation(
+                    name='{}_CONSTRAINT_{}_{}_{}_{}'.format(
+                        constraint_type, grouped_positions[1], grouped_positions[0], i, ndof),
+                    terms=terms)
+
+    def apply_pbcs_constraints(self, model):
+
+        # initialization
+        dim = len(self.dims)
+
+        # create reference points
+        ref_points = self._create_pbcs_ref_points(model)
+
+        # apply vertex constraints
+        self._apply_vertices_pbcs_constraints(model, dim, ref_points)
+
+        # apply edge constraints
+        self._apply_edges_pbcs_constraints(model, dim, ref_points)
+
+        # apply face constraints
+        if dim > 2:
+            self._apply_face_constraints(model, dim, ref_points)
 
 
 class RVE2D(RVE):
@@ -510,51 +572,22 @@ class RVE2D(RVE):
         '''
         return self._verify_edges()
 
-    def apply_pbcs_constraints(self, model):
-        # TODO: move to parent?
-        # TODO: split in several functions
-
-        # initialization
-        d = len(self.dims)
-
-        # create reference points
-        self._create_pbcs_ref_points(model)
-
-        # apply vertex constraints
-        self._apply_vertices_pbcs_constraints(model)
-
-        # edges constraints
-        self._apply_edges_pbcs_constraints(model)
-
-    def _apply_edges_pbcs_constraints(self, model):
-        # TODO: face constraints work in similar way in 3d (some adaptations needed)
-
-        # initialization
-        d = len(self.dims)
-        ref_points = self._get_all_ref_points(only_names=True)
+    def _apply_edges_pbcs_constraints(self, model, dim, ref_points):
 
         # apply constraints
-        for i, (positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
+        for i, (grouped_positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
 
             # get sorted nodes
             j = (i + 1) % 2
-            nodes = [self._get_edge_nodes(pos, sort_direction=j) for pos in positions]
+            node_lists = [self._get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
 
-            for k, nodes_ in enumerate(zip(nodes[0][1:-1], nodes[1][1:-1])):
+            # create no_dof terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
 
-                # create set with individual nodes
-                set_names = []
-                for pos, node in zip(positions, nodes_):
-                    set_name = 'EDGE_NODE_{}_{}'.format(pos, k)
-                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
-                    set_names.append('{}.{}'.format(self.name, set_name))
-
-                # create constraint
-                for ndof in range(1, d + 1):
-                    model.Equation(name='EDGE_CONSTRAINT_{}_{}_{}_{}'.format(positions[0], positions[1], k, ndof),
-                                   terms=((1.0, set_names[1], ndof),
-                                          (-1.0, set_names[0], ndof),
-                                          (-1.0, ref_point, ndof)))
+            # create constraints
+            self._apply_node_to_node_constraint(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "EDGES", dim)
 
 
 class RVE3D(RVE):
@@ -941,92 +974,38 @@ class RVE3D(RVE):
 
             return EdgeArray(unique_exterior_edges)
 
-    def apply_pbcs_constraints(self, model):
-        # TODO: move to parent?
-
-        # TODO: give ref points and dim to all as input?
-
-        # initialization
-        d = len(self.dims)
-
-        # create reference points
-        self._create_pbcs_ref_points(model)
-
-        # apply vertex constraints
-        self._apply_vertices_pbcs_constraints(model)
-
-        # apply edge constraints
-        self._apply_edges_pbcs_constraints(model)
-
-        # apply face constraints
-        self._apply_face_constraints(model)
-
-    def _apply_edges_pbcs_constraints(self, model):
-        # TODO: there's space for generalization
-
-        # initialization
-        d = len(self.dims)
+    def _apply_edges_pbcs_constraints(self, model, dim, *args):
 
         for grouped_positions in self.edge_positions:
 
             # get sorted nodes for each edge
-            # TODO: create get sorted edges, since code repeat...
             k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self._get_edge_nodes(pos, sort_direction=k) for pos in grouped_positions]
+            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
 
-            # get ref_points terms
+            # create ref_points terms
             ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
             sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
-            ref_point_terms_no_def = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
-                                      [sign, self._get_ref_point_name(ref_point_positions[1])]]
+            ref_points_terms_no_dof = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
+                                       [sign, self._get_ref_point_name(ref_point_positions[1])]]
 
-            for i, nodes_ in enumerate(zip(node_lists[0][1:-1], node_lists[1][1:-1])):
+            # create constraints
+            self._apply_node_to_node_constraint(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "EDGES", dim)
 
-                # create set with individual nodes
-                set_names = []
-                for pos, node in zip(grouped_positions, nodes_):
-                    set_name = 'EDGE_NODE_{}_{}'.format(pos, i)
-                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
-                    set_names.append('{}.{}'.format(self.name, set_name))
-
-                # create constraint
-                for ndof in range(1, d + 1):
-                    terms = [(1.0, set_names[1], ndof),
-                             (-1.0, set_names[0], ndof), ]
-                    for ref_point_term in ref_point_terms_no_def:
-                        terms.append(ref_point_term + [ndof])
-
-                    model.Equation(
-                        name='EDGE_CONSTRAINT_{}_{}_{}_{}'.format(grouped_positions[1], grouped_positions[0], i, ndof),
-                        terms=terms)
-
-    def _apply_face_constraints(self, model):
-        # TODO: there's space for generalization with 2d edges
-
-        # initialization
-        d = len(self.dims)
-        ref_points = self._get_all_ref_points(only_names=True)
+    def _apply_face_constraints(self, model, dim, ref_points):
 
         # apply constraints
         for ref_point, grouped_positions in zip(ref_points, self.face_positions):
 
             # get nodes
             j, k = self._get_face_sort_directions(grouped_positions[0])
-            node_list = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+            node_lists = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
 
-            for i, nodes_ in enumerate(zip(node_list[0], node_list[1])):
+            # create no_dof terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
 
-                # create set with individual nodes
-                set_names = []
-                for pos, node in zip(grouped_positions, nodes_):
-                    set_name = 'FACE_NODE_{}_{}'.format(pos, i)
-                    self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
-                    set_names.append('{}.{}'.format(self.name, set_name))
-
-                # creeate constraint
-                for ndof in range(1, d + 1):
-                    model.Equation(
-                        name='FACE_CONSTRAINT_{}_{}_{}_{}'.format(grouped_positions[1], grouped_positions[0], i, ndof),
-                        terms=((1.0, set_names[1], ndof),
-                               (-1.0, set_names[0], ndof),
-                               (-1.0, ref_point, ndof)))
+            # create constraints
+            self._apply_node_to_node_constraint(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "FACES", dim)
