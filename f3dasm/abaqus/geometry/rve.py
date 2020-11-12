@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-12 15:55:39
+Last modified on 2020-11-12 19:46:34
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -31,6 +31,7 @@ from part import (EdgeArray, FaceArray)
 from mesh import MeshNodeArray
 
 # standard
+from abc import abstractmethod
 from abc import ABCMeta
 from collections import OrderedDict
 
@@ -48,6 +49,151 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 
 
 # object definition
+
+
+class Constraints(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def apply_constraints(self):
+        pass
+
+
+class PBCConstraints(Constraints):
+
+    def __init__(self):
+        super(self, PBCConstraints).__init__()
+
+    def apply_constraints(self, model):
+
+        # initialization
+        dim = len(self.dims)
+
+        # create reference points
+        ref_points = self._create_pbcs_ref_points(model)
+
+        # apply vertex constraints
+        self._apply_vertex_constraints(model, dim, ref_points)
+
+        # apply edge constraints
+        self._apply_edge_constraints(model, dim, ref_points)
+
+        # apply face constraints
+        if dim > 2:
+            self._apply_face_constraints(model, dim, ref_points)
+
+    def _apply_vertex_constraints(self, model, dim, ref_points):
+        '''
+        Notes
+        -----
+        The implementation is based on the patterns found on equations (that
+        result from the fact that we relate opposite vertices).
+        '''
+
+        # local functions
+        def get_ref_points_coeff(signs):
+            coeffs = []
+            for sign in signs:
+                if sign == '+':
+                    coeffs.append(-1.0)
+                else:
+                    coeffs.append(1.0)
+            return coeffs
+
+        # initialization
+        fixed_pos = self._get_fixed_vertex_position()
+
+        # apply kinematic constraints
+        for k in range((dim - 1) * 2):
+            name = 'VERTEX_CONSTRAINT_'
+            signs = ['+' for _ in self.dims]
+            if k < (dim - 1) * 2 - 1:  # in one time all the signs are positive
+                signs[-(k + 1)] = '-'
+
+            terms_no_dof = []
+            for i, signs_ in enumerate([signs, self._get_compl_signs(signs)]):
+                pos = self._get_position_from_signs(signs_)
+                if pos != fixed_pos:
+                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self._get_vertex_name(pos)), ])
+                    name += pos
+            for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
+                terms_no_dof.append([coeff, ref_point])
+
+            for ndof in range(1, dim + 1):
+                terms = []
+                for term in terms_no_dof:
+                    terms.append(term + [ndof])
+                model.Equation(name='{}{}'.format(name, ndof),
+                               terms=terms)
+
+
+class PBCConstraints2D(PBCConstraints):
+
+    def __init__(self):
+        super(PBCConstraints, self).__init__()
+
+    def _apply_edge_constraints(self, model, dim, ref_points):
+
+        # apply constraints
+        for i, (grouped_positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
+
+            # get sorted nodes
+            j = (i + 1) % 2
+            node_lists = [self._get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
+
+            # create no_dof terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "EDGES", dim)
+
+
+class PBCConstraints3D(PBCConstraints):
+
+    def __init__(self):
+        super(PBCConstraints, self).__init__()
+
+    def _apply_edge_constraints(self, model, dim, *args):
+
+        for grouped_positions in self.edge_positions:
+
+            # get sorted nodes for each edge
+            k = self._get_edge_sort_direction(grouped_positions[0])
+            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
+
+            # create ref_points terms
+            ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
+            sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
+            ref_points_terms_no_dof = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
+                                       [sign, self._get_ref_point_name(ref_point_positions[1])]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "EDGES", dim)
+
+    def _apply_face_constraints(self, model, dim, ref_points):
+
+        # apply constraints
+        for ref_point, grouped_positions in zip(ref_points, self.face_positions):
+
+            # get nodes
+            j, k = self._get_face_sort_directions(grouped_positions[0])
+            node_lists = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+
+            # create no_dof terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "FACES", dim)
+
 
 class RVE(object):
     __metaclass__ = ABCMeta
@@ -220,50 +366,6 @@ class RVE(object):
                               referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
 
         return names
-
-    def _apply_vertices_pbcs_constraints(self, model, dim, ref_points):
-        '''
-        Notes
-        -----
-        The implementation is based on the patterns found on equations (that
-        result from the fact that we relate opposite vertices).
-        '''
-
-        # local functions
-        def get_ref_points_coeff(signs):
-            coeffs = []
-            for sign in signs:
-                if sign == '+':
-                    coeffs.append(-1.0)
-                else:
-                    coeffs.append(1.0)
-            return coeffs
-
-        # initialization
-        fixed_pos = self._get_fixed_vertex_position()
-
-        # apply kinematic constraints
-        for k in range((dim - 1) * 2):
-            name = 'VERTEX_CONSTRAINT_'
-            signs = ['+' for _ in self.dims]
-            if k < (dim - 1) * 2 - 1:  # in one time all the signs are positive
-                signs[-(k + 1)] = '-'
-
-            terms_no_dof = []
-            for i, signs_ in enumerate([signs, self._get_compl_signs(signs)]):
-                pos = self._get_position_from_signs(signs_)
-                if pos != fixed_pos:
-                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self._get_vertex_name(pos)), ])
-                    name += pos
-            for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
-                terms_no_dof.append([coeff, ref_point])
-
-            for ndof in range(1, dim + 1):
-                terms = []
-                for term in terms_no_dof:
-                    terms.append(term + [ndof])
-                model.Equation(name='{}{}'.format(name, ndof),
-                               terms=terms)
 
     def _get_position_from_signs(self, signs, c_vars=None):
 
@@ -470,24 +572,6 @@ class RVE(object):
                         constraint_type, grouped_positions[1], grouped_positions[0], i, ndof),
                     terms=terms)
 
-    def apply_pbcs_constraints(self, model):
-
-        # initialization
-        dim = len(self.dims)
-
-        # create reference points
-        ref_points = self._create_pbcs_ref_points(model)
-
-        # apply vertex constraints
-        self._apply_vertices_pbcs_constraints(model, dim, ref_points)
-
-        # apply edge constraints
-        self._apply_edges_pbcs_constraints(model, dim, ref_points)
-
-        # apply face constraints
-        if dim > 2:
-            self._apply_face_constraints(model, dim, ref_points)
-
 
 class RVE2D(RVE):
 
@@ -571,23 +655,6 @@ class RVE2D(RVE):
         immediately stops when a node pair does not respect the tolerance.
         '''
         return self._verify_edges()
-
-    def _apply_edges_pbcs_constraints(self, model, dim, ref_points):
-
-        # apply constraints
-        for i, (grouped_positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
-
-            # get sorted nodes
-            j = (i + 1) % 2
-            node_lists = [self._get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
-
-            # create no_dof terms
-            ref_points_terms_no_dof = [[-1.0, ref_point]]
-
-            # create constraints
-            self._apply_node_to_node_constraint(
-                model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "EDGES", dim)
 
 
 class RVE3D(RVE):
@@ -973,39 +1040,3 @@ class RVE3D(RVE):
                     edge_indices.append(edge.index)
 
             return EdgeArray(unique_exterior_edges)
-
-    def _apply_edges_pbcs_constraints(self, model, dim, *args):
-
-        for grouped_positions in self.edge_positions:
-
-            # get sorted nodes for each edge
-            k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
-
-            # create ref_points terms
-            ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
-            sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
-            ref_points_terms_no_dof = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
-                                       [sign, self._get_ref_point_name(ref_point_positions[1])]]
-
-            # create constraints
-            self._apply_node_to_node_constraint(
-                model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "EDGES", dim)
-
-    def _apply_face_constraints(self, model, dim, ref_points):
-
-        # apply constraints
-        for ref_point, grouped_positions in zip(ref_points, self.face_positions):
-
-            # get nodes
-            j, k = self._get_face_sort_directions(grouped_positions[0])
-            node_lists = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
-
-            # create no_dof terms
-            ref_points_terms_no_dof = [[-1.0, ref_point]]
-
-            # create constraints
-            self._apply_node_to_node_constraint(
-                model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "FACES", dim)
