@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-13 11:33:37
+Last modified on 2020-11-16 14:12:59
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -44,28 +44,39 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 # TODO: handle warnings and errors using particular class
 # TODO: base default mesh size in characteristic length
 
-
 # object definition
+
+def _objects_initializer(name, dims, center, tol, bcs_type):
+
+    dim = len(dims)
+
+    if bcs_type == 'periodic':
+        obj_creator = PeriodicRVEObjCreator()
+        if dim == 2:
+            info = PeriodicRVEInfo2D(name, dims, center, tol)
+            mesh = PeriodicMeshGenerator2D()
+        else:
+            info = PeriodicRVEInfo3D(name, dims, center, tol)
+            mesh = PeriodicMeshGenerator3D()
+
+    return info, obj_creator, mesh
+
 
 class RVE(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, dims, center):
-        self.name = name
-        self.dims = dims
-        self.center = center
+    def __init__(self, name, dims, center, tol, bcs_type):
+        '''
+        Parameters
+        ----------
+        bcs_type : str
+            Possible values are 'periodic'.
+        '''
         # variable initialization
-        self.part = None
         self.particles = []
-        # computed variables
-        self.bounds = self._compute_bounds()
-        # auxiliar variables
-        self.var_coord_map = OrderedDict([('X', 0), ('Y', 1), ('Z', 2)])
-        self.sign_bound_map = {'-': 0, '+': 1}
-        # additional variables
-        self.ref_points_positions = self._define_ref_points()
-        # initial operations
-        self._compute_bounds()
+        # create objects
+        self.info, self.obj_creator, self.mesh = _objects_initializer(
+            name, dims, center, tol, bcs_type)
 
     def add_particle(self, particle):
         self.particles.append(particle)
@@ -89,7 +100,7 @@ class RVE(object):
 
         # fix left bottom node
         position = self._get_fixed_vertex_position()
-        region_name = '{}.{}'.format(self.name, self._get_vertex_name(position))
+        region_name = '{}.{}'.format(self.name, self.get_vertex_name(position))
         disp_bcs.append(DisplacementBC(
             name='FIXED_NODE', region=region_name, createStepName=step_name,
             u1=0, u2=0, u3=0))
@@ -112,46 +123,62 @@ class RVE(object):
 
         # rectangle points
         pts = []
-        for x1, x2 in zip(self.bounds[0], self.bounds[1]):
+        for x1, x2 in zip(self.info.bounds[0], self.info.bounds[1]):
             pts.append([x1, x2])
 
         # sketch
         sketch = model.ConstrainedSketch(name=self.name + '_PROFILE',
-                                         sheetSize=2 * self.dims[0])
+                                         sheetSize=2 * self.info.dims[0])
         sketch.rectangle(point1=pts[0], point2=pts[1])
 
         return sketch
 
-
-class RVE2D(RVE):
-
-    def __init__(self, length, width, center, name='RVE'):
-        super(RVE2D, self).__init__(name, dims=(length, width), center=center)
-        # additional variables
-        self.edge_positions = self._define_primary_positions()
-        # define positions
-        self.vertex_positions = self._define_positions_by_recursion(
-            self.edge_positions, len(self.dims))
-
     def create_part(self, model):
-        # TODO: move to parent?
 
         # create RVE
         sketch = self._create_RVE_sketch(model)
 
         # create particles geometry in sketch
         for particle in self.particles:
-            particle.create_inner_geometry(sketch, self)
+            particle.create_inner_geometry(sketch, self.info)
 
-        # create part
-        self.part = model.Part(name=self.name, dimensionality=TWO_D_PLANAR,
-                               type=DEFORMABLE_BODY)
-        self.part.BaseShell(sketch=sketch)
+        # create particles parts
+        for particle in self.particles:
+            particle.create_part(model, self.info)
 
-        # TODO: create particles by partitions
+        # create RVE part
+        self._create_part(model, sketch)
 
         # create PBCs sets (here because sets are required for meshing purposes)
-        self._create_bounds_sets()
+        self.obj_creator.create_bounds_sets(self.info)
+
+    @abstractmethod
+    def create_instance(self):
+        pass
+
+    def generate_mesh(self, *args, **kwargs):
+        return self.mesh.generate_mesh(self.info, *args, **kwargs)
+
+    @property
+    def name(self):
+        return self.info.name
+
+    @property
+    def part(self):
+        return self.info.part
+
+
+class RVE2D(RVE):
+
+    def __init__(self, length, width, center, name='RVE', bcs_type='periodic',
+                 tol=1e-5):
+        dims = (length, width)
+        super(RVE2D, self).__init__(name, dims, center, tol, bcs_type)
+
+    def _create_part(self, model, sketch):
+        self.info.part = model.Part(name=self.name, dimensionality=TWO_D_PLANAR,
+                                    type=DEFORMABLE_BODY)
+        self.info.part.BaseShell(sketch=sketch)
 
     def create_instance(self, model):
 
@@ -159,59 +186,25 @@ class RVE2D(RVE):
         model.rootAssembly.Instance(name=self.name,
                                     part=self.part, dependent=ON)
 
-    def generate_mesh(self):
-
-        # seed part
-        self.part.seedPart(size=self.mesh_size,
-                           deviationFactor=self.mesh_deviation_factor,
-                           minSizeFactor=self.mesh_min_size_factor)
-
-        # seed edges
-        edge_positions = self._unnest(self.edge_positions)
-        edges = [self.part.sets[self._get_edge_name(position)].edges[0] for position in edge_positions]
-        self.part.seedEdgeBySize(edges=edges, size=self.mesh_size,
-                                 deviationFactor=self.mesh_deviation_factor,
-                                 constraint=FIXED)
-        # generate mesh
-        self.part.generateMesh()
-
 
 class RVE3D(RVE):
 
-    def __init__(self, dims, name='RVE', center=(0., 0., 0.)):
-        super(RVE3D, self).__init__(name, dims, center)
-        # additional variables
-        self.face_positions = self._define_primary_positions()
-        # define positions
-        self.edge_positions = self._define_edge_positions()
-        self.vertex_positions = self._define_positions_by_recursion(
-            self.face_positions, len(self.dims))
+    def __init__(self, dims, name='RVE', center=(0., 0., 0.), tol=1e-5,
+                 bcs_type='periodic'):
+        super(RVE3D, self).__init__(name, dims, center, tol, bcs_type)
 
-    def create_part(self, model):
-
-        # create RVE
-        sketch = self._create_RVE_sketch(model)
-
-        # create particles geometry in sketch
-        for particle in self.particles:
-            particle.create_inner_geometry(sketch, self)
-
-        # create particles parts
-        for particle in self.particles:
-            particle.create_part(model, self)
+    def _create_part(self, model, sketch):
 
         # create part
         part_name = '{}_TMP'.format(self.name) if len(model.parts) > 0 else self.name
-        self.part = model.Part(name=part_name, dimensionality=THREE_D,
-                               type=DEFORMABLE_BODY)
-        self.part.BaseSolidExtrude(sketch=sketch, depth=self.dims[2])
+        self.info.part = model.Part(name=part_name, dimensionality=THREE_D,
+                                    type=DEFORMABLE_BODY)
+        self.info.part.BaseSolidExtrude(sketch=sketch, depth=self.info.dims[2])
 
         # create part by merge instances
+        # TODO: add better verificator
         if len(model.parts) > 1:
             self._create_part_by_merge(model)
-
-        # create PBCs sets (here because sets are required for meshing purposes)
-        self._create_bounds_sets()
 
     def _create_part_by_merge(self, model):
         # TODO: make with voids to extend method (base it on the material); make also combined
@@ -235,7 +228,7 @@ class RVE3D(RVE):
                                                domain=GEOMETRY)
         modelAssembly.features.changeKey(fromName='{}-1'.format(self.name),
                                          toName='RVE')
-        self.part = model.parts[self.name]  # override part
+        self.info.part = model.parts[self.name]  # override part
 
     def create_instance(self, model):
 
@@ -243,51 +236,30 @@ class RVE3D(RVE):
         modelAssembly = model.rootAssembly
 
         # verify if already created (e.g. during _create_part_by_merge)
+        # TODO: add better verificator
         if len(modelAssembly.instances.keys()) > 0:
             return
 
         # create assembly
         modelAssembly.Instance(name=self.name, part=self.part, dependent=ON)
 
-    def generate_mesh(self, face_by_closest=True, simple_trial=False):
-
-        # set mesh control
-        self.part.setMeshControls(regions=self.part.cells, elemShape=TET,
-                                  technique=FREE,)
-
-        # generate mesh by simple strategy
-        if simple_trial:
-            # generate mesh
-            self._seed_part()
-            self.part.generateMesh()
-
-            # verify mesh
-            success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
-
-        # TODO: delete
-        print('Mesh correcly generated? {}'.format(success))
-        return success
-
-        # retry meshing if unsuccessful
-        if not simple_trial or not success:
-            if simple_trial:
-                print("Warning: Unsucessful mesh generation. Another strategy will be tried out")
-
-            # retry meshing
-            self._retry_meshing()
-
-            # verify mesh
-            success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
-
-            if not success:
-                print("Warning: Unsucessful mesh generation")
-
 
 class RVEInfo(object):
-    # TODO: split between container and set creator?
+    # TODO: Info Periodic vs general info? Specially due to ref points.
 
-    def __init__(self):
-        pass
+    def __init__(self, name, dims, center, tol):
+        self.name = name
+        self.dims = dims
+        self.center = center
+        self.tol = tol
+        self.dim = len(self.dims)
+        # variable initialization
+        self.part = None
+        # computed variables
+        self.bounds = self._compute_bounds()
+        # auxiliar variables
+        self.var_coord_map = OrderedDict([('X', 0), ('Y', 1), ('Z', 2)])
+        self.sign_bound_map = {'-': 0, '+': 1}
 
     def _compute_bounds(self):
         bounds = []
@@ -304,11 +276,21 @@ class RVEInfo(object):
         '''
         return [('{}-'.format(var), '{}+'.format(var)) for _, var in zip(self.dims, self.var_coord_map)]
 
-    def _define_ref_points(self):
-        return ['{}-{}+'.format(var, var) for _, var in zip(self.dims, self.var_coord_map)]
+    @staticmethod
+    def _define_positions_by_recursion(ref_positions, d):
+        def append_positions(obj, i):
+            if i == d:
+                positions.append(obj)
+            else:
+                for ref_obj in (ref_positions[i]):
+                    obj_ = obj + ref_obj
+                    append_positions(obj_, i + 1)
 
-    def _get_fixed_vertex_position(self):
-        return ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
+        positions = []
+        obj = ''
+        append_positions(obj, 0)
+
+        return positions
 
     def _get_position_from_signs(self, signs, c_vars=None):
 
@@ -344,15 +326,15 @@ class RVEInfo(object):
             if i not in ls:
                 return i
 
-    def _get_edge_nodes(self, pos, sort_direction=None, include_vertices=False):
+    def get_edge_nodes(self, pos, sort_direction=None, include_vertices=False):
 
         # get nodes
-        edge_name = self._get_edge_name(pos)
+        edge_name = self.get_edge_name(pos)
         nodes = self.part.sets[edge_name].nodes
 
         # sort nodes
         if sort_direction is not None:
-            nodes = sorted(nodes, key=lambda node: self._get_node_coordinate(node, i=sort_direction))
+            nodes = sorted(nodes, key=lambda node: self.get_node_coordinate(node, i=sort_direction))
 
             # remove vertices
             if not include_vertices:
@@ -361,7 +343,7 @@ class RVEInfo(object):
         # remove vertices if not sorted
         if sort_direction is None and not include_vertices:
             j = self._get_edge_sort_direction(pos)
-            x = [self._get_node_coordinate(node, j) for node in nodes]
+            x = [self.get_node_coordinate(node, j) for node in nodes]
             f = lambda i: x[i]
             idx_min = min(range(len(x)), key=f)
             idx_max = max(range(len(x)), key=f)
@@ -371,54 +353,26 @@ class RVEInfo(object):
         return nodes
 
     @staticmethod
-    def _get_node_coordinate(node, i):
+    def get_node_coordinate(node, i):
         return node.coordinates[i]
 
     @staticmethod
-    def _get_node_coordinate_with_tol(node, i, decimal_places):
+    def get_node_coordinate_with_tol(node, i, decimal_places):
         return round(node.coordinates[i], decimal_places)
 
-    def _get_decimal_places(self):
-        d = 0
-        aux = 1
-        while aux > self.mesh_tol:
-            d += 1
-            aux = 10**(-d)
-
-        return d
-
     @staticmethod
-    def _get_edge_name(position):
+    def get_edge_name(position):
         return 'EDGE_{}'.format(position)
 
     @staticmethod
-    def _get_vertex_name(position):
+    def get_vertex_name(position):
         return 'VERTEX_{}'.format(position)
 
     @staticmethod
-    def _get_face_name(position):
+    def get_face_name(position):
         return 'FACE_{}'.format(position)
 
-    @staticmethod
-    def _get_ref_point_name(position):
-        return 'REF_POINT_{}'.format(position)
-
-    def _get_all_ref_points(self, model=None, only_names=False):
-        '''
-        Notes
-        -----
-        Output is given in the order of position definition.
-        Model is required if `only_names` is False.
-        '''
-
-        if only_names:
-            ref_points = [self._get_ref_point_name(position) for position in self.ref_points_positions]
-        else:
-            ref_points = [model.rootAssembly.sets[self._get_ref_point_name(position)] for position in self.ref_points_positions]
-
-        return ref_points
-
-    def _verify_set_name(self, name):
+    def verify_set_name(self, name):
         new_name = name
         i = 1
         while new_name in self.part.sets.keys():
@@ -428,22 +382,6 @@ class RVEInfo(object):
         return new_name
 
     @staticmethod
-    def _define_positions_by_recursion(ref_positions, d):
-        def append_positions(obj, i):
-            if i == d:
-                positions.append(obj)
-            else:
-                for ref_obj in (ref_positions[i]):
-                    obj_ = obj + ref_obj
-                    append_positions(obj_, i + 1)
-
-        positions = []
-        obj = ''
-        append_positions(obj, 0)
-
-        return positions
-
-    @staticmethod
     def _get_bound_arg_name(pos):
         return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
 
@@ -451,16 +389,28 @@ class RVEInfo(object):
         i, p = self.var_coord_map[pos[0]], self.sign_bound_map[pos[1]]
         return self.bounds[i][p]
 
+
 class RVEInfo2D(RVEInfo):
 
-    def __init__(self):
-        super(RVEInfo2D, self).__init__()
+    def __init__(self, name, dims, center, tol):
+        super(RVEInfo2D, self).__init__(name, dims, center, tol)
+        # additional variables
+        self.edge_positions = self._define_primary_positions()
+        # define positions
+        self.vertex_positions = self._define_positions_by_recursion(
+            self.edge_positions, len(self.dims))
 
 
 class RVEInfo3D(RVEInfo):
 
-    def __init__(self):
-        super(RVEInfo3D, self).__init__()
+    def __init__(self, name, dims, center, tol):
+        super(RVEInfo3D, self).__init__(name, dims, center, tol)
+        # additional variables
+        self.face_positions = self._define_primary_positions()
+        # define positions
+        self.edge_positions = self._define_edge_positions()
+        self.vertex_positions = self._define_positions_by_recursion(
+            self.face_positions, len(self.dims))
 
     def _define_edge_positions(self):
 
@@ -484,54 +434,54 @@ class RVEInfo3D(RVEInfo):
 
         return edge_positions
 
-    def _get_face_nodes(self, face_position, sort_direction_i=None, sort_direction_j=None,
-                        include_edges=False):
+    def get_face_nodes(self, face_position, sort_direction_i=None, sort_direction_j=None,
+                       include_edges=False):
 
         # get all nodes
-        face_name = self._get_face_name(face_position)
+        face_name = self.get_face_name(face_position)
         nodes = list(self.part.sets[face_name].nodes)
 
         # remove edge nodes
         if not include_edges:
-            edge_nodes = self._get_face_edges_nodes(face_position)
+            edge_nodes = self.get_face_edges_nodes(face_position)
             for node in nodes[::-1]:
                 if node in edge_nodes:
                     nodes.remove(node)
 
         # sort nodes
         if sort_direction_i is not None and sort_direction_j is not None:
-            d = self._get_decimal_places()
+            d = _get_decimal_places(self.tol)
             nodes = sorted(nodes, key=lambda node: (
-                self._get_node_coordinate_with_tol(node, i=sort_direction_i, decimal_places=d),
-                self._get_node_coordinate_with_tol(node, i=sort_direction_j, decimal_places=d),))
+                self.get_node_coordinate_with_tol(node, i=sort_direction_i, decimal_places=d),
+                self.get_node_coordinate_with_tol(node, i=sort_direction_j, decimal_places=d),))
 
         return nodes
 
-    def _get_face_sort_directions(self, pos):
+    def get_face_sort_directions(self, pos):
         k = self.var_coord_map[pos[0]]
         return [i for i in range(3) if i != k]
 
     def _get_face_edge_positions_names(self, face_position):
         edge_positions = []
-        for edge_position in self._unnest(self.edge_positions):
+        for edge_position in _unnest(self.edge_positions):
             if face_position in edge_position:
                 edge_positions.append(edge_position)
 
         return edge_positions
 
-    def _get_face_edges_nodes(self, face_position):
+    def get_face_edges_nodes(self, face_position):
         edge_positions = self._get_face_edge_positions_names(face_position)
         edges_nodes = []
         for edge_position in edge_positions:
-            edge_name = self._get_edge_name(edge_position)
+            edge_name = self.get_edge_name(edge_position)
             edges_nodes.extend(self.part.sets[edge_name].nodes)
 
         return edges_nodes
 
-    def _get_exterior_edges(self, allow_repetitions=True):
+    def get_exterior_edges(self, allow_repetitions=True):
 
         exterior_edges = []
-        for face_position in self._unnest(self.face_positions):
+        for face_position in _unnest(self.face_positions):
             kwargs = {self._get_bound_arg_name(face_position): self._get_bound(face_position)}
             edges = self.part.edges.getByBoundingBox(**kwargs)
             exterior_edges.extend(edges)
@@ -549,24 +499,70 @@ class RVEInfo3D(RVEInfo):
             return EdgeArray(unique_exterior_edges)
 
 
-class RVEObjCreation(object):
+class RVEInfoPeriodic(object):
+    __metaclass__ = ABCMeta
 
     def __init__(self):
-        pass
+        self.ref_points_positions = self._define_ref_points()
 
-    def _create_bounds_sets(self):
+    def _define_ref_points(self):
+        return ['{}-{}+'.format(var, var) for _, var in zip(self.dims, self.var_coord_map)]
+
+    def _get_fixed_vertex_position(self):
+        return ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
+
+    def _get_all_ref_points(self, model=None, only_names=False):
+        '''
+        Notes
+        -----
+        Output is given in the order of position definition.
+        Model is required if `only_names` is False.
+        '''
+
+        if only_names:
+            ref_points = [self._get_ref_point_name(position) for position in self.ref_points_positions]
+        else:
+            ref_points = [model.rootAssembly.sets[self._get_ref_point_name(position)] for position in self.ref_points_positions]
+
+        return ref_points
+
+    @staticmethod
+    def _get_ref_point_name(position):
+        return 'REF_POINT_{}'.format(position)
+
+
+class PeriodicRVEInfo2D(RVEInfo2D, RVEInfoPeriodic):
+
+    def __init__(self, name, dims, center, tol):
+        RVEInfo2D.__init__(self, name, dims, center, tol)
+        RVEInfoPeriodic.__init__(self)
+
+
+class PeriodicRVEInfo3D(RVEInfo3D, RVEInfoPeriodic):
+
+    def __init__(self, name, dims, center, tol):
+        RVEInfo3D.__init__(self, name, dims, center, tol)
+        RVEInfoPeriodic.__init__(self)
+
+
+class RVEObjCreator(object):
+
+    def create_bounds_sets(self, rve_info):
 
         # vertices
-        self._create_bound_obj_sets('vertices', self.vertex_positions, self._get_vertex_name)
+        self._create_bound_obj_sets(rve_info, 'vertices',
+                                    rve_info.vertex_positions, rve_info.get_vertex_name)
 
         # edges
-        self._create_bound_obj_sets('edges', self._unnest(self.edge_positions), self._get_edge_name)
+        self._create_bound_obj_sets(rve_info, 'edges',
+                                    _unnest(rve_info.edge_positions), rve_info.get_edge_name)
 
         # faces
-        if len(self.dims) > 2:
-            self._create_bound_obj_sets('faces', self._unnest(self.face_positions), self._get_face_name)
+        if rve_info.dim > 2:
+            self._create_bound_obj_sets(rve_info, 'faces',
+                                        _unnest(rve_info.face_positions), rve_info.get_face_name)
 
-    def _create_bound_obj_sets(self, obj, positions, get_name):
+    def _create_bound_obj_sets(self, rve_info, obj, positions, get_name):
         '''
         Parameter
         ---------
@@ -575,7 +571,7 @@ class RVEObjCreation(object):
         '''
 
         # initialization
-        get_objs = getattr(self.part, obj)
+        get_objs = getattr(rve_info.part, obj)
 
         # create sets
         for pos in positions:
@@ -583,14 +579,17 @@ class RVEObjCreation(object):
             kwargs = {}
             for i in range(0, len(pos), 2):
                 pos_ = pos[i:i + 2]
-                var_name = self._get_bound_arg_name(pos_)
-                kwargs[var_name] = self._get_bound(pos_)
+                var_name = rve_info._get_bound_arg_name(pos_)
+                kwargs[var_name] = rve_info._get_bound(pos_)
 
             objs = get_objs.getByBoundingBox(**kwargs)
             kwargs = {obj: objs}
-            self.part.Set(name=name, **kwargs)
+            rve_info.part.Set(name=name, **kwargs)
 
-    def _create_pbcs_ref_points(self, model):
+
+class PeriodicRVEObjCreator(RVEObjCreator):
+
+    def _create_ref_points(self, model):
         '''
         Notes
         -----
@@ -685,7 +684,7 @@ class PBCConstraints2D(PBCConstraints):
 
             # get sorted nodes
             j = (i + 1) % 2
-            node_lists = [self._get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
+            node_lists = [self.get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
 
             # create no_dof terms
             ref_points_terms_no_dof = [[-1.0, ref_point]]
@@ -727,7 +726,7 @@ class PBCConstraints2D(PBCConstraints):
             for i, signs_ in enumerate([signs, self._get_compl_signs(signs)]):
                 pos = self._get_position_from_signs(signs_)
                 if pos != fixed_pos:
-                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self._get_vertex_name(pos)), ])
+                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self.get_vertex_name(pos)), ])
                     name += pos
             for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
                 terms_no_dof.append([coeff, ref_point])
@@ -751,7 +750,7 @@ class PBCConstraints3D(PBCConstraints):
 
             # get sorted nodes for each edge
             k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
+            node_lists = [self.get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
 
             # create ref_points terms
             ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
@@ -770,8 +769,8 @@ class PBCConstraints3D(PBCConstraints):
         for ref_point, grouped_positions in zip(ref_points, self.face_positions):
 
             # get nodes
-            j, k = self._get_face_sort_directions(grouped_positions[0])
-            node_lists = [self._get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+            j, k = self.get_face_sort_directions(grouped_positions[0])
+            node_lists = [self.get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
 
             # create no_dof terms
             ref_points_terms_no_dof = [[-1.0, ref_point]]
@@ -783,14 +782,14 @@ class PBCConstraints3D(PBCConstraints):
 
 
 class MeshGenerator(object):
+    # TODO: abstract class?
 
     def __init__(self):
-        self.tol = 1e-5
         self.size = .02
         self.deviation_factor = .4
         self.min_size_factor = .4
 
-    def change_mesh_definitions(self, **kwargs):
+    def change_definitions(self, **kwargs):
         '''
         See mesh definition at __init__ to find out the variables that can be
         changed.
@@ -798,8 +797,11 @@ class MeshGenerator(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+    def generate_mesh(self, *args, **kwargs):
+        pass
 
-class PeriodicMeshGenerator(object):
+
+class PeriodicMeshGenerator(MeshGenerator):
 
     def __init__(self):
         super(PeriodicMeshGenerator, self).__init__()
@@ -810,49 +812,103 @@ class PeriodicMeshGenerator(object):
 class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
 
     def __init__(self):
-        super(PeriodicMeshGenerator, self).__init__()
+        super(PeriodicMeshGenerator2D, self).__init__()
+        self.mesh_checker = PeriodicMeshChecker2D()
 
-    def generate_mesh_for_pbcs(self):
+    def generate_mesh(self, rve_info):
+        # TODO: possible to move to parent?
         # TODO: generate error file
+        # TODO: still to finish
 
         it = 1
         success = False
-        while it <= self.mesh_trial_iter and not success:
+        while it <= self.trial_iter and not success:
 
             # generate mesh
-            self.generate_mesh()
+            self._generate_mesh(rve_info)
 
             # verify generated mesh
-            success = self.verify_mesh_for_pbcs()
+            success = self.mesh_checker.verify_mesh(rve_info)
 
             # prepare next iteration
             it += 1
             if not success:
-                if it <= self.mesh_trial_iter:
+                if it <= self.trial_iter:
                     print('Warning: Failed mesh generation. Mesh size will be decreased')
-                    self.mesh_size /= self.mesh_refine_factor
+                    self.size /= self.refine_factor
                 else:
                     print('Warning: Failed mesh generation')
 
         return success
 
+    def _generate_mesh(self, rve_info):
+
+        # seed part
+        rve_info.part.seedPart(size=self.size,
+                               deviationFactor=self.deviation_factor,
+                               minSizeFactor=self.min_size_factor)
+
+        # seed edges
+        edge_positions = _unnest(rve_info.edge_positions)
+        edges = [rve_info.part.sets[rve_info.get_edge_name(position)].edges[0] for position in edge_positions]
+        rve_info.part.seedEdgeBySize(edges=edges, size=self.size,
+                                     deviationFactor=self.deviation_factor,
+                                     constraint=FIXED)
+
+        # generate mesh
+        rve_info.part.generateMesh()
+
 
 class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
 
     def __init__(self):
-        super(PeriodicMeshGenerator, self).__init__()
+        super(PeriodicMeshGenerator3D, self).__init__()
+        self.mesh_checker = PeriodicMeshChecker3D()
 
-    def _seed_part(self):
+    def generate_mesh(self, rve_info, face_by_closest=True, simple_trial=False):
+        # TODO: still to finish
+
+        # set mesh control
+        rve_info.part.setMeshControls(regions=rve_info.part.cells, elemShape=TET,
+                                      technique=FREE,)
+
+        # generate mesh by simple strategy
+        if simple_trial:
+            # generate mesh
+            self._seed_part(rve_info)
+            rve_info.part.generateMesh()
+
+            # verify mesh
+            success = self.mesh_checker.verify_mesh(rve_info,
+                                                    face_by_closest=face_by_closest)
+
+        # retry meshing if unsuccessful
+        if not simple_trial or not success:
+            if simple_trial:
+                print("Warning: Unsucessful mesh generation. Another strategy will be tried out")
+
+            # retry meshing
+            self._retry_meshing()
+
+            # verify mesh
+            success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
+
+            if not success:
+                print("Warning: Unsucessful mesh generation")
+
+        return success
+
+    def _seed_part(self, rve_info):
         # seed part
-        self.part.seedPart(size=self.mesh_size,
-                           deviationFactor=self.mesh_deviation_factor,
-                           minSizeFactor=self.mesh_min_size_factor)
+        rve_info.part.seedPart(size=self.size,
+                               deviationFactor=self.deviation_factor,
+                               minSizeFactor=self.min_size_factor)
 
         # seed exterior edges
-        exterior_edges = self._get_exterior_edges()
-        self.part.seedEdgeBySize(edges=exterior_edges, size=self.mesh_size,
-                                 deviationFactor=self.mesh_deviation_factor,
-                                 constraint=FIXED)
+        exterior_edges = rve_info.get_exterior_edges()
+        rve_info.part.seedEdgeBySize(edges=exterior_edges, size=self.size,
+                                     deviationFactor=self.deviation_factor,
+                                     constraint=FIXED)
 
     def _mesh_half_periodically(self, k=0, zp=True):
         # TODO: need to be tested with the use of bounds
@@ -954,18 +1010,18 @@ class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
         self._mesh_half_periodically(k, zp=False)
 
 
-class MeshChecker(object):
+class PeriodicMeshChecker(object):
 
     def __init__(self):
         pass
 
-    def _verify_edges(self):
+    def _verify_edges(self, rve_info):
 
-        for grouped_positions in self.edge_positions:
+        for grouped_positions in rve_info.edge_positions:
 
             # get sorted nodes for each edge
-            k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self._get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
+            k = rve_info._get_edge_sort_direction(grouped_positions[0])
+            node_lists = [rve_info.get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
 
             # verify sizes
             sizes = [len(node_list) for node_list in node_lists]
@@ -975,40 +1031,40 @@ class MeshChecker(object):
             # verify if tolerance is respected
             for node_list in node_lists[1:]:
                 for n, node in enumerate(node_lists[0]):
-                    if not self._verify_tol_edge_nodes(node, node_list[n], k):
+                    if not self._verify_tol_edge_nodes(rve_info, node, node_list[n], k):
                         return False
 
         return True
 
-    def _verify_tol_edge_nodes(self, node, node_cmp, k):
-        if abs(node.coordinates[k] - node_cmp.coordinates[k]) > self.mesh_tol:
+    def _verify_tol_edge_nodes(self, rve_info, node, node_cmp, k):
+        if abs(node.coordinates[k] - node_cmp.coordinates[k]) > rve_info.tol:
             # create set with error nodes
-            set_name = self._verify_set_name('_ERROR_EDGE_NODES')
-            self.part.Set(set_name, nodes=MeshNodeArray(node, node_cmp))
+            set_name = rve_info.verify_set_name('_ERROR_EDGE_NODES')
+            rve_info.part.Set(set_name, nodes=MeshNodeArray(node, node_cmp))
             return False
 
         return True
 
 
-class MeshChecker2D(MeshChecker):
+class PeriodicMeshChecker2D(PeriodicMeshChecker):
 
     def __init__(self):
-        super(MeshChecker2D, self).__init__()
+        super(PeriodicMeshChecker2D, self).__init__()
 
-    def verify_mesh_for_pbcs(self):
+    def verify_mesh(self, rve_info):
         '''
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
         '''
-        return self._verify_edges()
+        return self._verify_edges(rve_info)
 
 
-class MeshChecker3D(MeshChecker):
+class PeriodicMeshChecker3D(PeriodicMeshChecker):
 
     def __init__(self):
-        super(MeshChecker3D, self).__init__()
+        super(PeriodicMeshChecker3D, self).__init__()
 
-    def verify_mesh_for_pbcs(self, face_by_closest=True):
+    def verify_mesh(self, rve_info, face_by_closest=True):
         '''
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
@@ -1016,16 +1072,16 @@ class MeshChecker3D(MeshChecker):
         # TODO: create get all error nodes
 
         # verify edges
-        if not self._verify_edges():
+        if not self._verify_edges(rve_info):
             return False
 
         # verify faces
         if face_by_closest:
-            return self._verify_faces_by_closest()
+            return self._verify_faces_by_closest(rve_info)
         else:
-            return self._verify_faces_by_sorting()
+            return self._verify_faces_by_sorting(rve_info)
 
-    def _verify_faces_by_sorting(self):
+    def _verify_faces_by_sorting(self, rve_info):
         '''
         Notes
         -----
@@ -1034,13 +1090,13 @@ class MeshChecker3D(MeshChecker):
         preferred.
         '''
 
-        for grouped_positions in self.face_positions:
+        for grouped_positions in rve_info.face_positions:
 
             # get nodes
             pos_i, pos_j = grouped_positions
-            j, k = self._get_face_sort_directions(pos_i)
-            nodes_i = self._get_face_nodes(pos_i, j, k)
-            nodes_j = self._get_face_nodes(pos_j, j, k)
+            j, k = rve_info.get_face_sort_directions(pos_i)
+            nodes_i = rve_info.get_face_nodes(pos_i, j, k)
+            nodes_j = rve_info.get_face_nodes(pos_j, j, k)
 
             # verify size
             if len(nodes_i) != len(nodes_j):
@@ -1050,20 +1106,20 @@ class MeshChecker3D(MeshChecker):
             for n, (node, node_cmp) in enumerate(zip(nodes_i, nodes_j)):
 
                 # verify tolerance
-                if not self._verify_tol_face_nodes(node, node_cmp, j, k):
+                if not self._verify_tol_face_nodes(rve_info, node, node_cmp, j, k):
                     return False
 
         return True
 
-    def _verify_faces_by_closest(self):
+    def _verify_faces_by_closest(self, rve_info):
 
-        for grouped_positions in self.face_positions:
+        for grouped_positions in rve_info.face_positions:
 
             # get nodes
             pos_i, pos_j = grouped_positions
-            j, k = self._get_face_sort_directions(pos_i)
-            nodes_i = self._get_face_nodes(pos_i)
-            nodes_j = self._get_face_nodes(pos_j)
+            j, k = rve_info.get_face_sort_directions(pos_i)
+            nodes_i = rve_info.get_face_nodes(pos_i)
+            nodes_j = rve_info.get_face_nodes(pos_j)
 
             # verify size
             if len(nodes_i) != len(nodes_j):
@@ -1074,27 +1130,36 @@ class MeshChecker3D(MeshChecker):
                 node_cmp = nodes_j.getClosest(node.coordinates)
 
                 # verify tolerance
-                if not self._verify_tol_face_nodes(node, node_cmp, j, k):
+                if not self._verify_tol_face_nodes(rve_info, node, node_cmp, j, k):
                     return False
 
         return True
 
-    def _verify_tol_face_nodes(self, node, node_cmp, j, k):
-        if abs(node.coordinates[j] - node_cmp.coordinates[j]) > self.mesh_tol or abs(node.coordinates[k] - node_cmp.coordinates[k]) > self.mesh_tol:
+    def _verify_tol_face_nodes(self, rve_info, node, node_cmp, j, k):
+        if abs(node.coordinates[j] - node_cmp.coordinates[j]) > rve_info.tol or abs(node.coordinates[k] - node_cmp.coordinates[k]) > rve_info.tol:
             # create set with error nodes
-            set_name = self._verify_set_name('_ERROR_FACE_NODES')
-            self.part.Set(set_name,
-                          nodes=MeshNodeArray((node, node_cmp)))
+            set_name = rve_info.verify_set_name('_ERROR_FACE_NODES')
+            rve_info.part.Set(set_name,
+                              nodes=MeshNodeArray((node, node_cmp)))
             return False
 
         return True
 
 
 def _unnest(array):
-    # TODO: unnest more levels?
     unnested_array = []
     for arrays in array:
         for array_ in arrays:
             unnested_array.append(array_)
 
     return unnested_array
+
+
+def _get_decimal_places(tol):
+    d = 0
+    aux = 1
+    while aux > tol:
+        d += 1
+        aux = 10**(-d)
+
+    return d

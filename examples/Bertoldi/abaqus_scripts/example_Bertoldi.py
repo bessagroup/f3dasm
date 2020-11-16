@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-11-11 17:13:12
+Last modified on 2020-11-16 10:51:15
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -59,7 +59,7 @@ if 'Model-1' in mdb.models.keys():
 # define objects
 
 rve = RVE2D(length, width, center, name='BERTOLDI_RVE')
-rve.change_mesh_definitions(mesh_size=0.1)
+rve.mesh.change_definitions(size=0.1)
 
 pore = BertoldiPore(center, r_0, c_1, c_2)
 rve.add_particle(pore)
@@ -69,28 +69,28 @@ rve.add_particle(pore)
 
 # create part and generate mesh
 rve.create_part(model)
-success = rve.generate_mesh_for_pbcs()
+success = rve.generate_mesh()
 print('Mesh generated successfully? {}'.format(success))
 
 # create assembly
 rve.create_instance(model)
 
-# apply boundary conditions
-rve.apply_pbcs_constraints(model)
+# # apply boundary conditions
+# rve.apply_pbcs_constraints(model)
 
-# set step
-step_name = "STATIC_STEP"
-static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
-                         minInc=1e-5, maxInc=0.02)
-static_step.create_step(model)
+# # set step
+# step_name = "STATIC_STEP"
+# static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
+#                          minInc=1e-5, maxInc=0.02)
+# static_step.create_step(model)
 
-# TODO: add initial conditions
+# # TODO: add initial conditions
 
-# set boundary condigionts
-rve.apply_bcs_disp(model, step_name, epsilon,
-                   green_lagrange_strain=False)
+# # set boundary condigionts
+# rve.apply_bcs_disp(model, step_name, epsilon,
+#                    green_lagrange_strain=False)
 
 
-# create inp
-# modelJob = mdb.Job(model=model_name, name=job_name)
-# modelJob.writeInput(consistencyChecking=OFF)
+# # create inp
+# # modelJob = mdb.Job(model=model_name, name=job_name)
+# # modelJob.writeInput(consistencyChecking=OFF)

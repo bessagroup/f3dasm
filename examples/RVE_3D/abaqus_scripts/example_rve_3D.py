@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:30:17
-Last modified on 2020-11-12 12:35:56
+Last modified on 2020-11-16 13:56:29
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -72,13 +72,14 @@ else:
 # mesh_size = min(radii) / 5.
 mesh_size = .1
 print('mesh_size: {:.4f}'.format(mesh_size))
-rve.change_mesh_definitions(mesh_size=mesh_size)
-# rve.change_mesh_definitions(mesh_deviation_factor=0.1, mesh_min_size_factor=0.1)
+rve.mesh.change_definitions(size=mesh_size)
+rve.mesh.change_definitions(deviation_factor=0.1, min_size_factor=0.1)
 
 # create part and assembly
 rve.create_part(model)
 rve.create_instance(model)
-rve.generate_mesh(simple_trial=True, face_by_closest=False)
+success = rve.generate_mesh(simple_trial=True, face_by_closest=False)
+print('Mesh generated successfully? {}'.format(success))
 
-# apply boundary conditions
-rve.apply_pbcs_constraints(model)
+# # apply boundary conditions
+# rve.apply_pbcs_constraints(model)

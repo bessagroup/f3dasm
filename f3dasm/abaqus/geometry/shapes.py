@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-09 11:16:08
+Last modified on 2020-11-16 13:34:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -15,6 +15,7 @@ from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
 # standard library
 import copy
 
+# TODO: refactor
 
 # abstract object
 
@@ -36,10 +37,13 @@ class Shape(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def create_inner_geometry(self, sketch, rve):
+    def create_inner_geometry(self, sketch, rve_info):
         '''
         Perform operations in main sketch.
         '''
+        pass
+
+    def create_part(self, sketch, rve_info):
         pass
 
 
@@ -105,13 +109,13 @@ class Sphere(Shape):
                 new_center[i] += dim
                 self.add_center(new_center, dims)
 
-    def create_part(self, model, rve=None):
+    def create_part(self, model, rve_info=None):
 
         for i, center in enumerate(self.centers):
             name = '{}_{}'.format(self.name, i)
-            self._create_part_by_center(model, center, name, rve)
+            self._create_part_by_center(model, center, name, rve_info)
 
-    def _create_part_by_center(self, model, center, name, rve,):
+    def _create_part_by_center(self, model, center, name, rve_info,):
         a, b = center[1] + self.r, center[1] - self.r
 
         # sketch
@@ -132,8 +136,8 @@ class Sphere(Shape):
         self._create_partitions(center, part)
 
         # remove cells
-        if rve is not None:
-            self._remove_cells(center, part, rve)
+        if rve_info is not None:
+            self._remove_cells(center, part, rve_info)
 
     def _create_partitions(self, center, part):
         planes = [YZPLANE, XZPLANE, XYPLANE]
@@ -144,7 +148,7 @@ class Sphere(Shape):
             datum = part.datums[feature.id]
             part.PartitionCellByDatumPlane(datumPlane=datum, cells=part.cells)
 
-    def _remove_cells(self, center, part, rve):
+    def _remove_cells(self, center, part, rve_info):
 
         # initialization
         planes = [YZPLANE, XZPLANE, XYPLANE]
@@ -153,7 +157,7 @@ class Sphere(Shape):
         # delete cells
         for i in range(3):
             # partition position
-            if (center[i] + self.r) > rve.dims[i]:
+            if (center[i] + self.r) > rve_info.dims[i]:
                 sign = 1
             elif (center[i] - self.r) < 0.:
                 sign = -1
@@ -162,7 +166,7 @@ class Sphere(Shape):
 
             # partition by datum
             if sign > 0:
-                x_max = rve.dims[i] if i != 2 else rve.dims[i] - center[i]
+                x_max = rve_info.dims[i] if i != 2 else rve_info.dims[i] - center[i]
             else:
                 x_max = 0. if i != 2 else -center[i]
             feature = part.DatumPlaneByPrincipalPlane(principalPlane=planes[i],

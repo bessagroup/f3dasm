@@ -4,7 +4,7 @@ digraph RVE {
     RVE[label = "{RVE}"]
     BCs[label = "{BCs}"]
     MeshGenerator[label = "{MeshGenerator}"]
-    MeshChecker[label = "{MeshChecker}"]
+    PeriodicMeshChecker[label = "{PeriodicMeshChecker}"]
     Constraints[label = "{Constraints}"]
     RVEInfo[label="{RVEInfo}"]
     RVEObjCreator[label="RVEObjCreator"]
@@ -12,21 +12,25 @@ digraph RVE {
     node[shape=record, style="rounded, filled", fillcolor=lightblue]
     PBCs[label = "{PBCs}"]
     PBCConstraints[label = "{PBCConstraints}"]
-    PeriodicMeshGenerator[label= "{PeriodicMeshGenerator}"]
+    PeriodicMeshGenerator[label = "{PeriodicMeshGenerator}"]
+    PeriodicRVEInfo[label = "{PeriodicRVEInfo}"]
+    PeriodRVEObjCreator[label = "{PeriodicRVEObjCreator}"]
 
     node[shape=record, style="rounded, filled", fillcolor=yellow]
     RVE2D[label = "{RVE2D}"]
     PBCConstraints2D[label = "{PBCConstraints2D}"]
     RVEInfo2D[label="{RVEInfo2D}"]
-    MeshChecker2D[label = "{MeshChecker2D}"]
+    PeriodicMeshChecker2D[label = "{PeriodicMeshChecker2D}"]
     PeriodicMeshGenerator2D[label= "{PeriodicMeshGenerator2D}"]
+    PeriodicRVEInfo2D[label="{PeriodicRVEInfo2D}"]
 
     node[shape=record, style="rounded, filled", fillcolor=lightgreen]
     RVE3D[label = "{RVE3D}"]
     PBCConstraints3D[label = "{PBCConstraints3D}"]
     RVEInfo3D[label="{RVEInfo3D}"]
-    MeshChecker3D[label = "{MeshChecker3D}"]
+    PeriodicMeshChecker3D[label = "{PeriodicMeshChecker3D}"]
     PeriodicMeshGenerator3D[label= "{PeriodicMeshGenerator3D}"]
+    PeriodicRVEInfo3D[label="{PeriodicRVEInfo3D}"]
 
 
     // generalizations
@@ -40,25 +44,30 @@ digraph RVE {
     PBCConstraints->PBCConstraints3D
     RVEInfo->RVEInfo2D
     RVEInfo->RVEInfo3D
-    MeshChecker->MeshChecker2D
-    MeshChecker->MeshChecker3D
+    PeriodicMeshChecker->PeriodicMeshChecker2D
+    PeriodicMeshChecker->PeriodicMeshChecker3D
     PeriodicMeshGenerator->PeriodicMeshGenerator2D
     PeriodicMeshGenerator->PeriodicMeshGenerator3D
+    PeriodicRVEInfo->PeriodicRVEInfo2D
+    RVEInfo2D->PeriodicRVEInfo2D
+    PeriodicRVEInfo->PeriodicRVEInfo3D
+    RVEInfo3D->PeriodicRVEInfo3D
+    RVEObjCreator->PeriodRVEObjCreator
 
     // dependencies
     edge[dir=normal, arrowhead=normal, style=dashed]
+    // PeriodicMeshGenerator->RVEInfo
+    // PeriodicMeshChecker->RVEInfo
 
     // compositions
     edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
-    RVE->RVEInfo
+    RVE2D->RVEInfo2D
+    RVE3D->RVEInfo3D
     RVE->MeshGenerator
     RVE->BCs
-    PeriodicMeshGenerator2D->MeshChecker2D
-    PeriodicMeshGenerator3D->MeshChecker3D
+    PeriodicMeshGenerator2D->PeriodicMeshChecker2D
+    PeriodicMeshGenerator3D->PeriodicMeshChecker3D
     RVE->RVEObjCreator
-    PeriodicMeshGenerator->PBCConstraints
-
-
-
+    PBCs->PBCConstraints
 
 }
