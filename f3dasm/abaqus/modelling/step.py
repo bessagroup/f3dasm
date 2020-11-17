@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:55:21
-Last modified on 2020-11-03 11:56:20
+Last modified on 2020-11-17 10:23:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -49,7 +49,7 @@ class Step(object):
         if model:
             self.create_step(model)
 
-    def create_step(self, model):
+    def create(self, model):
 
         # get method
         create_step = getattr(model, self.method_name)

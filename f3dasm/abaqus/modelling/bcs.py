@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 16:52:37
-Last modified on 2020-11-03 15:01:20
+Last modified on 2020-11-17 10:24:17
 Python 2.7.16
 v0.1
 
@@ -51,7 +51,7 @@ class BoundaryCondition(object):
     def _get_loaded_region(self, model):
         return model.rootAssembly.sets[self.region]
 
-    def apply_bc(self, model):
+    def create(self, model):
 
         # get method
         apply_bc = getattr(model, self.method_name)
