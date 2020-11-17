@@ -1,16 +1,12 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-16 14:12:59
+Last modified on 2020-11-17 15:35:15
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
 Main goal
 ---------
 Create an RVE class from which more useful classes can inherit.
-
-Notes
------
--Based on code developed by M. A. Bessa.
 
 References
 ----------
@@ -40,26 +36,14 @@ from ...utils.linalg import symmetricize_vector
 from ...utils.solid_mechanics import compute_small_strains_from_green
 
 
-# TODO: create a Geometry abstract class
 # TODO: handle warnings and errors using particular class
 # TODO: base default mesh size in characteristic length
+# TODO: use more polymorphic names in methods
 
 # object definition
 
-def _objects_initializer(name, dims, center, tol, bcs_type):
 
-    dim = len(dims)
-
-    if bcs_type == 'periodic':
-        obj_creator = PeriodicRVEObjCreator()
-        if dim == 2:
-            info = PeriodicRVEInfo2D(name, dims, center, tol)
-            mesh = PeriodicMeshGenerator2D()
-        else:
-            info = PeriodicRVEInfo3D(name, dims, center, tol)
-            mesh = PeriodicMeshGenerator3D()
-
-    return info, obj_creator, mesh
+# TODO: inherit from geometry
 
 
 class RVE(object):
@@ -75,49 +59,28 @@ class RVE(object):
         # variable initialization
         self.particles = []
         # create objects
-        self.info, self.obj_creator, self.mesh = _objects_initializer(
+        self.info, self.obj_creator, self.mesh, self.bcs = self._objects_initializer(
             name, dims, center, tol, bcs_type)
+
+    @staticmethod
+    def _objects_initializer(name, dims, center, tol, bcs_type):
+
+        dim = len(dims)
+
+        if bcs_type == 'periodic':
+            obj_creator = PeriodicRVEObjCreator()
+            if dim == 2:
+                info = PeriodicRVEInfo2D(name, dims, center, tol)
+                mesh = PeriodicMeshGenerator2D()
+            else:
+                info = PeriodicRVEInfo3D(name, dims, center, tol)
+                mesh = PeriodicMeshGenerator3D()
+            bcs = PeriodicBoundaryConditions(info)
+
+        return info, obj_creator, mesh, bcs
 
     def add_particle(self, particle):
         self.particles.append(particle)
-
-    def apply_bcs_disp(self, model, step_name, epsilon,
-                       green_lagrange_strain=False):
-        '''
-        Parameters
-        ----------
-        epsilon : vector
-            Order of elements based on triangular superior strain matrix.
-        '''
-
-        # initialization
-        disp_bcs = []
-        epsilon = symmetricize_vector(epsilon)
-
-        # create strain matrix
-        if green_lagrange_strain:
-            epsilon = compute_small_strains_from_green(epsilon)
-
-        # fix left bottom node
-        position = self._get_fixed_vertex_position()
-        region_name = '{}.{}'.format(self.name, self.get_vertex_name(position))
-        disp_bcs.append(DisplacementBC(
-            name='FIXED_NODE', region=region_name, createStepName=step_name,
-            u1=0, u2=0, u3=0))
-
-        # apply displacement
-        for k, (position, dim) in enumerate(zip(self.ref_points_positions, self.dims)):
-            region_name = self._get_ref_point_name(position)
-            applied_disps = {}
-            for i in range(len(self.dims)):
-                applied_disps['u{}'.format(i + 1)] = dim * epsilon[i, k]
-            disp_bcs.append(DisplacementBC(
-                name='{}'.format(position), region=region_name,
-                createStepName=step_name, **applied_disps))
-
-        # TODO: return disp bcs and do apply outside?
-        for disp_bc in disp_bcs:
-            disp_bc.apply_bc(model)
 
     def _create_RVE_sketch(self, model):
 
@@ -149,8 +112,8 @@ class RVE(object):
         # create RVE part
         self._create_part(model, sketch)
 
-        # create PBCs sets (here because sets are required for meshing purposes)
-        self.obj_creator.create_bounds_sets(self.info)
+        # create required objects (here, because some are required for mesh generation)
+        self.obj_creator.create_objs(self.info, model)
 
     @abstractmethod
     def create_instance(self):
@@ -166,7 +129,6 @@ class RVE(object):
     @property
     def part(self):
         return self.info.part
-
 
 class RVE2D(RVE):
 
@@ -292,7 +254,7 @@ class RVEInfo(object):
 
         return positions
 
-    def _get_position_from_signs(self, signs, c_vars=None):
+    def get_position_from_signs(self, signs, c_vars=None):
 
         if c_vars is None:
             pos = ''.join(['{}{}'.format(var, sign) for var, sign in zip(self.var_coord_map.keys(), signs)])
@@ -303,12 +265,12 @@ class RVEInfo(object):
 
     def _get_opposite_position(self, position):
         signs = [sign for sign in position[1::2]]
-        opp_signs = self._get_compl_signs(signs)
+        opp_signs = self.get_compl_signs(signs)
         c_vars = [var for var in position[::2]]
-        return self._get_position_from_signs(opp_signs, c_vars)
+        return self.get_position_from_signs(opp_signs, c_vars)
 
     @staticmethod
-    def _get_compl_signs(signs):
+    def get_compl_signs(signs):
         c_signs = []
         for sign in signs:
             if sign == '+':
@@ -508,10 +470,10 @@ class RVEInfoPeriodic(object):
     def _define_ref_points(self):
         return ['{}-{}+'.format(var, var) for _, var in zip(self.dims, self.var_coord_map)]
 
-    def _get_fixed_vertex_position(self):
+    def get_fixed_vertex_position(self):
         return ''.join(['{}-'.format(var) for _, var in zip(self.dims, self.var_coord_map.keys())])
 
-    def _get_all_ref_points(self, model=None, only_names=False):
+    def get_all_ref_points(self, model=None, only_names=True):
         '''
         Notes
         -----
@@ -547,7 +509,10 @@ class PeriodicRVEInfo3D(RVEInfo3D, RVEInfoPeriodic):
 
 class RVEObjCreator(object):
 
-    def create_bounds_sets(self, rve_info):
+    def create_objs(self, rve_info, *args, **kwargs):
+        self._create_bounds_sets(rve_info)
+
+    def _create_bounds_sets(self, rve_info):
 
         # vertices
         self._create_bound_obj_sets(rve_info, 'vertices',
@@ -589,7 +554,17 @@ class RVEObjCreator(object):
 
 class PeriodicRVEObjCreator(RVEObjCreator):
 
-    def _create_ref_points(self, model):
+    # TODO: create ref points simultaneously to bound sets.
+
+    def create_objs(self, rve_info, model):
+
+        # bound sets
+        self._create_bounds_sets(rve_info)
+
+        # reference points
+        self._create_ref_points(model, rve_info)
+
+    def _create_ref_points(self, model, rve_info):
         '''
         Notes
         -----
@@ -599,18 +574,74 @@ class PeriodicRVEObjCreator(RVEObjCreator):
         # initialization
         modelAssembly = model.rootAssembly
         names = []
-        coord = list(self.center)
+        coord = list(rve_info.center)
         if len(coord) == 2:
             coord += [0.]
 
         # create reference points
-        for position in self.ref_points_positions:
-            names.append(self._get_ref_point_name(position))
+        for position in rve_info.ref_points_positions:
+            names.append(rve_info._get_ref_point_name(position))
             ref_point = modelAssembly.ReferencePoint(point=coord)
             modelAssembly.Set(name=names[-1],
                               referencePoints=((modelAssembly.referencePoints[ref_point.id],)))
 
         return names
+
+
+class BoundaryConditions(object):
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def set_bcs(self, *args, **kwargs):
+        pass
+
+
+class PeriodicBoundaryConditions(BoundaryConditions):
+
+    def __init__(self, rve_info):
+        super(PeriodicBoundaryConditions, self).__init__()
+        self.rve_info = rve_info
+        if self.rve_info.dim == 2:
+            self.constraints = PBCConstraints2D(rve_info)
+        else:
+            self.constraints = PBCConstraints3D(rve_info)
+
+    def set_bcs(self, step_name, epsilon, green_lagrange_strain=False):
+        '''
+        Parameters
+        ----------
+        epsilon : vector
+            Order of elements based on triangular superior strain matrix.
+        '''
+
+        # initialization
+        disp_bcs = []
+        epsilon = symmetricize_vector(epsilon)
+
+        # create strain matrix
+        if green_lagrange_strain:
+            epsilon = compute_small_strains_from_green(epsilon)
+
+        # fix left bottom node
+        position = self.rve_info.get_fixed_vertex_position()
+        region_name = '{}.{}'.format(self.rve_info.name, self.rve_info.get_vertex_name(position))
+        disp_bcs.append(DisplacementBC(
+            name='FIXED_NODE', region=region_name, createStepName=step_name,
+            u1=0, u2=0, u3=0))
+
+        # apply displacement
+        for k, (position, dim) in enumerate(zip(self.rve_info.ref_points_positions, self.rve_info.dims)):
+            region_name = self.rve_info._get_ref_point_name(position)
+            applied_disps = {}
+            for i in range(len(self.rve_info.dims)):
+                applied_disps['u{}'.format(i + 1)] = dim * epsilon[i, k]
+            disp_bcs.append(DisplacementBC(
+                name='{}'.format(position), region=region_name,
+                createStepName=step_name, **applied_disps))
+
+        # TODO: add decoration of constraints in a bc? due to order issues.
+
+        return self.constraints, disp_bcs
 
 
 class Constraints(object):
@@ -620,35 +651,33 @@ class Constraints(object):
         pass
 
     @abstractmethod
-    def apply_constraints(self):
+    def create(self):
         pass
 
 
 class PBCConstraints(Constraints):
 
-    def __init__(self):
-        super(self, PBCConstraints).__init__()
+    def __init__(self, rve_info):
+        super(PBCConstraints, self).__init__()
+        self.rve_info = rve_info
 
-    def apply_constraints(self, model):
+    def create(self, model):
 
-        # initialization
-        dim = len(self.dims)
-
-        # create reference points
-        ref_points = self._create_pbcs_ref_points(model)
+        # get reference points
+        ref_points = self.rve_info.get_all_ref_points(only_names=True)
 
         # apply vertex constraints
-        self._apply_vertex_constraints(model, dim, ref_points)
+        self._apply_vertex_constraints(model, ref_points)
 
         # apply edge constraints
-        self._apply_edge_constraints(model, dim, ref_points)
+        self._apply_edge_constraints(model, ref_points)
 
         # apply face constraints
-        if dim > 2:
-            self._apply_face_constraints(model, dim, ref_points)
+        if self.rve_info.dim > 2:
+            self._apply_face_constraints(model, ref_points)
 
-    def _apply_node_to_node_constraint(self, model, grouped_positions, node_lists,
-                                       ref_points_terms_no_dof, constraint_type, dim):
+    def _apply_node_to_node_constraints(self, model, grouped_positions, node_lists,
+                                        ref_points_terms_no_dof, constraint_type, dim):
 
         for i, nodes in enumerate(zip(node_lists[0], node_lists[1])):
 
@@ -656,8 +685,8 @@ class PBCConstraints(Constraints):
             set_names = []
             for pos, node in zip(grouped_positions, nodes):
                 set_name = '{}_NODE_{}_{}'.format(constraint_type, pos, i)
-                self.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
-                set_names.append('{}.{}'.format(self.name, set_name))
+                self.rve_info.part.Set(name=set_name, nodes=MeshNodeArray((node,)))
+                set_names.append('{}.{}'.format(self.rve_info.name, set_name))
 
             # create constraint
             for ndof in range(1, dim + 1):
@@ -674,17 +703,17 @@ class PBCConstraints(Constraints):
 
 class PBCConstraints2D(PBCConstraints):
 
-    def __init__(self):
-        super(PBCConstraints, self).__init__()
+    def __init__(self, rve_info):
+        super(PBCConstraints2D, self).__init__(rve_info)
 
-    def _apply_edge_constraints(self, model, dim, ref_points):
+    def _apply_edge_constraints(self, model, ref_points):
 
         # apply constraints
-        for i, (grouped_positions, ref_point) in enumerate(zip(self.edge_positions, ref_points)):
+        for i, (grouped_positions, ref_point) in enumerate(zip(self.rve_info.edge_positions, ref_points)):
 
             # get sorted nodes
             j = (i + 1) % 2
-            node_lists = [self.get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
+            node_lists = [self.rve_info.get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
 
             # create no_dof terms
             ref_points_terms_no_dof = [[-1.0, ref_point]]
@@ -692,9 +721,9 @@ class PBCConstraints2D(PBCConstraints):
             # create constraints
             self._apply_node_to_node_constraints(
                 model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "EDGES", dim)
+                "EDGES", self.rve_info.dim)
 
-    def _apply_vertex_constraints(self, model, dim, ref_points):
+    def _apply_vertex_constraints(self, model, ref_points):
         '''
         Notes
         -----
@@ -713,25 +742,26 @@ class PBCConstraints2D(PBCConstraints):
             return coeffs
 
         # initialization
-        fixed_pos = self._get_fixed_vertex_position()
+        fixed_pos = self.rve_info.get_fixed_vertex_position()
 
         # apply kinematic constraints
-        for k in range((dim - 1) * 2):
+        for k in range((self.rve_info.dim - 1) * 2):
             name = 'VERTEX_CONSTRAINT_'
-            signs = ['+' for _ in self.dims]
-            if k < (dim - 1) * 2 - 1:  # in one time all the signs are positive
+            signs = ['+' for _ in self.rve_info.dims]
+            if k < (self.rve_info.dim - 1) * 2 - 1:  # in one time all the signs are positive
                 signs[-(k + 1)] = '-'
 
             terms_no_dof = []
-            for i, signs_ in enumerate([signs, self._get_compl_signs(signs)]):
-                pos = self._get_position_from_signs(signs_)
+            for i, signs_ in enumerate([signs, self.rve_info.get_compl_signs(signs)]):
+                pos = self.rve_info.get_position_from_signs(signs_)
                 if pos != fixed_pos:
-                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(self.name, self.get_vertex_name(pos)), ])
+                    terms_no_dof.append([(-1.0)**i, '{}.{}'.format(
+                        self.rve_info.name, self.rve_info.get_vertex_name(pos)), ])
                     name += pos
             for coeff, ref_point in zip(get_ref_points_coeff(signs), ref_points):
                 terms_no_dof.append([coeff, ref_point])
 
-            for ndof in range(1, dim + 1):
+            for ndof in range(1, self.rve_info.dim + 1):
                 terms = []
                 for term in terms_no_dof:
                     terms.append(term + [ndof])
@@ -741,8 +771,8 @@ class PBCConstraints2D(PBCConstraints):
 
 class PBCConstraints3D(PBCConstraints):
 
-    def __init__(self):
-        super(PBCConstraints, self).__init__()
+    def __init__(self, rve_info):
+        super(PBCConstraints3D, self).__init__(rve_info)
 
     def _apply_edge_constraints(self, model, dim, *args):
 

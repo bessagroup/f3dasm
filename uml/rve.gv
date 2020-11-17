@@ -2,7 +2,7 @@ digraph RVE {
 
     node[shape=record, style=rounded]
     RVE[label = "{RVE}"]
-    BCs[label = "{BCs}"]
+    BoundaryConditions[label = "{BoundaryConditions}"]
     MeshGenerator[label = "{MeshGenerator}"]
     PeriodicMeshChecker[label = "{PeriodicMeshChecker}"]
     Constraints[label = "{Constraints}"]
@@ -10,7 +10,7 @@ digraph RVE {
     RVEObjCreator[label="RVEObjCreator"]
 
     node[shape=record, style="rounded, filled", fillcolor=lightblue]
-    PBCs[label = "{PBCs}"]
+    PeriodicBoundaryConditions[label = "{PeriodicBoundaryConditions}"]
     PBCConstraints[label = "{PBCConstraints}"]
     PeriodicMeshGenerator[label = "{PeriodicMeshGenerator}"]
     PeriodicRVEInfo[label = "{PeriodicRVEInfo}"]
@@ -37,7 +37,7 @@ digraph RVE {
     edge[dir=back, arrowtail=empty, style=normal]
     RVE->RVE2D
     RVE->RVE3D
-    BCs->PBCs
+    BoundaryConditions->PeriodicBoundaryConditions
     MeshGenerator->PeriodicMeshGenerator
     Constraints->PBCConstraints
     PBCConstraints->PBCConstraints2D
@@ -64,10 +64,10 @@ digraph RVE {
     RVE2D->RVEInfo2D
     RVE3D->RVEInfo3D
     RVE->MeshGenerator
-    RVE->BCs
+    RVE->BoundaryConditions
     PeriodicMeshGenerator2D->PeriodicMeshChecker2D
     PeriodicMeshGenerator3D->PeriodicMeshChecker3D
     RVE->RVEObjCreator
-    PBCs->PBCConstraints
+    PeriodicBoundaryConditions->PBCConstraints
 
 }

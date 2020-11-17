@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-11-16 10:51:15
+Last modified on 2020-11-17 15:15:31
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -75,20 +75,21 @@ print('Mesh generated successfully? {}'.format(success))
 # create assembly
 rve.create_instance(model)
 
-# # apply boundary conditions
-# rve.apply_pbcs_constraints(model)
-
-# # set step
-# step_name = "STATIC_STEP"
-# static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
-#                          minInc=1e-5, maxInc=0.02)
-# static_step.create_step(model)
+# set step
+step_name = "STATIC_STEP"
+static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
+                         minInc=1e-5, maxInc=0.02)
+static_step.create(model)
 
 # # TODO: add initial conditions
 
-# # set boundary condigionts
-# rve.apply_bcs_disp(model, step_name, epsilon,
-#                    green_lagrange_strain=False)
+# set boundary conditions
+constraints, bcs = rve.bcs.set_bcs(step_name, epsilon,
+                                   green_lagrange_strain=False)
+
+constraints.create(model)
+for bc in bcs:
+    bc.create(model)
 
 
 # # create inp
