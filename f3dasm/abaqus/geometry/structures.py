@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-06 17:53:59
-Last modified on 2020-11-02 12:07:44
+Last modified on 2020-11-17 10:23:15
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -17,6 +17,8 @@ References
 1. Bessa, M. A. and S. Pellegrino (2018) International Journal of Solids and
 Structures 139-140: 174-188.
 '''
+
+# TODO: move place
 
 
 # imports
@@ -45,6 +47,7 @@ import itertools
 import numpy as np
 
 # local library
+from .base import Geometry
 from ..material.abaqus_materials import AbaqusMaterial
 
 
@@ -370,7 +373,7 @@ class TRACBoom(object):
 
 # Bessa, 2019 (supercompressible metamaterial)
 
-class Supercompressible(object):
+class Supercompressible(Geometry):
 
     def __init__(self, n_longerons, bottom_diameter, top_diameter, pitch,
                  young_modulus, shear_modulus, cross_section_props,
