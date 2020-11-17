@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-11-17 10:49:25
+Last modified on 2020-11-17 12:00:03
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -24,7 +24,7 @@ from abc import abstractmethod
 
 # third-party
 import numpy as np
-from f3dasm.abaqus.geometry.structures import Supercompressible
+from f3dasm.abaqus.geometry.supercompressible import Supercompressible
 from f3dasm.abaqus.modelling.model import GenericModel
 from f3dasm.abaqus.modelling.step import BuckleStep
 from f3dasm.abaqus.modelling.step import StaticRiksStep
@@ -44,9 +44,7 @@ from f3dasm.abaqus.post_processing.nodes_and_elements import get_nodes_given_set
 
 # supercompressible metamaterial
 
-# TODO: create a model common to TRAC boom (it is the same strategy); ImperfectionModel
 # TODO: simplify geometry generation
-# TODO: delete dependency on geometry objects
 
 
 class SupercompressibleModel(GenericModel):
@@ -180,7 +178,7 @@ class SupercompressibleRiksModel(SupercompressibleModel):
     sim_type = 'riks'
 
     def __init__(self, name, job_info, geometry_info, previous_model,
-                 previous_model_results, imperfection):
+                 imperfection, previous_model_results=None):
         super(SupercompressibleRiksModel, self).__init__(
             name, job_info, geometry_info)
         self.step_info = {'name': 'RIKS_STEP',
@@ -213,7 +211,7 @@ class SupercompressibleRiksModel(SupercompressibleModel):
         # reference point data
         position = self.supercompressible.ref_point_positions[-1]
         variables = ['U', 'UR', 'RF', 'RM']
-        set_names = [self.upercompressible._get_ref_point_name(position)]
+        set_names = [self.supercompressible._get_ref_point_name(position)]
         nodes = get_nodes_given_set_names(odb, set_names)
         # get variables
         for variable in variables:
@@ -315,7 +313,7 @@ class SupercompressibleRiksModel(SupercompressibleModel):
         disp_bcs = super(SupercompressibleRiksModel, self)._set_disp_bcs(step_name)
 
         # additional bcs
-        vert_disp = - self.pitch
+        vert_disp = - self.geometry_info['pitch']
         position = self.supercompressible.ref_point_positions[-1]
         region_name = self.supercompressible._get_ref_point_name(position)
         disp_bcs.append(DisplacementBC('DISPLACEMENT', createStepName=step_name,

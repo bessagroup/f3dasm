@@ -1,6 +1,6 @@
 '''
 Created on 2020-11-17 11:33:18
-Last modified on 2020-11-17 11:35:06
+Last modified on 2020-11-17 11:45:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -30,6 +30,10 @@ import numpy as np
 # local library
 from .base import Geometry
 from ..material.abaqus_materials import AbaqusMaterial
+
+
+# TODO: review under rve development strategy
+# TODO: apply strategy pattern
 
 
 # Bessa, 2019 (supercompressible metamaterial)
@@ -316,7 +320,9 @@ class Supercompressible(Geometry):
         material_name = 'LONGERON_MATERIAL'
         props = {'E': self.young_modulus,
                  'nu': self.young_modulus / (2 * self.shear_modulus) - 1}
-        AbaqusMaterial(name=material_name, props=props, create_section=False)
+        # TODO: create outside?
+        AbaqusMaterial(name=material_name, props=props, create_section=False,
+                       model=model)
 
         # create profile
         model.CircularProfile(name=profile_name, r=r)
