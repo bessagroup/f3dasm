@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-11-17 11:17:37
+Last modified on 2020-11-17 12:02:37
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -108,6 +108,7 @@ class F3DASMModel(AbstractModel):
 
 class GenericModel(F3DASMModel):
     __metaclass__ = ABCMeta
+    # TODO: deal with field and history outputs to delete
 
     def __init__(self, name, job_info):
         super(GenericModel, self).__init__(name, job_info)
