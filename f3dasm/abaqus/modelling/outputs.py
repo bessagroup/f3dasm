@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-15 18:00:10
-Last modified on 2020-09-22 14:45:29
-Python 2.7.16
-v0.1
+Last modified on 2020-11-17 11:56:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,10 +14,10 @@ References
 1. Simulia (2015). ABAQUS 2016: Scripting Reference Guide
 '''
 
-# TODO: understand how to deal with steValuesInStep
+# TODO: understand how to deal with setValuesInStep
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (MODEL, PRESELECT)
@@ -28,7 +26,7 @@ from abaqusConstants import (MODEL, PRESELECT)
 import abc
 
 
-#%% abstract classes
+# abstract classes
 
 class Output(object):
     __metaclass__ = abc.ABCMeta
@@ -47,7 +45,7 @@ class Output(object):
         self.createStepName = createStepName
         # computations
         if model:
-            self.create_output(model)
+            self.create(model)
 
     def _get_set(self, set_name, model):
 
@@ -60,7 +58,7 @@ class Output(object):
 
         return abaqusSet
 
-    def create_output(self, model):
+    def create(self, model):
 
         # get method
         create_output = getattr(model, self.method_name)
@@ -83,7 +81,7 @@ class Output(object):
                       createStepName=self.createStepName, **args)
 
 
-#%% field outputs
+# field outputs
 
 class FieldOutputRequest(Output):
 
@@ -154,7 +152,7 @@ class FieldOutputRequest(Output):
         Output.__init__(self, name, createStepName, model=model)
 
 
-#%% history outputs
+# history outputs
 
 class HistoryOutputRequest(Output):
 

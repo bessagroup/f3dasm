@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-21 12:29:20
-Last modified on 2020-04-21 14:56:19
-Python 2.7.16
-v0.1
+Last modified on 2020-11-17 11:14:47
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,14 +14,16 @@ References
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (FRICTIONLESS, ISOTROPIC, OFF, COEFFICIENTS,
                              FRACTION, DEFAULT, HARD, ON, LINEAR)
 
 
-#%% contact property
+# contact property
+
+# TODO: create abstract base class (InteractionProperty)
 
 class ContactProperty(object):
 
@@ -45,7 +45,7 @@ class ContactProperty(object):
         if model:
             self.create_contact_property(model)
 
-    def create_contact_property(self, model):
+    def create(self, model):
 
         # create abaqus object
         contact = model.ContactProperty(self.name)
@@ -56,7 +56,7 @@ class ContactProperty(object):
             add_behavior(**behavior.args)
 
 
-#%% contact behaviours
+# contact behaviours
 
 class TangentialBehavior(object):
 

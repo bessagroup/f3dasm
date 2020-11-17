@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-21 11:11:26
-Last modified on 2020-09-22 14:35:15
-Python 2.7.16
-v0.1
+Last modified on 2020-11-17 11:15:12
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,7 +14,7 @@ References
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqusConstants import (NONE, COMPUTED, SURFACE_TO_SURFACE, ON, OFF, OMIT,)
@@ -25,7 +23,7 @@ from abaqusConstants import (NONE, COMPUTED, SURFACE_TO_SURFACE, ON, OFF, OMIT,)
 import abc
 
 
-#%% abstract classes
+# abstract classes
 
 class Interaction(object):
     __metaclass__ = abc.ABCMeta
@@ -56,7 +54,7 @@ class Interaction(object):
 
         return surf
 
-    def create_interaction(self, model):
+    def create(self, model):
 
         # get method
         create_interaction = getattr(model, self.method_name)
@@ -79,7 +77,7 @@ class Interaction(object):
                            **args)
 
 
-#%% particular interactions definition
+# particular interactions definition
 
 class SurfaceToSurfaceContactStd(Interaction):
 

@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-09-29 10:35:08
-Python 2.7.16
-v0.1
+Last modified on 2020-11-17 12:02:37
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,38 +14,44 @@ Notes
 '''
 
 
-#%% imports
+# imports
 
 # abaqus
 from abaqus import mdb, backwardCompatibility
 from abaqusConstants import OFF
 from abaqus import session
 
-# standard library
+# standard-library
 import os
 import pickle
-import abc
+from abc import ABCMeta
+from abc import abstractmethod
 import inspect
+
+# local library
+from .utils import InpAdditions
 
 
 # object definition
 
 class AbstractModel(object):
-    __metaclass__ = abc.ABCMeta
+    __metaclass__ = ABCMeta
 
     def __init__(self, name, job_info):
         self.name = name
         self.job_info = job_info
+        # initialize variables
+        self.abort = False
 
-    @abc.abstractmethod
+    @abstractmethod
     def create_model(self):
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def write_inp(self, submit=True):
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def perform_post_processing(self, odb):
         pass
 
@@ -64,64 +68,18 @@ class AbstractModel(object):
                 pickle.dump(data, f)
 
 
-class BasicModel(AbstractModel):
+class F3DASMModel(AbstractModel):
+    __metaclass__ = ABCMeta
 
     def __init__(self, name, job_info):
-        '''
-        Parameters
-        ----------
-        job_info: dict
-            Must contain at least `name`.
-        '''
-        AbstractModel.__init__(self, name, job_info)
+        super(F3DASMModel, self).__init__(name, job_info)
         # create model
         self.model = mdb.Model(name=self.name)
-        backwardCompatibility.setValues(reportDeprecated=False)
-        if 'Model-1' in mdb.models.keys():
+        if 'Model-1' in mdb.models.keys() and self.name != 'Model-1':
             del mdb.models['Model-1']
+        backwardCompatibility.setValues(reportDeprecated=False)
         # initialize variables
-        self.abort = None
-        self.geometry_objects = []
-        self.materials = []
-        self.steps = ['Initial']
-        self.bcs = []
-        self.contact_properties = []
-        self.interactions = []
-        self.output_requests = []
         self.inp_additions = []
-
-    def create_model(self):
-
-        # assemble puzzle
-        self.abort = self._assemble_puzzle()
-
-        # if order to abort from `_assemble_puzzle`, then it stops
-        if self.abort:
-            return
-
-        # create materials
-        self._create_materials()
-
-        # create parts
-        self._create_parts()
-
-        # create instances
-        self._create_instances()
-
-        # create steps
-        self._create_steps()
-
-        # create boundary conditions
-        self._create_bcs()
-
-        # create contact properties
-        self._create_contact_properties()
-
-        # create interactions
-        self._create_interactions()
-
-        # create outputs
-        self._create_outputs()
 
     def write_inp(self, submit=False):
 
@@ -147,9 +105,124 @@ class BasicModel(AbstractModel):
             modelJob.submit(consistencyChecking=OFF)
             modelJob.waitForCompletion()
 
+
+class GenericModel(F3DASMModel):
+    __metaclass__ = ABCMeta
+    # TODO: deal with field and history outputs to delete
+
+    def __init__(self, name, job_info):
+        super(GenericModel, self).__init__(name, job_info)
+        # initialize variables
+        self.objs = []
+        # auxiliar variables
+        self.assemble_fncs = ['set_materials', 'set_geometries', 'set_steps',
+                              'set_bcs', 'set_interactions', 'set_outputs',
+                              'set_inp_additions']
+
+    def _assemble_puzzle(self):
+
+        # verify if must abort
+        if self._must_abort():
+            return True
+
+        # set objects
+        for fnc_str in self.assemble_fncs:
+            if hasattr(self, fnc_str):
+                fnc = getattr(self, fnc_str)
+            else:
+                continue
+            out = fnc()
+            self.add_obj(out)
+
+        return False
+
+    def add_obj(self, obj):
+        if type(obj) in [list, tuple]:
+            for obj_ in obj:
+                self.add_obj(obj_)
+        else:
+            if isinstance(obj, InpAdditions):
+                self.inp_additions.append(obj)
+            else:
+                self.objs.append(obj)
+
+    def _must_abort(self):
+        return False
+
+    def create_model(self):
+
+        # assemble puzzle
+        self.abort = self._assemble_puzzle()
+
+        # if order to abort from `_assemble_puzzle`, then it stops
+        if self.abort:
+            return
+
+        # create objects
+        for obj in self.objs:
+            obj.create(self.model)
+
+
+class BasicModel(F3DASMModel):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name, job_info):
+        '''
+        Parameters
+        ----------
+        job_info: dict
+            Must contain at least `name`.
+        '''
+        super(BasicModel, self).__init__(name, job_info)
+        # initialize variables
+        self.geometry_objects = []
+        self.materials = []
+        self.steps = ['Initial']
+        self.bcs = []
+        self.contact_properties = []
+        self.interactions = []
+        self.output_requests = []
+        self.inp_additions = []
+
+    def create_model(self):
+
+        # assemble puzzle
+        self.abort = self._assemble_puzzle()
+
+        # if order to abort from `_assemble_puzzle`, then it stops
+        if self.abort:
+            return
+
+        # create materials
+        self._create_materials()
+
+        # create parts
+        # TODO: create geometries?
+        self._create_parts()
+
+        # create instances
+        self._create_instances()
+
+        # TODO: generate mesh?
+
+        # create steps
+        self._create_steps()
+
+        # create boundary conditions
+        self._create_bcs()
+
+        # create contact properties
+        self._create_contact_properties()
+
+        # create interactions
+        self._create_interactions()
+
+        # create outputs
+        self._create_outputs()
+
     def _create_materials(self):
         for material in self.materials:
-            material.create_material(self.model)
+            material.create(self.model)
 
     def _create_parts(self):
         for obj in self.geometry_objects:
@@ -161,19 +234,19 @@ class BasicModel(AbstractModel):
 
     def _create_steps(self):
         for step in self.steps[1:]:
-            step.create_step(self.model)
+            step.create(self.model)
 
     def _create_bcs(self):
         for bc in self.bcs:
-            bc.apply_bc(self.model)
+            bc.create(self.model)
 
     def _create_contact_properties(self):
         for contact_property in self.contact_properties:
-            contact_property.create_contact_property(self.model)
+            contact_property.create(self.model)
 
     def _create_interactions(self):
         for interaction in self.interactions:
-            interaction.create_interaction(self.model)
+            interaction.create(self.model)
 
     def _create_outputs(self):
 
@@ -183,7 +256,7 @@ class BasicModel(AbstractModel):
 
         # create requested field outputs
         for output in self.output_requests:
-            output.create_output(self.model)
+            output.create(self.model)
             if output.method_name == 'HistoryOutputRequest' and output.name != 'H-Output-1':
                 create_history = True
             elif output.method_name == 'FieldOutputRequest' and output.name != 'F-Output-1':
@@ -195,15 +268,24 @@ class BasicModel(AbstractModel):
         if create_field:
             del self.model.fieldOutputRequests['F-Output-1']
 
-    def _update_list(self, variable, new_value):
+    def update_list(self, variable, new_value):
 
-        if type(new_value) is list or type(new_value) is tuple:
-            variable.extend(new_value)
+        if type(new_value) in [list, tuple]:
+            for new_value_ in new_value:
+                self.update_list(variable, new_value_)
         else:
             variable.append(new_value)
 
 
+class FreeModel(F3DASMModel):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, job_info):
+        super(FreeModel, self).__init__(name, job_info)
+
+
 class WrapperModel(AbstractModel):
+    __metaclass__ = ABCMeta
 
     def __init__(self, name, job_info, abstract_model, post_processing_fnc=None,
                  previous_model=None, previous_model_results=None,
@@ -226,8 +308,6 @@ class WrapperModel(AbstractModel):
         for key, value in self.kwargs.items():
             if key not in self.abstract_model_args:
                 del self.kwargs[key]
-        # initialize variables
-        self.abort = None
 
     def create_model(self):
         '''

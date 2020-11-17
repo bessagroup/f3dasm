@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-07 18:04:04
-Last modified on 2020-09-30 11:44:23
+Last modified on 2020-11-17 11:49:51
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -12,7 +12,8 @@ Last modified on 2020-09-30 11:44:23
 from abaqus import session
 
 # third-party
-from f3dasm.abaqus.models.supercompressible import SupercompressibleModel
+from examples.supercompressible_cls.abaqus_modules.supercompressible import SupercompressibleLinearBuckleModel as LinearBuckleModel
+from examples.supercompressible_cls.abaqus_modules.supercompressible import SupercompressibleRiksModel as RiksModel
 
 
 # initialization
@@ -20,14 +21,14 @@ from f3dasm.abaqus.models.supercompressible import SupercompressibleModel
 model_name = 'SUPERCOMPRESSIBLE'
 
 # variable definition
-n_longerons = 3
-bottom_diameter = 100.
-top_diameter = 82.42
-pitch = 1.15223e2
-young_modulus = 3.5e3
-shear_modulus = 1.38631e3
-cross_section_props = {'type': 'circular',
-                       'd': 10}
+geometry_info = {'n_longerons': 3,
+                 'bottom_diameter': 100.,
+                 'top_diameter': 82.42,
+                 'pitch': 1.15223e2,
+                 'young_modulus': 3.5e3,
+                 'shear_modulus': 1.38631e3,
+                 'cross_section_props': {'type': 'circular',
+                                         'd': 10}}
 imperfection = 7.85114e-02
 
 
@@ -36,10 +37,7 @@ imperfection = 7.85114e-02
 # create object
 sim_type = 'lin_buckle'
 job_info = {'name': 'Simul_{}_{}'.format(model_name, sim_type)}
-lin_buckle_model = SupercompressibleModel(
-    model_name, job_info, sim_type, n_longerons, bottom_diameter, top_diameter,
-    pitch, young_modulus, shear_modulus, cross_section_props)
-
+lin_buckle_model = LinearBuckleModel(model_name, job_info, geometry_info)
 
 # create model
 lin_buckle_model.create_model()
@@ -53,10 +51,8 @@ lin_buckle_model.write_inp(submit=True)
 # create object
 sim_type = 'riks'
 job_info = {'name': 'Simul_{}_{}'.format(model_name, sim_type)}
-riks_model = SupercompressibleModel(
-    model_name, job_info, sim_type, n_longerons, bottom_diameter, top_diameter,
-    pitch, young_modulus, shear_modulus, cross_section_props,
-    previous_model=lin_buckle_model, imperfection=imperfection)
+riks_model = RiksModel(model_name, job_info, geometry_info,
+                       previous_model=lin_buckle_model, imperfection=imperfection)
 
 # create model
 riks_model.create_model()

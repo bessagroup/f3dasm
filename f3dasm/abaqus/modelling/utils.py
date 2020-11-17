@@ -1,8 +1,6 @@
 '''
 Created on 2020-04-15 18:01:32
-Last modified on 2020-09-22 14:59:16
-Python 2.7.16
-v0.1
+Last modified on 2020-11-17 10:37:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -12,9 +10,9 @@ Place where additional useful functions are defined.
 '''
 
 
-#%% write to inp
+# write to inp
 
-class AddToInp(object):
+class InpAdditions(object):
 
     def __init__(self, text, job_name, section='OUTPUT REQUESTS'):
         '''
