@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-20 19:18:16
-Last modified on 2020-11-17 12:00:03
+Last modified on 2020-11-17 13:46:30
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -219,7 +219,7 @@ class SupercompressibleRiksModel(SupercompressibleModel):
                 odb, nodes, variable)[0]
 
         # add information if not generalized section
-        if self.supercompressible.geometry_info.cross_section_props.get('type', 'generalized') != 'generalized':
+        if self.geometry_info['cross_section_props'].get('type', 'generalized') != 'generalized':
             step = odb.steps[odb.steps.keys()[-1]]
             frames = step.frames
             elemSet = odb.rootAssembly.elementSets[' ALL ELEMENTS']
