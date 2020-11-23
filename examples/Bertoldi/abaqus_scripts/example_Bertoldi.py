@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:52:25
-Last modified on 2020-11-17 15:15:31
+Last modified on 2020-11-17 16:58:24
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -19,6 +19,7 @@ from abaqusConstants import OFF
 # third-party
 from f3dasm.abaqus.geometry.rve import RVE2D
 from f3dasm.abaqus.modelling.step import StaticStep
+from f3dasm.abaqus.material.abaqus_materials import AbaqusMaterial
 
 # local library
 from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiPore
@@ -26,7 +27,7 @@ from examples.Bertoldi.abaqus_modules.bertoldi_rve import BertoldiPore
 
 # initialization
 
-backwardCompatibility.setValues(reportDeprecated=False)
+# backwardCompatibility.setValues(reportDeprecated=False)
 
 model_name = 'RVE2D'
 job_name = 'Sim_' + model_name
@@ -58,7 +59,14 @@ if 'Model-1' in mdb.models.keys():
 
 # define objects
 
-rve = RVE2D(length, width, center, name='BERTOLDI_RVE')
+# define material
+material_name = 'Steel'
+props = {'E': 210e3,
+         'nu': .3, }
+material = AbaqusMaterial(name=material_name, props=props,
+                          create_section=False)
+
+rve = RVE2D(length, width, center, material, name='BERTOLDI_RVE')
 rve.mesh.change_definitions(size=0.1)
 
 pore = BertoldiPore(center, r_0, c_1, c_2)
@@ -66,6 +74,9 @@ rve.add_particle(pore)
 
 
 # create part and assembly
+
+# create material
+material.create(model)
 
 # create part and generate mesh
 rve.create_part(model)
@@ -91,7 +102,11 @@ constraints.create(model)
 for bc in bcs:
     bc.create(model)
 
+section_name = material.name
+model.HomogeneousSolidSection(name=section_name, material=material.name)
+rve.part.SectionAssignment(region=(rve.part.faces,), sectionName=section_name,)
 
-# # create inp
-# # modelJob = mdb.Job(model=model_name, name=job_name)
-# # modelJob.writeInput(consistencyChecking=OFF)
+# create inp
+modelJob = mdb.Job(model=model_name, name=job_name)
+modelJob.writeInput(consistencyChecking=OFF)
+modelJob.submit()

@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-17 15:35:15
+Last modified on 2020-11-17 22:16:23
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,7 +21,8 @@ from __future__ import division
 from caeModules import *  # allow noGui
 from abaqusConstants import (TWO_D_PLANAR, DEFORMABLE_BODY, ON, FIXED,
                              THREE_D, DELETE, GEOMETRY, TET, FREE,
-                             YZPLANE, XZPLANE, XYPLANE)
+                             YZPLANE, XZPLANE, XYPLANE, MIDDLE_SURFACE,
+                             FROM_SECTION)
 from part import (EdgeArray, FaceArray)
 from mesh import MeshNodeArray
 
@@ -45,11 +46,10 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 
 # TODO: inherit from geometry
 
-
 class RVE(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, dims, center, tol, bcs_type):
+    def __init__(self, name, dims, center, material, tol, bcs_type):
         '''
         Parameters
         ----------
@@ -58,12 +58,14 @@ class RVE(object):
         '''
         # variable initialization
         self.particles = []
+        self.material = material
         # create objects
         self.info, self.obj_creator, self.mesh, self.bcs = self._objects_initializer(
             name, dims, center, tol, bcs_type)
 
-    @staticmethod
     def _objects_initializer(name, dims, center, tol, bcs_type):
+
+        # TODO: move outside to obey open/closed principle; call it RVEFactory?
 
         dim = len(dims)
 
@@ -110,7 +112,10 @@ class RVE(object):
             particle.create_part(model, self.info)
 
         # create RVE part
-        self._create_part(model, sketch)
+        tmp_part = self._create_part(model, sketch)
+
+        # assign material
+        # self._assign_section(model, tmp_part)
 
         # create required objects (here, because some are required for mesh generation)
         self.obj_creator.create_objs(self.info, model)
@@ -130,17 +135,31 @@ class RVE(object):
     def part(self):
         return self.info.part
 
+    def _assign_section(self, model, part):
+
+        # create section
+        section_name = self.material.name
+        model.HomogeneousSolidSection(name=section_name,
+                                      material=self.material.name)
+
+        # assign section
+        part.SectionAssignment(region=(part.cells,), sectionName=section_name,
+                               thicknessAssignment=FROM_SECTION)
+
+
 class RVE2D(RVE):
 
-    def __init__(self, length, width, center, name='RVE', bcs_type='periodic',
+    def __init__(self, length, width, center, material, name='RVE', bcs_type='periodic',
                  tol=1e-5):
         dims = (length, width)
-        super(RVE2D, self).__init__(name, dims, center, tol, bcs_type)
+        super(RVE2D, self).__init__(name, dims, center, material, tol, bcs_type)
 
     def _create_part(self, model, sketch):
         self.info.part = model.Part(name=self.name, dimensionality=TWO_D_PLANAR,
                                     type=DEFORMABLE_BODY)
         self.info.part.BaseShell(sketch=sketch)
+
+        return self.info.part
 
     def create_instance(self, model):
 
@@ -151,24 +170,28 @@ class RVE2D(RVE):
 
 class RVE3D(RVE):
 
-    def __init__(self, dims, name='RVE', center=(0., 0., 0.), tol=1e-5,
+    def __init__(self, dims, material, name='RVE', center=(0., 0., 0.), tol=1e-5,
                  bcs_type='periodic'):
-        super(RVE3D, self).__init__(name, dims, center, tol, bcs_type)
+        super(RVE3D, self).__init__(name, dims, center, material, tol, bcs_type)
 
     def _create_part(self, model, sketch):
 
         # create part
         part_name = '{}_TMP'.format(self.name) if len(model.parts) > 0 else self.name
-        self.info.part = model.Part(name=part_name, dimensionality=THREE_D,
-                                    type=DEFORMABLE_BODY)
-        self.info.part.BaseSolidExtrude(sketch=sketch, depth=self.info.dims[2])
+        tmp_part = model.Part(name=part_name, dimensionality=THREE_D,
+                              type=DEFORMABLE_BODY)
+        tmp_part.BaseSolidExtrude(sketch=sketch, depth=self.info.dims[2])
 
         # create part by merge instances
         # TODO: add better verificator
         if len(model.parts) > 1:
-            self._create_part_by_merge(model)
+            self._create_part_by_merge(model, tmp_part)
+        else:
+            self.info.part = tmp_part
 
-    def _create_part_by_merge(self, model):
+        return tmp_part
+
+    def _create_part_by_merge(self, model, tmp_part):
         # TODO: make with voids to extend method (base it on the material); make also combined
 
         # initialization
@@ -176,7 +199,7 @@ class RVE3D(RVE):
 
         # create rve instance
         modelAssembly.Instance(name='{}_TMP'.format(self.name),
-                               part=self.part, dependent=ON)
+                               part=tmp_part, dependent=ON)
 
         # create particle instances
         for particle in self.particles:

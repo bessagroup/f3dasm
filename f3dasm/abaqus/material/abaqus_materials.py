@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 12:03:11
-Last modified on 2020-11-04 13:17:24
+Last modified on 2020-11-17 16:23:38
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -27,6 +27,8 @@ import abc
 
 
 # abaqus material class
+
+# TODO: define section must have to be reconsidered
 
 class AbaqusMaterial(object):
 
@@ -56,7 +58,7 @@ class AbaqusMaterial(object):
         else:
             self.material_behaviors = material_behaviors
         if model:
-            self.create_material(model)
+            self.create(model)
 
     def _verify_existing_material(self, model):
         '''
@@ -72,7 +74,7 @@ class AbaqusMaterial(object):
 
         return False
 
-    def create_material(self, model):
+    def create(self, model):
 
         # verify existing material
         if self._verify_existing_material(model):
