@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 12:03:11
-Last modified on 2020-11-17 16:23:38
+Last modified on 2020-11-23 09:59:50
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -20,7 +20,7 @@ material database.
 from abaqusConstants import (ISOTROPIC, ENGINEERING_CONSTANTS, LAMINA, ORTHOTROPIC)
 
 # standard library
-import abc
+from abc import ABCMeta
 
 
 # TODO: add user material
@@ -28,12 +28,10 @@ import abc
 
 # abaqus material class
 
-# TODO: define section must have to be reconsidered
-
 class AbaqusMaterial(object):
 
-    def __init__(self, name, info=None, create_section=True, props=None,
-                 material_behaviors=None, model=None):
+    def __init__(self, name, info=None, props=None, material_behaviors=None,
+                 section=None, model=None):
         '''
         Parameters
         ----------
@@ -44,14 +42,15 @@ class AbaqusMaterial(object):
             If None, then the behaviors are automatically found out based on
             the available properties.
         model : abaqus mdb object
-        create_section : bool
-            If an homogeneous section is created.
         '''
         self.name = name
         self.info = info
         self.material_behaviors = material_behaviors
-        self.create_section = create_section
         self.props = props
+        if section is None:
+            self.section = None
+        else:
+            self.associate_section(section)
         # deal with behaviors
         if material_behaviors is None:
             self.material_behaviors = self._find_material_behaviors()
@@ -90,9 +89,16 @@ class AbaqusMaterial(object):
             material_behavior.create_behavior(abaqusMaterial)
 
         # define section
-        if self.create_section:
-            model.HomogeneousSolidSection(name=self.name, material=self.name,
-                                          thickness=None)
+        if self.section is not None and self.section.name not in model.sections.keys():
+            self.section.create(model)
+
+    def associate_section(self, section):
+        if hasattr(section, 'name') and section.name is None:
+            section.name = self.name
+        if hasattr(section, 'material') and section.material is None:
+            section.material = self.name
+
+        self.section = section
 
     def _find_material_behaviors(self):
         material_behaviors = []
@@ -124,6 +130,7 @@ class AbaqusMaterial(object):
 # material behavior abstract class
 
 class MaterialBehavior(object):
+    __metaclass__ = ABCMeta
     '''
     Notes
     -----
@@ -208,7 +215,7 @@ class Density(MaterialBehavior):
 # elastic behavior
 
 class ElasticBehavior(MaterialBehavior):
-    __metaclass__ = abc.ABCMeta
+    __metaclass__ = ABCMeta
     method_name = 'Elastic'
 
     def __init__(self, props=None, **kwargs):
@@ -248,7 +255,7 @@ class ElasticEngineeringConstantsBehavior(ElasticBehavior):
 # expansion behavior
 
 class ExpansionBehavior(MaterialBehavior):
-    __metaclass__ = abc.ABCMeta
+    __metaclass__ = ABCMeta
     method_name = 'Expansion'
     optional_props = ['T0']
     optional_props_map = {'T0': 'zero'}

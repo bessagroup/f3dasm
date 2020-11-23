@@ -8,6 +8,7 @@
         FreeModel[label = "{FreeModel}"]
         WrapperModel[label = "{WrapperModel}"]
         Geometry[label = "{Geometry}"]
+        Section[label = "{Section}"]
         AbaqusMaterial[label = "{AbaqusMaterial}"]
         MaterialBehavior[label = "{MaterialBehavior}"]
         Step[label = "{Step}"]
@@ -30,6 +31,7 @@
         edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
         BasicModel->Geometry
         BasicModel->AbaqusMaterial
+        BasicModel->Section
         AbaqusMaterial->MaterialBehavior
         BasicModel->Step
         BasicModel->BoundaryCondition
