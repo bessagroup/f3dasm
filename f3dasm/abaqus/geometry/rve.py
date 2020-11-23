@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-17 22:16:23
+Last modified on 2020-11-23 10:08:54
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,8 +21,7 @@ from __future__ import division
 from caeModules import *  # allow noGui
 from abaqusConstants import (TWO_D_PLANAR, DEFORMABLE_BODY, ON, FIXED,
                              THREE_D, DELETE, GEOMETRY, TET, FREE,
-                             YZPLANE, XZPLANE, XYPLANE, MIDDLE_SURFACE,
-                             FROM_SECTION)
+                             YZPLANE, XZPLANE, XYPLANE, FROM_SECTION)
 from part import (EdgeArray, FaceArray)
 from mesh import MeshNodeArray
 
@@ -43,6 +42,22 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 
 # object definition
 
+def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
+
+    dim = len(dims)
+
+    if bcs_type == 'periodic':
+        obj_creator = PeriodicRVEObjCreator()
+        if dim == 2:
+            info = PeriodicRVEInfo2D(name, dims, center, tol)
+            mesh = PeriodicMeshGenerator2D()
+        else:
+            info = PeriodicRVEInfo3D(name, dims, center, tol)
+            mesh = PeriodicMeshGenerator3D()
+        bcs = PeriodicBoundaryConditions(info)
+
+    return info, obj_creator, mesh, bcs
+
 
 # TODO: inherit from geometry
 
@@ -60,26 +75,8 @@ class RVE(object):
         self.particles = []
         self.material = material
         # create objects
-        self.info, self.obj_creator, self.mesh, self.bcs = self._objects_initializer(
+        self.info, self.obj_creator, self.mesh, self.bcs = _RVE_objects_initializer(
             name, dims, center, tol, bcs_type)
-
-    def _objects_initializer(name, dims, center, tol, bcs_type):
-
-        # TODO: move outside to obey open/closed principle; call it RVEFactory?
-
-        dim = len(dims)
-
-        if bcs_type == 'periodic':
-            obj_creator = PeriodicRVEObjCreator()
-            if dim == 2:
-                info = PeriodicRVEInfo2D(name, dims, center, tol)
-                mesh = PeriodicMeshGenerator2D()
-            else:
-                info = PeriodicRVEInfo3D(name, dims, center, tol)
-                mesh = PeriodicMeshGenerator3D()
-            bcs = PeriodicBoundaryConditions(info)
-
-        return info, obj_creator, mesh, bcs
 
     def add_particle(self, particle):
         self.particles.append(particle)
@@ -115,10 +112,19 @@ class RVE(object):
         tmp_part = self._create_part(model, sketch)
 
         # assign material
-        # self._assign_section(model, tmp_part)
+        self._assign_section(model, tmp_part)
 
         # create required objects (here, because some are required for mesh generation)
         self.obj_creator.create_objs(self.info, model)
+
+    def _assign_section(self, model, part):
+
+        region = (part.faces,) if self.dim == 2 else (part.cells,)
+
+        # assign section
+        part.SectionAssignment(region=region,
+                               sectionName=self.material.section.name,
+                               thicknessAssignment=FROM_SECTION)
 
     @abstractmethod
     def create_instance(self):
@@ -134,17 +140,6 @@ class RVE(object):
     @property
     def part(self):
         return self.info.part
-
-    def _assign_section(self, model, part):
-
-        # create section
-        section_name = self.material.name
-        model.HomogeneousSolidSection(name=section_name,
-                                      material=self.material.name)
-
-        # assign section
-        part.SectionAssignment(region=(part.cells,), sectionName=section_name,
-                               thicknessAssignment=FROM_SECTION)
 
 
 class RVE2D(RVE):
@@ -230,7 +225,6 @@ class RVE3D(RVE):
 
 
 class RVEInfo(object):
-    # TODO: Info Periodic vs general info? Specially due to ref points.
 
     def __init__(self, name, dims, center, tol):
         self.name = name
@@ -577,8 +571,6 @@ class RVEObjCreator(object):
 
 class PeriodicRVEObjCreator(RVEObjCreator):
 
-    # TODO: create ref points simultaneously to bound sets.
-
     def create_objs(self, rve_info, model):
 
         # bound sets
@@ -661,8 +653,6 @@ class PeriodicBoundaryConditions(BoundaryConditions):
             disp_bcs.append(DisplacementBC(
                 name='{}'.format(position), region=region_name,
                 createStepName=step_name, **applied_disps))
-
-        # TODO: add decoration of constraints in a bc? due to order issues.
 
         return self.constraints, disp_bcs
 
