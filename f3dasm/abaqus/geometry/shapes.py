@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-16 13:34:43
+Last modified on 2020-11-23 16:03:54
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -10,7 +10,7 @@ Last modified on 2020-11-16 13:34:43
 # abaqus
 from caeModules import *  # allow noGui
 from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
-                             YZPLANE, XYPLANE, XZPLANE)
+                             YZPLANE, XYPLANE, XZPLANE, FROM_SECTION)
 
 # standard library
 import copy
@@ -21,8 +21,9 @@ import copy
 
 class Shape(object):
 
-    def __init__(self, name):
+    def __init__(self, name, material=None):
         self.name = name
+        self.material = material
 
         # mesh definitions
         self.mesh_size = .02
@@ -30,6 +31,7 @@ class Shape(object):
         self.mesh_min_size_factor = .4
 
     def change_mesh_definitions(self, **kwargs):
+        # TODO: use general create mesh
         '''
         See mesh definition at __init__ to find out the variables that can be
         changed.
@@ -46,17 +48,20 @@ class Shape(object):
     def create_part(self, sketch, rve_info):
         pass
 
+    def creat_instance(self, model):
+        return None
+
 
 # particular shapes
 
-# TODO: multiple inheritance?
+# TODO: periodic sphere?
 class Sphere(Shape):
 
     # TODO: add material
 
     def __init__(self, r, center=None, periodic=False, tol=1e-4, name='SPHERE',
-                 dims=None):
-        super(Sphere, self).__init__(name)
+                 dims=None, material=None):
+        super(Sphere, self).__init__(name, material)
         self.r = r
         self.centers = []
         self.periodic = periodic
@@ -139,6 +144,17 @@ class Sphere(Shape):
         if rve_info is not None:
             self._remove_cells(center, part, rve_info)
 
+        # assign section
+        if self.material is not None:
+            self._assign_section(part)
+
+    def _assign_section(self, part):
+
+        # assign section
+        part.SectionAssignment(region=(part.cells,),
+                               sectionName=self.material.section.name,
+                               thicknessAssignment=FROM_SECTION)
+
     def _create_partitions(self, center, part):
         planes = [YZPLANE, XZPLANE, XYPLANE]
         for c, plane in zip(center, planes):
@@ -193,11 +209,15 @@ class Sphere(Shape):
     def create_instance(self, model):
 
         # create instance
+        instances = []
         for i, (center, part) in enumerate(zip(self.centers, self.parts)):
             name = '{}_{}'.format(self.name, i)
             instance = model.rootAssembly.Instance(name=name,
                                                    part=part, dependent=ON)
             instance.translate(vector=(0., 0., center[2]))
+            instances.append(instance)
+
+        return instances
 
     def generate_mesh(self):
         for part in self.parts:

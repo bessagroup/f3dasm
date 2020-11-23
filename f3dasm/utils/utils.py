@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 13:51:00
-Last modified on 2020-09-25 11:22:05
+Last modified on 2020-11-23 15:26:55
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -42,3 +42,12 @@ def import_abstract_obj(fnc_loc):
     module = importlib.import_module(module_name)
 
     return getattr(module, method_name)
+
+
+def unnest(array):
+    unnested_array = []
+    for arrays in array:
+        for array_ in arrays:
+            unnested_array.append(array_)
+
+    return unnested_array

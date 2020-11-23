@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-23 10:08:54
+Last modified on 2020-11-23 17:03:55
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -21,7 +21,8 @@ from __future__ import division
 from caeModules import *  # allow noGui
 from abaqusConstants import (TWO_D_PLANAR, DEFORMABLE_BODY, ON, FIXED,
                              THREE_D, DELETE, GEOMETRY, TET, FREE,
-                             YZPLANE, XZPLANE, XYPLANE, FROM_SECTION)
+                             YZPLANE, XZPLANE, XYPLANE, FROM_SECTION,
+                             SUPPRESS)
 from part import (EdgeArray, FaceArray)
 from mesh import MeshNodeArray
 
@@ -34,6 +35,7 @@ from collections import OrderedDict
 from ..modelling.bcs import DisplacementBC
 from ...utils.linalg import symmetricize_vector
 from ...utils.solid_mechanics import compute_small_strains_from_green
+from ...utils.utils import unnest
 
 
 # TODO: handle warnings and errors using particular class
@@ -43,6 +45,7 @@ from ...utils.solid_mechanics import compute_small_strains_from_green
 # object definition
 
 def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
+    # TODO: object factory?
 
     dim = len(dims)
 
@@ -109,17 +112,16 @@ class RVE(object):
             particle.create_part(model, self.info)
 
         # create RVE part
-        tmp_part = self._create_part(model, sketch)
-
-        # assign material
-        self._assign_section(model, tmp_part)
+        self._create_part(model, sketch)
 
         # create required objects (here, because some are required for mesh generation)
         self.obj_creator.create_objs(self.info, model)
 
-    def _assign_section(self, model, part):
+        # TODO: deal with materials that come from skectch
 
-        region = (part.faces,) if self.dim == 2 else (part.cells,)
+    def _assign_section(self, part):
+
+        region = (part.faces,) if self.info.dim == 2 else (part.cells,)
 
         # assign section
         part.SectionAssignment(region=region,
@@ -150,11 +152,14 @@ class RVE2D(RVE):
         super(RVE2D, self).__init__(name, dims, center, material, tol, bcs_type)
 
     def _create_part(self, model, sketch):
+
+        # create part
         self.info.part = model.Part(name=self.name, dimensionality=TWO_D_PLANAR,
                                     type=DEFORMABLE_BODY)
         self.info.part.BaseShell(sketch=sketch)
 
-        return self.info.part
+        # assign section
+        self._assign_section(self.part)
 
     def create_instance(self, model):
 
@@ -168,47 +173,100 @@ class RVE3D(RVE):
     def __init__(self, dims, material, name='RVE', center=(0., 0., 0.), tol=1e-5,
                  bcs_type='periodic'):
         super(RVE3D, self).__init__(name, dims, center, material, tol, bcs_type)
+        # auxiliar variables
+        self._create_instance = False
 
     def _create_part(self, model, sketch):
 
+        # create particle instances
+        particle_instances = unnest([particle.create_instance(model) for particle in self.particles])
+
         # create part
-        part_name = '{}_TMP'.format(self.name) if len(model.parts) > 0 else self.name
+        part_name = '{}_TMP'.format(self.name) if len(particle_instances) > 0 else self.name
         tmp_part = model.Part(name=part_name, dimensionality=THREE_D,
                               type=DEFORMABLE_BODY)
         tmp_part.BaseSolidExtrude(sketch=sketch, depth=self.info.dims[2])
 
         # create part by merge instances
-        # TODO: add better verificator
-        if len(model.parts) > 1:
-            self._create_part_by_merge(model, tmp_part)
+        if len(particle_instances) > 0:
+            self._create_part_with_particles(model, tmp_part, particle_instances)
         else:
             self.info.part = tmp_part
+            self._create_instance = True
 
-        return tmp_part
-
-    def _create_part_by_merge(self, model, tmp_part):
-        # TODO: make with voids to extend method (base it on the material); make also combined
+    def _create_part_with_particles(self, model, tmp_part, particle_instances):
 
         # initialization
         modelAssembly = model.rootAssembly
 
-        # create rve instance
-        modelAssembly.Instance(name='{}_TMP'.format(self.name),
-                               part=tmp_part, dependent=ON)
+        # create initial rbe instance
+        rve_tmp_instance = modelAssembly.Instance(name='{}_TMP'.format(self.name),
+                                                  part=tmp_part, dependent=ON)
 
-        # create particle instances
-        for particle in self.particles:
-            particle.create_instance(model)
+        # cut RVE
+        if len(particle_instances) > 0:
+            rve_tmp_instance = self._create_part_by_cut(model, rve_tmp_instance,
+                                                        particle_instances)
+
+        # assign material
+        tmp_rve_part = model.parts[rve_tmp_instance.name[:-2]]
+        self._assign_section(tmp_rve_part)
+
+        # merge particles
+        if len(particle_instances) > 0:
+            rve_tmp_instance = self._create_part_by_merge(model, rve_tmp_instance,
+                                                          particle_instances)
+
+        # rename
+        if rve_tmp_instance.name != self.name:
+            model.parts.changeKey(fromName=rve_tmp_instance.name[:-2],
+                                  toName=self.name)
+        modelAssembly.features.changeKey(fromName=rve_tmp_instance.name,
+                                         toName=self.name)
+        self.info.part = model.parts[self.name]
+
+    def _create_part_by_cut(self, model, rve_tmp_instance, particle_instances):
+
+        # initialization
+        modelAssembly = model.rootAssembly
+
+        # cut the particles from RVE
+        rve_instance = modelAssembly.InstanceFromBooleanCut(
+            name='{}_TMP_CUT'.format(self.name),
+            instanceToBeCut=rve_tmp_instance,
+            cuttingInstances=particle_instances,
+            originalInstances=SUPPRESS)
+        del modelAssembly.features[rve_tmp_instance.name]
+
+        # resume particles
+        for particle_instance in particle_instances:
+            modelAssembly.features[particle_instance.name].resume()
+
+        return rve_instance
+
+    def _create_part_by_merge(self, model, rve_tmp_instance, particle_instances):
+
+        # initialization
+        modelAssembly = model.rootAssembly
+
+        # get particles with section
+        particle_instances_w_sections = []
+        for particle_instance in particle_instances:
+            if len(particle_instance.part.sectionAssignments) > 0:
+                particle_instances_w_sections.append(particle_instance)
+            else:
+                del modelAssembly.features[particle_instance.name]
 
         # create merged rve
-        modelAssembly.InstanceFromBooleanMerge(name=self.name,
-                                               instances=modelAssembly.instances.values(),
-                                               keepIntersections=ON,
-                                               originalInstances=DELETE,
-                                               domain=GEOMETRY)
-        modelAssembly.features.changeKey(fromName='{}-1'.format(self.name),
-                                         toName='RVE')
-        self.info.part = model.parts[self.name]  # override part
+        if len(particle_instances_w_sections) == 0:
+            return rve_tmp_instance
+
+        instances = [rve_tmp_instance] + particle_instances_w_sections
+        rve_instance = modelAssembly.InstanceFromBooleanMerge(
+            name=self.name, instances=instances, keepIntersections=ON,
+            originalInstances=DELETE, domain=GEOMETRY,)
+
+        return rve_instance
 
     def create_instance(self, model):
 
@@ -216,8 +274,7 @@ class RVE3D(RVE):
         modelAssembly = model.rootAssembly
 
         # verify if already created (e.g. during _create_part_by_merge)
-        # TODO: add better verificator
-        if len(modelAssembly.instances.keys()) > 0:
+        if self._create_instance:
             return
 
         # create assembly
@@ -255,7 +312,7 @@ class RVEInfo(object):
         '''
         return [('{}-'.format(var), '{}+'.format(var)) for _, var in zip(self.dims, self.var_coord_map)]
 
-    @staticmethod
+    @ staticmethod
     def _define_positions_by_recursion(ref_positions, d):
         def append_positions(obj, i):
             if i == d:
@@ -286,7 +343,7 @@ class RVEInfo(object):
         c_vars = [var for var in position[::2]]
         return self.get_position_from_signs(opp_signs, c_vars)
 
-    @staticmethod
+    @ staticmethod
     def get_compl_signs(signs):
         c_signs = []
         for sign in signs:
@@ -331,23 +388,23 @@ class RVEInfo(object):
 
         return nodes
 
-    @staticmethod
+    @ staticmethod
     def get_node_coordinate(node, i):
         return node.coordinates[i]
 
-    @staticmethod
+    @ staticmethod
     def get_node_coordinate_with_tol(node, i, decimal_places):
         return round(node.coordinates[i], decimal_places)
 
-    @staticmethod
+    @ staticmethod
     def get_edge_name(position):
         return 'EDGE_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def get_vertex_name(position):
         return 'VERTEX_{}'.format(position)
 
-    @staticmethod
+    @ staticmethod
     def get_face_name(position):
         return 'FACE_{}'.format(position)
 
@@ -360,7 +417,7 @@ class RVEInfo(object):
 
         return new_name
 
-    @staticmethod
+    @ staticmethod
     def _get_bound_arg_name(pos):
         return '{}Min'.format(pos[0].lower()) if pos[-1] == '+' else '{}Max'.format(pos[0].lower())
 
@@ -442,7 +499,7 @@ class RVEInfo3D(RVEInfo):
 
     def _get_face_edge_positions_names(self, face_position):
         edge_positions = []
-        for edge_position in _unnest(self.edge_positions):
+        for edge_position in unnest(self.edge_positions):
             if face_position in edge_position:
                 edge_positions.append(edge_position)
 
@@ -460,7 +517,7 @@ class RVEInfo3D(RVEInfo):
     def get_exterior_edges(self, allow_repetitions=True):
 
         exterior_edges = []
-        for face_position in _unnest(self.face_positions):
+        for face_position in unnest(self.face_positions):
             kwargs = {self._get_bound_arg_name(face_position): self._get_bound(face_position)}
             edges = self.part.edges.getByBoundingBox(**kwargs)
             exterior_edges.extend(edges)
@@ -505,7 +562,7 @@ class RVEInfoPeriodic(object):
 
         return ref_points
 
-    @staticmethod
+    @ staticmethod
     def _get_ref_point_name(position):
         return 'REF_POINT_{}'.format(position)
 
@@ -537,12 +594,12 @@ class RVEObjCreator(object):
 
         # edges
         self._create_bound_obj_sets(rve_info, 'edges',
-                                    _unnest(rve_info.edge_positions), rve_info.get_edge_name)
+                                    unnest(rve_info.edge_positions), rve_info.get_edge_name)
 
         # faces
         if rve_info.dim > 2:
             self._create_bound_obj_sets(rve_info, 'faces',
-                                        _unnest(rve_info.face_positions), rve_info.get_face_name)
+                                        unnest(rve_info.face_positions), rve_info.get_face_name)
 
     def _create_bound_obj_sets(self, rve_info, obj, positions, get_name):
         '''
@@ -606,7 +663,7 @@ class PeriodicRVEObjCreator(RVEObjCreator):
 class BoundaryConditions(object):
     __metaclass__ = ABCMeta
 
-    @abstractmethod
+    @ abstractmethod
     def set_bcs(self, *args, **kwargs):
         pass
 
@@ -663,7 +720,7 @@ class Constraints(object):
     def __init__(self):
         pass
 
-    @abstractmethod
+    @ abstractmethod
     def create(self):
         pass
 
@@ -892,7 +949,7 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
                                minSizeFactor=self.min_size_factor)
 
         # seed edges
-        edge_positions = _unnest(rve_info.edge_positions)
+        edge_positions = unnest(rve_info.edge_positions)
         edges = [rve_info.part.sets[rve_info.get_edge_name(position)].edges[0] for position in edge_positions]
         rve_info.part.seedEdgeBySize(edges=edges, size=self.size,
                                      deviationFactor=self.deviation_factor,
@@ -1187,15 +1244,6 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
             return False
 
         return True
-
-
-def _unnest(array):
-    unnested_array = []
-    for arrays in array:
-        for array_ in arrays:
-            unnested_array.append(array_)
-
-    return unnested_array
 
 
 def _get_decimal_places(tol):
