@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-24 11:47:51
+Last modified on 2020-11-24 13:31:26
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -77,7 +77,7 @@ class RVE(Geometry):
         bcs_type : str
             Possible values are 'periodic'.
         '''
-        super(RVE, self).__init__()
+        super(RVE, self).__init__(default_mesh=False)
         # variable initialization
         self.particles = []
         self.material = material
@@ -109,11 +109,11 @@ class RVE(Geometry):
 
         # create particles geometry in sketch
         for particle in self.particles:
-            particle.create_inner_geometry(sketch, self.info)
+            particle.create_inner_geometry(sketch)
 
         # create particles parts
         for particle in self.particles:
-            particle.create_part(model, self.info)
+            particle.create_part(model)
 
         # create RVE part
         self._create_part(model, sketch)
@@ -213,6 +213,7 @@ class RVE3D(RVE):
                                                         particle_instances)
 
         # assign material
+        # TODO: material assignment in case of no particles
         tmp_rve_part = model.parts[rve_tmp_instance.name[:-2]]
         self._assign_section(tmp_rve_part)
 

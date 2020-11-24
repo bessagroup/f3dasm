@@ -7,6 +7,7 @@ digraph geometry {
     Supercompressible[label = "{Supercompressible}"]
     MicroShape[label = "{MicroShape}"]
     Sphere[label = "{Sphere}"]
+    PeriodicSphere[label = "{PeriodicSphere}"]
 
     // generalizations
     edge[dir=back, arrowtail=empty, style=normal]
@@ -15,6 +16,11 @@ digraph geometry {
     Geometry->MicroShape
     MicroShape->Sphere
     MicroShape->Circle
+    MicroShape->PeriodicSphere
+
+    // compositions
+    edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
+    PeriodicSphere->Sphere
 
     // aggregations
     edge[dir=both, arrowtail=ediamond, arrowhead=normal, style=normal]

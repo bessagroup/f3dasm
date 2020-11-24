@@ -1,6 +1,6 @@
 '''
 Created on 2020-11-24 11:25:42
-Last modified on 2020-11-24 11:30:42
+Last modified on 2020-11-24 12:25:21
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -22,7 +22,7 @@ class MeshGenerator(object):
             setattr(self, key, value)
 
     def generate_mesh(self, part):
-        # TODO: improve
+        # TODO: improve to control element size, etc
         part.seedPart(size=self.size,
                       deviationFactor=self.deviation_factor,
                       minSizeFactor=self.min_size_factor)
