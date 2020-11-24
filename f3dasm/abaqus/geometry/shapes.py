@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-24 13:53:06
+Last modified on 2020-11-24 19:52:21
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -10,10 +10,12 @@ Last modified on 2020-11-24 13:53:06
 # abaqus
 from caeModules import *  # allow noGui
 from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
-                             YZPLANE, XYPLANE, XZPLANE)
+                             YZPLANE, XYPLANE, XZPLANE, SIDE1)
+from part import FaceArray
 
 # standard library
 import copy
+from abc import ABCMeta
 
 # local library
 from .base import Geometry
@@ -22,26 +24,28 @@ from .base import Geometry
 # abstract object
 
 class MicroShape(Geometry):
+    __metaclass__ = ABCMeta
 
-    def __init__(self, name, material=None, default_mesh=True):
+    def __init__(self, name, material=None, default_mesh=False):
         super(MicroShape, self).__init__(default_mesh=default_mesh)
         self.name = name
         self.material = material
 
-    def create_inner_geometry(self, sketch):
+    def draw_in_sketch(self, sketch):
         '''
         Perform operations in main sketch.
         '''
         pass
 
+    def make_partition(self, model, tmp_part):
+        pass
 
-# concrete shapes
 
-class PeriodicSphere(MicroShape):
+class PeriodicBall(MicroShape):
+    __metaclass__ = ABCMeta
 
-    def __init__(self, r, center, tol=1e-4, name='PERIODIC_SPHERE',
-                 bounds=None, material=None):
-        super(PeriodicSphere, self).__init__(name, material, default_mesh=False)
+    def __init__(self, name, r, center, tol=1e-4, bounds=None, material=None):
+        super(PeriodicBall, self).__init__(name, material, default_mesh=False)
         self.r = r
         self.tol = tol
         self.bounds = bounds
@@ -75,11 +79,6 @@ class PeriodicSphere(MicroShape):
 
         return dist_squared > 0
 
-    def _add_particle(self, center):
-        name = '{}_{}'.format(self.name, len(self.particles))
-        self.particles.append(Sphere(name=name, r=self.r, center=center, tol=self.tol,
-                                     bounds=self.bounds, material=self.material))
-
     def add_center(self, center):
         if self._center_exists(center) or (self.bounds is not None and not self._is_inside(center)):
             return
@@ -96,6 +95,19 @@ class PeriodicSphere(MicroShape):
                 new_center = copy.copy(center)
                 new_center[i] += dim
                 self.add_center(new_center)
+
+    def _get_name(self):
+        return '{}_{}'.format(self.name, len(self.particles))
+
+
+# concrete shapes
+
+class PeriodicSphere(PeriodicBall):
+
+    def _add_particle(self, center):
+        name = self._get_name()
+        self.particles.append(Sphere(name=name, r=self.r, center=center, tol=self.tol,
+                                     bounds=self.bounds, material=self.material))
 
     def create_part(self, model):
 
@@ -119,10 +131,38 @@ class PeriodicSphere(MicroShape):
             particle.generate_mesh()
 
 
+class PeriodicCircle(PeriodicBall):
+
+    def _add_particle(self, center):
+        name = self._get_name()
+        self.particles.append(Circle(name=name, r=self.r, center=center,
+                                     tol=self.tol, bounds=self.bounds,
+                                     material=self.material))
+
+    def draw_in_sketch(self, sketch):
+        for particle in self.particles:
+            particle.draw_in_sketch(sketch)
+
+    def make_partition(self, model, tmp_part):
+
+        # verification
+        if self.material is None:
+            return False
+
+        # create partitions
+        for particle in self.particles:
+            particle.make_partition(model, tmp_part)
+
+        return True
+
+    def get_region(self, tmp_part):
+        return [particle.get_region(tmp_part) for particle in self.particles]
+
+
 class Sphere(MicroShape):
 
     def __init__(self, r, center, tol=1e-4, name='SPHERE',
-                 bounds=None, material=None):
+                 bounds=(), material=None):
         '''
         Parameters
         ----------
@@ -155,7 +195,7 @@ class Sphere(MicroShape):
 
         # assign section
         if self.material is not None:
-            self._assign_section(self.material, (self.part.cells,))
+            self._assign_section(region=(self.part.cells,))
 
         return self.part
 
@@ -239,3 +279,65 @@ class Sphere(MicroShape):
                 self.part.RemoveFaces(faceList=faces_to_delete, deleteCells=False)
             except:  # in case faces where already removed
                 pass
+
+
+class Circle(MicroShape):
+
+    def __init__(self, r, center, tol=1e-4, name='CIRCLE', bounds=(), material=None):
+        '''
+        Parameters
+        ----------
+        bounds : array-like e.g. ((x_min, x_max), (y_min, y_max))
+            Bounds of the e.g. RVE. Sphere is cutted to be contained within
+            bounds.
+        '''
+        super(Circle, self).__init__(name, material)
+        self.r = r
+        self.center = center
+        self.tol = tol
+        self.bounds = bounds
+
+    def draw_in_sketch(self, sketch):
+
+        # verification
+        if self.material is not None:
+            return
+
+        # draw in sketch
+        pt = (self.center[0] + self.r, self.center[1])
+        sketch.CircleByCenterPerimeter(center=self.center, point1=pt)
+
+        # TODO: deal with bounds
+
+    def make_partition(self, model, part):
+
+        # verification
+        if self.material is None:
+            return False
+
+        # create sketch
+        face = part.faces[0]
+        transf_sketch = part.MakeSketchTransform(sketchPlane=face, sketchPlaneSide=SIDE1,
+                                                 origin=[0., 0., 0.])
+        sketch = model.ConstrainedSketch(name=self.name, sheetSize=2 * self.r,
+                                         transform=transf_sketch)
+
+        # draw in sketch
+        pt = (self.center[0] + self.r, self.center[1])
+        sketch.CircleByCenterPerimeter(center=self.center, point1=pt)
+
+        # partition sketch
+        part.PartitionFaceBySketch(faces=part.faces, sketch=sketch)
+
+        # assign material
+        region = self.get_region(part)
+        self._assign_section(part=part, region=region)
+
+        return True
+
+    def get_region(self, part):
+        center1 = list(self.center) + [0.]
+        center2 = list(self.center) + [1.]
+        faces = part.faces.getByBoundingCylinder(center1, center2, self.r + self.tol)
+
+        return (faces[0],)
