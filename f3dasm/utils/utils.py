@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 13:51:00
-Last modified on 2020-11-24 11:27:08
+Last modified on 2020-11-24 13:02:01
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -46,9 +46,11 @@ def import_abstract_obj(fnc_loc):
 
 def unnest(array):
     unnested_array = []
-    for arrays in array:
-        for array_ in arrays:
-            unnested_array.append(array_)
+    for obj in array:
+        if type(obj) in [list, tuple]:
+            unnested_array.extend(unnest(obj))
+        else:
+            unnested_array.append(obj)
 
     return unnested_array
 
