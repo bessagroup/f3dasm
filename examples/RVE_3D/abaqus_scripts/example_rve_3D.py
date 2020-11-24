@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:30:17
-Last modified on 2020-11-16 13:56:29
+Last modified on 2020-11-24 13:50:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -12,41 +12,20 @@ from abaqus import mdb, backwardCompatibility
 
 # third-party
 from f3dasm.abaqus.geometry.rve import RVE3D
-from f3dasm.abaqus.geometry.shapes import Sphere
-
-
-# local functiosn
-def get_RVE_info_from_file(filename):
-    with open(filename, 'r') as file:
-        data = file.readlines()
-
-    # create rve
-    dims = [float(dim) for dim in data[0].split()]
-
-    # add particles
-    centers, radii = [], []
-    for line in data[1:]:
-        particle_info = line.split()
-        centers.append([float(pos) for pos in particle_info[:-1]])
-        radii.append(float(particle_info[-1]))
-
-    return dims, centers, radii
+# from f3dasm.abaqus.geometry.shapes import Sphere
+from f3dasm.abaqus.geometry.shapes import PeriodicSphere as Sphere
+from f3dasm.abaqus.material.abaqus_materials import AbaqusMaterial
+from f3dasm.abaqus.material.section import HomogeneousSolidSection
 
 
 # initialization
 
-backwardCompatibility.setValues(reportDeprecated=False)
+# backwardCompatibility.setValues(reportDeprecated=False)
 
 model_name = 'RVE3D'
 job_name = 'Sim_' + model_name
 job_description = ''
 
-# initialization
-# filename = 'particles.txt'
-# periodic = True
-# filename = 'particles_all.txt'
-# periodic = False
-filename = None
 
 # create model
 
@@ -56,30 +35,42 @@ if 'Model-1' in mdb.models.keys():
     del mdb.models['Model-1']
 
 # define objects
-if filename:
-    dims, centers, radii = get_RVE_info_from_file(filename)
-    rve = RVE3D(dims)
-    for i, (center, radius) in enumerate(zip(centers, radii)):
-        rve.add_particle(Sphere(name='PARTICLE_{}'.format(i), center=center,
-                                r=radius, periodic=periodic, dims=rve.dims))
-else:
-    rve = RVE3D(dims=[1., 1., 1.], center=(.5, .5, .5))
-    rve.add_particle(Sphere(name='PARTICLE_1', center=[.5, .5, .5], r=0.25))
-    # rve.add_particle(Sphere(name='PARTICLE_2', center=[1.1, 1.2, 1.], r=0.25,
-    #                         periodic=True, dims=rve.dims))
-    radii = [0.5]  # fake for code not fail
 
-# mesh_size = min(radii) / 5.
+# define material
+material_name = 'STEEL'
+props = {'E': 210e3,
+         'nu': .3, }
+matrix_material = AbaqusMaterial(name=material_name, props=props,
+                                 section=HomogeneousSolidSection())
+material_name = 'OTHER_STEEL'
+props = {'E': 200e3,
+         'nu': .3, }
+fiber_material = AbaqusMaterial(name=material_name, props=props,
+                                section=HomogeneousSolidSection())
+
+# rve
+dims = (1., 1., 1.)
+center = (.5, .5, .5)
+rve = RVE3D(dims=dims, material=matrix_material, center=center)
+bounds = [(c - dim / 2, c + dim / 2) for dim, c in zip(dims, center)]
+rve.add_particle(Sphere(name='PARTICLE_1', center=[1.1, 1.2, 1.], r=0.25,
+                        material=fiber_material, bounds=bounds))
+# rve.add_particle(Sphere(name='PARTICLE_2', center=[0., 0., 0.], r=0.25,
+#                         material=None))
 mesh_size = .1
-print('mesh_size: {:.4f}'.format(mesh_size))
-rve.mesh.change_definitions(size=mesh_size)
-rve.mesh.change_definitions(deviation_factor=0.1, min_size_factor=0.1)
+rve.mesh.change_definitions(size=mesh_size, deviation_factor=0.1,
+                            min_size_factor=0.1)
 
 # create part and assembly
+
+# create material
+matrix_material.create(model)
+fiber_material.create(model)
+
 rve.create_part(model)
 rve.create_instance(model)
-success = rve.generate_mesh(simple_trial=True, face_by_closest=False)
-print('Mesh generated successfully? {}'.format(success))
+# success = rve.generate_mesh(simple_trial=True, face_by_closest=False)
+# print('Mesh generated successfully? {}'.format(success))
 
 # # apply boundary conditions
 # rve.apply_pbcs_constraints(model)

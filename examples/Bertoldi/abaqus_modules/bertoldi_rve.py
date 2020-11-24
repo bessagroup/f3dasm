@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 08:38:20
-Last modified on 2020-11-04 16:41:10
+Last modified on 2020-11-24 16:14:35
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -9,22 +9,23 @@ Last modified on 2020-11-04 16:41:10
 
 # third-party
 import numpy as np
-from f3dasm.abaqus.geometry.shapes import Shape
+from f3dasm.abaqus.geometry.shapes import MicroShape
 from f3dasm.abaqus.geometry.utils import transform_point
 
 
 # object definition
 
-class BertoldiPore(Shape):
+class BertoldiPore(MicroShape):
 
     def __init__(self, center, r_0, c_1, c_2, n_points=100):
+        super(BertoldiPore, self).__init__(name='PORE', material=None)
         self.center = center
         self.r_0 = r_0
         self.c_1 = c_1
         self.c_2 = c_2
         self.n_points = n_points
 
-    def create_inner_geometry(self, sketch, *args, **kwargs):
+    def draw_in_sketch(self, sketch, *args, **kwargs):
         '''
         Creates particular geometry of this example, i.e. internal pores.
         '''
