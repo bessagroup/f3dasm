@@ -1,6 +1,6 @@
 '''
 Created on 2020-11-17 10:16:09
-Last modified on 2020-11-24 12:48:32
+Last modified on 2020-11-24 19:23:11
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -27,7 +27,6 @@ class Geometry(object):
         if default_mesh:
             self.mesh = MeshGenerator()
 
-    @abstractmethod
     def create_part(self, model):
         return None
 
@@ -42,10 +41,16 @@ class Geometry(object):
     def generate_mesh(self):
         return self.mesh.generate_mesh(self.part)
 
-    def _assign_section(self, material, region):
-        self.part.SectionAssignment(region=region,
-                                    sectionName=material.section.name,
-                                    thicknessAssignment=FROM_SECTION)
+    def _assign_section(self, region, part=None):
+
+        # initialization
+        if part is None:
+            part = self.part
+
+        # assign section
+        part.SectionAssignment(region=region,
+                               sectionName=self.material.section.name,
+                               thicknessAssignment=FROM_SECTION)
 
 
 # TODO: default mesh strategy?
