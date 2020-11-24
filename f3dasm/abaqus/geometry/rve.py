@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-23 17:03:55
+Last modified on 2020-11-24 11:47:51
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -32,10 +32,13 @@ from abc import ABCMeta
 from collections import OrderedDict
 
 # local library
+from .base import Geometry
 from ..modelling.bcs import DisplacementBC
+from ..modelling.mesh import MeshGenerator
 from ...utils.linalg import symmetricize_vector
 from ...utils.solid_mechanics import compute_small_strains_from_green
 from ...utils.utils import unnest
+from ...utils.utils import get_decimal_places
 
 
 # TODO: handle warnings and errors using particular class
@@ -64,7 +67,7 @@ def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
 
 # TODO: inherit from geometry
 
-class RVE(object):
+class RVE(Geometry):
     __metaclass__ = ABCMeta
 
     def __init__(self, name, dims, center, material, tol, bcs_type):
@@ -74,6 +77,7 @@ class RVE(object):
         bcs_type : str
             Possible values are 'periodic'.
         '''
+        super(RVE, self).__init__()
         # variable initialization
         self.particles = []
         self.material = material
@@ -486,7 +490,7 @@ class RVEInfo3D(RVEInfo):
 
         # sort nodes
         if sort_direction_i is not None and sort_direction_j is not None:
-            d = _get_decimal_places(self.tol)
+            d = get_decimal_places(self.tol)
             nodes = sorted(nodes, key=lambda node: (
                 self.get_node_coordinate_with_tol(node, i=sort_direction_i, decimal_places=d),
                 self.get_node_coordinate_with_tol(node, i=sort_direction_j, decimal_places=d),))
@@ -881,26 +885,6 @@ class PBCConstraints3D(PBCConstraints):
                 "FACES", dim)
 
 
-class MeshGenerator(object):
-    # TODO: abstract class?
-
-    def __init__(self):
-        self.size = .02
-        self.deviation_factor = .4
-        self.min_size_factor = .4
-
-    def change_definitions(self, **kwargs):
-        '''
-        See mesh definition at __init__ to find out the variables that can be
-        changed.
-        '''
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def generate_mesh(self, *args, **kwargs):
-        pass
-
-
 class PeriodicMeshGenerator(MeshGenerator):
 
     def __init__(self):
@@ -1244,13 +1228,3 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
             return False
 
         return True
-
-
-def _get_decimal_places(tol):
-    d = 0
-    aux = 1
-    while aux > tol:
-        d += 1
-        aux = 10**(-d)
-
-    return d

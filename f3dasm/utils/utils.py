@@ -1,6 +1,6 @@
 '''
 Created on 2020-05-05 13:51:00
-Last modified on 2020-11-23 15:26:55
+Last modified on 2020-11-24 11:27:08
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -51,3 +51,13 @@ def unnest(array):
             unnested_array.append(array_)
 
     return unnested_array
+
+
+def get_decimal_places(tol):
+    d = 0
+    aux = 1
+    while aux > tol:
+        d += 1
+        aux = 10**(-d)
+
+    return d

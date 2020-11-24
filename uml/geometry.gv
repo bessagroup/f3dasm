@@ -1,0 +1,24 @@
+digraph geometry {
+
+    node[shape=record, style=rounded]
+    Geometry[label = "{Geometry}"]
+    MeshGenerator[label = "{MeshGenerator}"]
+    RVE[label = "{RVE}"]
+    Supercompressible[label = "{Supercompressible}"]
+    MicroShape[label = "{MicroShape}"]
+    Sphere[label = "{Sphere}"]
+
+    // generalizations
+    edge[dir=back, arrowtail=empty, style=normal]
+    Geometry->RVE
+    Geometry->Supercompressible
+    Geometry->MicroShape
+    MicroShape->Sphere
+    MicroShape->Circle
+
+    // aggregations
+    edge[dir=both, arrowtail=ediamond, arrowhead=normal, style=normal]
+    Geometry->MeshGenerator
+
+
+}

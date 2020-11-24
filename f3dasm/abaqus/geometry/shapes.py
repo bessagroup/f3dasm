@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-23 16:03:54
+Last modified on 2020-11-24 11:48:30
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -15,29 +15,19 @@ from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
 # standard library
 import copy
 
+# local library
+from .base import Geometry
+
 # TODO: refactor
 
 # abstract object
 
-class Shape(object):
+class MicroShape(Geometry):
 
     def __init__(self, name, material=None):
+        super(MicroShape, self).__init__(default_mesh=True)
         self.name = name
         self.material = material
-
-        # mesh definitions
-        self.mesh_size = .02
-        self.mesh_deviation_factor = .4
-        self.mesh_min_size_factor = .4
-
-    def change_mesh_definitions(self, **kwargs):
-        # TODO: use general create mesh
-        '''
-        See mesh definition at __init__ to find out the variables that can be
-        changed.
-        '''
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
     def create_inner_geometry(self, sketch, rve_info):
         '''
@@ -45,22 +35,17 @@ class Shape(object):
         '''
         pass
 
-    def create_part(self, sketch, rve_info):
-        pass
-
-    def creat_instance(self, model):
-        return None
-
 
 # particular shapes
 
 # TODO: periodic sphere?
-class Sphere(Shape):
+class Sphere(MicroShape):
 
     # TODO: add material
 
     def __init__(self, r, center=None, periodic=False, tol=1e-4, name='SPHERE',
                  dims=None, material=None):
+        # TODO: receive box dimension
         super(Sphere, self).__init__(name, material)
         self.r = r
         self.centers = []
@@ -115,12 +100,15 @@ class Sphere(Shape):
                 self.add_center(new_center, dims)
 
     def create_part(self, model, rve_info=None):
+        # TODO: update remove cells, not RVE info.
 
         for i, center in enumerate(self.centers):
             name = '{}_{}'.format(self.name, i)
             self._create_part_by_center(model, center, name, rve_info)
 
     def _create_part_by_center(self, model, center, name, rve_info,):
+        # TODO: update remove cells (rve_info should not be an input)
+
         a, b = center[1] + self.r, center[1] - self.r
 
         # sketch
@@ -226,3 +214,6 @@ class Sphere(Shape):
                           minSizeFactor=self.mesh_min_size_factor)
 
             part.generateMesh()
+
+
+# TODO: add circle
