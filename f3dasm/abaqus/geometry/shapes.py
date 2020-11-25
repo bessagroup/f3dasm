@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-24 19:52:21
+Last modified on 2020-11-25 13:23:34
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -9,13 +9,13 @@ Last modified on 2020-11-24 19:52:21
 
 # abaqus
 from caeModules import *  # allow noGui
-from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, CLOCKWISE,
-                             YZPLANE, XYPLANE, XZPLANE, SIDE1)
-from part import FaceArray
+from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, COUNTERCLOCKWISE,
+                             YZPLANE, XYPLANE, XZPLANE, SIDE1, LINE)
 
 # standard library
 import copy
 from abc import ABCMeta
+import math
 
 # local library
 from .base import Geometry
@@ -304,10 +304,97 @@ class Circle(MicroShape):
             return
 
         # draw in sketch
+        if self._is_to_remove_cells():
+            self._draw_partial_arc(sketch)
+        else:
+            self._draw_circle(sketch)
+
+    def _draw_circle(self, sketch):
         pt = (self.center[0] + self.r, self.center[1])
         sketch.CircleByCenterPerimeter(center=self.center, point1=pt)
 
-        # TODO: deal with bounds
+    def _draw_partial_arc(self, sketch):
+        '''
+        Notes
+        -----
+        Vertices cannot be cut (otherwise it will mess the application of the
+        boundary conditions).
+        '''
+
+        # get intersection points
+        inter_pts = self._get_intersection_pts()
+
+        # find right points order
+        if inter_pts[0][0] == self.bounds[0][0] or inter_pts[0][1] == self.bounds[1][1]:
+            inter_pts[0], inter_pts[1] = inter_pts[1], inter_pts[0]
+
+        # draw circle
+        arc = sketch.ArcByCenterEnds(center=self.center, point1=inter_pts[0],
+                                     point2=inter_pts[1],
+                                     direction=COUNTERCLOCKWISE)
+
+        # create breakpoints
+        for pt in inter_pts:
+
+            # find line (findAt sometimes finds ARC)
+            geom = [g for g in sketch.geometry.values() if g.curveType == LINE]
+            for g in geom:
+                vertices = g.getVertices()
+                v1, v2 = vertices[0].coords, vertices[1].coords
+                index = 1 if v1[0] == v2[0] else 0
+                cpl_index = 0 if v1[0] == v2[0] else 1
+                lv, rv = min(v1[index], v2[index]), max(v1[index], v2[index])
+                if pt[cpl_index] == v1[cpl_index] and lv <= pt[index] <= rv:
+                    line = g
+                    break
+
+            # break line
+            sketch.breakCurve(curve1=line, curve2=arc, point1=pt, point2=pt)
+
+        # delete curves
+        geom = [g for g in sketch.geometry.values() if g.curveType == LINE]
+        for g in geom:
+            v1, v2 = g.getVertices()
+            if v1.coords in inter_pts and v2.coords in inter_pts:
+                sketch.delete((g,))
+                break
+
+    def _is_to_remove_cells(self):
+        for bounds, c in zip(self.bounds, self.center):
+            if c - self.r < bounds[0] or c + self.r > bounds[1]:
+                return True
+
+        return False
+
+    def _get_intersection_pts(self):
+
+        # initialization
+        xc, yc = self.center
+        pts = []
+
+        # in vertical edges
+        for x in self.bounds[0]:
+            aux = self.r**2 - (x - xc)**2
+            if aux >= 0.:
+                ys1 = math.sqrt(aux) + yc
+                ys2 = -math.sqrt(aux) + yc
+                if ys1 < self.bounds[1][1]:
+                    pts.append((x, ys1))
+                if ys2 > self.bounds[1][0]:
+                    pts.append((x, ys2))
+
+        # in horizontal edges
+        for y in self.bounds[1]:
+            aux = self.r**2 - (y - yc)**2
+            if aux >= 0.:
+                xs1 = math.sqrt(aux) + xc
+                xs2 = -math.sqrt(aux) + xc
+                if xs1 < self.bounds[0][1]:
+                    pts.append((xs1, y))
+                if xs2 > self.bounds[0][0]:
+                    pts.append((xs2, y))
+
+        return pts
 
     def make_partition(self, model, part):
 
