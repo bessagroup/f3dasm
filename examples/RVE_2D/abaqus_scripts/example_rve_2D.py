@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:30:17
-Last modified on 2020-11-24 20:01:29
+Last modified on 2020-11-26 12:45:37
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -13,8 +13,8 @@ from abaqusConstants import OFF
 
 # third-party
 from f3dasm.abaqus.geometry.rve import RVE2D
-from f3dasm.abaqus.geometry.shapes import Circle
-# from f3dasm.abaqus.geometry.shapes import PeriodicCircle as Circle
+# from f3dasm.abaqus.geometry.shapes import Circle
+from f3dasm.abaqus.geometry.shapes import PeriodicCircle as Circle
 from f3dasm.abaqus.modelling.step import StaticStep
 from f3dasm.abaqus.material.abaqus_materials import AbaqusMaterial
 from f3dasm.abaqus.material.section import HomogeneousSolidSection
@@ -22,7 +22,7 @@ from f3dasm.abaqus.material.section import HomogeneousSolidSection
 
 # initialization
 
-# backwardCompatibility.setValues(reportDeprecated=False)
+backwardCompatibility.setValues(reportDeprecated=False)
 
 model_name = 'RVE2D'
 job_name = 'Sim_' + model_name
@@ -54,6 +54,11 @@ props = {'E': 200e3,
          'nu': .3, }
 fiber_material = AbaqusMaterial(name=material_name, props=props,
                                 section=HomogeneousSolidSection())
+material_name = 'YET_ANOTHER_STEEL'
+props = {'E': 190e3,
+         'nu': .3, }
+fiber_material2 = AbaqusMaterial(name=material_name, props=props,
+                                 section=HomogeneousSolidSection())
 
 # rve
 length = 1.
@@ -62,12 +67,12 @@ center = (.5, .5)
 rve = RVE2D(length=length, width=width, material=matrix_material, center=center)
 dims = [length, width]
 bounds = [(c - dim / 2, c + dim / 2) for dim, c in zip(dims, center)]
-rve.add_particle(Circle(name='PARTICLE_1', center=[0.5, 0.5], r=0.25,
+rve.add_particle(Circle(name='PARTICLE_1', center=[0.5, 0.5], r=0.1,
                         material=None, bounds=bounds))
-rve.add_particle(Circle(name='PARTICLE_2', center=[1.1, 0.9], r=0.25,
-                        material=None, bounds=bounds))
-# rve.add_particle(Circle(name='PARTICLE_3', center=[-0.1, 0.5], r=0.25,
-#                         material=fiber_material, bounds=bounds))
+rve.add_particle(Circle(name='PARTICLE_2', center=[-0.1, 0.5], r=0.2,
+                        material=fiber_material, bounds=bounds))
+rve.add_particle(Circle(name='PARTICLE_3', center=[0.5, -0.1], r=0.2,
+                        material=fiber_material2, bounds=bounds))
 mesh_size = .1
 rve.mesh.change_definitions(size=mesh_size, deviation_factor=0.1,
                             min_size_factor=0.1)
@@ -77,27 +82,28 @@ rve.mesh.change_definitions(size=mesh_size, deviation_factor=0.1,
 # create material
 matrix_material.create(model)
 fiber_material.create(model)
+fiber_material2.create(model)
 
 rve.create_part(model)
 rve.create_instance(model)
-# success = rve.generate_mesh()
-# print('Mesh generated successfully? {}'.format(success))
+success = rve.generate_mesh()
+print('Mesh generated successfully? {}'.format(success))
 
-# # set step
-# step_name = "STATIC_STEP"
-# static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
-#                          minInc=1e-5, maxInc=0.02)
-# static_step.create(model)
+# set step
+step_name = "STATIC_STEP"
+static_step = StaticStep(step_name, initialInc=0.02, timePeriod=1.,
+                         minInc=1e-5, maxInc=0.02)
+static_step.create(model)
 
-# # set boundary conditions
-# constraints, bcs = rve.bcs.set_bcs(step_name, epsilon,
-#                                    green_lagrange_strain=False)
+# set boundary conditions
+constraints, bcs = rve.bcs.set_bcs(step_name, epsilon,
+                                   green_lagrange_strain=False)
 
-# constraints.create(model)
-# for bc in bcs:
-#     bc.create(model)
+constraints.create(model)
+for bc in bcs:
+    bc.create(model)
 
-# # create inp
-# modelJob = mdb.Job(model=model_name, name=job_name)
-# modelJob.writeInput(consistencyChecking=OFF)
-# modelJob.submit()
+# create inp
+modelJob = mdb.Job(model=model_name, name=job_name)
+modelJob.writeInput(consistencyChecking=OFF)
+modelJob.submit()
