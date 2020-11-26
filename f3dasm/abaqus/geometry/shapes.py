@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:36:46
-Last modified on 2020-11-25 13:23:34
+Last modified on 2020-11-26 12:49:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -10,7 +10,7 @@ Last modified on 2020-11-25 13:23:34
 # abaqus
 from caeModules import *  # allow noGui
 from abaqusConstants import (DEFORMABLE_BODY, THREE_D, ON, COUNTERCLOCKWISE,
-                             YZPLANE, XYPLANE, XZPLANE, SIDE1, LINE)
+                             CLOCKWISE, YZPLANE, XYPLANE, XZPLANE, SIDE1, LINE)
 
 # standard library
 import copy
