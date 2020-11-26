@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-24 19:41:47
+Last modified on 2020-11-26 15:36:17
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -58,7 +58,7 @@ def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
             mesh = PeriodicMeshGenerator2D()
         else:
             info = PeriodicRVEInfo3D(name, dims, center, tol)
-            mesh = PeriodicMeshGenerator3D()
+            mesh = PeriodicMeshGenerator3DSimple()
         bcs = PeriodicBoundaryConditions(info)
 
     return info, obj_creator, mesh, bcs
@@ -525,7 +525,7 @@ class RVEInfo3D(RVEInfo):
                 self.get_node_coordinate_with_tol(node, i=sort_direction_i, decimal_places=d),
                 self.get_node_coordinate_with_tol(node, i=sort_direction_j, decimal_places=d),))
 
-        return nodes
+        return MeshNodeArray(nodes)
 
     def get_face_sort_directions(self, pos):
         k = self.var_coord_map[pos[0]]
@@ -546,7 +546,7 @@ class RVEInfo3D(RVEInfo):
             edge_name = self.get_edge_name(edge_position)
             edges_nodes.extend(self.part.sets[edge_name].nodes)
 
-        return edges_nodes
+        return MeshNodeArray(edges_nodes)
 
     def get_exterior_edges(self, allow_repetitions=True):
 
@@ -807,29 +807,6 @@ class PBCConstraints(Constraints):
                         constraint_type, grouped_positions[1], grouped_positions[0], i, ndof),
                     terms=terms)
 
-
-class PBCConstraints2D(PBCConstraints):
-
-    def __init__(self, rve_info):
-        super(PBCConstraints2D, self).__init__(rve_info)
-
-    def _apply_edge_constraints(self, model, ref_points):
-
-        # apply constraints
-        for i, (grouped_positions, ref_point) in enumerate(zip(self.rve_info.edge_positions, ref_points)):
-
-            # get sorted nodes
-            j = (i + 1) % 2
-            node_lists = [self.rve_info.get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
-
-            # create no_dof terms
-            ref_points_terms_no_dof = [[-1.0, ref_point]]
-
-            # create constraints
-            self._apply_node_to_node_constraints(
-                model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "EDGES", self.rve_info.dim)
-
     def _apply_vertex_constraints(self, model, ref_points):
         '''
         Notes
@@ -876,38 +853,19 @@ class PBCConstraints2D(PBCConstraints):
                                terms=terms)
 
 
-class PBCConstraints3D(PBCConstraints):
+class PBCConstraints2D(PBCConstraints):
 
     def __init__(self, rve_info):
-        super(PBCConstraints3D, self).__init__(rve_info)
+        super(PBCConstraints2D, self).__init__(rve_info)
 
-    def _apply_edge_constraints(self, model, dim, *args):
-
-        for grouped_positions in self.edge_positions:
-
-            # get sorted nodes for each edge
-            k = self._get_edge_sort_direction(grouped_positions[0])
-            node_lists = [self.get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
-
-            # create ref_points terms
-            ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
-            sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
-            ref_points_terms_no_dof = [[-1.0, self._get_ref_point_name(ref_point_positions[0])],
-                                       [sign, self._get_ref_point_name(ref_point_positions[1])]]
-
-            # create constraints
-            self._apply_node_to_node_constraints(
-                model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "EDGES", dim)
-
-    def _apply_face_constraints(self, model, dim, ref_points):
+    def _apply_edge_constraints(self, model, ref_points):
 
         # apply constraints
-        for ref_point, grouped_positions in zip(ref_points, self.face_positions):
+        for i, (grouped_positions, ref_point) in enumerate(zip(self.rve_info.edge_positions, ref_points)):
 
-            # get nodes
-            j, k = self.get_face_sort_directions(grouped_positions[0])
-            node_lists = [self.get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+            # get sorted nodes
+            j = (i + 1) % 2
+            node_lists = [self.rve_info.get_edge_nodes(pos, sort_direction=j, include_vertices=False) for pos in grouped_positions]
 
             # create no_dof terms
             ref_points_terms_no_dof = [[-1.0, ref_point]]
@@ -915,25 +873,61 @@ class PBCConstraints3D(PBCConstraints):
             # create constraints
             self._apply_node_to_node_constraints(
                 model, grouped_positions, node_lists, ref_points_terms_no_dof,
-                "FACES", dim)
+                "EDGES", self.rve_info.dim)
+
+
+class PBCConstraints3D(PBCConstraints):
+
+    def __init__(self, rve_info):
+        super(PBCConstraints3D, self).__init__(rve_info)
+
+    def _apply_edge_constraints(self, model, *args, **kwargs):
+
+        for grouped_positions in self.rve_info.edge_positions:
+
+            # get sorted nodes for each edge
+            k = self.rve_info._get_edge_sort_direction(grouped_positions[0])
+            node_lists = [self.rve_info.get_edge_nodes(pos, sort_direction=k, include_vertices=False) for pos in grouped_positions]
+
+            # create ref_points terms
+            ref_point_positions = ['{}-{}+'.format(coord, coord) for coord in grouped_positions[1][::2]]
+            sign = -1.0 if grouped_positions[1][-1] == '+' else 1.0
+            ref_points_terms_no_dof = [[-1.0, self.rve_info._get_ref_point_name(ref_point_positions[0])],
+                                       [sign, self.rve_info._get_ref_point_name(ref_point_positions[1])]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "EDGES", self.rve_info.dim)
+
+    def _apply_face_constraints(self, model, ref_points):
+
+        # apply constraints
+        for ref_point, grouped_positions in zip(ref_points, self.rve_info.face_positions):
+
+            # get nodes
+            j, k = self.rve_info.get_face_sort_directions(grouped_positions[0])
+            node_lists = [self.rve_info.get_face_nodes(pos, j, k, include_edges=False) for pos in grouped_positions]
+
+            # create no_dof terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, node_lists, ref_points_terms_no_dof,
+                "FACES", self.rve_info.dim)
 
 
 class PeriodicMeshGenerator(MeshGenerator):
+    __metaclass__ = ABCMeta
 
     def __init__(self):
         super(PeriodicMeshGenerator, self).__init__()
         self.trial_iter = 1
         self.refine_factor = 1.25
 
-
-class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
-
-    def __init__(self):
-        super(PeriodicMeshGenerator2D, self).__init__()
-        self.mesh_checker = PeriodicMeshChecker2D()
-
     def generate_mesh(self, rve_info):
-        # TODO: possible to move to parent?
+        # TODO: args and kwargs
         # TODO: generate error file
         # TODO: still to finish
 
@@ -945,6 +939,7 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
             self._generate_mesh(rve_info)
 
             # verify generated mesh
+            # TODO: how to pass `face_by_closest` in 3D?
             success = self.mesh_checker.verify_mesh(rve_info)
 
             # prepare next iteration
@@ -957,6 +952,17 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
                     print('Warning: Failed mesh generation')
 
         return success
+
+    @abstractmethod
+    def _generate_mesh(self, rve_info):
+        pass
+
+
+class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
+
+    def __init__(self):
+        super(PeriodicMeshGenerator2D, self).__init__()
+        self.mesh_checker = PeriodicMeshChecker2D()
 
     def _generate_mesh(self, rve_info):
 
@@ -977,45 +983,14 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
 
 
 class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
+    __metaclass__ = ABCMeta
 
     def __init__(self):
         super(PeriodicMeshGenerator3D, self).__init__()
         self.mesh_checker = PeriodicMeshChecker3D()
 
-    def generate_mesh(self, rve_info, face_by_closest=True, simple_trial=False):
-        # TODO: still to finish
-
-        # set mesh control
-        rve_info.part.setMeshControls(regions=rve_info.part.cells, elemShape=TET,
-                                      technique=FREE,)
-
-        # generate mesh by simple strategy
-        if simple_trial:
-            # generate mesh
-            self._seed_part(rve_info)
-            rve_info.part.generateMesh()
-
-            # verify mesh
-            success = self.mesh_checker.verify_mesh(rve_info,
-                                                    face_by_closest=face_by_closest)
-
-        # retry meshing if unsuccessful
-        if not simple_trial or not success:
-            if simple_trial:
-                print("Warning: Unsucessful mesh generation. Another strategy will be tried out")
-
-            # retry meshing
-            self._retry_meshing()
-
-            # verify mesh
-            success = self.verify_mesh_for_pbcs(face_by_closest=face_by_closest)
-
-            if not success:
-                print("Warning: Unsucessful mesh generation")
-
-        return success
-
     def _seed_part(self, rve_info):
+
         # seed part
         rve_info.part.seedPart(size=self.size,
                                deviationFactor=self.deviation_factor,
@@ -1026,6 +1001,55 @@ class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
         rve_info.part.seedEdgeBySize(edges=exterior_edges, size=self.size,
                                      deviationFactor=self.deviation_factor,
                                      constraint=FIXED)
+
+    @abstractmethod
+    def _generate_mesh(self, rve_info):
+        pass
+
+
+class PeriodicMeshGenerator3DSimple(PeriodicMeshGenerator3D):
+
+    def _generate_mesh(self, rve_info):
+
+        # set mesh control
+        rve_info.part.setMeshControls(regions=rve_info.part.cells, elemShape=TET,
+                                      technique=FREE,)
+
+        # generate mesh
+        self._seed_part(rve_info)
+        rve_info.part.generateMesh()
+
+
+class PeriodicMeshGenerator3DS1(PeriodicMeshGenerator3D):
+    # TODO: need to be fixed
+
+    def _generate_mesh(self, rve_info):
+
+        # delete older mesh
+        self.part.deleteMesh()
+
+        # 8-cube partitions (not necessarily midplane)
+        planes = [YZPLANE, XZPLANE, XYPLANE]
+        for i, plane in enumerate(planes):
+            feature = self.part.DatumPlaneByPrincipalPlane(principalPlane=plane,
+                                                           offset=self.dims[i] / 2)
+            datum = self.part.datums[feature.id]
+            self.part.PartitionCellByDatumPlane(datumPlane=datum, cells=self.part.cells)
+
+        # reseed (due to partitions)
+        self._seed_part()
+
+        # z+
+        # generate local mesh
+        k = self._mesh_half_periodically()
+        # transition
+        axis = 2
+        faces = self.part.faces.getByBoundingBox(zMin=self.dims[2])
+        for face in faces:
+            self._copy_face_mesh_pattern(face, axis, k)
+            k += 1
+        # z-
+        self._mesh_half_periodically(k, zp=False)
 
     def _mesh_half_periodically(self, k=0, zp=True):
         # TODO: need to be tested with the use of bounds
@@ -1098,34 +1122,6 @@ class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
                                   nodes=nodes,
                                   coordinates=coords)
 
-    def _retry_meshing(self):
-
-        # delete older mesh
-        self.part.deleteMesh()
-
-        # 8-cube partitions (not necessarily midplane)
-        planes = [YZPLANE, XZPLANE, XYPLANE]
-        for i, plane in enumerate(planes):
-            feature = self.part.DatumPlaneByPrincipalPlane(principalPlane=plane,
-                                                           offset=self.dims[i] / 2)
-            datum = self.part.datums[feature.id]
-            self.part.PartitionCellByDatumPlane(datumPlane=datum, cells=self.part.cells)
-
-        # reseed (due to partitions)
-        self._seed_part()
-
-        # z+
-        # generate local mesh
-        k = self._mesh_half_periodically()
-        # transition
-        axis = 2
-        faces = self.part.faces.getByBoundingBox(zMin=self.dims[2])
-        for face in faces:
-            self._copy_face_mesh_pattern(face, axis, k)
-            k += 1
-        # z-
-        self._mesh_half_periodically(k, zp=False)
-
 
 class PeriodicMeshChecker(object):
 
@@ -1177,6 +1173,7 @@ class PeriodicMeshChecker2D(PeriodicMeshChecker):
 
 
 class PeriodicMeshChecker3D(PeriodicMeshChecker):
+    # TODO: consider to have only by sorting due to way constraints are generated.
 
     def __init__(self):
         super(PeriodicMeshChecker3D, self).__init__()
