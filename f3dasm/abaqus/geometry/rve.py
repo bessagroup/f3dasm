@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-26 15:36:17
+Last modified on 2020-11-30 10:37:26
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -182,7 +182,7 @@ class RVE(Geometry):
                                                           particle_instances)
 
         # rename
-        # TODO: COMMENT?
+        # TODO: COMMENT? No, and move outside
         if rve_tmp_instance.name != self.name:
             model.parts.changeKey(fromName=rve_tmp_instance.name[:-2],
                                   toName=self.name)
@@ -500,7 +500,7 @@ class RVEInfo3D(RVEInfo):
                 continue
             opp_edge = self._get_opposite_position(edge)
             edge_positions.append((edge, opp_edge))
-            added_positions.append(edge)
+            added_positions.extend([edge, opp_edge])
 
         return edge_positions
 
@@ -1173,7 +1173,7 @@ class PeriodicMeshChecker2D(PeriodicMeshChecker):
 
 
 class PeriodicMeshChecker3D(PeriodicMeshChecker):
-    # TODO: consider to have only by sorting due to way constraints are generated.
+    # TODO: consider to have only by sorting due to way constraints are generated
 
     def __init__(self):
         super(PeriodicMeshChecker3D, self).__init__()
