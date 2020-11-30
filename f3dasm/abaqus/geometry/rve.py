@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-30 10:37:26
+Last modified on 2020-11-30 11:12:00
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -80,6 +80,8 @@ class RVE(Geometry):
         # variable initialization
         self.particles = []
         self.material = material
+        # auxiliar variables
+        self._create_instance = False
         # create objects
         self.info, self.obj_creator, self.mesh, self.bcs = _RVE_objects_initializer(
             name, dims, center, tol, bcs_type)
@@ -100,18 +102,20 @@ class RVE(Geometry):
         for particle in self.particles:
             particle.create_part(model)
 
+        # create particle instances
+        particle_instances = unnest([particle.create_instance(model) for particle in self.particles])
+        particle_instances = [instance for instance in particle_instances if instance is not None]
+        n_instances = len(particle_instances)
+
         # create RVE part
-        tmp_part = self._create_tmp_part(model, sketch)
+        name = '{}_TMP'.format(self.name) if n_instances > 0 else self.name
+        tmp_part = self._create_tmp_part(model, sketch, name)
 
         # create partitions due to particles
         particle_cells = self._create_particles_by_partition(model, tmp_part)
 
-        # create particle instances
-        particle_instances = unnest([particle.create_instance(model) for particle in self.particles])
-        particle_instances = [instance for instance in particle_instances if instance is not None]
-
         # create part by merge instances
-        if len(particle_instances) > 0:
+        if n_instances > 0:
             self._create_part_from_part_particles(model, tmp_part, particle_instances,
                                                   particle_cells)
         else:
@@ -122,8 +126,6 @@ class RVE(Geometry):
 
         # create required objects (here, because some are required for mesh generation)
         self.obj_creator.create_objs(self.info, model)
-
-        # TODO: deal with names
 
     def _create_RVE_sketch(self, model):
 
@@ -167,9 +169,8 @@ class RVE(Geometry):
                                                   part=tmp_part, dependent=ON)
 
         # cut RVE
-        if len(particle_instances) > 0:
-            rve_tmp_instance = self._create_part_by_cut(model, rve_tmp_instance,
-                                                        particle_instances)
+        rve_tmp_instance = self._create_part_by_cut(model, rve_tmp_instance,
+                                                    particle_instances)
 
         # assign material
         tmp_rve_part = model.parts[rve_tmp_instance.name[:-2]]
@@ -177,12 +178,10 @@ class RVE(Geometry):
         self._assign_section(region, part=tmp_rve_part)
 
         # merge particles
-        if len(particle_instances) > 0:
-            rve_tmp_instance = self._create_part_by_merge(model, rve_tmp_instance,
-                                                          particle_instances)
+        rve_tmp_instance = self._create_part_by_merge(model, rve_tmp_instance,
+                                                      particle_instances)
 
         # rename
-        # TODO: COMMENT? No, and move outside
         if rve_tmp_instance.name != self.name:
             model.parts.changeKey(fromName=rve_tmp_instance.name[:-2],
                                   toName=self.name)
@@ -238,6 +237,7 @@ class RVE(Geometry):
         pass
 
     def generate_mesh(self, *args, **kwargs):
+        # TODO: different mesh in different regions
         return self.mesh.generate_mesh(self.info, *args, **kwargs)
 
     @property
@@ -256,10 +256,10 @@ class RVE2D(RVE):
         dims = (length, width)
         super(RVE2D, self).__init__(name, dims, center, material, tol, bcs_type)
 
-    def _create_tmp_part(self, model, sketch):
+    def _create_tmp_part(self, model, sketch, name):
 
         # create part
-        tmp_part = model.Part(name='{}_TMP'.format(self.name), dimensionality=TWO_D_PLANAR,
+        tmp_part = model.Part(name=name, dimensionality=TWO_D_PLANAR,
                               type=DEFORMABLE_BODY)
         tmp_part.BaseShell(sketch=sketch)
 
@@ -277,13 +277,11 @@ class RVE3D(RVE):
     def __init__(self, dims, material, name='RVE', center=(0., 0., 0.), tol=1e-5,
                  bcs_type='periodic'):
         super(RVE3D, self).__init__(name, dims, center, material, tol, bcs_type)
-        # auxiliar variables
-        self._create_instance = False
 
-    def _create_tmp_part(self, model, sketch):
+    def _create_tmp_part(self, model, sketch, name):
 
         # create part
-        tmp_part = model.Part(name='{}_TMP'.format(self.name), dimensionality=THREE_D,
+        tmp_part = model.Part(name=name, dimensionality=THREE_D,
                               type=DEFORMABLE_BODY)
         tmp_part.BaseSolidExtrude(sketch=sketch, depth=self.info.dims[2])
 
@@ -291,12 +289,12 @@ class RVE3D(RVE):
 
     def create_instance(self, model):
 
+        # verify if already created (e.g. during _create_part_by_merge)
+        if not self._create_instance:
+            return
+
         # initialization
         modelAssembly = model.rootAssembly
-
-        # verify if already created (e.g. during _create_part_by_merge)
-        if self._create_instance:
-            return
 
         # create assembly
         modelAssembly.Instance(name=self.name, part=self.part, dependent=ON)
