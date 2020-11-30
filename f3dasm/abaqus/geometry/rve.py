@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-30 11:12:00
+Last modified on 2020-11-30 14:20:55
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -58,6 +58,7 @@ def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
             mesh = PeriodicMeshGenerator2D()
         else:
             info = PeriodicRVEInfo3D(name, dims, center, tol)
+            # TODO: pass as argument the mesh generator
             mesh = PeriodicMeshGenerator3DSimple()
         bcs = PeriodicBoundaryConditions(info)
 
@@ -925,9 +926,7 @@ class PeriodicMeshGenerator(MeshGenerator):
         self.refine_factor = 1.25
 
     def generate_mesh(self, rve_info):
-        # TODO: args and kwargs
         # TODO: generate error file
-        # TODO: still to finish
 
         it = 1
         success = False
@@ -937,7 +936,6 @@ class PeriodicMeshGenerator(MeshGenerator):
             self._generate_mesh(rve_info)
 
             # verify generated mesh
-            # TODO: how to pass `face_by_closest` in 3D?
             success = self.mesh_checker.verify_mesh(rve_info)
 
             # prepare next iteration
@@ -1009,6 +1007,9 @@ class PeriodicMeshGenerator3DSimple(PeriodicMeshGenerator3D):
 
     def _generate_mesh(self, rve_info):
 
+        # delete older mesh
+        rve_info.part.deleteMesh()
+
         # set mesh control
         rve_info.part.setMeshControls(regions=rve_info.part.cells, elemShape=TET,
                                       technique=FREE,)
@@ -1019,106 +1020,98 @@ class PeriodicMeshGenerator3DSimple(PeriodicMeshGenerator3D):
 
 
 class PeriodicMeshGenerator3DS1(PeriodicMeshGenerator3D):
-    # TODO: need to be fixed
 
     def _generate_mesh(self, rve_info):
 
         # delete older mesh
-        self.part.deleteMesh()
+        rve_info.part.deleteMesh()
+
+        # set mesh control
+        rve_info.part.setMeshControls(regions=rve_info.part.cells, elemShape=TET,
+                                      technique=FREE,)
 
         # 8-cube partitions (not necessarily midplane)
         planes = [YZPLANE, XZPLANE, XYPLANE]
         for i, plane in enumerate(planes):
-            feature = self.part.DatumPlaneByPrincipalPlane(principalPlane=plane,
-                                                           offset=self.dims[i] / 2)
-            datum = self.part.datums[feature.id]
-            self.part.PartitionCellByDatumPlane(datumPlane=datum, cells=self.part.cells)
+            feature = rve_info.part.DatumPlaneByPrincipalPlane(
+                principalPlane=plane, offset=rve_info.dims[i] / 2)
+            datum = rve_info.part.datums[feature.id]
+            rve_info.part.PartitionCellByDatumPlane(datumPlane=datum,
+                                                    cells=rve_info.part.cells)
 
         # reseed (due to partitions)
-        self._seed_part()
+        self._seed_part(rve_info)
 
         # z+
         # generate local mesh
-        k = self._mesh_half_periodically()
+        self._mesh_half_periodically(rve_info)
         # transition
         axis = 2
-        faces = self.part.faces.getByBoundingBox(zMin=self.dims[2])
+        faces = rve_info.part.faces.getByBoundingBox(zMin=rve_info.bounds[2][1])
         for face in faces:
-            self._copy_face_mesh_pattern(face, axis, k)
-            k += 1
+            self._copy_face_mesh_pattern(rve_info, face, axis)
         # z-
-        self._mesh_half_periodically(k, zp=False)
+        self._mesh_half_periodically(rve_info, zp=False)
 
-    def _mesh_half_periodically(self, k=0, zp=True):
-        # TODO: need to be tested with the use of bounds
+    def _mesh_half_periodically(self, rve_info, zp=True):
+
+        def get_mean_coord(axis):
+            return (rve_info.bounds[axis][0] + rve_info.bounds[axis][1]) / 2.
 
         # initialization
-        if zp:
-            kwargs = {'zMin': self.dims[2] / 2}
-        else:
-            kwargs = {'zMax': self.dims[2] / 2}
+        kwarg_name = 'zMin' if zp else 'zMax'
+        kwargs = {kwarg_name: get_mean_coord(2)}
 
-        pickedCells = self.part.cells.getByBoundingBox(xMin=self.dims[0] / 2,
-                                                       yMin=self.dims[1] / 2,
-                                                       **kwargs)
-        self.part.generateMesh(regions=pickedCells)
-        # copy pattern
-        axis = 0
-        faces = self.part.faces.getByBoundingBox(xMin=self.dims[0],
-                                                 yMin=self.dims[1] / 2,
-                                                 **kwargs)
-        for face in faces:
-            self._copy_face_mesh_pattern(face, axis, k)
-            k += 1
-        # generate local mesh
-        pickedCells = self.part.cells.getByBoundingBox(xMax=self.dims[0] / 2,
-                                                       yMin=self.dims[1] / 2,
-                                                       **kwargs)
-        self.part.generateMesh(regions=pickedCells)
-        # copy pattern
-        axis = 1
-        faces = self.part.faces.getByBoundingBox(yMin=self.dims[1],
-                                                 **kwargs)
-        for face in faces:
-            self._copy_face_mesh_pattern(face, axis, k)
-            k += 1
-        # generate local mesh
-        pickedCells = self.part.cells.getByBoundingBox(xMax=self.dims[0] / 2,
-                                                       yMax=self.dims[1] / 2,
-                                                       **kwargs)
-        self.part.generateMesh(regions=pickedCells)
-        # copy pattern
-        axis = 0
-        faces = self.part.faces.getByBoundingBox(xMax=0.,
-                                                 yMax=self.dims[1] / 2,
-                                                 **kwargs)
-        for face in faces:
-            self._copy_face_mesh_pattern(face, axis, k, s=1)
-            k += 1
-        # generate local mesh
-        pickedCells = self.part.cells.getByBoundingBox(xMin=self.dims[0] / 2,
-                                                       yMax=self.dims[1] / 2,
-                                                       **kwargs)
-        self.part.generateMesh(regions=pickedCells)
+        # generate mesh in picked cells
+        picked_cells = rve_info.part.cells.getByBoundingBox(
+            xMin=get_mean_coord(0), yMin=get_mean_coord(1), **kwargs)
+        rve_info.part.generateMesh(regions=picked_cells)
 
-        return k
+        # copy pattern and generate mesh in selected cells
+        axes = (0, 1, 0)
+        face_bounds = ({'xMin': rve_info.bounds[0][1], 'yMin': get_mean_coord(1)},
+                       {'yMin': rve_info.bounds[1][1]},
+                       {'xMax': rve_info.bounds[0][0], 'yMax': get_mean_coord(1)},)
+        cell_bounds = ({'xMax': get_mean_coord(0), 'yMin': get_mean_coord(1)},
+                       {'xMax': get_mean_coord(0), 'yMax': get_mean_coord(1)},
+                       {'xMin': get_mean_coord(0), 'yMax': get_mean_coord(1)})
 
-    def _copy_face_mesh_pattern(self, face, axis, k, s=0):
+        for axis, face_bounds_, cell_bounds_ in zip(axes, face_bounds, cell_bounds):
+            # copy pattern
+            face_bounds_.update(kwargs)
+            faces = rve_info.part.faces.getByBoundingBox(**face_bounds_)
+            for face in faces:
+                self._copy_face_mesh_pattern(rve_info, face, axis)
+
+            # generate local mesh
+            cell_bounds_.update(kwargs)
+            picked_cells = rve_info.part.cells.getByBoundingBox(**cell_bounds_)
+            rve_info.part.generateMesh(regions=picked_cells)
+
+    def _copy_face_mesh_pattern(self, rve_info, face, axis):
+
+        # find k
+        tf_names = [name for name in rve_info.part.sets.keys() if '_TARGET_FACE_' in name]
+        k = int(tf_names[-1].split('_')[-1]) + 1 if len(tf_names) > 0 else 0
+
+        # get opposite edge point
         pt = list(face.pointOn[0])
-        pt[axis] = self.dims[axis] * s
-        target_face = self.part.faces.findAt(pt)
-        face_set = self.part.Set(name='_FACE_{}'.format(k), faces=FaceArray((face,)))
-        self.part.Set(name='_TARGET_FACE_{}'.format(k), faces=FaceArray((target_face,)))
-        k += 1
+        to = 0 if abs(pt[axis] - rve_info.bounds[axis][1]) < rve_info.tol else 1
+        pt[axis] = rve_info.bounds[axis][to]
+
+        # find opposite face and create sets
+        target_face = rve_info.part.faces.findAt(pt)
+        face_set = rve_info.part.Set(name='_FACE_{}'.format(k), faces=FaceArray((face,)))
+        rve_info.part.Set(name='_TARGET_FACE_{}'.format(k), faces=FaceArray((target_face,)))
         vertex_indices = face.getVertices()
-        vertices = [self.part.vertices[index].pointOn[0] for index in vertex_indices]
+        vertices = [rve_info.part.vertices[index].pointOn[0] for index in vertex_indices]
         coords = [list(vertex) for vertex in vertices]
         for coord in coords:
-            coord[axis] = self.dims[axis] * s
+            coord[axis] = rve_info.bounds[axis][to]
         nodes = [face_set.nodes.getClosest(vertex) for vertex in vertices]
-        self.part.copyMeshPattern(faces=face_set, targetFace=target_face,
-                                  nodes=nodes,
-                                  coordinates=coords)
+        rve_info.part.copyMeshPattern(faces=face_set, targetFace=target_face,
+                                      nodes=nodes,
+                                      coordinates=coords)
 
 
 class PeriodicMeshChecker(object):
@@ -1172,11 +1165,13 @@ class PeriodicMeshChecker2D(PeriodicMeshChecker):
 
 class PeriodicMeshChecker3D(PeriodicMeshChecker):
     # TODO: consider to have only by sorting due to way constraints are generated
+    # TODO: consider to split class into 2 -> in practice it is better to use strategy pattern
 
     def __init__(self):
         super(PeriodicMeshChecker3D, self).__init__()
+        self.face_by_closest = False
 
-    def verify_mesh(self, rve_info, face_by_closest=True):
+    def verify_mesh(self, rve_info):
         '''
         Verify correctness of generated mesh based on allowed tolerance. It
         immediately stops when a node pair does not respect the tolerance.
@@ -1188,7 +1183,7 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
             return False
 
         # verify faces
-        if face_by_closest:
+        if self.face_by_closest:
             return self._verify_faces_by_closest(rve_info)
         else:
             return self._verify_faces_by_sorting(rve_info)
@@ -1251,8 +1246,7 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
         if abs(node.coordinates[j] - node_cmp.coordinates[j]) > rve_info.tol or abs(node.coordinates[k] - node_cmp.coordinates[k]) > rve_info.tol:
             # create set with error nodes
             set_name = rve_info.verify_set_name('_ERROR_FACE_NODES')
-            rve_info.part.Set(set_name,
-                              nodes=MeshNodeArray((node, node_cmp)))
+            rve_info.part.Set(set_name, nodes=MeshNodeArray((node, node_cmp)))
             return False
 
         return True
