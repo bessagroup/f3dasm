@@ -1,6 +1,6 @@
 '''
 Created on 2020-12-01 13:09:44
-Last modified on 2020-12-01 13:24:43
+Last modified on 2020-12-01 15:58:28
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -116,13 +116,10 @@ class PeriodicRVEObjCreator(RVEObjCreator):
 
 class PeriodicBoundaryConditions(BoundaryConditions):
 
-    def __init__(self, rve_info):
+    def __init__(self, rve_info, constraints):
         super(PeriodicBoundaryConditions, self).__init__()
         self.rve_info = rve_info
-        if self.rve_info.dim == 2:
-            self.constraints = PBCConstraints2D(rve_info)
-        else:
-            self.constraints = PBCConstraints3D(rve_info)
+        self.constraints = constraints
 
     def set_bcs(self, step_name, epsilon, green_lagrange_strain=False):
         '''
@@ -275,6 +272,7 @@ class PBCConstraints2D(PBCConstraints):
 
 
 class PBCConstraints3D(PBCConstraints):
+    __metaclass__ = ABCMeta
 
     def __init__(self, rve_info):
         super(PBCConstraints3D, self).__init__(rve_info)
@@ -297,6 +295,35 @@ class PBCConstraints3D(PBCConstraints):
             self._apply_node_to_node_constraints(
                 model, grouped_positions, node_lists, ref_points_terms_no_dof,
                 "EDGES", self.rve_info.dim)
+
+    @abstractmethod
+    def _apply_face_constraints(self, model, ref_points):
+        pass
+
+
+class PBCConstraints3DByClosest(PBCConstraints3D):
+
+    def _apply_face_constraints(self, model, ref_points):
+
+        for ref_point, grouped_positions in zip(ref_points, self.rve_info.face_positions):
+
+            # get nodes
+            nodes_i = self.rve_info.get_face_nodes(grouped_positions[0])
+            nodes_j = self.rve_info.get_face_nodes(grouped_positions[1])
+
+            # get opposite nodes
+            nodes_k = [nodes_j.getClosest(node.coordinates) for node in nodes_i]
+
+            # create no_def terms
+            ref_points_terms_no_dof = [[-1.0, ref_point]]
+
+            # create constraints
+            self._apply_node_to_node_constraints(
+                model, grouped_positions, [nodes_i, nodes_k], ref_points_terms_no_dof,
+                "FACES", self.rve_info.dim)
+
+
+class PBCConstraints3DBySorting(PBCConstraints3D):
 
     def _apply_face_constraints(self, model, ref_points):
 
@@ -669,20 +696,22 @@ class PeriodicMeshChecker3DBySorting(PeriodicMeshChecker3D):
 class PeriodicRVEObjInit(RVEObjInit):
     mesh_strats = {'simple': PeriodicMeshGenerator3DSimple,
                    'S1': PeriodicMeshGenerator3DS1}
+    constraint_strats = {'by_closest': PBCConstraints3DByClosest,
+                         'by_sorting': PBCConstraints3DBySorting}
 
-    def __init__(self, dim, mesh_strat='simple', mesh_checker='by_closest'):
+    def __init__(self, dim, mesh_strat='simple', constrain_strat='by_closest'):
         '''
         Parameters
         ----------
         mesh_strat : str
             Possible values are 'simple', 'S1'. Only applicable to `dim == 3`.
-        mesh_checker : str
+        constrain_strat : str
             Possible values are 'by_closest', 'by_sorting'. Only applicable
             to `dim == 3`.
         '''
         super(PeriodicRVEObjInit, self).__init__(dim)
         self.mesh_strat = mesh_strat
-        self.mesh_checker = mesh_checker
+        self.constrain_strat = constrain_strat
 
     def get_info(self, name, dims, center, tol):
         if self.dim == 2:
@@ -691,7 +720,12 @@ class PeriodicRVEObjInit(RVEObjInit):
             return PeriodicRVEInfo3D(name, dims, center, tol)
 
     def get_bcs(self, rve_info):
-        return PeriodicBoundaryConditions(rve_info)
+        if self.dim == 2:
+            constraints = PBCConstraints2D(rve_info)
+        else:
+            constraints = self.constraint_strats[self.constrain_strat](rve_info)
+
+        return PeriodicBoundaryConditions(rve_info, constraints)
 
     def get_obj_creator(self):
         return PeriodicRVEObjCreator()
@@ -700,4 +734,4 @@ class PeriodicRVEObjInit(RVEObjInit):
         if self.dim == 2:
             return PeriodicMeshGenerator2D()
         else:
-            return self.mesh_strats[self.mesh_strat](mesh_checker=self.mesh_checker)
+            return self.mesh_strats[self.mesh_strat](mesh_checker=self.constrain_strat)
