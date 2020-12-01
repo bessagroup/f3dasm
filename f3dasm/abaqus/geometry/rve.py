@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-12-01 12:27:25
+Last modified on 2020-12-01 13:05:17
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -70,10 +70,23 @@ class RVEObjInit(object):
 
 
 class PeriodicRVEObjInit(RVEObjInit):
+    # TODO: uncomment
+    # mesh_strats = {'simple': PeriodicMeshGenerator3DSimple,
+    #                'S1': PeriodicMeshGenerator3DS1}
 
-    def __init__(self, dim, mesh_strat='simple'):
+    def __init__(self, dim, mesh_strat='simple', mesh_checker='by_closest'):
+        '''
+        Parameters
+        ----------
+        mesh_strat : str
+            Possible values are 'simple', 'S1'. Only applicable to `dim == 3`.
+        mesh_checker : str
+            Possible values are 'by_closest', 'by_sorting'. Only applicable
+            to `dim == 3`.
+        '''
         super(PeriodicRVEObjInit, self).__init__(dim)
         self.mesh_strat = mesh_strat
+        self.mesh_checker = mesh_checker
 
     def get_info(self, name, dims, center, tol):
         if self.dim == 2:
@@ -88,16 +101,19 @@ class PeriodicRVEObjInit(RVEObjInit):
         return PeriodicRVEObjCreator()
 
     def get_mesh(self):
-        # TODO: expand
         if self.dim == 2:
             return PeriodicMeshGenerator2D()
         else:
-            return PeriodicMeshGenerator3DSimple()
+            if self.mesh_strat == 'simple':
+                return PeriodicMeshGenerator3DSimple(mesh_checker=self.mesh_checker)
+
+            elif self.mesh_strat == 'S1':
+                return PeriodicMeshGenerator3DS1(mesh_checker=self.mesh_checker)
 
 
 class RVE(Geometry):
     __metaclass__ = ABCMeta
-    bcs_type = {'periodic': PeriodicRVEObjInit}
+    bcs_types = {'periodic': PeriodicRVEObjInit}
 
     def __init__(self, name, dims, center, material, tol, bcs_type, **kwargs):
         '''
@@ -113,7 +129,7 @@ class RVE(Geometry):
         # auxiliar variables
         self._create_instance = False
         # create objects
-        self.obj_init = self.bcs_type[bcs_type](len(dims), **kwargs)
+        self.obj_init = self.bcs_types[bcs_type](len(dims), **kwargs)
         self.info = self.obj_init.get_info(name, dims, center, tol)
         self.bcs = self.obj_init.get_bcs(self.info)
         self.obj_creator = self.obj_init.get_obj_creator()
@@ -676,7 +692,7 @@ class RVEObjCreator(object):
         Parameter
         ---------
         obj : str
-            Possible values are 'vertices', 'edges', 'faces'
+            Possible values are 'vertices', 'edges', 'faces'.
         '''
 
         # initialization
@@ -1015,9 +1031,18 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
 class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self, mesh_checker='by_closest'):
+        '''
+        Parameters
+        ----------
+        mesh_checker : str
+            Possible values are 'by_closest', 'by_sorting'.
+        '''
         super(PeriodicMeshGenerator3D, self).__init__()
-        self.mesh_checker = PeriodicMeshChecker3D()
+        if mesh_checker == 'by_closest':
+            self.mesh_checker = PeriodicMeshChecker3DByClosest()
+        else:
+            self.mesh_checker = PeriodicMeshChecker3DBySorting()
 
     def _seed_part(self, rve_info):
 
@@ -1198,12 +1223,15 @@ class PeriodicMeshChecker2D(PeriodicMeshChecker):
 
 
 class PeriodicMeshChecker3D(PeriodicMeshChecker):
-    # TODO: consider to have only by sorting due to way constraints are generated
-    # TODO: consider to split class into 2 -> in practice it is better to use strategy pattern
+    __metaclass__ = ABCMeta
 
     def __init__(self):
         super(PeriodicMeshChecker3D, self).__init__()
         self.face_by_closest = False
+
+    @abstractmethod
+    def _verify_faces(self, rve_info):
+        pass
 
     def verify_mesh(self, rve_info):
         '''
@@ -1217,12 +1245,48 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
             return False
 
         # verify faces
-        if self.face_by_closest:
-            return self._verify_faces_by_closest(rve_info)
-        else:
-            return self._verify_faces_by_sorting(rve_info)
+        return self._verify_faces(rve_info)
 
-    def _verify_faces_by_sorting(self, rve_info):
+    def _verify_tol_face_nodes(self, rve_info, node, node_cmp, j, k):
+        if abs(node.coordinates[j] - node_cmp.coordinates[j]) > rve_info.tol or abs(node.coordinates[k] - node_cmp.coordinates[k]) > rve_info.tol:
+            # create set with error nodes
+            set_name = rve_info.verify_set_name('_ERROR_FACE_NODES')
+            rve_info.part.Set(set_name, nodes=MeshNodeArray((node, node_cmp)))
+            return False
+
+        return True
+
+
+class PeriodicMeshChecker3DByClosest(PeriodicMeshChecker3D):
+
+    def _verify_faces(self, rve_info):
+
+        for grouped_positions in rve_info.face_positions:
+
+            # get nodes
+            pos_i, pos_j = grouped_positions
+            j, k = rve_info.get_face_sort_directions(pos_i)
+            nodes_i = rve_info.get_face_nodes(pos_i)
+            nodes_j = rve_info.get_face_nodes(pos_j)
+
+            # verify size
+            if len(nodes_i) != len(nodes_j):
+                return False
+
+            # verify if tolerance is respected
+            for node in nodes_i:
+                node_cmp = nodes_j.getClosest(node.coordinates)
+
+                # verify tolerance
+                if not self._verify_tol_face_nodes(rve_info, node, node_cmp, j, k):
+                    return False
+
+        return True
+
+
+class PeriodicMeshChecker3DBySorting(PeriodicMeshChecker3D):
+
+    def _verify_faces(self, rve_info):
         '''
         Notes
         -----
@@ -1249,38 +1313,5 @@ class PeriodicMeshChecker3D(PeriodicMeshChecker):
                 # verify tolerance
                 if not self._verify_tol_face_nodes(rve_info, node, node_cmp, j, k):
                     return False
-
-        return True
-
-    def _verify_faces_by_closest(self, rve_info):
-
-        for grouped_positions in rve_info.face_positions:
-
-            # get nodes
-            pos_i, pos_j = grouped_positions
-            j, k = rve_info.get_face_sort_directions(pos_i)
-            nodes_i = rve_info.get_face_nodes(pos_i)
-            nodes_j = rve_info.get_face_nodes(pos_j)
-
-            # verify size
-            if len(nodes_i) != len(nodes_j):
-                return False
-
-            # verify if tolerance is respected
-            for node in nodes_i:
-                node_cmp = nodes_j.getClosest(node.coordinates)
-
-                # verify tolerance
-                if not self._verify_tol_face_nodes(rve_info, node, node_cmp, j, k):
-                    return False
-
-        return True
-
-    def _verify_tol_face_nodes(self, rve_info, node, node_cmp, j, k):
-        if abs(node.coordinates[j] - node_cmp.coordinates[j]) > rve_info.tol or abs(node.coordinates[k] - node_cmp.coordinates[k]) > rve_info.tol:
-            # create set with error nodes
-            set_name = rve_info.verify_set_name('_ERROR_FACE_NODES')
-            rve_info.part.Set(set_name, nodes=MeshNodeArray((node, node_cmp)))
-            return False
 
         return True

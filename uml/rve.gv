@@ -29,9 +29,13 @@ digraph RVE {
     node[shape=record, style="rounded, filled", fillcolor=lightgreen]
     RVE3D[label = "{RVE3D}"]
     PBCConstraints3D[label = "{PBCConstraints3D}"]
+    PBCConstraints3DByClosest[label = "{PBCConstraints3DByClosest}"]
+    PBCConstraints3DBySorting[label = "{PBCConstraints3DBySorting}"]
     RVEInfo3D[label="{RVEInfo3D}"]
     PeriodicRVEInfo3D[label="{PeriodicRVEInfo3D}"]
     PeriodicMeshChecker3D[label = "{PeriodicMeshChecker3D}"]
+    PeriodicMeshChecker3DByClosest[label = "{PeriodicMeshChecker3DByClosest}"]
+    PeriodicMeshChecker3DBySorting[label = "{PeriodicMeshChecker3DBySorting}"]
     PeriodicMeshGenerator3D[label= "{PeriodicMeshGenerator3D}"]
     PeriodicMeshGenerator3DSimple[label= "{PeriodicMeshGenerator3DSimple}"]
     PeriodicMeshGenerator3DS1[label= "{PeriodicMeshGenerator3DS1}"]
@@ -45,10 +49,14 @@ digraph RVE {
     Constraints->PBCConstraints
     PBCConstraints->PBCConstraints2D
     PBCConstraints->PBCConstraints3D
+    PBCConstraints3D->PBCConstraints3DByClosest
+    PBCConstraints3D->PBCConstraints3DBySorting
     RVEInfo->RVEInfo2D
     RVEInfo->RVEInfo3D
     PeriodicMeshChecker->PeriodicMeshChecker2D
     PeriodicMeshChecker->PeriodicMeshChecker3D
+    PeriodicMeshChecker3D->PeriodicMeshChecker3DByClosest
+    PeriodicMeshChecker3D->PeriodicMeshChecker3DBySorting
     PeriodicMeshGenerator->PeriodicMeshGenerator2D
     PeriodicMeshGenerator->PeriodicMeshGenerator3D
     PeriodicRVEInfo->PeriodicRVEInfo2D
