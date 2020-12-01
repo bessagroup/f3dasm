@@ -1,6 +1,6 @@
 '''
 Created on 2020-12-01 13:09:44
-Last modified on 2020-12-01 13:21:57
+Last modified on 2020-12-01 13:24:43
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -34,7 +34,7 @@ from ...utils.utils import unnest
 
 # object definition
 
-class RVEInfoPeriodic(object):
+class PeriodicRVEInfo(object):
     __metaclass__ = ABCMeta
 
     def __init__(self):
@@ -66,18 +66,18 @@ class RVEInfoPeriodic(object):
         return 'REF_POINT_{}'.format(position)
 
 
-class PeriodicRVEInfo2D(RVEInfo2D, RVEInfoPeriodic):
+class PeriodicRVEInfo2D(RVEInfo2D, PeriodicRVEInfo):
 
     def __init__(self, name, dims, center, tol):
         RVEInfo2D.__init__(self, name, dims, center, tol)
-        RVEInfoPeriodic.__init__(self)
+        PeriodicRVEInfo.__init__(self)
 
 
-class PeriodicRVEInfo3D(RVEInfo3D, RVEInfoPeriodic):
+class PeriodicRVEInfo3D(RVEInfo3D, PeriodicRVEInfo):
 
     def __init__(self, name, dims, center, tol):
         RVEInfo3D.__init__(self, name, dims, center, tol)
-        RVEInfoPeriodic.__init__(self)
+        PeriodicRVEInfo.__init__(self)
 
 
 class PeriodicRVEObjCreator(RVEObjCreator):
