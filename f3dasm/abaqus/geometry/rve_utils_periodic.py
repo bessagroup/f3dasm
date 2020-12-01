@@ -1,6 +1,6 @@
 '''
 Created on 2020-12-01 13:09:44
-Last modified on 2020-12-01 15:58:28
+Last modified on 2020-12-01 16:11:05
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -346,10 +346,11 @@ class PBCConstraints3DBySorting(PBCConstraints3D):
 class PeriodicMeshGenerator(MeshGenerator):
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self, mesh_checker):
         super(PeriodicMeshGenerator, self).__init__()
         self.trial_iter = 1
         self.refine_factor = 1.25
+        self.mesh_checker = mesh_checker
 
     def generate_mesh(self, rve_info):
         # TODO: generate error file
@@ -382,10 +383,6 @@ class PeriodicMeshGenerator(MeshGenerator):
 
 class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
 
-    def __init__(self):
-        super(PeriodicMeshGenerator2D, self).__init__()
-        self.mesh_checker = PeriodicMeshChecker2D()
-
     def _generate_mesh(self, rve_info):
 
         # seed part
@@ -406,19 +403,6 @@ class PeriodicMeshGenerator2D(PeriodicMeshGenerator):
 
 class PeriodicMeshGenerator3D(PeriodicMeshGenerator):
     __metaclass__ = ABCMeta
-
-    def __init__(self, mesh_checker='by_closest'):
-        '''
-        Parameters
-        ----------
-        mesh_checker : str
-            Possible values are 'by_closest', 'by_sorting'.
-        '''
-        super(PeriodicMeshGenerator3D, self).__init__()
-        if mesh_checker == 'by_closest':
-            self.mesh_checker = PeriodicMeshChecker3DByClosest()
-        else:
-            self.mesh_checker = PeriodicMeshChecker3DBySorting()
 
     def _seed_part(self, rve_info):
 
@@ -698,6 +682,8 @@ class PeriodicRVEObjInit(RVEObjInit):
                    'S1': PeriodicMeshGenerator3DS1}
     constraint_strats = {'by_closest': PBCConstraints3DByClosest,
                          'by_sorting': PBCConstraints3DBySorting}
+    mesh_checkers = {'by_closest': PeriodicMeshChecker3DByClosest,
+                     'by_sorting': PeriodicMeshChecker3DBySorting}
 
     def __init__(self, dim, mesh_strat='simple', constrain_strat='by_closest'):
         '''
@@ -732,6 +718,8 @@ class PeriodicRVEObjInit(RVEObjInit):
 
     def get_mesh(self):
         if self.dim == 2:
-            return PeriodicMeshGenerator2D()
+            mesh_checker = PeriodicMeshChecker2D()
+            return PeriodicMeshGenerator2D(mesh_checker)
         else:
-            return self.mesh_strats[self.mesh_strat](mesh_checker=self.constrain_strat)
+            mesh_checker = self.mesh_checkers[self.constrain_strat]()
+            return self.mesh_strats[self.mesh_strat](mesh_checker)
