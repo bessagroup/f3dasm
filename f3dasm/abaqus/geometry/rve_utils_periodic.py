@@ -1,6 +1,6 @@
 '''
 Created on 2020-12-01 13:09:44
-Last modified on 2020-12-01 16:11:05
+Last modified on 2020-12-01 16:45:34
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -533,6 +533,37 @@ class PeriodicMeshGenerator3DS1(PeriodicMeshGenerator3D):
                                       coordinates=coords)
 
 
+class PeriodicMeshGenerator3DHybridS1(PeriodicMeshGenerator3D):
+    '''
+    To show how easy it is to combine individual meshing strategies.
+    '''
+
+    def __init__(self, mesh_checker):
+        super(PeriodicMeshGenerator3DHybridS1, self).__init__(mesh_checker)
+        # instantiate simple strategy
+        self.mesh_simple = PeriodicMeshGenerator3DSimple(mesh_checker)
+        # instantiate S1 strategy
+        self.mesh_s1 = PeriodicMeshGenerator3DS1(mesh_checker)
+
+    def change_definitions(self, **kwargs):
+        super(PeriodicMeshGenerator3DHybridS1, self).change_definitions(**kwargs)
+        self.mesh_simple.change_definitions(**kwargs)
+        self.mesh_s1.change_definitions(**kwargs)
+
+    def _generate_mesh(self, rve_info):
+
+        # let's try to play it simple
+        self.mesh_simple._generate_mesh(rve_info)
+
+        # has it worked?
+        if self.mesh_checker.verify_mesh(rve_info):
+            return
+
+        # let's try better
+        print('Warning: Failed mesh generation with simple strategy')
+        self.mesh_s1._generate_mesh(rve_info)
+
+
 class PeriodicMeshChecker(object):
 
     def __init__(self):
@@ -679,7 +710,8 @@ class PeriodicMeshChecker3DBySorting(PeriodicMeshChecker3D):
 
 class PeriodicRVEObjInit(RVEObjInit):
     mesh_strats = {'simple': PeriodicMeshGenerator3DSimple,
-                   'S1': PeriodicMeshGenerator3DS1}
+                   'S1': PeriodicMeshGenerator3DS1,
+                   'HybridS1': PeriodicMeshGenerator3DHybridS1}
     constraint_strats = {'by_closest': PBCConstraints3DByClosest,
                          'by_sorting': PBCConstraints3DBySorting}
     mesh_checkers = {'by_closest': PeriodicMeshChecker3DByClosest,

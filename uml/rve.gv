@@ -39,6 +39,7 @@ digraph RVE {
     PeriodicMeshGenerator3D[label= "{PeriodicMeshGenerator3D}"]
     PeriodicMeshGenerator3DSimple[label= "{PeriodicMeshGenerator3DSimple}"]
     PeriodicMeshGenerator3DS1[label= "{PeriodicMeshGenerator3DS1}"]
+    PeriodicMeshGenerator3DHybridS1[label= "{PeriodicMeshGenerator3DHybridS1}"]
 
     // generalizations
     edge[dir=back, arrowtail=empty, style=normal]
@@ -66,6 +67,7 @@ digraph RVE {
     RVEObjCreator->PeriodRVEObjCreator
     PeriodicMeshGenerator3D->PeriodicMeshGenerator3DSimple
     PeriodicMeshGenerator3D->PeriodicMeshGenerator3DS1
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DHybridS1
 
     // dependencies
     edge[dir=normal, arrowhead=normal, style=dashed]
@@ -84,5 +86,7 @@ digraph RVE {
     PeriodicBoundaryConditions->PBCConstraints
     RVE->RVEObjInit
     RVEObjInit->PeriodicRVEObjInit
+    PeriodicMeshGenerator3DHybridS1->PeriodicMeshGenerator3DSimple
+    PeriodicMeshGenerator3DHybridS1->PeriodicMeshGenerator3DS1
 
 }

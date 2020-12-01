@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:30:17
-Last modified on 2020-12-01 16:16:17
+Last modified on 2020-12-01 16:46:31
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -63,7 +63,7 @@ fiber_material = AbaqusMaterial(name=material_name, props=props,
 dims = (1., 1., 1.)
 center = (.5, .5, .5)
 rve = RVE3D(dims=dims, material=matrix_material, center=center,
-            mesh_strat='S1', constrain_strat='by_sorting')
+            mesh_strat='HybridS1', constrain_strat='by_closest')
 bounds = [(c - dim / 2, c + dim / 2) for dim, c in zip(dims, center)]
 rve.add_particle(Sphere(name='PARTICLE_1', center=center, r=0.25,
                         material=fiber_material, bounds=bounds))
@@ -99,7 +99,7 @@ for bc in bcs:
     bc.create(model)
 
 
-# create inp
-modelJob = mdb.Job(model=model_name, name=job_name)
-modelJob.writeInput(consistencyChecking=OFF)
-modelJob.submit()
+# # create inp
+# modelJob = mdb.Job(model=model_name, name=job_name)
+# modelJob.writeInput(consistencyChecking=OFF)
+# modelJob.submit()
