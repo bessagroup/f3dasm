@@ -8,6 +8,7 @@ digraph RVE {
     Constraints[label = "{Constraints}"]
     RVEInfo[label="{RVEInfo}"]
     RVEObjCreator[label="RVEObjCreator"]
+    RVEObjInit[label="RVEObjInit"]
 
     node[shape=record, style="rounded, filled", fillcolor=lightblue]
     PeriodicBoundaryConditions[label = "{PeriodicBoundaryConditions}"]
@@ -15,6 +16,7 @@ digraph RVE {
     PeriodicMeshGenerator[label = "{PeriodicMeshGenerator}"]
     PeriodicRVEInfo[label = "{PeriodicRVEInfo}"]
     PeriodRVEObjCreator[label = "{PeriodicRVEObjCreator}"]
+    PeriodicRVEObjInit[label="PeriodicRVEObjInit"]
 
     node[shape=record, style="rounded, filled", fillcolor=yellow]
     RVE2D[label = "{RVE2D}"]
@@ -28,10 +30,11 @@ digraph RVE {
     RVE3D[label = "{RVE3D}"]
     PBCConstraints3D[label = "{PBCConstraints3D}"]
     RVEInfo3D[label="{RVEInfo3D}"]
+    PeriodicRVEInfo3D[label="{PeriodicRVEInfo3D}"]
     PeriodicMeshChecker3D[label = "{PeriodicMeshChecker3D}"]
     PeriodicMeshGenerator3D[label= "{PeriodicMeshGenerator3D}"]
-    PeriodicRVEInfo3D[label="{PeriodicRVEInfo3D}"]
-
+    PeriodicMeshGenerator3DSimple[label= "{PeriodicMeshGenerator3DSimple}"]
+    PeriodicMeshGenerator3DS1[label= "{PeriodicMeshGenerator3DS1}"]
 
     // generalizations
     edge[dir=back, arrowtail=empty, style=normal]
@@ -53,6 +56,8 @@ digraph RVE {
     PeriodicRVEInfo->PeriodicRVEInfo3D
     RVEInfo3D->PeriodicRVEInfo3D
     RVEObjCreator->PeriodRVEObjCreator
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DSimple
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DS1
 
     // dependencies
     edge[dir=normal, arrowhead=normal, style=dashed]
@@ -69,5 +74,7 @@ digraph RVE {
     PeriodicMeshGenerator3D->PeriodicMeshChecker3D
     RVE->RVEObjCreator
     PeriodicBoundaryConditions->PBCConstraints
+    RVE->RVEObjInit
+    RVEObjInit->PeriodicRVEObjInit
 
 }

@@ -1,6 +1,6 @@
 '''
 Created on 2020-03-24 14:33:48
-Last modified on 2020-11-30 14:20:55
+Last modified on 2020-12-01 12:27:25
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -46,31 +46,60 @@ from ...utils.utils import get_decimal_places
 
 # object definition
 
-def _RVE_objects_initializer(name, dims, center, tol, bcs_type):
-    # TODO: object factory?
+class RVEObjInit(object):
+    __metaclass__ = ABCMeta
 
-    dim = len(dims)
+    def __init__(self, dim):
+        self.dim = dim
 
-    if bcs_type == 'periodic':
-        obj_creator = PeriodicRVEObjCreator()
-        if dim == 2:
-            info = PeriodicRVEInfo2D(name, dims, center, tol)
-            mesh = PeriodicMeshGenerator2D()
+    @abstractmethod
+    def get_info(self, name, dims, center, tol):
+        pass
+
+    @abstractmethod
+    def get_obj_creator(self):
+        pass
+
+    @abstractmethod
+    def get_bcs(self, rve_info):
+        pass
+
+    @abstractmethod
+    def get_mesh(self):
+        pass
+
+
+class PeriodicRVEObjInit(RVEObjInit):
+
+    def __init__(self, dim, mesh_strat='simple'):
+        super(PeriodicRVEObjInit, self).__init__(dim)
+        self.mesh_strat = mesh_strat
+
+    def get_info(self, name, dims, center, tol):
+        if self.dim == 2:
+            return PeriodicRVEInfo2D(name, dims, center, tol)
         else:
-            info = PeriodicRVEInfo3D(name, dims, center, tol)
-            # TODO: pass as argument the mesh generator
-            mesh = PeriodicMeshGenerator3DSimple()
-        bcs = PeriodicBoundaryConditions(info)
+            return PeriodicRVEInfo3D(name, dims, center, tol)
 
-    return info, obj_creator, mesh, bcs
+    def get_bcs(self, rve_info):
+        return PeriodicBoundaryConditions(rve_info)
 
+    def get_obj_creator(self):
+        return PeriodicRVEObjCreator()
 
-# TODO: inherit from geometry
+    def get_mesh(self):
+        # TODO: expand
+        if self.dim == 2:
+            return PeriodicMeshGenerator2D()
+        else:
+            return PeriodicMeshGenerator3DSimple()
+
 
 class RVE(Geometry):
     __metaclass__ = ABCMeta
+    bcs_type = {'periodic': PeriodicRVEObjInit}
 
-    def __init__(self, name, dims, center, material, tol, bcs_type):
+    def __init__(self, name, dims, center, material, tol, bcs_type, **kwargs):
         '''
         Parameters
         ----------
@@ -84,8 +113,11 @@ class RVE(Geometry):
         # auxiliar variables
         self._create_instance = False
         # create objects
-        self.info, self.obj_creator, self.mesh, self.bcs = _RVE_objects_initializer(
-            name, dims, center, tol, bcs_type)
+        self.obj_init = self.bcs_type[bcs_type](len(dims), **kwargs)
+        self.info = self.obj_init.get_info(name, dims, center, tol)
+        self.bcs = self.obj_init.get_bcs(self.info)
+        self.obj_creator = self.obj_init.get_obj_creator()
+        self.mesh = self.obj_init.get_mesh()
 
     def add_particle(self, particle):
         self.particles.append(particle)
@@ -253,9 +285,10 @@ class RVE(Geometry):
 class RVE2D(RVE):
 
     def __init__(self, length, width, center, material, name='RVE', bcs_type='periodic',
-                 tol=1e-5):
+                 tol=1e-5, **kwargs):
         dims = (length, width)
-        super(RVE2D, self).__init__(name, dims, center, material, tol, bcs_type)
+        super(RVE2D, self).__init__(name, dims, center, material, tol, bcs_type,
+                                    **kwargs)
 
     def _create_tmp_part(self, model, sketch, name):
 
@@ -276,8 +309,9 @@ class RVE2D(RVE):
 class RVE3D(RVE):
 
     def __init__(self, dims, material, name='RVE', center=(0., 0., 0.), tol=1e-5,
-                 bcs_type='periodic'):
-        super(RVE3D, self).__init__(name, dims, center, material, tol, bcs_type)
+                 bcs_type='periodic', **kwargs):
+        super(RVE3D, self).__init__(name, dims, center, material, tol, bcs_type,
+                                    **kwargs)
 
     def _create_tmp_part(self, model, sketch, name):
 
