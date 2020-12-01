@@ -1,6 +1,6 @@
 '''
 Created on 2020-12-01 13:09:44
-Last modified on 2020-12-01 13:19:58
+Last modified on 2020-12-01 13:21:57
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -33,48 +33,6 @@ from ...utils.utils import unnest
 
 
 # object definition
-
-class PeriodicRVEObjInit(RVEObjInit):
-    # TODO: uncomment
-    # mesh_strats = {'simple': PeriodicMeshGenerator3DSimple,
-    #                'S1': PeriodicMeshGenerator3DS1}
-
-    def __init__(self, dim, mesh_strat='simple', mesh_checker='by_closest'):
-        '''
-        Parameters
-        ----------
-        mesh_strat : str
-            Possible values are 'simple', 'S1'. Only applicable to `dim == 3`.
-        mesh_checker : str
-            Possible values are 'by_closest', 'by_sorting'. Only applicable
-            to `dim == 3`.
-        '''
-        super(PeriodicRVEObjInit, self).__init__(dim)
-        self.mesh_strat = mesh_strat
-        self.mesh_checker = mesh_checker
-
-    def get_info(self, name, dims, center, tol):
-        if self.dim == 2:
-            return PeriodicRVEInfo2D(name, dims, center, tol)
-        else:
-            return PeriodicRVEInfo3D(name, dims, center, tol)
-
-    def get_bcs(self, rve_info):
-        return PeriodicBoundaryConditions(rve_info)
-
-    def get_obj_creator(self):
-        return PeriodicRVEObjCreator()
-
-    def get_mesh(self):
-        if self.dim == 2:
-            return PeriodicMeshGenerator2D()
-        else:
-            if self.mesh_strat == 'simple':
-                return PeriodicMeshGenerator3DSimple(mesh_checker=self.mesh_checker)
-
-            elif self.mesh_strat == 'S1':
-                return PeriodicMeshGenerator3DS1(mesh_checker=self.mesh_checker)
-
 
 class RVEInfoPeriodic(object):
     __metaclass__ = ABCMeta
@@ -706,3 +664,40 @@ class PeriodicMeshChecker3DBySorting(PeriodicMeshChecker3D):
                     return False
 
         return True
+
+
+class PeriodicRVEObjInit(RVEObjInit):
+    mesh_strats = {'simple': PeriodicMeshGenerator3DSimple,
+                   'S1': PeriodicMeshGenerator3DS1}
+
+    def __init__(self, dim, mesh_strat='simple', mesh_checker='by_closest'):
+        '''
+        Parameters
+        ----------
+        mesh_strat : str
+            Possible values are 'simple', 'S1'. Only applicable to `dim == 3`.
+        mesh_checker : str
+            Possible values are 'by_closest', 'by_sorting'. Only applicable
+            to `dim == 3`.
+        '''
+        super(PeriodicRVEObjInit, self).__init__(dim)
+        self.mesh_strat = mesh_strat
+        self.mesh_checker = mesh_checker
+
+    def get_info(self, name, dims, center, tol):
+        if self.dim == 2:
+            return PeriodicRVEInfo2D(name, dims, center, tol)
+        else:
+            return PeriodicRVEInfo3D(name, dims, center, tol)
+
+    def get_bcs(self, rve_info):
+        return PeriodicBoundaryConditions(rve_info)
+
+    def get_obj_creator(self):
+        return PeriodicRVEObjCreator()
+
+    def get_mesh(self):
+        if self.dim == 2:
+            return PeriodicMeshGenerator2D()
+        else:
+            return self.mesh_strats[self.mesh_strat](mesh_checker=self.mesh_checker)
