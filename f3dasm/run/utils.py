@@ -1,6 +1,6 @@
 '''
 Created on 2020-09-17 19:10:47
-Last modified on 2020-09-30 11:39:22
+Last modified on 2020-12-04 10:21:25
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -75,11 +75,12 @@ def create_main_file(example_name, doe_variables, points, sim_info,
             'version': f3dasm.__version__}
 
     # add facultative information
-    facultative_vars = ['fixed_variables', 'additional_variables',
-                        'transform_inputs', 'additional_info']
-    for var in facultative_vars:
-        if var is not None:
-            data[var] = eval(var)
+    optional_vars = ['fixed_variables', 'additional_variables',
+                     'transform_inputs', 'additional_info']
+    for var in optional_vars:
+        var_value = eval(var)
+        if var_value is not None:
+            data[var] = var_value
 
     # create directory and save pkl file
     os.mkdir(example_name)
