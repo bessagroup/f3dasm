@@ -14,9 +14,7 @@ Installation guide
 
 
 
-.. code-block::
-
-   >> pip install f3dasm
+>>> pip install f3dasm
 
 
 .. warning::
@@ -25,18 +23,17 @@ Installation guide
 
 In order to protect your Python installation, you can create a virtual environment where to install |f3dasm|_ and all its dependencies. Among several options, you can create a ``conda environment``:
 
-.. code-block::
 
-   >> conda create -n f3dasm_env python
+>>> conda create -n f3dasm_env python
 
 
 When |f3dasm|_ is installed via ``pip``, all the dependencies are also installed. Nevertheless, some examples require access to additional libraries, such as ``jupyter`` and ``scipy``. You can easily install them while you create your virtual environment:
 
-.. code-block::
 
-   >> conda create -n f3dasm_env jupyter scipy
-
+>>> conda create -n f3dasm_env jupyter scipy
 
 
 .. tip::
     Install ``nb_conda`` to ensure jupyter notebooks work properly within virtual environments.
+
+

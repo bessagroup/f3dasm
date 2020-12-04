@@ -21,7 +21,7 @@ Additionally, |f3dasm|_ offers utils for fast and easy development of new |abaqu
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting Started
 
    installation
@@ -29,15 +29,12 @@ Additionally, |f3dasm|_ offers utils for fast and easy development of new |abaqu
    basic_supercompressible
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Examples
-
-
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Advanced users
+
+   basic_supercompressible_advanced
 
 
 
