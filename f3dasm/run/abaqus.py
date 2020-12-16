@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-22 19:50:46
-Last modified on 2020-09-30 11:41:45
+Last modified on 2020-12-16 16:48:19
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 '''
@@ -104,8 +104,7 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
     n_cpus = 1 if np.prod(n_cpus_sim) != 1 else n_cpus
 
     # create _temp folder and copy f3dasm
-    temp_dir_name = '_temp'
-    _create_temp_dir(temp_dir_name)
+    temp_dir_name = _create_temp_dir('_temp')
 
     # update data temporarily (due to run_info)
     with open(os.path.join(example_name, data_filename), 'wb') as file:
@@ -151,7 +150,7 @@ def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
 
         # automatic post-processing
         if pp_fnc is not None and len(successful_sims):
-            # TODO: variant of pp_fnc when user defines variable; how to have both ways of defining variables?
+            # TODO: variant of pp_fnc where user defines variable; how to have both ways of defining variables?
             data = post_process_sims(pp_fnc, example_name,
                                      sim_numbers=successful_sims,
                                      data_filename='', data=data,
@@ -286,12 +285,19 @@ def _run_sims_in_parallel(example_name, points, n_cpus,
 
 
 def _create_temp_dir(temp_dir_name='_temp'):
-    if not os.path.exists(temp_dir_name):
-        os.mkdir(temp_dir_name)
-    new_f3das_dir = os.path.join(temp_dir_name, 'f3dasm')
-    if os.path.exists(new_f3das_dir):
-        shutil.rmtree(new_f3das_dir)
-    shutil.copytree(f3dasm.__path__[0], new_f3das_dir)
+    temp_dir_name = verify_existing_name(temp_dir_name)
+    os.mkdir(temp_dir_name)
+    copy_lib(dir_name=temp_dir_name)
+
+    return temp_dir_name
+
+
+def copy_lib(dir_name=None, lib=f3dasm):
+    dir_name = os.getcwd() if dir_name is None else dir_name
+    new_lib_dir = os.path.join(dir_name, lib.__name__)
+    if os.path.exists(new_lib_dir):
+        shutil.rmtree(new_lib_dir)
+    shutil.copytree(lib.__path__[0], new_lib_dir)
 
 
 def _update_sims_state(data, points, raw_data):
