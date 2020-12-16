@@ -1,6 +1,6 @@
 '''
 Created on 2020-10-15 09:30:17
-Last modified on 2020-11-26 12:45:37
+Last modified on 2020-12-16 10:41:06
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
@@ -18,6 +18,9 @@ from f3dasm.abaqus.geometry.shapes import PeriodicCircle as Circle
 from f3dasm.abaqus.modelling.step import StaticStep
 from f3dasm.abaqus.material.abaqus_materials import AbaqusMaterial
 from f3dasm.abaqus.material.section import HomogeneousSolidSection
+from f3dasm.abaqus.modelling.outputs import del_default_outputs
+from f3dasm.abaqus.modelling.outputs import HistoryOutputRequest
+from f3dasm.abaqus.modelling.outputs import FieldOutputRequest
 
 
 # initialization
@@ -102,6 +105,18 @@ constraints, bcs = rve.bcs.set_bcs(step_name, epsilon,
 constraints.create(model)
 for bc in bcs:
     bc.create(model)
+
+
+# set field outputs
+history = HistoryOutputRequest(name='ENERGIES', createStepName=step_name,
+                               variables=('ALLEN',))
+field = FieldOutputRequest(name='STRESS_STRAIN_DISP', createStepName=step_name,
+                           variables=('S', 'U', 'LE'))
+
+history.create(model)
+field.create(model)
+del_default_outputs(model)
+
 
 # create inp
 modelJob = mdb.Job(model=model_name, name=job_name)

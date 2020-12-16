@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-08 14:29:12
-Last modified on 2020-11-17 12:02:37
+Last modified on 2020-12-16 10:40:57
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -30,6 +30,7 @@ import inspect
 
 # local library
 from .utils import InpAdditions
+from .outputs import del_default_outputs
 
 
 # object definition
@@ -162,6 +163,9 @@ class GenericModel(F3DASMModel):
         for obj in self.objs:
             obj.create(self.model)
 
+        # delete default outputs
+        del_default_outputs(self.model)
+
 
 class BasicModel(F3DASMModel):
     __metaclass__ = ABCMeta
@@ -250,23 +254,12 @@ class BasicModel(F3DASMModel):
 
     def _create_outputs(self):
 
-        # initialization
-        create_field = False
-        create_history = False
-
         # create requested field outputs
         for output in self.output_requests:
             output.create(self.model)
-            if output.method_name == 'HistoryOutputRequest' and output.name != 'H-Output-1':
-                create_history = True
-            elif output.method_name == 'FieldOutputRequest' and output.name != 'F-Output-1':
-                create_field = True
 
         # delete existing fields
-        if create_history:
-            del self.model.historyOutputRequests['H-Output-1']
-        if create_field:
-            del self.model.fieldOutputRequests['F-Output-1']
+        del_default_outputs(self.model)
 
     def update_list(self, variable, new_value):
 

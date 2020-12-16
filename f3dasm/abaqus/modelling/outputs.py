@@ -1,6 +1,6 @@
 '''
 Created on 2020-04-15 18:00:10
-Last modified on 2020-11-17 11:56:23
+Last modified on 2020-12-16 10:22:30
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -226,3 +226,22 @@ class HistoryOutputRequest(Output):
         self.args.update(kwargs)
         # initialize parent
         Output.__init__(self, name, createStepName, model=model)
+
+
+def del_default_outputs(model, del_all=False):
+    '''
+    Parameters
+    ----------
+    all : bool
+        If True, then it deletes all the default outputs, regardless of the
+        existence of requested outputs. Otherwise, it deletes only the outputs
+        with the name 'H-Output-1' and 'F-Output-1'.
+    '''
+
+    # history outputs
+    if len(model.historyOutputRequests.keys()) > 1 or del_all:
+        del model.historyOutputRequests['H-Output-1']
+
+    # field outputs
+    if len(model.fieldOutputRequests.keys()) > 1 or del_all:
+        del model.fieldOutputRequests['F-Output-1']
