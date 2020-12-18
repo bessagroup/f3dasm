@@ -1,6 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-12-18 18:09:48
+Last modified on 2020-12-18 19:00:41
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -16,7 +16,6 @@ Run Abaqus examples.
 import os
 import argparse
 import shutil
-from pathlib import Path
 
 # local library
 from ..utils.file_handling import verify_existing_name
@@ -58,9 +57,6 @@ def run_example(folder_name, example_name, same_dir, gui):
     # create simul dir
     simul_dir_name = _create_simul_dir('simulation', same_dir)
 
-    # create __init__.py files
-    files_to_del = _create_init_files(module_path)
-
     # copy f3dasm if not in the current directory
     if 'f3dasm' not in os.listdir('.'):
         temp_dir_name = _create_temp_dir('_temp')
@@ -77,7 +73,7 @@ def run_example(folder_name, example_name, same_dir, gui):
     fail = os.system(command)
 
     # clean dir
-    _clean_dir(run_filename, temp_dir_name, files_to_del)
+    _clean_dir(run_filename, temp_dir_name)
 
     # success message
     if fail:
@@ -110,23 +106,6 @@ def _create_simul_dir(name, same_dir):
     return simul_dir_name
 
 
-def _create_init_files(module_path):
-
-    p = Path(module_path)
-    path = ''
-    init_filename = '__init__.py'
-    files_to_del = []
-    for part in p.parts:
-        path = os.path.join(path, part)
-        if init_filename not in os.listdir(path):
-            filename_ = os.path.join(path, init_filename)
-            # create empty file
-            open(filename_, 'w').close()
-            files_to_del.append(filename_)
-
-    return files_to_del
-
-
 def _generate_run_file(module_path, module_name, simul_dir_name, temp_dir_name, temp_filename):
 
     run_filename = verify_existing_name(temp_filename)
@@ -150,16 +129,10 @@ def _generate_run_file(module_path, module_name, simul_dir_name, temp_dir_name, 
     return run_filename
 
 
-def _clean_dir(run_filename, temp_dir_name, files_to_del):
+def _clean_dir(run_filename, temp_dir_name):
 
     clean_abaqus_dir()
     os.remove(run_filename)
-    for filename in files_to_del:
-        os.remove(filename)
-        try:
-            os.remove('{}c'.format(filename))
-        except FileNotFoundError:
-            pass
     if temp_dir_name:
         shutil.rmtree(temp_dir_name)
 
