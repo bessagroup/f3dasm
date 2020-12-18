@@ -1,6 +1,6 @@
 '''
 Created on 2019-09-12 16:51:02
-Last modified on 2020-12-16 18:48:10
+Last modified on 2020-12-18 18:09:48
 
 @author: L. F. Pereira (lfpereira@fe.up.pt)
 
@@ -53,13 +53,13 @@ def get_args():
 def run_example(folder_name, example_name, same_dir, gui):
 
     # find example in subfolders
-    module_name = _find_module_name(folder_name, example_name)
+    module_path, module_name = _find_module_loc(folder_name, example_name)
 
     # create simul dir
     simul_dir_name = _create_simul_dir('simulation', same_dir)
 
     # create __init__.py files
-    files_to_del = _create_init_files(module_name)
+    files_to_del = _create_init_files(module_path)
 
     # copy f3dasm if not in the current directory
     if 'f3dasm' not in os.listdir('.'):
@@ -68,8 +68,8 @@ def run_example(folder_name, example_name, same_dir, gui):
         temp_dir_name = ''
 
     # generate run file
-    run_filename = _generate_run_file(module_name, simul_dir_name, temp_dir_name,
-                                      'temp.py')
+    run_filename = _generate_run_file(module_path, module_name, simul_dir_name,
+                                      temp_dir_name, '_temp.py')
 
     # run example
     interface_cmd = 'SCRIPT' if gui else 'noGUI'
@@ -86,18 +86,19 @@ def run_example(folder_name, example_name, same_dir, gui):
         print("'%s' successfully run" % os.path.splitext(example_name)[0])
 
 
-def _find_module_name(folder_name, example_name):
+def _find_module_loc(folder_name, example_name):
     module_name = None
     for path, _, filenames in os.walk(folder_name):
         for filename in filenames:
             if filename.lower().endswith(example_name.lower()):
-                module_name = os.path.splitext(os.path.join(path, filename))[0]
+                module_path = path
+                module_name = os.path.splitext(filename)[0]
                 break
 
     if module_name is None:
         raise Exception('{} was not found'.format(example_name))
 
-    return module_name
+    return module_path, module_name
 
 
 def _create_simul_dir(name, same_dir):
@@ -109,13 +110,13 @@ def _create_simul_dir(name, same_dir):
     return simul_dir_name
 
 
-def _create_init_files(module_name):
+def _create_init_files(module_path):
 
-    p = Path(module_name)
+    p = Path(module_path)
     path = ''
     init_filename = '__init__.py'
     files_to_del = []
-    for part in p.parts[:-1]:
+    for part in p.parts:
         path = os.path.join(path, part)
         if init_filename not in os.listdir(path):
             filename_ = os.path.join(path, init_filename)
@@ -126,16 +127,17 @@ def _create_init_files(module_name):
     return files_to_del
 
 
-def _generate_run_file(module_name, simul_dir_name, temp_dir_name, temp_filename):
+def _generate_run_file(module_path, module_name, simul_dir_name, temp_dir_name, temp_filename):
 
     run_filename = verify_existing_name(temp_filename)
-    module_name = '.'.join(os.path.normpath(module_name).split(os.sep))
+    module_path = module_path.replace('\\', '\\\\')
     lines = ['import runpy',
              'import os',
              'import sys',
              'initial_wd = os.getcwd()',
              "temp_dir_name = '%s'" % temp_dir_name,
              'sys.path.append(initial_wd)',
+             "sys.path.append(os.path.join(initial_wd,'%s'))" % module_path,
              'if temp_dir_name:',
              '\tsys.path.append(os.path.join(initial_wd, temp_dir_name))',
              "os.chdir('%s')" % simul_dir_name,
