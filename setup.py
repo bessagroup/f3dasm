@@ -3,8 +3,6 @@ Created on 2020-09-18 09:44:00
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
 
-# imports
-
 # standard library
 from setuptools import setup, find_packages
 
@@ -12,7 +10,6 @@ from setuptools import setup, find_packages
 import f3dasm
 
 install_requires = ['numpy', 'matplotlib', 'pandas', 'salib', ]
-
 
 setup(
     name="f3dasm",
