@@ -1,7 +1,5 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-30 11:36:40
-
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
 
@@ -12,9 +10,6 @@ from setuptools import setup, find_packages
 
 # local library
 import f3dasm
-
-
-# setup
 
 install_requires = ['numpy', 'matplotlib', 'pandas', 'salib', ]
 
@@ -30,4 +25,4 @@ setup(
     classifiers=["Programming Language :: Python :: 3",
                  "License :: OSI Approved :: BSD License",
                  "Operating System :: OS Independent", ],
-    python_requires='>=3.6',)
+    python_requires='>=3.8',)
