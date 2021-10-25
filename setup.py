@@ -22,8 +22,8 @@ install_requires = ['numpy', 'matplotlib', 'pandas', 'salib', ]
 setup(
     name="f3dasm",
     version=f3dasm.__version__,
-    author="L. F. Pereira",
-    author_email="lfpereira@fe.up.pt",
+    author="Bessa Group, TU Delft",
+    author_email="",
     packages=find_packages(include=['f3dasm', 'f3dasm.*']),
     install_requires=install_requires,
     description="Framework for Data-Driven Design and Analysis of Structures.",
