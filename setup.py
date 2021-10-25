@@ -1,6 +1,5 @@
 '''
 Created on 2020-09-18 09:44:00
-Last modified on 2020-09-30 11:36:40
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
 '''
