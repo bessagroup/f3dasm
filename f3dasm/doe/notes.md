@@ -1,7 +1,7 @@
 # DoE Package
 
 ## RESPONSIBILITY:
-This package is responsible for managing the information required to generate the DoE data table and used by the simulator, the machine learning and the optimization packages.
+This package is responsible for managing the information required to generate the DoE data table used by the simulator, the machine learning and the optimization packages.
 
 ## Requirements:
 * shall automatically generate data points using several sampling methods
