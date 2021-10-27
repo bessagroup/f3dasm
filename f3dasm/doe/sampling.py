@@ -11,8 +11,15 @@ class Sampling(ABC):
     """Represets a generic sampling method for the design of experiments"""
 
     @abstractclassmethod
-    def get_sampling(self) -> array:
-        """computes N number of samples for the values in the dimentions"""
+    def get_sampling(self, sample_size, range_variables, _type='float') -> array:
+        """
+        computes N number of samples for the values in the dimensions
+        Args:
+            sample_size (int): number of samples to be generated
+            range_variables (dict): minumun and maximum values for the range
+            _type (str): type of output for the sample, interger or float. Default is float
+        Returns
+        """
 
 
 @dataclass
