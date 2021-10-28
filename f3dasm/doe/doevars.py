@@ -25,20 +25,20 @@ class Material:
 
 
 @dataclass
-class Microsructure(ABC):
+class BaseMicrosructure(ABC):
     """Represents a generic microstructue"""
     
     material: Material
 
 @dataclass
-class CircleMicrostructur(Microsructure):
+class CircleMicrostructure(BaseMicrosructure):
     """Represents a microstructure for a circle"""
 
     diameter: any # can be a single value or a range of values
     shape: str = 'Circle'
 
 @dataclass
-class CilinderMicrostructur(Microsructure):
+class CilinderMicrostructure(BaseMicrosructure):
     """Represents a microstructure for """
 
     diameter: any # can be a single value or a range of values
@@ -61,7 +61,7 @@ class RVE:
     
     Lc: float # characteristic length
     material: Material
-    microstructure: Microsructure
+    microstructure: BaseMicrosructure
     dimesionality: int = 2 # e.g. 2D
 
 
@@ -73,8 +73,6 @@ class DoeVars:
     rve: RVE
     imperfections: Optional[Imperfection] = None
 
-    #TODO: implement own method to convert to pandas dataframe, use data.py as example
-    
     def __str__(self):
 
         """ Overwrite print function"""
@@ -83,16 +81,19 @@ class DoeVars:
         print('                       DOE INFO                      ')
         print('-----------------------------------------------------')
         print('\n')
-        # print('Module Name          :',self.__name__)
-        # print('Method               :',self.method)
-        print('Feature dimension    :',self.dimensions)     
-        print('Feature object count :',self.sample_size)
+        print('Boundary conditions:',self.boundary_conditions)
+        print('RVE dimensions:',self.rve.dimesionality)
+        print('RVE Lc:',self.rve.Lc)
+        print('RVE material:',self.rve.material.parameters)
+        print('Microstructure shape:',self.rve.microstructure.shape)
+        print('Microstructure material:',self.rve.microstructure.material.parameters)
+        print('Imperfections:',self.imperfections)
         return '\n'
 
     # todo: convert values to array
     # todo: collect names for data colums
     # pass them on to data.py
-
+    #TODO: implement own method to convert to pandas dataframe, use data.py as example
     def save(self,filename):
 
         """ Save experiemet doe points as pickle file
@@ -107,3 +108,16 @@ class DoeVars:
         data_frame = DATA(self.values,self.feature_names)       # f3dasm data structure, numpy array
         data_frame.to_pickle(filename)
 
+
+def main():
+
+    components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
+    mat1 = Material({'param1': 1, 'param2': 2})
+    mat2 = Material({'param1': 3, 'param2': 4})
+    micro = CircleMicrostructure(material=mat2, diameter=0.3)
+    rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+    doe = DoeVars(boundary_conditions=components, rve=rve)
+
+    print(doe)
+if __name__ == "__main__":
+    main()
