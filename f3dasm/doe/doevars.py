@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import numpy as np, array
 from data import DATA
 from typing import Optional
+from abc import ABC, abstractmethod
 
 # using Optiona
 # attritube: Optional[optional-object] = None
@@ -24,12 +25,18 @@ class Material:
 
 
 @dataclass
-class Microsructure:
-    """Represents a microstructue"""
-
-    shape: str
-    size: float
+class Microsructure(ABC):
+    """Represents a generic microstructue"""
+    
     material: Material
+
+@dataclass
+class CircularMicrostructur(Microsructure):
+    """Represents a microstructure for a circle"""
+
+    diameter: any # can be a single value or a range of values
+    shape: str = 'Circle'
+    
 
 
 @dataclass
@@ -37,7 +44,6 @@ class Imperfection:
     """Represents imperfections"""
 
     #TODO: define the class further, can we define subtypes?
-
     imperfections: dict # a list parameters defining an imperfection as name:value pairs
 
 
@@ -58,15 +64,6 @@ class DoeVars:
     boundary_conditions: dict  # boundary conditions 
     rve: RVE
     imperfections: Optional[Imperfection] = None
-
-    # feature_names: list = field(init=False)     # Names of features 
-    # dimensions: int = field(init=False)         # number of dimensions for the feature space of boundary conditions
-    # values: array = field(init=False)           # inita value to construct data array
-    
-    # def __post_init__(self):
-    #     self.feature_names = list(self.variables.keys())
-    #     self.dimensions = len(self.variables)
-    #     self.values = np.zeros((self.sample_size,self.dimensions))    
 
     #TODO: implement own method to convert to pandas dataframe, use data.py as example
     
