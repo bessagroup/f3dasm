@@ -31,12 +31,20 @@ class Microsructure(ABC):
     material: Material
 
 @dataclass
-class CircularMicrostructur(Microsructure):
+class CircleMicrostructur(Microsructure):
     """Represents a microstructure for a circle"""
 
     diameter: any # can be a single value or a range of values
     shape: str = 'Circle'
-    
+
+@dataclass
+class CilinderMicrostructur(Microsructure):
+    """Represents a microstructure for """
+
+    diameter: any # can be a single value or a range of values
+    length: float
+    shape: str = 'Cilinder'
+
 
 
 @dataclass
