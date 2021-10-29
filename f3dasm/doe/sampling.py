@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
 from abc import ABC, abstractclassmethod
+import typing
 import numpy
 
 from numpy.core.records import array
