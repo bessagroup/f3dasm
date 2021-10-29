@@ -10,8 +10,14 @@ import pandas as pd
 
 B_CONDITIONS = {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]} 
 MICROSTRUCTURE_SIZE = 0.3
-MATERIAL_A = {'parameter1': 0.5, 'paramter2': {0.1,0.2,0.3}}
-MATERIAL_B = {'parameter1': 50, 'paramter2': 110}
+MATERIAL_A = {'elements': [ {'name': 'STEEL', 'params': {'param1': 1, 'param2': 2}},
+                    {'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'} }
+                    ]
+                }
+
+MATERIAL_B = {'elements': [{'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'}}
+                    ]
+                }
 SAMPLE_SIZE = 5
 IMPERFFECTIONS= {'imp1': 1.2, 'imp2': {1,2,3}}
 LC = 4
@@ -38,6 +44,7 @@ class TestMicrostructures(unittest.TestCase):
         """Test that  CilinderMicrostruture inherits from BaseMicrostructure"""
         self.assertIsInstance(self.micro_cilinder, BaseMicrosructure)
 
+
 class TestRVE(unittest.TestCase):
     """Write relevant tests"""
 
@@ -50,7 +57,9 @@ class TestDoeVars(unittest.TestCase):
 
     def setUp(self) -> None:
         """set up test fixtures"""
-        self.doe_vars = DoeVars(B_CONDITIONS, REV(LC, Material(MATERIAL_A), CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),Imperfection(IMPERFFECTIONS))
+        self.doe_vars = DoeVars(B_CONDITIONS, REV(LC, Material(MATERIAL_A), 
+            CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),
+            Imperfection(IMPERFFECTIONS))
 
     def test_boundary_conditions(self):
         """Test that bournday contidions are named correctly"""
