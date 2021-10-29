@@ -5,7 +5,7 @@
 ##############################################################
 
 import unittest
-from f3dasm.doe.doevars import DoeVars, Imperfection, Material, CircleMicrostructure, CilinderMicrostructure, RVE, BaseMicrosructure
+from f3dasm.doe.doevars import DoeVars, Imperfection, Material, CircleMicrostructure, CilinderMicrostructure, REV, BaseMicrosructure
 import pandas as pd
 
 B_CONDITIONS = {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]} 
@@ -50,7 +50,7 @@ class TestDoeVars(unittest.TestCase):
 
     def setUp(self) -> None:
         """set up test fixtures"""
-        self.doe_vars = DoeVars(B_CONDITIONS, RVE(LC, Material(MATERIAL_A), CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),Imperfection(IMPERFFECTIONS))
+        self.doe_vars = DoeVars(B_CONDITIONS, REV(LC, Material(MATERIAL_A), CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),Imperfection(IMPERFFECTIONS))
 
     def test_boundary_conditions(self):
         """Test that bournday contidions are named correctly"""
