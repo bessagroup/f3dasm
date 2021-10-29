@@ -119,7 +119,7 @@ def main():
     mat1 = Material({'param1': 1, 'param2': 2})
     mat2 = Material({'param1': 3, 'param2': 4})
     micro = CircleMicrostructure(material=mat2, diameter=0.3)
-    rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+    rve = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
     doe = DoeVars(boundary_conditions=components, rve=rve)
 
     print(isinstance(mat1, Material))
