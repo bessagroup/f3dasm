@@ -1,5 +1,5 @@
 """
-Example on how to write custome sampling menthod using the base class
+Example on how to write custom sampling menthod using the base class
 This example will be moved to the documentation
 """
 
@@ -12,7 +12,8 @@ class MyCustomeSampling(SamplingMethod):
     def compute_sampling(self, aprox='float') -> array:
         # validate values represente ranges, this is a list with two elements
         super().validate_range()
-        
+
+        # compute dimentions of the input data if required by your sampling method
         self.dimensions = super().compute_dimensions()
         
 
