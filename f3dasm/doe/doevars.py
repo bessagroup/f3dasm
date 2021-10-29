@@ -57,7 +57,7 @@ class Imperfection:
 
 
 @dataclass
-class RVE:
+class REV:
     """Represents an Representative Elementary Volume"""
     
     Lc: float # characteristic length
@@ -71,7 +71,7 @@ class DoeVars:
     """Parameters for the design of experiments"""
 
     boundary_conditions: dict  # boundary conditions 
-    rve: RVE
+    rev: REV
     imperfections: Optional[Imperfection] = None
 
     def __str__(self):
@@ -83,11 +83,11 @@ class DoeVars:
         print('-----------------------------------------------------')
         print('\n')
         print('Boundary conditions:',self.boundary_conditions)
-        print('RVE dimensions:',self.rve.dimesionality)
-        print('RVE Lc:',self.rve.Lc)
-        print('RVE material:',self.rve.material.parameters)
-        print('Microstructure shape:',self.rve.microstructure.shape)
-        print('Microstructure material:',self.rve.microstructure.material.parameters)
+        print('REV dimensions:',self.rev.dimesionality)
+        print('REV Lc:',self.rev.Lc)
+        print('REV material:',self.rev.material.parameters)
+        print('Microstructure shape:',self.rev.microstructure.shape)
+        print('Microstructure material:',self.rev.microstructure.material.parameters)
         print('Imperfections:',self.imperfections)
         return '\n'
 
