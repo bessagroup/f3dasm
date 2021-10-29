@@ -8,13 +8,13 @@
 A dataclass for storing variables (features) during the DoE
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np, array
-from data import DATA
+from .data import DATA
 from typing import Optional
-from abc import ABC, abstractmethod
+from abc import ABC
 
-# using Optiona
+# using Optional
 # attritube: Optional[optional-object] = None
 
 
@@ -30,12 +30,14 @@ class BaseMicrosructure(ABC):
     
     material: Material
 
+
 @dataclass
 class CircleMicrostructure(BaseMicrosructure):
     """Represents a microstructure for a circle"""
 
     diameter: any # can be a single value or a range of values
     shape: str = 'Circle'
+
 
 @dataclass
 class CilinderMicrostructure(BaseMicrosructure):
@@ -44,7 +46,6 @@ class CilinderMicrostructure(BaseMicrosructure):
     diameter: any # can be a single value or a range of values
     length: float
     shape: str = 'Cilinder'
-
 
 
 @dataclass
@@ -57,7 +58,7 @@ class Imperfection:
 
 @dataclass
 class RVE:
-    """Represents an Representative Volume Element"""
+    """Represents an Representative Elementary Volume"""
     
     Lc: float # characteristic length
     material: Material
@@ -94,6 +95,7 @@ class DoeVars:
     # todo: collect names for data colums
     # pass them on to data.py
     #TODO: implement own method to convert to pandas dataframe, use data.py as example
+    
     def save(self,filename):
 
         """ Save experiemet doe points as pickle file
@@ -109,6 +111,8 @@ class DoeVars:
         data_frame.to_pickle(filename)
 
 
+
+
 def main():
 
     components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
@@ -118,6 +122,7 @@ def main():
     rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
     doe = DoeVars(boundary_conditions=components, rve=rve)
 
+    print(isinstance(mat1, Material))
     print(doe)
 if __name__ == "__main__":
     main()
