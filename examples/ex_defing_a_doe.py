@@ -10,7 +10,7 @@ components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
 
 # define material for RVE and microstructure
 mat1 = Material({'param1': 1, 'param2': 2})
-mat2 = Material({'param1': 3, 'param2': 4})
+mat2 = Material({'param1': 3, 'param2': 4, 'param3': 'value3'})
 
 # create a microstructure 
 #circle
