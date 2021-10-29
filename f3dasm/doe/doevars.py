@@ -17,7 +17,6 @@ from abc import ABC
 # using Optional
 # attritube: Optional[optional-object] = None
 
-
 @dataclass
 class Material:
     """represents a material"""
@@ -74,7 +73,7 @@ class DoeVars:
     rev: REV
     imperfections: Optional[Imperfection] = None
 
-    def __str__(self):
+    def info(self):
 
         """ Overwrite print function"""
 
@@ -119,10 +118,13 @@ def main():
     mat1 = Material({'param1': 1, 'param2': 2})
     mat2 = Material({'param1': 3, 'param2': 4})
     micro = CircleMicrostructure(material=mat2, diameter=0.3)
-    rve = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-    doe = DoeVars(boundary_conditions=components, rve=rve)
+    rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+    doe = DoeVars(boundary_conditions=components, rev=rev)
 
-    print(isinstance(mat1, Material))
     print(doe)
+
+    print(doe.info())
+
+
 if __name__ == "__main__":
     main()
