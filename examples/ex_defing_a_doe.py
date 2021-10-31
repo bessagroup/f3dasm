@@ -3,6 +3,7 @@ Example on how to define a DoE
 This example will be moved to the documentation
 """
 from f3dasm.doe.doevars import CilinderMicrostructure, DoeVars, Material, CircleMicrostructure, REV, DoeVars
+from dataclasses import asdict
 
 
 # define strain components
@@ -36,7 +37,10 @@ doe = DoeVars(boundary_conditions=components, rev=rev)
 print('DoEVars definition:')
 print(doe)
 
-print('DoEVars summary information:')
+
+print('\n DoEVars summary information:')
 print(doe.info())
 
+print('\n DoEVars as nested dictionary:')
+print(asdict(doe))
 
