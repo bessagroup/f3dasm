@@ -50,9 +50,16 @@ doe.rev.microstructure.material = mat3
 print('\n', 'Changed Material of microstructure:')
 print('\n', doe)
 
-#.  2 Change diameter of geometry of microstructure
+#. 3 Change parameters of geometery for DoE
+micro.diameter = 0.5
+doe.rev.microstructure = micro
+print('\n', 'Changed diameter of microstructure:')
+print('\n', doe)
 
+#.  2 Change  geometry of microstructure
 new_micro = CilinderMicrostructure(material=mat1, diameter=0.3, length=1.0)
 doe.rev.microstructure = new_micro
 print('\n', 'Changed microstructure geometry:')
 print('\n', doe)
+
+
