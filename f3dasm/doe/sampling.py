@@ -13,8 +13,8 @@ class SamplingMethod(ABC):
     """Represets a generic sampling method for parmeters with a range of values"""
 
     size: int
-    values: dict
-    
+    values: any # list or dict
+
     @abstractclassmethod
     def compute_sampling(self, aprox='float') -> array:
         """
@@ -22,20 +22,38 @@ class SamplingMethod(ABC):
         Values 
         Args:
             sample_size (int): number of samples to be generated
-            values (dic): ranges of values to be sample as name:value pairs
+            values (dic or list): ranges of values to be sample. A dictionary conatig several ranges or a single list of lenth 2
             aprox (int or float): controls if sampled values are aproximated to an integer or to a float. Default is float
         Returns:
             sampling results as array 
         """
-    
+
+    def check_input_type(self):
+        """
+        Check the data type of values attribute.
+        Returns:
+            dict or list data type
+        """
+        if isinstance(self.values, dict):
+            input_type = dict
+        elif isinstance(self.values, list):
+            input_type = list
+        else:
+            raise TypeError("Input values must be dictionary or list")
+
+        return input_type
+
     def validate_range(self) -> None:
         """Checks that elements in values represent value rantes """
 
+        # TODO: IMPLEMENT ONLY FOR THE CASE OF RANGE A LIST
         for value in self.values.values():
             if isinstance(value, list) and len(value) == 2:
                 return True
             else:
                 raise TypeError("Sampling can only be applied to values representing a range. E.g. [2, 3]")
+        # TODO: implement check of range contains numbers
+
 
 
     def compute_dimensions(self) -> int:
@@ -46,7 +64,8 @@ class SamplingMethod(ABC):
         """
         return len(self.values.keys())
 
-    
+
+
 class Sobol(SamplingMethod):
     """Computes sampling using a sobol sequence from SALib"""
 
@@ -93,11 +112,12 @@ def main():
 
     sobol = Sobol(size, components)
     samples =sobol.compute_sampling()
+    print(sobol.check_input_type())
     print(samples)
 
-    linear = Linear(size, components)
-    samples =linear.compute_sampling()
-    print(samples)
+    # linear = Linear(size, components)
+    # samples =linear.compute_sampling()
+    # print(samples)
 
 if __name__ == "__main__":
     main()
