@@ -44,17 +44,23 @@ class SamplingMethod(ABC):
         return input_type
 
     def validate_range(self) -> None:
-        """Checks that elements in values represent value rantes """
+        """Checks that a range of values contains two numeric values"""
 
-        # TODO: IMPLEMENT ONLY FOR THE CASE OF RANGE A LIST
-        for value in self.values.values():
-            if isinstance(value, list) and len(value) == 2:
-                return True
+        if isinstance(self.check_input_type(), dict):
+            for value in self.values.values():
+                if isinstance(value, list) and len(value) == 2:
+                    if isinstance(value[0], (int, float)) and isinstance(value[1], (int, float)):
+                        return True
+                    else:
+                        raise TypeError("Range of values contains one of more values that are not numeric.")
+                else:
+                    raise TypeError("Input don't contain a valid range of vlaues. E.g. [2.1, 3]")
+        else:
+            if len(self.values) ==2 and isinstance(self.values[0], (int, float)) and isinstance(self.values[1], (int, float)):
+                        return True
             else:
-                raise TypeError("Sampling can only be applied to values representing a range. E.g. [2, 3]")
-        # TODO: implement check of range contains numbers
-
-
+                raise TypeError("Range of values contains one of more values that are not numeric.")
+                
 
     def compute_dimensions(self) -> int:
         """Computes the number of dimentions for the sampling methon
