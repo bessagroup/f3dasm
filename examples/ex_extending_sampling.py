@@ -28,9 +28,9 @@ class MyCustomeSampling(SamplingMethod):
 # Use:
 
 # define strain components
-components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
+values= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
 sampling_size = 5
-sampling = MyCustomeSampling(sampling_size, components)
-
+sampling = MyCustomeSampling(sampling_size, values)
+print('Sampling results:', sampling.compute_sampling())
 
 
