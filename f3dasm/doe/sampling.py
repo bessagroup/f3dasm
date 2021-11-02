@@ -21,8 +21,10 @@ class SamplingMethod(ABC):
         Computes N number of samples for the values represented as ranges of values. E.g. [min, max]
         Args:
             sample_size (int): number of samples to be generated
-            values (dic or list): ranges of values to be sample. A dictionary conatig several ranges or a single list of lenth 2
-            aprox (int or float): controls if sampled values are aproximated to an integer or to a float. Default is float
+            values (dic or list): ranges of values to be sample. 
+                A dictionary conatig several ranges or a single list of length 2
+            aprox (int or float): controls if sampled values are aproximated to an integer or to a float. 
+                Default is float
         Returns:
             sampling results as array 
         """
@@ -70,7 +72,7 @@ class SamplingMethod(ABC):
         """
         if isinstance(self.check_input_type(), dict):
             return len(self.values.keys())
-        else: # for the case of a list, dimentions must always be 1
+        else: # for the case of a list, dimensions is always one
             return 1
 
 
@@ -91,12 +93,12 @@ class Sobol(SamplingMethod):
         # Streches sampling values toward the bounds given by the original values
         if aprox == 'float' and isinstance(self.check_input_type(), dict):
             for i, bound in enumerate(self.values.values()): 
-                samples[:,i] = samples[:,i] * (bound[1] - bound[0]) + bound[0] # TODO: Are values being strechted to the upper bound?
+                samples[:,i] = samples[:,i] * (bound[1] - bound[0]) + bound[0] 
         elif aprox == 'float' and isinstance(self.check_input_type(), list):
             samples = samples * (self.values[1] - self.values[0]) + self.values[0]
         else:
             raise NotImplementedError
-            #TODO: implement case when samples must be integers
+            #TODO: implement cases when samples must be integers
 
         return samples
        
@@ -121,7 +123,7 @@ class Linear(SamplingMethod):
             samples = numpy.linspace(self.values[0], self.values[1],self.size)
         else:
             raise NotImplementedError
-            #TODO: implement case when samples must be integers
+            #TODO: implement cases when samples must be integers
 
         return samples
 
