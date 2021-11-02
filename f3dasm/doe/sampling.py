@@ -68,7 +68,10 @@ class SamplingMethod(ABC):
             values (dict): values the sampling will be applied to
         Returns (int): number of elements in values
         """
-        return len(self.values.keys())
+        if isinstance(self.check_input_type, dict):
+            return len(self.values.keys())
+        else: # for the case of a list, dimentions must always be 1
+            return 1
 
 
 
