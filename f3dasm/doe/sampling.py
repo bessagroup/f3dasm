@@ -35,9 +35,9 @@ class SamplingMethod(ABC):
             dict or list data type
         """
         if isinstance(self.values, dict):
-            input_type = dict
+            input_type = {}
         elif isinstance(self.values, list):
-            input_type = list
+            input_type = []
         else:
             raise TypeError("Input values must be dictionary or list")
 
@@ -45,7 +45,7 @@ class SamplingMethod(ABC):
 
     def validate_range(self) -> None:
         """Checks that a range of values contains two numeric values"""
-
+        
         if isinstance(self.check_input_type(), dict):
             for value in self.values.values():
                 if isinstance(value, list) and len(value) == 2:
@@ -54,11 +54,14 @@ class SamplingMethod(ABC):
                     else:
                         raise TypeError("Range of values contains one of more values that are not numeric.")
                 else:
+                    
                     raise TypeError("Input don't contain a valid range of vlaues. E.g. [2.1, 3]")
-        else:
-            if len(self.values) ==2 and isinstance(self.values[0], (int, float)) and isinstance(self.values[1], (int, float)):
-                        return True
+        else: # when input_type is list
+            if len(self.values) == 2 and isinstance(self.values[0], (int, float)) and isinstance(self.values[1], (int, float)):
+                print('input is list')
+                return True
             else:
+                print(self.values)
                 raise TypeError("Range of values contains one of more values that are not numeric.")
                 
 
@@ -68,7 +71,8 @@ class SamplingMethod(ABC):
             values (dict): values the sampling will be applied to
         Returns (int): number of elements in values
         """
-        if isinstance(self.check_input_type, dict):
+        if isinstance(self.check_input_type(), dict):
+            print('type', type(self.check_input_type))
             return len(self.values.keys())
         else: # for the case of a list, dimentions must always be 1
             return 1
@@ -81,12 +85,20 @@ class Sobol(SamplingMethod):
     def compute_sampling(self, aprox='float') -> array:
         super().validate_range()
         self.dimensions = super().compute_dimensions()
+        print(self.dimensions)
+
+        #----------------------------------------------------------
+        # Implementation of Sampling Method
+        # ----------------------------------------------------------
         # seeds for the sampling
         samples = sobol_sequence.sample(self.size, self.dimensions) 
 
-        if aprox == 'float':
-            for i, bound in enumerate(self.values.values()):   
-                samples[:,i] = samples[:,i] * (bound[1] - bound[0]) + bound[0] # TODO: values are not stretch to the upper bound
+        # Streches sampling values toward the bounds given by the original values
+        if aprox == 'float' and isinstance(self.check_input_type(), dict):
+            for i, bound in enumerate(self.values.values()): 
+                samples[:,i] = samples[:,i] * (bound[1] - bound[0]) + bound[0] # TODO: Are values being strechted to the upper bound?
+        elif aprox == 'float' and isinstance(self.check_input_type(), list):
+            samples = samples * (self.values[1] - self.values[0]) + self.values[0]
         else:
             raise NotImplementedError
             #TODO: implement case when samples must be integers
@@ -100,15 +112,24 @@ class Linear(SamplingMethod):
     def compute_sampling(self, aprox='float') -> array:
         super().validate_range()
         self.dimensions = super().compute_dimensions()
+
+        #----------------------------------------------------------
+        # Implementation of Sampling Method
+        # ----------------------------------------------------------
         samples = numpy.zeros((self.size, self.dimensions))
-    
+
         # Streches sampling values toward the bounds given by the original values
-        if aprox == 'float':
-            for i, bound in enumerate(self.values.values()):          
-                samples[:,i] = numpy.linspace(bound[0], bound[1],self.size) 
+        if aprox == 'float' and isinstance(self.check_input_type(), dict):
+            for i, bound in enumerate(self.values.values()): 
+                samples[:,i] = numpy.linspace(bound[0], bound[1],self.size)
+        elif aprox == 'float' and isinstance(self.check_input_type(), list):
+            print('input type is list')
+            samples = numpy.linspace(self.values[0], self.values[1],self.size)
+            # samples = samples * (self.values[1] - self.values[0]) + self.values[0]
         else:
             raise NotImplementedError
             #TODO: implement case when samples must be integers
+
         return samples
 
 
@@ -119,14 +140,27 @@ def main():
     components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
     size = 10
 
-    sobol = Sobol(size, components)
-    samples =sobol.compute_sampling()
-    print(sobol.check_input_type())
+    # sobol1 = Sobol(size, components)
+    # samples =sobol1.compute_sampling()
+    # # print(sobol1.check_input_type())
+    # print(samples)
+
+    # print('List Case, dimentions=1')
+    # var_range = [5, 10]
+    # sobol2 = Sobol(size, var_range)
+    # samples = sobol2.compute_sampling()
+    # print(samples)
+
+    linear = Linear(size, components)
+    samples =linear.compute_sampling()
     print(samples)
 
-    # linear = Linear(size, components)
-    # samples =linear.compute_sampling()
-    # print(samples)
+    var_range = [5, 10]
+    linear2 = Linear(size, var_range)
+    samples = linear2.compute_sampling()
+    print(samples)
+
+
 
 if __name__ == "__main__":
     main()
