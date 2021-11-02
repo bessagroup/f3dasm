@@ -18,7 +18,7 @@ SAMPLE_SIZE = 5
 
 class TestSamplingMethod(unittest.TestCase):
 
-    def test_validate_rante(self):
+    def test_validate_range(self):
         """Test that method raises a typeError when values pass to the sampling method contatin a list with more than 2 elements"""
         self.sobol_with_bad_range = Sobol(SAMPLE_SIZE, BAD_RANGE)
         self.assertRaises(TypeError, self.sobol_with_bad_range.validate_range())
