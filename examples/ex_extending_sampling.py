@@ -16,12 +16,21 @@ class MyCustomeSampling(SamplingMethod):
         # compute dimentions of the input data if required by your sampling method
         self.dimensions = super().compute_dimensions()
         
+        #----------------------------------------------------------
+        # Implementation of Sampling Method
+        # ----------------------------------------------------------
+        # 1. seeds for the sampling:
+ 
+        # 2. cases for streaching values based on input data types, if required:
+        # 2.1. Case for inputs as dictionary:
 
-        # Implement you sampling method here:
-        # -----------------------------------
-        samples = None
+        # 2.1. Case for inputs as list:
 
-        # ------------------------------------
+        # 2.2. Case for X:
+    
+        samples = None  # output must be an Numpy array
+
+        # ----------------------------------------------------------
 
         return samples
 
