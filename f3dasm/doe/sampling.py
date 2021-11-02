@@ -18,8 +18,7 @@ class SamplingMethod(ABC):
     @abstractclassmethod
     def compute_sampling(self, aprox='float') -> array:
         """
-        Computes N number of samples for the values represented as ranges. E.g. [min, max]
-        Values 
+        Computes N number of samples for the values represented as ranges of values. E.g. [min, max]
         Args:
             sample_size (int): number of samples to be generated
             values (dic or list): ranges of values to be sample. A dictionary conatig several ranges or a single list of lenth 2
@@ -120,7 +119,6 @@ class Linear(SamplingMethod):
                 samples[:,i] = numpy.linspace(bound[0], bound[1],self.size)
         elif aprox == 'float' and isinstance(self.check_input_type(), list):
             samples = numpy.linspace(self.values[0], self.values[1],self.size)
-            # samples = samples * (self.values[1] - self.values[0]) + self.values[0]
         else:
             raise NotImplementedError
             #TODO: implement case when samples must be integers
@@ -154,7 +152,6 @@ def main():
     linear2 = Linear(size, var_range)
     samples = linear2.compute_sampling()
     print(samples)
-
 
 
 if __name__ == "__main__":
