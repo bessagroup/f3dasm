@@ -28,7 +28,7 @@ class MyCustomeSampling(SamplingMethod):
 
         # 2.2. Case for X:
     
-        samples = None  # output must be an Numpy array
+        samples = ['my sampling results']  # output must be an Numpy array
 
         # ----------------------------------------------------------
 
