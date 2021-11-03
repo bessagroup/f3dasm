@@ -2,7 +2,7 @@
 Example on how to modify  the parameters (definition) of a DoE
 This example will be moved to the documentation
 """
-from f3dasm.doe.doevars import CilinderMicrostructure, DoeVars, Material, CircleMicrostructure, REV, DoeVars
+from f3dasm.doe.doevars import CilinderMicrostructure, DoeVars, Material, CircleMicrostructure, RVE, DoeVars
 
 
 # -------------------------------------------
@@ -34,8 +34,8 @@ mat3 = Material({'elements': [{'name': 'BRONZE', 'params': {'param1': 5, 'param2
 micro = CircleMicrostructure(material=mat2, diameter=0.3)
 
 # create RVE
-rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-doe = DoeVars(boundary_conditions=components, rev=rev)
+rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+doe = DoeVars(boundary_conditions=components, rve=rve)
 
 print('DoEVars Original parameters:')
 print(doe)
@@ -46,18 +46,18 @@ print(doe)
 # -------------------------------------------
 
 #.  1 Change material of microstructure
-doe.rev.microstructure.material = mat3
+doe.rve.microstructure.material = mat3
 print('\n', 'Changed Material of microstructure:')
 print('\n', doe)
 
 #. 3 Change parameters of geometery for DoE
 micro.diameter = 0.5
-doe.rev.microstructure = micro
+doe.rve.microstructure = micro
 print('\n', 'Changed diameter of microstructure:')
 print('\n', doe)
 
 #.  2 Change  geometry of microstructure
 new_micro = CilinderMicrostructure(material=mat1, diameter=0.3, length=1.0)
-doe.rev.microstructure = new_micro
+doe.rve.microstructure = new_micro
 print('\n', 'Changed microstructure geometry:')
 print('\n', doe)
