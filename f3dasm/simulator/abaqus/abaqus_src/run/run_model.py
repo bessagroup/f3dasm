@@ -36,8 +36,8 @@ from .utils import convert_dict_unicode_str
 from .stats import get_wait_time_from_log
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
-from ...utils.file_handling import get_unique_file_by_ext
-from ...utils.utils import import_abstract_obj
+from .....utils.file_handling import get_unique_file_by_ext
+from .....utils.utils import import_abstract_obj
 
 
 # object definition

@@ -37,7 +37,7 @@ from ....post_processing import collect_raw_data
 
 def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
              data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
-             sims_dir_name='analyses', run_module_name='f3dasm.abaqus.run.run_model',
+             sims_dir_name='analyses', run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
              keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
              gui=False, delete=False, pp_fnc=None, pp_fnc_kwargs=None,
              create_new_file='',):
@@ -217,7 +217,7 @@ def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
 
 
 def _run_sims_sequentially(example_name, points, wait_time=0,
-                           run_module_name='f3dasm.abaqus.run.run_model',
+                           run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
                            sims_dir_name='analyses', abaqus_path='abaqus',
                            gui=False, temp_dir_name='_temp'):
     '''
@@ -259,7 +259,7 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
 
 
 def _run_sims_in_parallel(example_name, points, n_cpus,
-                          run_module_name='f3dasm.abaqus.run.run_model',
+                          run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
                           sims_dir_name='analyses', abaqus_path='abaqus',
                           gui=False, temp_dir_name='_temp'):
 
