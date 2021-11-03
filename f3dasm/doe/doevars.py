@@ -8,11 +8,12 @@
 A dataclass for storing variables (features) during the DoE
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import numpy as np, array
-from .data import DATA
+# from data import DATA
 from typing import Optional
 from abc import ABC
+import pandas as pd
 
 # using Optional
 # attritube: Optional[optional-object] = None
@@ -95,18 +96,37 @@ class DoeVars:
     # pass them on to data.py
     #TODO: implement own method to convert to pandas dataframe, use data.py as example
     
+    def pandas_df(self, max_level=None):
+        """
+        Converts DoeVars into a normilized flat table.
+        Args:
+            max_level: Max number of levels(depth of dict) to normalize. if None, normalizes all levels.
+        Returns:
+            pandas dataframe
+        """
+        pd.set_option('display.max_columns', None) # show all colums in the dataframe
+        normalized_dataframe = pd.json_normalize(asdict(self), max_level=max_level)
+        return normalized_dataframe
+
+    def as_dict(self):
+        """
+        Convert DoeVars into a nested dictionary
+        """
+        return asdict(self)
+
+
     def save(self,filename):
 
-        """ Save experiemet doe points as pickle file
+        """ Save doe-vars as pickle file
         
         Args:
             filename (string): filename for the pickle file
-        
+    
         Returns: 
             None
          """  
 
-        data_frame = DATA(self.values,self.feature_names)       # f3dasm data structure, numpy array
+        data_frame = self.pandas_df()       # f3dasm data structure, numpy array
         data_frame.to_pickle(filename)
 
 
@@ -114,16 +134,33 @@ class DoeVars:
 
 def main():
 
+    from dataclasses import asdict
+    import json
+    import pandas as pd
+
     components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
     mat1 = Material({'param1': 1, 'param2': 2})
-    mat2 = Material({'param1': 3, 'param2': 4})
-    micro = CircleMicrostructure(material=mat2, diameter=0.3)
+    mat2 = Material({'elements': [{'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'}}
+                    ]
+                })
+    micro = CircleMicrostructure(material=mat2, diameter=[0.3, 0.5])
     rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
     doe = DoeVars(boundary_conditions=components, rev=rev)
 
     print(doe)
 
-    print(doe.info())
+    # print(doe.info())
+    # print(asdict(doe))
+    # print(json.dumps(asdict(doe)))
+     
+    pd.set_option('display.max_columns', None)
+    norm_pd = pd.json_normalize(asdict(doe), max_level=1)
+    df = norm_pd.rename(columns= {"rev.Lc": "Lc"}, errors="raise")
+    # print(df)
+    print(doe.pandas_df())
+
+    print(doe.as_dict())
+
 
 
 if __name__ == "__main__":
