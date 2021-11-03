@@ -36,6 +36,6 @@ doe = DoeVars(boundary_conditions=components, rev=rev)
 sobol = Sobol(size=5, values='') 
 sampling =sample_doevars(doe_vars=doe, sampling_method=sobol)
 
-# pipe data into common Data interface
+# pipe data to common Data interface
 data = DATA(sampling[0][0], keys=sampling[1])
 print(data)
