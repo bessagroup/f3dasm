@@ -61,5 +61,3 @@ new_micro = CilinderMicrostructure(material=mat1, diameter=0.3, length=1.0)
 doe.rev.microstructure = new_micro
 print('\n', 'Changed microstructure geometry:')
 print('\n', doe)
-
-
