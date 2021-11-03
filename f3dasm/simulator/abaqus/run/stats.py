@@ -19,8 +19,8 @@ import pandas as pd
 
 # local library
 from .utils import get_sims_info
-from ..utils.file_handling import InfoReport
-from ..utils.plot import BarPlot
+from ....utils.file_handling import InfoReport
+from ....utils.plot import BarPlot
 from ..post_processing import collect_raw_data
 
 

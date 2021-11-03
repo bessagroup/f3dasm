@@ -23,11 +23,11 @@ import numpy as np
 # local library
 import f3dasm
 from .utils import get_updated_sims_state
-from ..utils.file_handling import verify_existing_name
-from ..utils.utils import import_abstract_obj
-from ..post_processing import post_process_sims
-from ..post_processing import concatenate_raw_data
-from ..post_processing import collect_raw_data
+from ....utils.file_handling import verify_existing_name
+from ....utils.utils import import_abstract_obj
+from ....post_processing import post_process_sims
+from ....post_processing import concatenate_raw_data
+from ....post_processing import collect_raw_data
 
 
 # TODO: interrupt simulations

@@ -14,8 +14,8 @@ from collections import OrderedDict
 
 # local library
 import f3dasm
-from ..utils.file_handling import InfoReport
-from ..post_processing import collect_raw_data
+from ....utils.file_handling import InfoReport
+from ....post_processing import collect_raw_data
 
 
 # object definition
