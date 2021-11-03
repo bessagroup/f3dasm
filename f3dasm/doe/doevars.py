@@ -15,58 +15,32 @@ from typing import Optional
 from abc import ABC
 import pandas as pd
 
-# using Optional
-# attritube: Optional[optional-object] = None
 
-@dataclass
-class Material:
-    """represents a material"""
-    parameters: dict  # materials can be represeted a variable list of name:value pairs
-
-
-@dataclass
-class BaseMicrosructure(ABC):
-    """Represents a generic microstructue"""
-    
-    material: Material
-
-
-@dataclass
-class CircleMicrostructure(BaseMicrosructure):
-    """Represents a microstructure for a circle"""
-
-    diameter: any # can be a single value or a range of values
-    shape: str = 'Circle'
-
-
-@dataclass
-class CilinderMicrostructure(BaseMicrosructure):
-    """Represents a microstructure for """
-
-    diameter: any # can be a single value or a range of values
-    length: float
-    shape: str = 'Cilinder'
+## working example:
+## Only parameters in the top level will be deserialized into a dataframe.
+d = {'F11':[-0.15, 1], 
+    'F12':[-0.1,0.15],
+    'F22':[-0.15, 1], 
+    'radius': [0.3, 5],  
+    'material1': {'STEEL': {
+                    'E': [0,100], 
+                    'u': {0.1, 0.2, 0.3} 
+                        }, 
+                'CARBON': {
+                    'E': 5, 
+                    'u': 0.5, 
+                    's': 0.1 
+                    } 
+                },
+    'material2': {
+                'CARBON': {
+                    'x': 2
+                    } 
+                },
+     }
 
 
-@dataclass
-class Imperfection:
-    """Represents imperfections"""
 
-    #TODO: define the class further, can we define subtypes?
-    imperfections: dict # a list parameters defining an imperfection as name:value pairs
-
-
-@dataclass
-class REV:
-    """Represents an Representative Elementary Volume"""
-    
-    Lc: float # characteristic length
-    material: Material
-    microstructure: BaseMicrosructure
-    dimesionality: int = 2 # e.g. 2D
-
-
-@dataclass
 class DoeVars:
     """Parameters for the design of experiments"""
 
