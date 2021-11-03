@@ -13,7 +13,7 @@ class SamplingMethod(ABC):
     """Represets a generic sampling method for parmeters with a range of values"""
 
     size: int
-    values: any # list or dict
+    values: any # list or dict, #TODO: make an optional parameter
 
     @abstractclassmethod
     def compute_sampling(self, aprox='float') -> array:
@@ -128,6 +128,38 @@ class Linear(SamplingMethod):
         return samples
 
 
+def sample_doevars(doe_vars, sampling_method):
+    """
+    Computes sampling over all DoE variables (at level 0) containing a valid range of values using the given sampling method.
+    Args:
+        doe_vars (object): instance of the DoeVar dataclass
+        sampling_method (object): concrete instance of the SamplingMethod with a concrete sampling method.
+    Returns:
+        list of keys (data colums) and sampled values (numpy array)   
+    """
+    # print(doe_vars.as_dict())
+    vars_dict = doe_vars.as_dict()
+    
+    results =[]
+
+    for var0 in vars_dict.keys():
+        sampling_method.values = vars_dict[var0]
+        try:
+            samples = sampling_method.compute_sampling()
+            results.append(numpy.asarray(samples))
+            # print(samples)
+        except TypeError:
+            # Exeptions are handled by the compute_sampling method
+            continue
+        else:
+            # TODO: make the collection of keys generic for the cases where multiple vars require sampling
+            data_colums=(list(vars_dict[var0].keys()))
+    
+    # print(results)
+    # print(data_colums)
+    return (results, data_colums)
+
+
 def main():
 
     #TODO: write unit test based on this example
@@ -143,6 +175,8 @@ def main():
     print('List Case, dimentions=1')
     var_range = [5, 10]
     sobol2 = Sobol(size, var_range)
+    sobol2.size = 3
+    sobol2.values = [1, 3]
     samples = sobol2.compute_sampling()
     print(samples)
 
@@ -154,6 +188,7 @@ def main():
     linear2 = Linear(size, var_range)
     samples = linear2.compute_sampling()
     print(samples)
+
 
 
 if __name__ == "__main__":
