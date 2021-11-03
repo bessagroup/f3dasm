@@ -10,7 +10,7 @@ A dataclass for storing variables (features) during the DoE
 
 from dataclasses import dataclass, asdict
 import numpy as np, array
-from data import DATA
+# from data import DATA
 from typing import Optional
 from abc import ABC
 import pandas as pd
@@ -117,16 +117,16 @@ class DoeVars:
 
     def save(self,filename):
 
-        """ Save experiemet doe points as pickle file
+        """ Save doe-vars as pickle file
         
         Args:
             filename (string): filename for the pickle file
-        
+    
         Returns: 
             None
          """  
 
-        data_frame = DATA(self.values,self.feature_names)       # f3dasm data structure, numpy array
+        data_frame = self.pandas_df()       # f3dasm data structure, numpy array
         data_frame.to_pickle(filename)
 
 
