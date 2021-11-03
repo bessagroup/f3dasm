@@ -101,9 +101,20 @@ class DoeVars:
         Converts DoeVars into a normilized flat table.
         Args:
             max_level: Max number of levels(depth of dict) to normalize. if None, normalizes all levels.
+        Returns:
+            pandas dataframe
         """
-        norm_pd = pd.json_normalize(asdict(self), max_level=max_level)
-        print(norm_pd)
+        pd.set_option('display.max_columns', None) # show all colums in the dataframe
+        normalized_dataframe = pd.json_normalize(asdict(self), max_level=max_level)
+        return normalized_dataframe
+
+    def as_dict(self):
+        """
+        Convert DoeVars into a nested dictionary
+        """
+        pass
+
+
 
 
     def save(self,filename):
@@ -148,7 +159,7 @@ def main():
     norm_pd = pd.json_normalize(asdict(doe), max_level=1)
     df = norm_pd.rename(columns= {"rev.Lc": "Lc"}, errors="raise")
     # print(df)
-    # print(doe.pandas_df(max_level=1))
+    print(doe.pandas_df())
 
 
 
