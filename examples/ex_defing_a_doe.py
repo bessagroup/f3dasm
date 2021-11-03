@@ -2,7 +2,7 @@
 Example on how to define a DoE
 This example will be moved to the documentation
 """
-from f3dasm.doe.doevars import CilinderMicrostructure, DoeVars, Material, CircleMicrostructure, REV, DoeVars
+from f3dasm.doe.doevars import CilinderMicrostructure, DoeVars, Material, CircleMicrostructure, RVE, DoeVars
 from dataclasses import asdict
 
 
@@ -32,8 +32,8 @@ micro = CircleMicrostructure(material=mat2, diameter=0.3)
 micro2 = CilinderMicrostructure(material=mat1, diameter=0.3, length=1.0)
 
 # create RVE
-rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-doe = DoeVars(boundary_conditions=components, rev=rev)
+rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+doe = DoeVars(boundary_conditions=components, rve=rve)
 
 print('DoEVars definition:')
 print(doe)

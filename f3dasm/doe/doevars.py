@@ -57,7 +57,7 @@ class Imperfection:
 
 
 @dataclass
-class REV:
+class RVE:
     """Represents an Representative Elementary Volume"""
     
     Lc: float # characteristic length
@@ -71,7 +71,7 @@ class DoeVars:
     """Parameters for the design of experiments"""
 
     boundary_conditions: dict  # boundary conditions 
-    rev: REV
+    rve: RVE
     imperfections: Optional[Imperfection] = None
 
     def info(self):
@@ -83,11 +83,11 @@ class DoeVars:
         print('-----------------------------------------------------')
         print('\n')
         print('Boundary conditions:',self.boundary_conditions)
-        print('REV dimensions:',self.rev.dimesionality)
-        print('REV Lc:',self.rev.Lc)
-        print('REV material:',self.rev.material.parameters)
-        print('Microstructure shape:',self.rev.microstructure.shape)
-        print('Microstructure material:',self.rev.microstructure.material.parameters)
+        print('RVE dimensions:',self.rve.dimesionality)
+        print('RVE Lc:',self.rve.Lc)
+        print('RVE material:',self.rve.material.parameters)
+        print('Microstructure shape:',self.rve.microstructure.shape)
+        print('Microstructure material:',self.rve.microstructure.material.parameters)
         print('Imperfections:',self.imperfections)
         return '\n'
 
@@ -144,8 +144,8 @@ def main():
                     ]
                 })
     micro = CircleMicrostructure(material=mat2, diameter=[0.3, 0.5])
-    rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-    doe = DoeVars(boundary_conditions=components, rev=rev)
+    rve = RVE(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
+    doe = DoeVars(boundary_conditions=components, rve=rve)
 
     print(doe)
 
@@ -155,7 +155,7 @@ def main():
      
     pd.set_option('display.max_columns', None)
     norm_pd = pd.json_normalize(asdict(doe), max_level=1)
-    df = norm_pd.rename(columns= {"rev.Lc": "Lc"}, errors="raise")
+    df = norm_pd.rename(columns= {"rve.Lc": "Lc"}, errors="raise")
     # print(df)
     print(doe.pandas_df())
 
