@@ -112,9 +112,7 @@ class DoeVars:
         """
         Convert DoeVars into a nested dictionary
         """
-        pass
-
-
+        return asdict(self)
 
 
     def save(self,filename):
@@ -160,6 +158,8 @@ def main():
     df = norm_pd.rename(columns= {"rev.Lc": "Lc"}, errors="raise")
     # print(df)
     print(doe.pandas_df())
+
+    print(doe.as_dict())
 
 
 
