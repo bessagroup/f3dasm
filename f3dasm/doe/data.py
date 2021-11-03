@@ -3,13 +3,13 @@
 # of data within F3DASM                               #
 #######################################################
 
-from dataclasses import dataclass
+# from dataclasses import dataclass
 
-@dataclass
-class DataPool:
-    """Common data structure in F3DAMS"""
+# @dataclass
+# class DataPool:
+#     """Common data structure in F3DAMS"""
 
-    # TODO: refactor code from data.py
+#     # TODO: refactor code from data.py
     
 
 # ==================== original code ================
