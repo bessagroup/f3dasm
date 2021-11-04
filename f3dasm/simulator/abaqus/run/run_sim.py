@@ -37,7 +37,7 @@ from ....post_processing import collect_raw_data
 
 def run_sims(example_name, n_sims=None, n_cpus=1, points=None,
              data_filename='DoE.pkl', raw_data_filename='raw_data.pkl',
-             sims_dir_name='analyses', run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
+             sims_dir_name='analyses', run_module_name='f3dasm.simulator.abaqus.abaqus_src.run.run_model',
              keep_odb=True, dump_py_objs=False, abaqus_path='abaqus',
              gui=False, delete=False, pp_fnc=None, pp_fnc_kwargs=None,
              create_new_file='',):
@@ -215,9 +215,28 @@ def _create_DoE_sim_info(example_name, data, points, sims_dir_name='analyses',
         for copy_subroutines_fnc in copy_subroutines_fncs:
             copy_subroutines_fnc(doe_dir_name)
 
+from f3dasm.simulator.abaqus.abaqus_src import abaqus_module_call
+
+def execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
+                    abaqus_path = 'abaqus', 
+                    gui = False, 
+                    execute_script = os.path.abspath(abaqus_module_call.__file__)
+                    ):
+    """
+    This function constructs a command for 'abaqus cae' in order to execute an abaqus module. 
+    The command passes abaqus module name (run_module_name) and directories to a generic 
+    abaqus scipt (execute_script). This script is then executed with the internal abaqus python 
+    interpreter. 
+    """
+    gui_ = 'script' if gui else 'noGUI'
+    command = '{} cae {}={} -- -func {} -sdir {} -tdir {}'.format(abaqus_path, gui_, 
+                                                                execute_script, run_module_name, 
+                                                                sim_dir, temp_dir_name)
+    os.system(command)
+
 
 def _run_sims_sequentially(example_name, points, wait_time=0,
-                           run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
+                           run_module_name='f3dasm.simulator.abaqus.abaqus_src.run.run_model',
                            sims_dir_name='analyses', abaqus_path='abaqus',
                            gui=False, temp_dir_name='_temp'):
     '''
@@ -230,36 +249,40 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
 
     # initialization
     time.sleep(wait_time)
+    for point in points:
+        sim_dir = os.path.join(example_name, sims_dir_name)
+        sim_dir = os.path.join(sim_dir, 'DoE_point%i' % point)
 
-    # create run filename
-    run_filename = verify_existing_name('_temp.py')
-    lines = ['import runpy',
-             'import os',
-             'import sys',
-             'initial_wd = os.getcwd()',
-             'sys.path.append(initial_wd)',
-             "sys.path.append(os.path.join(initial_wd, '%s'))" % temp_dir_name,
-             'points = %s' % points,
-             "sim_dir = r'%s'" % os.path.join(example_name, sims_dir_name),
-             'for point in points:',
-             "\tos.chdir('%s' % os.path.join(sim_dir, 'DoE_point%i' % point))",
-             "\trunpy.run_module('%s', run_name='__main__')" % run_module_name,
-             '\tos.chdir(initial_wd)']
-    with open(run_filename, 'w') as f:
-        for line in lines:
-            f.write(line + '\n')
+        execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
+                    abaqus_path =abaqus_path, gui = gui)
+    # # create run filename
+    # run_filename = verify_existing_name('_temp.py')
+    # lines = ['import runpy',
+    #          'import os',
+    #          'import sys',
+    #          'initial_wd = os.getcwd()',
+    #          'sys.path.append(initial_wd)',
+    #          "sys.path.append(os.path.join(initial_wd, '%s'))" % temp_dir_name,
+    #          'points = %s' % points,
+    #          "sim_dir = r'%s'" % os.path.join(example_name, sims_dir_name),
+    #          'for point in points:',
+    #          "\tos.chdir('%s' % os.path.join(sim_dir, 'DoE_point%i' % point))",
+    #          "\trunpy.run_module('%s', run_name='__main__')" % run_module_name,
+    #          '\tos.chdir(initial_wd)']
+    # with open(run_filename, 'w') as f:
+    #     for line in lines:
+    #         f.write(line + '\n')
+
+     
 
     # open abaqus and run module
-    gui_ = 'script' if gui else 'noGUI'
-    command = '{} cae {}={}'.format(abaqus_path, gui_, run_filename)
-    os.system(command)
+   
 
     # clear temporary run file
-    os.remove(run_filename)
-
+    #os.remove(run_filename)
 
 def _run_sims_in_parallel(example_name, points, n_cpus,
-                          run_module_name='f3dasm.simulation.abaqus.abaqus_src.run.run_model',
+                          run_module_name='f3dasm.simulator.abaqus.abaqus_src.run.run_model',
                           sims_dir_name='analyses', abaqus_path='abaqus',
                           gui=False, temp_dir_name='_temp'):
 
