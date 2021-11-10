@@ -5,25 +5,18 @@
 ##############################################################
 
 import unittest
-from f3dasm.doe.doevars import DoeVars, REV
+from f3dasm.doe.doevars import DoeVars
 import pandas as pd
 
-B_CONDITIONS = {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]} 
-MICROSTRUCTURE_SIZE = 0.3
-MATERIAL_A = {'elements': [ {'name': 'STEEL', 'params': {'param1': 1, 'param2': 2}},
-                    {'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'} }
-                    ]
-                }
-
-MATERIAL_B = {'elements': [{'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'}}
-                    ]
-                }
-SAMPLE_SIZE = 5
-IMPERFFECTIONS= {'imp1': 1.2, 'imp2': {1,2,3}}
-LC = 4
-DIAMETER= 0.3
-LENGTH = 1
-
+VARS = {
+    'F11':[-0.15, 1], 
+    'F12':[-0.1,0.15],
+    'F22':[-0.15, 1], 
+    'radius': [0.3, 5],  
+    'material1': {'STEEL': {'E': [0,100], 'u': {0.1, 0.2, 0.3} }, 
+                'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
+    'material2': { 'CARBON': {'x': 2} },
+    }
 
 class TestRVE(unittest.TestCase):
     """Write relevant tests"""
@@ -37,13 +30,15 @@ class TestDoeVars(unittest.TestCase):
 
     def setUp(self) -> None:
         """set up test fixtures"""
-        self.doe_vars = DoeVars(B_CONDITIONS, REV(LC, Material(MATERIAL_A), 
-            CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),
-            Imperfection(IMPERFFECTIONS))
+        self.doe_vars = DoeVars(VARS)
 
-    def test_conversion_to_dataframe(self):
-        """Test if dataclass can be converted to a valid pandas dataframe"""
-        pass
+    def test_as_dict(self):
+        """Test that the as_dict method converts DoE variables in to a valid dictionary"""
+        self.assertIsInstance(self.doe_vars.as_dict(), dict)
+
+    def test_pandas_df(self):
+        """Test that pandas_df method converts DoE variables into a valid pandas dataframe"""
+        self.assertIsInstance(self.doe_vars.pandas_df(), pd.DataFrame)
 
 if __name__ == '__main__':
     unittest.main()
