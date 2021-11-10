@@ -28,4 +28,4 @@ print('\n DoEVars as nested dictionary:')
 print(doe.as_dict())
 
 print('\n DoEVars as top-level normilized pandas dataframe:')
-print(doe.pandas_df(max_level=0))
+print(doe.pandas_df())
