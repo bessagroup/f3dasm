@@ -96,8 +96,7 @@ class DoeVars:
 
     def save(self,filename):
 
-        """ Save doe-vars as pickle file
-        
+        """ Save doe-vars as Pandas data frame in a pickle file
         Args:
             filename (string): filename for the pickle file
     
