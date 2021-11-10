@@ -41,10 +41,6 @@ class TestDoeVars(unittest.TestCase):
             CircleMicrostructure(MATERIAL_B, DIAMETER), dimesionality=2),
             Imperfection(IMPERFFECTIONS))
 
-    def test_boundary_conditions(self):
-        """Test that bournday contidions are named correctly"""
-        self.assertListEqual(list(self.doe_vars.boundary_conditions.keys()), ['F11', 'F12', 'F22'])
-
     def test_conversion_to_dataframe(self):
         """Test if dataclass can be converted to a valid pandas dataframe"""
         pass
