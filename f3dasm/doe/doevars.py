@@ -5,40 +5,12 @@
 #######################################################
 
 """
-A dataclass for storing variables (features) during the DoE
+A dataclass for storing variables (parameters) of
+the design of experiments
 """
 
-from dataclasses import dataclass, asdict
-import numpy as np, array
-# from data import DATA
-from typing import Optional
-from abc import ABC
+from dataclasses import dataclass
 import pandas as pd
-import pprint
-
-
-## working example:
-## Only parameters in the top level will be deserialized into a dataframe.
-d = {'F11':[-0.15, 1], 
-    'F12':[-0.1,0.15],
-    'F22':[-0.15, 1], 
-    'radius': [0.3, 5],  
-    'material1': {'STEEL': {
-                    'E': [0,100], 
-                    'u': {0.1, 0.2, 0.3} 
-                        }, 
-                'CARBON': {
-                    'E': 5, 
-                    'u': 0.5, 
-                    's': 0.1 
-                    } 
-                },
-    'material2': {
-                'CARBON': {
-                    'x': 2
-                    } 
-                },
-     }
 
 
 def print_variables(dictionary:dict):
@@ -106,60 +78,3 @@ class DoeVars:
 
         data_frame = self.pandas_df()       # f3dasm data structure, numpy array
         data_frame.to_pickle(filename)
-
-
-def main():
-
-    from dataclasses import asdict
-    import json
-    import pandas as pd
-
-    d = {'F11':[-0.15, 1], 
-    'F12':[-0.1,0.15],
-    'F22':[-0.15, 1], 
-    'radius': [0.3, 5],  
-    'material1': {'STEEL': {
-                    'E': [0,100], 
-                    'u': {0.1, 0.2, 0.3} 
-                        }, 
-                'CARBON': {
-                    'E': 5, 
-                    'u': 0.5, 
-                    's': 0.1 
-                    } 
-                },
-    'material2': {
-                'CARBON': {
-                    'x': 2
-                    } 
-                },
-     }
-
-
-    doe = DoeVars(variables=d)
-
-    print(doe)
-
-    doe.info()
-    # print(doe.as_dict())
-    print(doe.pandas_df())
-    doe.save('/home/manuel/Documents/development/f3dasm/F3DASM-1/examples/data-frame.pkl')
-    
-
-
-    # print(doe.info())
-    # print(asdict(doe))
-    # print(json.dumps(asdict(doe)))
-     
-    # pd.set_option('display.max_columns', None)
-    # norm_pd = pd.json_normalize(asdict(doe), max_level=1)
-    # df = norm_pd.rename(columns= {"rev.Lc": "Lc"}, errors="raise")
-    # # print(df)
-    # print(doe.pandas_df())
-
-    # print(doe.as_dict())
-
-
-
-if __name__ == "__main__":
-    main()
