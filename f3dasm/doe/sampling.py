@@ -235,79 +235,10 @@ def main():
     size = 5
 
     sobol1 = Sobol(size, VARS)
-    s =sobol1.select_values_for_sampling()
-    
-    c = sobol1.create_combinations()
-    print(c.size)
-
-    # f = sobol1.select_fixed_values()
-    # # print(f)
-
-    # samples =sobol1.compute_sampling()
-    # print(samples)
-    # # print(list(samples.T)[0])
-
-    # # de serialized sampling into dictionary
-    # k = s.keys()
-    # s_list = list(samples.T)
-    
-
-
-
-
-    # dis ={}
-    # for n in k:
-    #     for c in s_list:
-    #         dis[n] = list(c)
-
-
-    # r = samples_to_dict(samples, k)
-    # print(r)
-
-    # # add fix-parameters
-    # dis['paramx'] = 5
-    # dis['paramy'] = {'steel':  [5,6]}
+    sobol1.compute_sampling()
     
     
-    # # print(list(dis.values()))
-    # args = list(dis.values())
-    # print(type(args))
-    # print(args)
-
-
-    # def combination_wrapper(func, args):
-    #     columns = len(args)
-    #     try: 
-    #         result = func(*args)
-    #     finally:
-    #         return numpy.array(result).T.reshape(-1, columns)
-
-
-    # def combinations(values):
-    #     pass
-
-    # def print_func(v, w, x, y, z):
-    #     print(v)
-    #     print(w)
-    #     print(x)
-    #     print(y)
-    #     print(z)
-
-    # mesh_wrapper(print_func, args)
-
-    args2 =[[1,2,3], [10,20], 5]
-    # r = mesh_wrapper(numpy.meshgrid, args)
-    # print((r))
-
-    # print(numpy.array(numpy.meshgrid([1,2,3], [10,20], 5)).T.reshape(-1,3))
-
-    # mesh = numpy.array(numpy.meshgrid(list(dis.values())))
-    # print(mesh)
-
-
-    # linear = Linear(size, VARS)
-    # samples =linear.compute_sampling()
-    # print(samples)
+    c = sobol1.create_combinations(column_names=True)
 
 
 if __name__ == "__main__":
