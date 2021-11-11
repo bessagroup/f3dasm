@@ -25,6 +25,40 @@ def validate_range(range) -> None:
         raise TypeError("Input don't contain a valid range of values. Provide a list with a min and max values. E.g. [2.1, 3]") 
 
 
+def combine(func, args):
+    """wrapper for computing combinations of DoE variables"""
+    columns = len(args)
+    try: 
+        result = func(*args)
+    finally:
+        return numpy.array(result).T.reshape(-1, columns)
+
+def samples_to_dict(samples, column_names) -> dict:
+    """Converts sampled values in to a dictionary. Each column in th samples-array becomes
+    an element of the dictionary
+
+    Args:
+        samples(numpy_array): sampled values
+        column_names (dict_keys): list of name for the data columns (elements in the dictionary)
+    
+    Returns:
+        Dictionary of length  equals to the no. of columns in the samples-array
+    """
+
+    _dictionary = {}
+
+    if len(column_names) != samples.shape[1]:
+        raise RuntimeError("sampled array and column_names must be the same length")
+    else:
+        samples_list = list(samples.T)
+
+        for name in column_names:
+            for values in samples_list:
+                _dictionary[name] = list(values)
+ 
+    return _dictionary
+
+
 @dataclass
 class SamplingMethod(ABC):
     """Represets a generic sampling method for parameters with a range of values"""
@@ -83,6 +117,35 @@ class SamplingMethod(ABC):
                 continue
         
         return fixed_values
+
+    def create_combinations(self, column_names=False, *args) -> array:
+        """
+        Computes all possible combinations beteen sampled values and fixed values defined by the DoE variables. 
+        Each comibination resesents a distinct set of values for the DoE varialbes.
+
+        Args:
+            column_names (bolean): if true, the names of the top-level elements in the 
+            DoE variables will be returned along with the combinations. Default is false.
+
+        Returns:
+            If column_names = False: array with combination        
+            If column_names = True: tuple with array with combination and a list of column names
+        """
+
+        samples = self.compute_sampling(*args)
+        columns = self.sampling_ranges.keys() 
+        fixed_values_dict = self.select_fixed_values() 
+
+        samples_dict = samples_to_dict(samples, column_names=columns)
+
+        combined_dict = {**samples_dict, **fixed_values_dict}
+        values_list = list(combined_dict.values())
+        combinations = combine(numpy.meshgrid,values_list)
+        
+        if column_names:
+            return ( combinations, list( combined_dict.keys() ) )
+        if not column_names:
+            return combinations
 
 
 class Sobol(SamplingMethod):
@@ -162,25 +225,89 @@ def main():
     VARS = {
     'F11':[-0.15, 1], 
     'F12':[-0.1,0.15],
-    'F22':[-0.15, 1], 
+    'F22':[-0.2, 1], 
     'radius': [0.3, 5],  
     'material1': {'STEEL': {'E': [0,100], 'u': {0.1, 0.2, 0.3} }, 
                 'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
-    'material2': { 'CARBON': {'x': 2} },
+    'material2': { 'CARBON': {'x': 2} }
     }
 
-    size = 10
+    size = 5
 
     sobol1 = Sobol(size, VARS)
     s =sobol1.select_values_for_sampling()
-    f = sobol1.select_fixed_values()
+    
+    c = sobol1.create_combinations()
+    print(c.size)
 
-    samples =sobol1.compute_sampling()
-    print(samples)
+    # f = sobol1.select_fixed_values()
+    # # print(f)
 
-    linear = Linear(size, VARS)
-    samples =linear.compute_sampling()
-    print(samples)
+    # samples =sobol1.compute_sampling()
+    # print(samples)
+    # # print(list(samples.T)[0])
+
+    # # de serialized sampling into dictionary
+    # k = s.keys()
+    # s_list = list(samples.T)
+    
+
+
+
+
+    # dis ={}
+    # for n in k:
+    #     for c in s_list:
+    #         dis[n] = list(c)
+
+
+    # r = samples_to_dict(samples, k)
+    # print(r)
+
+    # # add fix-parameters
+    # dis['paramx'] = 5
+    # dis['paramy'] = {'steel':  [5,6]}
+    
+    
+    # # print(list(dis.values()))
+    # args = list(dis.values())
+    # print(type(args))
+    # print(args)
+
+
+    # def combination_wrapper(func, args):
+    #     columns = len(args)
+    #     try: 
+    #         result = func(*args)
+    #     finally:
+    #         return numpy.array(result).T.reshape(-1, columns)
+
+
+    # def combinations(values):
+    #     pass
+
+    # def print_func(v, w, x, y, z):
+    #     print(v)
+    #     print(w)
+    #     print(x)
+    #     print(y)
+    #     print(z)
+
+    # mesh_wrapper(print_func, args)
+
+    args2 =[[1,2,3], [10,20], 5]
+    # r = mesh_wrapper(numpy.meshgrid, args)
+    # print((r))
+
+    # print(numpy.array(numpy.meshgrid([1,2,3], [10,20], 5)).T.reshape(-1,3))
+
+    # mesh = numpy.array(numpy.meshgrid(list(dis.values())))
+    # print(mesh)
+
+
+    # linear = Linear(size, VARS)
+    # samples =linear.compute_sampling()
+    # print(samples)
 
 
 if __name__ == "__main__":
