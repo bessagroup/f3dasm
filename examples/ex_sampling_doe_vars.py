@@ -2,10 +2,8 @@
 Example on how to define a DoE
 This example will be moved to the documentation
 """
-from f3dasm.doe.doevars import DoeVars, Material, CircleMicrostructure, REV, DoeVars
-from f3dasm.doe.sampling import sample_doevars, Sobol
-from f3dasm.doe.data import DATA
-from dataclasses import asdict
+
+from f3dasm.doe.sampling import  Sobol
 
 
 # define DoE parameters:
@@ -22,12 +20,22 @@ VARS = {
 
 
 # -------------------------------
-# Sampling of Doe Vars
+# Sampling of variables in the DoE
 #--------------------------------
 
+# instantiate sampling method
 sobol = Sobol(size=5, values=VARS) 
-sampling = sobol.compute_sampling()
 
-# pipe data to common Data interface
+#compute sampling on variable with a range of values
+samples = sobol.compute_sampling()
+print(samples)
+
+# create a single array that combines sampling results and fixed variables
+combinations = sobol.create_combinations(column_names=True)
+print(combinations)
+
+
+
+# TODO: pipe data to common Data interface
 # data = DATA(sampling[0][0], keys=sampling[1])
 # print(data)
