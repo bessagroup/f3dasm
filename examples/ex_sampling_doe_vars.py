@@ -4,6 +4,7 @@ This example will be moved to the documentation
 """
 
 from f3dasm.doe.sampling import  Sobol
+from f3dasm.doe.data import DATA
 
 
 # define DoE parameters:
@@ -28,14 +29,15 @@ sobol = Sobol(size=5, values=VARS)
 
 #compute sampling on variable with a range of values
 samples = sobol.compute_sampling()
-print(samples)
+# print(samples)
 
 # create a single array that combines sampling results and fixed variables
 combinations = sobol.create_combinations(column_names=True)
-print(combinations)
 
 
 
-# TODO: pipe data to common Data interface
-# data = DATA(sampling[0][0], keys=sampling[1])
-# print(data)
+# Pipe data to common Data interface
+values = combinations[0]
+colum_names = combinations[1]
+data = DATA(values, keys=colum_names)
+print(data)
