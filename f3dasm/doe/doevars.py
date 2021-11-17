@@ -1,13 +1,8 @@
 
 #######################################################
-# Data class for the manipulation and transformation  #
-# of data within F3DASM                               #
+# Data class for storing variables (parameters) of
+# the design of experiments F3DASM                               #
 #######################################################
-
-"""
-A dataclass for storing variables (parameters) of
-the design of experiments
-"""
 
 from dataclasses import dataclass
 import pandas as pd
@@ -40,11 +35,6 @@ class DoeVars:
         print_variables(self.variables)
         print('\n')
         return None
-
-    # todo: convert values to array
-    # todo: collect names for data colums
-    # pass them on to data.py
-    #TODO: implement own method to convert to pandas dataframe, use data.py as example
     
     def pandas_df(self, max_level=0):
         """
