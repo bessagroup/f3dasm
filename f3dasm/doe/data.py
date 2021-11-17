@@ -60,7 +60,7 @@ class DATA():
             self.keys = keys
             self.tensor = self.torch_tensor()
             self.DataFrame = self.pandas_frame()
-
+            
         ################################
         # If you have pytorch tensor -> must name your data though!
         ################################
@@ -135,7 +135,7 @@ class DATA():
 
         """ Method: Creates pytorch tensor """
 
-        return torch.tensor(self.values).float()
+        # return torch.tensor(self.values).float()
     
     def to_pickle(self, filename):
 
