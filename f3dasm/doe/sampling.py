@@ -22,7 +22,7 @@ def validate_range(range) -> None:
         else:
             raise TypeError("Range of values contains one of more values that are not numeric.")
     else:        
-        raise TypeError("Input don't contain a valid range of values. Provide a list with a min and max values. E.g. [2.1, 3]") 
+        raise TypeError("Input doesn't contain a valid range of values. Provide a list with a min and max values. E.g. [2.1, 3]") 
 
 
 def combine(func, args):
@@ -34,7 +34,7 @@ def combine(func, args):
         return numpy.array(result).T.reshape(-1, columns)
 
 def samples_to_dict(samples, column_names) -> dict:
-    """Converts sampled values in to a dictionary. Each column in th samples-array becomes
+    """Converts sampled values to a dictionary. Each column in th samples-array becomes
     an element of the dictionary
 
     Args:
@@ -120,7 +120,7 @@ class SamplingMethod(ABC):
 
     def create_combinations(self, column_names=False, *args) -> array:
         """
-        Computes all possible combinations beteen sampled values and fixed values defined by the DoE variables. 
+        Computes all possible combinations between sampled values and fixed values defined by the DoE variables. 
         Each comibination resesents a distinct set of values for the DoE varialbes.
 
         Args:
@@ -235,8 +235,8 @@ def main():
     size = 5
 
     sobol1 = Sobol(size, VARS)
-    sobol1.compute_sampling()
-    
+    samples = sobol1.compute_sampling()
+    print(samples)
     
     c = sobol1.create_combinations(column_names=True)
 
