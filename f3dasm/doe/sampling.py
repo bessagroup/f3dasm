@@ -147,7 +147,7 @@ class SamplingMethod(ABC):
             return combinations
 
 
-class Sobol(SamplingMethod):
+class SALibSobol(SamplingMethod):
     """Computes sampling using a sobol sequence from SALib"""
 
     def compute_sampling(self, aprox='float') -> array:
@@ -168,7 +168,7 @@ class Sobol(SamplingMethod):
         return samples
        
 
-class Linear(SamplingMethod):
+class NumpyLinear(SamplingMethod):
     """Computes sampling using a linear sequence generator from Numpy"""
 
     def compute_sampling(self, aprox='float') -> array:
@@ -231,13 +231,62 @@ def main():
     'material2': { 'CARBON': {'x': 2} }
     }
 
-    size = 5
+    # cases:
+    #. separated F's
+    # c1 = {"F11": SALibSobol(5, [-0.15, 1]), "F12": SALibSobol(5, [-0.1, 0.15]) } #doesn't work
 
-    sobol1 = Sobol(size, VARS)
-    samples = sobol1.compute_sampling()
-    print(samples)
+    # PROPOSAL
+    VARS = [
+        SALibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
+        SALibSobol(2, {'radius': [0.3, 0.5]}),
+        {'material1': 
+            {'STEEL': [
+                SALibSobol(4, {'E': [1,100]}), 
+                {'u': [0.1, 0.2, 0.3] } 
+                ],
+            'CARBON': [ 
+                {'E': 5}, 
+                {'u': 0.5}, 
+                {'s': 0.1 } 
+                ]     
+            } 
+        },
+        {'material2': 
+            {'CARBON': [
+                {'x': 2}
+                ] 
+            }
+        }
+        ]
+
+    print(VARS)
+
+
+
+
+
+
+
+    # print(c3[1].compute_sampling())?
+
+    # single param
+    # c3 = {"radius": SALibSobol(5, [0.3, 0.5])} # doesn't work
+
+    # VARS = { "parms": SALibSobol(size, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1], 'radius': [0.3, 5] }) }
+      
+    # 'material1': {'STEEL': {SALibSobol(size, [0,100], 'u': {0.1, 0.2, 0.3} }, 
+    #             'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
+    # 'material2': { 'CARBON': {'x': 2} }
+    # }
+
+
+    size = {5}
+
+    # sobol1 = Sobol(size, VARS)
+    # samples = sobol1.compute_sampling()
+    # print(samples)
     
-    c = sobol1.create_combinations(column_names=True)
+    # c = sobol1.create_combinations(column_names=True)
 
 
 if __name__ == "__main__":
