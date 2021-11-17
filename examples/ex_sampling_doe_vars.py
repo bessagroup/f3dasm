@@ -40,4 +40,4 @@ combinations = sobol.create_combinations(column_names=True)
 values = combinations[0]
 colum_names = combinations[1]
 data = DATA(values, keys=colum_names)
-print(data)
+print(data) # as Pandas dataframe
