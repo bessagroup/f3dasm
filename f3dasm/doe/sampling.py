@@ -5,7 +5,6 @@ import numpy
 
 from numpy.core.records import array
 from SALib.sample import sobol_sequence
-from torch._C import Size
 
 
 def validate_range(range) -> None:
