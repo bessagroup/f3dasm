@@ -18,7 +18,7 @@ vars = {
     }
 
 doe = DoeVars(vars)
-print(doe)
+print(doe.info())
 
 
 # -------------------------------------------
@@ -30,10 +30,10 @@ print(doe)
 
 # Modify existing parameter
 doe.variables['radius'] = 1.0
-print('New value for radious:')
-print(doe)
+print('Modified radius:')
+print(doe.info())
 
 # Adding parameters
 doe.variables['F13']= [-.1, 0.8]
 print('New parameter F13')
-print(doe)
+print(doe.info())
