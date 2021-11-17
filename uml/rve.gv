@@ -1,0 +1,92 @@
+digraph RVE {
+
+    node[shape=record, style=rounded]
+    RVE[label = "{RVE}"]
+    BoundaryConditions[label = "{BoundaryConditions}"]
+    MeshGenerator[label = "{MeshGenerator}"]
+    PeriodicMeshChecker[label = "{PeriodicMeshChecker}"]
+    Constraints[label = "{Constraints}"]
+    RVEInfo[label="{RVEInfo}"]
+    RVEObjCreator[label="RVEObjCreator"]
+    RVEObjInit[label="RVEObjInit"]
+
+    node[shape=record, style="rounded, filled", fillcolor=lightblue]
+    PeriodicBoundaryConditions[label = "{PeriodicBoundaryConditions}"]
+    PBCConstraints[label = "{PBCConstraints}"]
+    PeriodicMeshGenerator[label = "{PeriodicMeshGenerator}"]
+    PeriodicRVEInfo[label = "{PeriodicRVEInfo}"]
+    PeriodRVEObjCreator[label = "{PeriodicRVEObjCreator}"]
+    PeriodicRVEObjInit[label="PeriodicRVEObjInit"]
+
+    node[shape=record, style="rounded, filled", fillcolor=yellow]
+    RVE2D[label = "{RVE2D}"]
+    PBCConstraints2D[label = "{PBCConstraints2D}"]
+    RVEInfo2D[label="{RVEInfo2D}"]
+    PeriodicMeshChecker2D[label = "{PeriodicMeshChecker2D}"]
+    PeriodicMeshGenerator2D[label= "{PeriodicMeshGenerator2D}"]
+    PeriodicRVEInfo2D[label="{PeriodicRVEInfo2D}"]
+
+    node[shape=record, style="rounded, filled", fillcolor=lightgreen]
+    RVE3D[label = "{RVE3D}"]
+    PBCConstraints3D[label = "{PBCConstraints3D}"]
+    PBCConstraints3DByClosest[label = "{PBCConstraints3DByClosest}"]
+    PBCConstraints3DBySorting[label = "{PBCConstraints3DBySorting}"]
+    RVEInfo3D[label="{RVEInfo3D}"]
+    PeriodicRVEInfo3D[label="{PeriodicRVEInfo3D}"]
+    PeriodicMeshChecker3D[label = "{PeriodicMeshChecker3D}"]
+    PeriodicMeshChecker3DByClosest[label = "{PeriodicMeshChecker3DByClosest}"]
+    PeriodicMeshChecker3DBySorting[label = "{PeriodicMeshChecker3DBySorting}"]
+    PeriodicMeshGenerator3D[label= "{PeriodicMeshGenerator3D}"]
+    PeriodicMeshGenerator3DSimple[label= "{PeriodicMeshGenerator3DSimple}"]
+    PeriodicMeshGenerator3DS1[label= "{PeriodicMeshGenerator3DS1}"]
+    PeriodicMeshGenerator3DHybridS1[label= "{PeriodicMeshGenerator3DHybridS1}"]
+
+    // generalizations
+    edge[dir=back, arrowtail=empty, style=normal]
+    RVE->RVE2D
+    RVE->RVE3D
+    BoundaryConditions->PeriodicBoundaryConditions
+    MeshGenerator->PeriodicMeshGenerator
+    Constraints->PBCConstraints
+    PBCConstraints->PBCConstraints2D
+    PBCConstraints->PBCConstraints3D
+    PBCConstraints3D->PBCConstraints3DByClosest
+    PBCConstraints3D->PBCConstraints3DBySorting
+    RVEInfo->RVEInfo2D
+    RVEInfo->RVEInfo3D
+    PeriodicMeshChecker->PeriodicMeshChecker2D
+    PeriodicMeshChecker->PeriodicMeshChecker3D
+    PeriodicMeshChecker3D->PeriodicMeshChecker3DByClosest
+    PeriodicMeshChecker3D->PeriodicMeshChecker3DBySorting
+    PeriodicMeshGenerator->PeriodicMeshGenerator2D
+    PeriodicMeshGenerator->PeriodicMeshGenerator3D
+    PeriodicRVEInfo->PeriodicRVEInfo2D
+    RVEInfo2D->PeriodicRVEInfo2D
+    PeriodicRVEInfo->PeriodicRVEInfo3D
+    RVEInfo3D->PeriodicRVEInfo3D
+    RVEObjCreator->PeriodRVEObjCreator
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DSimple
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DS1
+    PeriodicMeshGenerator3D->PeriodicMeshGenerator3DHybridS1
+
+    // dependencies
+    edge[dir=normal, arrowhead=normal, style=dashed]
+    // PeriodicMeshGenerator->RVEInfo
+    // PeriodicMeshChecker->RVEInfo
+
+    // compositions
+    edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
+    RVE2D->RVEInfo2D
+    RVE3D->RVEInfo3D
+    RVE->MeshGenerator
+    RVE->BoundaryConditions
+    PeriodicMeshGenerator2D->PeriodicMeshChecker2D
+    PeriodicMeshGenerator3D->PeriodicMeshChecker3D
+    RVE->RVEObjCreator
+    PeriodicBoundaryConditions->PBCConstraints
+    RVE->RVEObjInit
+    RVEObjInit->PeriodicRVEObjInit
+    PeriodicMeshGenerator3DHybridS1->PeriodicMeshGenerator3DSimple
+    PeriodicMeshGenerator3DHybridS1->PeriodicMeshGenerator3DS1
+
+}

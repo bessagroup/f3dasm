@@ -1,0 +1,37 @@
+digraph geometry {
+
+    node[shape=record, style=rounded]
+    Geometry[label = "{Geometry}"]
+    MeshGenerator[label = "{MeshGenerator}"]
+    RVE[label = "{RVE}"]
+    Supercompressible[label = "{Supercompressible}"]
+    MicroShape[label = "{MicroShape}"]
+    Sphere[label = "{Sphere}"]
+    Circle[label = "{Circle}"]
+    PeriodicBall[label = "{PeriodicBall}"]
+    PeriodicSphere[label = "{PeriodicSphere}"]
+    PeriodicCircle[label = "{PeriodicCircle}"]
+
+
+    // generalizations
+    edge[dir=back, arrowtail=empty, style=normal]
+    Geometry->RVE
+    Geometry->Supercompressible
+    Geometry->MicroShape
+    MicroShape->Sphere
+    MicroShape->Circle
+    MicroShape->PeriodicBall
+    PeriodicBall->PeriodicSphere
+    PeriodicBall->PeriodicCircle
+
+    // compositions
+    edge[dir=both, arrowtail=diamond, arrowhead=normal, style=normal]
+    PeriodicSphere->Sphere
+    PeriodicCircle->Circle
+
+    // aggregations
+    edge[dir=both, arrowtail=ediamond, arrowhead=normal, style=normal]
+    Geometry->MeshGenerator
+
+
+}

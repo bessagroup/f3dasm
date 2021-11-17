@@ -2,40 +2,42 @@
 Example on how to define a DoE
 This example will be moved to the documentation
 """
-from f3dasm.doe.doevars import DoeVars, Material, CircleMicrostructure, REV, DoeVars
-from f3dasm.doe.sampling import sample_doevars, Sobol
+
+from f3dasm.doe.sampling import  Sobol
 from f3dasm.doe.data import DATA
-from dataclasses import asdict
 
 
-# define strain components
-components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
+# define DoE parameters:
 
-mat1 = Material({'elements': [ {'name': 'STEEL', 'params': {'param1': 1, 'param2': 2}},
-                    {'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'} }
-                    ]
-                })
+VARS = {
+'F11':[-0.15, 1], 
+'F12':[-0.1,0.15],
+'F22':[-0.2, 1], 
+'radius': [0.3, 5],  
+'material1': {'STEEL': {'E': [0,100], 'u': {0.1, 0.2, 0.3} }, 
+            'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
+'material2': { 'CARBON': {'x': 2} },
+}
 
-mat2 = Material({'elements': [{'name': 'CARBON', 'params': {'param1': 3, 'param2': 4, 'param3': 'value3'}}
-                    ]
-                })
-
-
-# create a microstructure 
-#circle
-micro = CircleMicrostructure(material=mat2, diameter=0.3)
-
-# create RVE and DoeVars
-rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-doe = DoeVars(boundary_conditions=components, rev=rev)
 
 # -------------------------------
-# Sampling of Doe Vars
+# Sampling of variables in the DoE
 #--------------------------------
 
-sobol = Sobol(size=5, values='') 
-sampling =sample_doevars(doe_vars=doe, sampling_method=sobol)
+# instantiate sampling method
+sobol = Sobol(size=5, values=VARS) 
 
-# pipe data to common Data interface
-data = DATA(sampling[0][0], keys=sampling[1])
-print(data)
+#compute sampling on variable with a range of values
+samples = sobol.compute_sampling()
+# print(samples)
+
+# create a single array that combines sampling results and fixed variables
+combinations = sobol.create_combinations(column_names=True)
+
+
+
+# Pipe data to common Data interface
+values = combinations[0]
+colum_names = combinations[1]
+data = DATA(values, keys=colum_names)
+print(data) # as Pandas dataframe
