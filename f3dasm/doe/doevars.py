@@ -28,13 +28,14 @@ class DoeVars:
 
         """ Overwrite print function"""
 
-        
         print('-----------------------------------------------------')
         print('                       DOE VARIABLES                     ')
         print('-----------------------------------------------------')
         print_variables(self.variables)
         print('\n')
+
         return None
+
     
     def pandas_df(self, max_level=0):
         """

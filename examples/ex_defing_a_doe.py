@@ -2,8 +2,8 @@
 Example on how to define a DoE
 This example will be moved to the documentation
 """
-from f3dasm.doe.doevars import  DoeVars
 
+from f3dasm.doe.doevars import  DoeVars
 
 # define variables for the DoE as a dictionary, for example
 vars = {
