@@ -147,7 +147,7 @@ class SamplingMethod(ABC):
             return combinations
 
 
-class SALibSobol(SamplingMethod):
+class SalibSobol(SamplingMethod):
     """Computes sampling using a sobol sequence from SALib"""
 
     def compute_sampling(self, aprox='float') -> array:
@@ -236,12 +236,13 @@ def main():
     # c1 = {"F11": SALibSobol(5, [-0.15, 1]), "F12": SALibSobol(5, [-0.1, 0.15]) } #doesn't work
 
     # PROPOSAL
+
     VARS = [
-        SALibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
-        SALibSobol(2, {'radius': [0.3, 0.5]}),
+        SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
+        SalibSobol(2, {'radius': [0.3, 0.5]}),
         {'material1': 
             {'STEEL': [
-                SALibSobol(4, {'E': [1,100]}), 
+                SalibSobol(4, {'E': [1,100]}), 
                 {'u': [0.1, 0.2, 0.3] } 
                 ],
             'CARBON': [ 
@@ -259,7 +260,8 @@ def main():
         }
         ]
 
-    print(VARS)
+    print(SalibSobol in VARS)
+    # print(VARS)
 
 
 
