@@ -5,7 +5,8 @@ import numpy
 
 from numpy.core.records import array
 from SALib.sample import sobol_sequence
-
+from prettyprinter import pprint
+import pandas as pd
 
 def validate_range(range) -> None:
     """Checks that list of values contains two numeric values.
@@ -33,7 +34,7 @@ def combine(func, args):
         return numpy.array(result).T.reshape(-1, columns)
 
 def samples_to_dict(samples, column_names) -> dict:
-    """Converts sampled values to a dictionary. Each column in th samples-array becomes
+    """Converts sampled values to a dictionary. Each column in the samples-array becomes
     an element of the dictionary
 
     Args:
@@ -169,8 +170,8 @@ class SalibSobol(SamplingMethod):
        
 
 class NumpyLinear(SamplingMethod):
-    """Computes sampling using a linear sequence generator from Numpy"""
 
+    """Computes sampling using a linear sequence generator from Numpy"""
     def compute_sampling(self, aprox='float') -> array:
         #----------------------------------------------------------
         # Implementation of Sampling Method
@@ -220,52 +221,67 @@ def sample_doevars(doe_vars, sampling_method):
 
 def main():
 
-    #TODO: write unit test based on this example
-    VARS = {
-    'F11':[-0.15, 1], 
-    'F12':[-0.1,0.15],
-    'F22':[-0.2, 1], 
-    'radius': [0.3, 5],  
-    'material1': {'STEEL': {'E': [0,100], 'u': {0.1, 0.2, 0.3} }, 
-                'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
-    'material2': { 'CARBON': {'x': 2} }
-    }
+   
+    
+    # Check if value contains sampling function:
 
-    # cases:
-    #. separated F's
-    # c1 = {"F11": SALibSobol(5, [-0.15, 1]), "F12": SALibSobol(5, [-0.1, 0.15]) } #doesn't work
 
-    # PROPOSAL
+    #type of variables in doeVars
+    # 1 variable that need sampling:
+    # 'sample2': SalibSobol(2, {'radius': [0.3, 0.5]})
+    # variales with constants
+    # E: 5
+    # variables with vectors
+    # 'u': [0.1, 0.2, 0.3] } 
+    # varibles with other variables (directories)
+    # 'STEEL': {
+                #     'sample3': SalibSobol(4, {'E': [1,100]}), 
+                #     'u': [0.1, 0.2, 0.3] } 
+                # },
 
-    VARS = [
-        SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
-        SalibSobol(2, {'radius': [0.3, 0.5]}),
-        {'material1': 
-            {'STEEL': [
-                SalibSobol(4, {'E': [1,100]}), 
-                {'u': [0.1, 0.2, 0.3] } 
-                ],
-            'CARBON': [ 
-                {'E': 5}, 
-                {'u': 0.5}, 
-                {'s': 0.1 } 
-                ]     
-            } 
-        },
-        {'material2': 
-            {'CARBON': [
-                {'x': 2}
-                ] 
+    
+    vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
+            'R': SalibSobol(2, {'radius': [0.3, 0.5]}),
+            'material1': { 'element':
+                {'name': 'STEEL',
+                    'E': SalibSobol(4, {'E': [1,100]}), 
+                    'u': [0.1, 0.2, 0.3] 
+                } ,
+                'element':
+                {'name': 'CARBON', 
+                    'E': 5, 
+                    'u': 0.5, 
+                    's': 0.1  
+                } }, 
+            'material2': {  
+                'name': 'CARBON',  
+                'x': 2
+                }
             }
-        }
-        ]
+            
+    print(type(vars['material1']))
 
-    print(SalibSobol in VARS)
-    # print(VARS)
+    # pprint(list(vars.items()))
+
+    df = pd.json_normalize(vars)
+    df_2 =df.to_dict(orient='records')[0]
+
+    def find_functions(vars):
+        #list comprenhension
+
+        # thing for thing in list_of_things
+
+        elements_with_functions = [] # list of names
+        [ elements_with_functions.append(var) for var in vars.keys() if isinstance(vars[var], SalibSobol) ]
+
+        return elements_with_functions
+
+    print(find_functions(df_2))
+
+        
 
 
-
-
+    # print(isinstance(vars['sample1'], SalibSobol))
 
 
 
