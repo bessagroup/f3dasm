@@ -4,9 +4,8 @@
 # the design of experiments F3DASM                               #
 #######################################################
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pandas as pd
-
 
 def print_variables(dictionary:dict):
     """Print the top level elements in a dictionary"""
@@ -23,6 +22,8 @@ class DoeVars:
     """Parameters for the design of experiments"""
 
     variables: dict
+    sampling_vars: list = field(init=False)
+    
 
     def info(self):
 
@@ -36,9 +37,9 @@ class DoeVars:
         print('\n')
         return None
     
-    def pandas_df(self, max_level=0):
+    def as_dataframe(self, max_level=0):
         """
-        Converts DoE variables into a normilized data frame. By default only the elements on the top level are serialized.
+        Converts DoE variables into a normilized Pandas data frame. By default only the elements on the top level are serialized.
         Args:
             max_level: Max number of levels(depth of dict) to normalize. if None, normalizes all levels.
         Returns:
