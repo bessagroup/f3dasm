@@ -115,9 +115,10 @@ class DoeVars:
         Returns: 
             None
          """  
-
-        data_frame = self.pandas_df()       # f3dasm data structure, numpy array
-        data_frame.to_pickle(filename)
+        if self.data is None:
+            print("There's no data to save. Run DoeVars.sample_doevars() first")
+        else:
+            self.data.to_pickle(filename)
 
 
 
