@@ -10,7 +10,6 @@ from pandas.core.frame import DataFrame
 from f3dasm.doe.sampling import SamplingMethod, SalibSobol
 import copy
 import numpy
-import data
 
 
 def print_variables(dictionary:dict):
