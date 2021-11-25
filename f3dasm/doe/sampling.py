@@ -210,7 +210,7 @@ def sample_doevars(doe_vars, sampling_method):
             results.append(numpy.asarray(samples))
             # print(samples)
         except TypeError:
-            # Exeptions are handled by the compute_sampling method
+            # Exceptions are handled by the compute_sampling method
             continue
         else:
             # TODO: make the collection of keys generic for the cases where multiple vars require sampling
@@ -240,43 +240,61 @@ def main():
                 # },
 
     
+    #working case: Variant 1
     vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
             'R': SalibSobol(2, {'radius': [0.3, 0.5]}),
-            'material1': { 'element':
-                {'name': 'STEEL',
-                    'E': SalibSobol(4, {'E': [1,100]}), 
-                    'u': [0.1, 0.2, 0.3] 
+            'particle': { 
+                'name': 'NeoHookean',
+                'E': [500,2000], 
+                'nu': 0.4 
                 } ,
-                'element':
-                {'name': 'CARBON', 
-                    'E': 5, 
-                    'u': 0.5, 
-                    's': 0.1  
-                } }, 
-            'material2': {  
-                'name': 'CARBON',  
-                'x': 2
+            'matrix': {  
+                'name': 'SaintVenant',  
+                'E': [5, 200],
+                'nu': 0.3
+                }
+            }
+
+
+    #working case: Variant 2
+    vars2 = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
+            'R': SalibSobol(2, {'radius': [0.3, 0.5]}),
+            'particle': { 
+                'name': 'NeoHookean',
+                'E': [500, 100, 2000], # vector
+                'nu': 0.4 
+                } ,
+            'matrix': {  
+                'name': 'SaintVenant',  
+                'E': SalibSobol(2, {'E': [5, 200]}), # applying sample
+                'nu': 0.3
                 }
             }
             
-    print(type(vars['material1']))
+
+    print(type(vars['particle']))
 
     # pprint(list(vars.items()))
 
     df = pd.json_normalize(vars)
     df_2 =df.to_dict(orient='records')[0]
+    print(df_2)
 
-    def find_functions(vars):
+
+    def find_functions(vars: dict):
         #list comprenhension
-
         # thing for thing in list_of_things
 
+        df = pd.json_normalize(vars)
+        vars = df.to_dict(orient='records')[0]
         elements_with_functions = [] # list of names
-        [ elements_with_functions.append(var) for var in vars.keys() if isinstance(vars[var], SalibSobol) ]
+        [ elements_with_functions.append(var) for var in vars.keys() if isinstance(vars[var], SamplingMethod) ]
 
         return elements_with_functions
 
-    print(find_functions(df_2))
+    print(find_functions(vars))
+    print(find_functions(vars2))
+
 
         
 
