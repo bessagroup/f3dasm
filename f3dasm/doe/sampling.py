@@ -152,36 +152,6 @@ class NumpyLinear(SamplingMethod):
         return samples
 
 
-def sample_doevars(doe_vars, sampling_method):
-    """
-    Computes sampling over DoE variables (at level 0) containing a valid range of values using the given sampling method.
-    Args:
-        doe_vars (object): instance of the DoeVar dataclass
-        sampling_method (object): concrete instance of the SamplingMethod with a concrete sampling method.
-    Returns:
-        list of keys (data colums) and sampled values (numpy array)   
-    """
-    # print(doe_vars.as_dict())
-    vars_dict = doe_vars.as_dict()
-    
-    results =[]
-
-    for varx in vars_dict.keys():
-        sampling_method.values = vars_dict[varx]
-        try:
-            samples = sampling_method.compute_sampling()
-            results.append(numpy.asarray(samples))
-            # print(samples)
-        except TypeError:
-            # Exceptions are handled by the compute_sampling method
-            continue
-        else:
-            # TODO: make the collection of keys generic for the cases where multiple vars require sampling
-            data_colums=(list(vars_dict[varx].keys()))
-
-    return (results, data_colums)
-
-
 def main():
 
     
