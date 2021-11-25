@@ -75,20 +75,6 @@ class DoeVars:
         print_variables(self.variables)
         print('\n')
         return None
-    
-    def as_dataframe(self, max_level: int =0):
-        """
-        Converts DoE variables into a normilized Pandas data frame. By default only the elements on the top level are serialized.
-        Args:
-            max_level: Max number of levels(depth of dict) to normalize. if None, normalizes all levels.
-        Returns:
-            pandas dataframe
-        """
-        pd.set_option('display.max_columns', None) # show all colums in the dataframe
-        normalized_dataframe = pd.json_normalize(self.variables, max_level=max_level)
-
-        return normalized_dataframe
-
 
     def sample_doevars(self) -> DataFrame:
         """Apply sampling method to sampling variables, combines sampled value and fixed-values,
