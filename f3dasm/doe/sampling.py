@@ -25,14 +25,6 @@ def validate_range(range) -> None:
         raise TypeError("Input doesn't contain a valid range of values. Provide a list with a min and max values. E.g. [2.1, 3]") 
 
 
-def combine(func, args):
-    """wrapper for computing combinations of DoE variables"""
-    columns = len(args)
-    try: 
-        result = func(*args)
-    finally:
-        return numpy.array(result).T.reshape(-1, columns)
-
 def samples_to_dict(samples, column_names) -> dict:
     """Converts sampled values to a dictionary. Each column in the samples-array becomes
     an element of the dictionary
@@ -118,35 +110,6 @@ class SamplingMethod(ABC):
         
         return fixed_values
 
-    def create_combinations(self, column_names=False, *args) -> array:
-        """
-        Computes all possible combinations between sampled values and fixed values defined by the DoE variables. 
-        Each comibination resesents a distinct set of values for the DoE varialbes.
-
-        Args:
-            column_names (bolean): if true, the names of the top-level elements in the 
-            DoE variables will be returned along with the combinations. Default is false.
-
-        Returns:
-            If column_names = False: array with combination        
-            If column_names = True: tuple with array with combination and a list of column names
-        """
-
-        samples = self.compute_sampling(*args)
-        columns = self.sampling_ranges.keys() 
-        fixed_values_dict = self.select_fixed_values() 
-
-        samples_dict = samples_to_dict(samples, column_names=columns)
-
-        combined_dict = {**samples_dict, **fixed_values_dict}
-        values_list = list(combined_dict.values())
-        combinations = combine(numpy.meshgrid,values_list)
-        
-        if column_names:
-            return ( combinations, list( combined_dict.keys() ) )
-        if not column_names:
-            return combinations
-
 
 class SalibSobol(SamplingMethod):
     """Computes sampling using a sobol sequence from SALib"""
@@ -221,24 +184,6 @@ def sample_doevars(doe_vars, sampling_method):
 
 def main():
 
-   
-    
-    # Check if value contains sampling function:
-
-
-    #type of variables in doeVars
-    # 1 variable that need sampling:
-    # 'sample2': SalibSobol(2, {'radius': [0.3, 0.5]})
-    # variales with constants
-    # E: 5
-    # variables with vectors
-    # 'u': [0.1, 0.2, 0.3] } 
-    # varibles with other variables (directories)
-    # 'STEEL': {
-                #     'sample3': SalibSobol(4, {'E': [1,100]}), 
-                #     'u': [0.1, 0.2, 0.3] } 
-                # },
-
     
     #working case: Variant 1
     vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
@@ -280,49 +225,6 @@ def main():
     df_2 =df.to_dict(orient='records')[0]
     print(df_2)
 
-
-    def find_functions(vars: dict):
-        #list comprenhension
-        # thing for thing in list_of_things
-
-        df = pd.json_normalize(vars)
-        vars = df.to_dict(orient='records')[0]
-        elements_with_functions = [] # list of names
-        [ elements_with_functions.append(var) for var in vars.keys() if isinstance(vars[var], SamplingMethod) ]
-
-        return elements_with_functions
-
-    print(find_functions(vars))
-    print(find_functions(vars2))
-
-
-        
-
-
-    # print(isinstance(vars['sample1'], SalibSobol))
-
-
-
-    # print(c3[1].compute_sampling())?
-
-    # single param
-    # c3 = {"radius": SALibSobol(5, [0.3, 0.5])} # doesn't work
-
-    # VARS = { "parms": SALibSobol(size, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1], 'radius': [0.3, 5] }) }
-      
-    # 'material1': {'STEEL': {SALibSobol(size, [0,100], 'u': {0.1, 0.2, 0.3} }, 
-    #             'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
-    # 'material2': { 'CARBON': {'x': 2} }
-    # }
-
-
-    size = {5}
-
-    # sobol1 = Sobol(size, VARS)
-    # samples = sobol1.compute_sampling()
-    # print(samples)
-    
-    # c = sobol1.create_combinations(column_names=True)
 
 
 if __name__ == "__main__":
