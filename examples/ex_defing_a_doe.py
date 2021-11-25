@@ -7,7 +7,7 @@ from f3dasm.doe.doevars import  DoeVars
 from f3dasm.doe.sampling import SalibSobol
 
 # define variables for the DoE as a dictionary, for example
-vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
+vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.15, 1]}),
             'R': SalibSobol(3, {'radius': [0.3, 0.5]}),
             'particle': { 
                 'name': 'NeoHookean',
@@ -18,7 +18,10 @@ vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1
                 'name': 'SaintVenant',  
                 'E': [5, 200, 300],
                 'nu': 0.3
-                }
+                },
+            'Vf': 0.3,
+            'Lc': 4,
+            'geometry': 'circle'
             }
 
 doe = DoeVars(vars)
