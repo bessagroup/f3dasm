@@ -69,19 +69,18 @@ class DoeVars:
 
         """ Overwrite print function"""
 
-        
         print('-----------------------------------------------------')
         print('                       DOE VARIABLES                     ')
         print('-----------------------------------------------------')
         print_variables(self.variables)
         print('\n')
+
         return None
 
+      
     def do_sampling(self) -> DataFrame:
         """Apply sampling method to sampling variables, combines sampled value and fixed-values,
         and produces a pandas data frame with all combinations.
-        Returns:
-            Dataframe with 
         """
 
         doe_vars = copy.deepcopy(self.variables)

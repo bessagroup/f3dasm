@@ -6,7 +6,6 @@ This example will be moved to the documentation
 from f3dasm.doe.sampling import  Sobol
 from f3dasm.doe.data import DATA
 
-
 # define DoE parameters:
 
 VARS = {
@@ -18,7 +17,6 @@ VARS = {
             'CARBON': {'E': 5, 'u': 0.5, 's': 0.1 } },
 'material2': { 'CARBON': {'x': 2} },
 }
-
 
 # -------------------------------
 # Sampling of variables in the DoE
@@ -33,8 +31,6 @@ samples = sobol.compute_sampling()
 
 # create a single array that combines sampling results and fixed variables
 combinations = sobol.create_combinations(column_names=True)
-
-
 
 # Pipe data to common Data interface
 values = combinations[0]
