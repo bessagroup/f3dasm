@@ -2,6 +2,7 @@
 Example on how to modify  the parameters (definition) of a DoE
 This example will be moved to the documentation
 """
+
 from f3dasm.doe.doevars import  DoeVars
 
 # -------------------------------------------
@@ -17,13 +18,14 @@ vars = {
     'material2': { 'CARBON': {'x': 2} },
     }
 
+
 doe = DoeVars(vars)
 print(doe.info())
-
 
 # -------------------------------------------
 # Modifying DoE  parameters
 # -------------------------------------------
+
 # You can modify each parameter by calling the 'variables' attribute 
 # and the name of the parameter, and assing a new value , 
 # in the same way dictionaries can be modified

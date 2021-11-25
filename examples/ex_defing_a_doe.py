@@ -2,6 +2,7 @@
 Example on how to define a DoE
 This example will be moved to the documentation
 """
+
 from f3dasm.doe.doevars import  DoeVars
 from f3dasm.doe.sampling import SalibSobol
 
