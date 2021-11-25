@@ -89,11 +89,6 @@ class DoeVars:
 
         return normalized_dataframe
 
-    def as_dict(self):
-        """
-        Convert definition of DoeVars into a nested dictionary
-        """
-        return self.variables
 
     def sample_doevars(self) -> DataFrame:
         """Apply sampling method to sampling variables, combines sampled value and fixed-values,
