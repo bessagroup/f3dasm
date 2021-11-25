@@ -12,6 +12,7 @@ import copy
 import numpy
 import data
 
+
 def print_variables(dictionary:dict):
     """Print the top level elements in a dictionary"""
 
@@ -43,6 +44,7 @@ def deserialize_dictionary(nested_dict: dict):
     
     norm_ = pd.json_normalize(nested_dict)
     return norm_.to_dict(orient='records')[0]
+
 
 def create_combinations(func, args):
         """wrapper for computing combinations of DoE variables"""
@@ -76,7 +78,7 @@ class DoeVars:
         print('\n')
         return None
 
-    def sample_doevars(self) -> DataFrame:
+    def do_sampling(self) -> DataFrame:
         """Apply sampling method to sampling variables, combines sampled value and fixed-values,
         and produces a pandas data frame with all combinations.
         Returns:
@@ -120,44 +122,3 @@ class DoeVars:
         else:
             self.data.to_pickle(filename)
 
-
-
-def main():
-
-    vars = {'Fs': SalibSobol(5, {'F11':[-0.15, 1], 'F12':[-0.1,0.15], 'F22':[-0.2, 1]}),
-            'R': SalibSobol(3, {'radius': [0.3, 0.5]}),
-            'particle': { 
-                'name': 'NeoHookean',
-                'E': [0.3, 0.5], 
-                'nu': 0.4 
-                } ,
-            'matrix': {  
-                'name': 'SaintVenant',  
-                'E': [5, 200, 300],
-                'nu': 0.3
-                }
-            }
-
-    doe = DoeVars(vars)
-    # print(doe.sampling_vars)
-
-    samples =doe.sample()
-    print(samples)
-
-    # df = pd.json_normalize(samples)
-    # vars = df.to_dict(orient='records')[0]
-
-    # print(vars.keys())
-
-    # # print(vars.values())
-    # values_list =list(vars.values())
-    # print(values_list)
-
-    # combinations = combine(numpy.meshgrid,values_list)
- 
-    # print(combinations)
-
-
-
-if __name__ == "__main__":
-    main()
