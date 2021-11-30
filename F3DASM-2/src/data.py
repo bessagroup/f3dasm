@@ -1,8 +1,3 @@
-#######################################################
-# Data class for the manipulation and transformation  #
-# of data within F3DASM                               #
-#######################################################
-
 import os
 import pickle
 import numpy as np
@@ -12,21 +7,15 @@ import warnings
 
 class DATA():
     """
-        Data structure for data conversion and transfer between
+        
+        Data structure like class for allowing data passage between different
         modules inside f3dasm.
+
     """
 
     def __init__(self, data, keys=None):
 
-        """ Initialize data structure
-        
-        Args:
-            data : pandas DataFrame, numpy array or pytorch tensor
-            keys (list): names of data columns. Required for converting from numpy array or pythorch tensor 
-
-        Returns:
-            F3DASM data structures:  DataFrame, numpy array or pytorch tensor, values and feature names (keys)
-        """
+        """ Initialize """
 
         ################################
         # If you have pandas DataFrame
@@ -49,7 +38,7 @@ class DATA():
             self.keys = keys
             self.tensor = self.torch_tensor()
             self.DataFrame = self.pandas_frame()
-            
+
         ################################
         # If you have pytorch tensor -> must name your data though!
         ################################
@@ -68,7 +57,7 @@ class DATA():
 
     def __call__(self, data, keys=None):
 
-        """ Parses data object and creates different representations"""
+        """ After initialization changing the object """
 
         ################################
         # If you have pandas DataFrame
@@ -107,40 +96,41 @@ class DATA():
 
         else:
             self.read_pickle(data)
+
             
     def __str__(self):
         
-        """ Overwrites print function """
+        """ Overwrite print function """
 
         return str(self.DataFrame)
 
     def pandas_frame(self):
 
-        """ Method: Creates pandas DataFrame """
+        """ Method: Create pandas DataFrame """
 
         return pd.DataFrame(self.values,columns=self.keys)
 
     def torch_tensor(self):
 
-        """ Method: Creates pytorch tensor """
+        """ Method: Create pytorch tensor """
 
-        # return torch.tensor(self.values).float()
+        return torch.tensor(self.values).float()
     
     def to_pickle(self, filename):
 
-        """ Method: Saves DataFrame as Pickle file """
+        """ Method: Pickle DataFrame """
 
         return self.DataFrame.to_pickle(filename)
 
     def to_csv(self, filename):
 
-        """ Method: Saves DataFrame as .csv file """
+        """ Method: Save DataFrame as .csv file """
 
         return self.DataFrame.to_csv(filename)
 
     def read_pickle(self,filename):
 
-        """ Method: Reads pickled file, only if it contains pandas DataFrame """
+        """ Method: Read pickled file, iff it is pandas DataFrame """
 
         name, ext = os.path.splitext(filename)
         assert ext == '.pkl' or ext == '.pickle', 'File extension should be .pkl or .pickle'
@@ -156,5 +146,4 @@ class DATA():
 
 
            
-
 
