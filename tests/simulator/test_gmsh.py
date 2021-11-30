@@ -4,7 +4,11 @@ import os
 import uuid
 import shutil
 
-from f3dasm.mesher.gmsh_wrapper.Model import RandomInclusionRVE
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from set_path import *
+
+from f3dasm.simulator.gmsh_wrapper.Model import RandomInclusionRVE
 
 class TestGmsh(unittest.TestCase):
     """
@@ -57,7 +61,8 @@ class TestGmsh(unittest.TestCase):
         ex_dir = os.path.join(self.cur_dir, uid)
         if not os.path.exists(ex_dir):
             os.mkdir(ex_dir)
-        testRVE.saveMesh(os.path.join(ex_dir,"randomInclusions3DCylinder.xdmf"))
+        gmsh_file = os.path.join(ex_dir,"randomInclusions3DCylinder.xdmf")
+        testRVE.saveMesh(gmsh_file)
 
 
         # Show resulting mesh
@@ -69,5 +74,8 @@ class TestGmsh(unittest.TestCase):
         # For a proper closing of the Gmsh-Python-API, the API has to be finalized. This
         # can be achieved by calling the close() method of the model
         testRVE.close()
-
+        
         shutil.rmtree(ex_dir)
+
+if __name__ == '__main__':
+    unittest.main()

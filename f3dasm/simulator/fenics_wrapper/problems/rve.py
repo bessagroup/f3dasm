@@ -6,13 +6,14 @@ from f3dasm.simulator.fenics_wrapper.problems.problem_base import ProblemBase
 from dolfin import *
 import numpy as np
 import copy as cp
+import os
 
 
 class RVE(ProblemBase):
     """ 
         General RVE model implementation
     """
-    def __init__(self, options, domain_filename, F_macro, name=None):
+    def __init__(self, options, domain_filename, name=None):
         domain = Domain(domain_filename)
         super().__init__(options=options, name=name, domain=domain)
 
@@ -33,22 +34,26 @@ class RVE(ProblemBase):
         ################################
         self.W = FunctionSpace(self.domain.mesh, MixedElement([self.Ve, self.Re]), constrained_domain=self.bc_p)
 
-        self.F_macro = F_macro
-        self.convergence = True
-
 
         # Define the variational problem for with pure neumann boundary condition
 
-        v_,lamb_ = TestFunctions(self.W)                # Define test functions 
-        dv, dlamb = TrialFunctions(self.W)              # Define trial functions 
+        self.v_, self.lamb_ = TestFunctions(self.W)                # Define test functions 
         self.w = Function(self.W)
         
+        self.convergence = True
+
+    def solve(self, F_macro, work_dir):
+        if not os.path.exists(work_dir):
+            os.mkdir(work_dir)
+        self.work_dir = work_dir
+
         ################################
         # F_macro should be defined locally because when passing in another way
         # it gives erroneous results! So for consistancy it is defined just before
         # passing as Constant from fenics.
         ################################
-        F_macro = Constant(self.F_macro)                
+        self.convergence = True
+        F_macro = Constant(F_macro)                
 
         u,c = split(self.w)
 
@@ -63,12 +68,9 @@ class RVE(ProblemBase):
         ################################
         # Variational problem definition -> Lagrangian Linear Momentum Equation
         ################################
-        self.PI = inner(self.material[0].P,nabla_grad(v_))*dx(1) + inner(self.material[1].P,nabla_grad(v_))*dx(2)  
+        self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(self.v_))*dx(2)  
 
-        self.PI += dot(lamb_,u)*dx + dot(c,v_)*dx
-
-
-    def solve(self):
+        self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
 
         """ Method: Define solver options with your solver """
 
@@ -92,7 +94,7 @@ class RVE(ProblemBase):
         else:
             
             P = self.__project_P()                          # Project first Piola-Kirchhoff stress tensor 
-            filename = File('stress.pvd')
+            filename = File(os.path.join(self.work_dir,'stress.pvd'))
             filename << P
             F = self.__project_F()                          # Project Deformation Gradient
 
@@ -111,8 +113,6 @@ class RVE(ProblemBase):
             F_hom = F_hom.reshape(-1,self.domain.dim)
             S = np.dot(np.linalg.inv(F_hom.T),P_hom)
 
-
-        
         return S, F_hom
 
     def __deformed(self):
@@ -122,7 +122,7 @@ class RVE(ProblemBase):
         V = FunctionSpace(self.domain.mesh,self.Ve)
         y = SpatialCoordinate(self.domain.mesh)
         write = dot(Constant(self.F_macro),y)+self.v
-        filename = File("deformation.pvd")
+        filename = File(os.path.join(self.work_dir, "deformation.pvd"))
         filename << project(write,V)
 
         ################################

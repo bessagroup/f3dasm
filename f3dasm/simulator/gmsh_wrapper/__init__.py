@@ -5,10 +5,10 @@
 # should allow to generate Gmsh models for meshes using the Gmsh-Python-API.
 
 # set version information
-from f3dasm.mesher.gmsh_wrapper._version import __version__
+from f3dasm.simulator.gmsh_wrapper._version import __version__
 
 # import modules
-from . import (
+from f3dasm.simulator.gmsh_wrapper import (
     Geometry,
     MeshExport,
     Model,
