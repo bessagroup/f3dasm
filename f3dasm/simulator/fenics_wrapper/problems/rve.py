@@ -1,3 +1,4 @@
+from f3dasm.simulator.fenics_wrapper.model.bc import PeriodicBoundary
 from f3dasm.simulator.fenics_wrapper.model.domain import Domain
 from f3dasm.simulator.fenics_wrapper.model.materials.neohookean import NeoHookean
 from f3dasm.simulator.fenics_wrapper.model.materials.svenan_kirchhoff import SVenantKirchhoff
@@ -9,38 +10,23 @@ import copy as cp
 import os
 
 
-class RVE(ProblemBase):
+class RVE2D(ProblemBase):
     """ 
         General RVE model implementation
     """
     def __init__(self, options, domain_filename, name=None):
+        # import domain from file
         domain = Domain(domain_filename)
+
         super().__init__(options=options, name=name, domain=domain)
-
-        ################################
-        # Define function spaces for the problem
-        ################################
-        self.Ve = VectorElement("CG", self.domain.mesh.ufl_cell(), 1)
-
-        ################################
-        # Define function space for the pure Neumann Lagrange multiplier
-        ################################
-        self.Re = VectorElement("R", self.domain.mesh.ufl_cell(), 0)
-
+        
         self.bc_p = PeriodicBoundary(self.domain,periodicity=[0,1],tolerance=1e-10)   # Initialize periodic boundary conditions
-
-        ################################
         # Mixed function space initialization with periodic boundary conditions
-        ################################
         self.W = FunctionSpace(self.domain.mesh, MixedElement([self.Ve, self.Re]), constrained_domain=self.bc_p)
 
-
-        # Define the variational problem for with pure neumann boundary condition
-
-        self.v_, self.lamb_ = TestFunctions(self.W)                # Define test functions 
+        self.v_, self.lamb_ = TestFunctions(self.W)      # Define test functions 
         self.w = Function(self.W)
         
-        self.convergence = True
 
     def solve(self, F_macro, work_dir):
         if not os.path.exists(work_dir):
@@ -53,6 +39,7 @@ class RVE(ProblemBase):
         # passing as Constant from fenics.
         ################################
         self.convergence = True
+
         F_macro = Constant(F_macro)                
 
         u,c = split(self.w)
@@ -178,92 +165,3 @@ class RVE(ProblemBase):
         F = Function(V)
         solve(a_proj==b_proj,F)
         return F
-
-
-class PeriodicBoundary(SubDomain):
-    """
-        GENERAL PERIODIC BOUNDARY CONDITIONS IMPLEMENTATION
-
-                              #-----------# 
-                             / |        / |
-                            /  |       /  |
-                           #----------#   |
-                           *   |      |   |
-                           *   #----------# 
-                     [1]   *  *       |  / 
-                           * * [2]    | / 
-                           **         |/  
-                           ***********# 
-                               [0]
-
-            *   : Master edges/nodes
-            -   : Slave edges/nodes 
-            [i] : directions for periodicity
-
-   """
-
-    def __init__(self,domain,periodicity=None,tolerance=DOLFIN_EPS):
-
-        """ Initialize """
-
-        super().__init__()              # Initialize the base-class (Note: the tolerance is needed for the mapping method)
-
-        ################################
-        # Get the extrema of the domain for every direction
-        ################################
-        self.mins = np.array(domain.bounds[0])          
-        self.maxs = np.array(domain.bounds[1])
-
-        self.directions = np.flatnonzero(self.maxs - self.mins)     # Mark non-zero directions
-        
-        ################################
-        # Definie periodic directions
-        ################################
-        if periodicity is None:
-            self.periodic_dir = self.directions                 
-
-        else:
-            self.periodic_dir = periodicity
-
-        self.tol = tolerance 
-        self.master = []                                # Master nodes 
-        self.map_master = []                            # Mapped master nodes
-        self.map_slave = []                             # Mapped slave nodes
-
-    def inside(self,x,on_boundary):
-        ################################
-        # Mark the master nodes as True 
-        ################################
-        x_master=False                                                   
-        if on_boundary:                                                         
-            for axis in self.periodic_dir:                                      
-                if near(x[axis],self.maxs[axis],self.tol):
-                    x_master=False                                       
-                    break
-                elif near(x[axis],self.mins[axis],self.tol):
-                    x_master=True                                        
-
-        if x_master:
-            self.master.append(cp.deepcopy(x))
-
-        return x_master
-
-    # Overwrite map method of SubDomain class to define the mapping master -> slave
-    def map(self,x,y):
-        ################################
-        # Map the master nodes to slaves
-        ################################
-        x_slave=False                                       
-        for axis in self.directions:                               
-            if axis in self.periodic_dir:                          
-                if near(x[axis],self.maxs[axis],self.tol):
-                    y[axis]=self.mins[axis]                        
-                    x_slave=True                            
-                else:                                              
-                    y[axis]=x[axis]                                
-            else:                                                  
-                y[axis]=x[axis]                                    
-
-        if x_slave:
-            self.map_master.append(cp.deepcopy(y))                            # add y to list mapped master coordinates
-            self.map_slave.append(cp.deepcopy(x))                             # add x to list of mapped slave coordinates
