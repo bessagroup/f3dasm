@@ -11,6 +11,17 @@ import pickle
 
 
 
+class ABQsim():
+    def __init__(self) -> None:
+        pass
+        steps = None
+    
+    
+    def run(self):
+
+
+
+
 class ABQStep():
 
     def __init__(self, 
@@ -31,10 +42,19 @@ class ABQStep():
         self.write_input_pkl(inputs)
         return
 
-class ABQPreproc(ABQStep):
+class ABQPreproc():
     def __init__(self, abq_script, name):
         super().__init__(abq_script, name)
 
+    def write_input_pkl(self, inputs):
+        data = {}
+        data['config'] = self.config
+        data['inputs'] = inputs
+
+
+    def execute(self, inputs):
+        self.write_input_pkl(inputs)
+        return
 
 
 
