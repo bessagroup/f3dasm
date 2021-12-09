@@ -22,6 +22,7 @@ import numpy as np
 
 # local library
 import f3dasm
+#from f3dasm.simulator.abaqus.abaqus_src.pre_process.preproc import PreProc
 from .utils import get_updated_sims_state
 from ....utils.file_handling import verify_existing_name
 from ....utils.utils import import_abstract_obj
@@ -220,7 +221,7 @@ from f3dasm.simulator.abaqus.abaqus_src import abaqus_module_call
 def execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
                     abaqus_path = 'abaqus', 
                     gui = False, 
-                    execute_script = os.path.abspath(abaqus_module_call.__file__)
+                    execute_script = os.path.abspath(abaqus_module_call.__file__) #location of the caller script
                     ):
     """
     This function constructs a command for 'abaqus cae' in order to execute an abaqus module. 
@@ -230,9 +231,19 @@ def execute_abaqus(run_module_name, sim_dir, temp_dir_name,
     """
     gui_ = 'script' if gui else 'noGUI'
     command = '{} cae {}={} -- -func {} -sdir {} -tdir {}'.format(abaqus_path, gui_, 
-                                                                execute_script, run_module_name, 
-                                                                sim_dir, temp_dir_name)
+                                                                execute_script, 
+                                                                run_module_name, 
+                                                                sim_dir, 
+                                                                temp_dir_name)
     os.system(command)
+
+
+#from abaqus import mdb, backwardCompatibility
+
+def run_job_from_inp(inp_file):
+    command = 'abaqus job={}'.format(inp_file)
+    os.system(command)
+
 
 
 def _run_sims_sequentially(example_name, points, wait_time=0,
@@ -255,6 +266,21 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
 
         execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
                     abaqus_path =abaqus_path, gui = gui)
+
+        #for sim in sims:
+
+
+            #write preproc config
+            #PreProc, ->execute
+            # run inp, 
+            #write postproc_config
+            #postproc->execute
+
+            #get resutls from postproc
+
+
+
+
     # # create run filename
     # run_filename = verify_existing_name('_temp.py')
     # lines = ['import runpy',

@@ -205,14 +205,18 @@ class BasicModel(AbstractModel):
 
 class WrapperModel(AbstractModel):
 
-    def __init__(self, name, job_info, abstract_model, post_processing_fnc=None,
-                 previous_model=None, previous_model_results=None,
+    def __init__(self, name,
+                 job_info,                 #name of simulation
+                 abstract_model,            
+                 #post_processing_fnc=None, #abaqus script, simulation specific -> e.g. scmpsbl riks, link buckle
+                 #previous_model=None, 
+                 #previous_model_results=None, #
                  **kwargs):
         AbstractModel.__init__(self, name, job_info)
         self.abstract_model = abstract_model
-        self.post_processing_fnc = post_processing_fnc
-        self.previous_model = previous_model
-        self.previous_model_results = previous_model_results
+        #self.post_processing_fnc = post_processing_fnc
+        #self.previous_model = previous_model
+        #self.previous_model_results = previous_model_results -> shoud be part of input
         self.kwargs = kwargs
         # deal with model and job names
         self.abstract_model_args = inspect.getargspec(abstract_model).args
@@ -274,6 +278,6 @@ class WrapperModel(AbstractModel):
             modelJob.submit(consistencyChecking=OFF)
             modelJob.waitForCompletion()
 
-    def perform_post_processing(self, odb):
+    # def perform_post_processing(self, odb):
 
-        return self.post_processing_fnc(odb)
+    #     return self.post_processing_fnc(odb)

@@ -32,7 +32,7 @@ import time
 import traceback
 
 # local library
-from .utils import convert_dict_unicode_str
+from ..utils import convert_dict_unicode_str
 from .stats import get_wait_time_from_log
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
@@ -62,7 +62,7 @@ class RunModel(object):
         self.pickle_dict = data
         # store variables
         self.variables = data['variables']
-        self.sim_info = data['sim_info']
+        self.sim_info = data['sim_info']  
         self.keep_odb = data['keep_odb']
         self.dump_py_objs = data['dump_py_objs']
         # initialize variables
