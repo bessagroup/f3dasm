@@ -14,9 +14,9 @@ from collections import OrderedDict
 
 # third-party
 import numpy as np
-from f3dasm.run.utils import create_main_file
-from f3dasm.run.utils import create_sim_info
-from f3dasm.run.abaqus import run_sims
+from f3dasm.simulator.abaqus.run.utils import create_main_file
+from f3dasm.simulator.abaqus.run.utils import create_sim_info
+from f3dasm.simulator.abaqus.run.run_sim import run_sims
 from f3dasm.design_of_experiments import create_doe
 
 # local library
@@ -24,7 +24,7 @@ from abaqus_modules.get_results import get_results
 
 
 # initialization
-example_name = 'example_0'
+example_name = 'example_1'
 n_pts = 10  # number of points
 
 if os.path.exists(example_name):
@@ -86,6 +86,6 @@ create_main_file(example_name, doe_variables, points, sim_info,
 
 # run simulations
 
-run_sims(example_name, points=[0], abaqus_path='abaqus',
+run_sims(example_name, points=[0, 1, 2], abaqus_path='abaqus',
          keep_odb=True, pp_fnc=get_results,
          raw_data_filename='raw_data.pkl', delete=False)

@@ -78,7 +78,9 @@ def lin_buckle(model_name, job_name, n_longerons, bottom_diameter,
             aux3 = aux1 * i_vertex + aux2
             xcoord = mast_radius * np.cos(aux3)
             ycoord = mast_radius * np.sin(aux3)
-            joints[i_storey, i_vertex, :] = (xcoord * (1.0 - min(zcoord, transition_length_ratio * mast_height) / mast_height * cone_slope), ycoord * (1.0 - min(zcoord, transition_length_ratio * mast_height) / mast_height * cone_slope), zcoord)
+            joints[i_storey, i_vertex, :] = (xcoord * (1.0 - min(zcoord, transition_length_ratio * mast_height) / mast_height * cone_slope),
+                                             ycoord * (1.0 - min(zcoord, transition_length_ratio * mast_height) / mast_height * cone_slope),
+                                             zcoord)
 
     # create geometry longerons
     longerons_name = 'LONGERONS'
