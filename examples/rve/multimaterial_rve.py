@@ -60,7 +60,7 @@ class MultiMaterialRVE(ProblemBase):
         ################################
         # Variational problem definition -> Lagrangian Linear Momentum Equation
         ################################
-        self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(v_))*dx(2)  
+        self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(self.v_))*dx(2)  
         
         self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
         
