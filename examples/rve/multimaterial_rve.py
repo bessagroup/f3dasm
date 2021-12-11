@@ -3,6 +3,7 @@ from f3dasm.simulator.fenics_wrapper.model.domain import Domain
 from f3dasm.simulator.fenics_wrapper.model.materials.neohookean import NeoHookean
 from f3dasm.simulator.fenics_wrapper.model.materials.svenan_kirchhoff import SVenantKirchhoff
 from f3dasm.simulator.fenics_wrapper.problems.problem_base import ProblemBase 
+from f3dasm.simulator.fenics_wrapper.postprocessor.project_field import *
 
 from dolfin import *
 import numpy as np
@@ -27,7 +28,7 @@ class MultiMaterialRVE(ProblemBase):
         self.time = 0
         
         
-    def solve(self, F_macro, work_dir):
+    def solve(self, F_macro, model_tag, work_dir):
         if not os.path.exists(work_dir):
             os.mkdir(work_dir)
         self.work_dir = work_dir
@@ -45,7 +46,14 @@ class MultiMaterialRVE(ProblemBase):
         ################################
         # Define materials for phases
         ################################
-        self.material = [NeoHookean(u,F_macro, E=300, nu=0.1),SVenantKirchhoff(u,F_macro,E=500,nu=0.3)]
+        model1 = [NeoHookean(u,F_macro, E=300, nu=0.1),SVenantKirchhoff(u,F_macro,E=500,nu=0.3)]        # model-1
+        model2 = [NeoHookean(u,F_macro, E=300, nu=0.1),NeoHookean(u,F_macro,E=300,nu=0.1)]              # model-2
+        model3 = [NeoHookean(u,F_macro, E=300, nu=0.),NeoHookean(u,F_macro,E=300,nu=0.)]                # model-3
+        model4 = [NeoHookean(u,F_macro, E=300, nu=0.1),SVenantKirchhoff(u,F_macro,E=500,nu=0.1)]        # model-4
+        model5 = [NeoHookean(u,F_macro, E=300, nu=0.1),SVenantKirchhoff(u,F_macro,E=800,nu=0.3)]        # model-5
+        models = {1:model1, 2:model2, 3:model3, 4:model4,5:model5}
+
+        self.material = models[model_tag]
 
         dx = Measure('dx')(subdomain_data=self.domain.subdomains)       # Redefine dx for subdomains
 
@@ -55,7 +63,13 @@ class MultiMaterialRVE(ProblemBase):
         self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(v_))*dx(2)  
         
         self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
+        
+        self._solve()
+        
+        project_u(self)
 
+
+    def _solve(self):
         prm = {"newton_solver":
                 {"absolute_tolerance":1e-7,'relative_tolerance':1e-7,'relaxation_parameter':1.0,'linear_solver' : 'mumps'}}
         try:
@@ -63,8 +77,6 @@ class MultiMaterialRVE(ProblemBase):
             (self.v, lamb) = self.w.split(True)
         except:
             self.convergence = False
-        
-        self.__project_u()
 
 
     def postprocess(self):
@@ -76,8 +88,8 @@ class MultiMaterialRVE(ProblemBase):
             S = np.zeros((self.domain.dim,self.domain.dim))
         else:
             
-            P = self.__project_P()                          # Project first Piola-Kirchhoff stress tensor 
-            F = self.__project_F()                          # Project Deformation Gradient
+            P = project_P(self)                          # Project first Piola-Kirchhoff stress tensor 
+            F = project_F(self)                          # Project Deformation Gradient
 
             Piola = P.split(True)
             DG = F.split(True)
@@ -93,75 +105,3 @@ class MultiMaterialRVE(ProblemBase):
             S = np.dot(np.linalg.inv(F_hom.T),P_hom)
 
         return S, F_hom
-
-
-    def __project_P(self):
-
-        """ 
-            Method: Projecting first Piola-Kirchhoff stress tensor.
-                    Another linear variational problem has to be solved.
-        """
-
-        V = TensorFunctionSpace(self.domain.mesh, "DG",0)           # Define Discontinuous Galerkin space
-
-        ################################
-        # Similar type of problem definition inside the model
-        ################################
-        dx = Measure('dx')(subdomain_data=self.domain.subdomains)   
-        dx = dx(metadata={'quadrature_degree': 1})
-        dv = TrialFunction(V)
-        v_ = TestFunction(V)
-        a_proj = inner(dv,v_)*dx
-        b_proj = inner(self.material[0].P,v_)*dx(1) +inner(self.material[1].P,v_)*dx(2)
-        P = Function(V,name='Piola')
-        solve(a_proj==b_proj,P)
-        self.fileResults.write(P,self.time)
-        return P
-
-    def __project_u(self):
-
-        """ 
-            Method: Projecting displacement.
-                    Another linear variational problem has to be solved.
-        """
-
-        V = FunctionSpace(self.domain.mesh, self.Ve)           # Define Discontinuous Galerkin space
-
-        ################################
-        # Similar type of problem definition inside the model
-        ################################
-
-        y = SpatialCoordinate(self.domain.mesh)
-        write = dot(Constant(self.F_macro),y)+self.v
-        dx = Measure('dx')(subdomain_data=self.domain.subdomains)   
-        dx = dx(metadata={'quadrature_degree': 1})
-        dv = TrialFunction(V)
-        v_ = TestFunction(V)
-        a_proj = inner(dv,v_)*dx
-        b_proj = inner(write,v_)*dx
-        u = Function(V,name='Displacement')
-        solve(a_proj==b_proj,u,solver_parameters={"linear_solver": "mumps"} )
-        self.fileResults.write(u,self.time)
-        return u
-        
-
-    def __project_F(self):
-
-        """ 
-            Method: Projecting deformation gradient.
-                    Another linear variational problem has to be solved.
-        """
-
-        ################################
-        # Similar type of problem definition inside the model
-        ################################
-        V = TensorFunctionSpace(self.domain.mesh, "DG",0)       # Define Discontinuous Galerkin space
-
-        dx = Measure('dx')(subdomain_data=self.domain.subdomains)
-        dv = TrialFunction(V)
-        v_ = TestFunction(V)
-        a_proj = inner(dv,v_)*dx
-        b_proj = inner(self.material[0].F,v_)*dx(1) +inner(self.material[1].F,v_)*dx(2)
-        F = Function(V)
-        solve(a_proj==b_proj,F)
-        return F

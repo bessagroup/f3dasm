@@ -3,14 +3,14 @@ from f3dasm.simulator.fenics_wrapper.model.domain import Domain
 from f3dasm.simulator.fenics_wrapper.model.materials.neohookean import NeoHookean
 from f3dasm.simulator.fenics_wrapper.model.materials.svenan_kirchhoff import SVenantKirchhoff
 from f3dasm.simulator.fenics_wrapper.problems.problem_base import ProblemBase 
+from f3dasm.simulator.fenics_wrapper.postprocessor.project_field import *
 
 from dolfin import *
 import numpy as np
-import copy as cp
 import os
 
 
-class RVE2D(ProblemBase):
+class RVE(ProblemBase):
     """ 
         General RVE model implementation
     """
@@ -26,13 +26,17 @@ class RVE2D(ProblemBase):
 
         self.v_, self.lamb_ = TestFunctions(self.W)      # Define test functions 
         self.w = Function(self.W)
-        
+        self.time = 0
 
     def solve(self, F_macro, work_dir):
         if not os.path.exists(work_dir):
             os.mkdir(work_dir)
         self.work_dir = work_dir
 
+        self.fileResults = XDMFFile(os.path.join(work_dir, "output.xdmf"))
+        self.fileResults.parameters["flush_output"] = True
+        self.fileResults.parameters["functions_share_mesh"] = True
+        
         ################################
         # F_macro should be defined locally because when passing in another way
         # it gives erroneous results! So for consistancy it is defined just before
@@ -59,17 +63,21 @@ class RVE2D(ProblemBase):
 
         self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
 
-        """ Method: Define solver options with your solver """
+        self._solve()
 
+       # deformed()
+
+    
+    def _solve(self):
+        """ Method: Define solver options with your solver """
         prm = {"newton_solver":
                 {"absolute_tolerance":1e-7,'relative_tolerance':1e-7,'relaxation_parameter':1.0}}
+        
         try:
             solve(self.PI==0, self.w, [],solver_parameters=prm,form_compiler_parameters={"optimize": True})
             (self.v, lamb) = self.w.split(True)
         except:
             self.convergence = False
-       # self.__deformed()
-
 
     def postprocess(self):
         """ 
@@ -80,10 +88,10 @@ class RVE2D(ProblemBase):
             S = np.zeros((self.domain.dim,self.domain.dim))
         else:
             
-            P = self.__project_P()                          # Project first Piola-Kirchhoff stress tensor 
+            P = project_P(self)                          # Project first Piola-Kirchhoff stress tensor 
             filename = File(os.path.join(self.work_dir,'stress.pvd'))
             filename << P
-            F = self.__project_F()                          # Project Deformation Gradient
+            F = project_F(self)                          # Project Deformation Gradient
 
             Piola = P.split(True)
             DG = F.split(True)
@@ -102,66 +110,3 @@ class RVE2D(ProblemBase):
 
         return S, F_hom
 
-    def __deformed(self):
-
-        """ Method: output the deformed state to a file """
-
-        V = FunctionSpace(self.domain.mesh,self.Ve)
-        y = SpatialCoordinate(self.domain.mesh)
-        write = dot(Constant(self.F_macro),y)+self.v
-        filename = File(os.path.join(self.work_dir, "deformation.pvd"))
-        filename << project(write,V)
-
-        ################################
-        # Easy ploting for the 2D deformation
-        ################################
-        #y = SpatialCoordinate(self.domain.mesh)
-        ##F = Identity(self.domain.dim) + grad(self.v) + Constant(self.F_macro)              # Deformation gradient
-        #p = plot(dot(Constant(self.F_macro),y)+self.v, mode="displacement")
-        ##p = plot(self.v, mode="displacement")
-        ##p = plot(self.stress[0, 0])
-        #plt.colorbar(p)
-        #plt.savefig("rve_deformed.pdf")
-
-    def __project_P(self):
-
-        """ 
-            Method: Projecting first Piola-Kirchhoff stress tensor.
-                    Another linear variational problem has to be solved.
-        """
-
-        V = TensorFunctionSpace(self.domain.mesh, "DG",0)           # Define Discontinuous Galerkin space
-
-        ################################
-        # Similar type of problem definition inside the model
-        ################################
-        dx = Measure('dx')(subdomain_data=self.domain.subdomains)   
-        dx = dx(metadata={'quadrature_degree': 1})
-        dv = TrialFunction(V)
-        v_ = TestFunction(V)
-        a_proj = inner(dv,v_)*dx
-        b_proj = inner(self.material[0].P,v_)*dx(1) +inner(self.material[1].P,v_)*dx(2)
-        P = Function(V)
-        solve(a_proj==b_proj,P)
-        return P
-
-    def __project_F(self):
-
-        """ 
-            Method: Projecting deformation gradient.
-                    Another linear variational problem has to be solved.
-        """
-
-        ################################
-        # Similar type of problem definition inside the model
-        ################################
-        V = TensorFunctionSpace(self.domain.mesh, "DG",0)       # Define Discontinuous Galerkin space
-
-        dx = Measure('dx')(subdomain_data=self.domain.subdomains)
-        dv = TrialFunction(V)
-        v_ = TestFunction(V)
-        a_proj = inner(dv,v_)*dx
-        b_proj = inner(self.material[0].F,v_)*dx(1) +inner(self.material[1].F,v_)*dx(2)
-        F = Function(V)
-        solve(a_proj==b_proj,F)
-        return F

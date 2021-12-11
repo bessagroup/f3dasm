@@ -1,4 +1,6 @@
 from dolfin import *
+import numpy as np
+import copy as cp 
 
 class PeriodicBoundary(SubDomain):
     """

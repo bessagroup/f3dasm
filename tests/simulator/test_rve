@@ -9,8 +9,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from set_path import *
 
-from f3dasm.simulator.fenics_wrapper.preprocessor.rve_mesher import RVEMesher
-from f3dasm.simulator.fenics_wrapper.problems.rve import RVE2D
+from examples.rve.rve_mesher import RVEMesher
+from examples.rve.rve import RVE
 
 class TestFenics(unittest.TestCase):
     """
@@ -40,7 +40,7 @@ class TestFenics(unittest.TestCase):
         F22 = 1.
         dim = 2
         F_macro = np.array([[F11,F12],[F12,F22]])
-        rve_problem = RVE2D({'solver': 'linear'}, domain_filename=domain_filepath, name='test')
+        rve_problem = RVE({'solver': 'linear'}, domain_filename=domain_filepath, name='test')
         rve_problem.solve(F_macro, work_dir)
         
         S,_ = rve_problem.postprocess()

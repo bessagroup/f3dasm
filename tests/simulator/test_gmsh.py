@@ -6,9 +6,9 @@ import shutil
 
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from set_path import *
+from tests.set_path import *
 
-from f3dasm.simulator.gmsh_wrapper.Model import RandomInclusionRVE
+from gmshModel.Model import RandomInclusionRVE
 
 class TestGmsh(unittest.TestCase):
     """

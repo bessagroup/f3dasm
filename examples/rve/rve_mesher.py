@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from f3dasm.simulator.gmsh_wrapper.Model import RandomInclusionRVE
+from gmshModel.Model import RandomInclusionRVE
 from f3dasm.simulator.fenics_wrapper.preprocessor.gmsh_to_fenics import xdmf_extract
 
 class RVEMesher():

@@ -30,3 +30,9 @@ class ProblemBase():
     # V: Optional[dolfin.FunctionSpace]=None
     # u: Optional[dolfin.TrialFunction] = None
     # v: Optional[dolfin.TestFunction] = None
+
+    def _solve(self):
+        return
+
+    def postprocess(self):
+        return
