@@ -71,7 +71,10 @@ class MultiMaterialRVE(ProblemBase):
 
     def _solve(self):
         prm = {"newton_solver":
-                {"absolute_tolerance":1e-7,'relative_tolerance':1e-7,'relaxation_parameter':1.0,'linear_solver' : 'mumps'}}
+                {"linear_solver": "mumps", 
+                 "absolute_tolerance":1e-7,
+                 'relative_tolerance':1e-7,
+                 'relaxation_parameter':1.0}}
         try:
             solve(self.PI==0, self.w, [],solver_parameters=prm,form_compiler_parameters={"optimize": True},)
             (self.v, lamb) = self.w.split(True)

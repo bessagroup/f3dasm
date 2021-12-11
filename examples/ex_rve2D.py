@@ -23,9 +23,9 @@ domain_filepath = os.path.join(mesh_dir, 'rve.xdmf')
 uid = str(uuid.uuid1())
 work_dir = os.path.join(cur_dir, uid)
 
-F11 = 1.    
-F12 = 1.
-F22 = 1.
+F11 = 0.5
+F12 = 0.1
+F22 = 0.5
 dim = 2
 F_macro = np.array([[F11,F12],[F12,F22]])
 rve_problem = RVE({'solver': 'linear'}, domain_filename=domain_filepath, name='test')

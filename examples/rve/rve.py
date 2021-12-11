@@ -20,7 +20,7 @@ class RVE(ProblemBase):
 
         super().__init__(options=options, name=name, domain=domain)
         
-        self.bc_p = PeriodicBoundary(self.domain,periodicity=[0,1],tolerance=1e-10)   # Initialize periodic boundary conditions
+        self.bc_p = PeriodicBoundary(self.domain,periodicity=list(range(domain.dim)), tolerance=1e-10)   # Initialize periodic boundary conditions
         # Mixed function space initialization with periodic boundary conditions
         self.W = FunctionSpace(self.domain.mesh, MixedElement([self.Ve, self.Re]), constrained_domain=self.bc_p)
 
@@ -71,8 +71,11 @@ class RVE(ProblemBase):
     def _solve(self):
         """ Method: Define solver options with your solver """
         prm = {"newton_solver":
-                {"absolute_tolerance":1e-7,'relative_tolerance':1e-7,'relaxation_parameter':1.0}}
-        
+                {"linear_solver": "mumps", 
+                 "absolute_tolerance":1e-7,
+                 'relative_tolerance':1e-7,
+                 'relaxation_parameter':1.0}}
+
         try:
             solve(self.PI==0, self.w, [],solver_parameters=prm,form_compiler_parameters={"optimize": True})
             (self.v, lamb) = self.w.split(True)
