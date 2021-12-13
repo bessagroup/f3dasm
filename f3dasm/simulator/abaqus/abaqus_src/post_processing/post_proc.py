@@ -33,14 +33,14 @@ class PostProc(object):
     }
     '''
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.config = self.load_postproc_config() #the config variables are loaded from pkl file
+    def __init__(self):
+        data = self.load_postproc_config() #the config variables are loaded from pkl file
+        self.config = data['config']
         self.output = {}
 
 
     def load_postproc_config(self):
-        filename = 'abq_preproc_config.pkl'
+        filename = 'postproc_config.pkl'
         with open(filename, 'rb') as file:
             data = convert_dict_unicode_str(pickle.load(file))
         return data
@@ -60,9 +60,9 @@ class PostProc(object):
         # results readable outside abaqus
         # TODO: update success to be less permissive (e.g. subroutine location)
         self.output['success'] = True
-        filename =  self.config['simulation_name'] + '_postproc'
+        filename =  self.config['name'] + '_postproc'
         with open(filename, 'wb') as file:
-            pickle.dump(self.pickle_dict, file, protocol=2)
+            pickle.dump(self.output, file, protocol=2)
 
         # more complete results readable within abaqus
         # if self.dump_py_objs:
@@ -78,14 +78,13 @@ class PostProc(object):
         if self.config['keep_odb']:
             return
 
-        job_names = [model.job_name for model in self.models.values()]
-        for name in job_names:
-            for filename in glob.glob('%s*' % name):
-                if not filename.endswith(('.pkl', '.pkl_abq')):
-                    try:
-                        os.remove(filename)
-                    except:
-                        pass
+        job_name = self.config['name']
+        for filename in glob.glob('%s*' % job_name):
+            if not filename.endswith(('.pkl', '.pkl_abq')):
+                try:
+                    os.remove(filename)
+                except:
+                    pass
 
 
     def execute(self):
@@ -96,17 +95,15 @@ class PostProc(object):
 
 if __name__ == '__main__':
     
-    results = PostProc()
     try:  # to avoid to stop running due to one simulation error
-        # create run model
 
-        # run models
+        results = PostProc()
         results.execute()
 
     except:
 
         # create error file
-        with open('error.txt', 'w') as file:
+        with open('postproc_error.txt', 'w') as file:
             traceback.print_exc(file=file)
 
         # update success flag

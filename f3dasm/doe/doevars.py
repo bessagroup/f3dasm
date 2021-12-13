@@ -1,130 +1,122 @@
 
 #######################################################
-# Data class for the manipulation and transformation  #
-# of data within F3DASM                               #
+# Data class for storing variables (parameters) of
+# the design of experiments F3DASM                               #
 #######################################################
 
-"""
-A dataclass for storing variables (features) during the DoE
-"""
-
-from dataclasses import dataclass
-import numpy as np, array
-from .data import DATA
-from typing import Optional
-from abc import ABC
-
-# using Optional
-# attritube: Optional[optional-object] = None
-
-@dataclass
-class Material:
-    """represents a material"""
-    parameters: dict  # materials can be represeted a variable list of name:value pairs
+from dataclasses import dataclass, field
+import pandas as pd
+from pandas.core.frame import DataFrame
+from f3dasm.doe.sampling import SamplingMethod, SalibSobol
+import copy
+import numpy
 
 
-@dataclass
-class BaseMicrosructure(ABC):
-    """Represents a generic microstructue"""
+def print_variables(dictionary:dict):
+    """Print the top level elements in a dictionary"""
+
+    keys = dictionary.keys()
+    for k in keys:
+        print(k,':', dictionary[k])
+
+    return None
+
+def find_sampling_vars(doe_vars: dict):
+    """Find names of DoeVars that contain a definiton of a sampling method
+    Args:
+        doe_vars (dict): variables defining a design of experiment
+    Returns:
+        list of names
+    """
+    # expand dictionary
+    df = pd.json_normalize(doe_vars)
+    vars = df.to_dict(orient='records')[0]
+
+    elements_with_functions = [] # list of names
+    [ elements_with_functions.append(var) for var in vars.keys() if isinstance(vars[var], SamplingMethod) ]
+
+    return elements_with_functions
+
+
+def deserialize_dictionary(nested_dict: dict):
+    """Deserialize a nested dictionary"""
     
-    material: Material
+    norm_ = pd.json_normalize(nested_dict)
+    return norm_.to_dict(orient='records')[0]
 
 
-@dataclass
-class CircleMicrostructure(BaseMicrosructure):
-    """Represents a microstructure for a circle"""
-
-    diameter: any # can be a single value or a range of values
-    shape: str = 'Circle'
-
-
-@dataclass
-class CilinderMicrostructure(BaseMicrosructure):
-    """Represents a microstructure for """
-
-    diameter: any # can be a single value or a range of values
-    length: float
-    shape: str = 'Cilinder'
-
-
-@dataclass
-class Imperfection:
-    """Represents imperfections"""
-
-    #TODO: define the class further, can we define subtypes?
-    imperfections: dict # a list parameters defining an imperfection as name:value pairs
-
-
-@dataclass
-class REV:
-    """Represents an Representative Elementary Volume"""
-    
-    Lc: float # characteristic length
-    material: Material
-    microstructure: BaseMicrosructure
-    dimesionality: int = 2 # e.g. 2D
+def create_combinations(func, args):
+        """wrapper for computing combinations of DoE variables"""
+        columns = len(args)
+        try: 
+            result = func(*args)
+        finally:
+            return numpy.array(result).T.reshape(-1, columns)
 
 
 @dataclass
 class DoeVars:
     """Parameters for the design of experiments"""
 
-    boundary_conditions: dict  # boundary conditions 
-    rev: REV
-    imperfections: Optional[Imperfection] = None
+    variables: dict
+    sampling_vars: list = field(init=False)
+    data: DataFrame = None
+
+    def __post_init__(self):
+        self.sampling_vars = find_sampling_vars(self.variables)
 
     def info(self):
 
         """ Overwrite print function"""
 
         print('-----------------------------------------------------')
-        print('                       DOE INFO                      ')
+        print('                       DOE VARIABLES                     ')
         print('-----------------------------------------------------')
+        print_variables(self.variables)
         print('\n')
-        print('Boundary conditions:',self.boundary_conditions)
-        print('REV dimensions:',self.rev.dimesionality)
-        print('REV Lc:',self.rev.Lc)
-        print('REV material:',self.rev.material.parameters)
-        print('Microstructure shape:',self.rev.microstructure.shape)
-        print('Microstructure material:',self.rev.microstructure.material.parameters)
-        print('Imperfections:',self.imperfections)
-        return '\n'
 
-    # todo: convert values to array
-    # todo: collect names for data colums
-    # pass them on to data.py
-    #TODO: implement own method to convert to pandas dataframe, use data.py as example
+        return None
+
+      
+    def do_sampling(self) -> DataFrame:
+        """Apply sampling method to sampling variables, combines sampled value and fixed-values,
+        and produces a pandas data frame with all combinations.
+        """
+
+        doe_vars = copy.deepcopy(self.variables)
+        
+        # sample
+        for var in self.sampling_vars:
+            inner_vars = var.split('.') 
+            if len(inner_vars) == 1:
+                doe_vars[var] = doe_vars[var].compute_sampling()
+            elif len(inner_vars) == 2:
+                doe_vars[inner_vars[0]][inner_vars[1]] = doe_vars[inner_vars[0]][inner_vars[1]].compute_sampling()
+            elif len(inner_vars) == 3:
+                doe_vars[inner_vars[0]][inner_vars[1]][inner_vars[2]] = doe_vars[inner_vars[0]][inner_vars[1]][inner_vars[2]].compute_sampling()
+            else:
+                raise SyntaxError("DoeVars definition contains too many nested elements. A max of 3 is allowed")
     
+        # combinations
+        sampled_values = list( deserialize_dictionary(doe_vars).values() )
+        combinations = create_combinations(numpy.meshgrid, sampled_values)
+
+        # dataframe
+        _columns =list( deserialize_dictionary(doe_vars).keys() )
+        self.data = pd.DataFrame(combinations,columns=_columns)
+        return self.data
+
     def save(self,filename):
 
-        """ Save experiemet doe points as pickle file
-        
+        """ Save doe-vars as Pandas data frame in a pickle file
         Args:
             filename (string): filename for the pickle file
-        
+    
         Returns: 
             None
          """  
+        if self.data is None:
+            print("There's no data to save. Run DoeVars.sample_doevars() first")
+        else:
+            self.data.to_pickle(filename)
 
-        data_frame = DATA(self.values,self.feature_names)       # f3dasm data structure, numpy array
-        data_frame.to_pickle(filename)
-
-
-
-
-def main():
-
-    components= {'F11':[-0.15, 1], 'F12':[-0.1,0.15],'F22':[-0.15, 1]}
-    mat1 = Material({'param1': 1, 'param2': 2})
-    mat2 = Material({'param1': 3, 'param2': 4})
-    micro = CircleMicrostructure(material=mat2, diameter=0.3)
-    rev = REV(Lc=4,material=mat1, microstructure=micro, dimesionality=2)
-    doe = DoeVars(boundary_conditions=components, rev=rev)
-
-    print(doe)
-
-    print(doe.info())
-
-
-if __name__ == "__main__":
-    main()

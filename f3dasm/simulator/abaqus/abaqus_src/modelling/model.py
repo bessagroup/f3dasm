@@ -47,8 +47,8 @@ class AbstractModel(object):
     def write_inp(self, submit=True):
         pass
 
-    @abc.abstractmethod
-    def perform_post_processing(self, odb):
+    # @abc.abstractmethod
+    # def perform_post_processing(self, odb):
         pass
 
     def dump(self, create_file=True):
@@ -221,7 +221,7 @@ class WrapperModel(AbstractModel):
         # deal with model and job names
         self.abstract_model_args = inspect.getargspec(abstract_model).args
         if 'job_name' in self.abstract_model_args:
-            self.kwargs['job_name'] = self.job_info['name']
+             self.kwargs['job_name'] = self.job_info['name']
         if 'name' in self.abstract_model_args:
             self.kwargs['name'] = name
         elif 'model_name' in self.abstract_model_args:
@@ -243,16 +243,16 @@ class WrapperModel(AbstractModel):
         `previous_model_job_name`.
         '''
         # get previous model results
-        if self.previous_model_results is None and self.previous_model:
-            # access odb
-            odb_name = '{}.odb'.format(self.previous_model.job_info['name'])
-            odb = session.openOdb(name=odb_name)
-            self.previous_model_results = self.previous_model.perform_post_processing(odb)
-            odb.close()
-            self.kwargs['previous_model_results'] = self.previous_model_results
+        # if self.previous_model_results is None and self.previous_model:
+        #     # access odb
+        #     odb_name = '{}.odb'.format(self.previous_model.job_info['name'])
+        #     odb = session.openOdb(name=odb_name)
+        #     self.previous_model_results = self.previous_model.perform_post_processing(odb)
+        #     odb.close()
+        #     self.kwargs['previous_model_results'] = self.previous_model_results
             # verify if previous model job name should be passed
-            if 'previous_model_job_name' in self.abstract_model_args:
-                self.kwargs['previous_model_job_name'] = self.previous_model.job_info['name']
+            # if 'previous_model_job_name' in self.abstract_model_args:
+            #     self.kwargs['previous_model_job_name'] = self.previous_model.job_info['name']
 
         # create model
         self.abort = self.abstract_model(**self.kwargs)
