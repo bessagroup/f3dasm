@@ -13,3 +13,11 @@ def create_temp_dir(temp_dir_name='_temp'):
 
 
 
+def run_job_from_inp(inp_file, sim_dir):
+    initial_wd  = os.getcwd()
+    os.chdir(sim_dir)
+    command = 'abaqus job={}'.format(inp_file)
+    os.system(command)
+    os.chdir(initial_wd)
+
+

@@ -1,20 +1,10 @@
 import os
 import pickle
 import time
-from f3dasm.simulator.abaqus.run.run_sim import execute_abaqus
-
-
-def run_job_from_inp(inp_file, sim_dir):
-    initial_wd  = os.getcwd()
-    os.chdir(sim_dir)
-    command = 'abaqus job={}'.format(inp_file)
-    os.system(command)
-    os.chdir(initial_wd)
 
 import shutil
 from f3dasm.doe.doevars import  DoeVars
-import numpy as np
-from f3dasm.simulator.abaqus.run.run_sim import _create_temp_dir
+from f3dasm.simulator.abaqus.utils import create_temp_dir
 
 
 vars = {'ratio_d': 0.006, #[0.004, 0.073],
@@ -41,75 +31,7 @@ print(doe.data)
 doe_pd = doe.data
 doe_list = doe_pd.index.values.tolist()
 
-class AbaqusStep():
-    def __init__(self, name, 
-                config_filename, 
-                abq_script = None, 
-                abq_run_module = None, 
-                ):
-
-        self.config_filename = config_filename 
-        self.run_module_name = abq_run_module  #'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
-        self.abaqus_path='abaqus'
-        self.temp_dir_name = '_temp'
-        self.config = {}
-        self.config['name'] = name
-        #job info field passes kwargs to Abaqus mdb.JobFromInputFile(), for all possible kwargs check:
-        #https://abaqus-docs.mit.edu/2017/English/SIMACAEKERRefMap/simaker-c-jobfrominputfilepyc.htm
-        self.config['job_info'] = {'name': name,   #abaqus resires at least name, other kwargs are optional
-                                    'numCpus' : 1, 
-                                    #'userSubroutine': "" ,  # A WAY TO ADD USER SUBROUTINE
-                                    }
-
-        if abq_script is not None:
-            self.config['abq_script'] = abq_script
-
-    def write_input_pkl(self, simdir, inputs = None):
-        filename =  os.path.join(simdir, self.config_filename)
-        data = {}
-        data['config'] = self.config
-        data['variables'] = inputs
-
-        with open(filename, 'wb') as file:
-            pickle.dump(data, file, protocol = 2)
-
-    def execute(self, simdir, inputs = None):
-        inpt_file = os.path.join(simdir, self.config_filename)
-        if not os.path.exists(inpt_file):
-            self.write_input_pkl(simdir, inputs = inputs)
-
-        execute_abaqus(self.run_module_name,  
-                        simdir, self.temp_dir_name,
-                        abaqus_path =self.abaqus_path, gui = False)
-
-class PostProc(AbaqusStep):
-    def __init__(self, name , abq_script, 
-                keep_odb = True):
-        config_filename = 'postproc_config.pkl'
-        abq_run_module=  'f3dasm.simulator.abaqus.abaqus_src.post_processing.post_proc'
-        
-        super().__init__(name, config_filename, 
-                        abq_script =abq_script, 
-                        abq_run_module=abq_run_module)
-
-        self.config['keep_odb'] = keep_odb
-
-class PreProc(AbaqusStep):
-    def __init__(self, name, abq_script):
-        config_filename = 'preproc_inputs.pkl'
-        abq_run_module = 'f3dasm.simulator.abaqus.abaqus_src.pre_process.preproc'
-
-        super().__init__(name, config_filename, abq_script=abq_script, abq_run_module=abq_run_module)
-
-
-class RunJob(AbaqusStep):
-
-    def __init__(self, name):
-        config_filename ='sim_config.pkl'
-        abq_run_module= 'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
-        super().__init__(name, config_filename,
-                        abq_run_module=abq_run_module)
-
+from f3dasm.simulator.abaqus.steps import PreProc, RunJob, PostProc
 
 class Simulation():
     def __init__(self, name, 
@@ -170,7 +92,7 @@ sim_lb.job.config['job_info']['numCpus'] = 1
 
 
 temp_dir_name = '_temp'
-_create_temp_dir(temp_dir_name)
+create_temp_dir(temp_dir_name)
 
 sim_lb_path = os.path.join(analysis_folder, sim_lb.name )
 os.mkdir(sim_lb_path)
