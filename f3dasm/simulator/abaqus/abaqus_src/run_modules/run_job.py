@@ -18,10 +18,6 @@ class RunModelFromInp(object):
     def execute(self):
         filename = '%s.inp' % self.job_info['name']
         job_info = {key: value for key, value in self.job_info.items() if key != 'description'}
-
-        with open('jobinfo.pkl', 'wb') as f1:
-            #pickle.dump(args, f1)
-            pickle.dump(job_info, f1)
         modelJob = mdb.JobFromInputFile(inputFileName=filename,
                                         **job_info)
         modelJob.submit(consistencyChecking=OFF)
