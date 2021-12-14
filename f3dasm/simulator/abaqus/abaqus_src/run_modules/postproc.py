@@ -5,7 +5,7 @@ import pickle
 import traceback
 
 from ..utils import convert_dict_unicode_str
-from .....utils.utils import import_abstract_obj
+from ..utils import import_abstract_obj
 
 
 class PostProc(object):

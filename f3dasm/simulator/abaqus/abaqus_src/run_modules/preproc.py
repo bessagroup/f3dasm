@@ -5,7 +5,7 @@ import traceback
 from ..utils import convert_dict_unicode_str
 from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
-from .....utils.utils import import_abstract_obj
+from ..utils import import_abstract_obj
 
 class PreProc(object):
 

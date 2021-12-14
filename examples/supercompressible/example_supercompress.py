@@ -1,37 +1,11 @@
 import os
 import pickle
 import time
-
 import shutil
 from f3dasm.doe.doevars import  DoeVars
 from f3dasm.simulator.abaqus.utils import create_temp_dir
-
-
-vars = {'ratio_d': 0.006, #[0.004, 0.073],
-        'ratio_pitch': [0.75, 0.9],  #[.25, 1.5],
-        'ratio_top_diameter': 0.7, #[0., 0.8],
-            'n_longerons': 3,      
-            'bottom_diameter': 100.,
-            'young_modulus': 3500.,
-            'shear_modulus': 1287.}
-
-doe = DoeVars(vars)
-print('DoEVars definition:')
-print(doe)
-
-print('\n DoEVars summary information:')
-print(doe.info())
-
-# Compute sampling and combinations
-doe.do_sampling()
-
-print('\n Pandas dataframe with compbined-sampled values:')
-print(doe.data)
-
-doe_pd = doe.data
-doe_list = doe_pd.index.values.tolist()
-
 from f3dasm.simulator.abaqus.steps import PreProc, RunJob, PostProc
+from f3dasm.simulator.abaqus.utils import clean_abaqus_dir
 
 class Simulation():
     def __init__(self, name, 
@@ -60,6 +34,7 @@ class Simulation():
             data = pickle.load(file, encoding='latin1')
         return data
 
+#helper function
 def get_inputs_riks(inputs, sim_lin_bckl, i_doe_lin_buckle_path):
     data_lin_buckle = sim_lin_bckl.extract_results(simdir=i_doe_lin_buckle_path )
     inputs_riks = inputs.copy()
@@ -69,13 +44,37 @@ def get_inputs_riks(inputs, sim_lin_bckl, i_doe_lin_buckle_path):
     inputs_riks['imperfection'] = 0.001
     return inputs_riks
 
-example_name = 'example_4'
+
+#Beginning of Experiment
+
+vars = {'ratio_d': 0.006, #[0.004, 0.073],
+        'ratio_pitch': [0.75, 0.9],  #[.25, 1.5],
+        'ratio_top_diameter': 0.7, #[0., 0.8],
+            'n_longerons': 3,      
+            'bottom_diameter': 100.,
+            'young_modulus': 3500.,
+            'shear_modulus': 1287.}
+
+doe = DoeVars(vars)
+print('DoEVars definition:')
+print(doe)
+
+print('\n DoEVars summary information:')
+print(doe.info())
+# Compute sampling and combinations
+doe.do_sampling()
+
+print('\n Pandas dataframe with compbined-sampled values:')
+print(doe.data)
+doe_pd = doe.data
+doe_list = doe_pd.index.values.tolist()
+
+example_name = 'example_1'
 
 if not os.path.exists(example_name):
     os.mkdir(example_name)
 analysis_folder  = os.path.join(example_name, 'analyses')
 os.mkdir(analysis_folder )
-
 
 
 sim_lb = Simulation(name = 'linear_buckle', 
@@ -111,27 +110,36 @@ for i_doe in doe_list:
     sim_lb.execute(simdir=i_doe_path, inputs = inputs)
 
     #RIKS    
-    inputs_riks = get_inputs_riks(inputs, sim_lb, i_doe_path)    
-    i_doe_riks = os.path.join(sim_rx_path,  'DoE_point%i' % i_doe)
-    os.mkdir( i_doe_riks)
+    inputs_riks = get_inputs_riks(inputs, sim_lb, i_doe_path)  
 
-    #Riks needs access to lin buckle odb file, 
-    lb_odb = os.path.join(i_doe_path, sim_lb.name + '.odb')
-    target = os.path.join(i_doe_riks, sim_lb.name + '.odb')
-    shutil.copyfile(lb_odb, target, follow_symlinks=True)
-    while not os.path.exists(target):
-        print('odb, sleepin')
-        time.sleep(0.001)
-    #with odb files we also need to pass prt file, in order for odb to recognize the model instance
-    lb_odb = os.path.join(i_doe_path, sim_lb.name + '.prt')
-    target = os.path.join(i_doe_riks, sim_lb.name + '.prt')
-    shutil.copyfile(lb_odb, target, follow_symlinks=True)
-    while not os.path.exists(target):
-        print('inp, sleepin')
-        time.sleep(0.001)
+    if inputs_riks['coilable']: 
+        i_doe_riks = os.path.join(sim_rx_path,  'DoE_point%i' % i_doe)
+        os.mkdir( i_doe_riks)
+
+        #Riks needs access to lin buckle odb file 
+        lb_odb = os.path.join(i_doe_path, sim_lb.name + '.odb')
+        target = os.path.join(i_doe_riks, sim_lb.name + '.odb')
+        shutil.copyfile(lb_odb, target, follow_symlinks=True)
+        while not os.path.exists(target):
+            print('odb, sleepin')
+            time.sleep(0.001)
+
+        #with odb files we also need to pass prt file, in order 
+        # for odb to recognize the model instance
+        lb_odb = os.path.join(i_doe_path, sim_lb.name + '.prt')
+        target = os.path.join(i_doe_riks, sim_lb.name + '.prt')
+        shutil.copyfile(lb_odb, target, follow_symlinks=True)
+        while not os.path.exists(target):
+            print('inp, sleepin')
+            time.sleep(0.001)
 
 
-    sim_riks.write_configs(simdir = i_doe_riks, inputs = inputs_riks)
-    sim_riks.execute(simdir = i_doe_riks, inputs = inputs_riks)
+        sim_riks.write_configs(simdir = i_doe_riks, inputs = inputs_riks)
+        sim_riks.execute(simdir = i_doe_riks, inputs = inputs_riks)
 
-    riks_data = sim_riks.extract_results(i_doe_riks)
+        riks_data = sim_riks.extract_results(i_doe_riks)
+
+
+    clean_abaqus_dir(ext2rem=('.abq', '.com', '.log', '.mdl', '.pac', '.rpy',
+                                '.sel', '.stt'),
+                        dir_path=None)
