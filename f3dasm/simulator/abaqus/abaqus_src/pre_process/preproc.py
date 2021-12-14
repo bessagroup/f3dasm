@@ -7,8 +7,6 @@ from ..modelling.model import BasicModel
 from ..modelling.model import WrapperModel
 from .....utils.utils import import_abstract_obj
 
-
-
 class PreProc(object):
 
     def __init__(self):
@@ -22,30 +20,15 @@ class PreProc(object):
         job_info= self.sim_info['job_info']
 
         abstract_model = import_abstract_obj(self.sim_info['abq_script'])
-
         args = self.variables.copy()
-        #args.update(job_info)
-        
-        d = {}
-        d['model_name']= model_name
-        d['args']  = args
-        d['sbcls'] = issubclass(abstract_model, BasicModel)
-        d['abstrc_mdl'] = abstract_model.__name__
-        d['job_info'] = job_info
-        with open('preproc_args.pkl', 'wb') as f1:
-            #pickle.dump(args, f1)
-            pickle.dump(d, f1)
 
         if issubclass(abstract_model, BasicModel):
             model = abstract_model(name=model_name, job_info  = job_info, 
                                  **args)
         else:
-
             model = WrapperModel(name=model_name, job_info= job_info, 
                                  abstract_model=abstract_model,
                                    **args)
-
-        
         self.model = model
 
     def execute(self):
@@ -65,7 +48,6 @@ if __name__ == '__main__':
         preprocessor = PreProc()
         preprocessor.execute()
     except:
-
         with open('preproc_error.txt', 'w') as file:
             traceback.print_exc(file=file)
         # update success flag
