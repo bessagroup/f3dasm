@@ -67,8 +67,7 @@ class PostProc(AbaqusStep):
     def __init__(self, name , abq_script, 
                 keep_odb = True):
         config_filename = 'postproc_config.pkl'
-        abq_run_module=  'f3dasm.simulator.abaqus.abaqus_src.run_modules.post_proc'
-        
+        abq_run_module=  'f3dasm.simulator.abaqus.abaqus_src.run_modules.postproc'
         super().__init__(name, config_filename, 
                         abq_script =abq_script, 
                         abq_run_module=abq_run_module)
@@ -84,9 +83,8 @@ class PreProc(AbaqusStep):
 
 
 class RunJob(AbaqusStep):
-
     def __init__(self, name):
         config_filename ='sim_config.pkl'
-        abq_run_module= 'f3dasm.simulator.abaqus.abaqus_src.run_modules.run_from_inp'
+        abq_run_module= 'f3dasm.simulator.abaqus.abaqus_src.run_modules.run_job'
         super().__init__(name, config_filename,
                         abq_run_module=abq_run_module)
