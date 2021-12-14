@@ -1,17 +1,4 @@
-'''
-Created on 2020-09-25 14:29:14
-Last modified on 2020-09-25 14:31:55
-
-@author: L. F. Pereira (lfpereira@fe.up.pt))
-'''
-
-# imports
-
-# standard library
 from collections import OrderedDict
-
-
-# object definition
 
 def convert_dict_unicode_str(pickled_dict):
     new_dict = OrderedDict() if type(pickled_dict) is OrderedDict else {}

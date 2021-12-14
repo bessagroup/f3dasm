@@ -381,10 +381,14 @@ def post_process_lin_buckle(odb):
 
 def riks(model_name, job_name, n_longerons, bottom_diameter,
          young_modulus, shear_modulus, ratio_top_diameter, ratio_pitch,
-         ratio_d, imperfection, previous_model_results, previous_model_job_name):
+         ratio_d, 
+         imperfection, 
+         coilable,
+         lin_bckl_max_disp ,  #previous_model_results,
+         lin_buckle_odb ):      #= 'lin_buckle'):
 
     # abort if not coilable
-    if not int(previous_model_results['coilable']):
+    if not int(coilable): #int(previous_model_results['coilable']):
         return True
 
     # variables from ratios
@@ -641,9 +645,9 @@ def riks(model_name, job_name, n_longerons, bottom_diameter,
     modelJob.writeInput(consistencyChecking=OFF)
 
     # add imperfections to inp
-    amp_factor = imperfection / previous_model_results['max_disps'][1]
+    amp_factor = imperfection / lin_bckl_max_disp #previous_model_results['max_disps'][1]
     # TODO: deal with previous_model_job_name
-    text = ['*IMPERFECTION, FILE={}, STEP=1'.format(previous_model_job_name),
+    text = ['*IMPERFECTION, FILE={}, STEP=1'.format(lin_buckle_odb),
             '{}, {}'.format(1, amp_factor)]
     with open('{}.inp'.format(job_name), 'r') as file:
         lines = file.readlines()

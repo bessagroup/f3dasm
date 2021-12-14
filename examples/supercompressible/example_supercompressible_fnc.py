@@ -24,7 +24,7 @@ from abaqus_modules.get_results import get_results
 
 
 # initialization
-example_name = 'example_1'
+example_name = 'example_4'
 n_pts = 10  # number of points
 
 if os.path.exists(example_name):
