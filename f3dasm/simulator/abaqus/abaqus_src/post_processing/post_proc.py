@@ -47,7 +47,7 @@ class PostProc(object):
 
     def postproc_odb(self) :
         odb_name = '%s.odb' % self.config['name']
-        post_processing_fnc = import_abstract_obj(self.config['post_processing_fnc'])
+        post_processing_fnc = import_abstract_obj(self.config['abq_script'])
         odb = session.openOdb(name=odb_name)
         post_proc_data = post_processing_fnc(odb)
         odb.close()

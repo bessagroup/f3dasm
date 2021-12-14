@@ -267,6 +267,8 @@ def _run_sims_sequentially(example_name, points, wait_time=0,
         execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
                     abaqus_path =abaqus_path, gui = gui)
 
+        
+
         #for sim in sims:
 
 

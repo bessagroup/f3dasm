@@ -11,12 +11,17 @@ class RunModelFromInp(object):
 
     def __init__(self):
         self.filename, data = _read_data()
-        self.job_info = data['config']
-        #model_name = self.sim_info['name']
+        self.sim_info = data['config']
+        self.model_name = self.sim_info['name']
+        self.job_info = self.sim_info['job_info']
 
     def execute(self):
         filename = '%s.inp' % self.job_info['name']
         job_info = {key: value for key, value in self.job_info.items() if key != 'description'}
+
+        with open('jobinfo.pkl', 'wb') as f1:
+            #pickle.dump(args, f1)
+            pickle.dump(job_info, f1)
         modelJob = mdb.JobFromInputFile(inputFileName=filename,
                                         **job_info)
         modelJob.submit(consistencyChecking=OFF)

@@ -19,19 +19,33 @@ class PreProc(object):
         self.variables = data['variables']
         self.sim_info = data['config']
         model_name = self.sim_info['name']
+        job_info= self.sim_info['job_info']
 
-        job_name =  model_name
-        job_info  = {'job_info' : {'name' : job_name}}
-        abstract_model = import_abstract_obj(self.sim_info['abaqus_script'])
+        abstract_model = import_abstract_obj(self.sim_info['abq_script'])
 
         args = self.variables.copy()
-        args.update(job_info)
+        #args.update(job_info)
+        
+        d = {}
+        d['model_name']= model_name
+        d['args']  = args
+        d['sbcls'] = issubclass(abstract_model, BasicModel)
+        d['abstrc_mdl'] = abstract_model.__name__
+        d['job_info'] = job_info
+        with open('preproc_args.pkl', 'wb') as f1:
+            #pickle.dump(args, f1)
+            pickle.dump(d, f1)
 
         if issubclass(abstract_model, BasicModel):
-            model = abstract_model(name=model_name,   **args)
+            model = abstract_model(name=model_name, job_info  = job_info, 
+                                 **args)
         else:
-            model = WrapperModel(name=model_name, abstract_model=abstract_model,
+
+            model = WrapperModel(name=model_name, job_info= job_info, 
+                                 abstract_model=abstract_model,
                                    **args)
+
+        
         self.model = model
 
     def execute(self):
@@ -52,7 +66,7 @@ if __name__ == '__main__':
         preprocessor.execute()
     except:
 
-        with open('error.txt', 'w') as file:
+        with open('preproc_error.txt', 'w') as file:
             traceback.print_exc(file=file)
         # update success flag
         filename, data = _read_data()

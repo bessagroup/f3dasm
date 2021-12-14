@@ -1,7 +1,6 @@
-import numpy as np
 import os
 import pickle
-
+import time
 from f3dasm.simulator.abaqus.run.run_sim import execute_abaqus
 
 
@@ -12,12 +11,8 @@ def run_job_from_inp(inp_file, sim_dir):
     os.system(command)
     os.chdir(initial_wd)
 
-
+import shutil
 from f3dasm.doe.doevars import  DoeVars
-from f3dasm.doe.sampling import SalibSobol, NumpyLinear
-
-from f3dasm.doe.sampling import SamplingMethod
-from numpy.core.records import array
 import numpy as np
 from f3dasm.simulator.abaqus.run.run_sim import _create_temp_dir
 
@@ -28,11 +23,9 @@ vars = {'ratio_d': 0.006, #[0.004, 0.073],
             'n_longerons': 3,      
             'bottom_diameter': 100.,
             'young_modulus': 3500.,
-            'shear_modulus': 1287., 
-            'imperfections' : 0.001 }
+            'shear_modulus': 1287.}
 
 doe = DoeVars(vars)
-
 print('DoEVars definition:')
 print(doe)
 
@@ -48,27 +41,30 @@ print(doe.data)
 doe_pd = doe.data
 doe_list = doe_pd.index.values.tolist()
 
-
-
-
-class AbaqusProcess():
-
-
+class AbaqusStep():
     def __init__(self, name, 
                 config_filename, 
                 abq_script = None, 
+                abq_run_module = None, 
                 ):
 
-
-
+        self.config_filename = config_filename 
+        self.run_module_name = abq_run_module  #'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
+        self.abaqus_path='abaqus'
+        self.temp_dir_name = '_temp'
         self.config = {}
         self.config['name'] = name
-        self.config['abaqus_script'] = abq_script
+        #job info field passes kwargs to Abaqus mdb.JobFromInputFile(), for all possible kwargs check:
+        #https://abaqus-docs.mit.edu/2017/English/SIMACAEKERRefMap/simaker-c-jobfrominputfilepyc.htm
+        self.config['job_info'] = {'name': name,   #abaqus resires at least name, other kwargs are optional
+                                    'numCpus' : 1, 
+                                    #'userSubroutine': "" ,  # A WAY TO ADD USER SUBROUTINE
+                                    }
 
-        self.config_filename = config_filename
-    
+        if abq_script is not None:
+            self.config['abq_script'] = abq_script
 
-    def write_input_pkl(self,simdir, inputs = None):
+    def write_input_pkl(self, simdir, inputs = None):
         filename =  os.path.join(simdir, self.config_filename)
         data = {}
         data['config'] = self.config
@@ -77,260 +73,143 @@ class AbaqusProcess():
         with open(filename, 'wb') as file:
             pickle.dump(data, file, protocol = 2)
 
-    def execute_abq(self):
-        run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
-        abaqus_path='abaqus'
-        temp_dir_name = '_temp'
-        execute_abaqus(run_module_name,  
-                        i_doe_path, temp_dir_name, #temp_dir_name, 
-                        abaqus_path =abaqus_path, gui = False)
+    def execute(self, simdir, inputs = None):
+        inpt_file = os.path.join(simdir, self.config_filename)
+        if not os.path.exists(inpt_file):
+            self.write_input_pkl(simdir, inputs = inputs)
 
-class PostProc():
+        execute_abaqus(self.run_module_name,  
+                        simdir, self.temp_dir_name,
+                        abaqus_path =self.abaqus_path, gui = False)
 
-    def __init__(self, name, 
-                    abq_script,
-                    keep_odb = True,  
-                    config = {}):
-        self.name = name
-        self.config = config
-        self.config['name'] = name
-        self.config['post_processing_fnc'] = abq_script
+class PostProc(AbaqusStep):
+    def __init__(self, name , abq_script, 
+                keep_odb = True):
+        config_filename = 'postproc_config.pkl'
+        abq_run_module=  'f3dasm.simulator.abaqus.abaqus_src.post_processing.post_proc'
+        
+        super().__init__(name, config_filename, 
+                        abq_script =abq_script, 
+                        abq_run_module=abq_run_module)
+
         self.config['keep_odb'] = keep_odb
 
-    def write_input_pkl(self, filename = 'postproc_config.pkl'):
-        data = {}
-        data['config'] = self.config
+class PreProc(AbaqusStep):
+    def __init__(self, name, abq_script):
+        config_filename = 'preproc_inputs.pkl'
+        abq_run_module = 'f3dasm.simulator.abaqus.abaqus_src.pre_process.preproc'
 
-        with open(filename, 'wb') as file:
-            pickle.dump(data, file, protocol = 2)
-
-    def execute(self):
-        self.write_input_pkl()
-        return
+        super().__init__(name, config_filename, abq_script=abq_script, abq_run_module=abq_run_module)
 
 
-class Preprocessing():
+class RunJob(AbaqusStep):
 
+    def __init__(self, name):
+        config_filename ='sim_config.pkl'
+        abq_run_module= 'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
+        super().__init__(name, config_filename,
+                        abq_run_module=abq_run_module)
+
+
+class Simulation():
     def __init__(self, name, 
-                    abq_script, 
-                    config = {}):
+                preproc_script = None, 
+                postproc_script = None,
+               ): 
         self.name = name
-        self.config = config
-        self.config['name'] = name
-        self.config['abaqus_script'] = abq_script
+        self.preproc = PreProc(name = name, abq_script =preproc_script)
+        self.job = RunJob(name)
+        self.postproc = PostProc(name = name, abq_script = postproc_script)
 
-    def write_input_pkl(self, inputs, filename = 'preproc_inputs.pkl'):
-        data = {}
-        data['config'] = self.config
-        data['variables'] = inputs
+    def write_configs(self, simdir, inputs = None):
+        self.preproc.write_input_pkl(simdir = simdir, inputs = inputs )
+        self.job.write_input_pkl(simdir = simdir)
+        self.postproc.write_input_pkl(simdir = simdir)
 
-        with open(filename, 'wb') as file:
-            pickle.dump(data, file, protocol = 2)
+    def execute(self, simdir, inputs):
+        self.preproc.execute(simdir = simdir, inputs=inputs)
+        self.job.execute(simdir = simdir)
+        self.postproc.execute(simdir = simdir)
 
-    def execute(self, inputs):
-        self.write_input_pkl(inputs)
+    def extract_results(self, simdir):
+        file_name = self.name + '_postproc'
+        file_name = os.path.join(simdir, file_name)
+        with open(file_name, 'rb') as file:
+            data = pickle.load(file, encoding='latin1')
+        return data
 
-        run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
-        abaqus_path='abaqus'
-        temp_dir_name = '_temp'
-        execute_abaqus(run_module_name,  
-                        i_doe_path, temp_dir_name, #temp_dir_name, 
-                        abaqus_path =abaqus_path, gui = False)
-        return
+def get_inputs_riks(inputs, sim_lin_bckl, i_doe_lin_buckle_path):
+    data_lin_buckle = sim_lin_bckl.extract_results(simdir=i_doe_lin_buckle_path )
+    inputs_riks = inputs.copy()
+    inputs_riks['coilable'] = int(data_lin_buckle['post-processing']['coilable'])
+    inputs_riks['lin_bckl_max_disp'] = data_lin_buckle['post-processing']['max_disps'][1]
+    inputs_riks['lin_buckle_odb'] = sim_lin_bckl.name
+    inputs_riks['imperfection'] = 0.001
+    return inputs_riks
 
-
-class RunJob():
-    def __init__(self, name, 
-                    config = {}):
-        self.name = name
-        self.config = config
-        self.config['name'] = name
-
-    def write_input_pkl(self, filename = 'sim_config.pkl'):
-        data = {}
-        data['config'] = self.config
-
-        with open(filename, 'wb') as file:
-            pickle.dump(data, file, protocol = 2)
-
-    def execute(self, inputs):
-        self.write_input_pkl(inputs)
-        return
-
-
-
-preproc_1 = Preprocessing( name = 'lin_bckl', 
-                    abq_script = 'abaqus_modules.supercompressible_fnc.lin_buckle', 
-                    config = {})
-
-sim1 = RunJob(name ='lin_bckl' )
-postproc1 = PostProc(name ='lin_bckl',
-                    abq_script  = 'abaqus_modules.supercompressible_fnc.post_process_lin_buckle')
-
-sim_list = [preproc_1]
-
-#sim_list  = ['lin_bckl', 'riks']
-
-
-example_name = 'example_3'
+example_name = 'example_4'
 
 if not os.path.exists(example_name):
-    #raise Exception('Name already exists')
     os.mkdir(example_name)
 analysis_folder  = os.path.join(example_name, 'analyses')
 os.mkdir(analysis_folder )
 
 
 
+sim_lb = Simulation(name = 'linear_buckle', 
+                preproc_script =  'abaqus_modules.supercompressible_fnc.lin_buckle', 
+                postproc_script = 'abaqus_modules.supercompressible_fnc.post_process_lin_buckle'
+                )
+
+sim_riks = Simulation(name = 'riks', 
+                preproc_script =  'abaqus_modules.supercompressible_fnc.riks', 
+                postproc_script = 'abaqus_modules.supercompressible_fnc.post_process_riks'
+                )
+sim_riks.job.config['job_info']['numCpus'] = 1
+sim_lb.job.config['job_info']['numCpus'] = 1
+
+
 temp_dir_name = '_temp'
 _create_temp_dir(temp_dir_name)
 
-for sim in sim_list:
-    sim_dir = os.path.join(analysis_folder, sim.name )
-    os.mkdir(sim_dir)
+sim_lb_path = os.path.join(analysis_folder, sim_lb.name )
+os.mkdir(sim_lb_path)
 
-    for i_doe in doe_list:
-        i_doe_path = os.path.join(sim_dir,  'DoE_point%i' % i_doe)
-        os.mkdir( i_doe_path)
-
-        inputs = doe_pd.iloc[i_doe].to_dict()
-        inputs['n_longerons'] = int(inputs['n_longerons'])
-
-        preproc_filename = os.path.join(i_doe_path, 'preproc_inputs.pkl')
-        preproc_1.write_input_pkl(inputs, preproc_filename)
-
-        #preproc:
-        run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.pre_process.preproc'
-        abaqus_path='abaqus'
-        
-
-        sim_filename = os.path.join(i_doe_path, 'sim_config.pkl')
-        sim1.write_input_pkl(sim_filename)
-
-        ppc_filename = os.path.join(i_doe_path, 'postproc_config.pkl')
-        postproc1.write_input_pkl(ppc_filename)
-
-        #temp_dir_name = os.path.join(i_doe_path, temp_dir_name )
-        #if not os.path.exists(temp_dir_name):
-        #    os.mkdir(temp_dir_name)
-
-        #temp_dir = os.path.join(i_doe_path, temp_dir_name )
-        #if not os.path.exists(temp_dir):
-            #raise Exception('Name already exists')
-        #    os.mkdir(temp_dir)
-        #temp_dir
-        execute_abaqus(run_module_name, i_doe_path, temp_dir_name, #temp_dir_name, 
-                        abaqus_path =abaqus_path, gui = False)
-
-    
-        # scratch_dir = os.path.join(i_doe_path, temp_dir_name )
-        # if not os.path.exists(scratch_dir):
-        #     os.mkdir(scratch_dir)
+sim_rx_path = os.path.join(analysis_folder, sim_riks.name )
+os.mkdir(sim_rx_path)
 
 
-        #run:
-        run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.run.run_from_inp'
-        abaqus_path='abaqus'
-        temp_dir_name = '_temp'
-        execute_abaqus(run_module_name,  
-                        i_doe_path, temp_dir_name, #temp_dir_name, 
-                        abaqus_path =abaqus_path, gui = False)
+for i_doe in doe_list:
+
+    #LINEAR BUCKLING
+    i_doe_path = os.path.join(sim_lb_path,  'DoE_point%i' % i_doe)
+    os.mkdir( i_doe_path)
+    inputs = doe_pd.iloc[i_doe].to_dict()
+    inputs['n_longerons'] = int(inputs['n_longerons'])
+    sim_lb.execute(simdir=i_doe_path, inputs = inputs)
+
+    #RIKS    
+    inputs_riks = get_inputs_riks(inputs, sim_lb, i_doe_path)    
+    i_doe_riks = os.path.join(sim_rx_path,  'DoE_point%i' % i_doe)
+    os.mkdir( i_doe_riks)
+
+    #Riks needs access to lin buckle odb file, 
+    lb_odb = os.path.join(i_doe_path, sim_lb.name + '.odb')
+    target = os.path.join(i_doe_riks, sim_lb.name + '.odb')
+    shutil.copyfile(lb_odb, target, follow_symlinks=True)
+    while not os.path.exists(target):
+        print('odb, sleepin')
+        time.sleep(0.001)
+    #with odb files we also need to pass prt file, in order for odb to recognize the model instance
+    lb_odb = os.path.join(i_doe_path, sim_lb.name + '.prt')
+    target = os.path.join(i_doe_riks, sim_lb.name + '.prt')
+    shutil.copyfile(lb_odb, target, follow_symlinks=True)
+    while not os.path.exists(target):
+        print('inp, sleepin')
+        time.sleep(0.001)
 
 
-        #postproc:
-        run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.post_processing.post_proc'
-        abaqus_path='abaqus'
-        temp_dir_name = '_temp'
-        execute_abaqus(run_module_name,  
-                        i_doe_path, temp_dir_name, #temp_dir_name, 
-                        abaqus_path =abaqus_path, gui = False)
-        #if execute_directly:
-            #inp_file_name = os.path.join(sim.name + '_job')
-            #run_job_from_inp(inp_file_name, sim_dir =i_doe_path )
+    sim_riks.write_configs(simdir = i_doe_riks, inputs = inputs_riks)
+    sim_riks.execute(simdir = i_doe_riks, inputs = inputs_riks)
 
-
-
-
-
-
-# sim_dir = os.path.join(analysis_folder, sim_list[0].name)
-# sim_dir = os.path.join(sim_dir, 'DoE_point%i' % i_doe)
-
-
-# #preproc:
-# run_module_name = 'f3dasm.simulator.abaqus.abaqus_src.run.preproc'
-# abaqus_path='abaqus'
-# temp_dir_name = '_temp'
-# _create_temp_dir(temp_dir_name)
-
-
-# execute_abaqus(run_module_name, sim_dir, temp_dir_name, 
-#                 abaqus_path =abaqus_path, gui = False)
-
-print(123)
-# def _read_data():
-
-#     # get pickle filename
-#     filename = get_unique_file_by_ext(ext='.pkl')
-
-#     # read file
-#     with open(filename, 'rb') as file:
-#         data = convert_dict_unicode_str(pickle.load(file))
-
-#     return filename, data
-
-
-# class Step():
-
-#     def __init__(self) -> None:
-#         pass 
-
-#     def execute(self):
-#         pass
-        
-
-
-# class PreProcessAbaqus():
-
-#     def __init__(self, 
-#                 preprocessing_script = None) -> None:
-#         self.preprocessing_script = preprocessing_script
-
-
-#         abstract_model = import_abstract_obj(info['abstract_model'])
-#         pp_fnc_loc = info.get('post_processing_fnc', None)
-#         post_processing_fnc = import_abstract_obj(pp_fnc_loc) if pp_fnc_loc is not None else None
-#         for key in ['abstract_model', 'post_processing_fnc']:
-#             info.pop(key, None)
-
-#         # get args
-#         args = self.variables.copy()
-#         args.update(info)
-
-#         # instantiate model
-#         if i:
-#             args.update({'previous_model': list(self.models.values())[i - 1]})
-#         if issubclass(abstract_model, BasicModel):
-#             model = abstract_model(name=model_name, **args)
-#         else:
-#             model = WrapperModel(name=model_name, abstract_model=abstract_model,
-#                                     post_processing_fnc=post_processing_fnc,
-#                                      **args)
-
-#             self.models[model_name] = model
-
-#     def execute()
-
-
-
-# class Simulation():
-
-#     def __init__(self, 
-#                 pre_process, 
-#                 run_sim, 
-#                 post_process):
-
-
-#     def execute(self, inputs):
-
-#         return results
+    riks_data = sim_riks.extract_results(i_doe_riks)
