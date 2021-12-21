@@ -63,13 +63,7 @@ class MultiMaterialRVE(ProblemBase):
         self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(self.v_))*dx(2)  
         
         self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
-        
-        self._solve()
-        
-        project_u(self)
-
-
-    def _solve(self):
+                
         prm = {"newton_solver":
                 {"linear_solver": "mumps", 
                  "absolute_tolerance":1e-7,
@@ -80,7 +74,7 @@ class MultiMaterialRVE(ProblemBase):
             (self.v, lamb) = self.w.split(True)
         except:
             self.convergence = False
-
+        project_u(self)
 
     def postprocess(self):
         """ 

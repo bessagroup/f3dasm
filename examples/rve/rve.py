@@ -29,6 +29,7 @@ class RVE(ProblemBase):
         self.time = 0
 
     def solve(self, F_macro, work_dir):
+        """ Method: Define solver options with your solver """
         if not os.path.exists(work_dir):
             os.mkdir(work_dir)
         self.work_dir = work_dir
@@ -62,14 +63,7 @@ class RVE(ProblemBase):
         self.PI = inner(self.material[0].P,nabla_grad(self.v_))*dx(1) + inner(self.material[1].P,nabla_grad(self.v_))*dx(2)  
 
         self.PI += dot(self.lamb_,u)*dx + dot(c,self.v_)*dx
-
-        self._solve()
-
-       # deformed()
-
-    
-    def _solve(self):
-        """ Method: Define solver options with your solver """
+        
         prm = {"newton_solver":
                 {"linear_solver": "mumps", 
                  "absolute_tolerance":1e-7,
@@ -81,6 +75,9 @@ class RVE(ProblemBase):
             (self.v, lamb) = self.w.split(True)
         except:
             self.convergence = False
+
+        # deformed()  
+
 
     def postprocess(self):
         """ 
