@@ -17,7 +17,7 @@ DESCRIPTION = 'My short description for my project.'
 URL = 'https://github.com/mpvanderschelling/testthings'
 EMAIL = 'M.P.vanderSchelling@tudelft.nl'
 AUTHOR = 'Martin van der Schelling'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.6.0, <4'
 VERSION = '0.1.1'
 
 # What packages are required for this module to be executed?
