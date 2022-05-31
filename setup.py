@@ -12,7 +12,7 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'mypackage'
+NAME = 'testthings'
 DESCRIPTION = 'My short description for my project.'
 URL = 'https://github.com/mpvanderschelling/testthings'
 EMAIL = 'M.P.vanderSchelling@tudelft.nl'
@@ -82,8 +82,13 @@ class UploadCommand(Command):
         self.status('Building Source and Wheel (universal) distribution…')
         os.system('{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
 
-        self.status('Uploading the package to PyPI via Twine…')
-        os.system('twine upload dist/*')
+        # Uploading to PyPi
+        # self.status('Uploading the package to PyPI via Twine…')
+        # os.system('twine upload dist/*')
+
+        #Uploading to Test PyPI
+        self.status('Uploading the package to Test PyPI via Twine…')
+        os.system('twine upload -r testpypi dist/*')
 
         self.status('Pushing git tags…')
         os.system('git tag v{0}'.format(about['__version__']))
