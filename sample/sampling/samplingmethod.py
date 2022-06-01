@@ -20,3 +20,4 @@ class SamplingMethod(ABC):
         Returns:
             np.array: samples
         """
+        raise NotImplementedError
