@@ -1,6 +1,14 @@
 sample package
 ==============
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   sample.sampling
+
 Submodules
 ----------
 
