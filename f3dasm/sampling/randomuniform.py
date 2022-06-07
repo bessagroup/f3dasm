@@ -1,6 +1,6 @@
 import numpy as np
 
-from samplingmethod import SamplingMethod
+from ..src.samplingmethod import SamplingMethod
 
 
 class RandomUniform(SamplingMethod):

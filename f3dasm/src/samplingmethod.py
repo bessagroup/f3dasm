@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 import numpy as np
 
-from designofexperiments import DesignOfExperiments
+from .designofexperiments import DesignOfExperiments
 
 
 @dataclass

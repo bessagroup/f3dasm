@@ -1,7 +1,7 @@
 import numpy as np
 from SALib.sample import latin
 
-from samplingmethod import SamplingMethod
+from ..src.samplingmethod import SamplingMethod
 
 
 class LatinHypercube(SamplingMethod):

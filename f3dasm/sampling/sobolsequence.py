@@ -1,7 +1,7 @@
 import numpy as np
 from SALib.sample import sobol_sequence
 
-from samplingmethod import SamplingMethod
+from f3dasm.src.samplingmethod import SamplingMethod
 
 
 class SobolSequencing(SamplingMethod):
