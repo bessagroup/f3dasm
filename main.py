@@ -15,8 +15,7 @@ ran = RandomUniform(doe)
 # %%
 dim = 4
 samp = 5
-np.random.seed(42)
-
 sob.sample(samp, dim)
 lhs.sample(samp, dim)
 ran.sample(samp, dim)
+# %%
