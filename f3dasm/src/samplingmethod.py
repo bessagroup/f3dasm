@@ -9,6 +9,7 @@ from .designofexperiments import DesignOfExperiments
 @dataclass
 class SamplingMethod(ABC):
     """Interface for sampling method"""
+
     doe: DesignOfExperiments
     seed: Any = None
 
@@ -27,5 +28,3 @@ class SamplingMethod(ABC):
             np.array: samples
         """
         raise NotImplementedError("Subclasses should implement this method.")
-
-

@@ -7,12 +7,13 @@ from ..src.samplingmethod import SamplingMethod
 
 class LatinHypercube(SamplingMethod):
     """Sampling via Latin Hypercube Sampling"""
-    def sample(self, numsamples: int, dimensions: int, seed: Any | None = None) -> np.array:
+
+    def sample(self, numsamples: int, dimensions: int) -> np.array:
         problem = {
-            'num_vars': dimensions,
-            'names': ['x' + str(n) for n in range(dimensions)],
-            'bounds': [[0., 1.] for n in range(dimensions)]
+            "num_vars": dimensions,
+            "names": ["x" + str(n) for n in range(dimensions)],
+            "bounds": [[0.0, 1.0] for n in range(dimensions)],
         }
 
-        samples = latin.sample(problem, numsamples, seed=seed)
+        samples = latin.sample(problem, numsamples, seed=self.seed)
         return samples
