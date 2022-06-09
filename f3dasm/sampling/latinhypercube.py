@@ -2,18 +2,21 @@ from typing import Any
 import numpy as np
 from SALib.sample import latin
 
+from f3dasm.src.designofexperiments import DoE
+
 from ..src.samplingmethod import SamplingMethod
 
 
 class LatinHypercube(SamplingMethod):
     """Sampling via Latin Hypercube Sampling"""
 
-    def sample(self, numsamples: int, dimensions: int) -> np.array:
+    def sample(self, numsamples: int, doe: DoE) -> np.array:
+        continuous = doe.getContinuousParameters()
         problem = {
-            "num_vars": dimensions,
-            "names": ["x" + str(n) for n in range(dimensions)],
-            "bounds": [[0.0, 1.0] for n in range(dimensions)],
+            "num_vars": len(continuous),
+            "names": [s.name for s in continuous],
+            "bounds": [[s.lower_bound, s.upper_bound] for s in continuous],
         }
 
-        samples = latin.sample(problem, numsamples, seed=self.seed)
+        samples = latin.sample(problem, N=numsamples, seed=self.seed)
         return samples
