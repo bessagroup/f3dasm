@@ -46,6 +46,9 @@ class ContinuousSpace(SpaceInterface):
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
 
+        if self.upper_bound == self.lower_bound:
+            raise ValueError("same lower as upper bound!")
+
 
 @dataclass
 class DiscreteSpace(SpaceInterface):
@@ -59,8 +62,8 @@ class DiscreteSpace(SpaceInterface):
         ValueError: _description_
     """
 
-    lower_bound: float = field(default=0)
-    upper_bound: float = field(default=1)
+    lower_bound: int = field(default=0)
+    upper_bound: int = field(default=1)
 
     def __post_init__(self):
         self.check_types()
@@ -78,6 +81,9 @@ class DiscreteSpace(SpaceInterface):
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
 
+        if self.upper_bound == self.lower_bound:
+            raise ValueError("same lower as upper bound!")
+
 
 @dataclass
 class CategoricalSpace(SpaceInterface):
@@ -87,6 +93,10 @@ class CategoricalSpace(SpaceInterface):
         self.check_types()
 
     def check_types(self) -> None:
+
+        if not isinstance(self.categories, list):
+            raise TypeError(f"Expect list, got {type(self.categories)}")
+
         for category in self.categories:
             if not isinstance(category, str):
                 raise TypeError(f"Expect string, got {type(category)}")
