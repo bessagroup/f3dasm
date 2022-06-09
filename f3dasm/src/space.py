@@ -1,5 +1,3 @@
-# %%
-
 from dataclasses import dataclass, field
 from typing import List
 
@@ -35,7 +33,7 @@ class ContinuousSpace(SpaceInterface):
         if not isinstance(self.lower_bound, float) or not isinstance(
             self.upper_bound, float
         ):
-            raise ValueError(
+            raise TypeError(
                 f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}"
             )
 
@@ -72,7 +70,7 @@ class DiscreteSpace(SpaceInterface):
         if not isinstance(self.lower_bound, int) or not isinstance(
             self.upper_bound, int
         ):
-            raise ValueError(
+            raise TypeError(
                 f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}"
             )
 
@@ -91,18 +89,9 @@ class CategoricalSpace(SpaceInterface):
     def check_types(self) -> None:
         for category in self.categories:
             if not isinstance(category, str):
-                raise ValueError(f"Expect string, got {type(category)}")
+                raise TypeError(f"Expect string, got {type(category)}")
 
 
 @dataclass
 class ConstraintInterface:
     pass
-
-
-# %%
-
-# con = ContinuousSpace(name="x0", lower_bound=0.3, upper_bound=5.0)
-# dis = DiscreteSpace(name="x1", lower_bound=3, upper_bound=6)
-# cat = CategoricalSpace(name="x3", categories=["hoi", 3])
-
-# %%
