@@ -139,5 +139,11 @@ def test_invalid_types_categories_categorical_space():
         categorical = CategoricalSpace(name="test", categories=categories)
 
 
+def test_duplicates_categories_categorical_space():
+    categories = ["test1", "test2", "test1"]
+    with pytest.raises(ValueError):
+        categorical = CategoricalSpace(name="test", categories=categories)
+
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()
