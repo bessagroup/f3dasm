@@ -91,6 +91,11 @@ class CategoricalSpace(SpaceInterface):
 
     def __post_init__(self):
         self.check_types()
+        self.check_duplicates()
+
+    def check_duplicates(self) -> None:
+        if len(self.categories) != len(set(self.categories)):
+            raise ValueError("Categories contain duplicates!")
 
     def check_types(self) -> None:
 
