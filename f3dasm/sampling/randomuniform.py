@@ -8,7 +8,7 @@ from ..src.samplingmethod import SamplingMethod
 class RandomUniform(SamplingMethod):
     """Sampling via random uniform sampling"""
 
-    def sample(self, numsamples: int, doe: DoE) -> np.array:
+    def sample_continuous(self, numsamples: int, doe: DoE) -> np.array:
         continuous = doe.getContinuousParameters()
         dimensions = len(continuous)
 
