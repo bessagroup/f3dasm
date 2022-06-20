@@ -22,7 +22,6 @@ class Data:
             par2 (str): name of second parameter (y-axis)
         """
         fig, ax = plt.figure(), plt.axes()
-        sample_range = range(len(self.data))
 
         ax.scatter(self.data[par1], self.data[par2], s=3)
 

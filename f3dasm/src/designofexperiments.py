@@ -1,11 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from pandas import Categorical
 
 from f3dasm.src.space import (
     CategoricalSpace,
-    ConstraintInterface,
     ContinuousSpace,
     DiscreteSpace,
     SpaceInterface,

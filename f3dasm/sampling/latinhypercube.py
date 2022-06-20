@@ -1,4 +1,3 @@
-from typing import Any
 import numpy as np
 from SALib.sample import latin
 
