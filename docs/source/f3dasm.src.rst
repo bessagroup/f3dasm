@@ -4,6 +4,14 @@ f3dasm.src package
 Submodules
 ----------
 
+f3dasm.src.data module
+----------------------
+
+.. automodule:: f3dasm.src.data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.src.designofexperiments module
 -------------------------------------
 
