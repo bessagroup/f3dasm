@@ -4,17 +4,22 @@ from typing import List
 
 @dataclass
 class SpaceInterface:
+    """Interface class of a search space parameter
+
+    Args:
+        name (str): name of the parameter
+    """
+
     name: str
 
 
 @dataclass
 class ContinuousSpace(SpaceInterface):
-    """Define a continuous parameter for your search space.
+    """Creates a search space parameter that is continuous
 
     Args:
-        lower_bound (float): _description_
-        upper_bound (float): _description_
-
+        lower_bound (float): lower bound of continuous search space
+        upper_bound (float): upper bound of continuous search space (exclusive)
     """
 
     lower_bound: float = field(default=0.0)
@@ -25,11 +30,7 @@ class ContinuousSpace(SpaceInterface):
         self.check_range()
 
     def check_types(self) -> None:
-        """_summary_
-
-        Raises:
-            ValueError: _description_
-        """
+        """Check if the boundaries are actually floats"""
         if not isinstance(self.lower_bound, float) or not isinstance(
             self.upper_bound, float
         ):
@@ -38,11 +39,7 @@ class ContinuousSpace(SpaceInterface):
             )
 
     def check_range(self) -> None:
-        """_summary_
-
-        Raises:
-            ValueError: _description_
-        """
+        """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
 
@@ -52,14 +49,11 @@ class ContinuousSpace(SpaceInterface):
 
 @dataclass
 class DiscreteSpace(SpaceInterface):
-    """_summary_
+    """Creates a search space parameter that is discrete
 
     Args:
-        SpaceInterface (_type_): _description_
-
-    Raises:
-        ValueError: _description_
-        ValueError: _description_
+        lower_bound (int): lower bound of discrete search space
+        upper_bound (int): upper bound of discrete search space (exclusive)
     """
 
     lower_bound: int = field(default=0)
@@ -70,6 +64,7 @@ class DiscreteSpace(SpaceInterface):
         self.check_range()
 
     def check_types(self) -> None:
+        """Check if the boundaries are actually ints"""
         if not isinstance(self.lower_bound, int) or not isinstance(
             self.upper_bound, int
         ):
@@ -78,6 +73,7 @@ class DiscreteSpace(SpaceInterface):
             )
 
     def check_range(self) -> None:
+        """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
 
@@ -87,6 +83,12 @@ class DiscreteSpace(SpaceInterface):
 
 @dataclass
 class CategoricalSpace(SpaceInterface):
+    """Creates a search space parameter that is categorical
+
+    Args:
+        categories (list): list of strings that represent available categories
+    """
+
     categories: List[str]
 
     def __post_init__(self):
@@ -94,10 +96,12 @@ class CategoricalSpace(SpaceInterface):
         self.check_duplicates()
 
     def check_duplicates(self) -> None:
+        """Check if there are duplicates in the categories list"""
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
     def check_types(self) -> None:
+        """Check if the entries of the lists are all strings"""
 
         if not isinstance(self.categories, list):
             raise TypeError(f"Expect list, got {type(self.categories)}")
@@ -109,4 +113,6 @@ class CategoricalSpace(SpaceInterface):
 
 @dataclass
 class ConstraintInterface:
+    """Interface for constraints"""
+
     pass

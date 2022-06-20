@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any
 import numpy as np
+import pandas as pd
 
 from .designofexperiments import DoE
 
@@ -29,7 +30,8 @@ class SamplingMethod(ABC):
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: int):
+    def get_samples(self, numsamples: int) -> pd.DataFrame:
+        """Receive samples of the search space"""
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples, doe=self.doe)
 
@@ -42,9 +44,30 @@ class SamplingMethod(ABC):
         )
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
-        return samples
+        columnnames = (
+            self.doe.getContinuousNames()
+            + self.doe.getDiscreteNames()
+            + self.doe.getCategoricalNames()
+        )
+        # Make the dataframe
+        df = pd.DataFrame(data=samples, columns=columnnames)
+
+        # Make a dictionary that provides the datatype of each parameter
+        coltypes = {}
+        for continuous in self.doe.getContinuousNames():
+            coltypes[continuous] = "float"
+        for discrete in self.doe.getDiscreteNames():
+            coltypes[discrete] = "int"
+        for categorical in self.doe.getCategoricalNames():
+            coltypes[categorical] = "category"
+
+        # Cast the columns
+        df = df.astype(coltypes)
+
+        return df
 
     def sample_discrete(self, numsamples: int, doe: DoE):
+        """Sample the descrete parameters, default randomly uniform"""
         discrete = doe.getDiscreteParameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, _ in enumerate(discrete):
@@ -56,6 +79,7 @@ class SamplingMethod(ABC):
         return samples
 
     def sample_categorical(self, numsamples: int, doe: DoE):
+        """Sample the categorical parameters, default randomly uniform"""
         categorical = doe.getCategoricalParameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
@@ -66,7 +90,7 @@ class SamplingMethod(ABC):
         return samples
 
     def stretch_samples(self, doe: DoE, samples: np.array):
-        """Stretch samples"""
+        """Stretch samples to their boundaries"""
         continuous = doe.getContinuousParameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
