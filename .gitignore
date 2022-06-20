@@ -3,6 +3,7 @@
 
 # VS-code
 .vscode/
+*.code-workspace
 
 
 # Byte-compiled / optimized / DLL files
