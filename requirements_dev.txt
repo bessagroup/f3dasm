@@ -1,0 +1,13 @@
+pytest
+pytest-cov
+coverage
+flake8
+numpy
+pandas
+SALib
+matplotlib
+nose
+sphinx
+sphinx_rtd_theme
+tox
+mypy
