@@ -1,7 +1,7 @@
-sample
+f3dasm
 ======
 
 .. toctree::
    :maxdepth: 4
 
-   sample
+   f3dasm

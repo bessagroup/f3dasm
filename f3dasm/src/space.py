@@ -1,0 +1,118 @@
+from dataclasses import dataclass, field
+from typing import List
+
+
+@dataclass
+class SpaceInterface:
+    """Interface class of a search space parameter
+
+    Args:
+        name (str): name of the parameter
+    """
+
+    name: str
+
+
+@dataclass
+class ContinuousSpace(SpaceInterface):
+    """Creates a search space parameter that is continuous
+
+    Args:
+        lower_bound (float): lower bound of continuous search space
+        upper_bound (float): upper bound of continuous search space (exclusive)
+    """
+
+    lower_bound: float = field(default=0.0)
+    upper_bound: float = field(default=1.0)
+
+    def __post_init__(self):
+        self.check_types()
+        self.check_range()
+
+    def check_types(self) -> None:
+        """Check if the boundaries are actually floats"""
+        if not isinstance(self.lower_bound, float) or not isinstance(
+            self.upper_bound, float
+        ):
+            raise TypeError(
+                f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}"
+            )
+
+    def check_range(self) -> None:
+        """Check if the lower boundary is lower than the higher boundary"""
+        if self.upper_bound < self.lower_bound:
+            raise ValueError("not the right range!")
+
+        if self.upper_bound == self.lower_bound:
+            raise ValueError("same lower as upper bound!")
+
+
+@dataclass
+class DiscreteSpace(SpaceInterface):
+    """Creates a search space parameter that is discrete
+
+    Args:
+        lower_bound (int): lower bound of discrete search space
+        upper_bound (int): upper bound of discrete search space (exclusive)
+    """
+
+    lower_bound: int = field(default=0)
+    upper_bound: int = field(default=1)
+
+    def __post_init__(self):
+        self.check_types()
+        self.check_range()
+
+    def check_types(self) -> None:
+        """Check if the boundaries are actually ints"""
+        if not isinstance(self.lower_bound, int) or not isinstance(
+            self.upper_bound, int
+        ):
+            raise TypeError(
+                f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}"
+            )
+
+    def check_range(self) -> None:
+        """Check if the lower boundary is lower than the higher boundary"""
+        if self.upper_bound < self.lower_bound:
+            raise ValueError("not the right range!")
+
+        if self.upper_bound == self.lower_bound:
+            raise ValueError("same lower as upper bound!")
+
+
+@dataclass
+class CategoricalSpace(SpaceInterface):
+    """Creates a search space parameter that is categorical
+
+    Args:
+        categories (list): list of strings that represent available categories
+    """
+
+    categories: List[str]
+
+    def __post_init__(self):
+        self.check_types()
+        self.check_duplicates()
+
+    def check_duplicates(self) -> None:
+        """Check if there are duplicates in the categories list"""
+        if len(self.categories) != len(set(self.categories)):
+            raise ValueError("Categories contain duplicates!")
+
+    def check_types(self) -> None:
+        """Check if the entries of the lists are all strings"""
+
+        if not isinstance(self.categories, list):
+            raise TypeError(f"Expect list, got {type(self.categories)}")
+
+        for category in self.categories:
+            if not isinstance(category, str):
+                raise TypeError(f"Expect string, got {type(category)}")
+
+
+@dataclass
+class ConstraintInterface:
+    """Interface for constraints"""
+
+    pass

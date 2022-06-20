@@ -11,8 +11,8 @@ Getting started
 
 Install with pip:
 
-``pip install -i https://test.pypi.org/simple/ testthings``
-
+``pip install -i pip install -i https://test.pypi.org/simple/ F3DASM``
+s
 Documentation
 -------------
 

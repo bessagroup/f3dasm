@@ -12,8 +12,8 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'testthings'
-DESCRIPTION = 'My short description for my project.'
+NAME = 'F3DASM'
+DESCRIPTION = 'Stub for own interpretation of F3DASM code.'
 URL = 'https://github.com/mpvanderschelling/testthings'
 EMAIL = 'M.P.vanderSchelling@tudelft.nl'
 AUTHOR = 'Martin van der Schelling'
