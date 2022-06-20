@@ -9,7 +9,13 @@ from .designofexperiments import DoE
 
 @dataclass
 class SamplingMethod(ABC):
-    """Interface for sampling method"""
+    """Interface for sampling method
+
+    Args:
+        doe (DoE): design of experiments object
+        seed (Any): Optional: seed for sampling (default is None)
+
+    """
 
     doe: DoE
     seed: Any = None
