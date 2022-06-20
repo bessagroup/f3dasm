@@ -6,6 +6,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
+APIDOCDIR     = source
+PACKAGENAME   = f3dasm
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -45,6 +47,12 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+apidoc:
+	-rm -rf $(APIDOCDIR)/*
+	sphinx-apidoc -o $(APIDOCDIR)/ ../$(PACKAGENAME)
+	@echo
+	@echo "Created API documentation using sphinx-apidoc. The source files are in $(APIDOCDIR)."
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
