@@ -29,10 +29,9 @@ class DoE:
         self.space.append(space)
         return
 
-
     def getNumberOfParameters(self) -> int:
         return len(self.space)
-        
+
     def getContinuousParameters(self) -> List[ContinuousSpace]:
         """Receive all the continuous parameters"""
         return [

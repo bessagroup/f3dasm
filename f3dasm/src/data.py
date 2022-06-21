@@ -15,8 +15,7 @@ class Data:
     data: pd.DataFrame
 
     def append(self, data: pd.DataFrame) -> None:
-        self.data.append(data)
-
+        self.data = self.data.append(data)
 
     def plot(self, par1: str, par2: str) -> None:
         """Plot the data of two parameters in a figure
