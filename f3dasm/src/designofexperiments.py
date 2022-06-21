@@ -15,28 +15,41 @@ class DoE:
     """Design of experiments
 
     Args:
-        space (list): list of parameters
+        input_space (list): list of parameters
     """
 
-    space: List[SpaceInterface] = field(default_factory=list)
+    input_space: List[SpaceInterface] = field(default_factory=list)
+    output_space: List[SpaceInterface] = field(default_factory=list)
 
-    def addSpace(self, space: SpaceInterface) -> None:
+    def add_input_space(self, space: SpaceInterface) -> None:
         """Add a new parameter to the searchspace
 
         Args:
             space (SpaceInterface): search space parameter to be added
         """
-        self.space.append(space)
+        self.input_space.append(space)
         return
 
-    def getNumberOfParameters(self) -> int:
-        return len(self.space)
+    def add_output_space(self, space: SpaceInterface) -> None:
+        """Add a new parameter to the searchspace
+
+        Args:
+        space (SpaceInterface): search space parameter to be added
+        """
+        self.output_space.append(space)
+        return       
+
+    def getNumberOfInputParameters(self) -> int:
+        return len(self.input_space)
+
+    def getNumberOfOutputParameters(self) -> int:
+        return len(self.output_space)
 
     def getContinuousParameters(self) -> List[ContinuousSpace]:
         """Receive all the continuous parameters"""
         return [
             parameter
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, ContinuousSpace)
         ]
 
@@ -44,7 +57,7 @@ class DoE:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, ContinuousSpace)
         ]
 
@@ -52,7 +65,7 @@ class DoE:
         """Receive all the discrete parameters"""
         return [
             parameter
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, DiscreteSpace)
         ]
 
@@ -60,7 +73,7 @@ class DoE:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, DiscreteSpace)
         ]
 
@@ -68,7 +81,7 @@ class DoE:
         """Receive all the categorical parameters"""
         return [
             parameter
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, CategoricalSpace)
         ]
 
@@ -76,6 +89,6 @@ class DoE:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
-            for parameter in self.space
+            for parameter in self.input_space
             if isinstance(parameter, CategoricalSpace)
         ]

@@ -51,7 +51,7 @@ class SamplingMethod(ABC):
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
         columnnames = [
-            ["input"] * self.doe.getNumberOfParameters(),
+            ["input"] * self.doe.getNumberOfInputParameters(),
             self.doe.getContinuousNames()
             + self.doe.getDiscreteNames()
             + self.doe.getCategoricalNames(),
