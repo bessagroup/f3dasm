@@ -37,16 +37,16 @@ def test_correct_sampling_ran():
         ]
     )
 
-    columnnames = ["x1", "x3", "x5", "x2", "x4"]
+    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {"x1": "float", "x2": "int", "x3": "float", "x4": "category", "x5": "float"}
+        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
     samples = samples.round(6)
 
-    print(samples)
+    print(df_ground_truth)
     assert df_ground_truth.equals(samples)
 
 
@@ -79,10 +79,10 @@ def test_correct_sampling_sobol():
         ]
     )
 
-    columnnames = ["x1", "x3", "x5", "x2", "x4"]
+    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {"x1": "float", "x2": "int", "x3": "float", "x4": "category", "x5": "float"}
+        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
@@ -120,10 +120,10 @@ def test_correct_sampling_lhs():
         ]
     )
 
-    columnnames = ["x1", "x3", "x5", "x2", "x4"]
+    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {"x1": "float", "x2": "int", "x3": "float", "x4": "category", "x5": "float"}
+        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)

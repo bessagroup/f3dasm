@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 import numpy as np
 import pandas as pd
 
@@ -50,27 +50,34 @@ class SamplingMethod(ABC):
         )
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
-        columnnames = (
+        columnnames = [['input']*self.doe.getNumberOfParameters(),
             self.doe.getContinuousNames()
             + self.doe.getDiscreteNames()
             + self.doe.getCategoricalNames()
-        )
+        ]
+
+        df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
+        return df
+
+    def cast_to_dataframe(self, samples: np.ndarray, columnnames: List[str]) -> pd.DataFrame:
+        """Cast the samples to a DataFrame"""
         # Make the dataframe
         df = pd.DataFrame(data=samples, columns=columnnames)
 
         # Make a dictionary that provides the datatype of each parameter
         coltypes = {}
         for continuous in self.doe.getContinuousNames():
-            coltypes[continuous] = "float"
+            coltypes[('input',continuous)] = "float"
         for discrete in self.doe.getDiscreteNames():
-            coltypes[discrete] = "int"
+            coltypes[('input',discrete)] = "int"
         for categorical in self.doe.getCategoricalNames():
-            coltypes[categorical] = "category"
+            coltypes[('input',categorical)] = "category"
 
         # Cast the columns
         df = df.astype(coltypes)
-
         return df
+
+
 
     def sample_discrete(self, numsamples: int, doe: DoE):
         """Sample the descrete parameters, default randomly uniform"""
