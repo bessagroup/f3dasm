@@ -26,7 +26,7 @@ class Data:
         """
         fig, ax = plt.figure(), plt.axes()
 
-        ax.scatter(self.data[par1], self.data[par2], s=3)
+        ax.scatter(self.data[("input", par1)], self.data[("input", par2)], s=3)
 
         ax.set_xlabel(par1)
         ax.set_ylabel(par2)
