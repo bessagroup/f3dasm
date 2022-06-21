@@ -24,7 +24,7 @@ class SamplingMethod(ABC):
         if self.seed:
             np.random.seed(self.seed)
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.array:
+    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
         """Create N samples within the search space
 
         Args:
@@ -95,7 +95,7 @@ class SamplingMethod(ABC):
 
         return samples
 
-    def stretch_samples(self, doe: DoE, samples: np.array):
+    def stretch_samples(self, doe: DoE, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
         continuous = doe.getContinuousParameters()
         for dim, _ in enumerate(continuous):

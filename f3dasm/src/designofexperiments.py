@@ -29,7 +29,7 @@ class DoE:
         self.space.append(space)
         return
 
-    def getContinuousParameters(self) -> list[ContinuousSpace]:
+    def getContinuousParameters(self) -> List[ContinuousSpace]:
         """Receive all the continuous parameters"""
         return [
             parameter
@@ -37,7 +37,7 @@ class DoE:
             if isinstance(parameter, ContinuousSpace)
         ]
 
-    def getContinuousNames(self) -> list[str]:
+    def getContinuousNames(self) -> List[str]:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
@@ -45,7 +45,7 @@ class DoE:
             if isinstance(parameter, ContinuousSpace)
         ]
 
-    def getDiscreteParameters(self) -> list[DiscreteSpace]:
+    def getDiscreteParameters(self) -> List[DiscreteSpace]:
         """Receive all the discrete parameters"""
         return [
             parameter
@@ -53,7 +53,7 @@ class DoE:
             if isinstance(parameter, DiscreteSpace)
         ]
 
-    def getDiscreteNames(self) -> list[str]:
+    def getDiscreteNames(self) -> List[str]:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
@@ -61,7 +61,7 @@ class DoE:
             if isinstance(parameter, DiscreteSpace)
         ]
 
-    def getCategoricalParameters(self) -> list[CategoricalSpace]:
+    def getCategoricalParameters(self) -> List[CategoricalSpace]:
         """Receive all the categorical parameters"""
         return [
             parameter
@@ -69,7 +69,7 @@ class DoE:
             if isinstance(parameter, CategoricalSpace)
         ]
 
-    def getCategoricalNames(self) -> list[str]:
+    def getCategoricalNames(self) -> List[str]:
         """Receive all the continuous parameter names"""
         return [
             parameter.name

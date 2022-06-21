@@ -9,7 +9,7 @@ from ..src.samplingmethod import SamplingMethod
 class LatinHypercube(SamplingMethod):
     """Sampling via Latin Hypercube Sampling"""
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.array:
+    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
         continuous = doe.getContinuousParameters()
         problem = {
             "num_vars": len(continuous),
