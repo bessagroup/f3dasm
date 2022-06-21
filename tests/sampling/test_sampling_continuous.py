@@ -10,6 +10,22 @@ from f3dasm.sampling.sobolsequence import SobolSequencing
 from f3dasm.src.designofexperiments import DoE
 from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
 
+
+@pytest.fixture
+def design():
+    # Define the parameters
+    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
+    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
+    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
+
+    # Create the design space
+    space = [x1, x2, x3, x4, x5]
+    design = DoE(space)
+    return design
+
+
 # Sampling interface
 
 
@@ -32,19 +48,8 @@ def test_sampling_interface_not_implemented_error():
 # Random Uniform Sampling
 
 
-def test_correct_randomuniform_sampling():
+def test_correct_randomuniform_sampling(design):
     seed = 42
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
 
     # Construct sampler
     random_uniform = RandomUniform(doe=design, seed=seed)
@@ -65,19 +70,8 @@ def test_correct_randomuniform_sampling():
     assert samples == pytest.approx(ground_truth_samples)
 
 
-def test_correct_latinhypercube_sampling():
+def test_correct_latinhypercube_sampling(design):
     seed = 42
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
 
     # Construct sampler
     random_uniform = LatinHypercube(doe=design, seed=seed)
@@ -97,19 +91,8 @@ def test_correct_latinhypercube_sampling():
     assert samples == pytest.approx(ground_truth_samples)
 
 
-def test_correct_sobolsequence_sampling():
+def test_correct_sobolsequence_sampling(design):
     seed = 42
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
 
     # Construct sampler
     sobol_sequencing = SobolSequencing(doe=design, seed=seed)

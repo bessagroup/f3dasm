@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from f3dasm.src.space import (
@@ -9,6 +10,14 @@ from f3dasm.src.space import (
 
 # Continuous space tests
 
+
+def test_check_default_lower_bound():
+    continuous = ContinuousSpace(name="test")
+    assert (continuous.lower_bound == -np.inf)
+
+def test_check_default_upper_bound():
+    continuous = ContinuousSpace(name="test")
+    assert (continuous.upper_bound == np.inf)
 
 def test_correct_continuous_space():
     lower_bound = 3.3

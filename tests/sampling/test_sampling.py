@@ -8,9 +8,8 @@ from f3dasm.src.designofexperiments import DoE
 from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
 
 
-def test_correct_sampling_ran():
-    seed = 42
-
+@pytest.fixture
+def design():
     # Define the parameters
     x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
     x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
@@ -21,7 +20,11 @@ def test_correct_sampling_ran():
     # Create the design space
     space = [x1, x2, x3, x4, x5]
     design = DoE(space)
+    return design
 
+
+def test_correct_sampling_ran(design):
+    seed = 42
     # Construct sampler
     sobol_sequencing = RandomUniform(doe=design, seed=seed)
 
@@ -37,10 +40,19 @@ def test_correct_sampling_ran():
         ]
     )
 
-    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
+    columnnames = [
+        ["input"] * design.getNumberOfInputParameters(),
+        ["x1", "x3", "x5", "x2", "x4"],
+    ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
+        {
+            ("input", "x1"): "float",
+            ("input", "x2"): "int",
+            ("input", "x3"): "float",
+            ("input", "x4"): "category",
+            ("input", "x5"): "float",
+        }
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
@@ -50,19 +62,8 @@ def test_correct_sampling_ran():
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_sobol():
+def test_correct_sampling_sobol(design):
     seed = 42
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
 
     # Construct sampler
     sobol_sequencing = SobolSequencing(doe=design, seed=seed)
@@ -79,10 +80,19 @@ def test_correct_sampling_sobol():
         ]
     )
 
-    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
+    columnnames = [
+        ["input"] * design.getNumberOfInputParameters(),
+        ["x1", "x3", "x5", "x2", "x4"],
+    ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
+        {
+            ("input", "x1"): "float",
+            ("input", "x2"): "int",
+            ("input", "x3"): "float",
+            ("input", "x4"): "category",
+            ("input", "x5"): "float",
+        }
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
@@ -91,19 +101,8 @@ def test_correct_sampling_sobol():
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_lhs():
+def test_correct_sampling_lhs(design):
     seed = 42
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
 
     # Construct sampler
     sobol_sequencing = LatinHypercube(doe=design, seed=seed)
@@ -120,10 +119,19 @@ def test_correct_sampling_lhs():
         ]
     )
 
-    columnnames = [["input"]*design.getNumberOfParameters(),["x1", "x3", "x5", "x2", "x4"]]
+    columnnames = [
+        ["input"] * design.getNumberOfInputParameters(),
+        ["x1", "x3", "x5", "x2", "x4"],
+    ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
-        {("input","x1"): "float", ("input","x2"): "int", ("input","x3"): "float", ("input","x4"): "category", ("input","x5"): "float"}
+        {
+            ("input", "x1"): "float",
+            ("input", "x2"): "int",
+            ("input", "x3"): "float",
+            ("input", "x4"): "category",
+            ("input", "x5"): "float",
+        }
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
