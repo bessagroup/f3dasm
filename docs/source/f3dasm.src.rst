@@ -28,6 +28,14 @@ f3dasm.src.samplingmethod module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.src.simulation module
+----------------------------
+
+.. automodule:: f3dasm.src.simulation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.src.space module
 -----------------------
 
