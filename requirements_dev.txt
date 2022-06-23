@@ -2,7 +2,7 @@ pytest==7.1.2
 pytest-cov==3.0.0
 coverage==6.4
 flake8==4.0.1
-numpy==1.22.4
+numpy==1.21.6
 pandas==1.4.2
 salib==1.4.5
 matplotlib==3.5.2
