@@ -15,7 +15,8 @@ class DoE:
     """Design of experiments
 
     Args:
-        input_space (list): list of parameters
+        input_space (List[SpaceInterface]): list of parameters, :class:`~f3dasm.src.space`, :class:`numpy.ndarray`
+        output_space (List[SpaceInterface]): list of parameters, :class:`~f3dasm.src.space`, :class:`numpy.ndarray`
     """
 
     input_space: List[SpaceInterface] = field(default_factory=list)
@@ -34,19 +35,33 @@ class DoE:
         """Add a new parameter to the searchspace
 
         Args:
-        space (SpaceInterface): search space parameter to be added
+            space (SpaceInterface): search space parameter to be added
         """
         self.output_space.append(space)
-        return       
+        return
 
     def getNumberOfInputParameters(self) -> int:
+        """Obtain the number of input parameters
+
+        Returns:
+            int: number of input parameters
+        """
         return len(self.input_space)
 
     def getNumberOfOutputParameters(self) -> int:
+        """Obtain the number of input parameters
+
+        Returns:
+            int: number of output parameters
+        """
         return len(self.output_space)
 
     def getContinuousParameters(self) -> List[ContinuousSpace]:
-        """Receive all the continuous parameters"""
+        """Obtain all the continuous parameters
+
+        Returns:
+            List[ContinuousSpace]: space of continuous parameters
+        """
         return [
             parameter
             for parameter in self.input_space
@@ -62,7 +77,11 @@ class DoE:
         ]
 
     def getDiscreteParameters(self) -> List[DiscreteSpace]:
-        """Receive all the discrete parameters"""
+        """Obtain all the discrete parameters
+
+        Returns:
+            List[DiscreteSpace]: space of discrete parameters
+        """
         return [
             parameter
             for parameter in self.input_space
@@ -70,7 +89,11 @@ class DoE:
         ]
 
     def getDiscreteNames(self) -> List[str]:
-        """Receive all the continuous parameter names"""
+        """Receive the names of all the discrete parameters
+
+        Returns:
+            List[str]: list of names
+        """
         return [
             parameter.name
             for parameter in self.input_space
@@ -78,7 +101,11 @@ class DoE:
         ]
 
     def getCategoricalParameters(self) -> List[CategoricalSpace]:
-        """Receive all the categorical parameters"""
+        """Obtain all the categorical parameters
+
+        Returns:
+            List[CategoricalSpace]: space of categorical parameters
+        """
         return [
             parameter
             for parameter in self.input_space
@@ -86,7 +113,11 @@ class DoE:
         ]
 
     def getCategoricalNames(self) -> List[str]:
-        """Receive all the continuous parameter names"""
+        """Receive the names of all the categorical parameters
+
+        Returns:
+            List[str]: list of names
+        """
         return [
             parameter.name
             for parameter in self.input_space

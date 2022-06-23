@@ -5,10 +5,12 @@ from f3dasm.src.simulation import Function
 
 class Levy(Function):
     """Levy function"""
+
     # def __init__(self):
     #     self.bounds = [-10, 10]
 
     def f(self, x: np.ndarray) -> np.ndarray:
+
         n_points, n_features = np.shape(x)
         y = np.empty((n_points, 1))
 

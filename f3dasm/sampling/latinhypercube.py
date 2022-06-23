@@ -3,7 +3,7 @@ from SALib.sample import latin
 
 from f3dasm.src.designofexperiments import DoE
 
-from ..src.samplingmethod import SamplingMethod
+from f3dasm.src.samplingmethod import SamplingMethod
 
 
 class LatinHypercube(SamplingMethod):

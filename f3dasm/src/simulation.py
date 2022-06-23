@@ -1,10 +1,81 @@
+from abc import ABC
+from typing import List
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcol
 
 
-class Function:
-    def eval(self, x, noise=False):
+class Function(ABC):
+    """Interface of a continuous benchmark function"""
+
+    def eval(self, x: np.ndarray, noise=False) -> np.ndarray:
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
 
         return np.atleast_1d(self.f(x))
+
+    def f(x) -> np.ndarray:
+        """Compute the analytical output of the objective function"""
+        raise NotImplementedError("Subclasses should implement this method.")
+
+    def plot(self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]):
+        """Generate a surface plot, either 2D or 3D, of the function
+
+        Args:
+            orientation (str, optional): Either "2D" or "3D" orientation. Defaults to "3D".
+            px (int, optional): Number of points per dimension. Defaults to 300.
+            domain (List, optional): Domain that needs to be plotted . Defaults to [0, 1].
+
+        Returns:
+            fig, ax: Figure and axis
+        """
+        x1 = np.linspace(domain[0], domain[1], num=px)
+        x2 = np.linspace(domain[0], domain[1], num=px)
+        X1, X2 = np.meshgrid(x1, x2)
+
+        Y = np.zeros([len(X1), len(X1)])
+
+        for i in range(len(X1)):
+            for j in range(len(X1)):
+                xy = np.array([X1[i, j], X2[i, j]])
+                Y[i, j] = self.eval(xy)
+
+        dx = dy = (domain[1] - domain[0]) / px
+        x, y = domain[0] + dx * np.arange(Y.shape[1]), domain[0] + dy * np.arange(
+            Y.shape[0]
+        )
+        xv, yv = np.meshgrid(x, y)
+
+        fig = plt.figure(figsize=(7, 7), constrained_layout=True)
+        if orientation == "2D":
+            ax = plt.axes()
+            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.LogNorm())
+            # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
+
+        if orientation == "3D":
+            ax = plt.axes(projection="3d", elev=50, azim=-50)
+
+            ax.plot_surface(
+                xv,
+                yv,
+                Y,
+                rstride=1,
+                cstride=1,
+                edgecolor="none",
+                alpha=0.8,
+                cmap="viridis",
+                norm=mcol.LogNorm(),
+                zorder=1,
+            )
+            ax.set_zlabel("$f(X)$", fontsize=16)
+
+        ax.set_xticks(np.linspace(domain[0], domain[1], num=11))
+        ax.set_yticks(np.linspace(domain[0], domain[1], num=11))
+
+        ax.set_xlabel("$X_{1}$", fontsize=16)
+        ax.set_ylabel("$X_{2}$", fontsize=16)
+
+        # ax.legend(fontsize="small", loc="lower right")
+
+        return fig, ax
