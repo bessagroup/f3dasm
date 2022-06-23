@@ -3,6 +3,8 @@ Sample Module Repository
 
 This simple project is an example repo for Python projects.
 
+.. |Tests| image:: https://github.com/mpvanderschelling/testthings/actions/workflows/tests.yml/badge.svg
+
 `Learn
 more <http://www.kennethreitz.org/essays/repository-structure-and-python>`__.
 
