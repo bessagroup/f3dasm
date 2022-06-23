@@ -5,6 +5,7 @@ from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.sobolsequence import SobolSequencing
 from f3dasm.src.designofexperiments import DoE
+from f3dasm.src.samplingmethod import SamplingMethod
 from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
 
 
@@ -21,6 +22,25 @@ def design():
     space = [x1, x2, x3, x4, x5]
     design = DoE(space)
     return design
+
+
+# Sampling interface
+
+
+def test_sampling_interface_not_implemented_error():
+    seed = 42
+
+    class NewSamplingStrategy(SamplingMethod):
+        pass
+
+    # Define the parameters
+    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
+    space = [x1]
+
+    design = DoE(space)
+    new_sampler = NewSamplingStrategy(doe=design, seed=seed)
+    with pytest.raises(NotImplementedError):
+        samples = new_sampler.sample_continuous(numsamples=5, doe=design)
 
 
 def test_correct_sampling_ran(design):

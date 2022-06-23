@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-from f3dasm.src.samplingmethod import SamplingMethod
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.sobolsequence import SobolSequencing
@@ -24,25 +23,6 @@ def design():
     space = [x1, x2, x3, x4, x5]
     design = DoE(space)
     return design
-
-
-# Sampling interface
-
-
-def test_sampling_interface_not_implemented_error():
-    seed = 42
-
-    class NewSamplingStrategy(SamplingMethod):
-        pass
-
-    # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    space = [x1]
-
-    design = DoE(space)
-    new_sampler = NewSamplingStrategy(doe=design, seed=seed)
-    with pytest.raises(NotImplementedError):
-        samples = new_sampler.sample_continuous(numsamples=5, doe=design)
 
 
 # Random Uniform Sampling
@@ -74,7 +54,7 @@ def test_correct_latinhypercube_sampling(design):
     seed = 42
 
     # Construct sampler
-    random_uniform = LatinHypercube(doe=design, seed=seed)
+    latin_hypercube = LatinHypercube(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -87,7 +67,7 @@ def test_correct_latinhypercube_sampling(design):
             [10.03525937, 321.96583454, 4.08549412],
         ]
     )
-    samples = random_uniform.sample_continuous(numsamples=numsamples, doe=design)
+    samples = latin_hypercube.sample_continuous(numsamples=numsamples, doe=design)
     assert samples == pytest.approx(ground_truth_samples)
 
 

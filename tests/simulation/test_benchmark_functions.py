@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from f3dasm.simulation.benchmark_functions import Levy
+from f3dasm.src.simulation import Function
 
 x = np.array([0.2, 0.3, 0.4, 0.6])  # 1D array with 4 dimensions
 x1 = np.array([[0.1], [0.2], [0.3]])  # 2D array with 1 dimension
@@ -8,6 +9,14 @@ x2 = np.array([[0.0, 0.0], [0.5, 0.3], [1.0, 0.8]])  # 2D array with 2 dimension
 x3 = np.array(
     [[0.0, 0.0, 0.0], [0.5, 0.3, 0.2], [1.0, 0.8, 0.5]]
 )  # 2D array with 3 dimensions
+
+
+def test_f_not_implemented_error():
+    class NewFunction(Function):
+        pass
+
+    with pytest.raises(NotImplementedError):
+        f = NewFunction.f(x)
 
 
 @pytest.mark.parametrize(
