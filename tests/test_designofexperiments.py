@@ -10,9 +10,13 @@ def doe():
     x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
     x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
     x5 = DiscreteSpace(name="x5", lower_bound=2, upper_bound=3)
-    designspace = [x1, x2, x3, x4, x5]
 
-    doe = DoE(input_space=designspace)
+    y1 = ContinuousSpace(name="y1")
+    y2 = ContinuousSpace(name="y2")
+    designspace = [x1, x2, x3, x4, x5]
+    output_space = [y1, y2]
+
+    doe = DoE(input_space=designspace, output_space=output_space)
     return doe
 
 
@@ -69,6 +73,7 @@ def test_add_input_space():
 
     assert design.input_space == [x1, x2, x3, x4, x5]
 
+
 def test_add_output_space():
     x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
     x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
@@ -86,6 +91,10 @@ def test_add_output_space():
 
 def test_getNumberOfInputParameters(doe):
     assert doe.getNumberOfInputParameters() == 5
+
+
+def test_getNumberOfOutputParameters(doe):
+    assert doe.getNumberOfOutputParameters() == 2
 
 
 if __name__ == "__main__":  # pragma: no cover
