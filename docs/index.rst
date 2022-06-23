@@ -3,15 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to f3dasm's documentation!
+F3DASM
 ==================================
 
-Contents:
+Framework for Data-Driven Design and Analysis of Structures and Materials (F3DASM)
 
 .. toctree::
    :maxdepth: 2
+   :caption: Contents:
    
    readme
+   bmcoptimizer
+   space
 
 Indices and tables
 ==================
