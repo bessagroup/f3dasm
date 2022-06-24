@@ -1,21 +1,63 @@
 from abc import ABC
-from typing import List
+from typing import Any, List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 
 
 class Function(ABC):
-    """Interface of a continuous benchmark function"""
+    """Interface of a continuous benchmark function
 
-    def eval(self, x: np.ndarray, noise=False) -> np.ndarray:
+    Args:
+        noise (bool): inflict Gaussian noise on the output.
+        seed (Any|int): value to seed the random generator (Default = None).
+    """
+
+    def __init__(self, noise: bool = False, seed: Any | int = None):
+        self.noise = noise
+        self.seed = seed
+
+        # Set the seed
+        if seed:
+            self.set_seed(seed)
+
+    @staticmethod
+    def set_seed(seed) -> None:
+        """Set the seed of the random generator"""
+        np.random.seed(seed)
+
+    def eval(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate the objective function
+        Args:
+            x (np.ndarray): input to be evaluated
+
+        Returns:
+            np.ndarray: output of the objective function
+        """
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
 
-        return np.atleast_1d(self.f(x))
+        y = np.atleast_1d(self.f(x))
+        # add noise
+        if self.noise:
+            y = self.add_noise(y)
+        return y
 
-    def f(x) -> np.ndarray:
+    def add_noise(self, y: np.ndarray) -> np.ndarray:
+        """Add Gaussian noise to the output of the function
+
+        Args:
+            y (np.ndarray): output of the objective function
+
+        Returns:
+            np.ndarray: output of the objective function with added noise
+        """
+        sigma = 0.2  # Hard coded amount of noise
+        y_noise = np.random.normal(loc=0.0, scale=abs(sigma * y), size=None)
+        return y + y_noise
+
+    def f(self, x) -> np.ndarray:
         """Compute the analytical output of the objective function"""
         raise NotImplementedError("Subclasses should implement this method.")
 
