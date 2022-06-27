@@ -31,33 +31,33 @@ def test_correct_doe(doe):
     pass
 
 
-def test_get_continuous_parameters(doe):
+def test_get_continuous_parameters(doe: DoE):
     x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
     x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    assert doe.getContinuousParameters() == [x1, x3]
+    assert doe.get_continuous_parameters() == [x1, x3]
 
 
-def test_get_discrete_parameters(doe):
+def test_get_discrete_parameters(doe: DoE):
     x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
     x5 = DiscreteSpace(name="x5", lower_bound=2, upper_bound=3)
-    assert doe.getDiscreteParameters() == [x2, x5]
+    assert doe.get_discrete_parameters() == [x2, x5]
 
 
-def test_get_categorical_parameters(doe):
+def test_get_categorical_parameters(doe: DoE):
     x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    assert doe.getCategoricalParameters() == [x4]
+    assert doe.get_categorical_parameters() == [x4]
 
 
-def test_get_continuous_names(doe):
-    assert doe.getContinuousNames() == ["x1", "x3"]
+def test_get_continuous_names(doe: DoE):
+    assert doe.get_continuous_names() == ["x1", "x3"]
 
 
-def test_get_discrete_names(doe):
-    assert doe.getDiscreteNames() == ["x2", "x5"]
+def test_get_discrete_names(doe: DoE):
+    assert doe.get_discrete_names() == ["x2", "x5"]
 
 
-def test_get_categorical_names(doe):
-    assert doe.getCategoricalNames() == ["x4"]
+def test_get_categorical_names(doe: DoE):
+    assert doe.get_categorical_names() == ["x4"]
 
 
 def test_add_input_space():
@@ -90,12 +90,12 @@ def test_add_output_space():
     assert design.output_space == [x1, x2, x3, x4, x5]
 
 
-def test_getNumberOfInputParameters(doe):
-    assert doe.getNumberOfInputParameters() == 5
+def test_getNumberOfInputParameters(doe: DoE):
+    assert doe.get_number_of_input_parameters() == 5
 
 
-def test_getNumberOfOutputParameters(doe):
-    assert doe.getNumberOfOutputParameters() == 2
+def test_getNumberOfOutputParameters(doe: DoE):
+    assert doe.get_number_of_output_parameters() == 2
 
 
 def test_get_input_space(doe: DoE):
@@ -106,7 +106,7 @@ def test_get_output_space(doe: DoE):
     assert doe.output_space == doe.get_output_space()
 
 
-# def test_get_empty_dataframe(doe):
+# def test_get_empty_dataframe(doe: DoE):
 #     df = doe.get_empty_dataframe()
 #     expected_columns = {
 #         ("input", "x1"),
@@ -127,7 +127,7 @@ def test_get_output_space(doe: DoE):
 #         ("output", "y1"): "float",
 #         ("output", "y2"): "float",
 #     }
-#     print(df)
+#     # print(df)
 
 #     df_expected = pd.DataFrame(columns=expected_columns).astype(types)
 #     print(df_expected)

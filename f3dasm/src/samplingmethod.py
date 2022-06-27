@@ -54,9 +54,9 @@ class SamplingMethod(ABC):
         # Get the column names in this particular order
         columnnames = [
             ("input", name)
-            for name in self.doe.getContinuousNames()
-            + self.doe.getDiscreteNames()
-            + self.doe.getCategoricalNames()
+            for name in self.doe.get_continuous_names()
+            + self.doe.get_discrete_names()
+            + self.doe.get_categorical_names()
         ]
 
         df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
@@ -84,7 +84,7 @@ class SamplingMethod(ABC):
 
     def sample_discrete(self, numsamples: int, doe: DoE):
         """Sample the descrete parameters, default randomly uniform"""
-        discrete = doe.getDiscreteParameters()
+        discrete = doe.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, _ in enumerate(discrete):
             samples[:, dim] = np.random.choice(
@@ -96,7 +96,7 @@ class SamplingMethod(ABC):
 
     def sample_categorical(self, numsamples: int, doe: DoE):
         """Sample the categorical parameters, default randomly uniform"""
-        categorical = doe.getCategoricalParameters()
+        categorical = doe.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
             samples[:, dim] = np.random.choice(
@@ -107,7 +107,7 @@ class SamplingMethod(ABC):
 
     def stretch_samples(self, doe: DoE, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
-        continuous = doe.getContinuousParameters()
+        continuous = doe.get_continuous_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
                 samples[:, dim]

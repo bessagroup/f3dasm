@@ -10,7 +10,7 @@ class LatinHypercube(SamplingMethod):
     """Sampling via Latin Hypercube Sampling"""
 
     def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
-        continuous = doe.getContinuousParameters()
+        continuous = doe.get_continuous_parameters()
         problem = {
             "num_vars": len(continuous),
             "names": [s.name for s in continuous],

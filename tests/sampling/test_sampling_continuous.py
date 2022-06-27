@@ -28,7 +28,7 @@ def design():
 # Random Uniform Sampling
 
 
-def test_correct_randomuniform_sampling(design):
+def test_correct_randomuniform_sampling(design: DoE):
     seed = 42
 
     # Construct sampler
@@ -50,7 +50,7 @@ def test_correct_randomuniform_sampling(design):
     assert samples == pytest.approx(ground_truth_samples)
 
 
-def test_correct_latinhypercube_sampling(design):
+def test_correct_latinhypercube_sampling(design: DoE):
     seed = 42
 
     # Construct sampler

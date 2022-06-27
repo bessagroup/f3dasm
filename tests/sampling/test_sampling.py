@@ -61,7 +61,7 @@ def test_correct_sampling_ran(design: DoE):
     )
 
     columnnames = [
-        ["input"] * design.getNumberOfInputParameters(),
+        ["input"] * design.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
@@ -83,7 +83,7 @@ def test_correct_sampling_ran(design: DoE):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_sobol(design):
+def test_correct_sampling_sobol(design: DoE):
     seed = 42
 
     # Construct sampler
@@ -102,7 +102,7 @@ def test_correct_sampling_sobol(design):
     )
 
     columnnames = [
-        ["input"] * design.getNumberOfInputParameters(),
+        ["input"] * design.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
@@ -124,7 +124,7 @@ def test_correct_sampling_sobol(design):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_lhs(design):
+def test_correct_sampling_lhs(design: DoE):
     seed = 42
 
     # Construct sampler
@@ -143,7 +143,7 @@ def test_correct_sampling_lhs(design):
     )
 
     columnnames = [
-        ["input"] * design.getNumberOfInputParameters(),
+        ["input"] * design.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)

@@ -71,7 +71,7 @@ class DoE:
             isinstance(parameter, ContinuousSpace) for parameter in self.input_space
         )
 
-    def getNumberOfInputParameters(self) -> int:
+    def get_number_of_input_parameters(self) -> int:
         """Obtain the number of input parameters
 
         Returns:
@@ -79,7 +79,7 @@ class DoE:
         """
         return len(self.input_space)
 
-    def getNumberOfOutputParameters(self) -> int:
+    def get_number_of_output_parameters(self) -> int:
         """Obtain the number of input parameters
 
         Returns:
@@ -87,7 +87,7 @@ class DoE:
         """
         return len(self.output_space)
 
-    def getContinuousParameters(self) -> List[ContinuousSpace]:
+    def get_continuous_parameters(self) -> List[ContinuousSpace]:
         """Obtain all the continuous parameters
 
         Returns:
@@ -99,7 +99,7 @@ class DoE:
             if isinstance(parameter, ContinuousSpace)
         ]
 
-    def getContinuousNames(self) -> List[str]:
+    def get_continuous_names(self) -> List[str]:
         """Receive all the continuous parameter names"""
         return [
             parameter.name
@@ -107,7 +107,7 @@ class DoE:
             if isinstance(parameter, ContinuousSpace)
         ]
 
-    def getDiscreteParameters(self) -> List[DiscreteSpace]:
+    def get_discrete_parameters(self) -> List[DiscreteSpace]:
         """Obtain all the discrete parameters
 
         Returns:
@@ -119,7 +119,7 @@ class DoE:
             if isinstance(parameter, DiscreteSpace)
         ]
 
-    def getDiscreteNames(self) -> List[str]:
+    def get_discrete_names(self) -> List[str]:
         """Receive the names of all the discrete parameters
 
         Returns:
@@ -131,7 +131,7 @@ class DoE:
             if isinstance(parameter, DiscreteSpace)
         ]
 
-    def getCategoricalParameters(self) -> List[CategoricalSpace]:
+    def get_categorical_parameters(self) -> List[CategoricalSpace]:
         """Obtain all the categorical parameters
 
         Returns:
@@ -143,7 +143,7 @@ class DoE:
             if isinstance(parameter, CategoricalSpace)
         ]
 
-    def getCategoricalNames(self) -> List[str]:
+    def get_categorical_names(self) -> List[str]:
         """Receive the names of all the categorical parameters
 
         Returns:
