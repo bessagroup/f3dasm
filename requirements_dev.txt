@@ -10,3 +10,4 @@ sphinx
 sphinx_rtd_theme
 tox==3.25.0
 mypy
+hypothesis

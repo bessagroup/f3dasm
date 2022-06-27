@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List
 
+import pandas as pd
+
 
 from f3dasm.src.space import (
     CategoricalSpace,
@@ -22,6 +24,21 @@ class DoE:
     input_space: List[SpaceInterface] = field(default_factory=list)
     output_space: List[SpaceInterface] = field(default_factory=list)
 
+    def get_empty_dataframe(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        # input columns
+        df_input = pd.DataFrame(
+            columns=[("input", s.name) for s in self.input_space]
+        ).astype(self.cast_types_dataframe(self.input_space, label="input"))
+        df_output = pd.DataFrame(
+            columns=[("output", s.name) for s in self.output_space]
+        ).astype(self.cast_types_dataframe(self.output_space, label="output"))
+
+        return pd.concat([df_input, df_output])
+
+    def cast_types_dataframe(self, space: List[SpaceInterface], label: str) -> dict:
+        # Make a dictionary that provides the datatype of each parameter
+        return {(label, parameter.name): parameter.type for parameter in space}
+
     def add_input_space(self, space: SpaceInterface) -> None:
         """Add a new parameter to the searchspace
 
@@ -39,6 +56,18 @@ class DoE:
         """
         self.output_space.append(space)
         return
+
+    def get_input_space(self) -> List[SpaceInterface]:
+        return self.input_space
+
+    def get_output_space(self) -> List[SpaceInterface]:
+        return self.output_space
+
+    def all_input_continuous(self) -> bool:
+        """Check if all input parameters are continuous"""
+        return all(
+            isinstance(parameter, ContinuousSpace) for parameter in self.input_space
+        )
 
     def getNumberOfInputParameters(self) -> int:
         """Obtain the number of input parameters

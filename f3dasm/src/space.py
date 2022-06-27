@@ -26,6 +26,7 @@ class ContinuousSpace(SpaceInterface):
 
     lower_bound: float = field(default=-np.inf)
     upper_bound: float = field(default=np.inf)
+    type: str = field(init=False, default="float")
 
     def __post_init__(self):
         self.check_types()
@@ -60,6 +61,7 @@ class DiscreteSpace(SpaceInterface):
 
     lower_bound: int = field(default=0)
     upper_bound: int = field(default=1)
+    type: str = field(init=False, default="int")
 
     def __post_init__(self):
         self.check_types()
@@ -92,6 +94,7 @@ class CategoricalSpace(SpaceInterface):
     """
 
     categories: List[str]
+    type: str = field(init=False, default="category")
 
     def __post_init__(self):
         self.check_types()

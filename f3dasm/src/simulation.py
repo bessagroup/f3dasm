@@ -4,6 +4,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 
+from f3dasm.src.data import Data
+
+
+def from_data_to_numpy_array_benchmarkfunction(
+    data: Data,
+) -> np.ndarray:  # pragma: no cover
+    if data.doe.all_input_continuous():
+        return data.get_input_data().to_numpy()
+    else:
+        raise TypeError(
+            "All inputs need to be continuous parameters to be evaluated by a benchmark function!"
+        )
+
 
 class Function(ABC):
     """Interface of a continuous benchmark function
@@ -26,7 +39,7 @@ class Function(ABC):
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
-    def eval(self, x: np.ndarray) -> np.ndarray:
+    def eval(self, x: np.ndarray | Data) -> np.ndarray:
         """Evaluate the objective function
         Args:
             x (np.ndarray): input to be evaluated
@@ -34,6 +47,10 @@ class Function(ABC):
         Returns:
             np.ndarray: output of the objective function
         """
+        # If the input is a Data object
+        if isinstance(x, Data):
+            x = from_data_to_numpy_array_benchmarkfunction(data=x)
+
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array

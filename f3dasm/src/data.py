@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,31 +14,26 @@ class Data:
         data (DataFrame): data stored in a DataFrame
     """
 
-    data: pd.DataFrame
+    # data: pd.DataFrame
+    doe: DoE
+    data: pd.DataFrame = field(init=False)
 
-    def set_with_doe(self, doe: DoE) -> None:
-        """set the design space of the data with a DoE object
+    def __post_init__(self):
+        self.data = self.doe.get_empty_dataframe()
 
-        Args:
-            doe (DoE): design of experiments
-
-        Returns:
-            pd.DataFrame: empty dataframe with columns
-        """
-        columns = [
-            ["input"] * doe.getNumberOfInputParameters()
-            + ["output"] * doe.getNumberOfOutputParameters(),
-            [s.name for s in doe.input_space] + [s.name for s in doe.output_space],
-        ]
-        self.data = pd.DataFrame(columns=columns)
-
-    def append(self, data: pd.DataFrame) -> None:
+    def add(self, data: pd.DataFrame) -> None:
         """Add data
 
         Args:
             data (pd.DataFrame): data to append
         """
         self.data = self.data.append(data)
+
+    def get_input_data(self):
+        return self.data["input"]
+
+    def get_output_data(self):
+        return self.data["output"]
 
     def plot(
         self, input_par1: str, input_par2: str = None, output_par: str = None
