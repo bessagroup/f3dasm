@@ -80,5 +80,12 @@ def test_data_to_numpy_array_benchmarkfunction_raise_error(
         y = func.eval(x=data_discrete)
 
 
+def test_data_and_numpy_input_eval(data: Data, xsinx: Function):
+    x = data.get_input_data().to_numpy()
+    func = xsinx()
+
+    assert all(func.eval(x) == func.eval(data))
+
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()
