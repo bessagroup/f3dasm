@@ -1,6 +1,12 @@
 import numpy as np
 import pytest
-from f3dasm.simulation.benchmark_functions import Levy
+from f3dasm.simulation.benchmark_functions import (
+    Ackley,
+    Levy,
+    Rastrigin,
+    Schwefel,
+    Rosenbrock,
+)
 from f3dasm.src.simulation import Function
 
 x = np.array([0.2, 0.3, 0.4, 0.6])  # 1D array with 4 dimensions
@@ -56,6 +62,71 @@ def test_levy_noise_20percent(test_input, expected):
     seed = 42
     f = Levy(noise=True, seed=seed)
     print(f.eval(test_input))
+    assert f.eval(test_input) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (x, np.array([[3.60014084]])),
+        (x1, np.array([[0.868609], [2.14040753], [3.14882286]])),
+        (x2, np.array([[4.44089210e-16], [3.78165788e00], [4.10717544e00]])),
+        (x3, np.array([[4.44089210e-16], [3.37587535e00], [4.54550747e00]])),
+    ],
+)
+def test_ackley_noiseless(test_input, expected):
+    f = Ackley(noise=False)
+    assert f.eval(test_input) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (x, np.array([[1675.03277817]])),
+        (
+            x1,
+            np.array([[418.95180164], [418.89640903], [418.82667671]]),
+        ),
+        (
+            x2,
+            np.array([[837.9658], [837.48475824], [836.50044849]]),
+        ),
+        (
+            x3,
+            np.array([[1256.9487], [1256.38116727], [1255.15853003]]),
+        ),
+    ],
+)
+def test_schwefel_noiseless(test_input, expected):
+    f = Schwefel(noise=False)
+    assert f.eval(test_input) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (x, np.array([[37.22]])),
+        (x1, np.array([[0.0], [0.0], [0.0]])),
+        (x2, np.array([[1.0], [0.5], [4.0]])),
+        (x3, np.array([[2.0], [2.2], [6.0]])),
+    ],
+)
+def test_rosenbrock_noiseless(test_input, expected):
+    f = Rosenbrock(noise=False)
+    assert f.eval(test_input) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "test_input, expected",
+    [
+        (x, np.array([[56.83033989]])),
+        (x1, np.array([[1.91983006], [6.94983006], [13.18016994]])),
+        (x2, np.array([[0.0], [33.43016994], [8.54983006]])),
+        (x3, np.array([[0.0], [40.38], [28.79983006]])),
+    ],
+)
+def test_rastrigin_noiseless(test_input, expected):
+    f = Rastrigin(noise=False)
     assert f.eval(test_input) == pytest.approx(expected)
 
 
