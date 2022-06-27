@@ -63,7 +63,7 @@ class SamplingMethod(ABC):
         return df
 
     def cast_to_dataframe(
-        self, samples: np.ndarray, columnnames: list[str]
+        self, samples: np.ndarray, columnnames: List[str]
     ) -> pd.DataFrame:
         """Cast the samples to a DataFrame"""
 

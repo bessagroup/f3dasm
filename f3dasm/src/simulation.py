@@ -26,7 +26,7 @@ class Function(ABC):
         seed (Any|int): value to seed the random generator (Default = None).
     """
 
-    def __init__(self, noise: bool = False, seed: Any | int = None):
+    def __init__(self, noise: bool = False, seed: Any or int = None):
         self.noise = noise
         self.seed = seed
 
@@ -39,7 +39,7 @@ class Function(ABC):
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
-    def eval(self, x: np.ndarray | Data) -> np.ndarray:
+    def eval(self, x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
         Args:
             x (np.ndarray): input to be evaluated
