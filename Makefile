@@ -73,6 +73,7 @@ test-html:
 	pytest --cov-report html
 	@echo
 	@echo "Test finished. The coverage report HTML pages are in ./htmlcov/index.html"
+	xdg-open ./htmlcov/index.html
 	
 build:
 	@echo "Removing previous build"
