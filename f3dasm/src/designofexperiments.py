@@ -24,11 +24,13 @@ class DoE:
     input_space: List[SpaceInterface] = field(default_factory=list)
     output_space: List[SpaceInterface] = field(default_factory=list)
 
-    def get_empty_dataframe(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def get_empty_dataframe(self) -> pd.DataFrame:
         # input columns
         df_input = pd.DataFrame(
             columns=[("input", s.name) for s in self.input_space]
         ).astype(self.cast_types_dataframe(self.input_space, label="input"))
+
+        # output columns
         df_output = pd.DataFrame(
             columns=[("output", s.name) for s in self.output_space]
         ).astype(self.cast_types_dataframe(self.output_space, label="output"))

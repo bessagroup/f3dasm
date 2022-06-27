@@ -40,29 +40,29 @@ def test_sampling_interface_not_implemented_error():
     design = DoE(space)
     new_sampler = NewSamplingStrategy(doe=design, seed=seed)
     with pytest.raises(NotImplementedError):
-        samples = new_sampler.sample_continuous(numsamples=5, doe=design)
+        _ = new_sampler.sample_continuous(numsamples=5, doe=design)
 
 
-def test_correct_sampling_ran(design):
+def test_correct_sampling_ran(design: DoE):
     seed = 42
     # Construct sampler
-    sobol_sequencing = RandomUniform(doe=design, seed=seed)
+    random_sequencing = RandomUniform(doe=design, seed=seed)
 
     numsamples = 5
 
     ground_truth_samples = np.array(
         [
-            [5.358867, 362.049508, 5.504359, 25, "test1"],
-            [7.129402, 67.773703, 1.645163, 37, "test1"],
-            [2.858861, 330.745027, 4.627471, 80, "test1"],
-            [7.993773, 17.622438, 7.098396, 62, "test3"],
-            [8.976297, 88.629173, 1.818227, 26, "test3"],
+            [5.358867, 25, 362.049508, "test1", 5.504359],
+            [7.129402, 37, 67.773703, "test1", 1.645163],
+            [2.858861, 80, 330.745027, "test1", 4.627471],
+            [7.993773, 62, 17.622438, "test3", 7.098396],
+            [8.976297, 26, 88.629173, "test3", 1.818227],
         ]
     )
 
     columnnames = [
         ["input"] * design.getNumberOfInputParameters(),
-        ["x1", "x3", "x5", "x2", "x4"],
+        ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
@@ -75,10 +75,11 @@ def test_correct_sampling_ran(design):
         }
     )
 
-    samples = sobol_sequencing.get_samples(numsamples=numsamples)
+    samples = random_sequencing.get_samples(numsamples=numsamples)
     samples = samples.round(6)
 
-    print(df_ground_truth)
+    # print(df_ground_truth.dtypes)
+    # print(samples.dtypes)
     assert df_ground_truth.equals(samples)
 
 
@@ -92,17 +93,17 @@ def test_correct_sampling_sobol(design):
 
     ground_truth_samples = np.array(
         [
-            [2.4000, 10.0000, 0.6000, 56, "test3"],
-            [6.3500, 195.1500, 3.9500, 19, "test2"],
-            [8.3250, 102.5750, 2.2750, 76, "test3"],
-            [4.3750, 287.7250, 5.6250, 65, "test3"],
-            [5.3625, 148.8625, 4.7875, 25, "test3"],
+            [2.4000, 56, 10.0000, "test3", 0.6000],
+            [6.3500, 19, 195.1500, "test2", 3.9500],
+            [8.3250, 76, 102.5750, "test3", 2.2750],
+            [4.3750, 65, 287.7250, "test3", 5.6250],
+            [5.3625, 25, 148.8625, "test3", 4.7875],
         ]
     )
 
     columnnames = [
         ["input"] * design.getNumberOfInputParameters(),
-        ["x1", "x3", "x5", "x2", "x4"],
+        ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
@@ -117,6 +118,8 @@ def test_correct_sampling_sobol(design):
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
     samples = samples.round(6)
+    print(samples)
+    print(df_ground_truth)
 
     assert df_ground_truth.equals(samples)
 
@@ -131,17 +134,17 @@ def test_correct_sampling_lhs(design):
 
     ground_truth_samples = np.array(
         [
-            [8.258755, 95.614741, 1.580872, 64, "test2"],
-            [5.651772, 222.269005, 2.149033, 19, "test3"],
-            [4.925880, 80.409902, 5.919679, 66, "test3"],
-            [2.991773, 233.704488, 6.203645, 66, "test1"],
-            [10.035259, 321.965835, 4.085494, 51, "test3"],
+            [8.258755, 64, 95.614741, "test2", 1.580872],
+            [5.651772, 19, 222.269005, "test3", 2.149033],
+            [4.925880, 66, 80.409902, "test3", 5.919679],
+            [2.991773, 66, 233.704488, "test1", 6.203645],
+            [10.035259, 51, 321.965835, "test3", 4.085494],
         ]
     )
 
     columnnames = [
         ["input"] * design.getNumberOfInputParameters(),
-        ["x1", "x3", "x5", "x2", "x4"],
+        ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
@@ -157,6 +160,7 @@ def test_correct_sampling_lhs(design):
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
     samples = samples.round(6)
 
+    print(samples)
     assert df_ground_truth.equals(samples)
 
 

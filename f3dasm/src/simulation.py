@@ -9,7 +9,7 @@ from f3dasm.src.data import Data
 
 def from_data_to_numpy_array_benchmarkfunction(
     data: Data,
-) -> np.ndarray:  # pragma: no cover
+) -> np.ndarray:
     if data.doe.all_input_continuous():
         return data.get_input_data().to_numpy()
     else:
@@ -78,7 +78,9 @@ class Function(ABC):
         """Compute the analytical output of the objective function"""
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def plot(self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]):
+    def plot(
+        self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]
+    ):  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
 
         Args:

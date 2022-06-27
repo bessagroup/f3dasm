@@ -21,13 +21,17 @@ class Data:
     def __post_init__(self):
         self.data = self.doe.get_empty_dataframe()
 
+    def show(self) -> None:
+        print(self.data)
+        return
+
     def add(self, data: pd.DataFrame) -> None:
         """Add data
 
         Args:
             data (pd.DataFrame): data to append
         """
-        self.data = self.data.append(data)
+        self.data = pd.concat([self.data, data])
 
     def get_input_data(self):
         return self.data["input"]

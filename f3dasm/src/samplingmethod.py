@@ -50,34 +50,36 @@ class SamplingMethod(ABC):
         )
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
+
+        # Get the column names in this particular order
         columnnames = [
-            ["input"] * self.doe.getNumberOfInputParameters(),
-            self.doe.getContinuousNames()
+            ("input", name)
+            for name in self.doe.getContinuousNames()
             + self.doe.getDiscreteNames()
-            + self.doe.getCategoricalNames(),
+            + self.doe.getCategoricalNames()
         ]
 
         df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
         return df
 
     def cast_to_dataframe(
-        self, samples: np.ndarray, columnnames: List[str]
+        self, samples: np.ndarray, columnnames: list[str]
     ) -> pd.DataFrame:
         """Cast the samples to a DataFrame"""
-        # Make the dataframe
-        df = pd.DataFrame(data=samples, columns=columnnames)
 
-        # Make a dictionary that provides the datatype of each parameter
-        coltypes = {}
-        for continuous in self.doe.getContinuousNames():
-            coltypes[("input", continuous)] = "float"
-        for discrete in self.doe.getDiscreteNames():
-            coltypes[("input", discrete)] = "int"
-        for categorical in self.doe.getCategoricalNames():
-            coltypes[("input", categorical)] = "category"
+        # First get an empty reference frame from the DoE
+        empty_frame = self.doe.get_empty_dataframe()
 
-        # Cast the columns
-        df = df.astype(coltypes)
+        # Then, create a new frame from the samples and columnnames
+        samples_frame = pd.DataFrame(data=samples, columns=columnnames)
+
+        # Concat the two frames
+        df = pd.concat([empty_frame, samples_frame], sort=True)
+
+        # Apparently you need to cast the types again
+        df = df.astype(self.doe.cast_types_dataframe(self.doe.input_space, "input"))
+        df = df.astype(self.doe.cast_types_dataframe(self.doe.output_space, "output"))
+
         return df
 
     def sample_discrete(self, numsamples: int, doe: DoE):
@@ -114,3 +116,7 @@ class SamplingMethod(ABC):
             )
 
         return samples
+
+
+if __name__ == "__main__":  # pragma: no cover
+    pass

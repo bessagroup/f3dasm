@@ -4,7 +4,7 @@ import numpy as np
 from f3dasm.src.simulation import Function
 
 
-def create_test_data(f: Callable):
+def create_test_data(f: Callable):  # pragma: no cover
     x = np.array([0.2, 0.3, 0.4, 0.6])  # 1D array with 4 dimensions
     x1 = np.array([[0.1], [0.2], [0.3]])  # 2D array with 1 dimension
     x2 = np.array([[0.0, 0.0], [0.5, 0.3], [1.0, 0.8]])  # 2D array with 2 dimensions
