@@ -26,6 +26,7 @@ REQUIRED = [
     "pandas",
     "matplotlib",
     "SALib",
+    "hypothesis",
 ]
 
 # What packages are optional?
