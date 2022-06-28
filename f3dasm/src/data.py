@@ -40,9 +40,6 @@ class Data:
     def get_input_data(self) -> pd.DataFrame:
         return self.data["input"]
 
-    # def get_input_data_nan_output(self) -> pd.DataFrame:
-    #     return self.data[self.data.isnull().any(axis=1)]["input"]
-
     def get_output_data(self) -> pd.DataFrame:
         return self.data["output"]
 
