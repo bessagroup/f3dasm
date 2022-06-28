@@ -71,6 +71,20 @@ class DoE:
             isinstance(parameter, ContinuousSpace) for parameter in self.input_space
         )
 
+    def all_output_continuous(self) -> bool:
+        """Check if all output parameters are continuous"""
+        return all(
+            isinstance(parameter, ContinuousSpace) for parameter in self.output_space
+        )
+
+    def is_single_objective_continuous(self) -> bool:
+        """Check if the output is single objective and continuous"""
+        return (
+            self.all_input_continuous()
+            and self.all_output_continuous()
+            and self.get_number_of_output_parameters() == 1
+        )
+
     def get_number_of_input_parameters(self) -> int:
         """Obtain the number of input parameters
 

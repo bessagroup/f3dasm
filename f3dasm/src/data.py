@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import numpy as np
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -33,10 +34,16 @@ class Data:
         """
         self.data = pd.concat([self.data, data])
 
-    def get_input_data(self):
+    def add_output(self, output: np.ndarray, label: str) -> None:
+        self.data[("output", label)] = output
+
+    def get_input_data(self) -> pd.DataFrame:
         return self.data["input"]
 
-    def get_output_data(self):
+    # def get_input_data_nan_output(self) -> pd.DataFrame:
+    #     return self.data[self.data.isnull().any(axis=1)]["input"]
+
+    def get_output_data(self) -> pd.DataFrame:
         return self.data["output"]
 
     def plot(

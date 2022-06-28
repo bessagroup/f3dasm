@@ -10,12 +10,13 @@ from f3dasm.src.data import Data
 def from_data_to_numpy_array_benchmarkfunction(
     data: Data,
 ) -> np.ndarray:
-    if data.doe.all_input_continuous():
-        return data.get_input_data().to_numpy()
-    else:
+    # Check if doe is in right format
+    if not data.doe.is_single_objective_continuous():
         raise TypeError(
-            "All inputs need to be continuous parameters to be evaluated by a benchmark function!"
+            "All inputs and outputs need to be continuous parameters and output single objective"
         )
+
+    return data.get_input_data().to_numpy()
 
 
 class Function(ABC):
@@ -39,17 +40,20 @@ class Function(ABC):
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
-    def eval(self, x: np.ndarray or Data) -> np.ndarray:
+    def eval(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
         Args:
-            x (np.ndarray): input to be evaluated
+            input_x (np.ndarray | Data object): input to be evaluated
 
         Returns:
             np.ndarray: output of the objective function
         """
         # If the input is a Data object
-        if isinstance(x, Data):
-            x = from_data_to_numpy_array_benchmarkfunction(data=x)
+        if isinstance(input_x, Data):
+            x = from_data_to_numpy_array_benchmarkfunction(data=input_x)
+
+        else:
+            x = input_x
 
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
@@ -59,6 +63,7 @@ class Function(ABC):
         # add noise
         if self.noise:
             y = self.add_noise(y)
+
         return y
 
     def add_noise(self, y: np.ndarray) -> np.ndarray:
