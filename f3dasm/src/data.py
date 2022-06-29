@@ -1,7 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import numpy as np
 
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from f3dasm.src.designofexperiments import DoE
 
 
 @dataclass
@@ -12,21 +15,51 @@ class Data:
         data (DataFrame): data stored in a DataFrame
     """
 
-    data: pd.DataFrame
+    # data: pd.DataFrame
+    doe: DoE
+    data: pd.DataFrame = field(init=False)
 
-    def plot(self, par1: str, par2: str) -> None:
+    def __post_init__(self):
+        self.data = self.doe.get_empty_dataframe()
+
+    def show(self) -> None:
+        print(self.data)
+        return
+
+    def add(self, data: pd.DataFrame) -> None:
+        """Add data
+
+        Args:
+            data (pd.DataFrame): data to append
+        """
+        self.data = pd.concat([self.data, data])
+
+    def add_output(self, output: np.ndarray, label: str) -> None:
+        self.data[("output", label)] = output
+
+    def get_input_data(self) -> pd.DataFrame:
+        return self.data["input"]
+
+    def get_output_data(self) -> pd.DataFrame:
+        return self.data["output"]
+
+    def plot(
+        self, input_par1: str, input_par2: str = None, output_par: str = None
+    ) -> None:
         """Plot the data of two parameters in a figure
 
         Args:
-            par1 (str): name of first parameter (x-axis)
-            par2 (str): name of second parameter (y-axis)
+            input_par1 (str): name of first parameter (x-axis)
+            input_par2 (str): name of second parameter (x-axis)
+            output_par (str): name of output parameter (y-axis)
         """
         fig, ax = plt.figure(), plt.axes()
-        sample_range = range(len(self.data))
 
-        ax.scatter(self.data[par1], self.data[par2], s=3)
+        ax.scatter(
+            self.data[("input", input_par1)], self.data[("input", input_par2)], s=3
+        )
 
-        ax.set_xlabel(par1)
-        ax.set_ylabel(par2)
+        ax.set_xlabel(input_par1)
+        ax.set_ylabel(input_par2)
 
         fig.show()

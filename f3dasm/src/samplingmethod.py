@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 import numpy as np
 import pandas as pd
 
@@ -24,7 +24,7 @@ class SamplingMethod(ABC):
         if self.seed:
             np.random.seed(self.seed)
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.array:
+    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
         """Create N samples within the search space
 
         Args:
@@ -50,31 +50,41 @@ class SamplingMethod(ABC):
         )
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
-        columnnames = (
-            self.doe.getContinuousNames()
-            + self.doe.getDiscreteNames()
-            + self.doe.getCategoricalNames()
-        )
-        # Make the dataframe
-        df = pd.DataFrame(data=samples, columns=columnnames)
 
-        # Make a dictionary that provides the datatype of each parameter
-        coltypes = {}
-        for continuous in self.doe.getContinuousNames():
-            coltypes[continuous] = "float"
-        for discrete in self.doe.getDiscreteNames():
-            coltypes[discrete] = "int"
-        for categorical in self.doe.getCategoricalNames():
-            coltypes[categorical] = "category"
+        # Get the column names in this particular order
+        columnnames = [
+            ("input", name)
+            for name in self.doe.get_continuous_names()
+            + self.doe.get_discrete_names()
+            + self.doe.get_categorical_names()
+        ]
 
-        # Cast the columns
-        df = df.astype(coltypes)
+        df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
+        return df
+
+    def cast_to_dataframe(
+        self, samples: np.ndarray, columnnames: List[str]
+    ) -> pd.DataFrame:
+        """Cast the samples to a DataFrame"""
+
+        # First get an empty reference frame from the DoE
+        empty_frame = self.doe.get_empty_dataframe()
+
+        # Then, create a new frame from the samples and columnnames
+        samples_frame = pd.DataFrame(data=samples, columns=columnnames)
+
+        # Concat the two frames
+        df = pd.concat([empty_frame, samples_frame], sort=True)
+
+        # Apparently you need to cast the types again
+        df = df.astype(self.doe.cast_types_dataframe(self.doe.input_space, "input"))
+        df = df.astype(self.doe.cast_types_dataframe(self.doe.output_space, "output"))
 
         return df
 
     def sample_discrete(self, numsamples: int, doe: DoE):
         """Sample the descrete parameters, default randomly uniform"""
-        discrete = doe.getDiscreteParameters()
+        discrete = doe.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, _ in enumerate(discrete):
             samples[:, dim] = np.random.choice(
@@ -86,7 +96,7 @@ class SamplingMethod(ABC):
 
     def sample_categorical(self, numsamples: int, doe: DoE):
         """Sample the categorical parameters, default randomly uniform"""
-        categorical = doe.getCategoricalParameters()
+        categorical = doe.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
             samples[:, dim] = np.random.choice(
@@ -95,9 +105,9 @@ class SamplingMethod(ABC):
 
         return samples
 
-    def stretch_samples(self, doe: DoE, samples: np.array):
+    def stretch_samples(self, doe: DoE, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
-        continuous = doe.getContinuousParameters()
+        continuous = doe.get_continuous_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
                 samples[:, dim]
@@ -106,3 +116,7 @@ class SamplingMethod(ABC):
             )
 
         return samples
+
+
+if __name__ == "__main__":  # pragma: no cover
+    pass

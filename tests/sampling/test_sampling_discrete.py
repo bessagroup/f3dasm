@@ -5,9 +5,8 @@ from f3dasm.src.designofexperiments import DoE
 from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
 
 
-def test_correct_discrete_sampling_1():
-    seed = 42
-
+@pytest.fixture
+def doe1():
     # Define the parameters
     x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
     x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
@@ -18,21 +17,11 @@ def test_correct_discrete_sampling_1():
     # Create the design space
     space = [x1, x2, x3, x4, x5]
     design = DoE(space)
-
-    # Construct sampler
-    random_uniform = RandomUniform(doe=design, seed=seed)
-
-    numsamples = 5
-
-    ground_truth_samples = np.array([[56, 5], [19, 4], [76, 5], [65, 5], [25, 5]])
-    samples = random_uniform.sample_discrete(numsamples=numsamples, doe=design)
-
-    assert samples == pytest.approx(ground_truth_samples)
+    return design
 
 
-def test_correct_discrete_sampling_2():
-    seed = 42
-
+@pytest.fixture
+def doe2():
     # Define the parameters
     x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
     x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
@@ -45,8 +34,28 @@ def test_correct_discrete_sampling_2():
     space = [x1, x2, x3, x4, x5, x6]
     design = DoE(space)
 
+    return design
+
+
+def test_correct_discrete_sampling_1(doe1):
+    seed = 42
+
     # Construct sampler
-    random_uniform = RandomUniform(doe=design, seed=seed)
+    random_uniform = RandomUniform(doe=doe1, seed=seed)
+
+    numsamples = 5
+
+    ground_truth_samples = np.array([[56, 5], [19, 4], [76, 5], [65, 5], [25, 5]])
+    samples = random_uniform.sample_discrete(numsamples=numsamples, doe=doe1)
+
+    assert samples == pytest.approx(ground_truth_samples)
+
+
+def test_correct_discrete_sampling_2(doe2):
+    seed = 42
+
+    # Construct sampler
+    random_uniform = RandomUniform(doe=doe2, seed=seed)
 
     numsamples = 5
 
@@ -59,7 +68,7 @@ def test_correct_discrete_sampling_2():
             [25, 5, 521],
         ]
     )
-    samples = random_uniform.sample_discrete(numsamples=numsamples, doe=design)
+    samples = random_uniform.sample_discrete(numsamples=numsamples, doe=doe2)
     assert samples == pytest.approx(ground_truth_samples)
 
 

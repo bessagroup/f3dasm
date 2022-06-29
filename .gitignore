@@ -1,5 +1,6 @@
 #Draw.io
 ~$*.bkp
+~$*.drawio.dtmp
 
 # VS-code
 .vscode/

@@ -9,8 +9,8 @@ from ..src.samplingmethod import SamplingMethod
 class SobolSequencing(SamplingMethod):
     """Sampling via Sobol Sequencing with SALib"""
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.array:
-        continuous = doe.getContinuousParameters()
+    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
+        continuous = doe.get_continuous_parameters()
         dimensions = len(continuous)
 
         samples = sobol_sequence.sample(numsamples, dimensions)

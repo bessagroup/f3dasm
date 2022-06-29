@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List
 
+import numpy as np
+
 
 @dataclass
 class SpaceInterface:
@@ -22,8 +24,9 @@ class ContinuousSpace(SpaceInterface):
         upper_bound (float): upper bound of continuous search space (exclusive)
     """
 
-    lower_bound: float = field(default=0.0)
-    upper_bound: float = field(default=1.0)
+    lower_bound: float = field(default=-np.inf)
+    upper_bound: float = field(default=np.inf)
+    type: str = field(init=False, default="float")
 
     def __post_init__(self):
         self.check_types()
@@ -58,6 +61,7 @@ class DiscreteSpace(SpaceInterface):
 
     lower_bound: int = field(default=0)
     upper_bound: int = field(default=1)
+    type: str = field(init=False, default="int")
 
     def __post_init__(self):
         self.check_types()
@@ -90,6 +94,7 @@ class CategoricalSpace(SpaceInterface):
     """
 
     categories: List[str]
+    type: str = field(init=False, default="category")
 
     def __post_init__(self):
         self.check_types()
