@@ -83,6 +83,10 @@ class Function(ABC):
         """Compute the analytical output of the objective function"""
         raise NotImplementedError("Subclasses should implement this method.")
 
+    def dfdx(self, x) -> np.ndarray:
+        """ "Compute the gradient at a particular point in space"""
+        pass  # TO DO: implement way to get gradient
+
     def plot(
         self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]
     ):  # pragma: no cover

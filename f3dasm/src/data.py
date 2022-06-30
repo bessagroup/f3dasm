@@ -63,3 +63,8 @@ class Data:
         ax.set_ylabel(input_par2)
 
         fig.show()
+
+    def plot_pairs(self):
+        import seaborn as sb
+
+        sb.pairplot(data=self.get_input_data())
