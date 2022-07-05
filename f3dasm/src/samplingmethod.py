@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, List
 import numpy as np
 import pandas as pd
-from pyparsing import col
 
 from f3dasm.src.data import Data
 
