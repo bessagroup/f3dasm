@@ -21,10 +21,7 @@ def data():
     output_space = [y]
     design = DoE(input_space=input_space, output_space=output_space)
     sampler = RandomUniform(doe=design, seed=seed)
-    samples = sampler.get_samples(numsamples=20)
-
-    data = Data(doe=design)
-    data.add(samples)
+    data = sampler.get_samples(numsamples=20)
 
     return data
 
@@ -43,10 +40,7 @@ def data_discrete():
     output_space = [y]
     design = DoE(input_space=input_space, output_space=output_space)
     sampler = RandomUniform(doe=design, seed=seed)
-    samples = sampler.get_samples(numsamples=20)
-
-    data = Data(doe=design)
-    data.add(samples)
+    data = sampler.get_samples(numsamples=20)
 
     return data
 

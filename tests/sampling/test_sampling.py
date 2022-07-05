@@ -76,7 +76,7 @@ def test_correct_sampling_ran(design: DoE):
     )
 
     samples = random_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.round(6)
+    samples = samples.data.round(6)
 
     # print(df_ground_truth.dtypes)
     # print(samples.dtypes)
@@ -117,7 +117,7 @@ def test_correct_sampling_sobol(design: DoE):
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.round(6)
+    samples = samples.data.round(6)
     print(samples)
     print(df_ground_truth)
 
@@ -158,7 +158,7 @@ def test_correct_sampling_lhs(design: DoE):
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.round(6)
+    samples = samples.data.round(6)
 
     print(samples)
     assert df_ground_truth.equals(samples)

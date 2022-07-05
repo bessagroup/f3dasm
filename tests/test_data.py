@@ -25,13 +25,8 @@ def data():
     output_space = [y1, y2]
     design = DoE(input_space=input_space, output_space=output_space)
 
-    # Create Data object
-    data = Data(doe=design)
-
     random_sampler = RandomUniform(doe=design, seed=seed)
-    samples = random_sampler.get_samples(numsamples=N)
-
-    data.add(samples)
+    data = random_sampler.get_samples(numsamples=N)
 
     return data
 

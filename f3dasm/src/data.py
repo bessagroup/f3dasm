@@ -34,6 +34,14 @@ class Data:
         """
         self.data = pd.concat([self.data, data])
 
+        # Apparently you need to cast the types again
+        self.data = self.data.astype(
+            self.doe.cast_types_dataframe(self.doe.input_space, "input")
+        )
+        self.data = self.data.astype(
+            self.doe.cast_types_dataframe(self.doe.output_space, "output")
+        )
+
     def add_output(self, output: np.ndarray, label: str) -> None:
         self.data[("output", label)] = output
 

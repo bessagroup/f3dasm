@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from typing import Any, List
 import numpy as np
 import pandas as pd
+from pyparsing import col
+
+from f3dasm.src.data import Data
 
 from .designofexperiments import DoE
 
@@ -36,8 +39,15 @@ class SamplingMethod(ABC):
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: int) -> pd.DataFrame:
-        """Receive samples of the search space"""
+    def get_samples(self, numsamples: int) -> Data:
+        """Receive samples of the search space
+
+        Args:
+            numsamples (int): number of samples
+
+        Returns:
+            Data: Data objects with the samples
+        """
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples, doe=self.doe)
 
@@ -59,28 +69,25 @@ class SamplingMethod(ABC):
             + self.doe.get_categorical_names()
         ]
 
-        df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
-        return df
+        # df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
+        data = self.cast_to_data_object(samples=samples, columnnames=columnnames)
+        return data
 
-    def cast_to_dataframe(
-        self, samples: np.ndarray, columnnames: List[str]
-    ) -> pd.DataFrame:
-        """Cast the samples to a DataFrame"""
+    def cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
+        """Cast the samples to a Data object"""
+        data = Data(doe=self.doe)
 
         # First get an empty reference frame from the DoE
         empty_frame = self.doe.get_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)
-
-        # Concat the two frames
         df = pd.concat([empty_frame, samples_frame], sort=True)
 
-        # Apparently you need to cast the types again
-        df = df.astype(self.doe.cast_types_dataframe(self.doe.input_space, "input"))
-        df = df.astype(self.doe.cast_types_dataframe(self.doe.output_space, "output"))
+        # Add the samples to the Data object
+        data.add(data=df)
 
-        return df
+        return data
 
     def sample_discrete(self, numsamples: int, doe: DoE):
         """Sample the descrete parameters, default randomly uniform"""

@@ -3,6 +3,7 @@ from typing import Any, List
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
+import numdifftools as nd
 
 from f3dasm.src.data import Data
 
@@ -40,6 +41,13 @@ class Function(ABC):
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
+    def reshape_input(self, x: np.ndarray) -> np.ndarray:
+        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        if x.ndim == 1:
+            x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+
+        return x
+
     def eval(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
         Args:
@@ -55,9 +63,10 @@ class Function(ABC):
         else:
             x = input_x
 
-        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
-        if x.ndim == 1:
-            x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        # if x.ndim == 1:
+        #     x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        x = self.reshape_input(x)
 
         y = np.atleast_1d(self.f(x))
         # add noise
@@ -85,7 +94,14 @@ class Function(ABC):
 
     def dfdx(self, x) -> np.ndarray:
         """ "Compute the gradient at a particular point in space"""
-        pass  # TO DO: implement way to get gradient
+        # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
+        grad = nd.Gradient(self.eval)
+        x = self.reshape_input(x)
+        output = np.empty(shape=(1, len(x[0, :])))
+        for i in range(len(x)):
+            output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
+
+        return output[1:]  # Cut of the first one because that is the empty array input
 
     def plot(
         self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]
