@@ -2,15 +2,17 @@
 
 import numpy as np
 import pytest
-from f3dasm.sampling.randomuniform import RandomUniformSampling
-from f3dasm.sampling.latinhypercube import LatinHypercubeSampling
-from f3dasm.sampling.sobolsequence import SobolSequenceSampling
 
 from f3dasm.base.designofexperiments import DesignSpace
 from f3dasm.base.space import (
     CategoricalParameter,
     ContinuousParameter,
     DiscreteParameter,
+)
+from f3dasm.sampling.samplers import (
+    LatinHypercubeSampling,
+    RandomUniformSampling,
+    SobolSequenceSampling,
 )
 
 

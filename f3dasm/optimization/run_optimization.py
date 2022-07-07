@@ -40,6 +40,9 @@ def run_multiple_realizations(
         # Iterate
         optimizer.iterate(iterations=iterations, function=function)
 
+        # Reset the parameters
+        optimizer.init_parameters()
+
         all_data.append(optimizer.extract_data())
 
         # Increase seed

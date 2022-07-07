@@ -7,8 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   f3dasm.base
+   f3dasm.optimization
    f3dasm.sampling
-   f3dasm.src
 
 Module contents
 ---------------

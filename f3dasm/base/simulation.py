@@ -1,4 +1,5 @@
 from abc import ABC
+from dataclasses import dataclass
 from typing import Any, List
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,21 +21,23 @@ def from_data_to_numpy_array_benchmarkfunction(
     return data.get_input_data().to_numpy()
 
 
+@dataclass
 class Function(ABC):
     """Interface of a continuous benchmark function
 
     Args:
         noise (bool): inflict Gaussian noise on the output.
         seed (Any|int): value to seed the random generator (Default = None).
+        scale_bounds (Any|List[float]): Boundaries of the original function between 0. and 1.
     """
 
-    def __init__(self, noise: bool = False, seed: Any or int = None):
-        self.noise = noise
-        self.seed = seed
+    noise: bool = False
+    seed: Any or int = None
+    scale_bounds: Any or List[float] = None
 
-        # Set the seed
-        if seed:
-            self.set_seed(seed)
+    def __post_init__(self):
+        if self.seed:
+            self.set_seed(self.seed)
 
     @staticmethod
     def set_seed(seed) -> None:
@@ -47,6 +50,9 @@ class Function(ABC):
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
 
         return x
+
+    def scale_input(self, x: np.ndarray) -> np.ndarray:
+        return (self.scale_bounds[1] - self.scale_bounds[0]) * x + self.scale_bounds[0]
 
     def eval(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
@@ -63,10 +69,10 @@ class Function(ABC):
         else:
             x = input_x
 
-        # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
-        # if x.ndim == 1:
-        #     x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
         x = self.reshape_input(x)
+
+        if self.scale_bounds is not None:
+            x = self.scale_input(x)
 
         y = np.atleast_1d(self.f(x))
         # add noise

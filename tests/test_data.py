@@ -6,8 +6,7 @@ from f3dasm.base.space import (
     ContinuousParameter,
     DiscreteParameter,
 )
-
-from f3dasm.sampling.randomuniform import RandomUniformSampling
+from f3dasm.sampling.samplers import RandomUniformSampling
 
 
 @pytest.fixture

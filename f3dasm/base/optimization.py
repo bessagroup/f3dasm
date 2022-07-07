@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Mapping, Optional
 import numpy as np
 from f3dasm.base.data import Data
 from f3dasm.base.designofexperiments import DesignSpace
@@ -43,17 +43,32 @@ class PygmoProblem:
 
 
 class Optimizer:
-    def __init__(self, data: Data, seed: int or Any = None, population: int = 1):
+    def __init__(
+        self,
+        data: Data,
+        seed: int or Any = None,
+        population: int = 1,
+        hyperparameters: Optional[Mapping[str, Any]] = None,
+    ):
         self.seed = seed
         self.population = population
         self.data = data
+
+        if hyperparameters is None:
+            hyperparameters = {}
+
+        self.hyperparameters = hyperparameters
 
         if seed:
             pass  # Set the seed
 
         self.init_parameters()
+        self.set_hyperparameters()
 
     def init_parameters(self):
+        pass
+
+    def set_hyperparameters(self):
         pass
 
     def update_step(self, function: Function):

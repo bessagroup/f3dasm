@@ -5,7 +5,7 @@ from f3dasm.base.space import ContinuousParameter, DiscreteParameter
 from f3dasm.base.designofexperiments import DesignSpace
 from f3dasm.base.data import Data
 from f3dasm.base.simulation import Function
-from f3dasm.sampling.randomuniform import RandomUniformSampling
+from f3dasm.sampling.samplers import RandomUniformSampling
 
 
 @pytest.fixture
