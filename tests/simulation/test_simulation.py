@@ -1,26 +1,26 @@
 import numpy as np
 import pytest
 
-from f3dasm.src.space import ContinuousSpace, DiscreteSpace
-from f3dasm.src.designofexperiments import DoE
-from f3dasm.src.data import Data
-from f3dasm.src.simulation import Function
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.base.space import ContinuousParameter, DiscreteParameter
+from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.data import Data
+from f3dasm.base.simulation import Function
+from f3dasm.sampling.randomuniform import RandomUniformSampling
 
 
 @pytest.fixture
 def data():
     seed = 42
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = ContinuousSpace(name="x2", lower_bound=10.0, upper_bound=380.3)
-    y = ContinuousSpace(name="y")
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = ContinuousParameter(name="x2", lower_bound=10.0, upper_bound=380.3)
+    y = ContinuousParameter(name="y")
 
     # Create the design space
     input_space = [x1, x2]
     output_space = [y]
-    design = DoE(input_space=input_space, output_space=output_space)
-    sampler = RandomUniform(doe=design, seed=seed)
+    design = DesignSpace(input_space=input_space, output_space=output_space)
+    sampler = RandomUniformSampling(doe=design, seed=seed)
     data = sampler.get_samples(numsamples=20)
 
     return data
@@ -30,16 +30,16 @@ def data():
 def data_discrete():
     seed = 42
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = ContinuousSpace(name="x2", lower_bound=10.0, upper_bound=380.3)
-    x3 = DiscreteSpace(name="x3", lower_bound=10, upper_bound=380)
-    y = ContinuousSpace(name="y")
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = ContinuousParameter(name="x2", lower_bound=10.0, upper_bound=380.3)
+    x3 = DiscreteParameter(name="x3", lower_bound=10, upper_bound=380)
+    y = ContinuousParameter(name="y")
 
     # Create the design space
     input_space = [x1, x2, x3]
     output_space = [y]
-    design = DoE(input_space=input_space, output_space=output_space)
-    sampler = RandomUniform(doe=design, seed=seed)
+    design = DesignSpace(input_space=input_space, output_space=output_space)
+    sampler = RandomUniformSampling(doe=design, seed=seed)
     data = sampler.get_samples(numsamples=20)
 
     return data

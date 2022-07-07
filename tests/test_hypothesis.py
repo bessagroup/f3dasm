@@ -1,12 +1,12 @@
 from typing import Callable, List
 import numpy as np
 import pytest
-from f3dasm.src.designofexperiments import DoE
-from f3dasm.src.space import (
-    ContinuousSpace,
-    DiscreteSpace,
-    CategoricalSpace,
-    SpaceInterface,
+from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.space import (
+    ContinuousParameter,
+    DiscreteParameter,
+    CategoricalParameter,
+    ParameterInterface,
 )
 from hypothesis import given, settings
 from hypothesis.strategies import integers, floats, text, composite, SearchStrategy
@@ -19,10 +19,10 @@ def design_space(
     number_of_input_parameters = draw(integers(min_value, max_value))
     number_of_output_parameters = draw(integers(min_value, max_value))
 
-    def get_space(number_of_parameters: int) -> List[SpaceInterface]:
+    def get_space(number_of_parameters: int) -> List[ParameterInterface]:
         space = []
         for i in range(number_of_parameters):
-            parameter: SpaceInterface = np.random.choice(
+            parameter: ParameterInterface = np.random.choice(
                 a=["ContinuousSpace", "DiscreteSpace", "CategoricalSpace"]
             )
             name = draw(
@@ -36,7 +36,7 @@ def design_space(
                 )
 
                 space.append(
-                    ContinuousSpace(
+                    ContinuousParameter(
                         name=name, lower_bound=lower_bound, upper_bound=upper_bound
                     )
                 )
@@ -48,17 +48,17 @@ def design_space(
                 )
 
                 space.append(
-                    DiscreteSpace(
+                    DiscreteParameter(
                         name=name, lower_bound=lower_bound, upper_bound=upper_bound
                     )
                 )
             elif parameter == "CategoricalSpace":
                 categories = ["test1", "test2"]
-                space.append(CategoricalSpace(name=name, categories=categories))
+                space.append(CategoricalParameter(name=name, categories=categories))
 
         return space
 
-    design_space = DoE(
+    design_space = DesignSpace(
         input_space=get_space(number_of_input_parameters),
         output_space=get_space(number_of_output_parameters),
     )
@@ -67,9 +67,9 @@ def design_space(
 
 @given(design_space())
 @settings(max_examples=10)
-def test_check_length_input_when_adding_parameter(design: DoE):
+def test_check_length_input_when_adding_parameter(design: DesignSpace):
     length_input_space = len(design.input_space)
-    parameter = DiscreteSpace(name="test")
+    parameter = DiscreteParameter(name="test")
     design.add_input_space(space=parameter)
     assert length_input_space + 1 == (len(design.input_space))
 

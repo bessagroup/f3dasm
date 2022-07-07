@@ -4,16 +4,16 @@ from typing import List
 import pandas as pd
 
 
-from f3dasm.src.space import (
-    CategoricalSpace,
-    ContinuousSpace,
-    DiscreteSpace,
-    SpaceInterface,
+from f3dasm.base.space import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    ParameterInterface,
 )
 
 
 @dataclass
-class DoE:
+class DesignSpace:
     """Design of experiments
 
     Args:
@@ -21,27 +21,27 @@ class DoE:
         output_space (List[SpaceInterface]): list of parameters, :class:`~f3dasm.src.space`, :class:`numpy.ndarray`
     """
 
-    input_space: List[SpaceInterface] = field(default_factory=list)
-    output_space: List[SpaceInterface] = field(default_factory=list)
+    input_space: List[ParameterInterface] = field(default_factory=list)
+    output_space: List[ParameterInterface] = field(default_factory=list)
 
     def get_empty_dataframe(self) -> pd.DataFrame:
         # input columns
-        df_input = pd.DataFrame(
-            columns=[("input", s.name) for s in self.input_space]
-        ).astype(self.cast_types_dataframe(self.input_space, label="input"))
+        df_input = pd.DataFrame(columns=self.get_input_names()).astype(
+            self.cast_types_dataframe(self.input_space, label="input")
+        )
 
         # output columns
-        df_output = pd.DataFrame(
-            columns=[("output", s.name) for s in self.output_space]
-        ).astype(self.cast_types_dataframe(self.output_space, label="output"))
+        df_output = pd.DataFrame(columns=self.get_output_names()).astype(
+            self.cast_types_dataframe(self.output_space, label="output")
+        )
 
         return pd.concat([df_input, df_output])
 
-    def cast_types_dataframe(self, space: List[SpaceInterface], label: str) -> dict:
+    def cast_types_dataframe(self, space: List[ParameterInterface], label: str) -> dict:
         # Make a dictionary that provides the datatype of each parameter
         return {(label, parameter.name): parameter.type for parameter in space}
 
-    def add_input_space(self, space: SpaceInterface) -> None:
+    def add_input_space(self, space: ParameterInterface) -> None:
         """Add a new parameter to the searchspace
 
         Args:
@@ -50,7 +50,7 @@ class DoE:
         self.input_space.append(space)
         return
 
-    def add_output_space(self, space: SpaceInterface) -> None:
+    def add_output_space(self, space: ParameterInterface) -> None:
         """Add a new parameter to the searchspace
 
         Args:
@@ -59,22 +59,29 @@ class DoE:
         self.output_space.append(space)
         return
 
-    def get_input_space(self) -> List[SpaceInterface]:
+    def get_input_space(self) -> List[ParameterInterface]:
         return self.input_space
 
-    def get_output_space(self) -> List[SpaceInterface]:
+    def get_output_space(self) -> List[ParameterInterface]:
         return self.output_space
+
+    def get_output_names(self) -> List[str]:
+        return [("output", s.name) for s in self.output_space]
+
+    def get_input_names(self) -> List[str]:
+        return [("input", s.name) for s in self.input_space]
 
     def all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
         return all(
-            isinstance(parameter, ContinuousSpace) for parameter in self.input_space
+            isinstance(parameter, ContinuousParameter) for parameter in self.input_space
         )
 
     def all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
         return all(
-            isinstance(parameter, ContinuousSpace) for parameter in self.output_space
+            isinstance(parameter, ContinuousParameter)
+            for parameter in self.output_space
         )
 
     def is_single_objective_continuous(self) -> bool:
@@ -101,7 +108,7 @@ class DoE:
         """
         return len(self.output_space)
 
-    def get_continuous_parameters(self) -> List[ContinuousSpace]:
+    def get_continuous_parameters(self) -> List[ContinuousParameter]:
         """Obtain all the continuous parameters
 
         Returns:
@@ -110,7 +117,7 @@ class DoE:
         return [
             parameter
             for parameter in self.input_space
-            if isinstance(parameter, ContinuousSpace)
+            if isinstance(parameter, ContinuousParameter)
         ]
 
     def get_continuous_names(self) -> List[str]:
@@ -118,10 +125,10 @@ class DoE:
         return [
             parameter.name
             for parameter in self.input_space
-            if isinstance(parameter, ContinuousSpace)
+            if isinstance(parameter, ContinuousParameter)
         ]
 
-    def get_discrete_parameters(self) -> List[DiscreteSpace]:
+    def get_discrete_parameters(self) -> List[DiscreteParameter]:
         """Obtain all the discrete parameters
 
         Returns:
@@ -130,7 +137,7 @@ class DoE:
         return [
             parameter
             for parameter in self.input_space
-            if isinstance(parameter, DiscreteSpace)
+            if isinstance(parameter, DiscreteParameter)
         ]
 
     def get_discrete_names(self) -> List[str]:
@@ -142,10 +149,10 @@ class DoE:
         return [
             parameter.name
             for parameter in self.input_space
-            if isinstance(parameter, DiscreteSpace)
+            if isinstance(parameter, DiscreteParameter)
         ]
 
-    def get_categorical_parameters(self) -> List[CategoricalSpace]:
+    def get_categorical_parameters(self) -> List[CategoricalParameter]:
         """Obtain all the categorical parameters
 
         Returns:
@@ -154,7 +161,7 @@ class DoE:
         return [
             parameter
             for parameter in self.input_space
-            if isinstance(parameter, CategoricalSpace)
+            if isinstance(parameter, CategoricalParameter)
         ]
 
     def get_categorical_names(self) -> List[str]:
@@ -166,5 +173,19 @@ class DoE:
         return [
             parameter.name
             for parameter in self.input_space
-            if isinstance(parameter, CategoricalSpace)
+            if isinstance(parameter, CategoricalParameter)
         ]
+
+
+def make_nd_continuous_design(bounds: list, dimensions: int):
+    input_space, output_space = [], []
+    for dim in range(dimensions):
+        input_space.append(
+            ContinuousParameter(
+                name=f"x{dim}", lower_bound=bounds[0], upper_bound=bounds[1]
+            )
+        )
+
+    output_space.append(ContinuousParameter(name="y"))
+
+    return DesignSpace(input_space=input_space, output_space=output_space)

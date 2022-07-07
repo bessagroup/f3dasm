@@ -1,14 +1,14 @@
 import numpy as np
 
-from f3dasm.src.designofexperiments import DoE
+from f3dasm.base.designofexperiments import DesignSpace
 
-from ..src.samplingmethod import SamplingMethod
+from ..base.samplingmethod import SamplingInterface
 
 
-class RandomUniform(SamplingMethod):
+class RandomUniformSampling(SamplingInterface):
     """Sampling via random uniform sampling"""
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, doe: DesignSpace) -> np.ndarray:
         continuous = doe.get_continuous_parameters()
         dimensions = len(continuous)
 

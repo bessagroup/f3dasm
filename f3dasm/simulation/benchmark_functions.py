@@ -1,7 +1,7 @@
 from typing import Callable
 import numpy as np
 
-from f3dasm.src.simulation import Function
+from f3dasm.base.simulation import Function
 
 
 def create_test_data(f: Callable):  # pragma: no cover
@@ -22,9 +22,6 @@ def create_test_data(f: Callable):  # pragma: no cover
 
 class Levy(Function):
     """Levy function"""
-
-    # def __init__(self):
-    #     self.bounds = [-10, 10]
 
     def f(self, x: np.ndarray) -> np.ndarray:
 

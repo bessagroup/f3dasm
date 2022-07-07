@@ -5,7 +5,7 @@ import numpy as np
 
 
 @dataclass
-class SpaceInterface:
+class ParameterInterface:
     """Interface class of a search space parameter
 
     Args:
@@ -16,7 +16,7 @@ class SpaceInterface:
 
 
 @dataclass
-class ContinuousSpace(SpaceInterface):
+class ContinuousParameter(ParameterInterface):
     """Creates a search space parameter that is continuous
 
     Args:
@@ -51,7 +51,7 @@ class ContinuousSpace(SpaceInterface):
 
 
 @dataclass
-class DiscreteSpace(SpaceInterface):
+class DiscreteParameter(ParameterInterface):
     """Creates a search space parameter that is discrete
 
     Args:
@@ -86,7 +86,7 @@ class DiscreteSpace(SpaceInterface):
 
 
 @dataclass
-class CategoricalSpace(SpaceInterface):
+class CategoricalParameter(ParameterInterface):
     """Creates a search space parameter that is categorical
 
     Args:

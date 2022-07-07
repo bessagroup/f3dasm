@@ -4,13 +4,13 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
-from f3dasm.src.data import Data
+from f3dasm.base.data import Data
 
-from .designofexperiments import DoE
+from .designofexperiments import DesignSpace
 
 
 @dataclass
-class SamplingMethod(ABC):
+class SamplingInterface(ABC):
     """Interface for sampling method
 
     Args:
@@ -19,14 +19,18 @@ class SamplingMethod(ABC):
 
     """
 
-    doe: DoE
+    doe: DesignSpace
     seed: Any = None
 
     def __post_init__(self):
         if self.seed:
             np.random.seed(self.seed)
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
+    def set_seed(self, seed: int) -> None:
+        np.random.seed(seed)
+        self.seed = seed
+
+    def sample_continuous(self, numsamples: int, doe: DesignSpace) -> np.ndarray:
         """Create N samples within the search space
 
         Args:
@@ -74,7 +78,7 @@ class SamplingMethod(ABC):
 
     def cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
         """Cast the samples to a Data object"""
-        data = Data(doe=self.doe)
+        data = Data(designspace=self.doe)
 
         # First get an empty reference frame from the DoE
         empty_frame = self.doe.get_empty_dataframe()
@@ -88,7 +92,7 @@ class SamplingMethod(ABC):
 
         return data
 
-    def sample_discrete(self, numsamples: int, doe: DoE):
+    def sample_discrete(self, numsamples: int, doe: DesignSpace):
         """Sample the descrete parameters, default randomly uniform"""
         discrete = doe.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
@@ -100,7 +104,7 @@ class SamplingMethod(ABC):
 
         return samples
 
-    def sample_categorical(self, numsamples: int, doe: DoE):
+    def sample_categorical(self, numsamples: int, doe: DesignSpace):
         """Sample the categorical parameters, default randomly uniform"""
         categorical = doe.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
@@ -111,7 +115,7 @@ class SamplingMethod(ABC):
 
         return samples
 
-    def stretch_samples(self, doe: DoE, samples: np.ndarray) -> np.ndarray:
+    def stretch_samples(self, doe: DesignSpace, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
         continuous = doe.get_continuous_parameters()
         for dim, _ in enumerate(continuous):

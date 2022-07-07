@@ -2,37 +2,41 @@
 
 import numpy as np
 import pytest
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.sampling.sobolsequence import SobolSequencing
+from f3dasm.sampling.randomuniform import RandomUniformSampling
+from f3dasm.sampling.latinhypercube import LatinHypercubeSampling
+from f3dasm.sampling.sobolsequence import SobolSequenceSampling
 
-from f3dasm.src.designofexperiments import DoE
-from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
+from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.space import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 
 
 @pytest.fixture
 def design():
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = DiscreteParameter(name="x2", lower_bound=5, upper_bound=80)
+    x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalParameter(name="x4", categories=["test1", "test2", "test3"])
+    x5 = ContinuousParameter(name="x5", lower_bound=0.6, upper_bound=7.3)
 
     # Create the design space
     space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
+    design = DesignSpace(space)
     return design
 
 
 # Random Uniform Sampling
 
 
-def test_correct_randomuniform_sampling(design: DoE):
+def test_correct_randomuniform_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(doe=design, seed=seed)
+    random_uniform = RandomUniformSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -50,11 +54,11 @@ def test_correct_randomuniform_sampling(design: DoE):
     assert samples == pytest.approx(ground_truth_samples)
 
 
-def test_correct_latinhypercube_sampling(design: DoE):
+def test_correct_latinhypercube_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    latin_hypercube = LatinHypercube(doe=design, seed=seed)
+    latin_hypercube = LatinHypercubeSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -75,7 +79,7 @@ def test_correct_sobolsequence_sampling(design):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequencing(doe=design, seed=seed)
+    sobol_sequencing = SobolSequenceSampling(doe=design, seed=seed)
 
     numsamples = 5
 

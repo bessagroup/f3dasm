@@ -1,41 +1,49 @@
 import numpy as np
 import pytest
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.src.designofexperiments import DoE
-from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
+from f3dasm.sampling.randomuniform import RandomUniformSampling
+from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.space import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 
 
 @pytest.fixture
 def design():
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = DiscreteSpace(name="x5", lower_bound=3, upper_bound=6)
-    x6 = CategoricalSpace(name="x6", categories=["material1", "material2", "material3"])
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = DiscreteParameter(name="x2", lower_bound=5, upper_bound=80)
+    x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalParameter(name="x4", categories=["test1", "test2", "test3"])
+    x5 = DiscreteParameter(name="x5", lower_bound=3, upper_bound=6)
+    x6 = CategoricalParameter(
+        name="x6", categories=["material1", "material2", "material3"]
+    )
 
     # Create the design space
     space = [x1, x2, x3, x4, x5, x6]
-    design = DoE(space)
+    design = DesignSpace(space)
     return design
 
 
 @pytest.fixture
 def design2():
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = CategoricalSpace(name="x2", categories=["main"])
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test" + str(i) for i in range(80)])
-    x5 = DiscreteSpace(name="x5", lower_bound=3, upper_bound=6)
-    x6 = CategoricalSpace(
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = CategoricalParameter(name="x2", categories=["main"])
+    x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalParameter(
+        name="x4", categories=["test" + str(i) for i in range(80)]
+    )
+    x5 = DiscreteParameter(name="x5", lower_bound=3, upper_bound=6)
+    x6 = CategoricalParameter(
         name="x6", categories=["material" + str(i) for i in range(20)]
     )
 
     # Create the design space
     space = [x1, x2, x3, x4, x5, x6]
-    design = DoE(space)
+    design = DesignSpace(space)
     return design
 
 
@@ -43,7 +51,7 @@ def test_correct_discrete_sampling_1(design):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(doe=design, seed=seed)
+    random_uniform = RandomUniformSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -65,7 +73,7 @@ def test_correct_discrete_sampling_2(design2):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(doe=design2, seed=seed)
+    random_uniform = RandomUniformSampling(doe=design2, seed=seed)
 
     numsamples = 5
 

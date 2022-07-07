@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 import numdifftools as nd
 
-from f3dasm.src.data import Data
+from f3dasm.base.data import Data
 
 
 def from_data_to_numpy_array_benchmarkfunction(
     data: Data,
 ) -> np.ndarray:
     # Check if doe is in right format
-    if not data.doe.is_single_objective_continuous():
+    if not data.designspace.is_single_objective_continuous():
         raise TypeError(
             "All inputs and outputs need to be continuous parameters and output single objective"
         )
@@ -103,8 +103,21 @@ class Function(ABC):
 
         return output[1:]  # Cut of the first one because that is the empty array input
 
+    def plot_data(self, data: Data, px: int = 300, domain: List = [0.0, 1.0]):
+        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
+        x1 = data.get_input_data().iloc[:, 0]
+        x2 = data.get_input_data().iloc[:, 1]
+        ax.scatter(
+            x=x1,
+            y=x2,
+            s=10,
+            c=np.linspace(0, 1, len(x1)),
+            cmap="Blues",
+            edgecolors="black",
+        )
+
     def plot(
-        self, orientation: str = "3D", px: int = 300, domain: List = [0, 1]
+        self, orientation: str = "3D", px: int = 300, domain: List = [0.0, 1.0]
     ):  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
 

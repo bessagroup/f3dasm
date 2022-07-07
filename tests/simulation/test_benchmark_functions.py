@@ -7,7 +7,7 @@ from f3dasm.simulation.benchmark_functions import (
     Schwefel,
     Rosenbrock,
 )
-from f3dasm.src.simulation import Function
+from f3dasm.base.simulation import Function
 
 x = np.array([0.2, 0.3, 0.4, 0.6])  # 1D array with 4 dimensions
 x1 = np.array([[0.1], [0.2], [0.3]])  # 2D array with 1 dimension

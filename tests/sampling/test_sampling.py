@@ -1,26 +1,30 @@
 import numpy as np
 import pandas as pd
 import pytest
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.sobolsequence import SobolSequencing
-from f3dasm.src.designofexperiments import DoE
-from f3dasm.src.samplingmethod import SamplingMethod
-from f3dasm.src.space import CategoricalSpace, ContinuousSpace, DiscreteSpace
+from f3dasm.sampling.latinhypercube import LatinHypercubeSampling
+from f3dasm.sampling.randomuniform import RandomUniformSampling
+from f3dasm.sampling.sobolsequence import SobolSequenceSampling
+from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.samplingmethod import SamplingInterface
+from f3dasm.base.space import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 
 
 @pytest.fixture
 def design():
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteSpace(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousSpace(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalSpace(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousSpace(name="x5", lower_bound=0.6, upper_bound=7.3)
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x2 = DiscreteParameter(name="x2", lower_bound=5, upper_bound=80)
+    x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalParameter(name="x4", categories=["test1", "test2", "test3"])
+    x5 = ContinuousParameter(name="x5", lower_bound=0.6, upper_bound=7.3)
 
     # Create the design space
     space = [x1, x2, x3, x4, x5]
-    design = DoE(space)
+    design = DesignSpace(space)
     return design
 
 
@@ -30,23 +34,23 @@ def design():
 def test_sampling_interface_not_implemented_error():
     seed = 42
 
-    class NewSamplingStrategy(SamplingMethod):
+    class NewSamplingStrategy(SamplingInterface):
         pass
 
     # Define the parameters
-    x1 = ContinuousSpace(name="x1", lower_bound=2.4, upper_bound=10.3)
+    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
     space = [x1]
 
-    design = DoE(space)
+    design = DesignSpace(space)
     new_sampler = NewSamplingStrategy(doe=design, seed=seed)
     with pytest.raises(NotImplementedError):
         _ = new_sampler.sample_continuous(numsamples=5, doe=design)
 
 
-def test_correct_sampling_ran(design: DoE):
+def test_correct_sampling_ran(design: DesignSpace):
     seed = 42
     # Construct sampler
-    random_sequencing = RandomUniform(doe=design, seed=seed)
+    random_sequencing = RandomUniformSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -83,11 +87,11 @@ def test_correct_sampling_ran(design: DoE):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_sobol(design: DoE):
+def test_correct_sampling_sobol(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequencing(doe=design, seed=seed)
+    sobol_sequencing = SobolSequenceSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -124,11 +128,11 @@ def test_correct_sampling_sobol(design: DoE):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_lhs(design: DoE):
+def test_correct_sampling_lhs(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = LatinHypercube(doe=design, seed=seed)
+    sobol_sequencing = LatinHypercubeSampling(doe=design, seed=seed)
 
     numsamples = 5
 

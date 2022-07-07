@@ -1,15 +1,15 @@
 import numpy as np
 from SALib.sample import latin
 
-from f3dasm.src.designofexperiments import DoE
+from f3dasm.base.designofexperiments import DesignSpace
 
-from f3dasm.src.samplingmethod import SamplingMethod
+from f3dasm.base.samplingmethod import SamplingInterface
 
 
-class LatinHypercube(SamplingMethod):
+class LatinHypercubeSampling(SamplingInterface):
     """Sampling via Latin Hypercube Sampling"""
 
-    def sample_continuous(self, numsamples: int, doe: DoE) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, doe: DesignSpace) -> np.ndarray:
         continuous = doe.get_continuous_parameters()
         problem = {
             "num_vars": len(continuous),
