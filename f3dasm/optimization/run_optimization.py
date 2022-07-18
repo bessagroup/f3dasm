@@ -8,7 +8,7 @@ from f3dasm.base.simulation import Function
 
 
 def run_multiple_realizations(
-    algorithm: Type[Optimizer],
+    optimizer: Optimizer,
     function: Function,
     sampler: SamplingInterface,
     iterations: int,
@@ -16,6 +16,7 @@ def run_multiple_realizations(
 ) -> List[Data]:
     """Run multiple realizations of the same algorithm on a benchmark function"""
 
+    # TODO: Make sure Data in optimizer is initialized everytime new realization is taken
     # Create a random seed
     seed = np.random.randint(low=0, high=1e5)
     all_data = []
@@ -24,18 +25,17 @@ def run_multiple_realizations(
 
         # Set function seed
         function.set_seed(seed)
+        optimizer.set_seed(seed)
+        sampler.set_seed(seed)
 
         # Sample
-        sampler.set_seed(seed)
-        samples = sampler.get_samples(numsamples=30)
-        # TODO: make this numsamples a hyperparameter of the algorithm?
+        samples = sampler.get_samples(
+            numsamples=optimizer.hyperparameters["population"]
+        )
 
         samples.add_output(output=function.eval(samples), label="y")
 
-        # Construct optimizer object
-        optimizer = algorithm(
-            data=samples, seed=seed, population=samples.get_number_of_datapoints()
-        )
+        optimizer.set_data(samples)
 
         # Iterate
         optimizer.iterate(iterations=iterations, function=function)

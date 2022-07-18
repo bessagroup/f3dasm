@@ -12,3 +12,5 @@ tox==3.25.0
 mypy
 hypothesis
 numdifftools
+gpy
+gpyopt

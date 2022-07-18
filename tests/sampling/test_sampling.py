@@ -47,7 +47,7 @@ def test_sampling_interface_not_implemented_error():
     design = DesignSpace(space)
     new_sampler = NewSamplingStrategy(doe=design, seed=seed)
     with pytest.raises(NotImplementedError):
-        _ = new_sampler.sample_continuous(numsamples=5, doe=design)
+        _ = new_sampler.sample_continuous(numsamples=5, designspace=design)
 
 
 def test_correct_sampling_ran(design: DesignSpace):
@@ -135,7 +135,7 @@ def test_correct_sampling_lhs(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = LatinHypercubeSampling(doe=design, seed=seed)
+    lhs_sampler = LatinHypercubeSampling(doe=design, seed=seed)
 
     numsamples = 5
 
@@ -164,7 +164,7 @@ def test_correct_sampling_lhs(design: DesignSpace):
         }
     )
 
-    samples = sobol_sequencing.get_samples(numsamples=numsamples)
+    samples = lhs_sampler.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
 
     print(samples)

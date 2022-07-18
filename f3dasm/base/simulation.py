@@ -75,6 +75,7 @@ class Function(ABC):
             x = self.scale_input(x)
 
         y = np.atleast_1d(self.f(x))
+
         # add noise
         if self.noise:
             y = self.add_noise(y)

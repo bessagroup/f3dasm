@@ -30,7 +30,9 @@ class SamplingInterface(ABC):
         np.random.seed(seed)
         self.seed = seed
 
-    def sample_continuous(self, numsamples: int, doe: DesignSpace) -> np.ndarray:
+    def sample_continuous(
+        self, numsamples: int, designspace: DesignSpace
+    ) -> np.ndarray:
         """Create N samples within the search space
 
         Args:
@@ -52,7 +54,9 @@ class SamplingInterface(ABC):
             Data: Data objects with the samples
         """
         # First sample the continuous parameters
-        samples_continuous = self.sample_continuous(numsamples=numsamples, doe=self.doe)
+        samples_continuous = self.sample_continuous(
+            numsamples=numsamples, designspace=self.doe
+        )
 
         # Sample discrete parameters
         samples_discrete = self.sample_discrete(numsamples=numsamples, doe=self.doe)
