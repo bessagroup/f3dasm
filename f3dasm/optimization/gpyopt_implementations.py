@@ -8,13 +8,11 @@ from f3dasm.base.simulation import Function
 class BayesianOptimization(Optimizer):
     def init_parameters(self):
 
-        # Default hyperparamaters
         domain = [
             {
                 "name": f"var_{index}",
                 "type": "continuous",
                 "domain": (parameter.lower_bound, parameter.upper_bound),
-                "dimensionality": 1,
             }
             for index, parameter in enumerate(
                 self.data.designspace.get_continuous_parameters()
@@ -40,6 +38,7 @@ class BayesianOptimization(Optimizer):
         )
         evaluator = GPyOpt.core.evaluators.Sequential(acquisition)
 
+        # Default hyperparamaters
         self.defaults = {
             "model": model,
             "space": space,
@@ -48,12 +47,10 @@ class BayesianOptimization(Optimizer):
             "de_duplication": True,
         }
 
-        # Dynamic parameters
-
     def update_step(self, function: Function) -> None:
 
         x = self.data.get_input_data().to_numpy()
-        y = self.data.get_output_data().to_numpy().reshape(-1, 1)
+        y = self.data.get_output_data().to_numpy()
 
         bo = GPyOpt.methods.ModularBayesianOptimization(
             model=self.hyperparameters["model"],

@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import List
 import numpy as np
 from f3dasm.base.data import Data
 
