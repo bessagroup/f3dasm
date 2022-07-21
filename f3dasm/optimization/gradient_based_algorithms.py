@@ -6,6 +6,7 @@ from f3dasm.base.simulation import Function
 
 class SGD(Optimizer):
     def init_parameters(self):
+
         # Default hyperparameters
         self.defaults = {"step_size": 1e-2, "population": 1}
 
@@ -26,6 +27,7 @@ class SGD(Optimizer):
 
 class Momentum(Optimizer):
     def init_parameters(self):
+
         # Default hyperparameters
         self.defaults = {"step_size": 1e-2, "beta": 0.9, "population": 1}
 

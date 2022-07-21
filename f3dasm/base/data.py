@@ -15,7 +15,6 @@ class Data:
         data (DataFrame): data stored in a DataFrame
     """
 
-    # data: pd.DataFrame
     designspace: DesignSpace
     data: pd.DataFrame = field(init=False)
 

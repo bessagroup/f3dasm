@@ -1,5 +1,5 @@
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,16 +33,22 @@ class Function(ABC):
 
     noise: bool = False
     seed: Any or int = None
-    scale_bounds: Any or List[float] = None
+    scale_bounds: List[float] = field(default_factory=lambda: [0.0, 1.0])
+    dimensionality: int = 2
 
     def __post_init__(self):
         if self.seed:
             self.set_seed(self.seed)
 
+        self.set_parameters()
+
     @staticmethod
     def set_seed(seed) -> None:
         """Set the seed of the random generator"""
         np.random.seed(seed)
+
+    def set_parameters(self):
+        pass
 
     def reshape_input(self, x: np.ndarray) -> np.ndarray:
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
@@ -71,8 +77,7 @@ class Function(ABC):
 
         x = self.reshape_input(x)
 
-        if self.scale_bounds is not None:
-            x = self.scale_input(x)
+        x = self.scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -156,7 +161,9 @@ class Function(ABC):
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.LogNorm())
+            ax.pcolormesh(
+                xv, yv, Y, cmap="viridis", norm=mcol.Normalize()
+            )  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":
@@ -171,7 +178,7 @@ class Function(ABC):
                 edgecolor="none",
                 alpha=0.8,
                 cmap="viridis",
-                norm=mcol.LogNorm(),
+                norm=mcol.Normalize(),  # mcol.LogNorm()
                 zorder=1,
             )
             ax.set_zlabel("$f(X)$", fontsize=16)
@@ -185,3 +192,19 @@ class Function(ABC):
         # ax.legend(fontsize="small", loc="lower right")
 
         return fig, ax
+
+
+class PyBenchFunction(Function):
+    @classmethod
+    def is_dim_compatible(cls, d) -> bool:
+        pass
+
+    def scale_input(self, x: np.ndarray) -> np.ndarray:
+        # TODO: This always outputs [bounds, bounds]
+        return (
+            self.input_domain[:, 1] - self.input_domain[0:, 0]
+        ) * x + self.input_domain[:, 0]
+
+    def f(self, x: np.ndarray):
+        if self.is_dim_compatible(self.dimensionality):
+            return np.apply_along_axis(self, axis=1, arr=x).reshape(-1, 1)

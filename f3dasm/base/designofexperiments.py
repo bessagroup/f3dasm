@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, TypeVar
 
 import pandas as pd
 
@@ -71,18 +71,16 @@ class DesignSpace:
     def get_input_names(self) -> List[str]:
         return [("input", s.name) for s in self.input_space]
 
+    def check_space_on_type(self, type: TypeVar, space: List[ParameterInterface]):
+        return all(isinstance(parameter, type) for parameter in space)
+
     def all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return all(
-            isinstance(parameter, ContinuousParameter) for parameter in self.input_space
-        )
+        return self.check_space_on_type(ContinuousParameter, self.input_space)
 
     def all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
-        return all(
-            isinstance(parameter, ContinuousParameter)
-            for parameter in self.output_space
-        )
+        return self.check_space_on_type(ContinuousParameter, self.output_space)
 
     def is_single_objective_continuous(self) -> bool:
         """Check if the output is single objective and continuous"""
@@ -114,19 +112,11 @@ class DesignSpace:
         Returns:
             List[ContinuousSpace]: space of continuous parameters
         """
-        return [
-            parameter
-            for parameter in self.input_space
-            if isinstance(parameter, ContinuousParameter)
-        ]
+        return self.get_parameters(ContinuousParameter, self.input_space)
 
     def get_continuous_names(self) -> List[str]:
         """Receive all the continuous parameter names"""
-        return [
-            parameter.name
-            for parameter in self.input_space
-            if isinstance(parameter, ContinuousParameter)
-        ]
+        return self.get_names(ContinuousParameter, self.input_space)
 
     def get_discrete_parameters(self) -> List[DiscreteParameter]:
         """Obtain all the discrete parameters
@@ -134,11 +124,7 @@ class DesignSpace:
         Returns:
             List[DiscreteSpace]: space of discrete parameters
         """
-        return [
-            parameter
-            for parameter in self.input_space
-            if isinstance(parameter, DiscreteParameter)
-        ]
+        return self.get_parameters(DiscreteParameter, self.input_space)
 
     def get_discrete_names(self) -> List[str]:
         """Receive the names of all the discrete parameters
@@ -146,11 +132,20 @@ class DesignSpace:
         Returns:
             List[str]: list of names
         """
-        return [
-            parameter.name
-            for parameter in self.input_space
-            if isinstance(parameter, DiscreteParameter)
-        ]
+        return self.get_names(DiscreteParameter, self.input_space)
+
+    def get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:
+        return [parameter.name for parameter in space if isinstance(parameter, type)]
+
+    def get_parameters(
+        self, type: TypeVar, space: List[ParameterInterface]
+    ) -> List[ParameterInterface]:
+        return list(
+            filter(
+                lambda parameter: isinstance(parameter, type),
+                space,
+            )
+        )
 
     def get_categorical_parameters(self) -> List[CategoricalParameter]:
         """Obtain all the categorical parameters
@@ -158,11 +153,7 @@ class DesignSpace:
         Returns:
             List[CategoricalSpace]: space of categorical parameters
         """
-        return [
-            parameter
-            for parameter in self.input_space
-            if isinstance(parameter, CategoricalParameter)
-        ]
+        return self.get_parameters(CategoricalParameter, self.input_space)
 
     def get_categorical_names(self) -> List[str]:
         """Receive the names of all the categorical parameters
@@ -170,11 +161,7 @@ class DesignSpace:
         Returns:
             List[str]: list of names
         """
-        return [
-            parameter.name
-            for parameter in self.input_space
-            if isinstance(parameter, CategoricalParameter)
-        ]
+        return self.get_names(CategoricalParameter, self.input_space)
 
 
 def make_nd_continuous_design(bounds: list, dimensions: int):

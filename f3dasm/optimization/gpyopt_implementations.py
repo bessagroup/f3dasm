@@ -6,8 +6,9 @@ from f3dasm.base.simulation import Function
 
 
 class BayesianOptimization(Optimizer):
-    def init_parameters(self):
+    """Bayesian Optimization implementation from the GPyOPt library"""
 
+    def init_parameters(self):
         domain = [
             {
                 "name": f"var_{index}",
@@ -47,22 +48,24 @@ class BayesianOptimization(Optimizer):
             "de_duplication": True,
         }
 
-    def update_step(self, function: Function) -> None:
-
-        x = self.data.get_input_data().to_numpy()
-        y = self.data.get_output_data().to_numpy()
-
-        bo = GPyOpt.methods.ModularBayesianOptimization(
+    def set_algorithm(self):
+        self.algorithm = GPyOpt.methods.ModularBayesianOptimization(
             model=self.hyperparameters["model"],
             space=self.hyperparameters["space"],
-            objective=GPyOpt.core.task.SingleObjective(function.eval),
+            objective=None,
             acquisition=self.hyperparameters["acquisition"],
             evaluator=self.hyperparameters["evaluator"],
-            X_init=x,
-            Y_init=y,
+            X_init=None,
+            Y_init=None,
             de_duplication=self.hyperparameters["de_duplication"],
         )
 
-        x_new = bo.suggest_next_locations()
+    def update_step(self, function: Function) -> None:
+
+        self.algorithm.objective = GPyOpt.core.task.SingleObjective(function.eval)
+        self.algorithm.X = self.data.get_input_data().to_numpy()
+        self.algorithm.Y = self.data.get_output_data().to_numpy()
+
+        x_new = self.algorithm.suggest_next_locations()
 
         self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))

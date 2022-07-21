@@ -28,6 +28,8 @@ REQUIRED = [
     "matplotlib",
     "SALib",
     "hypothesis",
+    "GPyOpt",
+    "GPy"
 ]
 
 # What packages are optional?

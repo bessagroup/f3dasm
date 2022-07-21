@@ -1,23 +1,24 @@
-from typing import Any, Mapping, Optional
+from dataclasses import dataclass
+from typing import Any
 import numpy as np
 import pygmo as pg
 
-from f3dasm.base.data import Data
 from f3dasm.base.designofexperiments import DesignSpace
 from f3dasm.base.optimization import Optimizer
 from f3dasm.base.simulation import Function
 
 
+@dataclass
 class PygmoProblem:
     """Convert a testproblem from problemset to a pygmo object"""
 
-    def __init__(self, design: DesignSpace, func: Function, seed: Any or int = None):
-        self.design = design
-        self.func = func
-        self.seed = seed
+    design: DesignSpace
+    func: Function
+    seed: Any or int = None
 
-        if seed:
-            pg.set_global_rng_seed(seed)
+    def __post_init__(self):
+        if self.seed:
+            pg.set_global_rng_seed(self.seed)
 
     def fitness(self, x: np.ndarray) -> np.ndarray:
         """Pygmo representation of returning the objective value of a function"""
@@ -45,9 +46,12 @@ class PygmoProblem:
         return self.func.dfdx(x)
 
 
+@dataclass
 class PygmoAlgorithm(Optimizer):
+    """Wrapper around the pygmo algorithm class"""
+
     @staticmethod
-    def set_seed(seed: int):
+    def set_seed(seed: int) -> None:
         pg.set_global_rng_seed(seed=seed)
 
     def update_step(self, function: Function) -> None:
@@ -87,13 +91,9 @@ class PygmoAlgorithm(Optimizer):
 
 
 class CMAES(PygmoAlgorithm):
-    def __init__(
-        self,
-        data: Data,
-        hyperparameters: Optional[Mapping[str, Any]] = None,
-        seed: int or None = None,
-    ):
+    """Covariance Matrix Adaptation Evolution Strategy optimizer implemented from pygmo"""
 
+    def init_parameters(self):
         # Default hyperparameters
         self.defaults = {
             "gen": 1,
@@ -102,41 +102,102 @@ class CMAES(PygmoAlgorithm):
             "population": 30,
         }
 
-        self.set_hyperparameters(hyperparameters)
-
+    def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.cmaes(
                 gen=self.hyperparameters["gen"],
                 memory=self.hyperparameters["memory"],
-                seed=seed,
+                seed=self.seed,
                 force_bounds=self.hyperparameters["force_bounds"],
             )
         )
 
-        super().__init__(data=data, hyperparameters=self.hyperparameters, seed=seed)
-
 
 class PSO(PygmoAlgorithm):
-    def __init__(
-        self,
-        data: Data,
-        hyperparameters: Optional[Mapping[str, Any]] = None,
-        seed: int or None = None,
-    ):
+    "Particle Swarm Optimization (Generational) optimizer implemented from pygmo"
+
+    def init_parameters(self):
         # Default hyperparameters
         self.defaults = {
             "gen": 1,
             "memory": True,
             "population": 30,
         }
-        self.set_hyperparameters(hyperparameters)
 
+    def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.pso_gen(
                 gen=self.hyperparameters["gen"],
                 memory=self.hyperparameters["memory"],
-                seed=seed,
+                seed=self.seed,
             )
         )
 
-        super().__init__(data=data, hyperparameters=self.hyperparameters, seed=seed)
+
+class SGA(PygmoAlgorithm):
+    """Simple Genetic Algorithm optimizer implemented from pygmo"""
+
+    def init_parameters(self):
+        # Default hyperparameters
+        self.defaults = {
+            "gen": 1,
+            "cr": 0.9,
+            "eta_c": 1.0,
+            "m": 0.02,
+            "param_m": 1.0,
+            "param_s": 2,
+            "crossover": "exponential",
+            "mutation": "polynomial",
+            "selection": "tournament",
+            "population": 30,
+        }
+
+    def set_algorithm(self):
+        self.algorithm = pg.algorithm(
+            pg.sga(
+                gen=self.hyperparameters["gen"],
+                cr=self.hyperparameters["cr"],
+                eta_c=self.hyperparameters["eta_c"],
+                m=self.hyperparameters["m"],
+                param_m=self.hyperparameters["param_m"],
+                param_s=self.hyperparameters["param_s"],
+                crossover=self.hyperparameters["crossover"],
+                mutation=self.hyperparameters["mutation"],
+                selection=self.hyperparameters["selection"],
+                seed=self.seed,
+            )
+        )
+
+
+class XNES(PygmoAlgorithm):
+    """XNES optimizer implemented from pygmo"""
+
+    def init_parameters(self):
+        self.defaults = {
+            "gen": 1,
+            "eta_mu": -1,
+            "eta_sigma": -1,
+            "eta_b": -1,
+            "sigma0": -1,
+            "ftol": 1e-06,
+            "xtol": 1e-06,
+            "memory": True,
+            "force_bounds": True,
+            "population": 30,
+        }
+
+    def set_algorithm(self):
+        self.algorithm = pg.algorithm(
+            pg.xnes(
+                gen=self.hyperparameters["gen"],
+                eta_mu=self.hyperparameters["eta_mu"],
+                eta_sigma=self.hyperparameters["eta_sigma"],
+                eta_b=self.hyperparameters["eta_b"],
+                sigma0=self.hyperparameters["sigma0"],
+                ftol=self.hyperparameters["ftol"],
+                xtol=self.hyperparameters["xtol"],
+                memory=self.hyperparameters["memory"],
+                force_bounds=self.hyperparameters["force_bounds"],
+                seed=self.seed,
+            )
+        )
