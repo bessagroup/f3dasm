@@ -41,7 +41,7 @@ lxml==4.6.2
 MarkupSafe==1.1.1
 matplotlib==3.1.2
 meshio==4.3.8
-mistune==0.8.4
+mistune==2.0.3
 more-itertools==8.0.2
 mpi4py==3.0.3
 mpmath==1.1.0
