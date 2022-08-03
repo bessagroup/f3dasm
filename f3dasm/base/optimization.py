@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional
 from f3dasm.base.data import Data
 from f3dasm.base.simulation import Function
 
-
 @dataclass
 class Optimizer:
     """Mainclass to inherit from to implement optimization algorithms

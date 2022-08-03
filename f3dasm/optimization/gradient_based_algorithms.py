@@ -5,10 +5,12 @@ from f3dasm.base.simulation import Function
 
 
 class SGD(Optimizer):
+    """Gradient-based Stochastig Gradient Descent (SGD) optimizer"""
+
     def init_parameters(self):
 
         # Default hyperparameters
-        self.defaults = {"step_size": 1e-2, "population": 1}
+        self.defaults = {"step_size": 1e-2, "population": 1, "force_bounds": True}
 
     def update_step(self, function: Function) -> None:
 
@@ -22,14 +24,25 @@ class SGD(Optimizer):
 
         x_new = x - self.hyperparameters["step_size"] * g
 
+        if self.hyperparameters["force_bounds"]:
+            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
+            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
+
         self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
 
 
 class Momentum(Optimizer):
+    """Gradient-based Momentum optimizer"""
+
     def init_parameters(self):
 
         # Default hyperparameters
-        self.defaults = {"step_size": 1e-2, "beta": 0.9, "population": 1}
+        self.defaults = {
+            "step_size": 1e-2,
+            "beta": 0.9,
+            "population": 1,
+            "force_bounds": True,
+        }
 
         # Dynamic parameters
         self.m = 0
@@ -50,11 +63,17 @@ class Momentum(Optimizer):
         )
         x_new = x - self.hyperparameters["step_size"] * m
 
+        if self.hyperparameters["force_bounds"]:
+            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
+            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
+
         self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
         self.m = m
 
 
 class Adam(Optimizer):
+    """Gradient-based Adam optimizer"""
+
     def init_parameters(self):
 
         # Default hyperparameters
@@ -64,6 +83,7 @@ class Adam(Optimizer):
             "beta_2": 0.999,
             "epsilon": 1e-8,
             "population": 1,
+            "force_bounds": True,
         }
         # Dynamic parameters
         self.m = 0
@@ -92,6 +112,10 @@ class Adam(Optimizer):
         x_new = x - self.hyperparameters["step_size"] * m_hat / (
             np.sqrt(v_hat) + self.hyperparameters["epsilon"]
         )
+
+        if self.hyperparameters["force_bounds"]:
+            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
+            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
 
         self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
 

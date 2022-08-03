@@ -201,3 +201,37 @@ class XNES(PygmoAlgorithm):
                 seed=self.seed,
             )
         )
+
+
+class LBFGS(PygmoAlgorithm):
+    def init_parameters(self) -> None:
+        self.defaults = {
+            # "gen": 1,
+            # "eta_mu": -1,
+            # "eta_sigma": -1,
+            # "eta_b": -1,
+            # "sigma0": -1,
+            # "ftol": 1e-06,
+            # "xtol": 1e-06,
+            # "memory": True,
+            # "force_bounds": True,
+            "population": 1,
+        }
+
+    def set_algorithm(self) -> None:
+        self.algorithm = pg.algorithm(
+            pg.scipy_optimize(
+                method="L-BFGS-B",
+                # callback=callbackF,
+                options={"ftol": 0.0, "gtol": 0.0, "maxfun": 1e3},
+            )
+        )
+
+
+# def callbackF(Xi):
+#     global Xxi
+#     if isinstance(Xxi, int):
+#         Xxi = Xi.reshape(-1, len(Xi))
+#     else:
+#         Xxi = np.r_[Xxi, Xi.reshape(-1, len(Xi))]
+#     return Xxi

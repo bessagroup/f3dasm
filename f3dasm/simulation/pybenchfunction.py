@@ -223,7 +223,7 @@ class AckleyN4(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        print("WARNING ! Is only is available for d=2")
+        # WARNING ! Is only is available for d=2
         X = np.array([-1.51, -0.755])
         return (self.descale_input(X), self.eval(self.descale_input(X)))
 
@@ -466,7 +466,7 @@ class Bird(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        X = np.array([4.70104, 3.15294], [-1.58214, -3.13024])
+        X = np.array([[4.70104, 3.15294], [-1.58214, -3.13024]])
         return (X, [self(x) for x in X])
 
     def __call__(self, X):
@@ -1252,44 +1252,6 @@ class Exponential(PyBenchFunction):
         return res
 
 
-class Forrester(PyBenchFunction):
-    name = "Forrester"
-    latex_formula = r"f(x)=(6x-2)^2sin(12x-4)"
-    latex_formula_dimension = r"d=1"
-    latex_formula_input_domain = r"x \in [0, 1]"
-    latex_formula_global_minimum = r"f(0.757249) \approx -6.02074"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    mutimodal = True
-    randomized_term = False
-    parametric = False
-
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 1
-
-    def set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[0, 1] for _ in range(d)])
-
-    def get_param(self):
-        return {}
-
-    def get_global_minimum(self, d):
-        X = np.array([0.757249])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
-
-    def __call__(self, X):
-        x = X[0]
-        res = ((6 * x - 2) ** 2) * np.sin(12 * x - 4)
-        return res
-
-
 class GoldsteinPrice(PyBenchFunction):
     name = "Goldstein-Price"
     latex_formula = r"f(x,y)=[1 + (x + y + 1)^2(19 - 14x+3x^2- 14y + 6xy + 3y^2)]\\ \cdot [30 + (2x - 3y)^2(18 - 32x + 12x^2 + 4y - 36xy + 27y^2)]"
@@ -1330,44 +1292,6 @@ class GoldsteinPrice(PyBenchFunction):
         res *= 30 + (2 * x - 3 * y) ** 2 * (
             18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2
         )
-        return res
-
-
-class GramacyLee(PyBenchFunction):
-    name = "Gramacy & Lee"
-    latex_formula = r"f(x) = \frac{sin(10\pi x)}{2x} + (x-1)^4"
-    latex_formula_dimension = r"d=1"
-    latex_formula_input_domain = r"x \in [-0.5, 2.5]"
-    latex_formula_global_minimum = r"f(0.548563444114526) \approx -0.869011134989500"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    mutimodal = True
-    randomized_term = False
-    parametric = False
-
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 1
-
-    def set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[-0.5, 2.5] for _ in range(d)])
-
-    def get_param(self):
-        return {}
-
-    def get_global_minimum(self, d):
-        X = np.array([0.548563444114526])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
-
-    def __call__(self, X):
-        x = X[0]
-        res = np.sin(10 * np.pi * x) / 2 / x + (x - 1) ** 4
         return res
 
 
@@ -2768,10 +2692,7 @@ class Shekel(PyBenchFunction):
     def __call__(self, X):
         x1, x2, x3, x4 = X
         res = -np.sum(
-            [
-                np.sum((X[i] - self.C[i]) ** 2 + self.beta[i]) ** -1
-                for i in range(self.m)
-            ]
+            [[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)]
         )
         return res
 
@@ -3115,45 +3036,44 @@ class Trid(PyBenchFunction):
         res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
         return res
 
+    class Wolfe(PyBenchFunction):
+        name = "Wolfe"
+        latex_formula = r"f(x, y, z) = \frac{4}{3}(x^2 + y^2 - xy)^{0.75} + z"
+        latex_formula_dimension = r"d=3"
+        latex_formula_input_domain = (
+            r"x_i \in [0, 2], \forall i \in \llbracket 1, 3\rrbracket"
+        )
+        latex_formula_global_minimum = r"f(0, 0, 0)=0"
+        continuous = True
+        convex = False
+        separable = False
+        differentiable = True
+        mutimodal = True
+        randomized_term = False
+        parametric = False
 
-class Wolfe(PyBenchFunction):
-    name = "Wolfe"
-    latex_formula = r"f(x, y, z) = \frac{4}{3}(x^2 + y^2 - xy)^{0.75} + z"
-    latex_formula_dimension = r"d=3"
-    latex_formula_input_domain = (
-        r"x_i \in [0, 2], \forall i \in \llbracket 1, 3\rrbracket"
-    )
-    latex_formula_global_minimum = r"f(0, 0, 0)=0"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    mutimodal = True
-    randomized_term = False
-    parametric = False
+        @classmethod
+        def is_dim_compatible(cls, d):
+            assert (d is None) or (
+                isinstance(d, int) and (not d < 0)
+            ), "The dimension d must be None or a positive integer"
+            return d == 3
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 3
+        def set_parameters(self):
+            d = self.dimensionality
+            self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
 
-    def set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
+        def get_param(self):
+            return {}
 
-    def get_param(self):
-        return {}
+        def get_global_minimum(self, d):
+            X = np.array([0, 0, 0])
+            return (self.descale_input(X), self.eval(self.descale_input(X)))
 
-    def get_global_minimum(self, d):
-        X = np.array([0, 0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
-
-    def __call__(self, X):
-        x, y, z = X
-        res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
-        return res
+        def __call__(self, X):
+            x, y, z = X
+            res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
+            return res
 
 
 class XinSheYang(PyBenchFunction):

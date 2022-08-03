@@ -36,16 +36,39 @@ class Function(ABC):
     scale_bounds: List[float] = field(default_factory=lambda: [0.0, 1.0])
     dimensionality: int = 2
 
+    # TODO: Offset is not working correctly !
+
     def __post_init__(self):
         if self.seed:
             self.set_seed(self.seed)
 
+        # self.offset = np.zeros(self.dimensionality)
         self.set_parameters()
+        # self.offset = self.create_offset()
 
     @staticmethod
     def set_seed(seed) -> None:
         """Set the seed of the random generator"""
         np.random.seed(seed)
+
+    # def create_offset(self) -> np.ndarray:
+    #     global_minimum_method = getattr(self, "get_global_minimum", None)
+    #     if callable(global_minimum_method):
+    #         g = self.get_global_minimum(d=self.dimensionality)[0]
+    #     else:
+    #         g = np.zeros(self.dimensionality)
+
+    #     offset = [
+    #         np.random.uniform(
+    #             low=self.scale_bounds[0] - g[d], high=self.scale_bounds[1] - g[d]
+    #         )
+    #         for d in range(self.dimensionality)
+    #     ]
+
+    #     return np.array(offset)
+
+    def check_if_within_bounds(self, x: np.ndarray) -> bool:
+        return ((self.scale_bounds[0] < x) & (x < self.scale_bounds[1])).all()
 
     def set_parameters(self):
         pass
@@ -59,6 +82,9 @@ class Function(ABC):
 
     def scale_input(self, x: np.ndarray) -> np.ndarray:
         return (self.scale_bounds[1] - self.scale_bounds[0]) * x + self.scale_bounds[0]
+
+    def offset_input(self, x: np.ndarray) -> np.ndarray:
+        return x + self.offset
 
     def eval(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
@@ -78,6 +104,8 @@ class Function(ABC):
         x = self.reshape_input(x)
 
         x = self.scale_input(x)
+
+        # x = self.offset_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -129,7 +157,11 @@ class Function(ABC):
         )
 
     def plot(
-        self, orientation: str = "3D", px: int = 300, domain: List = [0.0, 1.0]
+        self,
+        orientation: str = "3D",
+        px: int = 300,
+        domain: List = [0.0, 1.0],
+        show: bool = True,
     ):  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
 
@@ -141,6 +173,12 @@ class Function(ABC):
         Returns:
             fig, ax: Figure and axis
         """
+
+        if not show:
+            plt.ioff()
+        else:
+            plt.ion()
+
         x1 = np.linspace(domain[0], domain[1], num=px)
         x2 = np.linspace(domain[0], domain[1], num=px)
         X1, X2 = np.meshgrid(x1, x2)
@@ -190,21 +228,7 @@ class Function(ABC):
         ax.set_ylabel("$X_{2}$", fontsize=16)
 
         # ax.legend(fontsize="small", loc="lower right")
+        if not show:
+            plt.close(fig)
 
         return fig, ax
-
-
-class PyBenchFunction(Function):
-    @classmethod
-    def is_dim_compatible(cls, d) -> bool:
-        pass
-
-    def scale_input(self, x: np.ndarray) -> np.ndarray:
-        # TODO: This always outputs [bounds, bounds]
-        return (
-            self.input_domain[:, 1] - self.input_domain[0:, 0]
-        ) * x + self.input_domain[:, 0]
-
-    def f(self, x: np.ndarray):
-        if self.is_dim_compatible(self.dimensionality):
-            return np.apply_along_axis(self, axis=1, arr=x).reshape(-1, 1)

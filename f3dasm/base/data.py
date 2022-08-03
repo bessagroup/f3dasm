@@ -62,6 +62,9 @@ class Data:
             n=nosamples, columns=self.designspace.get_output_names()
         )
 
+    def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
+        return self.get_n_best_output_samples(nosamples)['input'].to_numpy()
+
     def get_number_of_datapoints(self) -> int:
         return len(self.data)
 
