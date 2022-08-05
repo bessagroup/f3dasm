@@ -6,19 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 import numdifftools as nd
 
-from f3dasm.base.data import Data
-
-
-def from_data_to_numpy_array_benchmarkfunction(
-    data: Data,
-) -> np.ndarray:
-    # Check if doe is in right format
-    if not data.designspace.is_single_objective_continuous():
-        raise TypeError(
-            "All inputs and outputs need to be continuous parameters and output single objective"
-        )
-
-    return data.get_input_data().to_numpy()
+from ..base.data import Data
+from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 
 
 @dataclass
@@ -96,7 +85,7 @@ class Function(ABC):
         """
         # If the input is a Data object
         if isinstance(input_x, Data):
-            x = from_data_to_numpy_array_benchmarkfunction(data=input_x)
+            x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
 
         else:
             x = input_x
@@ -155,6 +144,9 @@ class Function(ABC):
             cmap="Blues",
             edgecolors="black",
         )
+        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
+        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
+        ax.scatter(x=x1_best, y=x2_best, s=20, c="red", marker="*", edgecolors="black")
 
     def plot(
         self,
@@ -191,17 +183,13 @@ class Function(ABC):
                 Y[i, j] = self.eval(xy)
 
         dx = dy = (domain[1] - domain[0]) / px
-        x, y = domain[0] + dx * np.arange(Y.shape[1]), domain[0] + dy * np.arange(
-            Y.shape[0]
-        )
+        x, y = domain[0] + dx * np.arange(Y.shape[1]), domain[0] + dy * np.arange(Y.shape[0])
         xv, yv = np.meshgrid(x, y)
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(
-                xv, yv, Y, cmap="viridis", norm=mcol.Normalize()
-            )  # mcol.LogNorm()
+            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.Normalize())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":

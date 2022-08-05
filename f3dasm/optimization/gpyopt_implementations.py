@@ -1,8 +1,8 @@
 import GPy
 import GPyOpt
 
-from f3dasm.base.optimization import Optimizer
-from f3dasm.base.simulation import Function
+from ..base.optimization import Optimizer
+from ..base.function import Function
 
 
 class BayesianOptimization(Optimizer):
@@ -15,14 +15,10 @@ class BayesianOptimization(Optimizer):
                 "type": "continuous",
                 "domain": (parameter.lower_bound, parameter.upper_bound),
             }
-            for index, parameter in enumerate(
-                self.data.designspace.get_continuous_parameters()
-            )
+            for index, parameter in enumerate(self.data.designspace.get_continuous_parameters())
         ]
 
-        kernel = GPy.kern.RBF(
-            input_dim=self.data.designspace.get_number_of_input_parameters()
-        )
+        kernel = GPy.kern.RBF(input_dim=self.data.designspace.get_number_of_input_parameters())
 
         model = GPyOpt.models.gpmodel.GPModel(
             kernel=kernel,
@@ -34,9 +30,7 @@ class BayesianOptimization(Optimizer):
 
         space = GPyOpt.Design_space(space=domain)
         acquisition_optimizer = GPyOpt.optimization.AcquisitionOptimizer(space)
-        acquisition = GPyOpt.acquisitions.AcquisitionEI(
-            model, space, acquisition_optimizer
-        )
+        acquisition = GPyOpt.acquisitions.AcquisitionEI(model, space, acquisition_optimizer)
         evaluator = GPyOpt.core.evaluators.Sequential(acquisition)
 
         # Default hyperparamaters

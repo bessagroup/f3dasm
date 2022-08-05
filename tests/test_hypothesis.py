@@ -1,7 +1,10 @@
 from typing import Callable, List
 import numpy as np
 import pytest
-from f3dasm.base.designofexperiments import DesignSpace
+
+pytestmark = pytest.mark.smoke
+
+from f3dasm.base.design import DesignSpace
 from f3dasm.base.space import (
     ContinuousParameter,
     DiscreteParameter,
@@ -13,9 +16,7 @@ from hypothesis.strategies import integers, floats, text, composite, SearchStrat
 
 
 @composite
-def design_space(
-    draw: Callable[[SearchStrategy[int]], int], min_value: int = 1, max_value: int = 20
-):
+def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1, max_value: int = 20):
     number_of_input_parameters = draw(integers(min_value, max_value))
     number_of_output_parameters = draw(integers(min_value, max_value))
 
@@ -25,9 +26,7 @@ def design_space(
             parameter: ParameterInterface = np.random.choice(
                 a=["ContinuousSpace", "DiscreteSpace", "CategoricalSpace"]
             )
-            name = draw(
-                text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10)
-            )
+            name = draw(text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10))
 
             if parameter == "ContinuousSpace":
                 lower_bound, upper_bound = (
@@ -35,11 +34,7 @@ def design_space(
                     draw(floats(min_value=0.1)),
                 )
 
-                space.append(
-                    ContinuousParameter(
-                        name=name, lower_bound=lower_bound, upper_bound=upper_bound
-                    )
-                )
+                space.append(ContinuousParameter(name=name, lower_bound=lower_bound, upper_bound=upper_bound))
 
             elif parameter == "DiscreteSpace":
                 lower_bound, upper_bound = (
@@ -47,11 +42,7 @@ def design_space(
                     draw(integers(min_value=1)),
                 )
 
-                space.append(
-                    DiscreteParameter(
-                        name=name, lower_bound=lower_bound, upper_bound=upper_bound
-                    )
-                )
+                space.append(DiscreteParameter(name=name, lower_bound=lower_bound, upper_bound=upper_bound))
             elif parameter == "CategoricalSpace":
                 categories = ["test1", "test2"]
                 space.append(CategoricalParameter(name=name, categories=categories))

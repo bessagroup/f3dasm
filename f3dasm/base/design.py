@@ -4,7 +4,7 @@ from typing import List, TypeVar
 import pandas as pd
 
 
-from f3dasm.base.space import (
+from ..base.space import (
     CategoricalParameter,
     ContinuousParameter,
     DiscreteParameter,
@@ -71,7 +71,7 @@ class DesignSpace:
     def get_input_names(self) -> List[str]:
         return [("input", s.name) for s in self.input_space]
 
-    def check_space_on_type(self, type: TypeVar, space: List[ParameterInterface]):
+    def check_space_on_type(self, type: TypeVar, space: List[ParameterInterface]) -> bool:
         return all(isinstance(parameter, type) for parameter in space)
 
     def all_input_continuous(self) -> bool:
@@ -137,9 +137,7 @@ class DesignSpace:
     def get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
 
-    def get_parameters(
-        self, type: TypeVar, space: List[ParameterInterface]
-    ) -> List[ParameterInterface]:
+    def get_parameters(self, type: TypeVar, space: List[ParameterInterface]) -> List[ParameterInterface]:
         return list(
             filter(
                 lambda parameter: isinstance(parameter, type),
@@ -162,17 +160,3 @@ class DesignSpace:
             List[str]: list of names
         """
         return self.get_names(CategoricalParameter, self.input_space)
-
-
-def make_nd_continuous_design(bounds: list, dimensions: int):
-    input_space, output_space = [], []
-    for dim in range(dimensions):
-        input_space.append(
-            ContinuousParameter(
-                name=f"x{dim}", lower_bound=bounds[0], upper_bound=bounds[1]
-            )
-        )
-
-    output_space.append(ContinuousParameter(name="y"))
-
-    return DesignSpace(input_space=input_space, output_space=output_space)

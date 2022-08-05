@@ -4,9 +4,8 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 
-from f3dasm.base.data import Data
-
-from .designofexperiments import DesignSpace
+from ..base.data import Data
+from .design import DesignSpace
 
 
 @dataclass
@@ -30,9 +29,7 @@ class SamplingInterface(ABC):
         np.random.seed(seed)
         self.seed = seed
 
-    def sample_continuous(
-        self, numsamples: int, designspace: DesignSpace
-    ) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, designspace: DesignSpace) -> np.ndarray:
         """Create N samples within the search space
 
         Args:
@@ -54,17 +51,13 @@ class SamplingInterface(ABC):
             Data: Data objects with the samples
         """
         # First sample the continuous parameters
-        samples_continuous = self.sample_continuous(
-            numsamples=numsamples, designspace=self.doe
-        )
+        samples_continuous = self.sample_continuous(numsamples=numsamples, designspace=self.doe)
 
         # Sample discrete parameters
         samples_discrete = self.sample_discrete(numsamples=numsamples, doe=self.doe)
 
         # Sample categorical parameters
-        samples_categorical = self.sample_categorical(
-            numsamples=numsamples, doe=self.doe
-        )
+        samples_categorical = self.sample_categorical(numsamples=numsamples, doe=self.doe)
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
 
@@ -113,9 +106,7 @@ class SamplingInterface(ABC):
         categorical = doe.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
-            samples[:, dim] = np.random.choice(
-                categorical[dim].categories, size=numsamples
-            )
+            samples[:, dim] = np.random.choice(categorical[dim].categories, size=numsamples)
 
         return samples
 
@@ -124,13 +115,8 @@ class SamplingInterface(ABC):
         continuous = doe.get_continuous_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
-                samples[:, dim]
-                * (continuous[dim].upper_bound - continuous[dim].lower_bound)
+                samples[:, dim] * (continuous[dim].upper_bound - continuous[dim].lower_bound)
                 + continuous[dim].lower_bound
             )
 
         return samples
-
-
-if __name__ == "__main__":  # pragma: no cover
-    pass

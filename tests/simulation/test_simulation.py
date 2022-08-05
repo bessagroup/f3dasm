@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.smoke
+
 from f3dasm.base.space import ContinuousParameter, DiscreteParameter
-from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.design import DesignSpace
 from f3dasm.base.data import Data
-from f3dasm.base.simulation import Function
+from f3dasm.base.function import Function
 from f3dasm.sampling.samplers import RandomUniformSampling
 
 
@@ -66,9 +68,7 @@ def test_data_to_numpy_array_benchmarkfunction(data: Data, xsinx: Function):
     y = func.eval(input_x=data)
 
 
-def test_data_to_numpy_array_benchmarkfunction_raise_error(
-    data_discrete: Data, xsinx: Function
-):
+def test_data_to_numpy_array_benchmarkfunction_raise_error(data_discrete: Data, xsinx: Function):
     func = xsinx()
     with pytest.raises(TypeError):
         y = func.eval(input_x=data_discrete)

@@ -9,6 +9,9 @@ addopts = "--cov=f3dasm"
 testpaths = [
     "tests",
 ]
+markers = [
+    "smoke"
+]
 
 [tool.mypy]
 mypy_path = "f3dasm"

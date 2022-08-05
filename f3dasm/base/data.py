@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
 import numpy as np
-
 import pandas as pd
 import matplotlib.pyplot as plt
+from dataclasses import dataclass, field
 
-from f3dasm.base.designofexperiments import DesignSpace
+from ..base.design import DesignSpace
 
 
 @dataclass
@@ -21,6 +20,9 @@ class Data:
     def __post_init__(self):
         self.data = self.designspace.get_empty_dataframe()
 
+    def reset_data(self) -> None:
+        self.__post_init__()
+
     def show(self) -> None:
         print(self.data)
         return
@@ -35,14 +37,8 @@ class Data:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self.data = self.data.astype(
-            self.designspace.cast_types_dataframe(self.designspace.input_space, "input")
-        )
-        self.data = self.data.astype(
-            self.designspace.cast_types_dataframe(
-                self.designspace.output_space, "output"
-            )
-        )
+        self.data = self.data.astype(self.designspace.cast_types_dataframe(self.designspace.input_space, "input"))
+        self.data = self.data.astype(self.designspace.cast_types_dataframe(self.designspace.output_space, "output"))
 
     def add_output(self, output: np.ndarray, label: str) -> None:
         self.data[("output", label)] = output
@@ -58,19 +54,15 @@ class Data:
         return self.data["output"]
 
     def get_n_best_output_samples(self, nosamples: int) -> pd.DataFrame:
-        return self.data.nsmallest(
-            n=nosamples, columns=self.designspace.get_output_names()
-        )
+        return self.data.nsmallest(n=nosamples, columns=self.designspace.get_output_names())
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
-        return self.get_n_best_output_samples(nosamples)['input'].to_numpy()
+        return self.get_n_best_output_samples(nosamples)["input"].to_numpy()
 
     def get_number_of_datapoints(self) -> int:
         return len(self.data)
 
-    def plot(
-        self, input_par1: str, input_par2: str = None, output_par: str = None
-    ) -> None:
+    def plot(self, input_par1: str, input_par2: str = None, output_par: str = None) -> None:
         """Plot the data of two parameters in a figure
 
         Args:
@@ -80,9 +72,7 @@ class Data:
         """
         fig, ax = plt.figure(), plt.axes()
 
-        ax.scatter(
-            self.data[("input", input_par1)], self.data[("input", input_par2)], s=3
-        )
+        ax.scatter(self.data[("input", input_par1)], self.data[("input", input_par2)], s=3)
 
         ax.set_xlabel(input_par1)
         ax.set_ylabel(input_par2)

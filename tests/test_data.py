@@ -1,6 +1,9 @@
 import pytest
+
+pytestmark = pytest.mark.smoke
+
 from f3dasm.base.data import Data
-from f3dasm.base.designofexperiments import DesignSpace
+from f3dasm.base.design import DesignSpace
 from f3dasm.base.space import (
     CategoricalParameter,
     ContinuousParameter,

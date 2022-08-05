@@ -1,16 +1,14 @@
 import numpy as np
 from SALib.sample import latin, sobol_sequence
 
-from f3dasm.base.designofexperiments import DesignSpace
-from f3dasm.base.samplingmethod import SamplingInterface
+from ..base.design import DesignSpace
+from ..base.samplingmethod import SamplingInterface
 
 
 class LatinHypercubeSampling(SamplingInterface):
     """Sampling via Latin Hypercube Sampling"""
 
-    def sample_continuous(
-        self, numsamples: int, designspace: DesignSpace
-    ) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, designspace: DesignSpace) -> np.ndarray:
         continuous = designspace.get_continuous_parameters()
         problem = {
             "num_vars": len(continuous),
@@ -25,9 +23,7 @@ class LatinHypercubeSampling(SamplingInterface):
 class RandomUniformSampling(SamplingInterface):
     """Sampling via random uniform sampling"""
 
-    def sample_continuous(
-        self, numsamples: int, designspace: DesignSpace
-    ) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, designspace: DesignSpace) -> np.ndarray:
         continuous = designspace.get_continuous_parameters()
         dimensions = len(continuous)
 
@@ -41,9 +37,7 @@ class RandomUniformSampling(SamplingInterface):
 class SobolSequenceSampling(SamplingInterface):
     """Sampling via Sobol Sequencing with SALib"""
 
-    def sample_continuous(
-        self, numsamples: int, designspace: DesignSpace
-    ) -> np.ndarray:
+    def sample_continuous(self, numsamples: int, designspace: DesignSpace) -> np.ndarray:
         continuous = designspace.get_continuous_parameters()
         dimensions = len(continuous)
 

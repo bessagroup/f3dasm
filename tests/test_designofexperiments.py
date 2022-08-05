@@ -1,6 +1,9 @@
 import pandas as pd
 import pytest
-from f3dasm.base.designofexperiments import DesignSpace
+
+pytestmark = pytest.mark.smoke
+
+from f3dasm.base.design import DesignSpace
 from f3dasm.base.space import (
     CategoricalParameter,
     ContinuousParameter,
@@ -162,9 +165,7 @@ def test_cast_types_dataframe_input(doe: DesignSpace):
         ("output", "y2"): "float",
     }
 
-    assert (
-        doe.cast_types_dataframe(space=doe.output_space, label="output") == ground_truth
-    )
+    assert doe.cast_types_dataframe(space=doe.output_space, label="output") == ground_truth
 
 
 def test_cast_types_dataframe_output(doe: DesignSpace):
@@ -176,9 +177,7 @@ def test_cast_types_dataframe_output(doe: DesignSpace):
         ("input", "x5"): "int",
     }
 
-    assert (
-        doe.cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
-    )
+    assert doe.cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
 
 
 if __name__ == "__main__":  # pragma: no cover

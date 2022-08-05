@@ -1,7 +1,12 @@
+from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
-from f3dasm.base.data import Data
-from f3dasm.base.simulation import Function
+
+import numpy as np
+
+from ..base.data import Data
+from ..base.function import Function
+
 
 @dataclass
 class Optimizer:
@@ -16,7 +21,7 @@ class Optimizer:
 
     data: Data
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
-    seed: int or None = None
+    seed: int = np.random.randint(low=0, high=1e5)
     defaults: Optional[Mapping[str, Any]] = field(default_factory=dict)
     algorithm: Any = field(init=False)
 
@@ -40,6 +45,11 @@ class Optimizer:
 
     def set_hyperparameters(self) -> None:
         updated_defaults = self.defaults.copy()
+
+        # Check if population argument is present
+        if "population" not in updated_defaults:
+            updated_defaults["population"] = 1
+
         updated_defaults.update(self.hyperparameters)
         self.hyperparameters = updated_defaults
 
@@ -47,13 +57,11 @@ class Optimizer:
         pass
 
     def update_step(self, function: Function) -> None:
-        raise NotImplementedError(
-            "You should implement an update step for your algorithm!"
-        )
+        raise NotImplementedError("You should implement an update step for your algorithm!")
 
     def iterate(self, iterations: int, function: Function) -> None:
         for _ in range(iterations):
             self.update_step(function=function)
 
     def extract_data(self) -> Data:
-        return self.data
+        return copy(self.data)
