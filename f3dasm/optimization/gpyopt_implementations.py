@@ -56,10 +56,10 @@ class BayesianOptimization(Optimizer):
 
     def update_step(self, function: Function) -> None:
 
-        self.algorithm.objective = GPyOpt.core.task.SingleObjective(function.eval)
+        self.algorithm.objective = GPyOpt.core.task.SingleObjective(function.__call__)
         self.algorithm.X = self.data.get_input_data().to_numpy()
         self.algorithm.Y = self.data.get_output_data().to_numpy()
 
         x_new = self.algorithm.suggest_next_locations()
 
-        self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function.__call__(x_new))

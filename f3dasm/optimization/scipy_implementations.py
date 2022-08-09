@@ -6,7 +6,7 @@ from ..base.function import Function
 
 
 class SciPyGlobalOptimizer(Optimizer):
-    def c(self, xk: np.ndarray, convergence) -> None:
+    def _callback(self, xk: np.ndarray, convergence) -> None:
         self.x_new.append(xk.tolist())
 
     def update_step(self) -> None:
@@ -37,11 +37,11 @@ class SciPyGlobalOptimizer(Optimizer):
             repeated_last_element = np.tile(self.x_new[-1], (iterations - len(self.x_new), 1))
             self.x_new = np.r_[self.x_new, repeated_last_element]
 
-        self.data.add_numpy_arrays(input=self.x_new, output=function.eval(self.x_new))
+        self.data.add_numpy_arrays(input=self.x_new, output=function.__call__(self.x_new))
 
 
 class SciPyLocalOptimizer(Optimizer):
-    def c(self, xk: np.ndarray) -> None:
+    def _callback(self, xk: np.ndarray) -> None:
         self.x_new.append(xk.tolist())
 
     def update_step(self) -> None:
@@ -53,13 +53,13 @@ class SciPyLocalOptimizer(Optimizer):
         self.hyperparameters["maxiter"] = iterations
 
         minimize(
-            fun=lambda x: function.eval(x).item(),
+            fun=lambda x: function.__call__(x).item(),
             method=self.algorithm,
             jac=lambda x: function.dfdx(x).ravel(),
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
-            callback=self.c,
+            callback=self._callback,
             options=self.hyperparameters,
-            bounds=[(function.scale_bounds[0], function.scale_bounds[1]) for _ in range(function.dimensionality)],
+            bounds=function.scale_bounds,
             tol=0.0,
         )
 
@@ -78,7 +78,7 @@ class SciPyLocalOptimizer(Optimizer):
             repeated_last_element = np.tile(self.x_new[-1], (iterations - len(self.x_new), 1))
             self.x_new = np.r_[self.x_new, repeated_last_element]
 
-        self.data.add_numpy_arrays(input=self.x_new, output=function.eval(self.x_new))
+        self.data.add_numpy_arrays(input=self.x_new, output=function.__call__(self.x_new))
 
 
 class CG(SciPyLocalOptimizer):
@@ -132,8 +132,8 @@ class DifferentialEvolution(SciPyGlobalOptimizer):
 
     def run_algorithm(self, iterations: int, function: Function) -> None:
         differential_evolution(
-            func=lambda x: function.eval(x).item(),
-            bounds=[(function.scale_bounds[0], function.scale_bounds[1]) for _ in range(function.dimensionality)],
+            func=lambda x: function.__call__(x).item(),
+            bounds=function.scale_bounds,
             strategy=self.hyperparameters["strategy"],
             maxiter=iterations,
             popsize=self.hyperparameters["population"],
@@ -141,7 +141,7 @@ class DifferentialEvolution(SciPyGlobalOptimizer):
             mutation=self.hyperparameters["mutation"],
             recombination=self.hyperparameters["recombination"],
             seed=self.seed,
-            callback=self.c,
+            callback=self._callback,
             polish=self.hyperparameters["polish"],
             init=self.data.get_n_best_input_parameters_numpy(nosamples=self.hyperparameters["population"]),
             atol=self.hyperparameters["atol"],
@@ -163,16 +163,15 @@ class DualAnnealing(SciPyGlobalOptimizer):
             "visit": 2.62,
             "accept": -5.0,
             "no_local_search": False,
-            "population": 1,
         }
 
-    def c(self, x: np.ndarray, f: float, context: float) -> None:
+    def _callback(self, x: np.ndarray, f: float, context: float) -> None:
         self.x_new.append(x.tolist())
 
     def run_algorithm(self, iterations: int, function: Function) -> None:
         dual_annealing(
-            func=lambda x: function.eval(x).item(),
-            bounds=[(function.scale_bounds[0], function.scale_bounds[1]) for _ in range(function.dimensionality)],
+            func=lambda x: function.__call__(x).item(),
+            bounds=function.scale_bounds,
             maxiter=iterations,
             initial_temp=self.hyperparameters["initial_temp"],
             restart_temp_ratio=self.hyperparameters["restart_temp_ratio"],
@@ -181,7 +180,7 @@ class DualAnnealing(SciPyGlobalOptimizer):
             maxfun=10000000.0,
             seed=self.seed,
             no_local_search=self.hyperparameters["no_local_search"],
-            callback=self.c,
+            callback=self._callback,
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
         )
 

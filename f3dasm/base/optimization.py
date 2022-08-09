@@ -63,5 +63,10 @@ class Optimizer:
         for _ in range(iterations):
             self.update_step(function=function)
 
+    def force_bounds(self, x: np.ndarray, scale_bounds: np.ndarray) -> np.ndarray:
+        x = np.where(x < scale_bounds[:, 0], scale_bounds[:, 0], x)
+        x = np.where(x > scale_bounds[:, 1], scale_bounds[:, 1], x)
+        return x
+
     def extract_data(self) -> Data:
         return copy(self.data)

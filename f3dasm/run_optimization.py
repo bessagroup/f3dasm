@@ -20,7 +20,7 @@ def run_optimization(
     # Sample
     samples = sampler.get_samples(numsamples=optimizer.hyperparameters["population"])
 
-    samples.add_output(output=function.eval(samples), label="y")
+    samples.add_output(output=function.__call__(samples), label="y")
 
     optimizer.set_data(samples)
 

@@ -7,7 +7,7 @@ import matplotlib.colors as mcol
 import numdifftools as nd
 
 from ..base.data import Data
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..base.utils import _from_data_to_numpy_array_benchmarkfunction, _scale_vector, _descale_vector
 
 
 @dataclass
@@ -22,42 +22,59 @@ class Function(ABC):
 
     noise: bool = False
     seed: Any or int = None
-    scale_bounds: List[float] = field(default_factory=lambda: [0.0, 1.0])
     dimensionality: int = 2
-
-    # TODO: Offset is not working correctly !
+    scale_bounds: np.ndarray = np.tile([0.0, 1.0], (dimensionality, 1))
+    input_domain: np.ndarray = np.tile([0.0, 1.0], (dimensionality, 1))
 
     def __post_init__(self):
+
         if self.seed:
             self.set_seed(self.seed)
 
-        # self.offset = np.zeros(self.dimensionality)
         self.set_parameters()
-        # self.offset = self.create_offset()
+        # self.create_offset()
 
     @staticmethod
     def set_seed(seed) -> None:
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
-    # def create_offset(self) -> np.ndarray:
-    #     global_minimum_method = getattr(self, "get_global_minimum", None)
-    #     if callable(global_minimum_method):
-    #         g = self.get_global_minimum(d=self.dimensionality)[0]
-    #     else:
-    #         g = np.zeros(self.dimensionality)
+    def scale_input(self, x: np.ndarray) -> np.ndarray:
+        return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
 
-    #     offset = [
-    #         np.random.uniform(
-    #             low=self.scale_bounds[0] - g[d], high=self.scale_bounds[1] - g[d]
-    #         )
-    #         for d in range(self.dimensionality)
-    #     ]
+    def descale_input(self, x: np.ndarray) -> np.ndarray:
+        return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
 
-    #     return np.array(offset)
+    def retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
+        return self.descale_input(x)  # - self.offset.ravel()
+
+    def create_offset(self) -> np.ndarray:
+        self.offset = np.zeros(self.dimensionality)
+
+        global_minimum_method = getattr(self, "get_global_minimum", None)
+        if callable(global_minimum_method):
+            g = self.get_global_minimum(d=self.dimensionality)[0]
+
+            if g is None:
+                g = np.zeros(self.dimensionality)
+
+            if g.ndim == 2:
+                g = g[0]
+
+        else:
+            g = np.zeros(self.dimensionality)
+
+        unscaled_offset = np.atleast_2d(
+            [
+                np.random.uniform(low=self.scale_bounds[d, 0] - g[d], high=self.scale_bounds[d, 1] - g[d])
+                for d in range(self.dimensionality)
+            ]
+        )
+
+        self.offset = unscaled_offset
 
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
-        return ((self.scale_bounds[0] < x) & (x < self.scale_bounds[1])).all()
+        return ((self.scale_bounds[:, 0] < x) & (x < self.scale_bounds[:, 1])).all()
 
     def set_parameters(self):
         pass
@@ -69,13 +86,10 @@ class Function(ABC):
 
         return x
 
-    def scale_input(self, x: np.ndarray) -> np.ndarray:
-        return (self.scale_bounds[1] - self.scale_bounds[0]) * x + self.scale_bounds[0]
-
     def offset_input(self, x: np.ndarray) -> np.ndarray:
         return x + self.offset
 
-    def eval(self, input_x: np.ndarray or Data) -> np.ndarray:
+    def __call__(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
         Args:
             input_x (np.ndarray | Data object): input to be evaluated
@@ -92,9 +106,9 @@ class Function(ABC):
 
         x = self.reshape_input(x)
 
-        x = self.scale_input(x)
+        # x = x + self.offset
 
-        # x = self.offset_input(x)
+        x = self.scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -114,7 +128,7 @@ class Function(ABC):
             np.ndarray: output of the objective function with added noise
         """
         sigma = 0.2  # Hard coded amount of noise
-        y_noise = np.random.normal(loc=0.0, scale=abs(sigma * y), size=None)
+        y_noise = np.random.normal(loc=0.0, scale=abs(sigma * y), size=y.shape)
         return y + y_noise
 
     def f(self, x) -> np.ndarray:
@@ -124,7 +138,7 @@ class Function(ABC):
     def dfdx(self, x) -> np.ndarray:
         """ "Compute the gradient at a particular point in space"""
         # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
-        grad = nd.Gradient(self.eval)
+        grad = nd.Gradient(self)
         x = self.reshape_input(x)
         output = np.empty(shape=(1, len(x[0, :])))
         for i in range(len(x)):
@@ -132,7 +146,7 @@ class Function(ABC):
 
         return output[1:]  # Cut of the first one because that is the empty array input
 
-    def plot_data(self, data: Data, px: int = 300, domain: List = [0.0, 1.0]):
+    def plot_data(self, data: Data, px: int = 300, domain: np.ndarray = np.tile([0.0, 1.0], (2, 1))):
         fig, ax = self.plot(orientation="2D", px=px, domain=domain)
         x1 = data.get_input_data().iloc[:, 0]
         x2 = data.get_input_data().iloc[:, 1]
@@ -146,13 +160,14 @@ class Function(ABC):
         )
         x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
         x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=20, c="red", marker="*", edgecolors="black")
+        ax.scatter(x=x1_best, y=x2_best, s=25, c="red", marker="*", edgecolors="red")
+        return fig, ax
 
     def plot(
         self,
         orientation: str = "3D",
         px: int = 300,
-        domain: List = [0.0, 1.0],
+        domain: np.ndarray = np.tile([0.0, 1.0], (2, 1)),
         show: bool = True,
     ):  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
@@ -171,25 +186,31 @@ class Function(ABC):
         else:
             plt.ion()
 
-        x1 = np.linspace(domain[0], domain[1], num=px)
-        x2 = np.linspace(domain[0], domain[1], num=px)
+        x1 = np.linspace(domain[0, 0], domain[0, 1], num=px)
+        x2 = np.linspace(domain[1, 0], domain[1, 1], num=px)
         X1, X2 = np.meshgrid(x1, x2)
 
-        Y = np.zeros([len(X1), len(X1)])
+        Y = np.zeros([len(X1), len(X2)])
 
         for i in range(len(X1)):
             for j in range(len(X1)):
-                xy = np.array([X1[i, j], X2[i, j]])
-                Y[i, j] = self.eval(xy)
+                xy = np.array([X1[i, j], X2[i, j]] + [0.0] * (self.dimensionality - 2))
+                Y[i, j] = self(xy)
 
-        dx = dy = (domain[1] - domain[0]) / px
-        x, y = domain[0] + dx * np.arange(Y.shape[1]), domain[0] + dy * np.arange(Y.shape[0])
+        # Add absolute value of global minimum + epsilon to ensure positivity
+        if self.get_global_minimum(self.dimensionality)[1][0] < 0:
+            Y += np.abs(self.get_global_minimum(self.dimensionality)[1][0]) + 10e-6
+
+        dx = (domain[0, 1] - domain[0, 0]) / px
+        dy = (domain[1, 1] - domain[1, 0]) / px
+        x = domain[0, 0] + dx * np.arange(Y.shape[0])
+        y = domain[1, 0] + dy * np.arange(Y.shape[1])
         xv, yv = np.meshgrid(x, y)
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.Normalize())  # mcol.LogNorm()
+            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.LogNorm())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":
@@ -204,13 +225,13 @@ class Function(ABC):
                 edgecolor="none",
                 alpha=0.8,
                 cmap="viridis",
-                norm=mcol.Normalize(),  # mcol.LogNorm()
+                norm=mcol.LogNorm(),  # mcol.LogNorm()
                 zorder=1,
             )
             ax.set_zlabel("$f(X)$", fontsize=16)
 
-        ax.set_xticks(np.linspace(domain[0], domain[1], num=11))
-        ax.set_yticks(np.linspace(domain[0], domain[1], num=11))
+        ax.set_xticks(np.linspace(domain[0, 0], domain[0, 1], num=11))
+        ax.set_yticks(np.linspace(domain[1, 0], domain[1, 1], num=11))
 
         ax.set_xlabel("$X_{1}$", fontsize=16)
         ax.set_ylabel("$X_{2}$", fontsize=16)

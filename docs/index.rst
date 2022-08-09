@@ -11,8 +11,11 @@ Framework for Data-Driven Design and Analysis of Structures and Materials (F3DAS
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   
-   readme
+   :hidden:
+   :glob:
+       
+   gettingstarted
+   capabilities/*
    bmcoptimizer
    space
 

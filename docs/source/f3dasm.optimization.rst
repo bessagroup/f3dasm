@@ -4,6 +4,14 @@ f3dasm.optimization package
 Submodules
 ----------
 
+f3dasm.optimization.gpyopt\_implementations module
+--------------------------------------------------
+
+.. automodule:: f3dasm.optimization.gpyopt_implementations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.gradient\_based\_algorithms module
 ------------------------------------------------------
 
@@ -20,10 +28,10 @@ f3dasm.optimization.pygmo\_implementations module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.run\_optimization module
---------------------------------------------
+f3dasm.optimization.scipy\_implementations module
+-------------------------------------------------
 
-.. automodule:: f3dasm.optimization.run_optimization
+.. automodule:: f3dasm.optimization.scipy_implementations
    :members:
    :undoc-members:
    :show-inheritance:

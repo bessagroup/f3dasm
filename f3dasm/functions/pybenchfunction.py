@@ -12,28 +12,23 @@ class PyBenchFunction(Function):
     def is_dim_compatible(cls, d) -> bool:
         pass
 
-    def scale_input(self, x: np.ndarray) -> np.ndarray:
-        return (self.input_domain[:, 1] - self.input_domain[:, 0]) * x + self.input_domain[:, 0]
-
-    def descale_input(self, x: np.ndarray) -> np.ndarray:
-        return (x - self.input_domain[:, 0]) / (self.input_domain[:, 1] - self.input_domain[:, 0])
+    def evaluate(x: np.ndarray):
+        raise NotImplementedError("Not function implemented!")
 
     def f(self, x: np.ndarray):
         if self.is_dim_compatible(self.dimensionality):
-            return np.apply_along_axis(self, axis=1, arr=x).reshape(-1, 1)
+            return np.apply_along_axis(self.evaluate, axis=1, arr=x).reshape(-1, 1)
 
 
 class Thevenot(PyBenchFunction):
+    """.. image:: ../img/functions/Thevenot.png"""
+
     name = "Thevenot"
-    latex_formula = r"f(\mathbf{x}) = exp(-\sum_{i=1}^{d}(x_i / \beta)^{2m}) - 2exp(-\prod_{i=1}^{d}x_i^2) \prod_{i=1}^{d}cos^ 2(x_i) "
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-2\pi, 2\pi], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=-1, \text{ for}, m=5, \beta=15"
     continuous = True
     convex = True
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -55,9 +50,9 @@ class Thevenot(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.scale_input(X), self.eval(X))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
         res = res - 2 * np.exp(-np.prod(X**2)) * np.prod(np.cos(X) ** 2)
@@ -65,16 +60,14 @@ class Thevenot(PyBenchFunction):
 
 
 class Ackley(PyBenchFunction):
+    """.. image:: ../img/functions/Ackley.png"""
+
     name = "Ackley"
-    latex_formula = r"f(\mathbf{x}) = -a \cdot exp(-b\sqrt{\frac{1}{d}\sum_{i=1}^{d}x_i^2})-exp(\frac{1}{d}\sum_{i=1}^{d}cos(c \cdot x_i))+ a + exp(1)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-32, 32], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f((0, ..., 0)) = 0"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -98,9 +91,9 @@ class Ackley(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = -self.a * np.exp(-self.b * np.sqrt(np.mean(X**2)))
         res = res - np.exp(np.mean(np.cos(self.c * X))) + self.a + np.exp(1)
@@ -108,16 +101,14 @@ class Ackley(PyBenchFunction):
 
 
 class AckleyN2(PyBenchFunction):
+    """.. image:: ../img/functions/AckleyN2.png"""
+
     name = "Ackley N. 2"
-    latex_formula = r"f(x, y) = -200exp(-0.2\sqrt{x^2 + y^2)}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-32, 32], y \in [-32, 32]"
-    latex_formula_global_minimum = r"f(0, 0)=-200"
     continuous = False
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -136,27 +127,23 @@ class AckleyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -200 * np.exp(-0.2 * np.sqrt(x**2 + y**2))
         return res
 
 
 class AckleyN3(PyBenchFunction):
+    """.. image:: ../img/functions/AckleyN3.png"""
+
     name = "Ackley N. 3"
-    latex_formula = r"f(x, y) = -200exp(-0.2\sqrt{x^2 + y^2}) + 5exp(cos(3x) + sin(3y))"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-32, 32], y \in [-32, 32]"
-    latex_formula_global_minimum = (
-        r"f(x, y)\approx-195.629028238419, at$$ $$x=\pm0.682584587365898, and$$ $$ y=-0.36075325513719"
-    )
     continuous = False
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -175,9 +162,9 @@ class AckleyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0.682584587365898, -0.36075325513719])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -200 * np.exp(-0.2 * np.sqrt(x**2 + y**2))
         res += 5 * np.exp(np.cos(3 * x) + np.sin(3 * y))
@@ -185,16 +172,14 @@ class AckleyN3(PyBenchFunction):
 
 
 class AckleyN4(PyBenchFunction):
+    """.. image:: ../img/functions/AckleyN4.png"""
+
     name = "Ackley N. 4"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d-1}\left( e^{-0.2}\sqrt{x_i^2+x_{i+1}^2} + 3\left( cos(2x_i) + sin(2x_{i+1}) \right) \right)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-35, 35], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(x, y)\approx-4.590101633799122, at$$ $$x=-1.51, and$$ $$ y=-0.755"
     continuous = False
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -215,25 +200,23 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
         # WARNING ! Is only is available for d=2
         X = np.array([-1.51, -0.755])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
         res = np.sum(np.exp(-0.2) * np.sqrt(X**2 + Xp1**2) + 3 * np.cos(2 * X) + np.sin(2 * Xp1))
         return res
 
 
 class Adjiman(PyBenchFunction):
+    """.. image:: ../img/functions/Adjiman.png"""
+
     name = "Adjiman"
-    latex_formula = r"f(x, y)=cos(x)sin(y) - \frac{x}{y^2+1}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-1, 2], y \in [-1, 1]"
-    latex_formula_global_minimum = r"f(0, 0)=-2.02181"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -254,9 +237,9 @@ class Adjiman(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         x, y = X
         res = np.cos(x) * np.sin(y) - x / (y**2 + 1)
@@ -264,16 +247,14 @@ class Adjiman(PyBenchFunction):
 
 
 class Bartels(PyBenchFunction):
+    """.. image:: ../img/functions/Bartels.png"""
+
     name = "Bartels"
-    latex_formula = r"f(x,y)=|x^2 + y^2 + xy| + |sin(x)| + |cos(y)|"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-500, 500], y \in [-500, 500]"
-    latex_formula_global_minimum = r"f(0, 0)=1"
     continuous = False
     convex = False
     separable = False
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -293,25 +274,23 @@ class Bartels(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = np.abs(x**2 + y**2 + x * y) + np.abs(np.sin(x)) + np.abs(np.cos(y))
         return res
 
 
 class Beale(PyBenchFunction):
+    """.. image:: ../img/functions/Beale.png"""
+
     name = "Beale"
-    latex_formula = r"f(x, y) = (1.5-x+xy)^2+(2.25-x+xy^2)^2+(2.625-x+xy^3)^2"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-4.5, 4.5], y \in [-4.5, 4.5]"
-    latex_formula_global_minimum = r"f(3, 0.5)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -331,27 +310,23 @@ class Beale(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([3, 0.5])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) * 2
         return res
 
 
 class Bird(PyBenchFunction):
+    """.. image:: ../img/functions/Bird.png"""
+
     name = "Bird"
-    latex_formula = r"f(x, y) = sin(x)exp((1-cos(y))^2)\\+cos(y)exp((1-sin(x))^2)+(x-y)^2"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-2\pi, 2\pi], y \in [-2\pi, 2\pi]"
-    latex_formula_global_minimum = (
-        r"f(x, y)\approx-106.764537, at$$ $$(x, y)=(4.70104,3.15294), and$$ $$(x, y)=(-1.58214,-3.13024)"
-    )
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -371,9 +346,9 @@ class Bird(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[4.70104, 3.15294], [-1.58214, -3.13024]])
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = np.sin(x) * np.exp((1 - np.cos(y)) ** 2)
         res = res + np.cos(y) * np.exp((1 - np.sin(x)) ** 2) + (x - y) ** 2
@@ -381,16 +356,14 @@ class Bird(PyBenchFunction):
 
 
 class BohachevskyN1(PyBenchFunction):
+    """.. image:: ../img/functions/BohachevskyN1.png"""
+
     name = "Bohachevsky N. 1"
-    latex_formula = r"f(x, y) = x^2 + 2y^2 -0.3cos(3\pi x)-0.4cos(4\pi y)+0.7"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -410,25 +383,23 @@ class BohachevskyN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x) - 0.4 * np.cos(4 * np.pi * y) + 0.7
         return res
 
 
 class BohachevskyN2(PyBenchFunction):
+    """.. image:: ../img/functions/BohachevskyN2.png"""
+
     name = "Bohachevsky N. 2"
-    latex_formula = r"f(x, y)=x^2 + 2y^2 -0.3cos(3\pi x)cos(4\pi y)+0.3"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -448,25 +419,23 @@ class BohachevskyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x) * np.cos(4 * np.pi * y) + 0.3
         return res
 
 
 class BohachevskyN3(PyBenchFunction):
+    """.. image:: ../img/functions/BohachevskyN3.png"""
+
     name = "Bohachevsky N. 3"
-    latex_formula = r"f(x, y)=x^2 + 2y^2 -0.3cos(3\pi x + 4\pi y)cos(4\pi y)+0.3"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-50, 50], y \in [-50, 50]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -486,25 +455,23 @@ class BohachevskyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x + 4 * np.pi * y) * np.cos(4 * np.pi * y) + 0.3
         return res
 
 
 class Booth(PyBenchFunction):
+    """.. image:: ../img/functions/Booth.png"""
+
     name = "Booth"
-    latex_formula = r"f(x,y)=(x+2y-7)^2+(2x+y-5)^2"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = r"f(1, 3)=0"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -524,25 +491,23 @@ class Booth(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 3])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (x + 2 * y - 7) ** 2 + (2 * x + y - 5) ** 2
         return res
 
 
 class Branin(PyBenchFunction):
+    """.. image:: ../img/functions/Branin.png"""
+
     name = "Branin"
-    latex_formula = r"f(x,y)=a(y - bx^2 + cx - r)^2 + s(1 - t)cos(x) + s"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-5, 10], y \in [0, 15]"
-    latex_formula_global_minimum = r"f(x, y)\approx0.397887, at $$ $$(x, y)=(-\pi, 12.275),$$ $$(x, y)=(\pi, 2.275), and $$ $$(x, y)=(9.42478, 2.475) "
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -583,9 +548,9 @@ class Branin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[-np.pi, 12.275], [np.pi, 2.275], [9.42478, 2.475]])
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = self.a * (y - self.b * x**2 + self.c * x - self.r) ** 2
         res = res + self.s * (1 - self.t) * np.cos(x) + self.s
@@ -593,16 +558,14 @@ class Branin(PyBenchFunction):
 
 
 class Brent(PyBenchFunction):
+    """.. image:: ../img/functions/Brent.png"""
+
     name = "Brent"
-    latex_formula = r"f(x, y) = (x + 10)^2 + (y + 10)^2 + exp(-x^2 - y^2)"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-20, 0], y \in [-20, 0]"
-    latex_formula_global_minimum = r"f(-10, -10)=e^{-200}"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -622,25 +585,23 @@ class Brent(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, -10])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (x + 10) ** 2 + (y + 10) ** 2 + np.exp(-(x**2) - y**2)
         return res
 
 
 class Brown(PyBenchFunction):
+    """.. image:: ../img/functions/Brown.png"""
+
     name = "Brown"
-    latex_formula = r"f(\mathbf{x}) = \sum_{i=1}^{d-1}(x_i^2)^{(x_{i+1}^{2}+1)}+(x_{i+1}^2)^{(x_{i}^{2}+1)}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-1, 4], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -660,25 +621,23 @@ class Brown(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
         res = np.sum((X**2) ** (Xp1**2 + 1) + (Xp1**2) ** (X**2 + 1))
         return res
 
 
 class BukinN6(PyBenchFunction):
+    """.. image:: ../img/functions/BukinN6.png"""
+
     name = "Bukin N. 6"
-    latex_formula = r"f(x,y)=100\sqrt{|y-0.01x^2|}+0.01|x+10|"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-15, -5], y \in [-3, 3]"
-    latex_formula_global_minimum = r"f(-10, 1)=0"
     continuous = True
     convex = True
     separable = False
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -698,25 +657,23 @@ class BukinN6(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, 1])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
         return res
 
 
 class Colville(PyBenchFunction):
+    """.. image:: ../img/functions/Colville.png"""
+
     name = "Colville"
-    latex_formula = r"f(\mathbf x) = 100(x_{1}^2-x_{2})^2 + (x_{1}-1)^2 + (x_{3} -1)^2  + 90(x_{3}^2-x_{4})^2\\+10.1((x_{2} - 1)^2+ (x_{4}-1)^2) +19.8(x_{2} -1)(x_{4} -1)"
-    latex_formula_dimension = r"d=4"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, 4\rrbracket"
-    latex_formula_global_minimum = r"f(1, 1, 1, 1)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -736,9 +693,9 @@ class Colville(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1, 1, 1])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x1, x2, x3, x4 = X
         res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
         res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1) ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
@@ -746,18 +703,14 @@ class Colville(PyBenchFunction):
 
 
 class CrossInTray(PyBenchFunction):
+    """.. image:: ../img/functions/CrossInTray.png"""
+
     name = "Cross-in-Tray"
-    latex_formula = r"f(x,y)=-0.0001(|sin(x)sin(y)exp(|100-\frac{\sqrt{x^2+y^2}}{\pi}|)|+1)^{0.1}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, -10], y \in [-10, -10]"
-    latex_formula_global_minimum = (
-        r"f(x, y)\approx-2.06261218, at $$ $$x\pm1.349406685353340, and $$ $$y\pm1.349406608602084"
-    )
     continuous = True
     convex = False
     separable = False
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -784,9 +737,9 @@ class CrossInTray(PyBenchFunction):
                 [+1.349406685353340, -1.349406608602084],
             ]
         )
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (
             -0.0001
@@ -796,18 +749,14 @@ class CrossInTray(PyBenchFunction):
 
 
 class DeJongN5(PyBenchFunction):
+    """.. image:: ../img/functions/DeJongN5.png"""
+
     name = "De Jong N. 5"
-    latex_formula = (
-        r"f(x, y)= \left ( 0.002 + \sum_{i=1}^{25} \frac{1}{i+(x - a_{1, i})^6+(x - a_{2, ij})^6}  \right)^{-1}"
-    )
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-65.536, 65.536], y \in [-65.536, 65.536]"
-    latex_formula_global_minimum = r"f(-32, -32)\approx-0.998003838818649"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -832,9 +781,9 @@ class DeJongN5(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.a[0]
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (
             0.002 + np.sum([1 / ((i + 1) + (x - a1) ** 6 + (y - a2) ** 6) for i, (a1, a2) in enumerate(self.a)])
@@ -843,16 +792,14 @@ class DeJongN5(PyBenchFunction):
 
 
 class DeckkersAarts(PyBenchFunction):
+    """.. image:: ../img/functions/DeckkersAarts.png"""
+
     name = "Deckkers-Aarts"
-    latex_formula = r"f(x, y) = 10^5x^2 + y^2 -(x^2 + y^2)^2 + 10^{-5}(x^2 + y^2)^4"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-20, 20], y \in [-20, 20]"
-    latex_formula_global_minimum = r"f(0, \pm15)\approx25628.906250000004"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -872,25 +819,23 @@ class DeckkersAarts(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[0, -15], [0, 15]])
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 1e5 * x**2 + y**2 - (x**2 + y**2) + 1e-5 * (x**2 + y**2) ** 4
         return res
 
 
 class DixonPrice(PyBenchFunction):
+    """.. image:: ../img/functions/DixonPrice.png"""
+
     name = "Dixon Price"
-    latex_formula = r"f(\mathbf x) = (x_1 - 1)^2 + \sum_{i=2}^d i(2x_i^2 - x_{i-1})^2"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(\mathbf x) = 0\text{, at }x_i = 2^{-\frac{2^i-2}{2^i}}"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -910,25 +855,23 @@ class DixonPrice(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([2 ** ((-(2 ** (i)) - 2) / 2**i) for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = (X[0] - 1) ** 2 + np.sum([(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
         return res
 
 
 class DropWave(PyBenchFunction):
+    """.. image:: ../img/functions/DropWave.png"""
+
     name = "Drop-Wave"
-    latex_formula = r"f(x, y) = - \frac{1 + cos(12\sqrt{x^{2} + y^{2}})}{(0.5(x^{2} + y^{2}) + 2)}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-5.2, 5.2], y \in [-5.2, 5.2]"
-    latex_formula_global_minimum = r"f(0, 0)=-1"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -948,25 +891,23 @@ class DropWave(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -(1 + np.cos(12 * np.sqrt(x**2 + y**2))) / (0.5 * (x**2 + y**2) + 2)
         return res
 
 
 class Easom(PyBenchFunction):
+    """.. image:: ../img/functions/Easom.png"""
+
     name = "Easom"
-    latex_formula = r"f(x,y)=-cos(x)cos(y) exp(-(x - \pi)^2-(y - \pi)^2)"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(\pi, \pi)=-1"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -986,25 +927,23 @@ class Easom(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([np.pi, np.pi])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi) ** 2) - (y - np.pi) ** 2)
         return res
 
 
 class EggCrate(PyBenchFunction):
+    """.. image:: ../img/functions/EggCrate.png"""
+
     name = "Egg Crate"
-    latex_formula = r"f(x,y)=x^2 + y^2 + 25(sin^2(x) + sin^2(y))"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-5, 5], y \in [-5, 5]"
-    latex_formula_global_minimum = r"f(0, 0)=-1"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1024,25 +963,23 @@ class EggCrate(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = x**2 + y**2 + 25 * (np.sin(x) ** 2 + np.sin(y) ** 2)
         return res
 
 
 class EggHolder(PyBenchFunction):
+    """.. image:: ../img/functions/EggHolder.png"""
+
     name = "Egg Holder"
-    latex_formula = r"f(x, y) = -(y + 47) sin \left ( \sqrt{| y + 0.5y +47 |} \right ) - x sin \left ( \sqrt{| x - (y + 47)|} \right )"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-512, 512], y \in [-512, 512]"
-    latex_formula_global_minimum = r"f(512, 404.2319)=-1"
     continuous = False
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1062,25 +999,23 @@ class EggHolder(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([512, 404.2319])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -(y + 47) * np.sin(np.sqrt(np.abs(y + x / 2 + 47))) - x * np.sin(np.sqrt(np.abs(x - y - 47)))
         return res
 
 
 class Exponential(PyBenchFunction):
+    """.. image:: ../img/functions/Exponential.png"""
+
     name = "Exponential"
-    latex_formula = r"f(\mathbf{x})=-exp(-0.5\sum_{i=1}^d{x_i^2})"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-1, 1], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) = -1"
     continuous = True
     convex = True
     separable = True
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -1100,25 +1035,23 @@ class Exponential(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = -np.exp(-0.5 * np.sum(X**2))
         return res
 
 
 class GoldsteinPrice(PyBenchFunction):
+    """.. image:: ../img/functions/GoldsteinPrice.png"""
+
     name = "Goldstein-Price"
-    latex_formula = r"f(x,y)=[1 + (x + y + 1)^2(19 - 14x+3x^2- 14y + 6xy + 3y^2)]\\ \cdot [30 + (2x - 3y)^2(18 - 32x + 12x^2 + 4y - 36xy + 27y^2)]"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-2, 2], y \in [-2, 2]"
-    latex_formula_global_minimum = r"f(0, -1)=3"
     continuous = False
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1138,9 +1071,9 @@ class GoldsteinPrice(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, -1])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
         res *= 30 + (2 * x - 3 * y) ** 2 * (18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
@@ -1148,18 +1081,14 @@ class GoldsteinPrice(PyBenchFunction):
 
 
 class Griewank(PyBenchFunction):
+    """.. image:: ../img/functions/Griewank.png"""
+
     name = "Griewank"
-    latex_formula = (
-        r"f(\mathbf{x}) = 1 + \sum_{i=1}^{d} \frac{x_i^{2}}{4000} - \prod_{i=1}^{d}cos(\frac{x_i}{\sqrt{i}})"
-    )
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-600, 600], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) = 0"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -1179,9 +1108,9 @@ class Griewank(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = 1 + np.sum(X**2 / 4000) - np.prod(np.cos(X / np.sqrt(i)))
@@ -1189,16 +1118,13 @@ class Griewank(PyBenchFunction):
 
 
 class HappyCat(PyBenchFunction):
+    """.. image:: ../img/functions/HappyCat.png"""
     name = "Happy Cat"
-    latex_formula = r"f(\mathbf{x})=\left[\left(||\mathbf{x}||^2 - d\right)^2\right]^\alpha + \frac{1}{d}\left(\frac{1}{2}||\mathbf{x}||^2+\sum_{i=1}^{d}x_i\right)+\frac{1}{2}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-2, 2], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(-1, ..., -1) = 0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -1219,9 +1145,9 @@ class HappyCat(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-1 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         norm = np.sum(X**2)
         res = ((norm - d) ** 2) ** self.alpha + (1 / d) * (0.5 * norm + np.sum(X)) + 0.5
@@ -1229,18 +1155,13 @@ class HappyCat(PyBenchFunction):
 
 
 class Himmelblau(PyBenchFunction):
+    """.. image:: ../img/functions/Himmelblau.png"""
     name = "Himmelblau"
-    latex_formula = r"f(x, y) = (x^{2} + y - 11)^{2} + (x + y^{2} - 7)^{2}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-6, 6], y \in [-6, 6]"
-    latex_formula_global_minimum = (
-        r"f(3,2)=0$$$$f(-2.805118,3.283186)\approx0$$$$f(-3.779310,-3.283186)\approx0$$$$f(3.584458,-1.848126)\approx0"
-    )
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1267,25 +1188,22 @@ class Himmelblau(PyBenchFunction):
                 [3.584458, -1.848126],
             ]
         )
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (x**2 + y - 11) ** 2 + (x + y**2 - 7) ** 2
         return res
 
 
 class HolderTable(PyBenchFunction):
+    """.. image:: ../img/functions/HolderTable.png"""
     name = "Holder-Table"
-    latex_formula = r"f(x,y)=-|sin(x)cos(y)exp(|1-\frac{\sqrt{x^2+y^2}}{\pi}|)|"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = r"f(\pm8.05502, \pm9.66459)\approx-19.2085"
     continuous = True
     convex = False
     separable = False
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1312,27 +1230,22 @@ class HolderTable(PyBenchFunction):
                 [8.05502, -9.66459],
             ]
         )
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -np.abs(np.sin(x) * np.cos(y) * np.exp(np.abs(1 - np.sqrt(x**2 + y**2) / np.pi)))
         return res
 
 
 class Keane(PyBenchFunction):
+    """.. image:: ../img/functions/Keane.png"""
     name = "Keane"
-    latex_formula = r"f(x,y)=-\frac{\sin^2(x-y)\sin^2(x+y)}{\sqrt{x^2+y^2}}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = (
-        r"f(1.393249070031784,0)\approx0.673667521146855 $$$$f(0,1.393249070031784)\approx0.673667521146855"
-    )
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1352,25 +1265,22 @@ class Keane(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[1.393249070031784, 0], [0, 1.393249070031784]])
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = -(np.sin(x - y) ** 2 * np.sin(x + y) ** 2) / np.sqrt(x**2 + y**2)
         return res
 
 
 class Langermann(PyBenchFunction):
+    """.. image:: ../img/functions/Langermann.png"""
     name = "Langermann"
-    latex_formula = r"f(\mathbf x) = \sum_{i=1}^{m}c_iexp\left( -\frac{1}{\pi}\sum_{j=1}^{d}(x_j - A_{ij})^2\right)cos\left( \pi\sum_{j=1}^{d}(x_j - A_{ij})^2\right)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [0, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"\text{Not found...}"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -1393,9 +1303,9 @@ class Langermann(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(
             [
@@ -1409,16 +1319,13 @@ class Langermann(PyBenchFunction):
 
 
 class Leon(PyBenchFunction):
+    """.. image:: ../img/functions/Leon.png"""
     name = "Leon"
-    latex_formula = r"f(x, y) = 100(y - x^{3})^2 + (1 - x)^2"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [0, 10], y \in [0, 10]"
-    latex_formula_global_minimum = r"f(1, 1)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -1438,25 +1345,22 @@ class Leon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 100 * (y - x**3) ** 2 + (1 - x) ** 2
         return res
 
 
 class Levy(PyBenchFunction):
+    """.. image:: ../img/functions/Levy.png"""
     name = "Levy"
-    latex_formula = r"f(x, y) = sin^2(3\pi x)+(x-1)^2(1+sin^2(3\pi y))+(y-1)^2(1+sin^2(2\pi y))"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = r"f(1, 1)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1476,9 +1380,9 @@ class Levy(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         z = 1 + (X - 1) / 4
         res = (
             np.sin(np.pi * z[0]) ** 2
@@ -1489,16 +1393,13 @@ class Levy(PyBenchFunction):
 
 
 class LevyN13(PyBenchFunction):
+    """.. image:: ../img/functions/LevyN13.png"""
     name = "Levy N. 13"
-    latex_formula = r"f(x, y) = sin^2(3\pi x)+(x-1)^2(1+sin^2(3\pi y))+(y-1)^2(1+sin^2(2\pi y))"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = r"f(1, 1)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1518,9 +1419,9 @@ class LevyN13(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = (
             np.sin(3 * np.pi * x) ** 2
@@ -1531,16 +1432,13 @@ class LevyN13(PyBenchFunction):
 
 
 class Matyas(PyBenchFunction):
+    """.. image:: ../img/functions/Matyas.png"""
     name = "Matyas"
-    latex_formula = r"f(x, y)=0.26(x^2+y^2) -0.48xy"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-10, 10], y \in [-10, 10]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -1560,25 +1458,22 @@ class Matyas(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 0.26 * (x**2 + y**2) - 0.48 * x * y
         return res
 
 
 class McCormick(PyBenchFunction):
+    """.. image:: ../img/functions/McCormick.png"""
     name = "McCormick"
-    latex_formula = r"f(x, y)=sin(x + y) + (x - y) ^2 - 1.5x + 2.5 y + 1"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-1.5, 4], y \in [-3, 3]"
-    latex_formula_global_minimum = r"f(-0.547,-1.547)\approx=-1.9133"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1598,25 +1493,22 @@ class McCormick(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-0.547, -1.547])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = np.sin(x + y) + (x - y) ** 2 - 1.5 * x + 2.5 * y + 1
         return res
 
 
 class Michalewicz(PyBenchFunction):
+    """.. image:: ../img/functions/Michalewicz.png"""
     name = "Michalewicz"
-    latex_formula = r"f(\mathbf x) = - \sum_{i=1}^{d}sin(x_i)sin\left(\frac{ix_i^2}{\pi}\right)^{2m}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [0, \pi], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"\text{at $d=2$, }f(2.20, 1.57) \approx -1.8013"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -1638,9 +1530,9 @@ class Michalewicz(PyBenchFunction):
     def get_global_minimum(self, d):
         assert d == 2, "Michalewicz minimum is only given for d=2"
         X = np.array([2.20, 1.57])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = -np.sum(np.sin(X) * np.sin(i * X**2 / np.pi) ** (2 * self.m))
@@ -1648,16 +1540,13 @@ class Michalewicz(PyBenchFunction):
 
 
 class Periodic(PyBenchFunction):
+    """.. image:: ../img/functions/Periodic.png"""
     name = "Periodic"
-    latex_formula = r"f(\mathbf{x})= 1 + \sum_{i=1}^{d}{sin^2(x_i)}-0.1exp(-\sum_{i=1}^{d}x_i^2)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"\text{at $d=2$, }f(0, ..., 0) =0.9"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1677,25 +1566,22 @@ class Periodic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = 1 + np.sum(np.sin(X) ** 2) - 0.1 * np.exp(-np.sum(X**2))
         return res
 
 
 class PermZeroDBeta(PyBenchFunction):
+    """.. image:: ../img/functions/PermZeroDBeta.png"""
     name = "Perm 0, d, beta"
-    latex_formula = r"f(\bold{x}) = \sum_{i=1}^{d} \left ( \sum_{j=1}^{d}(j + \beta) \left ( x_{j}^{i} - \frac{1}{j^{i}}\right )  \right )^2"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-d, d], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f((1, \frac{1}{2}, ..., \frac{1}{d})) = 0"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = True
 
@@ -1716,9 +1602,9 @@ class PermZeroDBeta(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(
             [
@@ -1730,16 +1616,13 @@ class PermZeroDBeta(PyBenchFunction):
 
 
 class PermDBeta(PyBenchFunction):
+    """.. image:: ../img/functions/PermDBeta.png"""
     name = "Perm d, beta"
-    latex_formula = r"f(\bold{x}) = \sum_{i=1}^{d} \left ( \sum_{j=1}^{d}(j^i + \beta) \left( \left( \frac{x_{j}}{j}\right )^{i} - 1 \right )  \right )^2"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-d, d], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(1, 2, ..., d) = 0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -1760,9 +1643,9 @@ class PermDBeta(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         j = np.arange(1, d + 1)
         res = np.sum([np.sum((j**i + self.beta) * ((X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
@@ -1770,16 +1653,13 @@ class PermDBeta(PyBenchFunction):
 
 
 class Powell(PyBenchFunction):
+    """.. image:: ../img/functions/Powell.png"""
     name = "Powell"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}|x_i|^{i+1}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-1, 1], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) =0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -1799,25 +1679,22 @@ class Powell(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.abs(X) ** np.arange(2, d + 2))
         return res
 
 
 class Qing(PyBenchFunction):
+    """.. image:: ../img/functions/Qing.png"""
     name = "Qing"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}(x^2-i)^2"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-500, 500], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(\pmi, ..., \pmi) =0"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1842,9 +1719,9 @@ class Qing(PyBenchFunction):
             neg = X.copy()
             neg[:, i] *= -1
             X = np.vstack((X, neg))
-        return (X, [self(x) for x in X])
+        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         X1 = np.power(X, 2)
 
@@ -1855,16 +1732,13 @@ class Qing(PyBenchFunction):
 
 
 class Quartic(PyBenchFunction):
+    """.. image:: ../img/functions/Quartic.png"""
     name = "Quartic"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{n}ix_i^4+\text{random}[0,1)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-1.28, 1.28], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) = 0 + \text{random noise}"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = True
     parametric = False
 
@@ -1884,25 +1758,22 @@ class Quartic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.arange(1, d + 1) * X**4) + np.random.random()
         return res
 
 
 class Rastrigin(PyBenchFunction):
+    """.. image:: ../img/functions/Rastrigin.png"""
     name = "Rastrigin"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}(x_i^2 - 10cos(2\pi x_i))"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5.12, 5.12], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) = 0"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -1922,25 +1793,22 @@ class Rastrigin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = 10 * d + np.sum(X**2 - 10 * np.cos(2 * np.pi * X))
         return res
 
 
 class Ridge(PyBenchFunction):
+    """.. image:: ../img/functions/Ridge.png"""
     name = "Ridge"
-    latex_formula = r"f(\mathbf{x})=x_1 + \beta\left(\sum_{i=2}^{d}x_i^2\right)^\alpha"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5, 5], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"\text{On the hypercube } [-\gamma, \gamma]^d,$$$$ f(-\gamma, 0, 0..., 0)=-\gamma "
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = True
 
@@ -1963,25 +1831,22 @@ class Ridge(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         X[0] = self.input_domain[0, 0]
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = X[0] + self.beta * np.sum(X[1:] ** 2) ** self.alpha
         return res
 
 
 class Rosenbrock(PyBenchFunction):
+    """.. image:: ../img/functions/Rosenbrock.png"""
     name = "Rosenbrock"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d-1}[b (x_{i+1} - x_i^2)^ 2 + (a - x_i)^2]"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(1, ..., 1)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -2003,25 +1868,22 @@ class Rosenbrock(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (self.a - X[:-1]) ** 2))
         return res
 
 
 class RotatedHyperEllipsoid(PyBenchFunction):
+    """.. image:: ../img/functions/RotatedHyperEllipsoid.png"""
     name = "Rotated Hyper-Ellipsoid"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}\sum_{j=1}^{i}x_j^2"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-65.536, 65.536], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2043,25 +1905,22 @@ class RotatedHyperEllipsoid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum([np.sum(X[: i + 1] ** 2) for i in range(d)])
         return res
 
 
 class Salomon(PyBenchFunction):
+    """.. image:: ../img/functions/Salomon.png"""
     name = "Salomon"
-    latex_formula = r"f(\mathbf{x})=1-cos(2\pi\sqrt{\sum_{i=1}^{d}x_i^2})+0.1\sqrt{\sum_{i=1}^{d}x_i^2}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-100, 100], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2083,9 +1942,9 @@ class Salomon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(X**2)))
         res = res + 0.1 * np.sqrt(np.sum(X**2))
@@ -2093,16 +1952,13 @@ class Salomon(PyBenchFunction):
 
 
 class SchaffelN1(PyBenchFunction):
+    """.. image:: ../img/functions/SchaffelN1.png"""
     name = "Schaffel N. 1"
-    latex_formula = r"f(x, y)=0.5 + \frac{sin^2(x^2+y^2)^2-0.5}{(1+0.001(x^2+y^2))^2}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2122,25 +1978,22 @@ class SchaffelN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 0.5 + (np.sin((x**2 + y**2) ** 2) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
 class SchaffelN2(PyBenchFunction):
+    """.. image:: ../img/functions/SchaffelN2.png"""
     name = "Schaffel N. 2"
-    latex_formula = r"f(x, y)=0.5 + \frac{sin^2(x^2-y^2)-0.5}{(1+0.001(x^2+y^2))^2}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2160,25 +2013,22 @@ class SchaffelN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 0.5 + (np.sin((x**2 + y**2)) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
 class SchaffelN3(PyBenchFunction):
+    """.. image:: ../img/functions/SchaffelN3.png"""
     name = "Schaffel N. 3"
-    latex_formula = r"f(x, y)=0.5 + \frac{sin^2(cos(|x^2-y^2|))-0.5}{(1+0.001(x^2+y^2))^2}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0,1.253115)\approx0.00156685"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2198,25 +2048,22 @@ class SchaffelN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 0.5 + (np.sin(np.cos(np.abs(x**2 + y**2))) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
 class SchaffelN4(PyBenchFunction):
+    """.. image:: ../img/functions/SchaffelN4.png"""
     name = "Schaffel N. 4"
-    latex_formula = r"f(x, y)=0.5 + \frac{sin^2(cos(|x^2-y^2|))-0.5}{(1+0.001(x^2+y^2))^2}"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-100, 100], y \in [-100, 100]"
-    latex_formula_global_minimum = r"f(0, 1.253115)\approx0.292579"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2236,25 +2083,22 @@ class SchaffelN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 0.5 + (np.cos(np.sin(np.abs(x**2 + y**2))) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
 class Schwefel(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel.png"""
     name = "Schwefel"
-    latex_formula = r"f(\mathbf{x})=418.9829d -{\sum_{i=1}^{d} x_i sin(\sqrt{|x_i|})}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-500, 500], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(420.9687, ..., 420.9687)=0"
     continuous = True
     convex = False
     separable = True
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2276,25 +2120,22 @@ class Schwefel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([420.9687 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = 418.9829 * d - np.sum(X * np.sin(np.sqrt(np.abs(X))))
         return res
 
 
 class Schwefel2_20(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel2_20.png"""
     name = "Schwefel 2.20"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^d |x_i|"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-100, 100], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2316,25 +2157,22 @@ class Schwefel2_20(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.abs(X))
         return res
 
 
 class Schwefel2_21(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel2_21.png"""
     name = "Schwefel 2.21"
-    latex_formula = r"f(\mathbf{x})=\max_{i \in \llbracket 1, d\rrbracket}|x_i| "
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-100, 100], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2356,25 +2194,22 @@ class Schwefel2_21(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.max(np.abs(X))
         return res
 
 
 class Schwefel2_22(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel2_22.png"""
     name = "Schwefel 2.22"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}|x_i|+\prod_{i=1}^{d}|x_i|"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-100, 100], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2396,25 +2231,22 @@ class Schwefel2_22(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.abs(X)) + np.prod(np.abs(X))
         return res
 
 
 class Schwefel2_23(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel2_23.png"""
     name = "Schwefel 2.23"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}x_i^{10}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2436,25 +2268,22 @@ class Schwefel2_23(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(X**10)
         return res
 
 
 class Shekel(PyBenchFunction):
+    """.. image:: ../img/functions/Shekel.png"""
     name = "Shekel"
-    latex_formula = r"f(\mathbf x) = -\sum_{i=1}^{m}\left(\sum_{j=1}^{4} (x_j - C_{ij})^2 + \beta_i\right)^{-1}"
-    latex_formula_dimension = r"d=4"
-    latex_formula_input_domain = r"x_i \in [0, 10], \forall i \in \llbracket 1, 4\rrbracket"
-    latex_formula_global_minimum = r"f(4, 4, 4, 4)= -10.1532 \text{ with default params}"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = True
 
@@ -2494,25 +2323,22 @@ class Shekel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.C[0]
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x1, x2, x3, x4 = X
         res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
         return res
 
 
 class Shubert(PyBenchFunction):
+    """.. image:: ../img/functions/Shubert.png"""
     name = "Shubert"
-    latex_formula = r"f(\mathbf{x})=\prod_{i=1}^{d}{\left(\sum_{j=1}^5{ cos((j+1)x_i+j)}\right)}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"\text{ has 18 global minima }f(\mathbf{x*})\approx-186.7309"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2533,9 +2359,11 @@ class Shubert(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        return None
+        # Global minimum from https://documentation.sas.com/doc/en/orcdc/14.2/orlsoug/orlsoug_ga_gettingstarted09.htm"
+        # X = np.array([-7.708309818, -0.800371886])
+        return (None, None)
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         for i in range(0, d):
             res = np.prod(np.sum([i * np.cos((j + 1) * X[i] + j) for j in range(1, 5 + 1)]))
@@ -2543,16 +2371,13 @@ class Shubert(PyBenchFunction):
 
 
 class ShubertN3(PyBenchFunction):
+    """.. image:: ../img/functions/ShubertN3.png"""
     name = "Shubert N. 3"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}{\sum_{j=1}^5{j sin((j+1)x_i+j)}}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(-7.4, -7.4)\approx-29.673336786222684"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2574,25 +2399,22 @@ class ShubertN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-7.4, -7.4])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.sum([j * np.sin((j + 1) * X + j) for j in range(1, 5 + 1)]))
         return res
 
 
 class ShubertN4(PyBenchFunction):
+    """.. image:: ../img/functions/ShubertN4.png"""
     name = "Shubert N. 4"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}{\sum_{j=1}^5{j cos((j+1)x_i+j)}}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(4.85, 4.85)\approx-25.720968549936323"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2614,25 +2436,22 @@ class ShubertN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([4.85, 4.85])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.sum([j * np.cos((j + 1) * X + j) for j in range(1, 5 + 1)]))
         return res
 
 
 class Sphere(PyBenchFunction):
+    """.. image:: ../img/functions/Sphere.png"""
     name = "Sphere"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d} x_i^{2}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5.12, 5.12], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = True
     convex = True
     separable = True
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2654,25 +2473,22 @@ class Sphere(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(X**2)
         return res
 
 
 class StyblinskiTank(PyBenchFunction):
+    """.. image:: ../img/functions/StyblinskiTank.png"""
     name = "Styblinski Tank"
-    latex_formula = r"f(\mathbf{x})=\frac{1}{2}\sum_{i=1}^{d} (x_i^4 -16x_i^2+5x_i)"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5, 5], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(-2.903534, ..., -2.903534)=-39.16599d"
     continuous = True
     convex = False
     separable = True
     differentiable = True
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2694,25 +2510,22 @@ class StyblinskiTank(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-2.903534 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = 0.5 * np.sum(X**4 - 16 * X**2 + 5 * X)
         return res
 
 
 class SumSquares(PyBenchFunction):
+    """.. image:: ../img/functions/SumSquares.png"""
     name = "Sum Squares"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}ix_i^{2}"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0) =0"
     continuous = True
     convex = True
     separable = True
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2732,9 +2545,9 @@ class SumSquares(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(i * X**2)
@@ -2742,16 +2555,13 @@ class SumSquares(PyBenchFunction):
 
 
 class ThreeHump(PyBenchFunction):
+    """.. image:: ../img/functions/ThreeHump.png"""
     name = "Three-Hump"
-    latex_formula = r"f(x,y)=2x^2-1.05x^4+\frac{x^6}{6}+xy+y^2"
-    latex_formula_dimension = r"d=2"
-    latex_formula_input_domain = r"x \in [-5, 5], y \in [-5, 5]"
-    latex_formula_global_minimum = r"f(0, 0)=0"
     continuous = True
     convex = False
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2771,25 +2581,22 @@ class ThreeHump(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         x, y = X
         res = 2 * x**2 - 1.05 * x**4 + x**6 * (1 / 6) + x * y + y**2
         return res
 
 
 class Trid(PyBenchFunction):
+    """.. image:: ../img/functions/Trid.png"""
     name = "Trid"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}(x_i-1)^2-\sum_{i=2}^{d}(x_i-1x_{i-1})"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-d^2, d^2], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(\mathbf{x}) =\frac{-d(d+4)(d-1)}{6}, $$$$x_i=i(d+1-i)"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -2809,25 +2616,22 @@ class Trid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([i * (d + 1 - i) for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
         return res
 
     class Wolfe(PyBenchFunction):
+        """.. image:: ../img/functions/Wolfe.png"""
         name = "Wolfe"
-        latex_formula = r"f(x, y, z) = \frac{4}{3}(x^2 + y^2 - xy)^{0.75} + z"
-        latex_formula_dimension = r"d=3"
-        latex_formula_input_domain = r"x_i \in [0, 2], \forall i \in \llbracket 1, 3\rrbracket"
-        latex_formula_global_minimum = r"f(0, 0, 0)=0"
         continuous = True
         convex = False
         separable = False
         differentiable = True
-        mutimodal = True
+        multimodal = True
         randomized_term = False
         parametric = False
 
@@ -2847,25 +2651,22 @@ class Trid(PyBenchFunction):
 
         def get_global_minimum(self, d):
             X = np.array([0, 0, 0])
-            return (self.descale_input(X), self.eval(self.descale_input(X)))
+            return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-        def __call__(self, X):
+        def evaluate(self, X):
             x, y, z = X
             res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
             return res
 
 
 class XinSheYang(PyBenchFunction):
+    """.. image:: ../img/functions/XinSheYang.png"""
     name = "Xin She Yang"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^{d}\text{random}_i[0,1)|x_i|^i"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5, 5], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0 \text{ (without random)}"
     continuous = False
     convex = False
     separable = True
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = True
     parametric = False
 
@@ -2885,9 +2686,9 @@ class XinSheYang(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         rand = np.random.random(d)
@@ -2896,16 +2697,13 @@ class XinSheYang(PyBenchFunction):
 
 
 class XinSheYangN2(PyBenchFunction):
+    """.. image:: ../img/functions/XinSheYangN2.png"""
     name = "Xin She Yang N.2"
-    latex_formula = r"f(\mathbf{x})=(\sum_{i=1}^{d}|x_i|)exp(-\sum_{i=1}^{d}sin(x_i^2))"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-2\pi, 2\pi], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=0"
     continuous = False
     convex = False
     separable = False
     differentiable = False
-    mutimodal = True
+    multimodal = True
     randomized_term = False
     parametric = False
 
@@ -2925,27 +2723,22 @@ class XinSheYangN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.abs(X)) * np.exp(-np.sum(np.sin(X**2)))
         return res
 
 
 class XinSheYangN3(PyBenchFunction):
+    """.. image:: ../img/functions/XinSheYangN3.png"""
     name = "Xin She Yang N.3"
-    latex_formula = (
-        r"f(\mathbf{x})=exp(-\sum_{i=1}^{n}(x_i / \beta)^{2m}) - 2exp(-\sum_{i=1}^{n}x_i^2) \prod_{i=1}^{n}cos^ 2(x_i)"
-    )
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-2\pi, 2\pi], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=-1, \text{ for}, m=5, \beta=15"
     continuous = True
     convex = True
     separable = False
     differentiable = True
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = True
 
@@ -2967,9 +2760,9 @@ class XinSheYangN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
         res = res - 2 * np.exp(-np.sum(X**2)) * np.prod(np.cos(X) ** 2)
@@ -2977,16 +2770,13 @@ class XinSheYangN3(PyBenchFunction):
 
 
 class XinSheYangN4(PyBenchFunction):
+    """.. image:: ../img/functions/XinSheYangN4.png"""
     name = "Xin-She Yang N.4"
-    latex_formula = r"f(\mathbf{x})=\left(\sum_{i=1}^{d}sin^2(x_i)-exp(-\sum_{i=1}^{d}x_i^2)\right)exp(-\sum_{i=1}^{d}{sin^2\sqrt{|x_i|}})"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-10, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=-2"
     continuous = True
     convex = True
     separable = False
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -3006,25 +2796,22 @@ class XinSheYangN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         res = np.sum(np.sin(X) ** 2 - np.exp(-np.sum(X) ** 2)) * np.exp(-np.sum(np.sin(np.sqrt(np.abs(X))) ** 2))
         return res
 
 
 class Zakharov(PyBenchFunction):
+    """.. image:: ../img/functions/Zakharov.png"""
     name = "Zakharov"
-    latex_formula = r"f(\mathbf{x})=\sum_{i=1}^n x_i^{2}+(\sum_{i=1}^n 0.5ix_i)^2 + (\sum_{i=1}^n 0.5ix_i)^4"
-    latex_formula_dimension = r"d \in \mathbb{N}_{+}^{*}"
-    latex_formula_input_domain = r"x_i \in [-5, 10], \forall i \in \llbracket 1, d\rrbracket"
-    latex_formula_global_minimum = r"f(0, ..., 0)=-1"
     continuous = False
     convex = False
     separable = False
     differentiable = False
-    mutimodal = False
+    multimodal = False
     randomized_term = False
     parametric = False
 
@@ -3044,9 +2831,9 @@ class Zakharov(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.descale_input(X), self.eval(self.descale_input(X)))
+        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
 
-    def __call__(self, X):
+    def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(X**2) + np.sum(0.5 * i * X) ** 2 + np.sum(0.5 * i * X) ** 4

@@ -7,19 +7,16 @@ from ..base.function import Function
 class RandomSearch(Optimizer):
     """Naive random search"""
 
-    def init_parameters(self):
-
-        # Default hyperparameters
-        self.defaults = {"population": 1}
-
     def update_step(self, function: Function) -> None:
-        x_new = np.random.uniform(
-            low=function.scale_bounds[0],
-            high=function.scale_bounds[1],
-            size=(self.hyperparameters["population"], function.dimensionality),
+
+        x_new = np.atleast_2d(
+            [
+                np.random.uniform(low=function.scale_bounds[d, 0], high=function.scale_bounds[d, 1])
+                for d in range(function.dimensionality)
+            ]
         )
 
-        self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function.__call__(x_new))
 
 
 class SGD(Optimizer):
@@ -28,7 +25,7 @@ class SGD(Optimizer):
     def init_parameters(self):
 
         # Default hyperparameters
-        self.defaults = {"step_size": 1e-2, "population": 1, "force_bounds": True}
+        self.defaults = {"learning_rate": 1e-2, "force_bounds": True}
 
     def update_step(self, function: Function) -> None:
 
@@ -36,13 +33,13 @@ class SGD(Optimizer):
 
         g = function.dfdx(x)
 
-        x_new = x - self.hyperparameters["step_size"] * g
+        x_new = x - self.hyperparameters["learning_rate"] * g
 
+        # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
-            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
+            x_new = self.force_bounds(x_new, function.scale_bounds)
 
-        self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
 
 
 class Momentum(Optimizer):
@@ -54,7 +51,6 @@ class Momentum(Optimizer):
         self.defaults = {
             "step_size": 1e-2,
             "beta": 0.9,
-            "population": 1,
             "force_bounds": True,
         }
 
@@ -70,11 +66,11 @@ class Momentum(Optimizer):
         m = self.hyperparameters["beta"] * self.m + (1 - self.hyperparameters["beta"]) * g
         x_new = x - self.hyperparameters["step_size"] * m
 
+        # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
-            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
+            x_new = self.force_bounds(x_new, function.scale_bounds)
 
-        self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
         self.m = m
 
 
@@ -89,7 +85,6 @@ class Adam(Optimizer):
             "beta_1": 0.9,
             "beta_2": 0.999,
             "epsilon": 1e-8,
-            "population": 1,
             "force_bounds": True,
         }
         # Dynamic parameters
@@ -109,11 +104,11 @@ class Adam(Optimizer):
         v_hat = v / (1 - np.power(self.hyperparameters["beta_2"], t))
         x_new = x - self.hyperparameters["step_size"] * m_hat / (np.sqrt(v_hat) + self.hyperparameters["epsilon"])
 
+        # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new[x_new < function.scale_bounds[0]] = function.scale_bounds[0]
-            x_new[x_new > function.scale_bounds[1]] = function.scale_bounds[1]
+            x_new = self.force_bounds(x_new, function.scale_bounds)
 
-        self.data.add_numpy_arrays(input=x_new, output=function.eval(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
 
         self.m = m
         self.v = v

@@ -22,7 +22,7 @@ class PygmoProblem:
 
     def fitness(self, x: np.ndarray) -> np.ndarray:
         """Pygmo representation of returning the objective value of a function"""
-        return self.func.eval(x).ravel()  # pygmo doc: should output 1D numpy array
+        return self.func.__call__(x).ravel()  # pygmo doc: should output 1D numpy array
 
     def batch_fitness(self, x: np.ndarray) -> np.ndarray:
         """Pygmo representation of returning multiple objective values of a function"""

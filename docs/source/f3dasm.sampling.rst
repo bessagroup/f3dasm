@@ -4,26 +4,10 @@ f3dasm.sampling package
 Submodules
 ----------
 
-f3dasm.sampling.latinhypercube module
--------------------------------------
+f3dasm.sampling.samplers module
+-------------------------------
 
-.. automodule:: f3dasm.sampling.latinhypercube
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.sampling.randomuniform module
-------------------------------------
-
-.. automodule:: f3dasm.sampling.randomuniform
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.sampling.sobolsequence module
-------------------------------------
-
-.. automodule:: f3dasm.sampling.sobolsequence
+.. automodule:: f3dasm.sampling.samplers
    :members:
    :undoc-members:
    :show-inheritance:
