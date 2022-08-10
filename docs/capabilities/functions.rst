@@ -1,10 +1,79 @@
 Benchmark functions
 ===================
 
-Some text about functions
+Usage
+-----
+
+
+Creating the function
+^^^^^^^^^^^^^^^^^^^^^
+
+First we make a 2-dimensional continous design space with the helper function :func:`~f3dasm.base.utils.make_nd_continuous_design`:
+
+.. code-block:: python
+
+  bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
+  design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
+
+Then we create an object of the :class:`~f3dasm.functions.pybenchfunction.Sphere` class, specifying the :attr:`~f3dasm.base.function.Function.dimensionality`:
+
+.. code-block:: python
+ 
+  sphere_function = f3dasm.functions.Sphere(dimensionality=dim, scale_bounds=bounds)
+
+Evaluating the function
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The function can be evaluated by directly calling the object
+
+.. code-block:: python
+
+  x = np.array([0.5, 0.8])
+  >>> sphere_function(x)
+  ... array([[23.330816]])
+
+Gradient
+^^^^^^^^
+
+The gradient of a function can be estimated by calling the :func:`~f3dasm.base.function.Function.dfdx` function:
+
+.. code-block:: python
+
+  >>> sphere_function.dfdx(x)
+  ... array([[26.2144 , 41.94304]])
+  
+The gradient is estimated using the numdifftools package.
+
+Plotting
+^^^^^^^^
+
+We can plot a 3D or 2D representation of the loss landscape:
+
+.. code-block:: python
+
+  sphere_function.plot(orientation="3D", domain=bounds)
+  
+img
+
+
+.. code-block:: python
+
+  sphere_function.plot(orientation="2D", domain=bounds)
+  
+img
+
+Implement your own benchmark functions
+--------------------------------------
+
+
+Implemented benchmark functions
+-------------------------------
+
+The following implementations of benchmark functions can found under the :mod:`f3dasm.functions` module.
+These are taken and modified from the `Python Benchmark Test Optimization Function Single Objective <https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective>`_ github repository.
 
 Convex functions
-----------------
+^^^^^^^^^^^^^^^^
 
 ======================== ======================================================================
 Name                      Docs of the Python class                                              
@@ -36,7 +105,7 @@ Xin-She Yang N.4         :class:`f3dasm.functions.pybenchfunction.XinSheYangN4`
 
 
 Seperable functions
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 ======================== ======================================================================
 Name                      Docs of the Python class                                              
@@ -66,7 +135,7 @@ Xin She Yang             :class:`f3dasm.functions.pybenchfunction.XinSheYang`
 
 
 Differentiable functions
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 ======================== ======================================================================
 Name                      Docs of the Python class                                              
@@ -133,7 +202,7 @@ Xin She Yang N.3         :class:`f3dasm.functions.pybenchfunction.XinSheYangN3`
 ======================== ======================================================================
 
 Multimodal functions
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 ======================== ======================================================================
 Name                      Docs of the Python class                                              
@@ -186,7 +255,7 @@ Xin She Yang N.2         :class:`f3dasm.functions.pybenchfunction.XinSheYangN2`
 
 
 Functions including a randomized term
--------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ======================== ======================================================================
 Name                      Docs of the Python class                                              

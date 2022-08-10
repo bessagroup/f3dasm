@@ -68,6 +68,11 @@ test:
 	pytest
 	@echo
 	@echo "Test finished"
+
+test-smoke:
+	pytest -v -s -m smoke
+	@echo
+	@echo "Smoke test finished"
 	
 test-html:
 	pytest --cov-report html

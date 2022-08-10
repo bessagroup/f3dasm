@@ -39,7 +39,7 @@ class Thevenot(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, m=5, beta=15):
+    def _set_parameters(self, m=5, beta=15):
         d = self.dimensionality
         self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
         self.m = m
@@ -50,7 +50,7 @@ class Thevenot(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -78,7 +78,7 @@ class Ackley(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, a=20, b=0.2, c=2 * np.pi):
+    def _set_parameters(self, a=20, b=0.2, c=2 * np.pi):
         d = self.dimensionality
         self.input_domain = np.array([[-32, 32] for _ in range(d)])
         self.a = a
@@ -91,7 +91,7 @@ class Ackley(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -119,7 +119,7 @@ class AckleyN2(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self=None):
+    def _set_parameters(self=None):
         self.input_domain = np.array([[-32, 32], [-32, 32]])
 
     def get_param(self):
@@ -127,7 +127,7 @@ class AckleyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -154,7 +154,7 @@ class AckleyN3(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self=None):
+    def _set_parameters(self=None):
         self.input_domain = np.array([[-32, 32], [-32, 32]])
 
     def get_param(self):
@@ -162,7 +162,7 @@ class AckleyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0.682584587365898, -0.36075325513719])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -190,7 +190,7 @@ class AckleyN4(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self=None):
+    def _set_parameters(self=None):
         d = self.dimensionality
         self.input_domain = np.array([[-35, 35] for _ in range(d)])
 
@@ -200,7 +200,7 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
         # WARNING ! Is only is available for d=2
         X = np.array([-1.51, -0.755])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
@@ -227,7 +227,7 @@ class Adjiman(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 2], [-1, 1]])
 
@@ -237,7 +237,7 @@ class Adjiman(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -265,7 +265,7 @@ class Bartels(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-500, 500], [-500, 500]])
 
@@ -274,7 +274,7 @@ class Bartels(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -301,7 +301,7 @@ class Beale(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-4.5, 4.5], [-4.5, 4.5]])
 
@@ -310,7 +310,7 @@ class Beale(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([3, 0.5])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -337,7 +337,7 @@ class Bird(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-2 * np.pi, 2 * np.pi], [-2 * np.pi, 2 * np.pi]])
 
@@ -346,7 +346,7 @@ class Bird(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[4.70104, 3.15294], [-1.58214, -3.13024]])
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -374,7 +374,7 @@ class BohachevskyN1(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
@@ -383,7 +383,7 @@ class BohachevskyN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -410,7 +410,7 @@ class BohachevskyN2(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
@@ -419,7 +419,7 @@ class BohachevskyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -446,7 +446,7 @@ class BohachevskyN3(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-50, 50], [-50, 50]])
 
@@ -455,7 +455,7 @@ class BohachevskyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -482,7 +482,7 @@ class Booth(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -491,7 +491,7 @@ class Booth(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 3])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -518,7 +518,7 @@ class Branin(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(
+    def _set_parameters(
         self,
         a=1,
         b=5.1 / (4 * np.pi**2),
@@ -548,7 +548,7 @@ class Branin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[-np.pi, 12.275], [np.pi, 2.275], [9.42478, 2.475]])
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -576,7 +576,7 @@ class Brent(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-20, 0], [-20, 0]])
 
@@ -585,7 +585,7 @@ class Brent(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, -10])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -612,7 +612,7 @@ class Brown(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self=None):
+    def _set_parameters(self=None):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 4] for _ in range(d)])
 
@@ -621,7 +621,7 @@ class Brown(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
@@ -648,7 +648,7 @@ class BukinN6(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-15, -5], [-3, 3]])
 
@@ -657,7 +657,7 @@ class BukinN6(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, 1])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -684,7 +684,7 @@ class Colville(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 4
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
@@ -693,7 +693,7 @@ class Colville(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1, 1, 1])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x1, x2, x3, x4 = X
@@ -721,7 +721,7 @@ class CrossInTray(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -737,7 +737,7 @@ class CrossInTray(PyBenchFunction):
                 [+1.349406685353340, -1.349406608602084],
             ]
         )
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -767,7 +767,7 @@ class DeJongN5(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self, a=None):
+    def _set_parameters(self, a=None):
         d = self.dimensionality
         self.input_domain = np.array([[-65.536, 65.536], [-65.536, 65.536]])
         if a is None:
@@ -781,7 +781,7 @@ class DeJongN5(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.a[0]
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -810,7 +810,7 @@ class DeckkersAarts(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-20, 20], [-20, 20]])
 
@@ -819,7 +819,7 @@ class DeckkersAarts(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[0, -15], [0, 15]])
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -846,7 +846,7 @@ class DixonPrice(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
@@ -855,7 +855,7 @@ class DixonPrice(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([2 ** ((-(2 ** (i)) - 2) / 2**i) for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -882,7 +882,7 @@ class DropWave(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5.2, 5.2], [-5.2, 5.2]])
 
@@ -891,7 +891,7 @@ class DropWave(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -918,7 +918,7 @@ class Easom(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
@@ -927,7 +927,7 @@ class Easom(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([np.pi, np.pi])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -954,7 +954,7 @@ class EggCrate(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
@@ -963,7 +963,7 @@ class EggCrate(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -990,7 +990,7 @@ class EggHolder(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-512, 512], [-512, 512]])
 
@@ -999,7 +999,7 @@ class EggHolder(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([512, 404.2319])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1026,7 +1026,7 @@ class Exponential(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 1] for _ in range(d)])
 
@@ -1035,7 +1035,7 @@ class Exponential(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1062,7 +1062,7 @@ class GoldsteinPrice(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-2, 2], [-2, 2]])
 
@@ -1071,7 +1071,7 @@ class GoldsteinPrice(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, -1])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1099,7 +1099,7 @@ class Griewank(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-600, 600] for _ in range(d)])
 
@@ -1108,7 +1108,7 @@ class Griewank(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1119,6 +1119,7 @@ class Griewank(PyBenchFunction):
 
 class HappyCat(PyBenchFunction):
     """.. image:: ../img/functions/HappyCat.png"""
+
     name = "Happy Cat"
     continuous = True
     convex = False
@@ -1135,7 +1136,7 @@ class HappyCat(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, alpha=0.5):
+    def _set_parameters(self, alpha=0.5):
         d = self.dimensionality
         self.input_domain = np.array([[-2, 2] for _ in range(d)])
         self.alpha = alpha
@@ -1145,7 +1146,7 @@ class HappyCat(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-1 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1156,6 +1157,7 @@ class HappyCat(PyBenchFunction):
 
 class Himmelblau(PyBenchFunction):
     """.. image:: ../img/functions/Himmelblau.png"""
+
     name = "Himmelblau"
     continuous = True
     convex = False
@@ -1172,7 +1174,7 @@ class Himmelblau(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-6, 6], [-6, 6]])
 
@@ -1188,7 +1190,7 @@ class Himmelblau(PyBenchFunction):
                 [3.584458, -1.848126],
             ]
         )
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1198,6 +1200,7 @@ class Himmelblau(PyBenchFunction):
 
 class HolderTable(PyBenchFunction):
     """.. image:: ../img/functions/HolderTable.png"""
+
     name = "Holder-Table"
     continuous = True
     convex = False
@@ -1214,7 +1217,7 @@ class HolderTable(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -1230,7 +1233,7 @@ class HolderTable(PyBenchFunction):
                 [8.05502, -9.66459],
             ]
         )
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1240,6 +1243,7 @@ class HolderTable(PyBenchFunction):
 
 class Keane(PyBenchFunction):
     """.. image:: ../img/functions/Keane.png"""
+
     name = "Keane"
     continuous = True
     convex = False
@@ -1256,7 +1260,7 @@ class Keane(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -1265,7 +1269,7 @@ class Keane(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[1.393249070031784, 0], [0, 1.393249070031784]])
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1275,6 +1279,7 @@ class Keane(PyBenchFunction):
 
 class Langermann(PyBenchFunction):
     """.. image:: ../img/functions/Langermann.png"""
+
     name = "Langermann"
     continuous = True
     convex = False
@@ -1291,7 +1296,7 @@ class Langermann(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self, m=None, c=None, A=None):
+    def _set_parameters(self, m=None, c=None, A=None):
         d = self.dimensionality
         self.input_domain = np.array([[0, 10] for _ in range(d)])
         self.m = m if m is not None else 5
@@ -1303,7 +1308,7 @@ class Langermann(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1320,6 +1325,7 @@ class Langermann(PyBenchFunction):
 
 class Leon(PyBenchFunction):
     """.. image:: ../img/functions/Leon.png"""
+
     name = "Leon"
     continuous = True
     convex = False
@@ -1336,7 +1342,7 @@ class Leon(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[0, 10], [0, 10]])
 
@@ -1345,7 +1351,7 @@ class Leon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1355,6 +1361,7 @@ class Leon(PyBenchFunction):
 
 class Levy(PyBenchFunction):
     """.. image:: ../img/functions/Levy.png"""
+
     name = "Levy"
     continuous = True
     convex = False
@@ -1371,7 +1378,7 @@ class Levy(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
@@ -1380,7 +1387,7 @@ class Levy(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         z = 1 + (X - 1) / 4
@@ -1394,6 +1401,7 @@ class Levy(PyBenchFunction):
 
 class LevyN13(PyBenchFunction):
     """.. image:: ../img/functions/LevyN13.png"""
+
     name = "Levy N. 13"
     continuous = True
     convex = False
@@ -1410,7 +1418,7 @@ class LevyN13(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -1419,7 +1427,7 @@ class LevyN13(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1433,6 +1441,7 @@ class LevyN13(PyBenchFunction):
 
 class Matyas(PyBenchFunction):
     """.. image:: ../img/functions/Matyas.png"""
+
     name = "Matyas"
     continuous = True
     convex = True
@@ -1449,7 +1458,7 @@ class Matyas(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
@@ -1458,7 +1467,7 @@ class Matyas(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1468,6 +1477,7 @@ class Matyas(PyBenchFunction):
 
 class McCormick(PyBenchFunction):
     """.. image:: ../img/functions/McCormick.png"""
+
     name = "McCormick"
     continuous = True
     convex = True
@@ -1484,7 +1494,7 @@ class McCormick(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1.5, 4], [-3, 3]])
 
@@ -1493,7 +1503,7 @@ class McCormick(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-0.547, -1.547])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1503,6 +1513,7 @@ class McCormick(PyBenchFunction):
 
 class Michalewicz(PyBenchFunction):
     """.. image:: ../img/functions/Michalewicz.png"""
+
     name = "Michalewicz"
     continuous = True
     convex = False
@@ -1519,7 +1530,7 @@ class Michalewicz(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, m=10):
+    def _set_parameters(self, m=10):
         d = self.dimensionality
         self.input_domain = np.array([[0, np.pi] for _ in range(d)])
         self.m = m
@@ -1530,7 +1541,7 @@ class Michalewicz(PyBenchFunction):
     def get_global_minimum(self, d):
         assert d == 2, "Michalewicz minimum is only given for d=2"
         X = np.array([2.20, 1.57])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1541,6 +1552,7 @@ class Michalewicz(PyBenchFunction):
 
 class Periodic(PyBenchFunction):
     """.. image:: ../img/functions/Periodic.png"""
+
     name = "Periodic"
     continuous = True
     convex = False
@@ -1557,7 +1569,7 @@ class Periodic(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
@@ -1566,7 +1578,7 @@ class Periodic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1576,6 +1588,7 @@ class Periodic(PyBenchFunction):
 
 class PermZeroDBeta(PyBenchFunction):
     """.. image:: ../img/functions/PermZeroDBeta.png"""
+
     name = "Perm 0, d, beta"
     continuous = True
     convex = True
@@ -1592,7 +1605,7 @@ class PermZeroDBeta(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, beta=10):
+    def _set_parameters(self, beta=10):
         d = self.dimensionality
         self.input_domain = np.array([[-d, d] for _ in range(d)])
         self.beta = beta
@@ -1602,7 +1615,7 @@ class PermZeroDBeta(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1617,6 +1630,7 @@ class PermZeroDBeta(PyBenchFunction):
 
 class PermDBeta(PyBenchFunction):
     """.. image:: ../img/functions/PermDBeta.png"""
+
     name = "Perm d, beta"
     continuous = True
     convex = False
@@ -1633,7 +1647,7 @@ class PermDBeta(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, beta=0.5):
+    def _set_parameters(self, beta=0.5):
         d = self.dimensionality
         self.input_domain = np.array([[-d, d] for _ in range(d)])
         self.beta = beta
@@ -1643,7 +1657,7 @@ class PermDBeta(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1654,6 +1668,7 @@ class PermDBeta(PyBenchFunction):
 
 class Powell(PyBenchFunction):
     """.. image:: ../img/functions/Powell.png"""
+
     name = "Powell"
     continuous = True
     convex = True
@@ -1670,7 +1685,7 @@ class Powell(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 1] for _ in range(d)])
 
@@ -1679,7 +1694,7 @@ class Powell(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1689,6 +1704,7 @@ class Powell(PyBenchFunction):
 
 class Qing(PyBenchFunction):
     """.. image:: ../img/functions/Qing.png"""
+
     name = "Qing"
     continuous = True
     convex = False
@@ -1705,7 +1721,7 @@ class Qing(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-500, 500] for _ in range(d)])
 
@@ -1719,7 +1735,7 @@ class Qing(PyBenchFunction):
             neg = X.copy()
             neg[:, i] *= -1
             X = np.vstack((X, neg))
-        return (self.retrieve_original_input(X), [self(x) for x in self.retrieve_original_input(X)])
+        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1733,6 +1749,7 @@ class Qing(PyBenchFunction):
 
 class Quartic(PyBenchFunction):
     """.. image:: ../img/functions/Quartic.png"""
+
     name = "Quartic"
     continuous = True
     convex = False
@@ -1749,7 +1766,7 @@ class Quartic(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1.28, 1.28] for _ in range(d)])
 
@@ -1758,7 +1775,7 @@ class Quartic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1768,6 +1785,7 @@ class Quartic(PyBenchFunction):
 
 class Rastrigin(PyBenchFunction):
     """.. image:: ../img/functions/Rastrigin.png"""
+
     name = "Rastrigin"
     continuous = True
     convex = False
@@ -1784,7 +1802,7 @@ class Rastrigin(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5.12, 5.12] for _ in range(d)])
 
@@ -1793,7 +1811,7 @@ class Rastrigin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1803,6 +1821,7 @@ class Rastrigin(PyBenchFunction):
 
 class Ridge(PyBenchFunction):
     """.. image:: ../img/functions/Ridge.png"""
+
     name = "Ridge"
     continuous = True
     convex = False
@@ -1819,7 +1838,7 @@ class Ridge(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, beta=2, alpha=0.1):
+    def _set_parameters(self, beta=2, alpha=0.1):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5] for _ in range(d)])
         self.beta = beta
@@ -1831,7 +1850,7 @@ class Ridge(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         X[0] = self.input_domain[0, 0]
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1841,6 +1860,7 @@ class Ridge(PyBenchFunction):
 
 class Rosenbrock(PyBenchFunction):
     """.. image:: ../img/functions/Rosenbrock.png"""
+
     name = "Rosenbrock"
     continuous = True
     convex = False
@@ -1857,7 +1877,7 @@ class Rosenbrock(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, a=1, b=100):
+    def _set_parameters(self, a=1, b=100):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 10] for _ in range(d)])
         self.a = a
@@ -1868,7 +1888,7 @@ class Rosenbrock(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1878,6 +1898,7 @@ class Rosenbrock(PyBenchFunction):
 
 class RotatedHyperEllipsoid(PyBenchFunction):
     """.. image:: ../img/functions/RotatedHyperEllipsoid.png"""
+
     name = "Rotated Hyper-Ellipsoid"
     continuous = True
     convex = True
@@ -1894,7 +1915,7 @@ class RotatedHyperEllipsoid(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -1905,7 +1926,7 @@ class RotatedHyperEllipsoid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1915,6 +1936,7 @@ class RotatedHyperEllipsoid(PyBenchFunction):
 
 class Salomon(PyBenchFunction):
     """.. image:: ../img/functions/Salomon.png"""
+
     name = "Salomon"
     continuous = True
     convex = False
@@ -1931,7 +1953,7 @@ class Salomon(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -1942,7 +1964,7 @@ class Salomon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1953,6 +1975,7 @@ class Salomon(PyBenchFunction):
 
 class SchaffelN1(PyBenchFunction):
     """.. image:: ../img/functions/SchaffelN1.png"""
+
     name = "Schaffel N. 1"
     continuous = True
     convex = False
@@ -1969,7 +1992,7 @@ class SchaffelN1(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
@@ -1978,7 +2001,7 @@ class SchaffelN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1988,6 +2011,7 @@ class SchaffelN1(PyBenchFunction):
 
 class SchaffelN2(PyBenchFunction):
     """.. image:: ../img/functions/SchaffelN2.png"""
+
     name = "Schaffel N. 2"
     continuous = True
     convex = False
@@ -2004,7 +2028,7 @@ class SchaffelN2(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
@@ -2013,7 +2037,7 @@ class SchaffelN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2023,6 +2047,7 @@ class SchaffelN2(PyBenchFunction):
 
 class SchaffelN3(PyBenchFunction):
     """.. image:: ../img/functions/SchaffelN3.png"""
+
     name = "Schaffel N. 3"
     continuous = True
     convex = False
@@ -2039,7 +2064,7 @@ class SchaffelN3(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
@@ -2048,7 +2073,7 @@ class SchaffelN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2058,6 +2083,7 @@ class SchaffelN3(PyBenchFunction):
 
 class SchaffelN4(PyBenchFunction):
     """.. image:: ../img/functions/SchaffelN4.png"""
+
     name = "Schaffel N. 4"
     continuous = True
     convex = False
@@ -2074,7 +2100,7 @@ class SchaffelN4(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
@@ -2083,7 +2109,7 @@ class SchaffelN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2093,6 +2119,7 @@ class SchaffelN4(PyBenchFunction):
 
 class Schwefel(PyBenchFunction):
     """.. image:: ../img/functions/Schwefel.png"""
+
     name = "Schwefel"
     continuous = True
     convex = False
@@ -2109,7 +2136,7 @@ class Schwefel(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2120,7 +2147,7 @@ class Schwefel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([420.9687 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2130,6 +2157,7 @@ class Schwefel(PyBenchFunction):
 
 class Schwefel2_20(PyBenchFunction):
     """.. image:: ../img/functions/Schwefel2_20.png"""
+
     name = "Schwefel 2.20"
     continuous = True
     convex = True
@@ -2146,7 +2174,7 @@ class Schwefel2_20(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2157,7 +2185,7 @@ class Schwefel2_20(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2167,6 +2195,7 @@ class Schwefel2_20(PyBenchFunction):
 
 class Schwefel2_21(PyBenchFunction):
     """.. image:: ../img/functions/Schwefel2_21.png"""
+
     name = "Schwefel 2.21"
     continuous = True
     convex = True
@@ -2183,7 +2212,7 @@ class Schwefel2_21(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2194,7 +2223,7 @@ class Schwefel2_21(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2204,6 +2233,7 @@ class Schwefel2_21(PyBenchFunction):
 
 class Schwefel2_22(PyBenchFunction):
     """.. image:: ../img/functions/Schwefel2_22.png"""
+
     name = "Schwefel 2.22"
     continuous = True
     convex = True
@@ -2220,7 +2250,7 @@ class Schwefel2_22(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2231,7 +2261,7 @@ class Schwefel2_22(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2241,6 +2271,7 @@ class Schwefel2_22(PyBenchFunction):
 
 class Schwefel2_23(PyBenchFunction):
     """.. image:: ../img/functions/Schwefel2_23.png"""
+
     name = "Schwefel 2.23"
     continuous = True
     convex = True
@@ -2257,7 +2288,7 @@ class Schwefel2_23(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2268,7 +2299,7 @@ class Schwefel2_23(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2278,6 +2309,7 @@ class Schwefel2_23(PyBenchFunction):
 
 class Shekel(PyBenchFunction):
     """.. image:: ../img/functions/Shekel.png"""
+
     name = "Shekel"
     continuous = True
     convex = False
@@ -2294,7 +2326,7 @@ class Shekel(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 4
 
-    def set_parameters(self, m=None, C=None, beta=None):
+    def _set_parameters(self, m=None, C=None, beta=None):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
         self.m = m if m is not None else 10
@@ -2323,7 +2355,7 @@ class Shekel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.C[0]
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x1, x2, x3, x4 = X
@@ -2333,6 +2365,7 @@ class Shekel(PyBenchFunction):
 
 class Shubert(PyBenchFunction):
     """.. image:: ../img/functions/Shubert.png"""
+
     name = "Shubert"
     continuous = True
     convex = False
@@ -2349,7 +2382,7 @@ class Shubert(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2372,6 +2405,7 @@ class Shubert(PyBenchFunction):
 
 class ShubertN3(PyBenchFunction):
     """.. image:: ../img/functions/ShubertN3.png"""
+
     name = "Shubert N. 3"
     continuous = True
     convex = False
@@ -2388,7 +2422,7 @@ class ShubertN3(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2399,7 +2433,7 @@ class ShubertN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-7.4, -7.4])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2409,6 +2443,7 @@ class ShubertN3(PyBenchFunction):
 
 class ShubertN4(PyBenchFunction):
     """.. image:: ../img/functions/ShubertN4.png"""
+
     name = "Shubert N. 4"
     continuous = True
     convex = False
@@ -2425,7 +2460,7 @@ class ShubertN4(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2436,7 +2471,7 @@ class ShubertN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([4.85, 4.85])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2446,6 +2481,7 @@ class ShubertN4(PyBenchFunction):
 
 class Sphere(PyBenchFunction):
     """.. image:: ../img/functions/Sphere.png"""
+
     name = "Sphere"
     continuous = True
     convex = True
@@ -2462,7 +2498,7 @@ class Sphere(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2473,7 +2509,7 @@ class Sphere(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2483,6 +2519,7 @@ class Sphere(PyBenchFunction):
 
 class StyblinskiTank(PyBenchFunction):
     """.. image:: ../img/functions/StyblinskiTank.png"""
+
     name = "Styblinski Tank"
     continuous = True
     convex = False
@@ -2499,7 +2536,7 @@ class StyblinskiTank(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(
+    def _set_parameters(
         self,
     ):
         d = self.dimensionality
@@ -2510,7 +2547,7 @@ class StyblinskiTank(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-2.903534 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2520,6 +2557,7 @@ class StyblinskiTank(PyBenchFunction):
 
 class SumSquares(PyBenchFunction):
     """.. image:: ../img/functions/SumSquares.png"""
+
     name = "Sum Squares"
     continuous = True
     convex = True
@@ -2536,7 +2574,7 @@ class SumSquares(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
@@ -2545,7 +2583,7 @@ class SumSquares(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2556,6 +2594,7 @@ class SumSquares(PyBenchFunction):
 
 class ThreeHump(PyBenchFunction):
     """.. image:: ../img/functions/ThreeHump.png"""
+
     name = "Three-Hump"
     continuous = True
     convex = False
@@ -2572,7 +2611,7 @@ class ThreeHump(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return d == 2
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
@@ -2581,7 +2620,7 @@ class ThreeHump(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2591,6 +2630,7 @@ class ThreeHump(PyBenchFunction):
 
 class Trid(PyBenchFunction):
     """.. image:: ../img/functions/Trid.png"""
+
     name = "Trid"
     continuous = True
     convex = True
@@ -2607,7 +2647,7 @@ class Trid(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-(d**2), d**2] for _ in range(d)])
 
@@ -2616,7 +2656,7 @@ class Trid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([i * (d + 1 - i) for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2624,43 +2664,46 @@ class Trid(PyBenchFunction):
         res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
         return res
 
-    class Wolfe(PyBenchFunction):
-        """.. image:: ../img/functions/Wolfe.png"""
-        name = "Wolfe"
-        continuous = True
-        convex = False
-        separable = False
-        differentiable = True
-        multimodal = True
-        randomized_term = False
-        parametric = False
 
-        @classmethod
-        def is_dim_compatible(cls, d):
-            assert (d is None) or (
-                isinstance(d, int) and (not d < 0)
-            ), "The dimension d must be None or a positive integer"
-            return d == 3
+class Wolfe(PyBenchFunction):
+    """.. image:: ../img/functions/Wolfe.png"""
 
-        def set_parameters(self):
-            d = self.dimensionality
-            self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
+    name = "Wolfe"
+    continuous = True
+    convex = False
+    separable = False
+    differentiable = True
+    multimodal = True
+    randomized_term = False
+    parametric = False
 
-        def get_param(self):
-            return {}
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return d == 3
 
-        def get_global_minimum(self, d):
-            X = np.array([0, 0, 0])
-            return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
 
-        def evaluate(self, X):
-            x, y, z = X
-            res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
-            return res
+    def get_param(self):
+        return {}
+
+    def get_global_minimum(self, d):
+        X = np.array([0, 0, 0])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+
+    def evaluate(self, X):
+        x, y, z = X
+        res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
+        return res
 
 
 class XinSheYang(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYang.png"""
+
     name = "Xin She Yang"
     continuous = False
     convex = False
@@ -2677,7 +2720,7 @@ class XinSheYang(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5] for _ in range(d)])
 
@@ -2686,7 +2729,7 @@ class XinSheYang(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2698,6 +2741,7 @@ class XinSheYang(PyBenchFunction):
 
 class XinSheYangN2(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN2.png"""
+
     name = "Xin She Yang N.2"
     continuous = False
     convex = False
@@ -2714,7 +2758,7 @@ class XinSheYangN2(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
 
@@ -2723,7 +2767,7 @@ class XinSheYangN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2733,6 +2777,7 @@ class XinSheYangN2(PyBenchFunction):
 
 class XinSheYangN3(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN3.png"""
+
     name = "Xin She Yang N.3"
     continuous = True
     convex = True
@@ -2749,7 +2794,7 @@ class XinSheYangN3(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self, m=5, beta=15):
+    def _set_parameters(self, m=5, beta=15):
         d = self.dimensionality
         self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
         self.m = m
@@ -2760,7 +2805,7 @@ class XinSheYangN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2771,6 +2816,7 @@ class XinSheYangN3(PyBenchFunction):
 
 class XinSheYangN4(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN4.png"""
+
     name = "Xin-She Yang N.4"
     continuous = True
     convex = True
@@ -2787,7 +2833,7 @@ class XinSheYangN4(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
@@ -2796,7 +2842,7 @@ class XinSheYangN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2806,6 +2852,7 @@ class XinSheYangN4(PyBenchFunction):
 
 class Zakharov(PyBenchFunction):
     """.. image:: ../img/functions/Zakharov.png"""
+
     name = "Zakharov"
     continuous = False
     convex = False
@@ -2822,7 +2869,7 @@ class Zakharov(PyBenchFunction):
         ), "The dimension d must be None or a positive integer"
         return (d is None) or (d > 0)
 
-    def set_parameters(self):
+    def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 10] for _ in range(d)])
 
@@ -2831,7 +2878,7 @@ class Zakharov(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self.retrieve_original_input(X), self(self.retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]

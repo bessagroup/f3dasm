@@ -24,7 +24,7 @@ def test_scaling_1(function: Function, scale_bounds_list: List[float]):
 
     x = np.random.uniform(low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
 
-    assert func.scale_input(func.descale_input(x)) == pytest.approx(x)
+    assert func._scale_input(func._descale_input(x)) == pytest.approx(x)
 
 
 @pytest.mark.parametrize("function", get_functions(d=2))
@@ -36,7 +36,7 @@ def test_scaling_2(function: Function, scale_bounds_list: List[float]):
 
     x = np.random.uniform(low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
 
-    assert func.descale_input(func.scale_input(x)) == pytest.approx(x)
+    assert func._descale_input(func._scale_input(x)) == pytest.approx(x)
 
 
 # @pytest.mark.parametrize("function", get_functions(d=2) + get_functions(d=6) + get_functions(d=3) + get_functions(d=4))

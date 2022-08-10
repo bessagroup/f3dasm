@@ -37,8 +37,8 @@ class Data:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self.data = self.data.astype(self.designspace.cast_types_dataframe(self.designspace.input_space, "input"))
-        self.data = self.data.astype(self.designspace.cast_types_dataframe(self.designspace.output_space, "output"))
+        self.data = self.data.astype(self.designspace._cast_types_dataframe(self.designspace.input_space, "input"))
+        self.data = self.data.astype(self.designspace._cast_types_dataframe(self.designspace.output_space, "output"))
 
     def add_output(self, output: np.ndarray, label: str) -> None:
         self.data[("output", label)] = output

@@ -37,7 +37,7 @@ class SGD(Optimizer):
 
         # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new = self.force_bounds(x_new, function.scale_bounds)
+            x_new = self._force_bounds(x_new, function.scale_bounds)
 
         self.data.add_numpy_arrays(input=x_new, output=function(x_new))
 
@@ -68,7 +68,7 @@ class Momentum(Optimizer):
 
         # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new = self.force_bounds(x_new, function.scale_bounds)
+            x_new = self._force_bounds(x_new, function.scale_bounds)
 
         self.data.add_numpy_arrays(input=x_new, output=function(x_new))
         self.m = m
@@ -106,7 +106,7 @@ class Adam(Optimizer):
 
         # Force bounds
         if self.hyperparameters["force_bounds"]:
-            x_new = self.force_bounds(x_new, function.scale_bounds)
+            x_new = self._force_bounds(x_new, function.scale_bounds)
 
         self.data.add_numpy_arrays(input=x_new, output=function(x_new))
 

@@ -61,7 +61,7 @@ def test_correct_discrete_sampling_1(design):
             ["test1", "material3"],
         ]
     )
-    samples = random_uniform.sample_categorical(numsamples=numsamples, doe=design)
+    samples = random_uniform._sample_categorical(numsamples=numsamples, doe=design)
 
     assert (samples == ground_truth_samples).all()
 
@@ -83,7 +83,7 @@ def test_correct_discrete_sampling_2(design2):
             ["main", "test20", "material3"],
         ]
     )
-    samples = random_uniform.sample_categorical(numsamples=numsamples, doe=design2)
+    samples = random_uniform._sample_categorical(numsamples=numsamples, doe=design2)
 
     assert (samples == ground_truth_samples).all()
 

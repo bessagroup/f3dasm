@@ -30,7 +30,7 @@ class RandomUniformSampling(SamplingInterface):
         samples = np.random.uniform(size=(numsamples, dimensions))
 
         # stretch samples
-        samples = self.stretch_samples(designspace, samples)
+        samples = self._stretch_samples(designspace, samples)
         return samples
 
 
@@ -44,5 +44,5 @@ class SobolSequenceSampling(SamplingInterface):
         samples = sobol_sequence.sample(numsamples, dimensions)
 
         # stretch samples
-        samples = self.stretch_samples(designspace, samples)
+        samples = self._stretch_samples(designspace, samples)
         return samples

@@ -29,19 +29,15 @@ class ContinuousParameter(ParameterInterface):
     type: str = field(init=False, default="float")
 
     def __post_init__(self):
-        self.check_types()
-        self.check_range()
+        self._check_types()
+        self._check_range()
 
-    def check_types(self) -> None:
+    def _check_types(self) -> None:
         """Check if the boundaries are actually floats"""
-        if not isinstance(self.lower_bound, float) or not isinstance(
-            self.upper_bound, float
-        ):
-            raise TypeError(
-                f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}"
-            )
+        if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
+            raise TypeError(f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
-    def check_range(self) -> None:
+    def _check_range(self) -> None:
         """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
@@ -64,19 +60,15 @@ class DiscreteParameter(ParameterInterface):
     type: str = field(init=False, default="int")
 
     def __post_init__(self):
-        self.check_types()
-        self.check_range()
+        self._check_types()
+        self._check_range()
 
-    def check_types(self) -> None:
+    def _check_types(self) -> None:
         """Check if the boundaries are actually ints"""
-        if not isinstance(self.lower_bound, int) or not isinstance(
-            self.upper_bound, int
-        ):
-            raise TypeError(
-                f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}"
-            )
+        if not isinstance(self.lower_bound, int) or not isinstance(self.upper_bound, int):
+            raise TypeError(f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
-    def check_range(self) -> None:
+    def _check_range(self) -> None:
         """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
@@ -97,15 +89,15 @@ class CategoricalParameter(ParameterInterface):
     type: str = field(init=False, default="category")
 
     def __post_init__(self):
-        self.check_types()
-        self.check_duplicates()
+        self._check_types()
+        self._check_duplicates()
 
-    def check_duplicates(self) -> None:
+    def _check_duplicates(self) -> None:
         """Check if there are duplicates in the categories list"""
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
-    def check_types(self) -> None:
+    def _check_types(self) -> None:
         """Check if the entries of the lists are all strings"""
 
         if not isinstance(self.categories, list):

@@ -142,7 +142,7 @@ def test_get_output_space(doe: DesignSpace):
 
 
 def test_all_input_continuous_False(doe: DesignSpace):
-    assert doe.all_input_continuous() is False
+    assert doe._all_input_continuous() is False
 
 
 def test_all_input_continuous_True():
@@ -156,7 +156,7 @@ def test_all_input_continuous_True():
 
     doe = DesignSpace(input_space=designspace, output_space=output_space)
 
-    assert doe.all_input_continuous() is True
+    assert doe._all_input_continuous() is True
 
 
 def test_cast_types_dataframe_input(doe: DesignSpace):
@@ -165,7 +165,7 @@ def test_cast_types_dataframe_input(doe: DesignSpace):
         ("output", "y2"): "float",
     }
 
-    assert doe.cast_types_dataframe(space=doe.output_space, label="output") == ground_truth
+    assert doe._cast_types_dataframe(space=doe.output_space, label="output") == ground_truth
 
 
 def test_cast_types_dataframe_output(doe: DesignSpace):
@@ -177,7 +177,7 @@ def test_cast_types_dataframe_output(doe: DesignSpace):
         ("input", "x5"): "int",
     }
 
-    assert doe.cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
+    assert doe._cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -9,14 +9,13 @@ F3DASM
 Framework for Data-Driven Design and Analysis of Structures and Materials (F3DASM)
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
    :hidden:
    :glob:
        
    gettingstarted
    capabilities/*
-   bmcoptimizer
    space
 
 Indices and tables

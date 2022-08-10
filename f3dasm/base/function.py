@@ -31,7 +31,7 @@ class Function(ABC):
         if self.seed:
             self.set_seed(self.seed)
 
-        self.set_parameters()
+        self._set_parameters()
         # self.create_offset()
 
     @staticmethod
@@ -39,16 +39,16 @@ class Function(ABC):
         """Set the seed of the random generator"""
         np.random.seed(seed)
 
-    def scale_input(self, x: np.ndarray) -> np.ndarray:
+    def _scale_input(self, x: np.ndarray) -> np.ndarray:
         return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
 
-    def descale_input(self, x: np.ndarray) -> np.ndarray:
+    def _descale_input(self, x: np.ndarray) -> np.ndarray:
         return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
 
-    def retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-        return self.descale_input(x)  # - self.offset.ravel()
+    def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
+        return self._descale_input(x)  # - self.offset.ravel()
 
-    def create_offset(self) -> np.ndarray:
+    def _create_offset(self) -> np.ndarray:
         self.offset = np.zeros(self.dimensionality)
 
         global_minimum_method = getattr(self, "get_global_minimum", None)
@@ -76,17 +76,17 @@ class Function(ABC):
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
         return ((self.scale_bounds[:, 0] < x) & (x < self.scale_bounds[:, 1])).all()
 
-    def set_parameters(self):
+    def _set_parameters(self):
         pass
 
-    def reshape_input(self, x: np.ndarray) -> np.ndarray:
+    def _reshape_input(self, x: np.ndarray) -> np.ndarray:
         x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
 
         return x
 
-    def offset_input(self, x: np.ndarray) -> np.ndarray:
+    def _offset_input(self, x: np.ndarray) -> np.ndarray:
         return x + self.offset
 
     def __call__(self, input_x: np.ndarray or Data) -> np.ndarray:
@@ -104,21 +104,21 @@ class Function(ABC):
         else:
             x = input_x
 
-        x = self.reshape_input(x)
+        x = self._reshape_input(x)
 
         # x = x + self.offset
 
-        x = self.scale_input(x)
+        x = self._scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
         # add noise
         if self.noise:
-            y = self.add_noise(y)
+            y = self._add_noise(y)
 
         return y
 
-    def add_noise(self, y: np.ndarray) -> np.ndarray:
+    def _add_noise(self, y: np.ndarray) -> np.ndarray:
         """Add Gaussian noise to the output of the function
 
         Args:
@@ -139,7 +139,7 @@ class Function(ABC):
         """ "Compute the gradient at a particular point in space"""
         # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
         grad = nd.Gradient(self)
-        x = self.reshape_input(x)
+        x = self._reshape_input(x)
         output = np.empty(shape=(1, len(x[0, :])))
         for i in range(len(x)):
             output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]

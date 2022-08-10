@@ -54,10 +54,10 @@ class SamplingInterface(ABC):
         samples_continuous = self.sample_continuous(numsamples=numsamples, designspace=self.doe)
 
         # Sample discrete parameters
-        samples_discrete = self.sample_discrete(numsamples=numsamples, doe=self.doe)
+        samples_discrete = self._sample_discrete(numsamples=numsamples, doe=self.doe)
 
         # Sample categorical parameters
-        samples_categorical = self.sample_categorical(numsamples=numsamples, doe=self.doe)
+        samples_categorical = self._sample_categorical(numsamples=numsamples, doe=self.doe)
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
 
@@ -70,10 +70,10 @@ class SamplingInterface(ABC):
         ]
 
         # df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
-        data = self.cast_to_data_object(samples=samples, columnnames=columnnames)
+        data = self._cast_to_data_object(samples=samples, columnnames=columnnames)
         return data
 
-    def cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
+    def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
         """Cast the samples to a Data object"""
         data = Data(designspace=self.doe)
 
@@ -89,7 +89,7 @@ class SamplingInterface(ABC):
 
         return data
 
-    def sample_discrete(self, numsamples: int, doe: DesignSpace):
+    def _sample_discrete(self, numsamples: int, doe: DesignSpace):
         """Sample the descrete parameters, default randomly uniform"""
         discrete = doe.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
@@ -101,7 +101,7 @@ class SamplingInterface(ABC):
 
         return samples
 
-    def sample_categorical(self, numsamples: int, doe: DesignSpace):
+    def _sample_categorical(self, numsamples: int, doe: DesignSpace):
         """Sample the categorical parameters, default randomly uniform"""
         categorical = doe.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
@@ -110,7 +110,7 @@ class SamplingInterface(ABC):
 
         return samples
 
-    def stretch_samples(self, doe: DesignSpace, samples: np.ndarray) -> np.ndarray:
+    def _stretch_samples(self, doe: DesignSpace, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
         continuous = doe.get_continuous_parameters()
         for dim, _ in enumerate(continuous):

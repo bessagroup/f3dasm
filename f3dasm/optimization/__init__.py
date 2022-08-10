@@ -1,3 +1,8 @@
+"""
+Some API information about the opitmizers
+"""
+
+
 import inspect
 from . import (
     gpyopt_implementations,
