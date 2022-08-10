@@ -27,7 +27,11 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx_rtd_theme", "sphinx.ext.napoleon", "myst_parser", "sphinxcontrib.bibtex"]
+extensions = ["sphinx_rtd_theme", "sphinx.ext.napoleon", "sphinxcontrib.bibtex"]
+
+napoleon_use_param = False
+napoleon_use_ivar = True
+
 bibtex_bibfiles= ['refs.bib']
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

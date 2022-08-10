@@ -18,6 +18,9 @@ Framework for Data-Driven Design and Analysis of Structures and Materials (F3DAS
    capabilities/*
    space
 
+.. include:: readme.rst
+
+
 Indices and tables
 ==================
 
