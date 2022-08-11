@@ -21,7 +21,7 @@ jobs:
         channel-priority: strict
         python-version: 3.8
 
-    - uses: s-weigand/setup-conda
+    - uses: s-weigand/setup-conda@v1
     - run: conda install pygmo
 
     - name: Install dependencies
