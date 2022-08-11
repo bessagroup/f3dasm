@@ -1,5 +1,4 @@
-
-name: CI
+name: CI2
 
 on:
   push:
@@ -37,7 +36,7 @@ jobs:
       with:
         name: DocumentationHTML
         path: docs/_build/html/
-        
+
     # Publish built docs to gh-pages branch.
     # ===============================
     - name: Commit documentation changes
