@@ -2404,7 +2404,7 @@ class Shubert(PyBenchFunction):
 
 
 class ShubertN3(PyBenchFunction):
-    """.. image:: ../img/functions/ShubertN3.png"""
+    # """.. image:: ../img/functions/ShubertN3.png"""
 
     name = "Shubert N. 3"
     continuous = True

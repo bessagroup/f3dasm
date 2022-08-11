@@ -12,7 +12,7 @@ Creating parameters
 
 There are three types of parameters that can be created: continous, discrete and categorical:
 
-* We can create **continous** parameters with a :attr:`~f3dasm.base.space.ContinuousParameter.lower_bound` and :attr:`f3dasm.base.space.ContinuousParameter.upper_bound` with the :class:`~f3dasm.ContinuousParameter` class
+* We can create **continous** parameters with a :attr:`~f3dasm.base.space.ContinuousParameter.lower_bound` and :attr:`~f3dasm.base.space.ContinuousParameter.upper_bound` with the :class:`~f3dasm.base.space.ContinuousParameter` class
 
 .. code-block:: python
 

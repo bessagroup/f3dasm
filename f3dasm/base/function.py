@@ -198,8 +198,11 @@ class Function(ABC):
                 Y[i, j] = self(xy)
 
         # Add absolute value of global minimum + epsilon to ensure positivity
-        if self.get_global_minimum(self.dimensionality)[1][0] < 0:
-            Y += np.abs(self.get_global_minimum(self.dimensionality)[1][0]) + 10e-6
+        # if (
+        #     self.get_global_minimum(self.dimensionality)[1][0] < 0
+        #     and self.get_global_minimum(self.dimensionality) is not None
+        # ):
+        #     Y += np.abs(self.get_global_minimum(self.dimensionality)[1][0]) + 10e-6
 
         dx = (domain[0, 1] - domain[0, 0]) / px
         dy = (domain[1, 1] - domain[1, 0]) / px
