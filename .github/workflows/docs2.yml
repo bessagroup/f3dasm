@@ -21,10 +21,12 @@ jobs:
         channel-priority: strict
         python-version: 3.8
 
+    - uses: s-weigand/setup-conda
+    - run: conda install pygmo
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        conda install pygmo
         pip install -r requirements_dev.txt
 
 
