@@ -32,7 +32,7 @@ extensions = ["sphinx_rtd_theme", "sphinx.ext.napoleon", "sphinxcontrib.bibtex"]
 napoleon_use_param = False
 napoleon_use_ivar = True
 
-bibtex_bibfiles= ['refs.bib']
+bibtex_bibfiles = ["refs.bib"]
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -174,7 +174,8 @@ htmlhelp_basename = "sampledoc"
 
 
 def setup(app):
-    app.add_stylesheet('theme_overrides.css')
+    app.add_css_file("theme_overrides.css")
+
 
 # -- Options for LaTeX output --------------------------------------------------
 
