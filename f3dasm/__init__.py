@@ -1,6 +1,6 @@
 """
 F3DASM
-=====
+======
 
 This is the initalizer of the F3DASM package
 """
