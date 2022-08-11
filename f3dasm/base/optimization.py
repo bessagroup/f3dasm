@@ -35,15 +35,23 @@ class Optimizer:
 
     @staticmethod
     def set_seed(seed: int) -> None:
+        """Set the seed of the optimizer. Needs to be inherited."""
         pass
 
     def set_data(self, data: Data) -> None:
+        """Set the data attribute
+
+        Args:
+            data (Data): Data object
+        """
         self.data = data
 
     def init_parameters(self) -> None:
+        """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
 
     def set_hyperparameters(self) -> None:
+        """Overwrite the default hyperparameters by the given ones"""
         updated_defaults = self.defaults.copy()
 
         # Check if population argument is present
@@ -54,19 +62,33 @@ class Optimizer:
         self.hyperparameters = updated_defaults
 
     def set_algorithm(self) -> None:
+        """If necessary, the algorithm needs to be set"""
         pass
 
     def update_step(self, function: Function) -> None:
+        """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
+
+        Args:
+            function (Function): Objective function to evaluate
+
+        """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
     def iterate(self, iterations: int, function: Function) -> None:
+        """Calls the update_step function multiple times.
+
+        Args:
+            iterations (int): number of iterations
+            function (Function): Objective function to evaluate
+        """
         for _ in range(iterations):
             self.update_step(function=function)
+
+    def extract_data(self) -> Data:
+        """Returns a copy of the data"""
+        return copy(self.data)
 
     def _force_bounds(self, x: np.ndarray, scale_bounds: np.ndarray) -> np.ndarray:
         x = np.where(x < scale_bounds[:, 0], scale_bounds[:, 0], x)
         x = np.where(x > scale_bounds[:, 1], scale_bounds[:, 1], x)
         return x
-
-    def extract_data(self) -> Data:
-        return copy(self.data)

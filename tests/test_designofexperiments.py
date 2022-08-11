@@ -41,30 +41,30 @@ def test_correct_doe(doe):
 def test_get_continuous_parameters(doe: DesignSpace):
     x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
     x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
-    assert doe.get_continuous_parameters() == [x1, x3]
+    assert doe.get_continuous_input_parameters() == [x1, x3]
 
 
 def test_get_discrete_parameters(doe: DesignSpace):
     x2 = DiscreteParameter(name="x2", lower_bound=5, upper_bound=80)
     x5 = DiscreteParameter(name="x5", lower_bound=2, upper_bound=3)
-    assert doe.get_discrete_parameters() == [x2, x5]
+    assert doe.get_discrete_input_parameters() == [x2, x5]
 
 
 def test_get_categorical_parameters(doe: DesignSpace):
     x4 = CategoricalParameter(name="x4", categories=["test1", "test2", "test3"])
-    assert doe.get_categorical_parameters() == [x4]
+    assert doe.get_categorical_input_parameters() == [x4]
 
 
 def test_get_continuous_names(doe: DesignSpace):
-    assert doe.get_continuous_names() == ["x1", "x3"]
+    assert doe.get_continuous_input_names() == ["x1", "x3"]
 
 
 def test_get_discrete_names(doe: DesignSpace):
-    assert doe.get_discrete_names() == ["x2", "x5"]
+    assert doe.get_discrete_input_names() == ["x2", "x5"]
 
 
 def test_get_categorical_names(doe: DesignSpace):
-    assert doe.get_categorical_names() == ["x4"]
+    assert doe.get_categorical_input_names() == ["x4"]
 
 
 def test_add_input_space():

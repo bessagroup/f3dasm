@@ -15,7 +15,7 @@ class BayesianOptimization(Optimizer):
                 "type": "continuous",
                 "domain": (parameter.lower_bound, parameter.upper_bound),
             }
-            for index, parameter in enumerate(self.data.designspace.get_continuous_parameters())
+            for index, parameter in enumerate(self.data.designspace.get_continuous_input_parameters())
         ]
 
         kernel = GPy.kern.RBF(input_dim=self.data.designspace.get_number_of_input_parameters())

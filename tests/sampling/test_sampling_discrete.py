@@ -53,7 +53,7 @@ def test_correct_discrete_sampling_1(doe1):
     numsamples = 5
 
     ground_truth_samples = np.array([[56, 5], [19, 4], [76, 5], [65, 5], [25, 5]])
-    samples = random_uniform._sample_discrete(numsamples=numsamples, doe=doe1)
+    samples = random_uniform._sample_discrete(numsamples=numsamples)
 
     assert samples == pytest.approx(ground_truth_samples)
 
@@ -75,7 +75,7 @@ def test_correct_discrete_sampling_2(doe2):
             [25, 5, 521],
         ]
     )
-    samples = random_uniform._sample_discrete(numsamples=numsamples, doe=doe2)
+    samples = random_uniform._sample_discrete(numsamples=numsamples)
     assert samples == pytest.approx(ground_truth_samples)
 
 

@@ -49,7 +49,7 @@ def test_sampling_interface_not_implemented_error():
     design = DesignSpace(space)
     new_sampler = NewSamplingStrategy(doe=design, seed=seed)
     with pytest.raises(NotImplementedError):
-        _ = new_sampler.sample_continuous(numsamples=5, designspace=design)
+        _ = new_sampler.sample_continuous(numsamples=5)
 
 
 def test_correct_sampling_ran(design: DesignSpace):

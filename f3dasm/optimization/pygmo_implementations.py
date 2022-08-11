@@ -31,8 +31,8 @@ class PygmoProblem:
     def get_bounds(self) -> tuple:
         """Box-constrained boundaries of the problem. Necessary for pygmo library"""
         return (
-            [parameter.lower_bound for parameter in self.design.get_continuous_parameters()],
-            [parameter.upper_bound for parameter in self.design.get_continuous_parameters()],
+            [parameter.lower_bound for parameter in self.design.get_continuous_input_parameters()],
+            [parameter.upper_bound for parameter in self.design.get_continuous_input_parameters()],
         )
 
     def gradient(self, x: np.ndarray):

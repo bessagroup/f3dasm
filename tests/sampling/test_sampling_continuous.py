@@ -53,7 +53,7 @@ def test_correct_randomuniform_sampling(design: DesignSpace):
             [8.97629686, 88.62917268, 1.81822728],
         ]
     )
-    samples = random_uniform.sample_continuous(numsamples=numsamples, designspace=design)
+    samples = random_uniform.sample_continuous(numsamples=numsamples)
 
     assert samples == pytest.approx(ground_truth_samples)
 
@@ -75,7 +75,7 @@ def test_correct_latinhypercube_sampling(design: DesignSpace):
             [10.03525937, 321.96583454, 4.08549412],
         ]
     )
-    samples = latin_hypercube.sample_continuous(numsamples=numsamples, designspace=design)
+    samples = latin_hypercube.sample_continuous(numsamples=numsamples)
     assert samples == pytest.approx(ground_truth_samples)
 
 
@@ -96,7 +96,7 @@ def test_correct_sobolsequence_sampling(design):
             [5.3625, 148.8625, 4.7875],
         ]
     )
-    samples = sobol_sequencing.sample_continuous(numsamples=numsamples, designspace=design)
+    samples = sobol_sequencing.sample_continuous(numsamples=numsamples)
     print(samples)
     assert samples == pytest.approx(ground_truth_samples)
 

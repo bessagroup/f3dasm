@@ -13,7 +13,7 @@ class PyBenchFunction(Function):
         pass
 
     def evaluate(x: np.ndarray):
-        raise NotImplementedError("Not function implemented!")
+        raise NotImplementedError("No function implemented!")
 
     def f(self, x: np.ndarray):
         if self.is_dim_compatible(self.dimensionality):
@@ -771,8 +771,8 @@ class DeJongN5(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-65.536, 65.536], [-65.536, 65.536]])
         if a is None:
-            l = [-32, -16, 0, 16, 32]
-            self.a = np.array([[x, y] for x in l for y in l])
+            l_parameter = [-32, -16, 0, 16, 32]
+            self.a = np.array([[x, y] for x in l_parameter for y in l_parameter])
         else:
             self.a = a
 
