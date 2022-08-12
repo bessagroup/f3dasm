@@ -5,12 +5,11 @@ Getting Started
 Install from source
 -------------------
 
-Download `Miniconda <https://docs.conda.io/en/latest/miniconda.html#linux-installers>`_ and add :code:`conda-forge` to the channels and set the priority to strict:
+Download `Miniconda <https://docs.conda.io/en/latest/miniconda.html#linux-installers>`_ and add :code:`conda-forge` to the channels:
 
 .. code-block:: console
 
   $ conda config --add channels conda-forge
-  $ conda config --set channel_priority strict
 
 Clone from the GitHub repository
 
@@ -33,7 +32,7 @@ Test if the installation was successful
   $ conda activate f3dasm_env
   $ make test-smoke
 
-If the tests pass the installation is successful!
+If the smoke tests pass the installation is successful!
 Now install the package in editable mode:
 
 .. code-block:: console
