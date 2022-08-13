@@ -45,3 +45,5 @@ You can now use :code:`import f3dasm`
 
   $ python
   >>> import f3dasm
+
+If no errors occur when importing the package, then you have succesfully installed the :code:`f3dasm` package!
