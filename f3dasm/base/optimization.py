@@ -30,7 +30,7 @@ class Optimizer:
             self.set_seed(self.seed)
 
         self.init_parameters()
-        self.set_hyperparameters()
+        self._set_hyperparameters()
         self.set_algorithm()
 
     @staticmethod
@@ -38,23 +38,15 @@ class Optimizer:
         """Set the seed of the optimizer. Needs to be inherited."""
         pass
 
-    def set_data(self, data: Data) -> None:
-        """Set the data attribute
-
-        Args:
-            data (Data): Data object
-        """
-        self.data = data
-
     def init_parameters(self) -> None:
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
 
-    def set_hyperparameters(self) -> None:
+    def _set_hyperparameters(self) -> None:
         """Overwrite the default hyperparameters by the given ones"""
         updated_defaults = self.defaults.copy()
 
-        # Check if population argument is present
+        # Check if population argument is present. Otherwise set to 1
         if "population" not in updated_defaults:
             updated_defaults["population"] = 1
 

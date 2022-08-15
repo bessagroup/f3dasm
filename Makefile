@@ -74,6 +74,13 @@ test-smoke:
 	@echo
 	@echo "Smoke test finished"
 	
+test-smoke-html:
+	pytest -v -s -m smoke --cov-report html
+	@echo
+	@echo "Smoke test finished. The coverage report HTML pages are in ./htmlcov/index.html"
+	xdg-open ./htmlcov/index.html
+	
+
 test-html:
 	pytest --cov-report html
 	@echo

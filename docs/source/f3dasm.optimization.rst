@@ -28,6 +28,14 @@ f3dasm.optimization.pygmo\_implementations module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.randomsearch module
+---------------------------------------
+
+.. automodule:: f3dasm.optimization.randomsearch
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.scipy\_implementations module
 -------------------------------------------------
 
