@@ -54,5 +54,5 @@ Name                      Docs of the Python class                              
 Adam                     :class:`f3dasm.optimization.gradient_based_algorithms.Adam`            self implemented
 Momentum                 :class:`f3dasm.optimization.gradient_based_algorithms.Momentum`        self implemented
 SGD                      :class:`f3dasm.optimization.gradient_based_algorithms.SGD`             self implemented
-RandomSearch             :class:`f3dasm.optimization.gradient_based_algorithms.RandomSearch`    self implemented
+RandomSearch             :class:`f3dasm.optimization.randomsearch.RandomSearch`                 self implemented
 ======================== ====================================================================== ==================
