@@ -45,6 +45,16 @@ LBFGSB                   :class:`f3dasm.optimization.scipy_implementations.LBFGS
 NelderMead               :class:`f3dasm.optimization.scipy_implementations.NelderMead`             `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
 ======================== ========================================================================= ===============================================================================================
 
+
+GPyOpt Implementations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+======================== ========================================================================= ======================================================
+Name                      Docs of the Python class                                                 Reference
+======================== ========================================================================= ======================================================
+Bayesian Optimization    :class:`f3dasm.optimization.gpyopt_implementations.BayesianOptimization`  `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_
+======================== ========================================================================= ======================================================
+
 Self implemented optimizers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
