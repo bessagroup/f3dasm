@@ -55,23 +55,11 @@ def run_multiple_realizations(
     ]
 
     with Pool() as pool:
-        results = pool.starmap(run_optimization, args)
-
-    # Create a random seed
-    # seed = np.random.randint(low=0, high=1e5)
-    # all_data = []
-
-    # for _ in range(realizations):
-    #     data = run_optimization(
-    #         optimizer=optimizer, function=function, sampler=sampler, iterations=iterations, seed=seed
-    #     )
-    #     all_data.append(data)
-
-    #     # Increase seed
-    #     seed += 1
+        results = pool.starmap(run_optimization, args)  # maybe implement pool.starmap_async ?
 
     # end_t = time.perf_counter()
 
     # total_duration = end_t - start_t
     # print(f"Optimization took {total_duration:.2f}s total")
+
     return results
