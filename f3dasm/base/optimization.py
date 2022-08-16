@@ -38,6 +38,9 @@ class Optimizer:
         """Set the seed of the optimizer. Needs to be inherited."""
         pass
 
+    def set_data(self, data: Data) -> None:
+        self.data = data
+
     def init_parameters(self) -> None:
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
