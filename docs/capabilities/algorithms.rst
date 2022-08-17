@@ -45,6 +45,16 @@ LBFGSB                   :class:`f3dasm.optimization.scipy_implementations.LBFGS
 NelderMead               :class:`f3dasm.optimization.scipy_implementations.NelderMead`             `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
 ======================== ========================================================================= ===============================================================================================
 
+
+GPyOpt Implementations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+======================== ========================================================================= ======================================================
+Name                      Docs of the Python class                                                 Reference
+======================== ========================================================================= ======================================================
+Bayesian Optimization    :class:`f3dasm.optimization.gpyopt_implementations.BayesianOptimization`  `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_
+======================== ========================================================================= ======================================================
+
 Self implemented optimizers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -54,5 +64,5 @@ Name                      Docs of the Python class                              
 Adam                     :class:`f3dasm.optimization.gradient_based_algorithms.Adam`            self implemented
 Momentum                 :class:`f3dasm.optimization.gradient_based_algorithms.Momentum`        self implemented
 SGD                      :class:`f3dasm.optimization.gradient_based_algorithms.SGD`             self implemented
-RandomSearch             :class:`f3dasm.optimization.gradient_based_algorithms.RandomSearch`    self implemented
+RandomSearch             :class:`f3dasm.optimization.randomsearch.RandomSearch`                 self implemented
 ======================== ====================================================================== ==================

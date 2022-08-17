@@ -49,7 +49,7 @@ class Momentum(Optimizer):
 
         # Default hyperparameters
         self.defaults = {
-            "step_size": 1e-2,
+            "learning_rate": 1e-2,
             "beta": 0.9,
             "force_bounds": True,
         }
@@ -64,14 +64,16 @@ class Momentum(Optimizer):
         g = function.dfdx(x)
 
         m = self.hyperparameters["beta"] * self.m + (1 - self.hyperparameters["beta"]) * g
-        x_new = x - self.hyperparameters["step_size"] * m
+        x_new = x - self.hyperparameters["learning_rate"] * m
 
         # Force bounds
         if self.hyperparameters["force_bounds"]:
             x_new = self._force_bounds(x_new, function.scale_bounds)
 
-        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
+        # Update dynamic parameters
         self.m = m
+
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
 
 
 class Adam(Optimizer):
@@ -81,12 +83,13 @@ class Adam(Optimizer):
 
         # Default hyperparameters
         self.defaults = {
-            "step_size": 1e-2,
+            "learning_rate": 1e-2,
             "beta_1": 0.9,
             "beta_2": 0.999,
             "epsilon": 1e-8,
             "force_bounds": True,
         }
+
         # Dynamic parameters
         self.m = 0
         self.v = 0
@@ -102,13 +105,14 @@ class Adam(Optimizer):
 
         m_hat = m / (1 - np.power(self.hyperparameters["beta_1"], t))
         v_hat = v / (1 - np.power(self.hyperparameters["beta_2"], t))
-        x_new = x - self.hyperparameters["step_size"] * m_hat / (np.sqrt(v_hat) + self.hyperparameters["epsilon"])
+        x_new = x - self.hyperparameters["learning_rate"] * m_hat / (np.sqrt(v_hat) + self.hyperparameters["epsilon"])
 
         # Force bounds
         if self.hyperparameters["force_bounds"]:
             x_new = self._force_bounds(x_new, function.scale_bounds)
 
-        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
-
+        # Update dynamic parameters
         self.m = m
         self.v = v
+
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))

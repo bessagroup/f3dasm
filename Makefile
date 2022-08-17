@@ -74,6 +74,13 @@ test-smoke:
 	@echo
 	@echo "Smoke test finished"
 	
+test-smoke-html:
+	pytest -v -s -m smoke --cov-report html
+	@echo
+	@echo "Smoke test finished. The coverage report HTML pages are in ./htmlcov/index.html"
+	xdg-open ./htmlcov/index.html
+	
+
 test-html:
 	pytest --cov-report html
 	@echo
@@ -86,7 +93,12 @@ build:
 	@echo "Building package"
 	python setup.py sdist bdist_wheel --universal
 	
-upload:
+upload-testpypi:
 	make build
 	@echo "Uploading the package to Test PyPI via Twine ..."
 	twine upload -r testpypi $(PACKAGEDIR)/*
+
+upload:
+	make build
+	@echo "Uploading the package to PyPI via Twine ..."
+	twine upload -r pypi $(PACKAGEDIR)/*

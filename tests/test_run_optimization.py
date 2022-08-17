@@ -12,6 +12,13 @@ from f3dasm.optimization import OPTIMIZERS
 from f3dasm.sampling.samplers import RandomUniformSampling
 
 
+@pytest.mark.smoke
+@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
+def test_run_multiple_realizations_3_functions(function: Function, optimizer: Optimizer):
+    test_run_multiple_realizations(function, optimizer)
+
+
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("function", FUNCTIONS_2D)
 def test_run_multiple_realizations(function: Function, optimizer: Optimizer):

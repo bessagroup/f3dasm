@@ -22,15 +22,7 @@ REQUIRES_PYTHON = ">=3.7.0, <4"
 # VERSION = get_version()
 
 # What packages are required for this module to be executed?
-REQUIRED = [
-    "numpy",
-    "pandas",
-    "matplotlib",
-    "SALib",
-    "hypothesis",
-    "GPyOpt",
-    "GPy"
-]
+REQUIRED = ["numpy", "scipy", "pandas", "matplotlib", "SALib", "hypothesis", "GPyOpt", "GPy"]
 
 # What packages are optional?
 EXTRAS = {
@@ -99,5 +91,4 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-
 )

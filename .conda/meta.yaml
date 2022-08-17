@@ -1,0 +1,38 @@
+{% set name = "f3dasm" %}
+{% set version = "0.1.7" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  path: ../f3dasm
+
+build:
+  number: 0
+  script: python setup.py sdist bdist_wheel --universal
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+    - numpy
+    - scipy
+    - pandas
+    - salib==1.4.5
+    - matplotlib==3.5.2
+    - numdifftools
+    - pygmo
+    - gpy
+    - gpyopt
+    - pytest
+    - pytest-cov
+    - hypothesis
+
+about:
+  home: https://github.com/mpvanderschelling/testthings
+  license: BSD
+  license_family: BSD
+  summary: Framework for Data-driven Design and Analysis of Structures and Materials

@@ -47,6 +47,10 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	
+html-open:
+	make html
+	xdg-open ./$(BUILDDIR)/html/index.html
 
 apidoc:
 	-rm -rf $(APIDOCDIR)/*

@@ -5,8 +5,8 @@ from ..base.optimization import Optimizer
 from ..base.function import Function
 
 
-class SciPyGlobalOptimizer(Optimizer):
-    def _callback(self, xk: np.ndarray, convergence) -> None:
+class SciPyOptimizer(Optimizer):
+    def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.x_new.append(xk.tolist())
 
     def update_step(self) -> None:
@@ -37,24 +37,14 @@ class SciPyGlobalOptimizer(Optimizer):
             repeated_last_element = np.tile(self.x_new[-1], (iterations - len(self.x_new), 1))
             self.x_new = np.r_[self.x_new, repeated_last_element]
 
-        self.data.add_numpy_arrays(input=self.x_new, output=function.__call__(self.x_new))
+        self.data.add_numpy_arrays(input=self.x_new, output=function(self.x_new))
 
 
-class SciPyLocalOptimizer(Optimizer):
-    def _callback(self, xk: np.ndarray) -> None:
-        self.x_new.append(xk.tolist())
-
-    def update_step(self) -> None:
-        pass
-
-    def iterate(self, iterations: int, function: Function) -> None:
-        self.x_new = []
-
-        self.hyperparameters["maxiter"] = iterations
-
+class SciPyMinimizeOptimizer(SciPyOptimizer):
+    def run_algorithm(self, iterations: int, function: Function) -> None:
         minimize(
-            fun=lambda x: function.__call__(x).item(),
-            method=self.algorithm,
+            fun=lambda x: function(x).item(),
+            method=self.hyperparameters["method"],
             jac=lambda x: function.dfdx(x).ravel(),
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
             callback=self._callback,
@@ -63,58 +53,32 @@ class SciPyLocalOptimizer(Optimizer):
             tol=0.0,
         )
 
-        self.x_new = np.array(self.x_new)
 
-        # If x_new is empty, repeat best x0 to fill up total iteration
-        if len(self.x_new) == 0:
-            repeated_last_element = np.tile(
-                self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
-                (iterations - len(self.x_new), 1),
-            )
-            self.x_new = repeated_last_element
-
-        # Repeat last iteration to fill up total iteration
-        if len(self.x_new) < iterations:
-            repeated_last_element = np.tile(self.x_new[-1], (iterations - len(self.x_new), 1))
-            self.x_new = np.r_[self.x_new, repeated_last_element]
-
-        self.data.add_numpy_arrays(input=self.x_new, output=function.__call__(self.x_new))
-
-
-class CG(SciPyLocalOptimizer):
+class CG(SciPyMinimizeOptimizer):
     """CG"""
 
     def init_parameters(self):
         # Default hyperparameters
-        self.defaults = {"gtol": 0.0}
-
-    def set_algorithm(self):
-        self.algorithm = "CG"
+        self.defaults = {"gtol": 0.0, "method": "CG"}
 
 
-class NelderMead(SciPyLocalOptimizer):
+class NelderMead(SciPyMinimizeOptimizer):
     """Nelder-Mead"""
 
     def init_parameters(self):
         # Default hyperparameters
-        self.defaults = {"xatol": 0.0, "fatol": 0.0, "adaptive": False}
-
-    def set_algorithm(self):
-        self.algorithm = "Nelder-Mead"
+        self.defaults = {"xatol": 0.0, "fatol": 0.0, "adaptive": False, "method": "Nelder-Mead"}
 
 
-class LBFGSB(SciPyLocalOptimizer):
+class LBFGSB(SciPyMinimizeOptimizer):
     """L-BFGS-B"""
 
     def init_parameters(self):
         # Default hyperparameters
-        self.defaults = {"ftol": 0.0, "gtol": 0.0}
-
-    def set_algorithm(self):
-        self.algorithm = "L-BFGS-B"
+        self.defaults = {"ftol": 0.0, "gtol": 0.0, "method": "L-BFGS-B"}
 
 
-class DifferentialEvolution(SciPyGlobalOptimizer):
+class DifferentialEvolution(SciPyOptimizer):
     """Differential Evolution"""
 
     def init_parameters(self):
@@ -132,7 +96,7 @@ class DifferentialEvolution(SciPyGlobalOptimizer):
 
     def run_algorithm(self, iterations: int, function: Function) -> None:
         differential_evolution(
-            func=lambda x: function.__call__(x).item(),
+            func=lambda x: function(x).item(),
             bounds=function.scale_bounds,
             strategy=self.hyperparameters["strategy"],
             maxiter=iterations,
@@ -148,12 +112,9 @@ class DifferentialEvolution(SciPyGlobalOptimizer):
             updating=self.hyperparameters["updating"],
         )
 
-    def set_algorithm(self):
-        pass
 
-
-class DualAnnealing(SciPyGlobalOptimizer):
-    """Differential Evolution"""
+class DualAnnealing(SciPyOptimizer):
+    """Dual Annealing"""
 
     def init_parameters(self):
         # Default hyperparameters
@@ -165,12 +126,9 @@ class DualAnnealing(SciPyGlobalOptimizer):
             "no_local_search": False,
         }
 
-    def _callback(self, x: np.ndarray, f: float, context: float) -> None:
-        self.x_new.append(x.tolist())
-
     def run_algorithm(self, iterations: int, function: Function) -> None:
         dual_annealing(
-            func=lambda x: function.__call__(x).item(),
+            func=lambda x: function(x).item(),
             bounds=function.scale_bounds,
             maxiter=iterations,
             initial_temp=self.hyperparameters["initial_temp"],
@@ -183,6 +141,3 @@ class DualAnnealing(SciPyGlobalOptimizer):
             callback=self._callback,
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
         )
-
-    def set_algorithm(self):
-        pass
