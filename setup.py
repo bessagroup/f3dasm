@@ -15,7 +15,7 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = "f3dasm"
 DESCRIPTION = "Stub for own interpretation of F3DASM code."
-URL = "https://github.com/mpvanderschelling/testthings"
+URL = "https://github.com/bessagroup/F3DASM/tree/versionmartin"
 EMAIL = "M.P.vanderSchelling@tudelft.nl"
 AUTHOR = "Martin van der Schelling"
 REQUIRES_PYTHON = ">=3.7.0, <4"

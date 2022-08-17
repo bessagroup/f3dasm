@@ -15,8 +15,7 @@ Clone from the GitHub repository
 
 .. code-block:: console
 
-  $ git clone https://github.com/mpvanderschelling/testthings.git
-
+  $ git clone -b versionmartin https://github.com/bessagroup/F3DASM.git
 
 Create a new environment from the :code:`f3dasm_environment.yml` file
 
