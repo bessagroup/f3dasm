@@ -1,0 +1,17 @@
+design:
+  bounds: [-1.0, 1.0]
+  dimensionality: 2
+
+function:
+  function_name: Ackley
+  noise: False
+
+optimizer:
+  optimizer_name: CMAES
+
+sampler:
+  sampler_name: RandomUniformSampling
+
+execution:
+  iterations: 20
+  realization: 3
