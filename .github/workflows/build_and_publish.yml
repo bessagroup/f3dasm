@@ -22,11 +22,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
 
-    - name: Remove previous build
-      run: |
-        -rm -rf dist/*
 
-    - name: Build
+    - name: Build package
       run: |
         python setup.py sdist bdist_wheel --universal
 
