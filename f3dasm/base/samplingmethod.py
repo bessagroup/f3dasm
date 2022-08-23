@@ -18,7 +18,7 @@ class SamplingInterface(ABC):
 
     """
 
-    doe: DesignSpace
+    design: DesignSpace
     seed: Any = None
 
     def __post_init__(self):
@@ -64,9 +64,9 @@ class SamplingInterface(ABC):
         # Get the column names in this particular order
         columnnames = [
             ("input", name)
-            for name in self.doe.get_continuous_input_names()
-            + self.doe.get_discrete_input_names()
-            + self.doe.get_categorical_input_names()
+            for name in self.design.get_continuous_input_names()
+            + self.design.get_discrete_input_names()
+            + self.design.get_categorical_input_names()
         ]
 
         # df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
@@ -75,10 +75,10 @@ class SamplingInterface(ABC):
 
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
         """Cast the samples to a Data object"""
-        data = Data(designspace=self.doe)
+        data = Data(design=self.design)
 
         # First get an empty reference frame from the DoE
-        empty_frame = self.doe.get_empty_dataframe()
+        empty_frame = self.design.get_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)
@@ -91,7 +91,7 @@ class SamplingInterface(ABC):
 
     def _sample_discrete(self, numsamples: int):
         """Sample the descrete parameters, default randomly uniform"""
-        discrete = self.doe.get_discrete_input_parameters()
+        discrete = self.design.get_discrete_input_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, _ in enumerate(discrete):
             samples[:, dim] = np.random.choice(
@@ -103,7 +103,7 @@ class SamplingInterface(ABC):
 
     def _sample_categorical(self, numsamples: int):
         """Sample the categorical parameters, default randomly uniform"""
-        categorical = self.doe.get_categorical_input_parameters()
+        categorical = self.design.get_categorical_input_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
             samples[:, dim] = np.random.choice(categorical[dim].categories, size=numsamples)
@@ -112,7 +112,7 @@ class SamplingInterface(ABC):
 
     def _stretch_samples(self, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
-        continuous = self.doe.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_input_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
                 samples[:, dim] * (continuous[dim].upper_bound - continuous[dim].lower_bound)

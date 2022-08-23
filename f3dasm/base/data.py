@@ -14,11 +14,11 @@ class Data:
         data (DataFrame): data stored in a DataFrame
     """
 
-    designspace: DesignSpace
+    design: DesignSpace
     data: pd.DataFrame = field(init=False)
 
     def __post_init__(self):
-        self.data = self.designspace.get_empty_dataframe()
+        self.data = self.design.get_empty_dataframe()
 
     def reset_data(self) -> None:
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
@@ -39,10 +39,10 @@ class Data:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self.data = self.data.astype(self.designspace._cast_types_dataframe(self.designspace.input_space, "input"))
-        self.data = self.data.astype(self.designspace._cast_types_dataframe(self.designspace.output_space, "output"))
+        self.data = self.data.astype(self.design._cast_types_dataframe(self.design.input_space, "input"))
+        self.data = self.data.astype(self.design._cast_types_dataframe(self.design.output_space, "output"))
 
-    def add_output(self, output: np.ndarray, label: str) -> None:
+    def add_output(self, output: np.ndarray, label: str = "y") -> None:
         """Add a numpy array to the output column of the dataframe
 
         Args:
@@ -86,7 +86,7 @@ class Data:
         Returns:
             pd.DataFrame: DataFrame containing the n best samples
         """
-        return self.data.nsmallest(n=nosamples, columns=self.designspace.get_output_names())
+        return self.data.nsmallest(n=nosamples, columns=self.design.get_output_names())
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
         """Returns the input vectors in numpy array format of the n best samples

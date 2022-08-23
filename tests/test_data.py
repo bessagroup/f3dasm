@@ -31,7 +31,7 @@ def data():
     output_space = [y1, y2]
     design = DesignSpace(input_space=input_space, output_space=output_space)
 
-    random_sampler = RandomUniformSampling(doe=design, seed=seed)
+    random_sampler = RandomUniformSampling(design=design, seed=seed)
     data = random_sampler.get_samples(numsamples=N)
 
     return data

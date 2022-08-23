@@ -53,7 +53,7 @@ class PygmoAlgorithm(Optimizer):
         # Construct the PygmoProblem
         prob = pg.problem(
             PygmoProblem(
-                design=self.data.designspace,
+                design=self.data.design,
                 func=function,
                 seed=self.seed,
             )

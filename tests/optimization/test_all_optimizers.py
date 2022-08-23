@@ -38,10 +38,10 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
             if not function.is_dim_compatible(dim):
                 dim = 2
 
-    design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensions=dim)
+    design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    ran_sampler = RandomUniformSampling(doe=design, seed=seed)
+    ran_sampler = RandomUniformSampling(design=design, seed=seed)
     data = ran_sampler.get_samples(numsamples=30)
 
     func = function(noise=False, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)

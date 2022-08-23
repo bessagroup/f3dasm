@@ -8,7 +8,7 @@ class LatinHypercubeSampling(SamplingInterface):
     """Sampling via Latin Hypercube Sampling"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
-        continuous = self.doe.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_input_parameters()
         problem = {
             "num_vars": len(continuous),
             "names": [s.name for s in continuous],
@@ -23,7 +23,7 @@ class RandomUniformSampling(SamplingInterface):
     """Sampling via random uniform sampling"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
-        continuous = self.doe.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 
         samples = np.random.uniform(size=(numsamples, dimensions))
@@ -37,7 +37,7 @@ class SobolSequenceSampling(SamplingInterface):
     """Sampling via Sobol Sequencing with SALib"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
-        continuous = self.doe.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 
         samples = sobol_sequence.sample(numsamples, dimensions)

@@ -40,7 +40,7 @@ def test_correct_randomuniform_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniformSampling(doe=design, seed=seed)
+    random_uniform = RandomUniformSampling(design=design, seed=seed)
 
     numsamples = 5
 
@@ -62,7 +62,7 @@ def test_correct_latinhypercube_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    latin_hypercube = LatinHypercubeSampling(doe=design, seed=seed)
+    latin_hypercube = LatinHypercubeSampling(design=design, seed=seed)
 
     numsamples = 5
 
@@ -83,7 +83,7 @@ def test_correct_sobolsequence_sampling(design):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequenceSampling(doe=design, seed=seed)
+    sobol_sequencing = SobolSequenceSampling(design=design, seed=seed)
 
     numsamples = 5
 

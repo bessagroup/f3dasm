@@ -25,11 +25,11 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer):
     iterations = 30
     realizations = 3
 
-    design = make_nd_continuous_design(dimensions=2, bounds=np.tile([0.0, 1.0], (2, 1)))
+    design = make_nd_continuous_design(dimensionality=2, bounds=np.tile([0.0, 1.0], (2, 1)))
     func = function(noise=False, dimensionality=2)
-    data = Data(designspace=design)
+    data = Data(design=design)
     opt = optimizer(data=data)
-    sampler = RandomUniformSampling(doe=design)
+    sampler = RandomUniformSampling(design=design)
 
     res = run_multiple_realizations(
         optimizer=opt,

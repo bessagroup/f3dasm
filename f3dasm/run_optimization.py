@@ -1,6 +1,7 @@
 import time
 from typing import List
 import numpy as np
+from pkg_resources import resource_listdir
 from .base.data import Data
 
 from .base.optimization import Optimizer
@@ -23,7 +24,7 @@ def run_optimization(
     # Sample
     samples = sampler.get_samples(numsamples=optimizer.hyperparameters["population"])
 
-    samples.add_output(output=function.__call__(samples), label="y")
+    samples.add_output(output=function(samples), label="y")
 
     optimizer.set_data(samples)
 
@@ -50,9 +51,8 @@ def run_multiple_realizations(
     """Run multiple realizations of the same algorithm on a benchmark function"""
     # start_t = time.perf_counter()
 
-    args = [
-        (optimizer, function, sampler, iterations, np.random.randint(low=0, high=1e5)) for _ in range(realizations)
-    ]
+    seed = np.random.randint(low=0, high=1e5)
+    args = [(optimizer, function, sampler, iterations, seed + index) for index, _ in enumerate(range(realizations))]
 
     with Pool() as pool:
         results = pool.starmap(run_optimization, args)  # maybe implement pool.starmap_async ?
