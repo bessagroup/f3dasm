@@ -11,6 +11,7 @@ Subpackages
    f3dasm.functions
    f3dasm.optimization
    f3dasm.sampling
+   f3dasm.simulation
 
 Submodules
 ----------

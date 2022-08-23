@@ -44,6 +44,14 @@ f3dasm.base.samplingmethod module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.base.simulation module
+-----------------------------
+
+.. automodule:: f3dasm.base.simulation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.base.space module
 ------------------------
 

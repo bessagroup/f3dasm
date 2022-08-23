@@ -4,6 +4,14 @@ f3dasm.functions package
 Submodules
 ----------
 
+f3dasm.functions.logisticregression module
+------------------------------------------
+
+.. automodule:: f3dasm.functions.logisticregression
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.functions.pybenchfunction module
 ---------------------------------------
 
