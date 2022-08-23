@@ -6,4 +6,4 @@ Link to the `Documentation on Github Pages <https://bessagroup.github.io/F3DASM/
 
 Link to the `PyPI package <https://pypi.org/project/f3dasm/>`_
 
-Download the assignment (PDF) :download:`here <./downloads/assignment.pdf>`.
+Download the assignment (PDF) :download:`here <./files/assignment.pdf>`.
