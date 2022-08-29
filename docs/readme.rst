@@ -7,3 +7,5 @@ Link to the `Documentation on Github Pages <https://bessagroup.github.io/F3DASM/
 Link to the `PyPI package <https://pypi.org/project/f3dasm/>`_
 
 Download the assignment (PDF) :download:`here <./files/assignment.pdf>`.
+
+Or updated version `here <https://github.com/mpvanderschelling/TUD_Martin_Fundamentals_of_AI_project_2022/raw/main/TUD_Undergrad_ProjectAssignment.pdf>`_
