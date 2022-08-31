@@ -46,7 +46,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "testthings"
+project = "f3dasm"
 copyright = "2022, Martin van der Schelling"
 
 # The version info for the project you're documenting, acts as replacement for
