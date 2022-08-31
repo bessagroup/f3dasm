@@ -97,3 +97,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+
+# Data
+data/
