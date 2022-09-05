@@ -205,8 +205,8 @@ class Function(ABC):
         ax.set_xticks(np.linspace(domain[0, 0], domain[0, 1], num=11))
         ax.set_yticks(np.linspace(domain[1, 0], domain[1, 1], num=11))
 
-        ax.set_xlabel("$X_{1}$", fontsize=16)
-        ax.set_ylabel("$X_{2}$", fontsize=16)
+        ax.set_xlabel("$X_{0}$", fontsize=16)
+        ax.set_ylabel("$X_{1}$", fontsize=16)
 
         # ax.legend(fontsize="small", loc="lower right")
         if not show:
