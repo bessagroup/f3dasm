@@ -6,8 +6,6 @@
 F3DASM
 ==================================
 
-Framework for Data-Driven Design and Analysis of Structures and Materials (F3DASM)
-
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
