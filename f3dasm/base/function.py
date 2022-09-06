@@ -34,6 +34,7 @@ class Function(ABC):
             self.set_seed(self.seed)
 
         self._set_parameters()
+        self.offset = np.zeros(self.dimensionality)
         # self.create_offset()
 
     @staticmethod
@@ -69,7 +70,7 @@ class Function(ABC):
 
         x = self._reshape_input(x)
 
-        # x = x + self.offset
+        x = self._offset_input(x)
 
         x = self._scale_input(x)
 
@@ -221,9 +222,25 @@ class Function(ABC):
         return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
 
     def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-        return self._descale_input(x)  # - self.offset.ravel()
+        return self._descale_input(x - self.offset.ravel())
 
-    def _create_offset(self) -> np.ndarray:
+    def _check_global_minimum(self) -> np.ndarray:
+        global_minimum_method = getattr(self, "get_global_minimum", None)
+        if callable(global_minimum_method):
+            g = self.get_global_minimum(d=self.dimensionality)[0]
+
+            if g is None:
+                g = np.zeros(self.dimensionality)
+
+            if g.ndim == 2:
+                g = g[0]
+
+        else:
+            g = np.zeros(self.dimensionality)
+
+        return g
+
+    def _create_offset(self):
         self.offset = np.zeros(self.dimensionality)
 
         global_minimum_method = getattr(self, "get_global_minimum", None)

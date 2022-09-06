@@ -2,7 +2,7 @@ import pytest
 from f3dasm.run_abaqus import main
 
 
-@pytest.mark.smoke
+# @pytest.mark.smoke
 def test_abaqus():
     main()
 
