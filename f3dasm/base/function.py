@@ -35,7 +35,7 @@ class Function(ABC):
 
         self._set_parameters()
         self.offset = np.zeros(self.dimensionality)
-        # self.create_offset()
+        self._create_offset()
 
     @staticmethod
     def set_seed(seed) -> None:
@@ -69,12 +69,6 @@ class Function(ABC):
             x = input_x
 
         x = self._from_input_to_scaled(x)
-
-        # x = self._reshape_input(x)
-
-        # x = self._offset_input(x)
-
-        # x = self._scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -226,9 +220,7 @@ class Function(ABC):
     def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
 
         x = self._reshape_input(x)
-
         x = self._offset_input(x)
-
         x = self._scale_input(x)
 
         return x
@@ -236,15 +228,10 @@ class Function(ABC):
     def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
 
         x = self._reshape_input(x)
-
         x = self._descale_input(x)
-
         x = self._reverse_offset_input(x)
 
         return x
-
-    # def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-    #     return self._descale_input(x - self.offset.ravel())
 
     def _check_global_minimum(self) -> np.ndarray:
         global_minimum_method = getattr(self, "get_global_minimum", None)
