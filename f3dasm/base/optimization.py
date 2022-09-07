@@ -76,8 +76,21 @@ class Optimizer:
             iterations (int): number of iterations
             function (Function): Objective function to evaluate
         """
-        for _ in range(iterations):
+        for _ in range(self._number_of_updates(iterations)):
             self.update_step(function=function)
+
+        # Remove overiterations
+        self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
+
+    def _number_of_updates(self, iterations: int) -> int:
+        return iterations // self.hyperparameters["population"] + (iterations % self.hyperparameters["population"] > 0)
+
+    def _number_of_overiterations(self, iterations: int) -> int:
+        overiterations: int = iterations % self.hyperparameters["population"]
+        if overiterations == 0:
+            return 0
+        else:
+            return self.hyperparameters["population"] - overiterations
 
     def extract_data(self) -> Data:
         """Returns a copy of the data"""
