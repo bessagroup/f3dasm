@@ -61,6 +61,17 @@ class Data:
         df = pd.DataFrame(np.hstack((input, output)), columns=self.data.columns)
         self.add(df, ignore_index=True)
 
+    def remove_rows_bottom(self, number_of_rows: int) -> None:
+        """Remove a number of rows from the end of the Dataframe
+
+        Args:
+            number_of_rows (int): number of rows to remove from the bottom
+        """
+        if number_of_rows == 0:
+            return  # Don't do anything if 0 rows need to be removed
+
+        self.data = self.data.iloc[:-number_of_rows]
+
     def get_input_data(self) -> pd.DataFrame:
         """Get the input data
 
