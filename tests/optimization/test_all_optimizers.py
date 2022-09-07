@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from f3dasm.base.data import Data
 from f3dasm.base.utils import make_nd_continuous_design
 from f3dasm.base.optimization import Optimizer
 from f3dasm.base.function import Function
@@ -58,6 +59,43 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     data2 = opt2.extract_data()
 
     assert all(data.data == data2.data)
+
+
+# TODO: Use stored data to assess this property (maybe hypothesis ?)
+@pytest.mark.smoke
+@pytest.mark.parametrize("iterations", np.random.randint(low=1, high=100, size=5))
+@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("function", [Sphere])
+def test_optimizer_iterations(iterations: int, function: Function, optimizer: Optimizer):
+    numsamples = 40  # iterations
+    seed = 42
+
+    dim = 6
+    if not function.is_dim_compatible(dim):
+        dim = 4
+        if not function.is_dim_compatible(dim):
+            dim = 3
+            if not function.is_dim_compatible(dim):
+                dim = 2
+
+    design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+
+    # Sampler
+    ran_sampler = RandomUniformSampling(design=design, seed=seed)
+    data: Data = ran_sampler.get_samples(numsamples=numsamples)
+
+    func = function(noise=False, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+
+    # Evaluate the initial samples
+    data.add_output(output=func(data), label="y")
+
+    opt1: Optimizer = optimizer(data=data, seed=seed)
+
+    opt1.iterate(iterations=iterations, function=func)
+
+    data = opt1.extract_data()
+
+    assert data.get_number_of_datapoints() == (iterations + numsamples)
 
 
 if __name__ == "__main__":  # pragma: no cover
