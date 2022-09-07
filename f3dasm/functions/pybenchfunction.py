@@ -80,7 +80,7 @@ class Ackley(PyBenchFunction):
 
     def _set_parameters(self, a=20, b=0.2, c=2 * np.pi):
         d = self.dimensionality
-        self.input_domain = np.array([[-32, 32] for _ in range(d)])
+        self.input_domain = np.array([[-32.768, 32.768] for _ in range(d)])
         self.a = a
         self.b = b
         self.c = c
@@ -664,38 +664,37 @@ class BukinN6(PyBenchFunction):
         res = 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
         return res
 
+        # class Colville(PyBenchFunction):
+        #     """.. image:: ../img/functions/Colville.png"""
 
-class Colville(PyBenchFunction):
-    """.. image:: ../img/functions/Colville.png"""
+        #     name = "Colville"
+        #     continuous = True
+        #     convex = False
+        #     separable = False
+        #     differentiable = True
+        #     multimodal = True
+        #     randomized_term = False
+        #     parametric = False
 
-    name = "Colville"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    multimodal = True
-    randomized_term = False
-    parametric = False
+        #     @classmethod
+        #     def is_dim_compatible(cls, d):
+        #         assert (d is None) or (
+        #             isinstance(d, int) and (not d < 0)
+        #         ), "The dimension d must be None or a positive integer"
+        #         return d == 4
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 4
+        #     def _set_parameters(self):
+        #         d = self.dimensionality
+        #         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
-    def _set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        #     def get_param(self):
+        #         return {}
 
-    def get_param(self):
-        return {}
+        #     def get_global_minimum(self, d):
+        #         X = np.array([1, 1, 1, 1])
+        #         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def get_global_minimum(self, d):
-        X = np.array([1, 1, 1, 1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
-
-    def evaluate(self, X):
+        #     def evaluate(self, X):
         x1, x2, x3, x4 = X
         res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
         res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1) ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
@@ -2307,60 +2306,60 @@ class Schwefel2_23(PyBenchFunction):
         return res
 
 
-class Shekel(PyBenchFunction):
-    """.. image:: ../img/functions/Shekel.png"""
+# class Shekel(PyBenchFunction):
+#     """.. image:: ../img/functions/Shekel.png"""
 
-    name = "Shekel"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    multimodal = True
-    randomized_term = False
-    parametric = True
+#     name = "Shekel"
+#     continuous = True
+#     convex = False
+#     separable = False
+#     differentiable = True
+#     multimodal = True
+#     randomized_term = False
+#     parametric = True
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 4
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return d == 4
 
-    def _set_parameters(self, m=None, C=None, beta=None):
-        d = self.dimensionality
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
-        self.m = m if m is not None else 10
-        self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
-        self.C = (
-            C
-            if C is not None
-            else np.array(
-                [
-                    [4, 4, 4, 4],
-                    [1, 1, 1, 1],
-                    [8, 8, 8, 8],
-                    [6, 6, 6, 6],
-                    [3, 7, 3, 7],
-                    [2, 9, 2, 9],
-                    [5, 3, 5, 3],
-                    [8, 1, 8, 1],
-                    [6, 2, 6, 2],
-                    [7, 3.6, 7, 3.6],
-                ]
-            )
-        )
+#     def _set_parameters(self, m=None, C=None, beta=None):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+#         self.m = m if m is not None else 10
+#         self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
+#         self.C = (
+#             C
+#             if C is not None
+#             else np.array(
+#                 [
+#                     [4, 4, 4, 4],
+#                     [1, 1, 1, 1],
+#                     [8, 8, 8, 8],
+#                     [6, 6, 6, 6],
+#                     [3, 7, 3, 7],
+#                     [2, 9, 2, 9],
+#                     [5, 3, 5, 3],
+#                     [8, 1, 8, 1],
+#                     [6, 2, 6, 2],
+#                     [7, 3.6, 7, 3.6],
+#                 ]
+#             )
+#         )
 
-    def get_param(self):
-        return {"m": self.m, "C": self.C, "beta": self.beta}
+#     def get_param(self):
+#         return {"m": self.m, "C": self.C, "beta": self.beta}
 
-    def get_global_minimum(self, d):
-        X = self.C[0]
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = self.C[0]
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        x1, x2, x3, x4 = X
-        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
-        return res
+#     def evaluate(self, X):
+#         x1, x2, x3, x4 = X
+#         res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
+#         return res
 
 
 class Shubert(PyBenchFunction):
@@ -2665,40 +2664,40 @@ class Trid(PyBenchFunction):
         return res
 
 
-class Wolfe(PyBenchFunction):
-    """.. image:: ../img/functions/Wolfe.png"""
+# class Wolfe(PyBenchFunction):
+#     """.. image:: ../img/functions/Wolfe.png"""
 
-    name = "Wolfe"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    multimodal = True
-    randomized_term = False
-    parametric = False
+#     name = "Wolfe"
+#     continuous = True
+#     convex = False
+#     separable = False
+#     differentiable = True
+#     multimodal = True
+#     randomized_term = False
+#     parametric = False
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return d == 3
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return d == 3
 
-    def _set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
+#     def _set_parameters(self):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
 
-    def get_param(self):
-        return {}
+#     def get_param(self):
+#         return {}
 
-    def get_global_minimum(self, d):
-        X = np.array([0, 0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = np.array([0, 0, 0])
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        x, y, z = X
-        res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
-        return res
+#     def evaluate(self, X):
+#         x, y, z = X
+#         res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
+#         return res
 
 
 class XinSheYang(PyBenchFunction):

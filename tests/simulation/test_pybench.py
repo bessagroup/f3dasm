@@ -8,15 +8,21 @@ from f3dasm.base.function import Function
 from f3dasm.functions import get_functions
 
 
-@pytest.mark.parametrize("function", get_functions(d=2))
-def test_offset(function: Function):
-    seed = 41
-    func = function(noise=False, seed=seed, dimensionality=function.dimensionality)
+@pytest.mark.parametrize("function", get_functions(d=6) + get_functions(d=3) + get_functions(d=4) + get_functions(d=2))
+@pytest.mark.parametrize("seed", range(20))
+def test_offset(function: Function, seed: int):
+    func: Function = function(
+        noise=False,
+        seed=seed,
+        dimensionality=function.dimensionality,
+        scale_bounds=np.tile([0.0, 1.0], (function.dimensionality, 1)),
+    )
     func._create_offset()
-    assert func.check_if_within_bounds(func._check_global_minimum())
+    xmin = func._check_global_minimum()
+    assert func.check_if_within_bounds(xmin)
 
 
-@pytest.mark.parametrize("function", get_functions(d=6) + get_functions(d=2))
+@pytest.mark.parametrize("function", get_functions(d=2))
 def test_check_global_minimum(function: Function):
     seed = 42
     func = function(noise=False, seed=seed, dimensionality=function.dimensionality)

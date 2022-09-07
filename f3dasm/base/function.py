@@ -51,7 +51,7 @@ class Function(ABC):
         Returns:
             bool: whether the vector is within the boundaries
         """
-        return ((self.scale_bounds[:, 0] < x) & (x < self.scale_bounds[:, 1])).all()
+        return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
     def __call__(self, input_x: np.ndarray or Data) -> np.ndarray:
         """Evaluate the objective function
@@ -68,11 +68,13 @@ class Function(ABC):
         else:
             x = input_x
 
-        x = self._reshape_input(x)
+        x = self._from_input_to_scaled(x)
 
-        x = self._offset_input(x)
+        # x = self._reshape_input(x)
 
-        x = self._scale_input(x)
+        # x = self._offset_input(x)
+
+        # x = self._scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -221,8 +223,28 @@ class Function(ABC):
     def _descale_input(self, x: np.ndarray) -> np.ndarray:
         return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
 
+    def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
+
+        x = self._reshape_input(x)
+
+        x = self._offset_input(x)
+
+        x = self._scale_input(x)
+
+        return x
+
     def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-        return self._descale_input(x - self.offset.ravel())
+
+        x = self._reshape_input(x)
+
+        x = self._descale_input(x)
+
+        x = self._reverse_offset_input(x)
+
+        return x
+
+    # def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
+    #     return self._descale_input(x - self.offset.ravel())
 
     def _check_global_minimum(self) -> np.ndarray:
         global_minimum_method = getattr(self, "get_global_minimum", None)
@@ -258,7 +280,9 @@ class Function(ABC):
 
         unscaled_offset = np.atleast_2d(
             [
-                np.random.uniform(low=self.scale_bounds[d, 0] - g[d], high=self.scale_bounds[d, 1] - g[d])
+                np.random.uniform(
+                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1])
+                )  # Here a bug
                 for d in range(self.dimensionality)
             ]
         )
@@ -289,4 +313,7 @@ class Function(ABC):
         return x
 
     def _offset_input(self, x: np.ndarray) -> np.ndarray:
+        return x - self.offset
+
+    def _reverse_offset_input(self, x: np.ndarray) -> np.ndarray:
         return x + self.offset
