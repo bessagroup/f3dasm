@@ -132,7 +132,7 @@ class Data:
         ax.set_xlabel(input_par1)
         ax.set_ylabel(input_par2)
 
-        fig.show()
+        return fig, ax
 
     def plot_pairs(self):
         """
