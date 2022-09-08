@@ -14,6 +14,7 @@ F3DASM
        
    gettingstarted
    capabilities/*
+   examples/*
 
 .. include:: readme.rst
 
