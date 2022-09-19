@@ -32,3 +32,8 @@ def _scale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
 def _descale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
     """Inverse of the _scale_vector() function"""
     return (x - scale[:, 0]) / (scale[:, 1] - scale[:, 0])
+
+
+def _rotate_vector(x: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
+    """Rotate a vector with a matrix"""
+    return x.dot(rotation_matrix)

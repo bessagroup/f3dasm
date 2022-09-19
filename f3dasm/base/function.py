@@ -5,9 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 import numdifftools as nd
+from scipy.stats import special_ortho_group
 
 from ..base.data import Data
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction, _scale_vector, _descale_vector
+from ..base.utils import (
+    _from_data_to_numpy_array_benchmarkfunction,
+    _scale_vector,
+    _descale_vector,
+    _rotate_vector,
+)
 
 
 @dataclass
@@ -35,7 +41,12 @@ class Function(ABC):
 
         self._set_parameters()
         self.offset = np.zeros(self.dimensionality)
+        # self.rotation_matrix = np.identity(self.dimensionality)
+        # self.rotation_point = np.zeros(self.dimensionality)
+
         self._create_offset()
+        # self._create_rotation_point()
+        # self._create_rotation()
 
     @staticmethod
     def set_seed(seed) -> None:
@@ -220,7 +231,10 @@ class Function(ABC):
     def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
 
         x = self._reshape_input(x)
+
         x = self._offset_input(x)
+        # x = self._rotate_input(x)
+
         x = self._scale_input(x)
 
         return x
@@ -228,7 +242,10 @@ class Function(ABC):
     def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
 
         x = self._reshape_input(x)
+
         x = self._descale_input(x)
+
+        # x = self._reverse_rotate_input(x)
         x = self._reverse_offset_input(x)
 
         return x
@@ -275,6 +292,37 @@ class Function(ABC):
         )
 
         self.offset = unscaled_offset
+
+    def _create_rotation_point(self):
+        global_minimum_method = getattr(self, "get_global_minimum", None)
+        if callable(global_minimum_method):
+            g = self.get_global_minimum(d=self.dimensionality)[0]
+
+            if g is None:
+                g = np.zeros(self.dimensionality)
+
+            if g.ndim == 2:
+                g = g[0]
+
+        else:
+            g = np.zeros(self.dimensionality)
+
+        self.rotation_point = g
+
+    def _create_rotation(self):
+        self.rotation_matrix = special_ortho_group(dim=self.dimensionality, seed=self.seed).rvs()
+
+    def _rotate_input(self, x: np.ndarray) -> np.ndarray:
+        x = x - self.rotation_point
+        x = _rotate_vector(x=x, rotation_matrix=self.rotation_matrix)  # Orthogonal matrix
+        x = x + self.rotation_point
+        return x
+
+    def _reverse_rotate_input(self, x: np.ndarray) -> np.ndarray:
+        x = x + self.rotation_point
+        x = _rotate_vector(x=x, rotation_matrix=self.rotation_matrix.T)  # Orthogonal matrix
+        x = x - self.rotation_point
+        return x
 
     def _add_noise(self, y: np.ndarray) -> np.ndarray:
         """Add Gaussian noise to the output of the function
