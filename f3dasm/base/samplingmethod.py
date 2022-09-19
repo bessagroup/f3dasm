@@ -69,7 +69,6 @@ class SamplingInterface(ABC):
             + self.design.get_categorical_input_names()
         ]
 
-        # df = self.cast_to_dataframe(samples=samples, columnnames=columnnames)
         data = self._cast_to_data_object(samples=samples, columnnames=columnnames)
         return data
 

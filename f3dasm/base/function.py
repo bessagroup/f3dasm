@@ -22,7 +22,7 @@ class Function(ABC):
         input_domain (np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
     """
 
-    noise: bool = False
+    noise: Any or float = None
     seed: Any or int = None
     dimensionality: int = 2
     scale_bounds: np.ndarray = np.tile([0.0, 1.0], (dimensionality, 1))
@@ -73,7 +73,7 @@ class Function(ABC):
         y = np.atleast_1d(self.f(x))
 
         # add noise
-        if self.noise:
+        if self.noise is not None:
             y = self._add_noise(y)
 
         return y
@@ -285,8 +285,8 @@ class Function(ABC):
         Returns:
             np.ndarray: output of the objective function with added noise
         """
-        sigma = 0.2  # Hard coded amount of noise
-        y_noise = np.random.normal(loc=0.0, scale=abs(sigma * y), size=y.shape)
+        # sigma = 0.2  # Hard coded amount of noise
+        y_noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
         return y + y_noise
 
     def _set_parameters(self):

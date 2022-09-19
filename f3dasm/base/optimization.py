@@ -34,27 +34,19 @@ class Optimizer:
         self.set_algorithm()
 
     @staticmethod
+    def _force_bounds(x: np.ndarray, scale_bounds: np.ndarray) -> np.ndarray:
+        x = np.where(x < scale_bounds[:, 0], scale_bounds[:, 0], x)
+        x = np.where(x > scale_bounds[:, 1], scale_bounds[:, 1], x)
+        return x
+
+    @staticmethod
     def set_seed(seed: int) -> None:
         """Set the seed of the optimizer. Needs to be inherited."""
         pass
 
-    def set_data(self, data: Data) -> None:
-        self.data = data
-
     def init_parameters(self) -> None:
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
-
-    def _set_hyperparameters(self) -> None:
-        """Overwrite the default hyperparameters by the given ones"""
-        updated_defaults = self.defaults.copy()
-
-        # Check if population argument is present. Otherwise set to 1
-        if "population" not in updated_defaults:
-            updated_defaults["population"] = 1
-
-        updated_defaults.update(self.hyperparameters)
-        self.hyperparameters = updated_defaults
 
     def set_algorithm(self) -> None:
         """If necessary, the algorithm needs to be set"""
@@ -69,6 +61,28 @@ class Optimizer:
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
+    def set_data(self, data: Data) -> None:
+        self.data = data
+
+    def _set_hyperparameters(self) -> None:
+        """Overwrite the default hyperparameters by the given ones"""
+        updated_defaults: dict = self.defaults.copy()
+
+        # Check if population argument is present. Otherwise set to 1
+        if "population" not in updated_defaults:
+            updated_defaults["population"] = 1
+
+        updated_defaults.update(self.hyperparameters)
+        self.hyperparameters = updated_defaults
+
+    def _check_number_of_datapoints(self) -> None:
+        """Check if available data => population size"""
+        if self.data.get_number_of_datapoints() < self.hyperparameters["population"]:
+            raise ValueError(
+                f"There are {self.data.get_number_of_datapoints()} datapoints available, need {self.hyperparameters['population']} for update step!"
+            )
+        return
+
     def iterate(self, iterations: int, function: Function) -> None:
         """Calls the update_step function multiple times.
 
@@ -76,6 +90,9 @@ class Optimizer:
             iterations (int): number of iterations
             function (Function): Objective function to evaluate
         """
+
+        self._check_number_of_datapoints()
+
         for _ in range(self._number_of_updates(iterations)):
             self.update_step(function=function)
 
@@ -88,15 +105,10 @@ class Optimizer:
     def _number_of_overiterations(self, iterations: int) -> int:
         overiterations: int = iterations % self.hyperparameters["population"]
         if overiterations == 0:
-            return 0
+            return overiterations
         else:
             return self.hyperparameters["population"] - overiterations
 
     def extract_data(self) -> Data:
         """Returns a copy of the data"""
         return copy(self.data)
-
-    def _force_bounds(self, x: np.ndarray, scale_bounds: np.ndarray) -> np.ndarray:
-        x = np.where(x < scale_bounds[:, 0], scale_bounds[:, 0], x)
-        x = np.where(x > scale_bounds[:, 1], scale_bounds[:, 1], x)
-        return x

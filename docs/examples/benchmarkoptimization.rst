@@ -51,14 +51,14 @@ We construct 2 lists of these parameters and the designspace:
     input_space = [x1, x2]
     output_space = [y]
 
-And the design space with the :class:`f3dasm.base.design.DesignSpace` class
+And the design space with the :class:`~f3dasm.base.design.DesignSpace` class
 
 .. code-block:: python
 
     # Construct the design space
     design_manually = f3dasm.DesignSpace(input_space=input_space, output_space=output_space)
 
-I have created a helper function that makes it easier to construct a n-dimensional continuous, single-objective space:
+I have created a helper function, :func:`~f3dasm.base.utils.make_nd_continuous_design`, that makes it easier to construct a n-dimensional continuous, single-objective space:
 
 .. code-block:: python
 
@@ -113,8 +113,7 @@ The :class:`~f3dasm.functions.pybenchfunction.Levy` function is a well-known, mu
     f(\textbf{x}) = \sin^2 (\pi w_1) + \sum_{i = 1}^{D - 1} (w_i - 1)^2 \left( 1 + 10 \sin^2 (\pi w_i + 1) \right) + (w_d - 1)^2 (1 + \sin^2 (2 \pi w_d)) \\ w_i = 1 + \frac{x_i - 1}{4}
 
 
-
-*The original input domain is (-10, 10), but we scale these boundaries to the boundaries our input space*
+.. note::   The original input domain is (-10, 10), but we scale these boundaries to the boundaries our input space
 
 First we create such a function by creating an object from the :class:`~f3dasm.functions.pybenchfunction.Levy` class
 
@@ -132,7 +131,7 @@ The global minima are known for these functions:
     >>> The global minimum is [[1.49975978e-32]] at position [[-0.25091976  0.90142861]]
 
 
-We can plot a three-dimensional represtation of two input parameters :math:`x_1` and :math:`x_2`` with the `plot()` function
+We can plot a three-dimensional represtation of two input parameters :math:`x_1` and :math:`x_2`` with the :meth:`~f3dasm.base.function.Function.plot()` function
 
 .. code-block:: python
 
@@ -169,7 +168,7 @@ We can create a contour plot with the samples coordinates with the :meth:`~f3das
 
 .. image:: ../img/contour_samples.png
 
-*The red start will indicate the best sample*
+.. note:: The red start will indicate the best sample.
 
 Now we will take a look how we can find the minimum of this loss-function with an **optimizer**!
 
