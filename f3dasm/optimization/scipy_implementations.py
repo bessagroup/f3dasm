@@ -1,6 +1,14 @@
 from scipy.optimize import minimize, differential_evolution, dual_annealing
 import numpy as np
 
+from ..optimization.hyperparameters import (
+    CG_Parameters,
+    DifferentialEvolution_Parameters,
+    DualAnnealing_Parameters,
+    LBFGSB_Parameters,
+    NelderMead_Parameters,
+)
+
 from ..base.optimization import Optimizer
 from ..base.function import Function
 
@@ -18,7 +26,7 @@ class SciPyOptimizer(Optimizer):
     def iterate(self, iterations: int, function: Function) -> None:
         self.x_new = []
 
-        self.hyperparameters["maxiter"] = iterations
+        self.parameter.maxiter = iterations
 
         self.run_algorithm(iterations, function)
 
@@ -44,11 +52,11 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function) -> None:
         minimize(
             fun=lambda x: function(x).item(),
-            method=self.hyperparameters["method"],
+            method=self.parameter.method,
             jac=lambda x: function.dfdx(x).ravel(),
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
             callback=self._callback,
-            options=self.hyperparameters,
+            options=self.parameter.__dict__,
             bounds=function.scale_bounds,
             tol=0.0,
         )
@@ -57,87 +65,62 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
 class CG(SciPyMinimizeOptimizer):
     """CG"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {"gtol": 0.0, "method": "CG"}
+    parameter: CG_Parameters = CG_Parameters()
 
 
 class NelderMead(SciPyMinimizeOptimizer):
     """Nelder-Mead"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {"xatol": 0.0, "fatol": 0.0, "adaptive": False, "method": "Nelder-Mead"}
+    parameter: NelderMead_Parameters = NelderMead_Parameters()
 
 
 class LBFGSB(SciPyMinimizeOptimizer):
     """L-BFGS-B"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {"ftol": 0.0, "gtol": 0.0, "method": "L-BFGS-B"}
+    parameter: LBFGSB_Parameters = LBFGSB_Parameters()
 
 
 class DifferentialEvolution(SciPyOptimizer):
     """Differential Evolution"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {
-            "strategy": "best1bin",
-            "population": 15,
-            "tol": 0.0,
-            "mutation": (0.5, 1),
-            "recombination": 0.7,
-            "polish": False,
-            "atol": 0.0,
-            "updating": "immediate",
-        }
+    parameter: DifferentialEvolution_Parameters = DifferentialEvolution_Parameters()
 
     def run_algorithm(self, iterations: int, function: Function) -> None:
         differential_evolution(
             func=lambda x: function(x).item(),
             bounds=function.scale_bounds,
-            strategy=self.hyperparameters["strategy"],
+            strategy=self.parameter.strategy,
             maxiter=iterations,
-            popsize=self.hyperparameters["population"],
-            tol=self.hyperparameters["tol"],
-            mutation=self.hyperparameters["mutation"],
-            recombination=self.hyperparameters["recombination"],
+            popsize=self.parameter.population,
+            tol=self.parameter.tol,
+            mutation=self.parameter.mutation,
+            recombination=self.parameter.recombination,
             seed=self.seed,
             callback=self._callback,
-            polish=self.hyperparameters["polish"],
-            init=self.data.get_n_best_input_parameters_numpy(nosamples=self.hyperparameters["population"]),
-            atol=self.hyperparameters["atol"],
-            updating=self.hyperparameters["updating"],
+            polish=self.parameter.polish,
+            init=self.data.get_n_best_input_parameters_numpy(nosamples=self.parameter.population),
+            atol=self.parameter.atol,
+            updating=self.parameter.updating,
         )
 
 
 class DualAnnealing(SciPyOptimizer):
     """Dual Annealing"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {
-            "initial_temp": 5230.0,
-            "restart_temp_ratio": 2e-05,
-            "visit": 2.62,
-            "accept": -5.0,
-            "no_local_search": False,
-        }
+    parameter: DualAnnealing_Parameters = DualAnnealing_Parameters()
 
     def run_algorithm(self, iterations: int, function: Function) -> None:
         dual_annealing(
             func=lambda x: function(x).item(),
             bounds=function.scale_bounds,
             maxiter=iterations,
-            initial_temp=self.hyperparameters["initial_temp"],
-            restart_temp_ratio=self.hyperparameters["restart_temp_ratio"],
-            visit=self.hyperparameters["visit"],
-            accept=self.hyperparameters["accept"],
+            initial_temp=self.parameter.initial_temp,
+            restart_temp_ratio=self.parameter.restart_temp_ratio,
+            visit=self.parameter.visit,
+            accept=self.parameter.accept,
             maxfun=10000000.0,
             seed=self.seed,
-            no_local_search=self.hyperparameters["no_local_search"],
+            no_local_search=self.parameter.no_local_search,
             callback=self._callback,
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
         )

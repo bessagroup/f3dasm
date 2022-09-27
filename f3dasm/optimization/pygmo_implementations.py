@@ -3,6 +3,8 @@ from typing import Any
 import numpy as np
 import pygmo as pg
 
+from ..optimization.hyperparameters import CMAES_Parameters, PSO_Parameters, SGA_Parameters, XNES_Parameters
+
 from ..base.design import DesignSpace
 from ..base.optimization import Optimizer
 from ..base.function import Function
@@ -22,7 +24,7 @@ class PygmoProblem:
 
     def fitness(self, x: np.ndarray) -> np.ndarray:
         """Pygmo representation of returning the objective value of a function"""
-        return self.func.__call__(x).ravel()  # pygmo doc: should output 1D numpy array
+        return self.func(x).ravel()  # pygmo doc: should output 1D numpy array
 
     def batch_fitness(self, x: np.ndarray) -> np.ndarray:
         """Pygmo representation of returning multiple objective values of a function"""
@@ -60,11 +62,11 @@ class PygmoAlgorithm(Optimizer):
         )
 
         # Construct the population
-        pop = pg.population(prob, size=self.hyperparameters["population"])
+        pop = pg.population(prob, size=self.parameter.population)
 
         # Set the population to the latest datapoints
-        pop_x = self.data.get_input_data().iloc[-self.hyperparameters["population"] :].to_numpy()
-        pop_fx = self.data.get_output_data().iloc[-self.hyperparameters["population"] :].to_numpy()
+        pop_x = self.data.get_input_data().iloc[-self.parameter.population :].to_numpy()
+        pop_fx = self.data.get_output_data().iloc[-self.parameter.population :].to_numpy()
 
         for index, (x, fx) in enumerate(zip(pop_x, pop_fx)):
             pop.set_xf(index, x, fx)
@@ -79,22 +81,15 @@ class PygmoAlgorithm(Optimizer):
 class CMAES(PygmoAlgorithm):
     """Covariance Matrix Adaptation Evolution Strategy optimizer implemented from pygmo"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {
-            "gen": 1,
-            "memory": True,
-            "force_bounds": True,
-            "population": 30,
-        }
+    parameter: CMAES_Parameters = CMAES_Parameters()
 
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.cmaes(
-                gen=self.hyperparameters["gen"],
-                memory=self.hyperparameters["memory"],
+                gen=self.parameter.gen,
+                memory=self.parameter.memory,
                 seed=self.seed,
-                force_bounds=self.hyperparameters["force_bounds"],
+                force_bounds=self.parameter.force_bounds,
             )
         )
 
@@ -102,19 +97,13 @@ class CMAES(PygmoAlgorithm):
 class PSO(PygmoAlgorithm):
     "Particle Swarm Optimization (Generational) optimizer implemented from pygmo"
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {
-            "gen": 1,
-            "memory": True,
-            "population": 30,
-        }
+    parameter: PSO_Parameters = PSO_Parameters()
 
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.pso_gen(
-                gen=self.hyperparameters["gen"],
-                memory=self.hyperparameters["memory"],
+                gen=self.parameter.gen,
+                memory=self.parameter.memory,
                 seed=self.seed,
             )
         )
@@ -123,33 +112,20 @@ class PSO(PygmoAlgorithm):
 class SGA(PygmoAlgorithm):
     """Simple Genetic Algorithm optimizer implemented from pygmo"""
 
-    def init_parameters(self):
-        # Default hyperparameters
-        self.defaults = {
-            "gen": 1,
-            "cr": 0.9,
-            "eta_c": 1.0,
-            "m": 0.02,
-            "param_m": 1.0,
-            "param_s": 2,
-            "crossover": "exponential",
-            "mutation": "polynomial",
-            "selection": "tournament",
-            "population": 30,
-        }
+    parameter: SGA_Parameters = SGA_Parameters()
 
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.sga(
-                gen=self.hyperparameters["gen"],
-                cr=self.hyperparameters["cr"],
-                eta_c=self.hyperparameters["eta_c"],
-                m=self.hyperparameters["m"],
-                param_m=self.hyperparameters["param_m"],
-                param_s=self.hyperparameters["param_s"],
-                crossover=self.hyperparameters["crossover"],
-                mutation=self.hyperparameters["mutation"],
-                selection=self.hyperparameters["selection"],
+                gen=self.parameter.gen,
+                cr=self.parameter.cr,
+                eta_c=self.parameter.eta_c,
+                m=self.parameter.m,
+                param_m=self.parameter.param_m,
+                param_s=self.parameter.param_s,
+                crossover=self.parameter.crossover,
+                mutation=self.parameter.mutation,
+                selection=self.parameter.selection,
                 seed=self.seed,
             )
         )
@@ -158,32 +134,20 @@ class SGA(PygmoAlgorithm):
 class XNES(PygmoAlgorithm):
     """XNES optimizer implemented from pygmo"""
 
-    def init_parameters(self):
-        self.defaults = {
-            "gen": 1,
-            "eta_mu": -1,
-            "eta_sigma": -1,
-            "eta_b": -1,
-            "sigma0": -1,
-            "ftol": 1e-06,
-            "xtol": 1e-06,
-            "memory": True,
-            "force_bounds": True,
-            "population": 30,
-        }
+    parameter: XNES_Parameters = XNES_Parameters()
 
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.xnes(
-                gen=self.hyperparameters["gen"],
-                eta_mu=self.hyperparameters["eta_mu"],
-                eta_sigma=self.hyperparameters["eta_sigma"],
-                eta_b=self.hyperparameters["eta_b"],
-                sigma0=self.hyperparameters["sigma0"],
-                ftol=self.hyperparameters["ftol"],
-                xtol=self.hyperparameters["xtol"],
-                memory=self.hyperparameters["memory"],
-                force_bounds=self.hyperparameters["force_bounds"],
+                gen=self.parameter.gen,
+                eta_mu=self.parameter.eta_mu,
+                eta_sigma=self.parameter.eta_sigma,
+                eta_b=self.parameter.eta_b,
+                sigma0=self.parameter.sigma0,
+                ftol=self.parameter.ftol,
+                xtol=self.parameter.xtol,
+                memory=self.parameter.memory,
+                force_bounds=self.parameter.force_bounds,
                 seed=self.seed,
             )
         )

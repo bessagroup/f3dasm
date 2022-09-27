@@ -9,6 +9,12 @@ from ..base.function import Function
 
 
 @dataclass
+class OptimizerParameters:
+    population: int = 1
+    force_bounds: bool = True
+
+
+@dataclass
 class Optimizer:
     """Mainclass to inherit from to implement optimization algorithms
 
@@ -22,8 +28,8 @@ class Optimizer:
     data: Data
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
     seed: int = np.random.randint(low=0, high=1e5)
-    defaults: Optional[Mapping[str, Any]] = field(default_factory=dict)
     algorithm: Any = field(init=False)
+    parameter: OptimizerParameters = field(init=False)
 
     def __post_init__(self):
         if self.seed:
@@ -65,21 +71,16 @@ class Optimizer:
         self.data = data
 
     def _set_hyperparameters(self) -> None:
-        """Overwrite the default hyperparameters by the given ones"""
-        updated_defaults: dict = self.defaults.copy()
-
-        # Check if population argument is present. Otherwise set to 1
-        if "population" not in updated_defaults:
-            updated_defaults["population"] = 1
-
-        updated_defaults.update(self.hyperparameters)
-        self.hyperparameters = updated_defaults
+        """New way of setting hyperparameters with dedicated class"""
+        # if isinstance(self.hyperparameters, dict):
+        #     # Create instance of the specific hyperparameter class
+        self.parameter.__init__(**self.hyperparameters)
 
     def _check_number_of_datapoints(self) -> None:
         """Check if available data => population size"""
-        if self.data.get_number_of_datapoints() < self.hyperparameters["population"]:
+        if self.data.get_number_of_datapoints() < self.parameter.population:
             raise ValueError(
-                f"There are {self.data.get_number_of_datapoints()} datapoints available, need {self.hyperparameters['population']} for update step!"
+                f"There are {self.data.get_number_of_datapoints()} datapoints available, need {self.parameter.population} for update step!"
             )
         return
 
@@ -100,14 +101,14 @@ class Optimizer:
         self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
 
     def _number_of_updates(self, iterations: int) -> int:
-        return iterations // self.hyperparameters["population"] + (iterations % self.hyperparameters["population"] > 0)
+        return iterations // self.parameter.population + (iterations % self.parameter.population > 0)
 
     def _number_of_overiterations(self, iterations: int) -> int:
-        overiterations: int = iterations % self.hyperparameters["population"]
+        overiterations: int = iterations % self.parameter.population
         if overiterations == 0:
             return overiterations
         else:
-            return self.hyperparameters["population"] - overiterations
+            return self.parameter.population - overiterations
 
     def extract_data(self) -> Data:
         """Returns a copy of the data"""

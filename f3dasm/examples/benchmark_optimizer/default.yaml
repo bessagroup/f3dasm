@@ -1,0 +1,20 @@
+design:
+  lower_bound: -1.0
+  upper_bound: 1.0
+  dimensionality: 2
+
+function:
+  function_name: Levy
+  noise: 0.0
+
+optimizer:
+  optimizer_name: CMAES
+  hyperparameters: {}
+
+sampler:
+  sampler_name: RandomUniformSampling
+
+execution:
+  iterations: 100
+  realization: 1
+  parallelization: True

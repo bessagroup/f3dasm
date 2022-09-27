@@ -44,6 +44,7 @@ OPTIMIZERS = [
         "PygmoAlgorithm",
         "SciPyMinimizeOptimizer",
         "SciPyOptimizer",
-        "BayesianOptimization",
-    ]  # Discard BO because slow for testing
+        "BayesianOptimization",  # Discard BO because slow for testing
+    ]
+    and not clsname.endswith("_Parameters")  # Ignore all parameter classes
 ]

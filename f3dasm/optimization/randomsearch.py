@@ -1,10 +1,14 @@
 import numpy as np
+
+from ..optimization.hyperparameters import RandomSearch_Parameters
 from ..base.function import Function
 from ..base.optimization import Optimizer
 
 
 class RandomSearch(Optimizer):
     """Naive random search"""
+
+    parameter: RandomSearch_Parameters = RandomSearch_Parameters()
 
     def update_step(self, function: Function) -> None:
 

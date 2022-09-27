@@ -37,3 +37,7 @@ def _descale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
 def _rotate_vector(x: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
     """Rotate a vector with a matrix"""
     return x.dot(rotation_matrix)
+
+
+def find_class(module, query: str):
+    return getattr(module, query)

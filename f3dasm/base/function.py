@@ -64,7 +64,7 @@ class Function(ABC):
         """
         return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
-    def __call__(self, input_x: np.ndarray or Data) -> np.ndarray:
+    def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
         """Evaluate the objective function
         Args:
             input_x (np.ndarray | Data object): input to be evaluated
@@ -86,6 +86,11 @@ class Function(ABC):
         # add noise
         if self.noise is not None:
             y = self._add_noise(y)
+
+        # If the input is a Data object
+        if isinstance(input_x, Data):
+            input_x.add_output(y)
+            # return input_x
 
         return y
 

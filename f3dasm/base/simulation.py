@@ -1,5 +1,4 @@
 import numpy as np
-from ..base.data import Data
 
 
 class Simulator:

@@ -23,3 +23,6 @@ from . import simulation
 
 # Import main scripts
 from .run_optimization import *
+
+# Configuration file structure
+from . import config

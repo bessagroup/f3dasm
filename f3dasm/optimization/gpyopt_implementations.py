@@ -1,12 +1,16 @@
 import GPy
 import GPyOpt
 
+from f3dasm.optimization.hyperparameters import BayesianOptimization_Parameters
+
 from ..base.optimization import Optimizer
 from ..base.function import Function
 
 
 class BayesianOptimization(Optimizer):
     """Bayesian Optimization implementation from the GPyOPt library"""
+
+    parameter: BayesianOptimization_Parameters = BayesianOptimization_Parameters()
 
     def init_parameters(self):
         domain = [
@@ -34,7 +38,7 @@ class BayesianOptimization(Optimizer):
         evaluator = GPyOpt.core.evaluators.Sequential(acquisition)
 
         # Default hyperparamaters
-        self.defaults = {
+        options = {
             "model": model,
             "space": space,
             "acquisition": acquisition,
@@ -42,16 +46,18 @@ class BayesianOptimization(Optimizer):
             "de_duplication": True,
         }
 
+        self.parameter = BayesianOptimization_Parameters(**options)
+
     def set_algorithm(self):
         self.algorithm = GPyOpt.methods.ModularBayesianOptimization(
-            model=self.hyperparameters["model"],
-            space=self.hyperparameters["space"],
+            model=self.parameter.model,
+            space=self.parameter.space,
             objective=None,
-            acquisition=self.hyperparameters["acquisition"],
-            evaluator=self.hyperparameters["evaluator"],
+            acquisition=self.parameter.acquisition,
+            evaluator=self.parameter.evaluator,
             X_init=None,
             Y_init=None,
-            de_duplication=self.hyperparameters["de_duplication"],
+            de_duplication=self.parameter.de_duplication,
         )
 
     def update_step(self, function: Function) -> None:
@@ -62,4 +68,4 @@ class BayesianOptimization(Optimizer):
 
         x_new = self.algorithm.suggest_next_locations()
 
-        self.data.add_numpy_arrays(input=x_new, output=function.__call__(x_new))
+        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
