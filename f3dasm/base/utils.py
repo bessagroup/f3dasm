@@ -1,4 +1,4 @@
-import numpy as np
+import autograd.numpy as np
 from f3dasm.base.data import Data
 from ..base.design import DesignSpace
 from ..base.space import ContinuousParameter

@@ -1,16 +1,13 @@
 f3dasm.simulation package
 =========================
 
-Submodules
-----------
+Subpackages
+-----------
 
-f3dasm.simulation.abaqus\_simulator module
-------------------------------------------
+.. toctree::
+   :maxdepth: 4
 
-.. automodule:: f3dasm.simulation.abaqus_simulator
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   f3dasm.simulation.abaqus
 
 Module contents
 ---------------

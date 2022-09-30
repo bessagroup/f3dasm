@@ -2,7 +2,7 @@ from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
-import numpy as np
+import autograd.numpy as np
 
 from ..base.data import Data
 from ..base.function import Function
@@ -113,3 +113,6 @@ class Optimizer:
     def extract_data(self) -> Data:
         """Returns a copy of the data"""
         return copy(self.data)
+
+    def get_name(self) -> str:
+        return self.__class__.__name__

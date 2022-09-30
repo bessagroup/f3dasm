@@ -1,8 +1,15 @@
-import numpy as np
+from dataclasses import dataclass
+import autograd.numpy as np
 
-from ..optimization.hyperparameters import RandomSearch_Parameters
 from ..base.function import Function
-from ..base.optimization import Optimizer
+from ..base.optimization import Optimizer, OptimizerParameters
+
+
+@dataclass
+class RandomSearch_Parameters(OptimizerParameters):
+    """Hyperparameters for RandomSearch optimizer"""
+
+    pass
 
 
 class RandomSearch(Optimizer):

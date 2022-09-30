@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, List
-import numpy as np
+import autograd.numpy as np
 import pandas as pd
 
 from ..base.data import Data

@@ -1,5 +1,5 @@
 import logging
-import numpy as np
+import autograd.numpy as np
 import hydra
 from hydra.core.config_store import ConfigStore
 

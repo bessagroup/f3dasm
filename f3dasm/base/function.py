@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any
-import numpy as np
+import autograd.numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 import numdifftools as nd
@@ -346,7 +346,7 @@ class Function(ABC):
         pass
 
     def _reshape_input(self, x: np.ndarray) -> np.ndarray:
-        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
         if x.ndim == 1:
             x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
 

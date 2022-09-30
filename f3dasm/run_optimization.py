@@ -49,9 +49,10 @@ def run_multiple_realizations(
     iterations: int,
     realizations: int,
     parallelization: bool = True,
+    verbal: bool = False,
 ) -> List[Data]:
     """Run multiple realizations of the same algorithm on a benchmark function"""
-    # start_t = time.perf_counter()
+    start_t = time.perf_counter()
 
     seed = np.random.randint(low=0, high=1e5)
 
@@ -75,9 +76,10 @@ def run_multiple_realizations(
             }
             results.append(run_optimization(**args))
 
-    # end_t = time.perf_counter()
+    end_t = time.perf_counter()
 
-    # total_duration = end_t - start_t
-    # print(f"Optimization took {total_duration:.2f}s total")
+    total_duration = end_t - start_t
+    if verbal:
+        print(f"Optimization took {total_duration:.2f}s total")
 
     return results

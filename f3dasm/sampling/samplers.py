@@ -1,4 +1,4 @@
-import numpy as np
+import autograd.numpy as np
 from SALib.sample import latin, sobol_sequence
 
 from ..base.samplingmethod import SamplingInterface

@@ -1,29 +1,93 @@
 f3dasm.optimization package
 ===========================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   f3dasm.optimization.adapters
+
 Submodules
 ----------
 
-f3dasm.optimization.gpyopt\_implementations module
---------------------------------------------------
+f3dasm.optimization.adam module
+-------------------------------
 
-.. automodule:: f3dasm.optimization.gpyopt_implementations
+.. automodule:: f3dasm.optimization.adam
    :members:
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.gradient\_based\_algorithms module
-------------------------------------------------------
+f3dasm.optimization.bayesianoptimization module
+-----------------------------------------------
 
-.. automodule:: f3dasm.optimization.gradient_based_algorithms
+.. automodule:: f3dasm.optimization.bayesianoptimization
    :members:
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.pygmo\_implementations module
--------------------------------------------------
+f3dasm.optimization.cg module
+-----------------------------
 
-.. automodule:: f3dasm.optimization.pygmo_implementations
+.. automodule:: f3dasm.optimization.cg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.cmaes module
+--------------------------------
+
+.. automodule:: f3dasm.optimization.cmaes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.differentialevolution module
+------------------------------------------------
+
+.. automodule:: f3dasm.optimization.differentialevolution
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.dualannealing module
+----------------------------------------
+
+.. automodule:: f3dasm.optimization.dualannealing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.lbfgsb module
+---------------------------------
+
+.. automodule:: f3dasm.optimization.lbfgsb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.momentum module
+-----------------------------------
+
+.. automodule:: f3dasm.optimization.momentum
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.neldermead module
+-------------------------------------
+
+.. automodule:: f3dasm.optimization.neldermead
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.pso module
+------------------------------
+
+.. automodule:: f3dasm.optimization.pso
    :members:
    :undoc-members:
    :show-inheritance:
@@ -36,10 +100,26 @@ f3dasm.optimization.randomsearch module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.scipy\_implementations module
--------------------------------------------------
+f3dasm.optimization.sga module
+------------------------------
 
-.. automodule:: f3dasm.optimization.scipy_implementations
+.. automodule:: f3dasm.optimization.sga
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.sgd module
+------------------------------
+
+.. automodule:: f3dasm.optimization.sgd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.xnes module
+-------------------------------
+
+.. automodule:: f3dasm.optimization.xnes
    :members:
    :undoc-members:
    :show-inheritance:

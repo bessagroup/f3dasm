@@ -3,7 +3,7 @@ Created by Axel Thevenot (2020)
 Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 """
 
-import numpy as np
+import autograd.numpy as np
 from ..base.function import Function
 
 
@@ -17,6 +17,8 @@ class PyBenchFunction(Function):
 
     def f(self, x: np.ndarray):
         if self.is_dim_compatible(self.dimensionality):
+            # TODO: instead of editing in place, return new arrays
+            # return self.evaluate(x)
             return np.apply_along_axis(self.evaluate, axis=1, arr=x).reshape(-1, 1)
 
 

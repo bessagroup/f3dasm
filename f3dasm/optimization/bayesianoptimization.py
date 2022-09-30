@@ -1,10 +1,22 @@
+from dataclasses import dataclass
+from typing import Any
 import GPy
 import GPyOpt
 
-from f3dasm.optimization.hyperparameters import BayesianOptimization_Parameters
 
-from ..base.optimization import Optimizer
+from ..base.optimization import Optimizer, OptimizerParameters
 from ..base.function import Function
+
+
+@dataclass
+class BayesianOptimization_Parameters(OptimizerParameters):
+    """Hyperparameters for BayesianOptimization optimizer"""
+
+    model: Any = None
+    space: Any = None
+    acquisition: Any = None
+    evaluator: Any = None
+    de_duplication: Any = None
 
 
 class BayesianOptimization(Optimizer):
