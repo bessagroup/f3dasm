@@ -330,6 +330,7 @@ class Function(ABC):
         return x
 
     def _add_noise(self, y: np.ndarray) -> np.ndarray:
+        # TODO: change noise calculation to work with autograd.numpy
         """Add Gaussian noise to the output of the function
 
         Args:

@@ -52,7 +52,7 @@ GPyOpt Implementations
 ======================== ========================================================================= ======================================================
 Name                      Docs of the Python class                                                 Reference
 ======================== ========================================================================= ======================================================
-Bayesian Optimization    :class:`f3dasm.optimization.bayesiantoptimization.BayesianOptimization`   `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_
+Bayesian Optimization    :class:`f3dasm.optimization.bayesianoptimization.BayesianOptimization`    `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_
 ======================== ========================================================================= ======================================================
 
 Self implemented optimizers
@@ -66,3 +66,13 @@ Momentum                 :class:`f3dasm.optimization.momentum.Momentum`         
 SGD                      :class:`f3dasm.optimization.sgd.SGD`                                   self implemented
 RandomSearch             :class:`f3dasm.optimization.randomsearch.RandomSearch`                 self implemented
 ======================== ====================================================================== ==================
+
+Tensorflow Keras optimizers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+======================== ====================================================================== =====================================================================================================
+Name                      Docs of the Python class                                              Reference
+======================== ====================================================================== =====================================================================================================
+Nadam                    :class:`f3dasm.optimization.nadam.Nadam`                               `tf.keras.optimizers.Nadam <https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/Nadam>`_
+Adamax                   :class:`f3dasm.optimization.adamax.Adamax`                             `tf.keras.optimizers.Adamax <https://www.tensorflow.org/api_docs/python/tf/keras/optimizers/Adamax>`_
+======================== ====================================================================== =====================================================================================================

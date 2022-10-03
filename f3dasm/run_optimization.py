@@ -9,7 +9,7 @@ from f3dasm.base.optimization import Optimizer
 from f3dasm.base.samplingmethod import SamplingInterface
 from f3dasm.base.function import Function
 
-from multiprocessing import Pool
+from pathos.helpers import mp
 
 
 def run_optimization(
@@ -61,7 +61,7 @@ def run_multiple_realizations(
             (optimizer, function, sampler, iterations, seed + index) for index, _ in enumerate(range(realizations))
         ]
 
-        with Pool() as pool:
+        with mp.Pool() as pool:
             results = pool.starmap(run_optimization, args)  # maybe implement pool.starmap_async ?
 
     else:

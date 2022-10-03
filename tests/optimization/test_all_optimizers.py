@@ -45,7 +45,7 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     ran_sampler = RandomUniformSampling(design=design, seed=seed)
     data = ran_sampler.get_samples(numsamples=30)
 
-    func = function(noise=False, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
     data.add_output(output=func(data), label="y")
@@ -84,7 +84,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
     ran_sampler = RandomUniformSampling(design=design, seed=seed)
     data: Data = ran_sampler.get_samples(numsamples=numsamples)
 
-    func = function(noise=False, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
     data.add_output(output=func(data), label="y")
