@@ -84,7 +84,7 @@ class Function(ABC):
         y = np.atleast_1d(self.f(x))
 
         # add noise
-        if self.noise is not None:
+        if self.noise not in [None, "None"]:
             y = self._add_noise(y)
 
         # If the input is a Data object
@@ -340,8 +340,9 @@ class Function(ABC):
             np.ndarray: output of the objective function with added noise
         """
         # sigma = 0.2  # Hard coded amount of noise
-        y_noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
-        return y + y_noise
+        noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
+        y_noise = y + noise
+        return y_noise
 
     def _set_parameters(self):
         pass

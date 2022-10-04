@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 import time
-from typing import List
+from typing import Any, List
 import numpy as np
 import f3dasm
 
@@ -12,8 +13,24 @@ from f3dasm.base.function import Function
 from pathos.helpers import mp
 
 
+@dataclass
+class OptimizationResult:
+    data: List[Data]
+    optimizer: str
+    hyperparameters: dict
+    function: Function
+    sampler: str
+    number_of_samples: int
+    seeds: List[int]
+
+
 def run_optimization(
-    optimizer: Optimizer, function: Function, sampler: SamplingInterface, iterations: int, seed: int
+    optimizer: Optimizer,
+    function: Function,
+    sampler: SamplingInterface,
+    iterations: int,
+    seed: int,
+    number_of_samples: int = 30,
 ) -> Data:
     """Run optimization on some benchmark function"""
 
@@ -23,7 +40,7 @@ def run_optimization(
     sampler.set_seed(seed)
 
     # Sample
-    samples = sampler.get_samples(numsamples=optimizer.parameter.population)
+    samples = sampler.get_samples(numsamples=number_of_samples)
 
     samples.add_output(output=function(samples), label="y")
 
@@ -48,17 +65,21 @@ def run_multiple_realizations(
     sampler: SamplingInterface,
     iterations: int,
     realizations: int,
+    number_of_samples: int = 30,
     parallelization: bool = True,
     verbal: bool = False,
-) -> List[Data]:
+    seed: int or Any = None,
+) -> OptimizationResult:
     """Run multiple realizations of the same algorithm on a benchmark function"""
     start_t = time.perf_counter()
 
-    seed = np.random.randint(low=0, high=1e5)
+    if seed is None:
+        seed = np.random.randint(low=0, high=1e5)
 
     if parallelization:
         args = [
-            (optimizer, function, sampler, iterations, seed + index) for index, _ in enumerate(range(realizations))
+            (optimizer, function, sampler, iterations, seed + index, number_of_samples)
+            for index, _ in enumerate(range(realizations))
         ]
 
         with mp.Pool() as pool:
@@ -72,6 +93,7 @@ def run_multiple_realizations(
                 "function": function,
                 "sampler": sampler,
                 "iterations": iterations,
+                "number_of_samples": number_of_samples,
                 "seed": seed + index,
             }
             results.append(run_optimization(**args))
@@ -82,4 +104,12 @@ def run_multiple_realizations(
     if verbal:
         print(f"Optimization took {total_duration:.2f}s total")
 
-    return results
+    return OptimizationResult(
+        data=results,
+        optimizer=optimizer.get_name(),
+        hyperparameters=optimizer.parameter,
+        function=function,
+        sampler=sampler,
+        number_of_samples=number_of_samples,
+        seeds=[seed + i for i in range(realizations)],
+    )

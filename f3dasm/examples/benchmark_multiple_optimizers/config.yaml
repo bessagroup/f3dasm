@@ -1,0 +1,39 @@
+defaults:
+  - default
+
+design:
+  lower_bound: -1.0
+  upper_bound: 1.0
+  dimensionality: 2
+
+function:
+  function_name: Levy
+
+optimizers:
+  optimizers_names: [
+    Adam,
+    SGD,
+    CG,
+    CMAES,
+    DifferentialEvolution,
+    DualAnnealing,
+    LBFGSB,
+    NelderMead,
+    PSO,
+    RandomSearch,
+    SGA,
+    XNES,
+    RMSprop,
+    Nadam,
+    Adamax,
+    Ftrl,
+  ]
+
+sampler:
+  sampler_name: LatinHypercubeSampling
+  number_of_samples: 30
+
+execution:
+  iterations: 500
+  realizations: 5
+  parallelization: True

@@ -20,6 +20,14 @@ f3dasm.optimization.adapters.scipy\_implementations module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.adapters.tensorflow\_implementations module
+---------------------------------------------------------------
+
+.. automodule:: f3dasm.optimization.adapters.tensorflow_implementations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

@@ -24,6 +24,7 @@ class OptimizerConfig:
 @dataclass
 class SamplerConfig:
     sampler_name: str
+    number_of_samples: int
 
 
 @dataclass

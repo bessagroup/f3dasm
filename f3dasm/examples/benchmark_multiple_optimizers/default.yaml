@@ -5,14 +5,14 @@ design:
 
 function:
   function_name: Levy
-  noise: 0.0
+  noise: None
 
-optimizer:
-  optimizer_name: CMAES
-  hyperparameters: {}
+optimizers:
+  optimizers_names: [Adam, CMAES, PSO, RandomSearch] 
 
 sampler:
   sampler_name: RandomUniformSampling
+  number_of_samples: 30
 
 execution:
   iterations: 100

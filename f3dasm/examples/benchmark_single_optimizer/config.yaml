@@ -8,15 +8,15 @@ design:
 
 function:
   function_name: Levy
-  noise: 1.1
 
 optimizer:
-  optimizer_name: Momentum
+  optimizer_name: Nadam
 
 sampler:
   sampler_name: LatinHypercubeSampling
+  number_of_samples: 30
 
 execution:
   iterations: 140
   realizations: 6
-  parallelization: False
+  parallelization: True

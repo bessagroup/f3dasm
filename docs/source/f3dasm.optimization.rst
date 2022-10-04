@@ -20,6 +20,14 @@ f3dasm.optimization.adam module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.adamax module
+---------------------------------
+
+.. automodule:: f3dasm.optimization.adamax
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.bayesianoptimization module
 -----------------------------------------------
 
@@ -68,10 +76,10 @@ f3dasm.optimization.lbfgsb module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.momentum module
------------------------------------
+f3dasm.optimization.nadam module
+--------------------------------
 
-.. automodule:: f3dasm.optimization.momentum
+.. automodule:: f3dasm.optimization.nadam
    :members:
    :undoc-members:
    :show-inheritance:
@@ -96,6 +104,14 @@ f3dasm.optimization.randomsearch module
 ---------------------------------------
 
 .. automodule:: f3dasm.optimization.randomsearch
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.rmsprop module
+----------------------------------
+
+.. automodule:: f3dasm.optimization.rmsprop
    :members:
    :undoc-members:
    :show-inheritance:

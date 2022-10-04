@@ -1,4 +1,7 @@
+from typing import Any
 import autograd.numpy as np
+import pickle
+
 from f3dasm.base.data import Data
 from ..base.design import DesignSpace
 from ..base.space import ContinuousParameter
@@ -41,3 +44,28 @@ def _rotate_vector(x: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
 
 def find_class(module, query: str):
     return getattr(module, query)
+
+
+def read_pickle(name: str) -> Any:
+    """read an pickled object to memory
+
+    Args:
+        name (str): name of file without file extension .obj
+
+    Returns:
+        Any: object
+    """
+    with open(f"{name}.obj", "rb") as f:
+        obj = pickle.load(f)
+    return obj
+
+
+def write_pickle(name: str, obj: Any) -> None:
+    """Write an object to a file with pickle
+
+    Args:
+        name (str): name of file to write without file extension .obj
+        obj (Any): object to store
+    """
+    with open(f"{name}.obj", "wb") as f:
+        pickle.dump(obj, f)

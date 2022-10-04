@@ -37,27 +37,20 @@ class Model(tf.keras.Model):
         self.env = args
 
 
-class PixelModel(Model):
+class SimpelModel(Model):
     """
     The class for performing optimization in the input space of the functions.
-    The initial parameters are chosen uniformly from [0,1] so as to ensure
-        similarity across all functions
-    TODO: May need to add the functionality to output denormalized bounds
     """
 
     def __init__(self, seed=None, args=None):
         super().__init__(seed)
-        z_init = tf.random.uniform((1, args["dim"]), minval=0, maxval=1.0)
-        self.z = tf.Variable(z_init, trainable=True, dtype=tf.float32)  # S:ADDED
+        self.z = tf.Variable(args["x0"], trainable=True, dtype=tf.float32)  # S:ADDED
 
     def call(self, inputs=None):
         return self.z
 
 
 class TensorflowOptimizer(Optimizer):
-    def set_algorithm(self):
-        pass  # self.algorithm = tf.keras.optimizers.Adam()
-
     def init_parameters(self):
         self.args = {}
 
@@ -73,9 +66,17 @@ class TensorflowOptimizer(Optimizer):
         self.data.add_numpy_arrays(input=logits.numpy().copy(), output=loss.numpy().copy())
 
     def iterate(self, iterations: int, function: Function) -> None:
-        self.args["model"] = PixelModel(None, args={"dim": function.dimensionality})  # Build the model
+        self.args["model"] = SimpelModel(
+            None,
+            args={
+                "dim": function.dimensionality,
+                "x0": self.data.get_n_best_input_parameters_numpy(self.parameter.population),
+            },
+        )  # Build the model
         self.args["tvars"] = self.args["model"].trainable_variables
         self.args["func"] = convert_autograd_to_tensorflow(function.__call__)
+
+        self._check_number_of_datapoints()
 
         for _ in range(self._number_of_updates(iterations)):
             self.update_step(function)
