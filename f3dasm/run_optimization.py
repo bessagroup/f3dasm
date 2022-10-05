@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+import logging
 import time
 from typing import Any, List
 import numpy as np
-import f3dasm
+
+# import f3dasm
 
 from f3dasm.base.data import Data
 
@@ -23,6 +25,12 @@ class OptimizationResult:
     number_of_samples: int
     seeds: List[int]
 
+    def __post_init__(self):
+        # Log
+        logging.info(
+            f"Optimized {self.function.get_name()} function (seed={self.function.seed}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
+        )
+
 
 def run_optimization(
     optimizer: Optimizer,
@@ -35,7 +43,7 @@ def run_optimization(
     """Run optimization on some benchmark function"""
 
     # Set function seed
-    function.set_seed(seed)
+    # function.set_seed(seed)
     optimizer.set_seed(seed)
     sampler.set_seed(seed)
 

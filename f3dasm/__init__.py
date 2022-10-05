@@ -27,3 +27,10 @@ from .run_optimization import *
 
 # Configuration file structure
 from . import config
+
+
+# Logging things
+
+import logging
+
+logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)

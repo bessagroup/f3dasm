@@ -28,3 +28,4 @@ def get_functions(
 
 FUNCTIONS = get_functions()
 FUNCTIONS_2D = get_functions(d=2)
+FUNCTIONS_7D = get_functions(d=7)

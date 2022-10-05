@@ -379,7 +379,6 @@ dependencies:
     - antlr4-python3-runtime==4.9.3
     - commonmark==0.9.1
     - cython==0.29.32
-    - f3dasm==0.1.9
     - hydra-core==1.2.0
     - jeepney==0.8.0
     - keyring==23.8.2

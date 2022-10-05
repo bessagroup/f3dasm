@@ -48,9 +48,9 @@ class Function(ABC):
         # self._create_rotation_point()
         # self._create_rotation()
 
-    @staticmethod
-    def set_seed(seed) -> None:
+    def set_seed(self, seed: int) -> None:
         """Set the numpy seed of the random generator"""
+        self.seed = seed
         np.random.seed(seed)
 
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
@@ -115,6 +115,9 @@ class Function(ABC):
             output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
 
         return output[1:]  # Cut of the first one because that is the empty array input
+
+    def get_name(self) -> str:
+        return self.__class__.__name__
 
     def plot_data(
         self, data: Data, px: int = 300, domain: np.ndarray = np.tile([0.0, 1.0], (2, 1))

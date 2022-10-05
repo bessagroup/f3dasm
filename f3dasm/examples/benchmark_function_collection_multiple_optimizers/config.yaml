@@ -1,13 +1,11 @@
-defaults:
-  - default
-
 design:
   lower_bound: -1.0
   upper_bound: 1.0
-  dimensionality: 3
+  dimensionality_lower_bound: 2
+  dimensionality_upper_bound: 5
 
 function:
-  function_name: Levy
+  noise: None
 
 optimizers:
   optimizers_names: [
@@ -30,10 +28,10 @@ optimizers:
   ]
 
 sampler:
-  sampler_name: LatinHypercubeSampling
+  sampler_name: RandomUniformSampling
   number_of_samples: 30
 
 execution:
   iterations: 500
-  realizations: 5
+  realizations: 10
   parallelization: True

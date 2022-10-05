@@ -1,6 +1,6 @@
 import logging
 from typing import List
-import autograd.numpy as np
+import numpy as np
 import hydra
 from hydra.core.config_store import ConfigStore
 import pickle
@@ -11,20 +11,27 @@ from config import Config
 def convert_config_to_input(config: Config) -> List[dict]:
 
     seed = np.random.randint(low=0, high=1e5)
+    dimensionality = np.random.randint(
+        low=config.design.dimensionality_lower_bound, high=config.design.dimensionality_upper_bound + 1
+    )
 
-    function_class: f3dasm.Function = f3dasm.find_class(f3dasm.functions, config.function.function_name)
+    functions_list = f3dasm.functions.get_functions(d=dimensionality)
+
+    function_class = np.random.choice(functions_list)
+
     optimizers_class: List[f3dasm.Optimizer] = [
         f3dasm.find_class(f3dasm.optimization, optimizer_name) for optimizer_name in config.optimizers.optimizers_names
     ]
     sampler_class: f3dasm.SamplingInterface = f3dasm.find_class(f3dasm.sampling, config.sampler.sampler_name)
 
-    bounds = np.tile([config.design.lower_bound, config.design.upper_bound], (config.design.dimensionality, 1))
-    design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=config.design.dimensionality)
-    data = f3dasm.Data(design=design)
+    bounds = np.tile([config.design.lower_bound, config.design.upper_bound], (dimensionality, 1))
 
     function = function_class(
-        dimensionality=config.design.dimensionality, noise=config.function.noise, scale_bounds=bounds, seed=seed
+        dimensionality=dimensionality, noise=config.function.noise, scale_bounds=bounds, seed=seed
     )
+    design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=dimensionality)
+    data = f3dasm.Data(design=design)
+
     optimizers = [optimizer(data=data, seed=seed) for optimizer in optimizers_class]
     sampler = sampler_class(design=data.design, seed=seed)
 
@@ -52,7 +59,10 @@ def main(cfg: Config):
     for options in options_list:
         results.append(f3dasm.run_multiple_realizations(**options))
 
-    f3dasm.write_pickle("0006", results)
+    f3dasm.write_pickle(
+        f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}",
+        results,
+    )
 
 
 cs = ConfigStore.instance()

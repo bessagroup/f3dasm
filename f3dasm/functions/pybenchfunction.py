@@ -217,7 +217,10 @@ class AckleyN4(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        # WARNING ! Is only is available for d=2
+
+        if d != 2:  # WARNING ! Is only is available for d=2
+            return (None, None)
+
         X = np.array([-1.51, -0.755])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
@@ -1557,7 +1560,8 @@ class Michalewicz(PyBenchFunction):
         return {"m": self.m}
 
     def get_global_minimum(self, d):
-        assert d == 2, "Michalewicz minimum is only given for d=2"
+        if d != 2:  # Michalewicz minimum is only given for d=2
+            return (None, None)
         X = np.array([2.20, 1.57])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
@@ -2450,7 +2454,8 @@ class ShubertN3(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        X = np.array([-7.4, -7.4])
+        X = np.array([-7.4 for _ in range(d)])
+
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
@@ -2488,7 +2493,7 @@ class ShubertN4(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        X = np.array([4.85, 4.85])
+        X = np.array([4.85 for _ in range(d)])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
