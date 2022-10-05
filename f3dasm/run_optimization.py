@@ -28,7 +28,7 @@ class OptimizationResult:
     def __post_init__(self):
         # Log
         logging.info(
-            f"Optimized {self.function.get_name()} function (seed={self.function.seed}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
+            f"Optimized {self.function.get_name()} function (seed={self.function.seed}, dim={self.function.dimensionality}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
         )
 
 

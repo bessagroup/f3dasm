@@ -32,6 +32,7 @@ sampler:
   number_of_samples: 30
 
 execution:
+  number_of_functions: 1
   iterations: 100
   realizations: 1
   parallelization: True

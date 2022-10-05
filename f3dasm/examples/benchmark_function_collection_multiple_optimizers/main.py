@@ -52,17 +52,19 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
 @hydra.main(config_path=".", config_name="config")
 def main(cfg: Config):
-    options_list = convert_config_to_input(config=cfg)
 
-    results = []
+    for _ in range(cfg.execution.number_of_functions):
+        options_list = convert_config_to_input(config=cfg)
 
-    for options in options_list:
-        results.append(f3dasm.run_multiple_realizations(**options))
+        results = []
 
-    f3dasm.write_pickle(
-        f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}",
-        results,
-    )
+        for options in options_list:
+            results.append(f3dasm.run_multiple_realizations(**options))
+
+        f3dasm.write_pickle(
+            f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}",
+            results,
+        )
 
 
 cs = ConfigStore.instance()

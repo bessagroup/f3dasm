@@ -28,6 +28,7 @@ class SamplerConfig:
 
 @dataclass
 class ExecutionConfig:
+    number_of_functions: int
     iterations: int
     realizations: int
     parallelization: bool
