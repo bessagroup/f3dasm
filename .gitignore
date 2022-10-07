@@ -105,3 +105,4 @@ outputs/
 # Data
 data/
 notebooks/archive/
+*.obj

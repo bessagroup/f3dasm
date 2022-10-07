@@ -7,8 +7,9 @@ from .sgd import SGD, SGD_Parameters
 from .bayesianoptimization import BayesianOptimization, BayesianOptimization_Parameters
 from .cg import CG, CG_Parameters
 from .cmaes import CMAES, CMAES_Parameters
-from .differentialevolution import DifferentialEvolution, DifferentialEvolution_Parameters
-from .dualannealing import DualAnnealing, DualAnnealing_Parameters
+
+# from .differentialevolution import DifferentialEvolution, DifferentialEvolution_Parameters
+# from .dualannealing import DualAnnealing, DualAnnealing_Parameters
 from .lbfgsb import LBFGSB, LBFGSB_Parameters
 from .neldermead import NelderMead, NelderMead_Parameters
 from .pso import PSO, PSO_Parameters
@@ -25,8 +26,8 @@ OPTIMIZERS = [
     SGD,
     CG,
     CMAES,
-    DifferentialEvolution,
-    DualAnnealing,
+    # DifferentialEvolution,
+    # DualAnnealing,
     LBFGSB,
     NelderMead,
     PSO,

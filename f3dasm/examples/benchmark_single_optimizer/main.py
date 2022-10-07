@@ -21,7 +21,7 @@ def convert_config_to_input(config: Config) -> dict:
     function = function_class(
         dimensionality=config.design.dimensionality, noise=config.function.noise, scale_bounds=bounds
     )
-    optimizer = optimizer_class(data=data, hyperparameters=config.optimizer.hyperparameters)
+    optimizer: f3dasm.Optimizer = optimizer_class(data=data, hyperparameters=config.optimizer.hyperparameters)
     sampler = sampler_class(design=data.design)
 
     return {
