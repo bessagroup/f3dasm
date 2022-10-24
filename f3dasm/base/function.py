@@ -79,7 +79,7 @@ class Function(ABC):
         else:
             x = input_x
 
-        x = self._from_input_to_scaled(x)
+        # x = self._from_input_to_scaled(x)
 
         y = np.atleast_1d(self.f(x))
 
