@@ -22,7 +22,7 @@ Clone from the GitHub repository
 
 .. code-block:: console
 
-  $ git clone -b versionmartin https://github.com/bessagroup/F3DASM.git
+  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.0.0 --single-branch
 
 Preferred way
 ^^^^^^^^^^^^^
