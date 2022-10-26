@@ -68,6 +68,14 @@ f3dasm.optimization.dualannealing module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.ftrl module
+-------------------------------
+
+.. automodule:: f3dasm.optimization.ftrl
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.lbfgsb module
 ---------------------------------
 
@@ -116,6 +124,22 @@ f3dasm.optimization.rmsprop module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.sade module
+-------------------------------
+
+.. automodule:: f3dasm.optimization.sade
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.sea module
+------------------------------
+
+.. automodule:: f3dasm.optimization.sea
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.sga module
 ------------------------------
 
@@ -128,6 +152,14 @@ f3dasm.optimization.sgd module
 ------------------------------
 
 .. automodule:: f3dasm.optimization.sgd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.simulatedannealing module
+---------------------------------------------
+
+.. automodule:: f3dasm.optimization.simulatedannealing
    :members:
    :undoc-members:
    :show-inheritance:

@@ -4,11 +4,15 @@ Samplers
 Usage
 -----
 
-We have to give initialize each sampler with a :class:`~f3dasm.base.design.DesignSpace`:
+A new sampler can be created by initializing the sampler with:
+
+* A :class:`~f3dasm.base.design.DesignSpace`
+* A random :attr:`~f3dasm.base.samplingmethod.SamplingInterface.seed` (optional)
+
 
 .. code-block:: python
 
-  ran = f3dasm.sampling.RandomUniformSampling(doe=design)
+  ran = f3dasm.sampling.RandomUniformSampling(design=design, seed=42)
   
 Then we can evoke sampling by calling the :meth:`~f3dasm.base.samplingmethod.SamplingInterface.get_samples` method:
 
@@ -22,6 +26,7 @@ This will return a :class:`~f3dasm.base.data.Data` object filled with the reques
 Implement your own sampler
 --------------------------
 
+WIP
 
 Implemented samplers
 --------------------

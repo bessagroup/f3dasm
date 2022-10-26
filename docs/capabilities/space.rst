@@ -40,6 +40,7 @@ Creating the design space
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The design space is then constructed by calling the :class:`~f3dasm.base.design.DesignSpace` class and providing:
+
 * a list of input parameters (:attr:`~f3dasm.base.design.DesignSpace.input_space`)
 * a list of output parameters (:attr:`~f3dasm.base.design.DesignSpace.output_space`):
 

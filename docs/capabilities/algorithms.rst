@@ -4,6 +4,23 @@ Optimizers
 Usage
 -----
 
+We will use the CMAES optimizer to find the minimum. We can find an implementation in the :mod:`f3dasm.optimization` module:
+
+.. code-block:: python
+
+    optimizer = f3dasm.optimization.CMAES(data=samples_lhs)
+
+By calling the :func:`~f3dasm.optimization.Optimizer.iterate` method and specifying the function and the number of iterations, we will start the optimization process:
+
+.. code-block:: python
+
+    optimizer.iterate(iterations=100, function=f)
+
+After that, we can extract the data:
+
+.. code-block:: python
+
+    cmaes_data = optimizer.extract_data()
 
 
 Implement your own optimizer
@@ -15,20 +32,25 @@ Implemented optimizers
 
 The following implementations of optimizers can found under the :mod:`f3dasm.optimization` module: 
 
+These are ported from several libraries such as `GPyOpt <https://sheffieldml.github.io/GPyOpt/>`_, `scipy-optimize <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_, `tensorflow <https://www.tensorflow.org/api_docs/python/tf/keras/optimizers>`_ and `pygmo <https://esa.github.io/pygmo2/>`_.
+
 
 Pygmo implementations
 ^^^^^^^^^^^^^^^^^^^^^
 
 These derivative-free global optimizers are ported from the `pygmo <https://esa.github.io/pygmo2/>`_ Python library: 
 
-======================== ====================================================================== ===============================================================================
-Name                      Docs of the Python class                                              Reference
-======================== ====================================================================== ===============================================================================
-CMAES                    :class:`~f3dasm.optimization.cmaes.CMAES`                               `pygmo cmaes <https://esa.github.io/pygmo2/algorithms.html#pygmo.cmaes>`_
-PSO                      :class:`~f3dasm.optimization.pso.PSO`                                   `pygmo pso_gen <https://esa.github.io/pygmo2/algorithms.html#pygmo.pso_gen>`_
-SGA                      :class:`~f3dasm.optimization.sga.SGA`                                   `pygmo sga <https://esa.github.io/pygmo2/algorithms.html#pygmo.sga>`_
-XNES                     :class:`~f3dasm.optimization.xnes.XNES`                                 `pygmo xnes <https://esa.github.io/pygmo2/algorithms.html#pygmo.xnes>`_
-======================== ====================================================================== ===============================================================================
+======================== ========================================================================== =======================================================================================================
+Name                      Docs of the Python class                                                  Reference
+======================== ========================================================================== =======================================================================================================
+CMAES                    :class:`~f3dasm.optimization.cmaes.CMAES`                                  `pygmo cmaes <https://esa.github.io/pygmo2/algorithms.html#pygmo.cmaes>`_
+PSO                      :class:`~f3dasm.optimization.pso.PSO`                                      `pygmo pso_gen <https://esa.github.io/pygmo2/algorithms.html#pygmo.pso_gen>`_
+SGA                      :class:`~f3dasm.optimization.sga.SGA`                                      `pygmo sga <https://esa.github.io/pygmo2/algorithms.html#pygmo.sga>`_
+SEA                      :class:`~f3dasm.optimization.sea.SEA`                                      `pygmo sea <https://esa.github.io/pygmo2/algorithms.html#pygmo.sea>`_
+XNES                     :class:`~f3dasm.optimization.xnes.XNES`                                    `pygmo xnes <https://esa.github.io/pygmo2/algorithms.html#pygmo.xnes>`_
+Differential Evolution   :class:`~f3dasm.optimization.differentialevolution.DifferentialEvolution`  `pygmo de <https://esa.github.io/pygmo2/algorithms.html#pygmo.de>`_
+Simulated Annealing      :class:`~f3dasm.optimization.simulatedannealing.SimulatedAnnealing`        `pygmo simulated_annealing <https://esa.github.io/pygmo2/algorithms.html#pygmo.simulated_annealing>`_
+======================== ========================================================================== =======================================================================================================
 
 Scipy Implementations
 ^^^^^^^^^^^^^^^^^^^^^
@@ -39,10 +61,10 @@ These optimizers are ported from the `scipy <https://scipy.org/>`_ Python librar
 Name                      Docs of the Python class                                                 Reference
 ======================== ========================================================================= ===============================================================================================
 CG                       :class:`~f3dasm.optimization.cg.CG`                                        `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
-DifferentialEvolution    :class:`~f3dasm.optimization.differentialevolution.DifferentialEvolution`  `scipy.optimize Differential Evolution <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html#scipy.optimize.differential_evolution>`_
-DualAnnealing            :class:`~f3dasm.optimization.dualannealing.DualAnnealing`                  `scipy.optimize Dual Annealing <https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.dual_annealing.html#scipy.optimize.dual_annealing>`_
 LBFGSB                   :class:`~f3dasm.optimization.lbfgsb.LBFGSB`                                `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
 NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`                        `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
+NelderMead               :class:`~f3dasm.optimization.cobyla.COBYLA`                                `scipy.minimize COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_
+
 ======================== ========================================================================= ===============================================================================================
 
 
