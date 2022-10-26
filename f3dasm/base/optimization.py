@@ -20,7 +20,7 @@ class Optimizer:
 
     Args:
         data (Data): Data-object
-        hyperparamaters (dict): Dictionary with hyperparamaters (default is None)
+        hyperparameters (dict): Dictionary with hyperparamaters (default is None)
         seed (int): seed to set the optimizer
         defaults (dict): Default hyperparameter arguments
     """
