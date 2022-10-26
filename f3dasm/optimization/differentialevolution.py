@@ -1,3 +1,10 @@
+from dataclasses import dataclass
+import pygmo as pg
+
+
+from ..base.optimization import OptimizerParameters
+from .adapters.pygmo_implementations import PygmoAlgorithm
+
 # from dataclasses import dataclass
 # from typing import Set
 # from scipy.optimize import differential_evolution
@@ -43,3 +50,35 @@
 #             atol=self.parameter.atol,
 #             updating=self.parameter.updating,
 #         )
+
+
+@dataclass
+class DifferentialEvolution_Parameters(OptimizerParameters):
+    """Hyperparameters for DifferentialEvolution optimizer"""
+
+    population: int = 30
+    gen: int = 1
+    F: float = 0.8
+    CR: float = 0.9
+    variant: int = 2
+    ftol: float = 0.0
+    xtol: float = 0.0
+
+
+class DifferentialEvolution(PygmoAlgorithm):
+    "DifferentialEvolution optimizer implemented from pygmo"
+
+    parameter: DifferentialEvolution_Parameters = DifferentialEvolution_Parameters()
+
+    def set_algorithm(self):
+        self.algorithm = pg.algorithm(
+            pg.de(
+                gen=self.parameter.gen,
+                F=self.parameter.F,
+                CR=self.parameter.CR,
+                variant=self.parameter.variant,
+                ftol=self.parameter.ftol,
+                xtol=self.parameter.xtol,
+                seed=self.seed,
+            )
+        )

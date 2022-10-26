@@ -20,5 +20,7 @@ gpyopt
 pytest
 pytest-cov
 hypothesis
+tensorflow
+autograd
 
 # nose==1.3.7

@@ -22,7 +22,21 @@ REQUIRES_PYTHON = ">=3.7.0, <4"
 # VERSION = get_version()
 
 # What packages are required for this module to be executed?
-REQUIRED = ["numpy", "scipy", "pandas", "matplotlib", "SALib", "hypothesis", "GPyOpt", "GPy"]
+REQUIRED = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "SALib",
+    "hypothesis",
+    "GPyOpt",
+    "GPy",
+    "autograd",
+    "numdifftools",
+    "pathos",
+    "pytest",
+    "pytest-cov",
+]
 
 # What packages are optional?
 EXTRAS = {
