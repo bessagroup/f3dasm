@@ -23,6 +23,8 @@ from .nadam import Nadam, Nadam_Parameters
 from .adamax import Adamax, Adamax_Parameters
 from .ftrl import Ftrl, Ftrl_Parameters
 from .sade import SADE, SADE_Parameters
+from .bayesianoptimization import BayesianOptimization, BayesianOptimization_Parameters
+from .bayesianoptimization_torch import BayesianOptimizationTorch, BayesianOptimizationTorch_Parameters
 
 # from .cobyla import COBYLA, COBYLA_Parameters
 

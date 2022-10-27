@@ -13,6 +13,7 @@ from .base.optimization import *
 from .base.samplingmethod import *
 from .base.function import *
 from .base.utils import *
+from .base.regression import *
 
 from .base.simulation import *
 
@@ -21,6 +22,7 @@ from . import optimization
 from . import functions
 from . import sampling
 from . import simulation
+from . import regression
 
 # Import main scripts
 from .run_optimization import *
