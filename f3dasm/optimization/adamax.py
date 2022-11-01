@@ -1,3 +1,7 @@
+"""
+Information on the Adamax optimizer
+"""
+
 from dataclasses import dataclass
 
 from ..base.optimization import OptimizerParameters
@@ -8,7 +12,14 @@ import tensorflow as tf
 
 @dataclass
 class Adamax_Parameters(OptimizerParameters):
-    """Hyperparameters for Momentum optimizer"""
+    """Hyperparameters for Adamax optimizer
+
+    Args:
+        learning_rate (float): desc (Default = 0.001)
+        beta_1 (float): desc (Default = 0.9)
+        beta_2 (float): desc (Default = 0.999)
+        epsilon (float): desc (Default = 1e-07)
+    """
 
     learning_rate: float = 0.001
     beta_1: float = 0.9

@@ -6,14 +6,19 @@ from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 @dataclass
 class LBFGSB_Parameters(OptimizerParameters):
-    """Hyperparameters for LBFGSB optimizer"""
+    """Hyperparameters for LBFGSB optimizer
+
+    Args:
+        ftol (float): _description_ (Default = 0.0)
+        gtol (float): _description_ (Default = 0.0)
+    """
 
     ftol: float = 0.0
     gtol: float = 0.0
-    method: str = "L-BFGS-B"
 
 
 class LBFGSB(SciPyMinimizeOptimizer):
     """L-BFGS-B"""
 
+    method: str = "L-BFGS-B"
     parameter: LBFGSB_Parameters = LBFGSB_Parameters()

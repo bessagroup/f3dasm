@@ -60,3 +60,15 @@ We can make a n-dimensional continous, single-objective design space with the he
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
   design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
 
+API Documentation
+-----------------
+
+.. automodule:: f3dasm.base.space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: f3dasm.base.design
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -9,7 +9,15 @@ import tensorflow as tf
 
 @dataclass
 class RMSprop_Parameters(OptimizerParameters):
-    """Hyperparameters for Momentum optimizer"""
+    """Hyperparameters for RMSprop optimizer
+
+    Args:
+        learning_rate (float): (Default = 0.001)
+        rho (float): (Default = 0.9)
+        momentum (float): (Default = 0.0)
+        epsilon (float): (Default = 1e-7)
+        centered (bool): (Default = False)
+    """
 
     learning_rate: float = 0.001
     rho: float = 0.9

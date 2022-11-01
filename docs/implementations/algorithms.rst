@@ -23,9 +23,6 @@ After that, we can extract the data:
     cmaes_data = optimizer.extract_data()
 
 
-Implement your own optimizer
-----------------------------
-
 
 Implemented optimizers
 ----------------------
@@ -99,3 +96,174 @@ Name                      Docs of the Python class                              
 ======================== ====================================================================== ==================
 RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                 self implemented
 ======================== ====================================================================== ==================
+
+API Documentation
+-----------------
+
+Adam
+^^^^
+
+.. automodule:: f3dasm.optimization.adam
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Adamax
+^^^^^^
+
+.. automodule:: f3dasm.optimization.adamax
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Bayesian Optimization
+^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.bayesianoptimization
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Bayesian Optimization Torch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.bayesianoptimization_torch
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Conjugate Gradient
+^^^^^^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.cg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CMAES
+^^^^^
+
+.. automodule:: f3dasm.optimization.cmaes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+COBYLA
+^^^^^^
+
+.. automodule:: f3dasm.optimization.cobyla
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Differential Evolution
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.differentialevolution
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+FTRL
+^^^^
+
+.. automodule:: f3dasm.optimization.ftrl
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+LBFGSB
+^^^^^^
+
+.. automodule:: f3dasm.optimization.lbfgsb
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Nadam
+^^^^^
+
+.. automodule:: f3dasm.optimization.nadam
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Nelder Mead
+^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.neldermead
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+PSO
+^^^
+
+.. automodule:: f3dasm.optimization.pso
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Random Search
+^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.randomsearch
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+RMSprop
+^^^^^^^
+
+.. automodule:: f3dasm.optimization.rmsprop
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SADE
+^^^^
+
+.. automodule:: f3dasm.optimization.sade
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SEA
+^^^
+
+.. automodule:: f3dasm.optimization.sea
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SGA
+^^^
+
+.. automodule:: f3dasm.optimization.sga
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SGD
+^^^
+
+.. automodule:: f3dasm.optimization.sgd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Simulated Annealing
+^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: f3dasm.optimization.simulatedannealing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+XNES
+^^^^
+
+.. automodule:: f3dasm.optimization.xnes
+   :members:
+   :undoc-members:
+   :show-inheritance:

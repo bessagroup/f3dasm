@@ -1,6 +1,14 @@
 f3dasm.functions package
 ========================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   f3dasm.functions.adapters
+
 Submodules
 ----------
 

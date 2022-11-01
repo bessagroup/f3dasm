@@ -9,7 +9,14 @@ import tensorflow as tf
 
 @dataclass
 class Nadam_Parameters(OptimizerParameters):
-    """Hyperparameters for Momentum optimizer"""
+    """Hyperparameters for Momentum optimizer
+
+    Args:
+        learning_rate (float): (Default = 0.004)
+        beta_1 (float): (Default = 0.9)
+        beta_2 (float): (Default = 0.999)
+        epsilon (float): (Default = 1e-07)
+    """
 
     learning_rate: float = 0.001
     beta_1: float = 0.9

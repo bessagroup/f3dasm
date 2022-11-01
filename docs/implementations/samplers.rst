@@ -1,4 +1,4 @@
-Samplers
+Sampling
 ========
 
 Usage
@@ -23,10 +23,6 @@ Then we can evoke sampling by calling the :meth:`~f3dasm.base.samplingmethod.Sam
   
 This will return a :class:`~f3dasm.base.data.Data` object filled with the requested samples.
 
-Implement your own sampler
---------------------------
-
-WIP
 
 Implemented samplers
 --------------------
@@ -41,3 +37,11 @@ Latin Hypercube sampling :class:`f3dasm.sampling.samplers.LatinHypercubeSampling
 Sobol Sequence sampling  :class:`f3dasm.sampling.samplers.SobolSequenceSampling`                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
 
 ======================== ====================================================================== ===========================================================================================================
+
+API Documentation
+-----------------
+
+.. automodule:: f3dasm.sampling.samplers
+   :members:
+   :undoc-members:
+   :show-inheritance:

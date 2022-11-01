@@ -1,3 +1,7 @@
+"""
+Information on the Adam optimizer
+"""
+
 from dataclasses import dataclass
 
 from ..base.optimization import OptimizerParameters

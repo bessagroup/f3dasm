@@ -45,7 +45,7 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function) -> None:
         minimize(
             fun=lambda x: function(x).item(),
-            method=self.parameter.method,
+            method=self.method,
             jac=lambda x: function.dfdx(x).ravel(),
             x0=self.data.get_n_best_input_parameters_numpy(nosamples=1).ravel(),
             callback=self._callback,

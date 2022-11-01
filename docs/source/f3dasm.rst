@@ -9,8 +9,10 @@ Subpackages
 
    f3dasm.base
    f3dasm.config
+   f3dasm.examples
    f3dasm.functions
    f3dasm.optimization
+   f3dasm.regression
    f3dasm.sampling
    f3dasm.simulation
 
