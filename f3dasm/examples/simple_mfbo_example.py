@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 from f3dasm import run_optimization, make_nd_continuous_design
 from f3dasm.functions import pybenchfunction
 from f3dasm.optimization.bayesianoptimization_torch import BayesianOptimizationTorch
-from f3dasm.sampling import SobolSequenceSampling
+from f3dasm.sampling import SobolSequence
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
         bounds=fun.input_domain.astype(float),
         dimensionality=dim,
     )
-    SobolSampler = SobolSequenceSampling(design=parameter_DesignSpace)
+    SobolSampler = SobolSequence(design=parameter_DesignSpace)
     samples = SobolSampler.get_samples(numsamples=8)
     samples.add_output(output=fun(samples))
     optimizer = BayesianOptimizationTorch(data=samples)

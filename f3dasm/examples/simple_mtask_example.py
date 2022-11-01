@@ -6,7 +6,7 @@ from f3dasm import make_nd_continuous_design, ContinuousParameter
 from f3dasm.functions import pybenchfunction
 from f3dasm.functions.adapters.torch_functions import AugmentedTestFunction, botorch_TestFunction
 from f3dasm.regression.gpr import Cokgj, Mtask, Stmf
-from f3dasm.sampling import SobolSequenceSampling
+from f3dasm.sampling import SobolSequence
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
         dimensionality=1,
     )
 
-    SobolSampler = SobolSequenceSampling(design=parameter_DesignSpace)
+    SobolSampler = SobolSequence(design=parameter_DesignSpace)
 
     aug_fun = AugmentedTestFunction(botorch_TestFunction(fun=fun), noise_type="b")
 

@@ -11,11 +11,9 @@ from f3dasm.base.space import (
     ContinuousParameter,
     DiscreteParameter,
 )
-from f3dasm.sampling.samplers import (
-    LatinHypercubeSampling,
-    RandomUniformSampling,
-    SobolSequenceSampling,
-)
+from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.sampling.latinhypercube import LatinHypercube
+from f3dasm.sampling.sobolsequence import SobolSequence
 
 
 @pytest.fixture
@@ -40,7 +38,7 @@ def test_correct_randomuniform_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniformSampling(design=design, seed=seed)
+    random_uniform = RandomUniform(design=design, seed=seed)
 
     numsamples = 5
 
@@ -62,7 +60,7 @@ def test_correct_latinhypercube_sampling(design: DesignSpace):
     seed = 42
 
     # Construct sampler
-    latin_hypercube = LatinHypercubeSampling(design=design, seed=seed)
+    latin_hypercube = LatinHypercube(design=design, seed=seed)
 
     numsamples = 5
 
@@ -83,7 +81,7 @@ def test_correct_sobolsequence_sampling(design):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequenceSampling(design=design, seed=seed)
+    sobol_sequencing = SobolSequence(design=design, seed=seed)
 
     numsamples = 5
 

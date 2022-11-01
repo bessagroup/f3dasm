@@ -4,8 +4,8 @@ from f3dasm.base.data import Data
 from f3dasm.base.utils import make_nd_continuous_design
 from f3dasm.base.optimization import Optimizer
 from f3dasm.base.function import Function
-from f3dasm.sampling.samplers import (
-    RandomUniformSampling,
+from f3dasm.sampling.randomuniform import (
+    RandomUniform,
 )
 from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Levy, Ackley, Sphere
 from f3dasm.optimization import OPTIMIZERS
@@ -42,7 +42,7 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    ran_sampler = RandomUniformSampling(design=design, seed=seed)
+    ran_sampler = RandomUniform(design=design, seed=seed)
     data = ran_sampler.get_samples(numsamples=30)
 
     func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
@@ -81,7 +81,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
     design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    ran_sampler = RandomUniformSampling(design=design, seed=seed)
+    ran_sampler = RandomUniform(design=design, seed=seed)
     data: Data = ran_sampler.get_samples(numsamples=numsamples)
 
     func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
