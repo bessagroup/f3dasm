@@ -14,15 +14,15 @@ from .kernels.cokgj_kernel import CoKrigingGP
 class Sogpr_Parameters:
     kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
 
-class Sogpr(TorchGPRegressor):
 
+class Sogpr(TorchGPRegressor):
     def __init__(
-            self,
-            regressor=SingleTaskGP,
-            parameter=Sogpr_Parameters(),
-            train_input_data=None,
-            train_output_data=None,
-            design=None,
+        self,
+        regressor=SingleTaskGP,
+        parameter=Sogpr_Parameters(),
+        train_input_data=None,
+        train_output_data=None,
+        design=None,
     ):
 
         super().__init__(
@@ -35,19 +35,20 @@ class Sogpr(TorchGPRegressor):
         self.regressor = regressor
         self.kernel = parameter.kernel
 
+
 @dataclass
 class Mtask_Parameters:
     kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
 
-class Mtask(TorchGPRegressor):
 
+class Mtask(TorchGPRegressor):
     def __init__(
-            self,
-            regressor=MultiTaskGP,
-            parameter=Mtask_Parameters(),
-            mf_train_input_data=None,
-            mf_train_output_data=None,
-            mf_design=None,
+        self,
+        regressor=MultiTaskGP,
+        parameter=Mtask_Parameters(),
+        mf_train_input_data=None,
+        mf_train_output_data=None,
+        mf_design=None,
     ):
         super().__init__(
             train_input_data=mf_train_input_data,
@@ -60,19 +61,20 @@ class Mtask(TorchGPRegressor):
         self.regressor = regressor
         self.kernel = parameter.kernel
 
+
 @dataclass
 class Cokgj_Parameters:
     kernel: gpytorch.kernels.Kernel = cokgj_kernel.CoKrigingKernel()
 
-class Cokgj(TorchGPRegressor):
 
+class Cokgj(TorchGPRegressor):
     def __init__(
-            self,
-            regressor=CoKrigingGP,
-            parameter=Cokgj_Parameters(),
-            mf_train_input_data=None,
-            mf_train_output_data=None,
-            mf_design=None,
+        self,
+        regressor=CoKrigingGP,
+        parameter=Cokgj_Parameters(),
+        mf_train_input_data=None,
+        mf_train_output_data=None,
+        mf_design=None,
     ):
         super().__init__(
             train_input_data=mf_train_input_data,
@@ -83,20 +85,21 @@ class Cokgj(TorchGPRegressor):
         self.regressor = regressor
         self.kernel = parameter.kernel
 
+
 @dataclass
 class Stmf_Parameters:
     linear_truncated: bool = False
     data_fidelity: int = -1
 
-class Stmf(TorchGPRegressor):
 
+class Stmf(TorchGPRegressor):
     def __init__(
-            self,
-            regressor=SingleTaskMultiFidelityGP,
-            parameter=Stmf_Parameters(),
-            mf_train_input_data=None,
-            mf_train_output_data=None,
-            mf_design=None,
+        self,
+        regressor=SingleTaskMultiFidelityGP,
+        parameter=Stmf_Parameters(),
+        mf_train_input_data=None,
+        mf_train_output_data=None,
+        mf_design=None,
     ):
         super().__init__(
             train_input_data=mf_train_input_data,

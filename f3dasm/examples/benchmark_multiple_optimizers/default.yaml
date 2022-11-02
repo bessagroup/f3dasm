@@ -11,7 +11,7 @@ optimizers:
   optimizers_names: [Adam, CMAES, PSO, RandomSearch] 
 
 sampler:
-  sampler_name: RandomUniformSampling
+  sampler_name: RandomUniform
   number_of_samples: 30
 
 execution:

@@ -1,14 +1,11 @@
-from dataclasses import dataclass
-
-import autograd.numpy as np
 import tensorflow as tf
 
 from ...base.function import Function
-from ...base.optimization import Optimizer, OptimizerParameters
+from ...base.optimization import Optimizer
 
 import autograd
 import autograd.core
-import autograd.numpy as np
+
 from autograd import elementwise_grad as egrad
 
 

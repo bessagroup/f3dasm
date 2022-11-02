@@ -4,18 +4,20 @@ from typing import Optional, Mapping, Any, List
 from .. import DesignSpace
 from ..base.data import Data
 
+
 @dataclass
 class Surrogate:
     model: Any
 
     def predict(
-            self,
-            test_input_data: Data,
+        self,
+        test_input_data: Data,
     ) -> Data or List[Data]:
         pass
 
     def save_model(self):
         pass
+
 
 @dataclass
 class Regressor:
@@ -25,9 +27,9 @@ class Regressor:
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
 
     def set_train_data(
-            self,
-            train_input_data: Data,
-            train_output_data: Data,
+        self,
+        train_input_data: Data,
+        train_output_data: Data,
     ) -> None:
         self.train_input_data = train_input_data
         self.train_output_data = train_output_data
@@ -37,4 +39,3 @@ class Regressor:
 
     def train(self) -> Surrogate:
         pass
-

@@ -2,6 +2,7 @@ import torch
 from torch import Tensor
 import numpy as np
 from botorch.test_functions import SyntheticTestFunction
+
 # from MFBO import Comsol_Sim_low, Comsol_Sim_high
 
 from f3dasm.functions.pybenchfunction import PyBenchFunction
@@ -11,6 +12,7 @@ tkwargs = {
     # "device": torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     "device": torch.device("cpu"),
 }
+
 
 class botorch_TestFunction(SyntheticTestFunction):
     def __init__(self, fun: PyBenchFunction, negate=False):
@@ -32,20 +34,17 @@ class botorch_TestFunction(SyntheticTestFunction):
         super().__init__()
 
     def evaluate_true(self, X: Tensor) -> Tensor:
-        res = torch.Tensor(
-            np.apply_along_axis(
-                self.fun, 1, X.cpu()
-            )
-        )
+        res = torch.Tensor(np.apply_along_axis(self.fun, 1, X.cpu()))
 
         # if self.negate:
         #     res = -res
 
         return res
 
+
 class AugmentedTestFunction(SyntheticTestFunction):
-    def __init__(self, fun, negate=False, noise_type='bn'):
-        self.name = 'Augmented' + fun.name.replace(' ', '')
+    def __init__(self, fun, negate=False, noise_type="bn"):
+        self.name = "Augmented" + fun.name.replace(" ", "")
         self.continuous = fun.continuous
         self.convex = fun.convex
         self.separable = fun.separable
@@ -79,18 +78,18 @@ class AugmentedTestFunction(SyntheticTestFunction):
         if len(res_high) > 1:
             stdev = torch.std(res_high)
 
-        if self.noise_type == 'bn':
+        if self.noise_type == "bn":
             # res_low = stdev * white_noise + torch.mean(res_high) #+ 500 * brown_noise
-            res_low = stdev * white_noise #+ 500 * brown_noise
-        elif self.noise_type == 'n':
+            res_low = stdev * white_noise  # + 500 * brown_noise
+        elif self.noise_type == "n":
             res_low = stdev * white_noise + res_high
-        elif self.noise_type == 'b':
+        elif self.noise_type == "b":
             # res_low = torch.mean(res_high)
             res_low = 0
         else:
-            res_low = stdev * white_noise + torch.mean(res_high) #+ 500 * brown_noise
+            res_low = stdev * white_noise + torch.mean(res_high)  # + 500 * brown_noise
 
-        ### Noise ideas ###
+        # Noise ideas ###
         # noise = 2 * (torch.rand(res_high.shape) - 0.5)
         # white_noise = white_noise_pre[:len(res_high)]
         # brown_noise = torch.cumsum(white_noise, dim=-1)
@@ -101,13 +100,14 @@ class AugmentedTestFunction(SyntheticTestFunction):
 
         c = 1
 
-        res = fid ** c * res_high + (1 - fid ** c) * res_low
+        res = fid**c * res_high + (1 - fid**c) * res_low
         # print(res)
 
         # if self.negate:
         #     res = -res
 
         return res
+
 
 # class ComsolTestFunction(SyntheticTestFunction):
 #     def __init__(self):

@@ -1,4 +1,3 @@
-from flatbuffers.builder import np
 from matplotlib import pyplot as plt
 
 from f3dasm import run_optimization, make_nd_continuous_design

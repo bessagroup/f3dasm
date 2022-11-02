@@ -17,17 +17,17 @@ class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     model: Any = None
     acquisition: Any = None
 
+
 def cost_model(self):
     lf = self.fidelities[0]
     a = (1 - 1 / self.cost_ratio) / (1 - lf)
-    cost_model = AffineFidelityCostModel(
-        fidelity_weights={self.objective_function.dim - 1: a},
-        fixed_cost=1 - a
-    )
+    cost_model = AffineFidelityCostModel(fidelity_weights={self.objective_function.dim - 1: a}, fixed_cost=1 - a)
     return cost_model
+
 
 def cost_aware_utility(self):
     return InverseCostWeightedUtility(cost_model=self.cost_model())
+
 
 def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, Any]:
     candidates, _ = optimize_acqf(
@@ -41,9 +41,9 @@ def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, An
     new_obj = function(new_x)
     return new_x, new_obj
 
+
 def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, function: Function) -> Tuple[Any, Any, Any]:
-    fixed_features_list = [{-1: float(lf)},
-                           {-1: 1.0}]
+    fixed_features_list = [{-1: float(lf)}, {-1: 1.0}]
     candidates, _ = optimize_acqf_mixed(
         acq_function=acq_f,
         bounds=torch.tensor(function.input_domain.T, dtype=torch.float64),
@@ -65,8 +65,8 @@ class BayesianOptimizationTorch(Optimizer):
 
     def init_parameters(self) -> None:
 
-        train_x = self.data.data['input'].values
-        train_y = self.data.data['output'].values
+        train_x = self.data.data["input"].values
+        train_y = self.data.data["output"].values
 
         regressor = Sogpr(
             train_input_data=train_x,
@@ -103,8 +103,8 @@ class BayesianOptimizationTorch(Optimizer):
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)
 
-        train_x = self.data.data['input'].values
-        train_y = self.data.data['output'].values
+        train_x = self.data.data["input"].values
+        train_y = self.data.data["output"].values
 
         regressor = Sogpr(
             train_input_data=train_x,
@@ -125,14 +125,15 @@ class BayesianOptimizationTorch(Optimizer):
         #     best_f=torch.amin(torch.tensor(train_y)),
         #     maximize=False,
         # )
+
 
 class MFBayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
 
     def init_parameters(self) -> None:
 
-        train_x = self.data.data['input'].values
-        train_y = self.data.data['output'].values
+        train_x = self.data.data["input"].values
+        train_y = self.data.data["output"].values
 
         regressor = Sogpr(
             train_input_data=train_x,
@@ -169,8 +170,8 @@ class MFBayesianOptimizationTorch(Optimizer):
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)
 
-        train_x = self.data.data['input'].values
-        train_y = self.data.data['output'].values
+        train_x = self.data.data["input"].values
+        train_y = self.data.data["output"].values
 
         regressor = Sogpr(
             train_input_data=train_x,
@@ -191,4 +192,3 @@ class MFBayesianOptimizationTorch(Optimizer):
         #     best_f=torch.amin(torch.tensor(train_y)),
         #     maximize=False,
         # )
-
