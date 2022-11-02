@@ -17,6 +17,8 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: conda-incubator/setup-miniconda@v2
       with:
+        activate-environment: f3dasm_env
+        environment-file: f3dasm_environment.yml
         auto-update-conda: true
         channels: conda-forge
         channel-priority: flexible
