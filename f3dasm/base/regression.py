@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Mapping, Any, List
+from typing import Any, List, Mapping, Optional
 
 from .. import DesignSpace
 from ..base.data import Data

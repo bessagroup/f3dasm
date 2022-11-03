@@ -1,8 +1,9 @@
-from typing import Any
-import autograd.numpy as np
 import pickle
+from typing import Any
 
-from f3dasm.base.data import Data
+import autograd.numpy as np
+
+from ..base.data import Data
 from ..base.design import DesignSpace
 from ..base.space import ContinuousParameter
 

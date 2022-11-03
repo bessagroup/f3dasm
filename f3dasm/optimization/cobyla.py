@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 from ..base.optimization import OptimizerParameters
+from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 
 @dataclass

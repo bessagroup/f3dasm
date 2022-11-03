@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from ..base.optimization import OptimizerParameters
-
-from .adapters.tensorflow_implementations import TensorflowOptimizer
 import tensorflow as tf
+
+from ..base.optimization import OptimizerParameters
+from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 
 @dataclass

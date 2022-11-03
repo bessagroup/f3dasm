@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Any, Tuple
 
 import torch
-from botorch.acquisition import UpperConfidenceBound, InverseCostWeightedUtility
+from botorch.acquisition import InverseCostWeightedUtility, UpperConfidenceBound
 from botorch.models import AffineFidelityCostModel
 from botorch.optim import optimize_acqf, optimize_acqf_mixed
 
-from .. import Optimizer, Function, OptimizerParameters
+from .. import Function, Optimizer, OptimizerParameters
 from ..regression.gpr import Sogpr
 
 

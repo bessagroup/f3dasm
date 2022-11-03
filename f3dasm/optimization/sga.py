@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+
 import pygmo as pg
 
-from .adapters.pygmo_implementations import PygmoAlgorithm
 from ..base.optimization import OptimizerParameters
+from .adapters.pygmo_implementations import PygmoAlgorithm
 
 
 @dataclass

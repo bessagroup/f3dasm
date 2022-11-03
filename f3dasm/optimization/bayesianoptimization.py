@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Any
+
 import GPy
 import GPyOpt
 
-
-from ..base.optimization import Optimizer, OptimizerParameters
 from ..base.function import Function
+from ..base.optimization import Optimizer, OptimizerParameters
 
 
 @dataclass

@@ -1,7 +1,8 @@
-import autograd.numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from dataclasses import dataclass, field
+
+import autograd.numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 
 from ..base.design import DesignSpace
 

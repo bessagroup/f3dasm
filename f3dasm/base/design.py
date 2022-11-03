@@ -3,12 +3,8 @@ from typing import List, TypeVar
 
 import pandas as pd
 
-from ..base.space import (
-    CategoricalParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-    ParameterInterface,
-)
+from ..base.space import (CategoricalParameter, ContinuousParameter,
+                          DiscreteParameter, ParameterInterface)
 
 
 @dataclass

@@ -4,6 +4,7 @@ Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimiz
 """
 
 import autograd.numpy as np
+
 from ..base.function import Function
 
 

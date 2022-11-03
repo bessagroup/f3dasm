@@ -1,19 +1,17 @@
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any
+
 import autograd.numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
+import matplotlib.pyplot as plt
 import numdifftools as nd
 from scipy.stats import special_ortho_group
 
 from ..base.data import Data
-from ..base.utils import (
-    _from_data_to_numpy_array_benchmarkfunction,
-    _scale_vector,
-    _descale_vector,
-    _rotate_vector,
-)
+from ..base.utils import (_descale_vector,
+                          _from_data_to_numpy_array_benchmarkfunction,
+                          _rotate_vector, _scale_vector)
 
 
 @dataclass
