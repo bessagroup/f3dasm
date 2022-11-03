@@ -9,7 +9,7 @@ import numdifftools as nd
 from scipy.stats import special_ortho_group
 
 from ..base.data import Data
-from ..base.utils import _descale_vector, _from_data_to_numpy_array_benchmarkfunction, _rotate_vector, _scale_vector
+from ..base.utils import _from_data_to_numpy_array_benchmarkfunction, _rotate_vector
 
 
 @dataclass
@@ -28,11 +28,8 @@ class Function(ABC):
     seed: Any or int = None
     dimensionality: int = 2
     scale_bounds: Any or np.ndarray = None
-    input_domain: Any or np.ndarray = field(init=False)
 
     def __post_init__(self):
-
-        self.input_domain = np.tile([0.0, 1.0], (self.dimensionality, 1))
 
         if self.scale_bounds is None:
             self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
@@ -84,7 +81,7 @@ class Function(ABC):
 
         x = self._offset_input(x)
 
-        x = self._scale_input(x)
+        # x = self._scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -234,9 +231,6 @@ class Function(ABC):
             plt.close(fig)
 
         return fig, ax
-
-    def _scale_input(self, x: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
 
     # def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
 
