@@ -6,12 +6,27 @@ Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimiz
 import autograd.numpy as np
 
 from ..base.function import Function
+from ..base.utils import _descale_vector, _scale_vector
 
 
 class PyBenchFunction(Function):
     @classmethod
     def is_dim_compatible(cls, d) -> bool:
         pass
+
+    def _descale_input(self, x: np.ndarray) -> np.ndarray:
+        return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
+
+    def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
+
+        x = self._reshape_input(x)
+
+        x = self._descale_input(x)
+
+        # x = self._reverse_rotate_input(x)
+        x = self._reverse_offset_input(x)
+
+        return x
 
     def evaluate(x: np.ndarray):
         raise NotImplementedError("No function implemented!")
@@ -33,6 +48,7 @@ class PyBenchFunction(Function):
             y = []
             x = np.atleast_2d(x)
             for xi in x:
+
                 y.append(self.evaluate(xi))
 
             return np.array(y).reshape(-1, 1)
