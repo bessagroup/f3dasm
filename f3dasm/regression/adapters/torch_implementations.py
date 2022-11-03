@@ -47,14 +47,12 @@ class TorchGPRegressor(Regressor):
     def __init__(
             self,
             regressor=None,
-            train_input_data=None,
-            train_output_data=None,
+            train_data: Data = None,
             design=None,
             **kwargs
     ):
         super().__init__(
-            train_input_data=train_input_data,
-            train_output_data=train_output_data,
+            train_data=train_data,
             design=design,
         )
         self.regressor = regressor
@@ -63,8 +61,8 @@ class TorchGPRegressor(Regressor):
     def train(self) -> Surrogate:
         surrogate = TorchGPSurrogate(
             model=self.regressor(
-                train_X=torch.tensor(self.train_input_data),
-                train_Y=torch.tensor(self.train_output_data),
+                train_X=torch.tensor(self.train_data.get_input_data().values),
+                train_Y=torch.tensor(self.train_data.get_output_data().values),
                 input_transform=Normalize(
                     d=len(self.design.input_space),
                     bounds=_continuousInputSpace_to_tensor(self.design.input_space),

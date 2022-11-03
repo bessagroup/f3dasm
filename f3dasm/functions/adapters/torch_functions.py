@@ -1,7 +1,11 @@
+from abc import ABC
+
 import torch
 from torch import Tensor
 import numpy as np
 from botorch.test_functions import SyntheticTestFunction
+
+from f3dasm import Function, MultiFidelityFunction
 # from MFBO import Comsol_Sim_low, Comsol_Sim_high
 
 from f3dasm.functions.pybenchfunction import PyBenchFunction
@@ -12,8 +16,20 @@ tkwargs = {
     "device": torch.device("cpu"),
 }
 
+
+# class f3dasm_multifidelityfunction(MultiFidelityFunction):
+#     def __init__(self, base_torch_fun):
+#         self.torch_fun: SyntheticTestFunction = torch_fun
+#
+#     def f(self, x: np.ndarray) -> np.ndarray:
+#         x_torch = torch.tensor(x)
+#         res_torch = self.torch_fun.evaluate_true(x_torch)
+#         res = res_torch.numpy()
+#         return res
+
+
 class botorch_TestFunction(SyntheticTestFunction):
-    def __init__(self, fun: PyBenchFunction, negate=False):
+    def __init__(self, fun: PyBenchFunction, negate=False): # fun: Function?
         self.name = fun.name
         self.continuous = fun.continuous
         self.convex = fun.convex
@@ -42,6 +58,7 @@ class botorch_TestFunction(SyntheticTestFunction):
         #     res = -res
 
         return res
+
 
 class AugmentedTestFunction(SyntheticTestFunction):
     def __init__(self, fun, negate=False, noise_type='bn'):
@@ -78,17 +95,17 @@ class AugmentedTestFunction(SyntheticTestFunction):
         stdev = 1
         if len(res_high) > 1:
             stdev = torch.std(res_high)
-
+        # adding noise from f3dasm to be implemented
         if self.noise_type == 'bn':
             # res_low = stdev * white_noise + torch.mean(res_high) #+ 500 * brown_noise
-            res_low = stdev * white_noise #+ 500 * brown_noise
+            res_low = stdev * white_noise  # + 500 * brown_noise
         elif self.noise_type == 'n':
             res_low = stdev * white_noise + res_high
         elif self.noise_type == 'b':
             # res_low = torch.mean(res_high)
             res_low = 0
         else:
-            res_low = stdev * white_noise + torch.mean(res_high) #+ 500 * brown_noise
+            res_low = stdev * white_noise + torch.mean(res_high)  # + 500 * brown_noise
 
         ### Noise ideas ###
         # noise = 2 * (torch.rand(res_high.shape) - 0.5)

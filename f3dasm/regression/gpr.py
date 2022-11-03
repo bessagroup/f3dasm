@@ -20,14 +20,12 @@ class Sogpr(TorchGPRegressor):
         self,
         regressor=SingleTaskGP,
         parameter=Sogpr_Parameters(),
-        train_input_data=None,
-        train_output_data=None,
+        train_data=None,
         design=None,
     ):
 
         super().__init__(
-            train_input_data=train_input_data,
-            train_output_data=train_output_data,
+            train_data=train_data,
             covar_module=parameter.kernel,
             design=design,
         )
@@ -46,13 +44,11 @@ class Mtask(TorchGPRegressor):
         self,
         regressor=MultiTaskGP,
         parameter=Mtask_Parameters(),
-        mf_train_input_data=None,
-        mf_train_output_data=None,
+        mf_train_data=None,
         mf_design=None,
     ):
         super().__init__(
-            train_input_data=mf_train_input_data,
-            train_output_data=mf_train_output_data,
+            train_data=mf_train_data,
             covar_module=parameter.kernel,
             design=mf_design,
             task_feature=-1,
@@ -72,13 +68,11 @@ class Cokgj(TorchGPRegressor):
         self,
         regressor=CoKrigingGP,
         parameter=Cokgj_Parameters(),
-        mf_train_input_data=None,
-        mf_train_output_data=None,
+        mf_train_data=None,
         mf_design=None,
     ):
         super().__init__(
-            train_input_data=mf_train_input_data,
-            train_output_data=mf_train_output_data,
+            train_data=mf_train_data,
             design=mf_design,
         )
 
@@ -89,7 +83,7 @@ class Cokgj(TorchGPRegressor):
 @dataclass
 class Stmf_Parameters:
     linear_truncated: bool = False
-    data_fidelity: int = -1
+    data_fidelity: int = 0
 
 
 class Stmf(TorchGPRegressor):
@@ -97,13 +91,11 @@ class Stmf(TorchGPRegressor):
         self,
         regressor=SingleTaskMultiFidelityGP,
         parameter=Stmf_Parameters(),
-        mf_train_input_data=None,
-        mf_train_output_data=None,
+        mf_train_data=None,
         mf_design=None,
     ):
         super().__init__(
-            train_input_data=mf_train_input_data,
-            train_output_data=mf_train_output_data,
+            train_data=mf_train_data,
             linear_truncated=parameter.linear_truncated,
             data_fidelity=parameter.data_fidelity,
             design=mf_design,

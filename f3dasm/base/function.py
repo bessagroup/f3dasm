@@ -1,7 +1,8 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any
-import autograd.numpy as np
+from typing import Any, List
+# import autograd.numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 import numdifftools as nd
@@ -95,7 +96,7 @@ class Function(ABC):
         return y
 
     def f(self, x) -> np.ndarray:
-        """Analytical function of the objective function. Needs to be implemented by inhereted class"""
+        """Analytical function of the objective function. Needs to be implemented by inherited class"""
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
@@ -362,3 +363,37 @@ class Function(ABC):
 
     def _reverse_offset_input(self, x: np.ndarray) -> np.ndarray:
         return x + self.offset
+
+
+class AugmentedFunction(Function):
+    def __init__(
+            self,
+            base_fun: Function,
+            fid: float,
+            aug_mode: str = 'b',
+    ):
+        # super().__init__()
+
+        self.base_fun = base_fun
+        self.fid = fid
+        self.aug_mode = aug_mode
+        self.name = base_fun.get_name()
+
+    def f(self, x) -> np.ndarray:
+
+        res_hf = self.base_fun(x)
+        res_lf = np.zeros_like(res_hf)
+        res = self.fid * res_hf + (1 - self.fid) * res_lf
+
+        return res
+
+@dataclass
+class MultiFidelityFunction:
+    funs: List[Function] = None
+    fids: List[float] = None
+    costs: List[float] = None
+
+    def get_fun_by_fid(self, fid):
+        for i, fid_i in enumerate(self.fids):
+            if fid == fid_i:
+                return self.funs[i]

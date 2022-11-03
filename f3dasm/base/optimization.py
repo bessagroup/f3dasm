@@ -1,11 +1,11 @@
 from copy import copy
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, List
 
 import autograd.numpy as np
 
 from ..base.data import Data
-from ..base.function import Function
+from ..base.function import Function, MultiFidelityFunction
 
 
 @dataclass
@@ -25,7 +25,7 @@ class Optimizer:
         defaults (dict): Default hyperparameter arguments
     """
 
-    data: Data
+    data: Data or List[Data]
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
     seed: int = np.random.randint(low=0, high=1e5)
     algorithm: Any = field(init=False)
@@ -67,6 +67,16 @@ class Optimizer:
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
+    def update_step_mf(self, mffunction: MultiFidelityFunction, iteration: int,) -> None:
+        """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
+
+        Args:
+            mffunction (MultiFidelityFunction): Objective function to evaluate
+            iteration (int): iteration
+
+        """
+        raise NotImplementedError("You should implement an update step for your algorithm!")
+
     def set_data(self, data: Data) -> None:
         self.data = data
 
@@ -99,6 +109,23 @@ class Optimizer:
 
         # Remove overiterations
         self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
+
+    def iterate_mf(self, iterations: int, mffunction: MultiFidelityFunction) -> None:
+        """Calls the update_step function multiple times.
+
+        Args:
+            iterations (int): number of iterations
+            mffunction (MultiFidelityFunction): Objective function to evaluate
+        """
+
+        # self._check_number_of_datapoints()
+
+        for _ in range(self._number_of_updates(iterations)):
+            print('iteration', _)#, self.data[-1].data)
+            self.update_step_mf(mffunction=mffunction, iteration=_)
+
+        # Remove overiterations
+        self.data[-1].remove_rows_bottom(self._number_of_overiterations(iterations))
 
     def _number_of_updates(self, iterations: int) -> int:
         return iterations // self.parameter.population + (iterations % self.parameter.population > 0)

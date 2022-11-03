@@ -1,3 +1,4 @@
+import numpy as np
 from matplotlib import pyplot as plt
 
 import f3dasm
@@ -26,7 +27,7 @@ res = f3dasm.run_optimization(
     number_of_samples=number_of_samples,
 )
 
-# plot_x = np.linspace(fun.input_domain[0, 0], fun.input_domain[0, 1], 500)[:, None]
-# plt.plot(plot_x, fun(plot_x))
-# plt.scatter(res.data['input'], res.data['output'])
-# plt.show()
+plot_x = np.linspace(fun.input_domain[0, 0], fun.input_domain[0, 1], 500)[:, None]
+plt.plot(plot_x, fun(plot_x))
+plt.scatter(res.data['input'], res.data['output'])
+plt.show()

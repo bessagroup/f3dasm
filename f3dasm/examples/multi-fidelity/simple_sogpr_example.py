@@ -4,7 +4,7 @@ import numpy as np
 import f3dasm
 
 dim = 1
-fun = f3dasm.functions.Exponential(dimensionality=dim)
+fun = f3dasm.functions.Schwefel(dimensionality=dim)
 parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
     bounds=fun.input_domain.astype(float),
     dimensionality=dim,
@@ -13,16 +13,9 @@ SobolSampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpac
 
 samples: f3dasm.Data = SobolSampler.get_samples(numsamples=8)
 samples.add_output(output=fun(samples))
-# print(samples.data['input'])
-# print(parameter_DesignSpace.input_space[0].name)
-
-# train_x = SobolSampler.sample_continuous(numsamples=8)
-train_x = samples.data["input"].values  # samples.get_input_data().values
-# train_y = fun(train_x)
-train_y = samples.data["output"].values  # samples.get_output_data().values
 
 regressor = f3dasm.regression.gpr.Sogpr(
-    train_input_data=train_x, train_output_data=train_y, design=parameter_DesignSpace
+    train_data=samples, design=parameter_DesignSpace
 )
 surrogate = regressor.train()
 
@@ -36,7 +29,7 @@ plt.plot(plot_x, mean, "r--")
 plt.plot(plot_x, lcb, "k", linewidth=0.5)
 plt.plot(plot_x, ucb, "k", linewidth=0.5)
 plt.fill_between(plot_x.flatten(), lcb.flatten(), ucb.flatten(), color="r", alpha=0.1)
-plt.scatter(train_x, train_y, c="r")
+plt.scatter(samples.get_input_data(), samples.get_output_data(), c="r")
 plt.grid()
 plt.tight_layout()
 

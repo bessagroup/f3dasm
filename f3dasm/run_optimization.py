@@ -10,7 +10,7 @@ from f3dasm.base.data import Data
 
 from f3dasm.base.optimization import Optimizer
 from f3dasm.base.samplingmethod import SamplingInterface
-from f3dasm.base.function import Function
+from f3dasm.base.function import Function, MultiFidelityFunction
 
 from pathos.helpers import mp
 
@@ -63,6 +63,43 @@ def run_optimization(
 
     # Reset data
     optimizer.data.reset_data()
+
+    return res
+
+def run_mf_optimization(
+    optimizer: Optimizer,
+    mffunction: MultiFidelityFunction,
+    sampler: SamplingInterface,
+    iterations: int,
+    seed: int,
+    number_of_samples: List[int]
+) -> Data:
+    """Run optimization on some benchmark function"""
+
+    # Set function seed
+    # function.set_seed(seed)
+    optimizer.set_seed(seed)
+    # sampler.set_seed(seed)
+
+    mfsamples = []
+    for fid_no, samp_no in enumerate(number_of_samples):
+        samples = sampler.get_samples(numsamples=samp_no)
+
+        samples.add_output(output=mffunction.funs[fid_no](samples))
+
+        mfsamples.append(samples)
+
+    optimizer.set_data(mfsamples)
+
+    # Iterate
+    optimizer.iterate_mf(iterations=iterations, mffunction=mffunction)
+    res = optimizer.extract_data()
+
+    # Reset the parameters
+    optimizer.__post_init__()
+
+    # Reset data
+    # optimizer.data[-1].reset_data()
 
     return res
 

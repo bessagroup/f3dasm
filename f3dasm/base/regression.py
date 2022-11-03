@@ -21,18 +21,15 @@ class Surrogate:
 
 @dataclass
 class Regressor:
-    train_input_data: Data
-    train_output_data: Data
+    train_data: Data
     design: DesignSpace
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
 
     def set_train_data(
         self,
-        train_input_data: Data,
-        train_output_data: Data,
+        train_data: Data,
     ) -> None:
-        self.train_input_data = train_input_data
-        self.train_output_data = train_output_data
+        self.train_data = train_data
 
     def set_regressor(self) -> None:
         pass
