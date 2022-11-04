@@ -19,8 +19,6 @@ class Function(ABC):
         noise (bool): inflict Gaussian noise on the output.
         seed (Any|int): value to seed the random generator (Default = None).
         dimensionality (int): input dimension
-        scale_bounds (Any|np.ndarray): array containing the lower and upper bound of the scaling factor of the input data (Default = [0.0, 1.0])
-        input_domain (Any|np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
     """
 
     def __init__(self, dimensionality: int = 2, noise: Any or float = None, seed: Any or int = None):
@@ -41,7 +39,6 @@ class Function(ABC):
         self.offset = np.zeros(self.dimensionality)
         # self.rotation_matrix = np.identity(self.dimensionality)
         # self.rotation_point = np.zeros(self.dimensionality)
-
 
         # self._create_rotation_point()
         # self._create_rotation()

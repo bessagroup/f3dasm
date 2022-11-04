@@ -11,6 +11,9 @@ class PyBenchFunction(Function):
     """
     Adapter for pybenchfunctions, created by Axel Thevenot (2020)
     Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
+
+    scale_bounds (Any|np.ndarray): array containing the lower and upper bound of the scaling factor of the input data (Default = [0.0, 1.0])
+    input_domain (Any|np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
     """
 
     def __init__(
@@ -54,9 +57,7 @@ class PyBenchFunction(Function):
 
         unscaled_offset = np.atleast_2d(
             [
-                np.random.uniform(
-                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1])
-                )  # Here a bug
+                np.random.uniform(low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
                 for d in range(self.dimensionality)
             ]
         )
