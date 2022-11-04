@@ -12,7 +12,6 @@ from ..base.data import Data
 from ..base.utils import _from_data_to_numpy_array_benchmarkfunction, _rotate_vector
 
 
-@dataclass
 class Function(ABC):
     """Interface of a continuous benchmark function
 
@@ -24,15 +23,16 @@ class Function(ABC):
         input_domain (Any|np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
     """
 
-    noise: Any or float = None
-    seed: Any or int = None
-    dimensionality: int = 2
-    scale_bounds: Any or np.ndarray = None
+    def __init__(self, dimensionality: int = 2, noise: Any or float = None, seed: Any or int = None):
+        self.dimensionality = dimensionality
+        self.noise = noise
+        self.seed = seed
+        self.__post_init__()
 
     def __post_init__(self):
 
-        if self.scale_bounds is None:
-            self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
+        # if self.scale_bounds is None:
+        #     self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
 
         if self.seed:
             self.set_seed(self.seed)
@@ -42,7 +42,7 @@ class Function(ABC):
         # self.rotation_matrix = np.identity(self.dimensionality)
         # self.rotation_point = np.zeros(self.dimensionality)
 
-        self._create_offset()
+
         # self._create_rotation_point()
         # self._create_rotation()
 
@@ -50,17 +50,6 @@ class Function(ABC):
         """Set the numpy seed of the random generator"""
         self.seed = seed
         np.random.seed(seed)
-
-    def check_if_within_bounds(self, x: np.ndarray) -> bool:
-        """Check if the input vector is between the given scaling bounds
-
-        Args:
-            x (np.ndarray): input vector
-
-        Returns:
-            bool: whether the vector is within the boundaries
-        """
-        return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
     def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
         """Evaluate the objective function
@@ -150,6 +139,35 @@ class Function(ABC):
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red", marker="*", edgecolors="red")
         return fig, ax
 
+    def _create_mesh(self, px: int, domain: np.ndarray):
+        """Create mesh to use for plotting
+
+        Args:
+            px (int, optional): Number of points per dimension. Defaults to 300.
+            domain (List, optional): Domain that needs to be plotted . Defaults to [0, 1].
+
+        Returns:
+            xv, yv: 2D mesh used for plotting
+            Y: another mesh
+        """
+        x1 = np.linspace(domain[0, 0], domain[0, 1], num=px)
+        x2 = np.linspace(domain[1, 0], domain[1, 1], num=px)
+        X1, X2 = np.meshgrid(x1, x2)
+
+        Y = np.zeros([len(X1), len(X2)])
+
+        for i in range(len(X1)):
+            for j in range(len(X1)):
+                xy = np.array([X1[i, j], X2[i, j]] + [0.0] * (self.dimensionality - 2))
+                Y[i, j] = self(xy)
+
+        dx = (domain[0, 1] - domain[0, 0]) / px
+        dy = (domain[1, 1] - domain[1, 0]) / px
+        x = domain[0, 0] + dx * np.arange(Y.shape[0])
+        y = domain[1, 0] + dy * np.arange(Y.shape[1])
+        xv, yv = np.meshgrid(x, y)
+        return xv, yv, Y
+
     def plot(
         self,
         orientation: str = "3D",
@@ -173,29 +191,7 @@ class Function(ABC):
         else:
             plt.ion()
 
-        x1 = np.linspace(domain[0, 0], domain[0, 1], num=px)
-        x2 = np.linspace(domain[1, 0], domain[1, 1], num=px)
-        X1, X2 = np.meshgrid(x1, x2)
-
-        Y = np.zeros([len(X1), len(X2)])
-
-        for i in range(len(X1)):
-            for j in range(len(X1)):
-                xy = np.array([X1[i, j], X2[i, j]] + [0.0] * (self.dimensionality - 2))
-                Y[i, j] = self(xy)
-
-        # Add absolute value of global minimum + epsilon to ensure positivity
-        # if (
-        #     self.get_global_minimum(self.dimensionality)[1][0] < 0
-        #     and self.get_global_minimum(self.dimensionality) is not None
-        # ):
-        #     Y += np.abs(self.get_global_minimum(self.dimensionality)[1][0]) + 10e-6
-
-        dx = (domain[0, 1] - domain[0, 0]) / px
-        dy = (domain[1, 1] - domain[1, 0]) / px
-        x = domain[0, 0] + dx * np.arange(Y.shape[0])
-        y = domain[1, 0] + dy * np.arange(Y.shape[1])
-        xv, yv = np.meshgrid(x, y)
+        xv, yv, Y = self._create_mesh(px=px, domain=domain)
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
@@ -232,12 +228,6 @@ class Function(ABC):
 
         return fig, ax
 
-    # def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
-
-    #     x = self._scale_input(x)
-
-    #     return x
-
     def _check_global_minimum(self) -> np.ndarray:
         global_minimum_method = getattr(self, "get_global_minimum", None)
         if callable(global_minimum_method):
@@ -253,33 +243,6 @@ class Function(ABC):
             g = np.zeros(self.dimensionality)
 
         return g
-
-    def _create_offset(self):
-        self.offset = np.zeros(self.dimensionality)
-
-        global_minimum_method = getattr(self, "get_global_minimum", None)
-        if callable(global_minimum_method):
-            g = self.get_global_minimum(d=self.dimensionality)[0]
-
-            if g is None:
-                g = np.zeros(self.dimensionality)
-
-            if g.ndim == 2:
-                g = g[0]
-
-        else:
-            g = np.zeros(self.dimensionality)
-
-        unscaled_offset = np.atleast_2d(
-            [
-                np.random.uniform(
-                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1])
-                )  # Here a bug
-                for d in range(self.dimensionality)
-            ]
-        )
-
-        self.offset = unscaled_offset
 
     def _create_rotation_point(self):
         global_minimum_method = getattr(self, "get_global_minimum", None)

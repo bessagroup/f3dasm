@@ -13,11 +13,66 @@ class PyBenchFunction(Function):
     Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
     """
 
-    input_domain: Any or np.ndarray = field(init=False)
+    def __init__(
+        self,
+        dimensionality: int = 2,
+        noise: Any or float = None,
+        seed: Any or int = None,
+        scale_bounds: Any or np.ndarray = None,
+    ):
+        self.input_domain: Any or np.ndarray = None
+        super().__init__(dimensionality=dimensionality, noise=noise, seed=seed)
+        self._create_scale_bounds(scale_bounds)
+
+        self._create_offset()
 
     @classmethod
     def is_dim_compatible(cls, d) -> bool:
         pass
+
+    def _create_scale_bounds(self, input: Any) -> None:
+        if input is None:
+            self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
+        else:
+            self.scale_bounds = input
+
+    def _create_offset(self):
+        self.offset = np.zeros(self.dimensionality)
+
+        global_minimum_method = getattr(self, "get_global_minimum", None)
+        if callable(global_minimum_method):
+            g = self.get_global_minimum(d=self.dimensionality)[0]
+
+            if g is None:
+                g = np.zeros(self.dimensionality)
+
+            if g.ndim == 2:
+                g = g[0]
+
+        else:
+            g = np.zeros(self.dimensionality)
+
+        unscaled_offset = np.atleast_2d(
+            [
+                np.random.uniform(
+                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1])
+                )  # Here a bug
+                for d in range(self.dimensionality)
+            ]
+        )
+
+        self.offset = unscaled_offset
+
+    def check_if_within_bounds(self, x: np.ndarray) -> bool:
+        """Check if the input vector is between the given scaling bounds
+
+        Args:
+            x (np.ndarray): input vector
+
+        Returns:
+            bool: whether the vector is within the boundaries
+        """
+        return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
     def _scale_input(self, x: np.ndarray) -> np.ndarray:
         return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
@@ -41,18 +96,6 @@ class PyBenchFunction(Function):
 
     def f(self, x: np.ndarray):
         if self.is_dim_compatible(self.dimensionality):
-            # TODO: instead of editing in place, return new arrays
-            # a is a 1-D slice of arr along axis.
-            # TODO: create expression for a
-            # axis = 1
-            # for a in x:
-            #     Ni, Nk = a.shape[:axis], a.shape[axis+1:]
-            #     for ii in np.ndindex(Ni):
-            #         for kk in np.ndindex(Nk):
-            #             f = self.evaluate(x[ii + np.s_[:,] + kk])
-            #             Nj = f.shape
-            #             for jj in np.ndindex(Nj):
-            #                 out[ii + jj + kk] = f[jj]
             y = []
             x = np.atleast_2d(x)
             for xi in x:
@@ -62,5 +105,3 @@ class PyBenchFunction(Function):
                 y.append(self.evaluate(xi))
 
             return np.array(y).reshape(-1, 1)
-
-            # return np.apply_along_axis(self.evaluate, axis=1, arr=x)  # .reshape(-1, 1)
