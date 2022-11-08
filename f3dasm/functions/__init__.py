@@ -2,8 +2,8 @@ import inspect
 from typing import List
 
 from ..base.function import Function
-
 from . import pybenchfunction
+from .adapters.augmentor import *
 from .pybenchfunction import *
 
 _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)

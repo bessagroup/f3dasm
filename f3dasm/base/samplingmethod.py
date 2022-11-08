@@ -62,6 +62,7 @@ class SamplingInterface(ABC):
         # Merge samples into array
         samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
 
+        # TODO #60 : Fix this ordering issue
         # Get the column names in this particular order
         columnnames = [
             ("input", name)

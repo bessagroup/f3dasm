@@ -6,28 +6,31 @@ import pytest
 pytestmark = pytest.mark.smoke
 
 from f3dasm.base.function import Function
-from f3dasm.functions import get_functions
+from f3dasm.functions import FUNCTIONS_2D, get_functions
 
 
-@pytest.mark.parametrize("function", get_functions(d=6) + get_functions(d=3) + get_functions(d=4) + get_functions(d=2))
-@pytest.mark.parametrize("seed", range(20))
+@pytest.mark.parametrize("function", FUNCTIONS_2D)
+@pytest.mark.parametrize("seed", range(1))
 def test_offset(function: Function, seed: int):
 
-    dim = 6
-    if not function.is_dim_compatible(dim):
-        dim = 4
-        if not function.is_dim_compatible(dim):
-            dim = 3
-            if not function.is_dim_compatible(dim):
-                dim = 2
+    # dim = 6
+    # if not function.is_dim_compatible(dim):
+    #     dim = 4
+    #     if not function.is_dim_compatible(dim):
+    #         dim = 3
+    #         if not function.is_dim_compatible(dim):
+    #             dim = 2
+
+    dim = 2
 
     func: Function = function(
         seed=seed,
         dimensionality=dim,
         scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
     )
-    func._create_offset()
+
     xmin = func._check_global_minimum()
+    print(xmin)
     assert func.check_if_within_bounds(xmin)
 
 
