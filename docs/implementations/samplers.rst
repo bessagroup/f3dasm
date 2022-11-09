@@ -62,5 +62,4 @@ Sobol sequence sampling
 
 .. automodule:: f3dasm.sampling.sobolsequence
    :members:
-   :undoc-members:
    :show-inheritance:

@@ -63,7 +63,7 @@ def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, function: Function
 class BayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
 
-    def init_parameters(self) -> None:
+    def init_parameters(self):
 
         train_x = self.data.data["input"].values
         train_y = self.data.data["output"].values
@@ -95,10 +95,10 @@ class BayesianOptimizationTorch(Optimizer):
 
         self.parameter = BayesianOptimizationTorch_Parameters(**options)
 
-    def set_algorithm(self) -> None:
+    def set_algorithm(self):
         self.algorithm = None
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function):
         new_x, new_obj = optimize_acq_and_get_observation(self.parameter.acquisition, function)
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)
@@ -130,7 +130,7 @@ class BayesianOptimizationTorch(Optimizer):
 class MFBayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
 
-    def init_parameters(self) -> None:
+    def init_parameters(self):
 
         train_x = self.data.data["input"].values
         train_y = self.data.data["output"].values
@@ -162,10 +162,10 @@ class MFBayesianOptimizationTorch(Optimizer):
 
         self.parameter = BayesianOptimizationTorch_Parameters(**options)
 
-    def set_algorithm(self) -> None:
+    def set_algorithm(self):
         self.algorithm = None
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function):
         new_x, new_obj = optimize_acq_and_get_observation(self.parameter.acquisition, function)
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)

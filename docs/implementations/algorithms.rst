@@ -105,7 +105,6 @@ Adam
 
 .. automodule:: f3dasm.optimization.adam
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Adamax
@@ -113,7 +112,6 @@ Adamax
 
 .. automodule:: f3dasm.optimization.adamax
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Bayesian Optimization
@@ -121,7 +119,6 @@ Bayesian Optimization
 
 .. automodule:: f3dasm.optimization.bayesianoptimization
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Bayesian Optimization Torch
@@ -129,7 +126,6 @@ Bayesian Optimization Torch
 
 .. automodule:: f3dasm.optimization.bayesianoptimization_torch
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Conjugate Gradient
@@ -137,7 +133,6 @@ Conjugate Gradient
 
 .. automodule:: f3dasm.optimization.cg
    :members:
-   :undoc-members:
    :show-inheritance:
 
 CMAES
@@ -145,7 +140,6 @@ CMAES
 
 .. automodule:: f3dasm.optimization.cmaes
    :members:
-   :undoc-members:
    :show-inheritance:
 
 COBYLA
@@ -153,7 +147,6 @@ COBYLA
 
 .. automodule:: f3dasm.optimization.cobyla
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Differential Evolution
@@ -161,7 +154,6 @@ Differential Evolution
 
 .. automodule:: f3dasm.optimization.differentialevolution
    :members:
-   :undoc-members:
    :show-inheritance:
 
 FTRL
@@ -169,7 +161,6 @@ FTRL
 
 .. automodule:: f3dasm.optimization.ftrl
    :members:
-   :undoc-members:
    :show-inheritance:
 
 LBFGSB
@@ -177,7 +168,6 @@ LBFGSB
 
 .. automodule:: f3dasm.optimization.lbfgsb
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Nadam
@@ -185,7 +175,6 @@ Nadam
 
 .. automodule:: f3dasm.optimization.nadam
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Nelder Mead
@@ -193,7 +182,6 @@ Nelder Mead
 
 .. automodule:: f3dasm.optimization.neldermead
    :members:
-   :undoc-members:
    :show-inheritance:
 
 PSO
@@ -201,7 +189,6 @@ PSO
 
 .. automodule:: f3dasm.optimization.pso
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Random Search
@@ -209,7 +196,6 @@ Random Search
 
 .. automodule:: f3dasm.optimization.randomsearch
    :members:
-   :undoc-members:
    :show-inheritance:
 
 RMSprop
@@ -217,7 +203,6 @@ RMSprop
 
 .. automodule:: f3dasm.optimization.rmsprop
    :members:
-   :undoc-members:
    :show-inheritance:
 
 SADE
@@ -225,7 +210,6 @@ SADE
 
 .. automodule:: f3dasm.optimization.sade
    :members:
-   :undoc-members:
    :show-inheritance:
 
 SEA
@@ -233,7 +217,6 @@ SEA
 
 .. automodule:: f3dasm.optimization.sea
    :members:
-   :undoc-members:
    :show-inheritance:
 
 SGA
@@ -241,7 +224,6 @@ SGA
 
 .. automodule:: f3dasm.optimization.sga
    :members:
-   :undoc-members:
    :show-inheritance:
 
 SGD
@@ -249,7 +231,6 @@ SGD
 
 .. automodule:: f3dasm.optimization.sgd
    :members:
-   :undoc-members:
    :show-inheritance:
 
 Simulated Annealing
@@ -257,7 +238,6 @@ Simulated Annealing
 
 .. automodule:: f3dasm.optimization.simulatedannealing
    :members:
-   :undoc-members:
    :show-inheritance:
 
 XNES
@@ -265,5 +245,4 @@ XNES
 
 .. automodule:: f3dasm.optimization.xnes
    :members:
-   :undoc-members:
    :show-inheritance:

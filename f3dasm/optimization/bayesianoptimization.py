@@ -72,7 +72,7 @@ class BayesianOptimization(Optimizer):
             de_duplication=self.parameter.de_duplication,
         )
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function):
 
         self.algorithm.objective = GPyOpt.core.task.SingleObjective(function.__call__)
         self.algorithm.X = self.data.get_input_data().to_numpy()

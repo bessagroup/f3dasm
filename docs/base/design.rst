@@ -65,10 +65,8 @@ API Documentation
 
 .. automodule:: f3dasm.base.space
    :members:
-   :undoc-members:
    :show-inheritance:
 
 .. automodule:: f3dasm.base.design
    :members:
-   :undoc-members:
    :show-inheritance:
