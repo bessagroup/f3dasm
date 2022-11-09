@@ -1,5 +1,5 @@
 Simulation interface
-==================
+====================
 
 Implement your own simulator
 ----------------------------

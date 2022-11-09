@@ -19,7 +19,7 @@ class SamplingInterface(ABC):
     """
 
     design: DesignSpace
-    seed: Any | int = None
+    seed: Any or int = None
 
     def __post_init__(self):
         if self.seed:
