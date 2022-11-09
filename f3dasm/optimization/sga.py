@@ -8,20 +8,7 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class SGA_Parameters(OptimizerParameters):
-    """Hyperparameters for SGA optimizer
-
-    Args:
-        cr (float): _description_ (Default = 0.9)
-        eta_c (float): _description_ (Default = 1.0)
-        m (float): _description_ (Default = 0.02)
-        param_m (float): _description_ (Default = 1.0)
-        param_s (float): _description_ (Default = 2)
-        crossover (str): _description_ (Default = 'exponential')
-        mutation (str): _description_ (Default = 'polynomial')
-        selection (float): _description_ (Default = 'tournament')
-        population (int): _description_ (Default = 30)
-
-    """
+    """Hyperparameters for SGA optimizer"""
 
     cr: float = 0.9
     eta_c: float = 1.0

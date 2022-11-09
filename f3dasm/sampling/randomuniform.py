@@ -7,6 +7,11 @@ class RandomUniform(SamplingInterface):
     """Sampling via random uniform sampling"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
+        """Sample from continuous space
+
+        :param numsamples: number of samples
+        :return: samples
+        """
         continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 

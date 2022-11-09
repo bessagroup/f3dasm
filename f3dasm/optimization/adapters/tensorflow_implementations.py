@@ -1,15 +1,19 @@
+import autograd
+import autograd.core
 import tensorflow as tf
+from autograd import elementwise_grad as egrad
 
 from ...base.function import Function
 from ...base.optimization import Optimizer
 
-import autograd
-import autograd.core
-
-from autograd import elementwise_grad as egrad
-
 
 def convert_autograd_to_tensorflow(func):  # S:func is completely written in numpy autograd
+    """Convert autograd function to tensorflow funciton
+
+    :param func: function
+    :return: wrapper
+    """
+
     @tf.custom_gradient
     def wrapper(x):
         vjp, ans = autograd.core.make_vjp(func, x.numpy())

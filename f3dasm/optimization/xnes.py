@@ -10,14 +10,7 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 class XNES_Parameters(OptimizerParameters):
     """Hyperparameters for XNES optimizer
 
-    Args:
-        population (int): _description_ (Default = 30)
-        eta_mu (float): _description_ (Default = -1.0)
-        eta_sigma (float): _description_ (Default = -1.0)
-        eta_b (float): _description_ (Default = -1.0)
-        sigma0 (float): _description_ (Default = -1.0)
-        ftol (float): _description_ (Default = 1e-06)
-        xtol (float): _description_ (Default = 1e-06)
+
     """
 
     population: int = 30

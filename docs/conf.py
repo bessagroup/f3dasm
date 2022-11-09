@@ -11,7 +11,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
+
 import sphinx_rtd_theme
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -27,10 +29,27 @@ sys.path.insert(0, os.path.abspath("../"))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx_rtd_theme", "sphinx.ext.napoleon", "sphinxcontrib.bibtex"]
+extensions = [
+    "sphinx_rtd_theme",
+    "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
+    "sphinxcontrib.bibtex",
+    "sphinx.ext.intersphinx",
+]
 
-napoleon_use_param = False
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "pagmo": ("https://esa.github.io/pagmo2/", None),
+    "pandas": ("http://pandas.pydata.org/pandas-docs/dev", None),
+}
+
+napoleon_use_param = True
 napoleon_use_ivar = True
+autoclass_content = "both"
 
 bibtex_bibfiles = ["refs.bib"]
 # Add any paths that contain templates here, relative to this directory.
@@ -213,6 +232,14 @@ latex_documents = [
 
 # If false, no module index is generated.
 # latex_domain_indices = True
+
+# -- Extension configuration -------------------------------------------------
+
+# Tell sphinx-autodoc-typehints to generate stub parameter annotations including
+# types, even if the parameters aren't explicitly documented.
+always_document_param_types = True
+typehints_defaults = "comma"
+typehints_use_rtype = False
 
 
 # -- Options for manual page output --------------------------------------------

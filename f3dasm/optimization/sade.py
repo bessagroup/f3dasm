@@ -8,16 +8,7 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class SADE_Parameters(OptimizerParameters):
-    """Hyperparameters for Self-adaptive Differential Evolution optimizer
-
-    Args:
-        population (int): _description_ (Default = 30)
-        variant (int): _description_ (Default = 2)
-        variant_adptv (int): _description_ (Default = 1)
-        ftol (float): _description_ (Default = 0.0)
-        xtol (float): _description_ (Default = 0.0)
-
-    """
+    """Hyperparameters for Self-adaptive Differential Evolution optimizer"""
 
     population: int = 30
     variant: int = 2

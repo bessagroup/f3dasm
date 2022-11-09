@@ -8,36 +8,36 @@ import autograd.numpy as np
 class ParameterInterface:
     """Interface class of a search space parameter
 
-    Args:
-        name (str): name of the parameter
+    :param name: name of the parameter
     """
 
     name: str
+    _type: str = field(init=False)
 
 
 @dataclass
 class ContinuousParameter(ParameterInterface):
     """Creates a search space parameter that is continuous
 
-    Args:
-        lower_bound (float): lower bound of continuous search space
-        upper_bound (float): upper bound of continuous search space (exclusive)
+    :param name: name of the parameter
+    :param lower_bound: lower bound of continuous search space
+    :param upper_bound: upper bound of continuous search space (exclusive)
     """
 
     lower_bound: float = field(default=-np.inf)
     upper_bound: float = field(default=np.inf)
-    type: str = field(init=False, default="float")
+    _type: str = field(init=False, default="float")
 
     def __post_init__(self):
         self._check_types()
         self._check_range()
 
-    def _check_types(self) -> None:
+    def _check_types(self):
         """Check if the boundaries are actually floats"""
         if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
             raise TypeError(f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
-    def _check_range(self) -> None:
+    def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
@@ -50,25 +50,25 @@ class ContinuousParameter(ParameterInterface):
 class DiscreteParameter(ParameterInterface):
     """Creates a search space parameter that is discrete
 
-    Args:
-        lower_bound (int): lower bound of discrete search space
-        upper_bound (int): upper bound of discrete search space (exclusive)
+    :param lower_bound: lower bound of discrete search space
+    :param upper_bound: upper bound of discrete search space (exclusive)
+    :param name: name of the parameter
     """
 
     lower_bound: int = field(default=0)
     upper_bound: int = field(default=1)
-    type: str = field(init=False, default="int")
+    _type: str = field(init=False, default="int")
 
     def __post_init__(self):
         self._check_types()
         self._check_range()
 
-    def _check_types(self) -> None:
+    def _check_types(self):
         """Check if the boundaries are actually ints"""
         if not isinstance(self.lower_bound, int) or not isinstance(self.upper_bound, int):
             raise TypeError(f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
-    def _check_range(self) -> None:
+    def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound < self.lower_bound:
             raise ValueError("not the right range!")
@@ -81,23 +81,23 @@ class DiscreteParameter(ParameterInterface):
 class CategoricalParameter(ParameterInterface):
     """Creates a search space parameter that is categorical
 
-    Args:
-        categories (list): list of strings that represent available categories
+    :param categories: list of strings that represent available categories
+    :param name: name of the parameter
     """
 
     categories: List[str]
-    type: str = field(init=False, default="category")
+    _type: str = field(init=False, default="category")
 
     def __post_init__(self):
         self._check_types()
         self._check_duplicates()
 
-    def _check_duplicates(self) -> None:
+    def _check_duplicates(self):
         """Check if there are duplicates in the categories list"""
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
-    def _check_types(self) -> None:
+    def _check_types(self):
         """Check if the entries of the lists are all strings"""
 
         if not isinstance(self.categories, list):

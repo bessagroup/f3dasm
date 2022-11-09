@@ -13,43 +13,41 @@ from .design import DesignSpace
 class SamplingInterface(ABC):
     """Interface for sampling method
 
-    Args:
-        doe (DoE): design of experiments object
-        seed (Any): Optional: seed for sampling (default is None)
+    :param design: design of experiments object
+    :param seed: seed for sampling
 
     """
 
     design: DesignSpace
-    seed: Any = None
+    seed: Any | int = None
 
     def __post_init__(self):
         if self.seed:
             np.random.seed(self.seed)
 
     def set_seed(self, seed: int) -> None:
+        """
+        Some summary on what this function does
+
+        :param seed: the seed to be used
+        """
         np.random.seed(seed)
         self.seed = seed
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Create N samples within the search space
 
-        Args:
-            numsamples (int): number of samples
-            dimensions (int): number of dimensions
-
-        Returns:
-            np.array: samples
+        :param numsamples: number of samples
+        :returns: samples
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
     def get_samples(self, numsamples: int) -> Data:
         """Receive samples of the search space
 
-        Args:
-            numsamples (int): number of samples
+        :param numsamples: number of samples
 
-        Returns:
-            Data: Data objects with the samples
+        :returns: Data objects with the samples
         """
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples)

@@ -14,6 +14,17 @@ from .base.samplingmethod import SamplingInterface
 
 @dataclass
 class OptimizationResult:
+    """Optimization results object
+
+    :param data: Data objects for each realization
+    :param optimizer: classname of the optimizer used
+    :param hyperparameters: hyperparameters of the optimizer
+    :param function: function that was optimized
+    :param sampler: classname of the initial sampling strategy
+    :param number_of_samples: number of initial samples, sampled by the sampling strategy
+    :param seeds: list of seeds that were used for each realization
+    """
+
     data: List[Data]
     optimizer: str
     hyperparameters: dict
@@ -37,8 +48,16 @@ def run_optimization(
     seed: int,
     number_of_samples: int = 30,
 ) -> Data:
-    """Run optimization on some benchmark function"""
+    """Run optimization on some benchmark function
 
+    :param optimizer: the optimizer used
+    :param function: the function to be optimized
+    :param sampler: the sampling strategy
+    :param iterations: number of iterations
+    :param seed: seed for the random number generator
+    :param number_of_samples: number of initial samples, sampled by the sampling strategy
+    :return: Data object with the optimization data results
+    """
     # Set function seed
     # function.set_seed(seed)
     optimizer.set_seed(seed)
@@ -75,7 +94,20 @@ def run_multiple_realizations(
     verbal: bool = False,
     seed: int or Any = None,
 ) -> OptimizationResult:
-    """Run multiple realizations of the same algorithm on a benchmark function"""
+    """Run multiple realizations of the same algorithm on a benchmark function
+
+    :param optimizer: the optimizer used
+    :param function: the function to be optimized
+    :param sampler: the sampling strategy
+    :param iterations: number of iterations
+    :param realizations: number of realizations
+    :param number_of_samples: number of initial samples, sampled by the sampling strategy
+    :param parallelization: set True to enable parallelization
+    :param verbal: set True to have more debug messages
+    :param seed: seed for the random number generator
+    :return: Object with the optimization data results
+    """
+
     start_t = time.perf_counter()
 
     if seed is None:

@@ -6,12 +6,7 @@ from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 @dataclass
 class LBFGSB_Parameters(OptimizerParameters):
-    """Hyperparameters for LBFGSB optimizer
-
-    Args:
-        ftol (float): _description_ (Default = 0.0)
-        gtol (float): _description_ (Default = 0.0)
-    """
+    """Hyperparameters for LBFGSB optimizer"""
 
     ftol: float = 0.0
     gtol: float = 0.0

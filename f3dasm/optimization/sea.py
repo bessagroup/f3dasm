@@ -8,11 +8,7 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class SEA_Parameters(OptimizerParameters):
-    """Hyperparameters for SEA optimizer
-
-    Args:
-        population (int): desc (Default = 30)
-    """
+    """Hyperparameters for SEA optimizer"""
 
     population: int = 30
 

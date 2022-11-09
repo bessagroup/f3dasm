@@ -6,11 +6,7 @@ from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 # @dataclass
 class CG_Parameters(OptimizerParameters):
-    """_summary_
-
-    Args:
-        gtol (float): _description_ (Default = 0.0)
-    """
+    """CG Parameters"""
 
     gtol: float = 0.0
 

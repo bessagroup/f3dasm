@@ -10,15 +10,6 @@ from .augmentor import FunctionAugmentor, Noise, Offset, Scale
 
 
 class PyBenchFunction(Function):
-    """
-    Adapter for pybenchfunctions, created by Axel Thevenot (2020)
-    Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
-
-    scale_bounds (Any|np.ndarray): array containing the lower and upper bound of the scaling factor of the input data (Default = [0.0, 1.0])
-    input_domain (Any|np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
-    noise (bool): inflict Gaussian noise on the output.
-    """
-
     def __init__(
         self,
         dimensionality: int = 2,
@@ -26,6 +17,15 @@ class PyBenchFunction(Function):
         seed: Any or int = None,
         scale_bounds: Any or np.ndarray = None,
     ):
+        """Adapter for pybenchfunctions, created by Axel Thevenot (2020).
+        Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
+
+
+        :param dimensionality: number of dimensions
+        :param noise: inflict Gaussian noise on the input
+        :param seed: seed for the random number generator
+        :param scale_bounds: array containing the lower and upper bound of the scaling factor of the input data
+        """
         self.noise = noise
         self.offset = np.zeros(dimensionality)
         self.input_domain: Any or np.ndarray = None
@@ -43,7 +43,12 @@ class PyBenchFunction(Function):
         self.augmentor = self._construct_augmentor()
 
     @classmethod
-    def is_dim_compatible(cls, d) -> bool:
+    def is_dim_compatible(cls, d: int) -> bool:
+        """Check if the functdion is compatible with a certain number of dimenions
+
+        :param d: number of dimensions
+        :return:
+        """
         pass
 
     def _construct_augmentor(self) -> FunctionAugmentor:
@@ -59,7 +64,7 @@ class PyBenchFunction(Function):
 
         return FunctionAugmentor(input_augmentors=input_augmentors, output_augmentors=output_augmentors)
 
-    def _create_scale_bounds(self, input: Any) -> None:
+    def _create_scale_bounds(self, input: Any):
         if input is None:
             self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
         else:
@@ -108,14 +113,6 @@ class PyBenchFunction(Function):
 
     def _add_noise(self, y: np.ndarray) -> np.ndarray:
         # TODO: change noise calculation to work with autograd.numpy
-        """Add Gaussian noise to the output of the function
-
-        Args:
-            y (np.ndarray): output of the objective function
-
-        Returns:
-            np.ndarray: output of the objective function with added noise
-        """
         # sigma = 0.2  # Hard coded amount of noise
         noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
         y_noise = y + noise
@@ -124,11 +121,8 @@ class PyBenchFunction(Function):
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
         """Check if the input vector is between the given scaling bounds
 
-        Args:
-            x (np.ndarray): input vector
-
-        Returns:
-            bool: whether the vector is within the boundaries
+        :param x: input vector
+        :return: wheter the vector is within the boundaries
         """
         return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
@@ -154,9 +148,19 @@ class PyBenchFunction(Function):
         return x
 
     def evaluate(x: np.ndarray):
+        """Evaluate the objective function
+
+        :param x: input fector
+        :raises NotImplementedError: If no function is implemented
+        """
         raise NotImplementedError("No function implemented!")
 
     def f(self, x: np.ndarray):
+        """Analytical form of the objective function
+
+        :param x: input vector
+        :return: objective value
+        """
         if self.is_dim_compatible(self.dimensionality):
             y = []
             x = np.atleast_2d(x)

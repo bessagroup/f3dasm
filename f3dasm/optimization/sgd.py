@@ -8,13 +8,7 @@ from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 @dataclass
 class SGD_Parameters(OptimizerParameters):
-    """Hyperparameters for Momentum optimizer
-
-    Args:
-        learning_rate (float): desc (Default = 0.01)
-        momentum (float): desc (Default = 0.0)
-        nesterov (bool): desc (Default = False)
-    """
+    """Hyperparameters for Momentum optimizer"""
 
     learning_rate: float = 0.01
     momentum: float = 0.0

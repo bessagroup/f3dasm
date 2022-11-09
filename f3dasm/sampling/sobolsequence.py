@@ -8,6 +8,11 @@ class SobolSequence(SamplingInterface):
     """Sampling via Sobol Sequencing with SALib"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
+        """Sample from continuous space
+
+        :param numsamples: number of samples
+        :return: samples
+        """
         continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 

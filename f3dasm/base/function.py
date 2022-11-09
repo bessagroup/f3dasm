@@ -10,14 +10,12 @@ from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 
 
 class Function:
-    """Interface of a continuous benchmark function
-
-    Args:
-        dimensionality (int): number of input dimensions
-        seed (Any|int): value to seed the random generator (Default = None).
-    """
-
     def __init__(self, dimensionality: int, seed: Any or int = None):
+        """Interface of a continuous benchmark function
+
+        :param dimensionality: number of input dimensions
+        :param seed: value to seed the random generator
+        """
         self.dimensionality = dimensionality
         self.seed = seed
         self.__post_init__()
@@ -29,18 +27,20 @@ class Function:
 
         self._set_parameters()
 
-    def set_seed(self, seed: int) -> None:
-        """Set the numpy seed of the random generator"""
+    def set_seed(self, seed: int):
+        """Set the numpy seed of the random generator
+
+        :param seed: seed for random number generator
+        """
         self.seed = seed
         np.random.seed(seed)
 
     def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
         """Evaluate the objective function
-        Args:
-            input_x (np.ndarray | Data object): input to be evaluated
 
-        Returns:
-            np.ndarray: output of the objective function
+        :param input_x: input to be evaluated
+
+        :returns: output of the objective function
         """
         # If the input is a Data object
         if isinstance(input_x, Data):
@@ -63,22 +63,18 @@ class Function:
     def f(self, x) -> np.ndarray:
         """Analytical function of the objective function. Needs to be implemented by inhereted class
 
-        Args:
-            x (np.ndarray): input vector
 
-        Returns:
-            np.ndarray: output vector
+        :param x: input vector
+
+        :returns: output vector
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
         """Compute the gradient at a particular point in space. Gradient is computed by numdifftools.
 
-        Args:
-            x (np.ndarray): input vector
-
-        Returns:
-            np.ndarray: gradient
+        :param x: input vector
+        :returns: gradient
         """
         # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
         grad = nd.Gradient(self)
@@ -92,24 +88,20 @@ class Function:
     def get_name(self) -> str:
         """Get the name of the function
 
-        Returns:
-            str: name of the function
+        :returns: name of the function
         """
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.tile([0.0, 1.0], (2, 1))
+        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contour plot with the datapoints as scatter
 
-        Args:
-            data (Data): Data object containing samples
-            px (int, optional): Number of pixels on each axis. (Defaults = 300)
-            domain (np.ndarray, optional): Domain that needs to be plotted. (Default = np.tile([0.0, 1.0], (2, 1)))
+        :param data: Data object containing samples
+        :param px: Number of pixels on each axis
+        :param domain: Domain that needs to be plotted
 
-        Returns:
-            fig (plt.Figure) : matplotlib figure object
-            ax (plt.Axes) : matplotib axes of the figure
+        :returns: matplotlib figure and axes
         """
         fig, ax = self.plot(orientation="2D", px=px, domain=domain)
         x1 = data.get_input_data().iloc[:, 0]
@@ -130,13 +122,10 @@ class Function:
     def _create_mesh(self, px: int, domain: np.ndarray):
         """Create mesh to use for plotting
 
-        Args:
-            px (int, optional): Number of points per dimension. Defaults to 300.
-            domain (List, optional): Domain that needs to be plotted . Defaults to [0, 1].
+        :param px: Number of points per dimension
+        :param domain: Domain that needs to be plotted
 
-        Returns:
-            xv, yv: 2D mesh used for plotting
-            Y: another mesh
+        :returns: 2D mesh used for plotting and another mesh
         """
         x1 = np.linspace(domain[0, 0], domain[0, 1], num=px)
         x2 = np.linspace(domain[1, 0], domain[1, 1], num=px)
@@ -160,20 +149,17 @@ class Function:
         self,
         orientation: str = "3D",
         px: int = 300,
-        domain: np.ndarray = np.tile([0.0, 1.0], (2, 1)),
+        domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
         show: bool = True,
-    ):  # pragma: no cover
+    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
 
-        Args:
-            orientation (str, optional): Either "2D" or "3D" orientation. (Default = "3D")
-            px (int, optional): Number of points per dimension. (Default = 300)
-            domain (np.ndarray, optional): Domain that needs to be plotted . (Default = [0, 1])
-            show (bool): Show the figure in interactive mode (Default = True)
+        :param orientation: Either "2D" or "3D" orientation.
+        :param px: Number of points per dimension.
+        :param domain: Domain that needs to be plotted.
+        :param show: Show the figure in interactive mode
 
-        Returns:
-            fig (plt.Figure) : matplotlib figure object
-            ax (plt.Axes) : matplotib axes of the figure
+        :returns: matplotlib figure object and axes of the figure
         """
 
         if not show:

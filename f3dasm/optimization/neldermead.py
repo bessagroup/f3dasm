@@ -6,13 +6,7 @@ from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 @dataclass
 class NelderMead_Parameters(OptimizerParameters):
-    """Hyperparameters for NelderMead optimizer
-
-    Args:
-        xatol (float): _description_ (Default = 0.0)
-        fatol (float): _description_ (Default = 0.0)
-        adaptive (bool): _description_ (Default = False)
-    """
+    """Hyperparameters for NelderMead optimizer"""
 
     xatol: float = 0.0
     fatol: float = 0.0

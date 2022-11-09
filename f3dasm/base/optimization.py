@@ -10,6 +10,12 @@ from ..base.function import Function
 
 @dataclass
 class OptimizerParameters:
+    """Standard optimization hyperparameters
+
+    :param population: population of the optimizer update step
+    :param force_bounds: force the optimizer to not exceed the boundaries of the designspace
+    """
+
     population: int = 1
     force_bounds: bool = True
 
@@ -18,11 +24,10 @@ class OptimizerParameters:
 class Optimizer:
     """Mainclass to inherit from to implement optimization algorithms
 
-    Args:
-        data (Data): Data-object
-        hyperparameters (dict): Dictionary with hyperparamaters (default is None)
-        seed (int): seed to set the optimizer
-        defaults (dict): Default hyperparameter arguments
+    :param data: Data-object
+    :param hyperparameters: Dictionary with hyperparamaters
+    :param seed: seed to set the optimizer
+    :param defaults: Default hyperparameter arguments
     """
 
     data: Data
@@ -46,37 +51,43 @@ class Optimizer:
         return x
 
     @staticmethod
-    def set_seed(seed: int) -> None:
-        """Set the seed of the optimizer. Needs to be inherited."""
+    def set_seed(seed: int):
+        """Set the seed of the optimizer. Needs to be inherited.
+
+        :param seed: seed for the random number generator
+        """
         pass
 
-    def init_parameters(self) -> None:
+    def init_parameters(self):
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
 
-    def set_algorithm(self) -> None:
+    def set_algorithm(self):
         """If necessary, the algorithm needs to be set"""
         pass
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function):
         """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
 
-        Args:
-            function (Function): Objective function to evaluate
+        :param function: Objective function to evaluate
 
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
-    def set_data(self, data: Data) -> None:
+    def set_data(self, data: Data):
+        """Overwrite the data attribute
+
+        :param data: data object
+        """
         self.data = data
 
-    def _set_hyperparameters(self) -> None:
+    def _set_hyperparameters(self):
         """New way of setting hyperparameters with dedicated class"""
         # if isinstance(self.hyperparameters, dict):
         #     # Create instance of the specific hyperparameter class
         self.parameter.__init__(**self.hyperparameters)
 
-    def _check_number_of_datapoints(self) -> None:
+    def _check_number_of_datapoints(self):
         """Check if available data => population size"""
         if self.data.get_number_of_datapoints() < self.parameter.population:
             raise ValueError(
@@ -84,12 +95,11 @@ class Optimizer:
             )
         return
 
-    def iterate(self, iterations: int, function: Function) -> None:
+    def iterate(self, iterations: int, function: Function):
         """Calls the update_step function multiple times.
 
-        Args:
-            iterations (int): number of iterations
-            function (Function): Objective function to evaluate
+        :param iterations: number of iterations
+        :param function: Objective function to evaluate
         """
 
         self._check_number_of_datapoints()
@@ -100,7 +110,7 @@ class Optimizer:
         # Remove overiterations
         self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
 
-    def _number_of_updates(self, iterations: int) -> int:
+    def _number_of_updates(self, iterations: int):
         return iterations // self.parameter.population + (iterations % self.parameter.population > 0)
 
     def _number_of_overiterations(self, iterations: int) -> int:
@@ -111,8 +121,15 @@ class Optimizer:
             return self.parameter.population - overiterations
 
     def extract_data(self) -> Data:
-        """Returns a copy of the data"""
+        """Returns a copy of the data
+
+        :returns: copy of the data
+        """
         return copy(self.data)
 
     def get_name(self) -> str:
+        """Retrieve the name of the optimizer
+
+        :returns: name of the optimizer
+        """
         return self.__class__.__name__

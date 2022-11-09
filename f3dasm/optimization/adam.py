@@ -12,16 +12,9 @@ from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 @dataclass
 class Adam_Parameters(OptimizerParameters):
-    """Hyperparameters for Adam optimizer
-
-    Args:
-        learning_rate (float): (Default = 1e-2)
-        beta_1 (float): (Default = 0.9)
-        beta_2 (float): (Default = 0.999)
-        epsilon (float): (Default = 1e-8)
-        amsgrad (bool): (Default = False)
-    """
-
+    
+    """Hyperparameters for Adam optimizer"""
+    
     learning_rate: float = 0.001
     beta_1: float = 0.9
     beta_2: float = 0.999

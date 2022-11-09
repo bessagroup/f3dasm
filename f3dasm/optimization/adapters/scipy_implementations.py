@@ -1,22 +1,32 @@
-from scipy.optimize import minimize
 import autograd.numpy as np
+from scipy.optimize import minimize
 
-
-from ...base.optimization import Optimizer
 from ...base.function import Function
+from ...base.optimization import Optimizer
 
 
 class SciPyOptimizer(Optimizer):
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.x_new.append(xk.tolist())
 
-    def update_step(self) -> None:
+    def update_step(self):
+        """Update step function"""
         pass
 
-    def run_algorithm(self, iterations: int, function: Function) -> None:
+    def run_algorithm(self, iterations: int, function: Function):
+        """Run the algorithm for a number of iterations
+
+        :param iterations: number of iterations
+        :param function: function to be evaluated
+        """
         pass
 
-    def iterate(self, iterations: int, function: Function) -> None:
+    def iterate(self, iterations: int, function: Function):
+        """Iterating on a funtion
+
+        :param iterations: number of iterations
+        :param function: function to be evaluated
+        """
         self.x_new = []
 
         self.parameter.maxiter = iterations
@@ -42,7 +52,12 @@ class SciPyOptimizer(Optimizer):
 
 
 class SciPyMinimizeOptimizer(SciPyOptimizer):
-    def run_algorithm(self, iterations: int, function: Function) -> None:
+    def run_algorithm(self, iterations: int, function: Function):
+        """Run the algorithm for a number of iterations
+
+        :param iterations: number of iterations
+        :param function: function to be evaluated
+        """
         minimize(
             fun=lambda x: function(x).item(),
             method=self.method,

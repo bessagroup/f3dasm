@@ -8,11 +8,7 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class PSO_Parameters(OptimizerParameters):
-    """Hyperparameters for PSO optimizer
-
-    Args:
-        population (int): desc (Default = 30)
-    """
+    """Hyperparameters for PSO optimizer"""
 
     population: int = 30
 
