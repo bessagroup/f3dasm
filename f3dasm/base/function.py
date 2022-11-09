@@ -1,22 +1,20 @@
-from abc import ABC
-from typing import Any
+from typing import Any, Tuple
 
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 import numdifftools as nd
-from scipy.stats import special_ortho_group
 
 from ..base.data import Data
 from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 
 
-class Function(ABC):
+class Function:
     """Interface of a continuous benchmark function
 
     Args:
+        dimensionality (int): number of input dimensions
         seed (Any|int): value to seed the random generator (Default = None).
-        dimensionality (int): input dimension
     """
 
     def __init__(self, dimensionality: int, seed: Any or int = None):
@@ -63,7 +61,14 @@ class Function(ABC):
         return y
 
     def f(self, x) -> np.ndarray:
-        """Analytical function of the objective function. Needs to be implemented by inhereted class"""
+        """Analytical function of the objective function. Needs to be implemented by inhereted class
+
+        Args:
+            x (np.ndarray): input vector
+
+        Returns:
+            np.ndarray: output vector
+        """
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
@@ -85,20 +90,26 @@ class Function(ABC):
         return output[1:]  # Cut of the first one because that is the empty array input
 
     def get_name(self) -> str:
+        """Get the name of the function
+
+        Returns:
+            str: name of the function
+        """
         return self.__class__.__name__
 
     def plot_data(
         self, data: Data, px: int = 300, domain: np.ndarray = np.tile([0.0, 1.0], (2, 1))
-    ):  # pragma: no cover
+    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contour plot with the datapoints as scatter
 
         Args:
             data (Data): Data object containing samples
-            px (int, optional): Number of pixels on each axis. Defaults to 300.
-            domain (np.ndarray, optional): Domain that needs to be plotted. Defaults to np.tile([0.0, 1.0], (2, 1)).
+            px (int, optional): Number of pixels on each axis. (Defaults = 300)
+            domain (np.ndarray, optional): Domain that needs to be plotted. (Default = np.tile([0.0, 1.0], (2, 1)))
 
         Returns:
-            _type_: _description_
+            fig (plt.Figure) : matplotlib figure object
+            ax (plt.Axes) : matplotib axes of the figure
         """
         fig, ax = self.plot(orientation="2D", px=px, domain=domain)
         x1 = data.get_input_data().iloc[:, 0]
@@ -155,12 +166,14 @@ class Function(ABC):
         """Generate a surface plot, either 2D or 3D, of the function
 
         Args:
-            orientation (str, optional): Either "2D" or "3D" orientation. Defaults to "3D".
-            px (int, optional): Number of points per dimension. Defaults to 300.
-            domain (List, optional): Domain that needs to be plotted . Defaults to [0, 1].
+            orientation (str, optional): Either "2D" or "3D" orientation. (Default = "3D")
+            px (int, optional): Number of points per dimension. (Default = 300)
+            domain (np.ndarray, optional): Domain that needs to be plotted . (Default = [0, 1])
+            show (bool): Show the figure in interactive mode (Default = True)
 
         Returns:
-            fig, ax: Figure and axis
+            fig (plt.Figure) : matplotlib figure object
+            ax (plt.Axes) : matplotib axes of the figure
         """
 
         if not show:

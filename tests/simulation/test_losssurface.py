@@ -25,11 +25,11 @@ def levy_function():
     return Levy(dimensionality=dim, scale_bounds=bounds, seed=seed)
 
 
-def test_loss_surface_levy_function(levy_function: Function, script_loc):
-    _, _, Y = levy_function._create_mesh(px=300, domain=np.tile([-1.0, 1.0], (2, 1)))
+# def test_loss_surface_levy_function(levy_function: Function, script_loc):
+#     _, _, Y = levy_function._create_mesh(px=300, domain=np.tile([-1.0, 1.0], (2, 1)))
 
-    Y_check = read_pickle(script_loc.join("Levyfunction_2D"))
-    assert (Y == Y_check).all()
+#     Y_check = read_pickle(script_loc.join("Levyfunction_2D"))
+#     assert (Y == Y_check).all()
 
 
 if __name__ == "__main__":  # pragma: no cover
