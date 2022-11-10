@@ -19,7 +19,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help doc-clean html apidoc latexpdf init init-dev test test-html build upload
+.PHONY: help doc-clean html apidoc latexpdf init init-dev test test-html build upload build-upload
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -91,14 +91,18 @@ build:
 	@echo "Removing previous build"
 	-rm -rf $(PACKAGEDIR)/*
 	@echo "Building package"
-	python setup.py sdist bdist_wheel --universal
+	python -m build
 	
 upload-testpypi:
 	make build
 	@echo "Uploading the package to Test PyPI via Twine ..."
-	twine upload -r testpypi $(PACKAGEDIR)/*
+	twine upload -r testpypi $(PACKAGEDIR)/* --verbose
 
 upload:
+	@echo "Uploading the package to PyPI via Twine ..."
+	twine upload $(PACKAGEDIR)/* --verbose
+
+build-upload:
 	make build
 	@echo "Uploading the package to PyPI via Twine ..."
-	twine upload -r pypi $(PACKAGEDIR)/*
+	twine upload $(PACKAGEDIR)/* --verbose

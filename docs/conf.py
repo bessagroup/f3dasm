@@ -32,11 +32,19 @@ sys.path.insert(0, os.path.abspath("../"))
 extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
+    "sphinx_autodoc_defaultargs",
+    # "sphinx_autodoc_typehints",
     "sphinxcontrib.bibtex",
     "sphinx.ext.intersphinx",
 ]
 
+rst_prolog = (
+    """
+.. |default| raw:: html
+
+    """
+    + '<span class="default-value-label">- Default:</span>'
+)
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
@@ -49,7 +57,12 @@ intersphinx_mapping = {
 
 napoleon_use_param = True
 napoleon_use_ivar = True
+napoleon_use_rtype = False
+napoleon_preprocess_types = True
 autoclass_content = "both"
+autodoc_preserve_defaults = True
+
+always_document_default_args = True
 
 bibtex_bibfiles = ["refs.bib"]
 # Add any paths that contain templates here, relative to this directory.
@@ -238,9 +251,9 @@ latex_documents = [
 # Tell sphinx-autodoc-typehints to generate stub parameter annotations including
 # types, even if the parameters aren't explicitly documented.
 always_document_param_types = True
-typehints_defaults = "comma"
+typehints_defaults = "braces"
 typehints_use_rtype = False
-
+autodoc_typehints = "description"
 
 # -- Options for manual page output --------------------------------------------
 

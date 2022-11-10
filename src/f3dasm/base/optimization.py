@@ -10,10 +10,14 @@ from ..base.function import Function
 
 @dataclass
 class OptimizerParameters:
-    """Standard optimization hyperparameters
+    """Interface of a continuous benchmark function
 
-    :param population: population of the optimizer update step
-    :param force_bounds: force the optimizer to not exceed the boundaries of the designspace
+    Parameters
+    ----------
+    population :
+        population of the optimizer update step
+    force_bounds :
+        force the optimizer to not exceed the boundaries of the designspace
     """
 
     population: int = 1
@@ -25,7 +29,7 @@ class Optimizer:
     """Mainclass to inherit from to implement optimization algorithms
 
     :param data: Data-object
-    :param hyperparameters: Dictionary with hyperparamaters
+    :param hyperparameters: Dictionary with hyperparameters
     :param seed: seed to set the optimizer
     :param defaults: Default hyperparameter arguments
     """

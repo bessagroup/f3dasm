@@ -13,8 +13,12 @@ class Function:
     def __init__(self, dimensionality: int, seed: Any or int = None):
         """Interface of a continuous benchmark function
 
-        :param dimensionality: number of input dimensions
-        :param seed: value to seed the random generator
+        Parameters
+        ----------
+        dimensionality :
+            number of input dimensions
+        seed : Any, optional
+            value to seed the random generator, by default None
         """
         self.dimensionality = dimensionality
         self.seed = seed

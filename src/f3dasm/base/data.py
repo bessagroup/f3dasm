@@ -86,9 +86,17 @@ class Data:
     def get_n_best_output_samples(self, nosamples: int) -> pd.DataFrame:
         """Returns the n lowest rows of the dataframe. Values are compared to the output columns
 
-        :param nosamples: number of samples
-        :returns: DataFrame containing the n best samples
+        Parameters
+        ----------
+        nosamples :
+            number of samples
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe containing the n best samples
         """
+
         return self.data.nsmallest(n=nosamples, columns=self.design.get_output_names())
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
