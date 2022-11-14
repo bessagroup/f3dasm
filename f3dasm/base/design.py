@@ -5,6 +5,7 @@ import pandas as pd
 
 from ..base.space import (
     CategoricalParameter,
+    ConstantParameter,
     ContinuousParameter,
     DiscreteParameter,
     ParameterInterface,
@@ -134,6 +135,22 @@ class DesignSpace:
             List[str]: list of names of the continuous input parameters
         """
         return self._get_names(ContinuousParameter, self.input_space)
+    
+    def get_constant_input_parameters(self) -> List[ConstantParameter]:
+        """Obtain all the constant parameters
+
+        Returns:
+            List[ConstantParameter]: space of constant parameters
+        """
+        return self._get_parameters(ConstantParameter, self.input_space)
+    
+    def get_constant_input_names(self) -> List[str]:
+        """Receive the names of all the constant parameters
+
+        Returns:
+            List[str]: list of names
+        """
+        return self._get_names(ConstantParameter, self.input_space)
 
     def get_discrete_input_parameters(self) -> List[DiscreteParameter]:
         """Obtain all the discrete parameters

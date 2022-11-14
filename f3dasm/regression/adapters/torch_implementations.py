@@ -27,12 +27,14 @@ class TorchGPSurrogate(Surrogate):
             test_input_data: Data,
     ) -> List[Data]:
         test_y_list = self.model.posterior(
-            torch.from_numpy(test_input_data)  # .to(**tkwargs)
+            torch.from_numpy(
+                test_input_data.data['input'].to_numpy()
+                )  # .to(**tkwargs)
         ).mean.cpu().detach().numpy()
 
         test_y_var_list = self.model.posterior(
             torch.from_numpy(
-                test_input_data
+                test_input_data.data['input'].to_numpy()
             )  # .to(**tkwargs)
         ).mvn.covariance_matrix.diag().cpu().detach().numpy()[:, None]
         return [test_y_list, test_y_var_list]
@@ -65,7 +67,8 @@ class TorchGPRegressor(Regressor):
                 train_Y=torch.tensor(self.train_data.get_output_data().values),
                 input_transform=Normalize(
                     d=len(self.design.input_space),
-                    bounds=_continuousInputSpace_to_tensor(self.design.input_space),
+                    # bounds=_continuousInputSpace_to_tensor(self.design.input_space),
+                    # bounds=None,
                 ),
                 outcome_transform=Standardize(m=1),
                 **self.kwargs,

@@ -365,23 +365,28 @@ class Function(ABC):
         return x + self.offset
 
 
+@dataclass
 class AugmentedFunction(Function):
-    def __init__(
-            self,
-            base_fun: Function,
-            fid: float,
-            aug_mode: str = 'b',
-    ):
-        # super().__init__()
+    base_fun: Function = None
+    fid: float = None
+    aug_mode = None
 
-        self.base_fun = base_fun
-        self.fid = fid
-        self.aug_mode = aug_mode
-        self.name = base_fun.get_name()
+    # def __init__(
+    #         self,
+    #         base_fun: Function,
+    #         fid: float,
+    #         aug_mode: str = 'b',
+    # ):
+    #     # super().__init__()
+
+    #     self.base_fun = base_fun
+    #     self.fid = fid
+    #     self.aug_mode = aug_mode
+    #     self.name = base_fun.get_name()
 
     def f(self, x) -> np.ndarray:
 
-        res_hf = self.base_fun(x)
+        res_hf = self.base_fun(x[:, 1:])
         res_lf = np.zeros_like(res_hf)
         res = self.fid * res_hf + (1 - self.fid) * res_lf
 

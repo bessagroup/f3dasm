@@ -204,10 +204,12 @@ class AckleyN4(PyBenchFunction):
 
     @classmethod
     def is_dim_compatible(cls, d):
+        # TODO: #62 this function is incompatible with a 1D design, 
+        # but this function returns otherwise.
         assert (d is None) or (
             isinstance(d, int) and (not d < 0)
         ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+        return (d is None) or (d > 1)
 
     def _set_parameters(self=None):
         d = self.dimensionality
@@ -629,10 +631,12 @@ class Brown(PyBenchFunction):
 
     @classmethod
     def is_dim_compatible(cls, d):
+        # TODO: #61 this function is incompatible with a 1D design, 
+        # but this function returns otherwise.
         assert (d is None) or (
             isinstance(d, int) and (not d < 0)
         ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+        return (d is None) or (d > 1)
 
     def _set_parameters(self=None):
         d = self.dimensionality
@@ -1294,7 +1298,11 @@ class Keane(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -(np.sin(x - y) ** 2 * np.sin(x + y) ** 2) / np.sqrt(x**2 + y**2)
+        # TODO: #63 evaluation is not defined at (x, y) = (0, 0)
+        if x != 0 or y != 0:
+            res = -(np.sin(x - y) ** 2 * np.sin(x + y) ** 2) / np.sqrt(x**2 + y**2)
+        else:
+            res = 0
         return res
 
 

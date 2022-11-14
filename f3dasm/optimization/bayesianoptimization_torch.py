@@ -11,6 +11,7 @@ from botorch.optim import optimize_acqf, optimize_acqf_mixed
 from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound
 from ..regression.gpr import Sogpr, Stmf
+import f3dasm
 
 
 @dataclass
@@ -71,9 +72,8 @@ def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, mffunction: MultiF
 
     cost = cost_model(lf, cost_ratio=10)(candidates).sum()
     new_x = candidates.numpy()
-    new_x_space = new_x[:, 1:]
     function = mffunction.get_fun_by_fid(fid=lf)
-    new_obj = function(new_x_space)
+    new_obj = function(new_x)
 
     return new_x, new_obj, cost
 
@@ -175,12 +175,9 @@ class MFBayesianOptimizationTorch(Optimizer):
     def update_step_mf(self, mffunction: MultiFidelityFunction, iteration: int,) -> None:
 
         if iteration == 0:
-            train_data = mf_data_compiler(
-                mfdata=self.data,
-                fids=self.mffun.fids
-            )
-        else:
-            train_data = self.data[-1]
+            self.data[-1].data = pd.concat([d.data for d in self.data], ignore_index=True)
+
+        train_data = self.data[-1]
 
         regressor = Stmf(
             mf_train_data=train_data,
@@ -190,13 +187,12 @@ class MFBayesianOptimizationTorch(Optimizer):
         surrogate = regressor.train()
         model = surrogate.model
 
-        test_x_hf_space = np.linspace(
-            mffunction.funs[0].base_fun.input_domain[0, 0],
-            mffunction.funs[0].base_fun.input_domain[0, 1], 500
-        )[:, None]
-        test_x_hf_fid = np.ones_like(test_x_hf_space)
-        test_x_hf = np.hstack((test_x_hf_space, test_x_hf_fid))
-        test_x_lf = np.hstack((test_x_hf_space, 0.5 * test_x_hf_fid))
+        low_sampler = f3dasm.sampling.SobolSequenceSampling(design=self.data[0].design)
+        high_sampler = f3dasm.sampling.SobolSequenceSampling(design=self.data[1].design)
+        
+        test_x_lf = low_sampler.get_samples(numsamples=500)
+        test_x_hf = high_sampler.get_samples(numsamples=500)
+
         mean_high, _ = surrogate.predict(test_x_hf)
         mean_low, _ = surrogate.predict(test_x_lf)
 
@@ -215,8 +211,6 @@ class MFBayesianOptimizationTorch(Optimizer):
         )
 
         self.data[-1].add_numpy_arrays(input=new_x, output=new_obj)
-
-        # print(self.data[-1])
 
 def mf_data_compiler(
         mfdata: List[Data],

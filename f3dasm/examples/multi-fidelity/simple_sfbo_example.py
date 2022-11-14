@@ -7,21 +7,33 @@ dim = 1
 iterations = 40
 seed = 123
 number_of_samples = 10
+samp_no = 8
 
-fun = f3dasm.functions.Schwefel(dimensionality=dim)
+fun = f3dasm.functions.Schwefel(
+    dimensionality=dim,
+    scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    )
+
 parameter_DesignSpace = f3dasm.make_nd_continuous_design(
     bounds=fun.input_domain.astype(float),
     dimensionality=dim,
 )
-SobolSampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
-samples = SobolSampler.get_samples(numsamples=8)
-samples.add_output(output=fun(samples))
-optimizer = f3dasm.optimization.BayesianOptimizationTorch(data=samples)
+
+sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+
+init_train_data = sampler.get_samples(numsamples=samp_no)
+init_train_data.add_output(output=fun(init_train_data))
+
+optimizer = f3dasm.optimization.BayesianOptimizationTorch(
+    # data=f3dasm.Data(design=parameter_DesignSpace),
+    data=init_train_data,
+    )
 optimizer.init_parameters()
+
 res = f3dasm.run_optimization(
     optimizer=optimizer,
     function=fun,
-    sampler=SobolSampler,
+    sampler=sampler,
     iterations=iterations,
     seed=seed,
     number_of_samples=number_of_samples,

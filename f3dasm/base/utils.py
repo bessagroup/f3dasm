@@ -21,8 +21,8 @@ def _from_data_to_numpy_array_benchmarkfunction(
     data: Data,
 ) -> np.ndarray:
     """Check if doe is in right format"""
-    if not data.design.is_single_objective_continuous():
-        raise TypeError("All inputs and outputs need to be continuous parameters and output single objective")
+    # if not data.design.is_single_objective_continuous():
+    #     raise TypeError("All inputs and outputs need to be continuous parameters and output single objective")
 
     return data.get_input_data().to_numpy()
 

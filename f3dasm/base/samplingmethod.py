@@ -53,18 +53,23 @@ class SamplingInterface(ABC):
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples)
 
+        # Sample constant parameters
+        samples_constant = self._sample_constant(numsamples=numsamples)
+
         # Sample discrete parameters
         samples_discrete = self._sample_discrete(numsamples=numsamples)
 
         # Sample categorical parameters
         samples_categorical = self._sample_categorical(numsamples=numsamples)
+
         # Merge samples into array
-        samples = np.hstack((samples_continuous, samples_discrete, samples_categorical))
+        samples = np.hstack((samples_continuous, samples_constant, samples_discrete, samples_categorical))
 
         # Get the column names in this particular order
         columnnames = [
             ("input", name)
             for name in self.design.get_continuous_input_names()
+            + self.design.get_constant_input_names()
             + self.design.get_discrete_input_names()
             + self.design.get_categorical_input_names()
         ]
@@ -87,6 +92,17 @@ class SamplingInterface(ABC):
         data.add(data=df)
 
         return data
+
+    def _sample_constant(self, numsamples: int):
+        """Sample the constant parameters"""
+        constant = self.design.get_constant_input_parameters()
+        samples = np.empty(shape=(numsamples, len(constant)))
+        for dim, _ in enumerate(constant):
+            samples[:, dim] = constant[dim].constant_value * np.ones(
+                (numsamples,)
+            )
+        
+        return samples
 
     def _sample_discrete(self, numsamples: int):
         """Sample the descrete parameters, default randomly uniform"""

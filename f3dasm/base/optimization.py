@@ -121,7 +121,7 @@ class Optimizer:
         # self._check_number_of_datapoints()
 
         for _ in range(self._number_of_updates(iterations)):
-            print('iteration', _)#, self.data[-1].data)
+            # print('iteration', _)#, self.data[-1].data)
             self.update_step_mf(mffunction=mffunction, iteration=_)
 
         # Remove overiterations

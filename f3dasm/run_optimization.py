@@ -81,15 +81,15 @@ def run_mf_optimization(
     optimizer.set_seed(seed)
     # sampler.set_seed(seed)
 
-    mfsamples = []
-    for fid_no, samp_no in enumerate(number_of_samples):
-        samples = sampler.get_samples(numsamples=samp_no)
+    # mfsamples = []
+    # for fid_no, samp_no in enumerate(number_of_samples):
+    #     samples = sampler.get_samples(numsamples=samp_no)
 
-        samples.add_output(output=mffunction.funs[fid_no](samples))
+    #     samples.add_output(output=mffunction.funs[fid_no](samples))
 
-        mfsamples.append(samples)
+    #     mfsamples.append(samples)
 
-    optimizer.set_data(mfsamples)
+    # optimizer.set_data(mfsamples)
 
     # Iterate
     optimizer.iterate_mf(iterations=iterations, mffunction=mffunction)

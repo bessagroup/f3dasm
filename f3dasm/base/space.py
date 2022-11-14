@@ -14,6 +14,24 @@ class ParameterInterface:
 
     name: str
 
+@dataclass
+class ConstantParameter(ParameterInterface):
+    """Creates a search space parameter that is constant
+
+    Args:
+        constant_value (float): value of constant search space
+    """
+
+    constant_value: float = field(default=0)
+    type: str = field(init=False, default="float")
+
+    def __post_init__(self):
+        self._check_types()
+
+    def _check_types(self) -> None:
+        """Check if the boundaries are actually floats"""
+        if not isinstance(self.constant_value, float):
+            raise TypeError(f"Expect float, got {type(self.constant_value)}")
 
 @dataclass
 class ContinuousParameter(ParameterInterface):

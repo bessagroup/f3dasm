@@ -1,27 +1,56 @@
+import copy
+
 import numpy as np
+import pandas as pd
 import torch
 from matplotlib import pyplot as plt
 
 import f3dasm
 from f3dasm.base.function import AugmentedFunction
+# from f3dasm.functions.adapters.torch_functions import AugmentedTestFunction, botorch_TestFunction
+from f3dasm.optimization.bayesianoptimization_torch import mf_data_compiler
 
-from f3dasm.functions.adapters.torch_functions import AugmentedTestFunction, botorch_TestFunction
-from f3dasm.regression.gpr import Cokgj, Mtask, Stmf
+dim = 1
 
-dim = 2
+base_fun = f3dasm.functions.Sphere(
+    dimensionality=dim,
+    scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    )
 
-base_fun = f3dasm.functions.Ackley(dimensionality=dim)
-fids = [0.5, 1]
-costs = [0.5, 1]
+fids = [0.5, 1.0]
+costs = [0.5, 1.0]
 samp_nos = [20, 10]
+
 funs = []
-for fid_no, fid in enumerate(fids):
-    funs.append(
-        AugmentedFunction(
+mf_design_space = []
+mf_sampler = []
+mf_train_data = []
+
+for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
+
+    fun = AugmentedFunction(
             base_fun=base_fun,
             fid=fid,
-        )
+            )
+    
+    parameter_DesignSpace = f3dasm.make_nd_continuous_design(
+        bounds=base_fun.input_domain.astype(float),
+        dimensionality=dim,
     )
+
+    fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fid)
+    parameter_DesignSpace.add_input_space(fidelity_parameter)
+
+    sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+
+    train_data = sampler.get_samples(numsamples=samp_no)
+
+    train_data.add_output(output=fun(train_data))
+
+    funs.append(fun)
+    mf_design_space.append(parameter_DesignSpace)
+    mf_sampler.append(sampler)
+    mf_train_data.append(train_data)
 
 mffun = f3dasm.base.function.MultiFidelityFunction(
     funs=funs,
@@ -29,66 +58,25 @@ mffun = f3dasm.base.function.MultiFidelityFunction(
     costs=costs,
 )
 
-parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-    bounds=base_fun.input_domain.astype(float),
-    dimensionality=dim,
-)
-
-SobolSampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
-
-mfsamples = []
-for fid_no, samp_no in enumerate(samp_nos):
-    samples = SobolSampler.get_samples(numsamples=samp_no)
-
-    samples.add_output(output=mffun.funs[fid_no](samples))
-
-    mfsamples.append(samples)
-
-print(mfsamples)
-
-# dim = 1
-
-# fun = f3dasm.functions.Schwefel(dimensionality=dim)
-# parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-#     bounds=fun.input_domain.astype(float),
-#     dimensionality=dim,
+# train_data: f3dasm.Data = mf_data_compiler(
+#     mfdata=mf_train_data,
+#     fids=fids,
 # )
 
-# SobolSampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+mf_train_data[-1].data = pd.concat([d.data for d in mf_train_data], ignore_index=True)
 
-# aug_fun = AugmentedTestFunction(botorch_TestFunction(fun=fun), noise_type="b")
+regressor = f3dasm.regression.gpr.Stmf(
+    mf_train_data=mf_train_data[-1],
+    mf_design=mf_train_data[-1].design,
+)
 
-# train_x_hf_space = SobolSampler.sample_continuous(numsamples=5)
-# train_x_lf_space = SobolSampler.sample_continuous(numsamples=200)
-# train_x_lf_fid = 0.5 * np.ones_like(train_x_lf_space)
-# train_x_lf = np.hstack((train_x_lf_space, train_x_lf_fid))
-# train_x_hf_fid = np.ones_like(train_x_hf_space)
-# train_x_hf = np.hstack((train_x_hf_space, train_x_hf_fid))
-# train_x_mf = torch.tensor(np.vstack((train_x_hf, train_x_lf)))
-# train_y_mf = aug_fun(train_x_mf)[:, None]
+surrogate = regressor.train()
 
-# fidelity_parameter = f3dasm.ContinuousParameter(name="fid", lower_bound=0.0, upper_bound=1.0)
-# parameter_DesignSpace.add_input_space(fidelity_parameter)
+test_sampler = f3dasm.sampling.LatinHypercubeSampling(design=mf_design_space[-1])
+test_data = sampler.get_samples(numsamples=500)
 
-# mf_regressor = Stmf(mf_train_input_data=train_x_mf, mf_train_output_data=train_y_mf, mf_design=parameter_DesignSpace)
-# mf_surrogate = mf_regressor.train()
+mean, var = surrogate.predict(test_data)
 
-# test_x_hf_space = np.linspace(fun.input_domain[0, 0], fun.input_domain[0, 1], 500)[:, None]
-# test_x_hf_fid = np.ones_like(test_x_hf_space)
-# test_x_hf = np.hstack((test_x_hf_space, test_x_hf_fid))
-# # mean_hf, var_hf = mf_surrogate.predict(test_x_hf_space)
-# mean_hf, var_hf = mf_surrogate.predict(test_x_hf)
-# # mean_hf = mean_hf[:, 1][:, None]
-# # var_hf = var_hf[:500]
-# ucb, lcb = [mean_hf + (-1) ** k * 2 * np.sqrt(np.abs(var_hf)) for k in range(2)]
-
-# plt.plot(test_x_hf_space, fun(test_x_hf_space))
-# plt.plot(test_x_hf_space, mean_hf, "r--")
-# plt.plot(test_x_hf_space, lcb, "k", linewidth=0.5)
-# plt.plot(test_x_hf_space, ucb, "k", linewidth=0.5)
-# plt.fill_between(test_x_hf_space.flatten(), lcb.flatten(), ucb.flatten(), color="r", alpha=0.1)
-# plt.scatter(train_x_hf_space, train_y_mf[: len(train_x_hf_space)], c="r")
-# plt.grid()
-# plt.tight_layout()
-
+# print(np.sort(test_data.data['input', 'x0'].values))
+# plt.plot(test_data.data['input', 'x0'], mean, '.')
 # plt.show()
