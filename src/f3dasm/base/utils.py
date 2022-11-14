@@ -11,9 +11,16 @@ from ..base.space import ContinuousParameter
 def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> DesignSpace:
     """Helper function to make an continuous design space with a single-objective continuous output
 
-    :param bounds: lower and upper bounds of every dimension
-    :param dimensionality: number of dimensions
-    :returns: continuous, single-objective designspace
+    Parameters
+    ----------
+    bounds
+        lower and upper bounds of every dimension
+    dimensionality
+        number of dimensions
+
+    Returns
+    -------
+        continuous, single-objective designspace
     """
     input_space, output_space = [], []
     for dim in range(dimensionality):
@@ -52,18 +59,31 @@ def _rotate_vector(x: np.ndarray, rotation_matrix: np.ndarray) -> np.ndarray:
 def find_class(module, query: str):
     """Find a class from a string
 
-    :param module: (sub)module to be searching
-    :param query: string to search for
-    :returns: class
+    Parameters
+    ----------
+    module
+        (sub)module to be searching
+    query
+        string to search for
+
+    Returns
+    -------
+        class
     """
     return getattr(module, query)
 
 
 def read_pickle(name: str) -> Any:
-    """read an pickled object to memory
+    """Read a pickled object to memory
 
-    :param name: name of file without file extension .obj
-    :returns: object
+    Parameters
+    ----------
+    name
+        name of file without extension .obj
+
+    Returns
+    -------
+        object
     """
     with open(f"{name}.obj", "rb") as f:
         obj = pickle.load(f)
@@ -73,8 +93,12 @@ def read_pickle(name: str) -> Any:
 def write_pickle(name: str, obj: Any):
     """Write an object to a file with pickle
 
-    :param obj: object to store
-    :param name: name of file to write without file extension .obj
+    Parameters
+    ----------
+    name
+        name of file to write without file exentions .obj
+    obj
+        object to store
     """
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)

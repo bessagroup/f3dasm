@@ -54,7 +54,7 @@ html-open:
 
 apidoc:
 	-rm -rf $(APIDOCDIR)/*
-	sphinx-apidoc -o $(APIDOCDIR)/ ../$(PACKAGENAME)
+	sphinx-apidoc -o $(APIDOCDIR)/ ../src/$(PACKAGENAME)
 	@echo
 	@echo "Created API documentation using sphinx-apidoc. The source files are in $(APIDOCDIR)."
 

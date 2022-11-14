@@ -34,7 +34,10 @@ class Function:
     def set_seed(self, seed: int):
         """Set the numpy seed of the random generator
 
-        :param seed: seed for random number generator
+        Parameters
+        ----------
+        seed
+            seed for random number generator
         """
         self.seed = seed
         np.random.seed(seed)
@@ -42,9 +45,14 @@ class Function:
     def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
         """Evaluate the objective function
 
-        :param input_x: input to be evaluated
+        Parameters
+        ----------
+        input_x
+            input to be evaluated
 
-        :returns: output of the objective function
+        Returns
+        -------
+            output of the objective function
         """
         # If the input is a Data object
         if isinstance(input_x, Data):
@@ -67,18 +75,33 @@ class Function:
     def f(self, x) -> np.ndarray:
         """Analytical function of the objective function. Needs to be implemented by inhereted class
 
+        Parameters
+        ----------
+        x
+            input vector
 
-        :param x: input vector
+        Returns
+        -------
+            output vector
 
-        :returns: output vector
+        Raises
+        ------
+        NotImplementedError
+            Raised when not implemented. Subclasses should implement this method.
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
-        """Compute the gradient at a particular point in space. Gradient is computed by numdifftools.
+        """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
 
-        :param x: input vector
-        :returns: gradient
+        Parameters
+        ----------
+        x
+            input vector
+
+        Returns
+        -------
+            gradient
         """
         # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
         grad = nd.Gradient(self)
@@ -92,20 +115,29 @@ class Function:
     def get_name(self) -> str:
         """Get the name of the function
 
-        :returns: name of the function
+        Returns
+        -------
+            name of the function
         """
         return self.__class__.__name__
 
     def plot_data(
         self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contour plot with the datapoints as scatter
+        """Create a 2D contout plot with the datapoints as scatter
 
-        :param data: Data object containing samples
-        :param px: Number of pixels on each axis
-        :param domain: Domain that needs to be plotted
+        Parameters
+        ----------
+        data
+            Data object containing samples
+        px, optional
+            number of pixels on each axis
+        domain, optional
+            domain that needs to be plotted
 
-        :returns: matplotlib figure and axes
+        Returns
+        -------
+            matplotlib figure and axes
         """
         fig, ax = self.plot(orientation="2D", px=px, domain=domain)
         x1 = data.get_input_data().iloc[:, 0]
@@ -126,10 +158,16 @@ class Function:
     def _create_mesh(self, px: int, domain: np.ndarray):
         """Create mesh to use for plotting
 
-        :param px: Number of points per dimension
-        :param domain: Domain that needs to be plotted
+        Parameters
+        ----------
+        px
+            Number of points per dimension
+        domain
+            Domain that needes to be plotted
 
-        :returns: 2D mesh used for plotting and another mesh
+        Returns
+        -------
+            2D mesh used for plotting and another mesh
         """
         x1 = np.linspace(domain[0, 0], domain[0, 1], num=px)
         x2 = np.linspace(domain[1, 0], domain[1, 1], num=px)
@@ -158,14 +196,21 @@ class Function:
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Generate a surface plot, either 2D or 3D, of the function
 
-        :param orientation: Either "2D" or "3D" orientation.
-        :param px: Number of points per dimension.
-        :param domain: Domain that needs to be plotted.
-        :param show: Show the figure in interactive mode
+        Parameters
+        ----------
+        orientation, optional
+            Either 2D or 3D orientation
+        px, optional
+            Number of points per dimension
+        domain, optional
+            Domain that needs to be plotted
+        show, optional
+            Show the figure in interactive mode
 
-        :returns: matplotlib figure object and axes of the figure
+        Returns
+        -------
+            matplotlib figure object and axes of the figure
         """
-
         if not show:
             plt.ioff()
         else:

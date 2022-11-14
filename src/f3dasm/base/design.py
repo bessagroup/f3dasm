@@ -20,7 +20,9 @@ class DesignSpace:
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space
 
-        :returns:  DataFrame containing "input" and "output" columns
+        Returns
+        -------
+            DataFrame containing "input" and "output" columns
         """
         # input columns
         df_input = pd.DataFrame(columns=self.get_input_names()).astype(
@@ -37,7 +39,10 @@ class DesignSpace:
     def add_input_space(self, space: ParameterInterface):
         """Add a new parameter to the searchspace
 
-        :param space: search space parameter to be added
+        Parameters
+        ----------
+        space
+            search space parameter to be added
         """
         self.input_space.append(space)
         return
@@ -45,48 +50,55 @@ class DesignSpace:
     def add_output_space(self, space: ParameterInterface):
         """Add a new parameter to the searchspace
 
-        :param space: search space parameter to be added
+        Parameters
+        ----------
+        space
+            search space parameter to be added
         """
         self.output_space.append(space)
-        return
 
     def get_input_space(self) -> List[ParameterInterface]:
         """Get the input space
 
-
-        :returns: List of input parameters
+        Returns
+        -------
+            List of input parameters
         """
         return self.input_space
 
     def get_output_space(self) -> List[ParameterInterface]:
         """Get the output space
 
-
-        :returns:  List of output parameters
+        Returns
+        -------
+            List of output parameters
         """
         return self.output_space
 
     def get_output_names(self) -> List[str]:
         """Get the names of the output parameters
 
-
-        :returns:  List of the names of the output parameters
+        Returns
+        -------
+            List of the names of the output parameters
         """
         return [("output", s.name) for s in self.output_space]
 
     def get_input_names(self) -> List[str]:
         """Get the names of the input parameters
 
-
-        :returns: List of the names of the input parameters
+        Returns
+        -------
+            List of the names of the input parameters
         """
         return [("input", s.name) for s in self.input_space]
 
     def is_single_objective_continuous(self) -> bool:
         """Check if the output is single objective and continuous
 
-
-        :returns: boolean value if the above described condition is true
+        Returns
+        -------
+            boolean value if the above described condition is true
         """
         return (
             self._all_input_continuous()
@@ -97,60 +109,72 @@ class DesignSpace:
     def get_number_of_input_parameters(self) -> int:
         """Obtain the number of input parameters
 
-
-        :returns: number of input parameters
+        Returns
+        -------
+            number of input parameters
         """
         return len(self.input_space)
 
     def get_number_of_output_parameters(self) -> int:
-        """Obtain the number of input parameters
+        """Obtain the number of output parameters
 
-
-        :returns: number of output parameters
+        Returns
+        -------
+            number of output parameters
         """
         return len(self.output_space)
 
     def get_continuous_input_parameters(self) -> List[ContinuousParameter]:
         """Obtain all the continuous parameters
 
-
-        :returns: space of continuous parameters
+        Returns
+        -------
+            space of continuous parameters
         """
         return self._get_parameters(ContinuousParameter, self.input_space)
 
     def get_continuous_input_names(self) -> List[str]:
-        """Receive the continuous parameter names of the input space"
+        """Receive the continuous parameter names of the input space
 
-
-        :returns: list of names of the continuous input parameters
+        Returns
+        -------
+            list of names of the continuous input parameters
         """
         return self._get_names(ContinuousParameter, self.input_space)
 
     def get_discrete_input_parameters(self) -> List[DiscreteParameter]:
         """Obtain all the discrete parameters
 
-        :returns: space of discrete parameters
+        Returns
+        -------
+            space of discrete parameters
         """
         return self._get_parameters(DiscreteParameter, self.input_space)
 
     def get_discrete_input_names(self) -> List[str]:
         """Receive the names of all the discrete parameters
 
-        :returns: list of names
+        Returns
+        -------
+            list of names
         """
         return self._get_names(DiscreteParameter, self.input_space)
 
     def get_categorical_input_parameters(self) -> List[CategoricalParameter]:
         """Obtain all the categorical input parameters
 
-        :returns: space of categorical input parameters
+        Returns
+        -------
+            space of categorical input parameters
         """
         return self._get_parameters(CategoricalParameter, self.input_space)
 
     def get_categorical_input_names(self) -> List[str]:
         """Receive the names of the categorical input parameters
 
-        :returns: list of names of categorical input parameters
+        Returns
+        -------
+            list of names of categorical input parameters
         """
         return self._get_names(CategoricalParameter, self.input_space)
 

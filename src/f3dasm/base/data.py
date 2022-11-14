@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Tuple
 
 import autograd.numpy as np
 import matplotlib.pyplot as plt
@@ -33,7 +34,12 @@ class Data:
     def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """Add data
 
-        :param data: data to append
+        Parameters
+        ----------
+        data
+            data to append
+        ignore_index, optional
+            whether to ignore the indices of the appended dataframe
         """
         self.data = pd.concat([self.data, data], ignore_index=ignore_index)
 
@@ -45,16 +51,24 @@ class Data:
     def add_output(self, output: np.ndarray, label: str = "y"):
         """Add a numpy array to the output column of the dataframe
 
-        :param output: Output data
-        :param label: label of the output column to add to
+        Parameters
+        ----------
+        output
+            Output data
+        label, optional
+            label of the output column to add to
         """
         self.data[("output", label)] = output
 
     def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
-        """Append a numpy array to the dataframe
+        """Append a numpy array to the datafram
 
-        :param input: 2d numpy array added to input data
-        :param output: 2d numpy array added to output data
+        Parameters
+        ----------
+        input
+            2d numpy array added to input data
+        output
+            2d numpy array added to output data
         """
         df = pd.DataFrame(np.hstack((input, output)), columns=self.data.columns)
         self.add(df, ignore_index=True)
@@ -62,7 +76,10 @@ class Data:
     def remove_rows_bottom(self, number_of_rows: int):
         """Remove a number of rows from the end of the Dataframe
 
-        :param number_of_rows: number of rows to remove from the bottom
+        Parameters
+        ----------
+        number_of_rows
+            number of rows to remove from the bottom
         """
         if number_of_rows == 0:
             return  # Don't do anything if 0 rows need to be removed
@@ -72,14 +89,18 @@ class Data:
     def get_input_data(self) -> pd.DataFrame:
         """Get the input data
 
-        :returns: DataFrame containing only the input data
+        Returns
+        -------
+            DataFrame containing only the input data
         """
         return self.data["input"]
 
     def get_output_data(self) -> pd.DataFrame:
         """Get the output data
 
-        :returns: DataFrame containing only the output data
+        Returns
+        -------
+            DataFrame containing only the output data
         """
         return self.data["output"]
 
@@ -100,26 +121,42 @@ class Data:
         return self.data.nsmallest(n=nosamples, columns=self.design.get_output_names())
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
-        """Returns the input vectors in numpy array format of the n best samples
+        """Returns the input vector in numpoy array format of the n best samples
 
-        :param nosamples: number of samples
+        Parameters
+        ----------
+        nosamples
+            number of samples
 
-        :returns: numpy array containing the n best input parameters
+        Returns
+        -------
+            numpy array containing the n best input parameters
         """
         return self.get_n_best_output_samples(nosamples)["input"].to_numpy()
 
     def get_number_of_datapoints(self) -> int:
         """Get the total number of datapoints
 
-        :returns: total number of datapoints
+        Returns
+        -------
+            total number of datapoints
         """
         return len(self.data)
 
-    def plot(self, input_par1: str, input_par2: str = None):
+    def plot(self, input_par1: str, input_par2: str = None) -> Tuple[plt.Figure, plt.Axes]:
+
         """Plot the data of two parameters in a figure
 
-        :param input_par1: name of first parameter (x-axis)
-        :param input_par2: name of second parameter (x-axis)
+        Parameters
+        ----------
+        input_par1
+            name of first parameter (x-axis)
+        input_par2
+            name of second parameter (x-axis)
+
+        Returns
+        -------
+            Matplotlib figure and axes
         """
         fig, ax = plt.figure(), plt.axes()
 

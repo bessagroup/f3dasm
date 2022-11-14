@@ -14,9 +14,9 @@ class OptimizerParameters:
 
     Parameters
     ----------
-    population :
+    population : int
         population of the optimizer update step
-    force_bounds :
+    force_bounds : bool
         force the optimizer to not exceed the boundaries of the designspace
     """
 
@@ -28,10 +28,23 @@ class OptimizerParameters:
 class Optimizer:
     """Mainclass to inherit from to implement optimization algorithms
 
-    :param data: Data-object
-    :param hyperparameters: Dictionary with hyperparameters
-    :param seed: seed to set the optimizer
-    :param defaults: Default hyperparameter arguments
+    Parameters
+    -------
+    data : f3dasm.base.data.Data
+        Data-object
+    hyperparameters : dict
+        Dictionary with hyperparameteres
+    seed : int
+        seed to set the optimizer
+    defaults : OptimizerParameters
+        Default hyperparameter arguments
+
+    Raises
+    ------
+    NotImplementedError
+        When no update step is implemented
+    ValueError
+        When number of datapoints is lower than the population
     """
 
     data: Data
@@ -56,10 +69,13 @@ class Optimizer:
 
     @staticmethod
     def set_seed(seed: int):
-        """Set the seed of the optimizer. Needs to be inherited.
+        """Set the seed of the optimizer. Needs to be inherited
 
-        :param seed: seed for the random number generator
-        """
+        Parameters
+        ----------
+        seed
+            seed for the random number generator
+        """        
         pass
 
     def init_parameters(self):
@@ -73,16 +89,26 @@ class Optimizer:
     def update_step(self, function: Function):
         """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
 
-        :param function: Objective function to evaluate
+        Parameters
+        ----------
+        function
+            Objective function to evaluate
 
+        Raises
+        ------
+        NotImplementedError
+            You should implement an update step for your algorithm!
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
     def set_data(self, data: Data):
         """Overwrite the data attribute
 
-        :param data: data object
-        """
+        Parameters
+        ----------
+        data
+            data object
+        """        
         self.data = data
 
     def _set_hyperparameters(self):
@@ -102,10 +128,13 @@ class Optimizer:
     def iterate(self, iterations: int, function: Function):
         """Calls the update_step function multiple times.
 
-        :param iterations: number of iterations
-        :param function: Objective function to evaluate
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            objective function to evaluate
         """
-
         self._check_number_of_datapoints()
 
         for _ in range(self._number_of_updates(iterations)):
@@ -124,16 +153,20 @@ class Optimizer:
         else:
             return self.parameter.population - overiterations
 
-    def extract_data(self) -> Data:
+    def extract_data(self) -> Data:        
         """Returns a copy of the data
 
-        :returns: copy of the data
+        Returns
+        -------
+            copy of the data
         """
         return copy(self.data)
 
     def get_name(self) -> str:
-        """Retrieve the name of the optimizer
+        """Retrieve the name of the optimizers
 
-        :returns: name of the optimizer
-        """
+        Returns
+        -------
+            name of the optimizer
+        """        
         return self.__class__.__name__

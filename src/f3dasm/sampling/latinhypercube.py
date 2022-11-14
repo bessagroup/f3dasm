@@ -10,10 +10,15 @@ class LatinHypercube(SamplingInterface):
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Sample from continuous space
 
-        :param numsamples: number of samples
-        :return: samples
-        """
+        Parameters
+        ----------
+        numsamples
+            numeber of samples
 
+        Returns
+        -------
+            samples
+        """        
         continuous = self.design.get_continuous_input_parameters()
         problem = {
             "num_vars": len(continuous),

@@ -38,7 +38,7 @@ class PyBenchFunction(Function):
         self._create_offset()
 
         # TEMP
-        self.offset = np.zeros(dimensionality)
+        # self.offset = np.zeros(dimensionality)
 
         self.augmentor = self._construct_augmentor()
 

@@ -28,6 +28,14 @@ f3dasm.base.function module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.base.metaoptimizer module
+--------------------------------
+
+.. automodule:: f3dasm.base.metaoptimizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.base.optimization module
 -------------------------------
 

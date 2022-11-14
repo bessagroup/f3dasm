@@ -19,8 +19,8 @@ import sphinx_rtd_theme
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath("./src"))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- General configuration -----------------------------------------------------
 
@@ -32,9 +32,9 @@ sys.path.insert(0, os.path.abspath("../"))
 extensions = [
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_defaultargs",
-    # "sphinx_autodoc_typehints",
-    "sphinxcontrib.bibtex",
+    # "sphinx_autodoc_defaultargs",
+    "sphinx_autodoc_typehints",
+    # "sphinxcontrib.bibtex",
     "sphinx.ext.intersphinx",
 ]
 
@@ -57,10 +57,16 @@ intersphinx_mapping = {
 
 napoleon_use_param = True
 napoleon_use_ivar = True
-napoleon_use_rtype = False
-napoleon_preprocess_types = True
+napoleon_use_rtype = True
+napoleon_preprocess_types = False
 autoclass_content = "both"
 autodoc_preserve_defaults = True
+autodoc_typehints_format = "short"
+
+always_document_param_types = True
+typehints_defaults = "comma"
+typehints_use_rtype = False
+autodoc_typehints = "description"
 
 always_document_default_args = True
 
@@ -250,10 +256,7 @@ latex_documents = [
 
 # Tell sphinx-autodoc-typehints to generate stub parameter annotations including
 # types, even if the parameters aren't explicitly documented.
-always_document_param_types = True
-typehints_defaults = "braces"
-typehints_use_rtype = False
-autodoc_typehints = "description"
+
 
 # -- Options for manual page output --------------------------------------------
 

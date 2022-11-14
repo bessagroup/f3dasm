@@ -8,7 +8,10 @@ import autograd.numpy as np
 class ParameterInterface:
     """Interface class of a search space parameter
 
-    :param name: name of the parameter
+    Parameters
+    ----------
+    name
+        name of the parameter
     """
 
     name: str
@@ -17,11 +20,16 @@ class ParameterInterface:
 
 @dataclass
 class ContinuousParameter(ParameterInterface):
-    """Creates a search space parameter that is continuous
+    """Create a search space parameter that is continuous
 
-    :param name: name of the parameter
-    :param lower_bound: lower bound of continuous search space
-    :param upper_bound: upper bound of continuous search space (exclusive)
+    Parameters
+    ----------
+    name
+        name of the parameter
+    lower_bound
+        lower bound of continuous search space
+    upper_bound
+        upper bound of continuous search space (exclusive)
     """
 
     lower_bound: float = field(default=-np.inf)
@@ -48,11 +56,16 @@ class ContinuousParameter(ParameterInterface):
 
 @dataclass
 class DiscreteParameter(ParameterInterface):
-    """Creates a search space parameter that is discrete
+    """Create a search space parameter that is discrete
 
-    :param lower_bound: lower bound of discrete search space
-    :param upper_bound: upper bound of discrete search space (exclusive)
-    :param name: name of the parameter
+    Parameters
+    ----------
+    name
+        name of the parameter
+    lower_bound
+        lower bound of discrete search space
+    upper_bound
+        upper bound of discrete search space (exclusive)
     """
 
     lower_bound: int = field(default=0)
@@ -79,10 +92,14 @@ class DiscreteParameter(ParameterInterface):
 
 @dataclass
 class CategoricalParameter(ParameterInterface):
-    """Creates a search space parameter that is categorical
+    """Create a search space parameter that is categorical
 
-    :param categories: list of strings that represent available categories
-    :param name: name of the parameter
+    Parameters
+    ----------
+    name
+        name of the parameter
+    categories
+        list of strings that represent available categories
     """
 
     categories: List[str]
