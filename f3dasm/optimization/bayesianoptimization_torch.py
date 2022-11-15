@@ -190,8 +190,8 @@ class MFBayesianOptimizationTorch(Optimizer):
         surrogate = regressor.train()
         model = surrogate.model
 
-        low_sampler = f3dasm.sampling.SobolSequenceSampling(design=self.data[0].design)
-        high_sampler = f3dasm.sampling.SobolSequenceSampling(design=self.data[1].design)
+        low_sampler = f3dasm.sampling.SobolSequence(design=self.data[0].design)
+        high_sampler = f3dasm.sampling.SobolSequence(design=self.data[1].design)
         
         test_x_lf = low_sampler.get_samples(numsamples=500)
         test_x_hf = high_sampler.get_samples(numsamples=500)

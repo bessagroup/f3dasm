@@ -5,7 +5,7 @@ import f3dasm
 
 dim = 2
 
-fun_class = f3dasm.functions.Keane
+fun_class = f3dasm.functions.Brown
 
 print(fun_class.is_dim_compatible(dim))
 
@@ -15,11 +15,12 @@ fun = fun_class(
     )
 
 parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
-    bounds=fun.input_domain.astype(float),
+    # bounds=fun.input_domain.astype(float),
+    bounds=np.tile([0.0, 1.0], (dim, 1)),
     dimensionality=dim,
 )
 
-sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
 train_data: f3dasm.Data = sampler.get_samples(numsamples=8)
 

@@ -22,11 +22,11 @@ def test_gpr(dim: int, function: f3dasm.Function):
     )
 
     parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
-        bounds=fun.input_domain.astype(float),
+        bounds=np.tile([0.0, 1.0], (dim, 1)),
         dimensionality=dim,
     )
 
-    sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+    sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
     train_data: f3dasm.Data = sampler.get_samples(numsamples=8)
 
@@ -55,10 +55,10 @@ def test_bo(dim: int):
         scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
         )
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-        bounds=fun.input_domain.astype(float),
+        bounds=np.tile([0.0, 1.0], (dim, 1)),
         dimensionality=dim,
     )
-    SobolSampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+    SobolSampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
     samples = SobolSampler.get_samples(numsamples=8)
     samples.add_output(output=fun(samples))
     optimizer = f3dasm.optimization.BayesianOptimizationTorch(data=samples)
@@ -100,14 +100,14 @@ def test_mf_gpr(dim: int, function: f3dasm.Function):
                 )
         
         parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-            bounds=base_fun.input_domain.astype(float),
+            bounds=np.tile([0.0, 1.0], (dim, 1)),
             dimensionality=dim,
         )
 
         fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fid)
         parameter_DesignSpace.add_input_space(fidelity_parameter)
 
-        sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
         train_data = sampler.get_samples(numsamples=samp_no)
 
@@ -133,7 +133,7 @@ def test_mf_gpr(dim: int, function: f3dasm.Function):
 
     surrogate = regressor.train()
 
-    test_sampler = f3dasm.sampling.LatinHypercubeSampling(design=mf_design_space[-1])
+    test_sampler = f3dasm.sampling.LatinHypercube(design=mf_design_space[-1])
     test_data = test_sampler.get_samples(numsamples=500)
 
     mean, var = surrogate.predict(test_data)
@@ -167,13 +167,13 @@ def test_mf_bo(dim: int):
                 )
         
         parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-            bounds=base_fun.input_domain.astype(float),
+            bounds=np.tile([0.0, 1.0], (dim, 1)),
             dimensionality=dim,
         )
         fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fid)
         parameter_DesignSpace.add_input_space(fidelity_parameter)
 
-        sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
+        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
         init_train_data = sampler.get_samples(numsamples=samp_no)
         init_train_data.add_output(output=fun(init_train_data))
