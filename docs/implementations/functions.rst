@@ -62,9 +62,6 @@ img
   
 img
 
-Implement your own benchmark functions
---------------------------------------
-
 
 Implemented benchmark functions
 -------------------------------

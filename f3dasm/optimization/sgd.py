@@ -1,14 +1,20 @@
 from dataclasses import dataclass
 
-from ..base.optimization import OptimizerParameters
-
-from .adapters.tensorflow_implementations import TensorflowOptimizer
 import tensorflow as tf
+
+from ..base.optimization import OptimizerParameters
+from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 
 @dataclass
 class SGD_Parameters(OptimizerParameters):
-    """Hyperparameters for Momentum optimizer"""
+    """Hyperparameters for Momentum optimizer
+
+    Args:
+        learning_rate (float): desc (Default = 0.01)
+        momentum (float): desc (Default = 0.0)
+        nesterov (bool): desc (Default = False)
+    """
 
     learning_rate: float = 0.01
     momentum: float = 0.0
@@ -16,7 +22,7 @@ class SGD_Parameters(OptimizerParameters):
 
 
 class SGD(TensorflowOptimizer):
-    """SGD2"""
+    """SGD"""
 
     parameter: SGD_Parameters = SGD_Parameters()
 

@@ -2,41 +2,9 @@
 Created by Axel Thevenot (2020)
 Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 """
-
 import autograd.numpy as np
-from ..base.function import Function
 
-
-class PyBenchFunction(Function):
-    @classmethod
-    def is_dim_compatible(cls, d) -> bool:
-        pass
-
-    def evaluate(x: np.ndarray):
-        raise NotImplementedError("No function implemented!")
-
-    def f(self, x: np.ndarray):
-        if self.is_dim_compatible(self.dimensionality):
-            # TODO: instead of editing in place, return new arrays
-            # a is a 1-D slice of arr along axis.
-            # TODO: create expression for a
-            # axis = 1
-            # for a in x:
-            #     Ni, Nk = a.shape[:axis], a.shape[axis+1:]
-            #     for ii in np.ndindex(Ni):
-            #         for kk in np.ndindex(Nk):
-            #             f = self.evaluate(x[ii + np.s_[:,] + kk])
-            #             Nj = f.shape
-            #             for jj in np.ndindex(Nj):
-            #                 out[ii + jj + kk] = f[jj]
-            y = []
-            x = np.atleast_2d(x)
-            for xi in x:
-                y.append(self.evaluate(xi))
-
-            return np.array(y).reshape(-1, 1)
-
-            # return np.apply_along_axis(self.evaluate, axis=1, arr=x)  # .reshape(-1, 1)
+from ..functions.adapters.pybenchfunction import PyBenchFunction
 
 
 class Thevenot(PyBenchFunction):

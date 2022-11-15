@@ -18,14 +18,15 @@ tkwargs = {
     "device": torch.device("cpu"),
 }
 
+
 class CoKrigingGP(SingleTaskGP):
     def __init__(
-            self,
-            train_X: Tensor,
-            train_Y: Tensor,
-            outcome_transform: Optional[OutcomeTransform] = None,
-            input_transform: Optional[InputTransform] = None,
-            noise_fix: Optional[bool] = True,
+        self,
+        train_X: Tensor,
+        train_Y: Tensor,
+        outcome_transform: Optional[OutcomeTransform] = None,
+        input_transform: Optional[InputTransform] = None,
+        noise_fix: Optional[bool] = True,
     ) -> None:
         covar_module = ScaleKernel(CoKrigingKernel(noise_fix))
         super().__init__(
@@ -33,18 +34,15 @@ class CoKrigingGP(SingleTaskGP):
             train_Y=train_Y,
             covar_module=covar_module,
             input_transform=input_transform,
-            outcome_transform=outcome_transform
+            outcome_transform=outcome_transform,
         )
+
 
 class CoKrigingKernel(Kernel):
 
     has_lengthscale = True
 
-    def __init__(
-            self,
-            noise_fix=False,
-            base_kernel=GPy.kern.RBF
-    ):
+    def __init__(self, noise_fix=False, base_kernel=GPy.kern.RBF):
         super(CoKrigingKernel, self).__init__()
         self.noise_fix = noise_fix
         self.base_kernel = base_kernel
@@ -54,7 +52,7 @@ class CoKrigingKernel(Kernel):
             kernels = [
                 self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
                 + GPy.kern.White(x1.shape[-1] - 1),
-                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
+                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()),
             ]
         else:
             kernels = [
@@ -83,7 +81,8 @@ class CoKrigingKernel(Kernel):
         covar_cokg = torch.from_numpy(covar_cokg_np).to(**tkwargs)
         return covar_cokg
 
-### Purgatory ###
+
+# Purgatory ###
 
 # class CoKrigingKernel_DMS(*[Kernel]):
 #

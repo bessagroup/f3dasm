@@ -1,20 +1,16 @@
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List
+# 
 # import autograd.numpy as np
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
+import matplotlib.pyplot as plt
 import numdifftools as nd
 from scipy.stats import special_ortho_group
 
 from ..base.data import Data
-from ..base.utils import (
-    _from_data_to_numpy_array_benchmarkfunction,
-    _scale_vector,
-    _descale_vector,
-    _rotate_vector,
-)
+from ..base.utils import _from_data_to_numpy_array_benchmarkfunction, _rotate_vector
 
 
 @dataclass
@@ -25,17 +21,19 @@ class Function(ABC):
         noise (bool): inflict Gaussian noise on the output.
         seed (Any|int): value to seed the random generator (Default = None).
         dimensionality (int): input dimension
-        scale_bounds (Any|List[float]): array containing the lower and upper bound of the scaling factor of the input data (Default = [0.0, 1.0])
-        input_domain (np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
+        scale_bounds (Any|np.ndarray): array containing the lower and upper bound of the scaling factor of the input data (Default = [0.0, 1.0])
+        input_domain (Any|np.ndarray): array containing the lower and upper bound of the input domain of the original function (Default = [0.0, 1.0])
     """
 
     noise: Any or float = None
     seed: Any or int = None
     dimensionality: int = 2
-    scale_bounds: np.ndarray = np.tile([0.0, 1.0], (dimensionality, 1))
-    input_domain: np.ndarray = np.tile([0.0, 1.0], (dimensionality, 1))
+    scale_bounds: Any or np.ndarray = None
 
     def __post_init__(self):
+
+        if self.scale_bounds is None:
+            self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
 
         if self.seed:
             self.set_seed(self.seed)
@@ -80,7 +78,11 @@ class Function(ABC):
         else:
             x = input_x
 
-        # x = self._from_input_to_scaled(x)
+        x = self._reshape_input(x)
+
+        x = self._offset_input(x)
+
+        # x = self._scale_input(x)
 
         y = np.atleast_1d(self.f(x))
 
@@ -231,33 +233,11 @@ class Function(ABC):
 
         return fig, ax
 
-    def _scale_input(self, x: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
+    # def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
 
-    def _descale_input(self, x: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
+    #     x = self._scale_input(x)
 
-    def _from_input_to_scaled(self, x: np.ndarray) -> np.ndarray:
-
-        x = self._reshape_input(x)
-
-        x = self._offset_input(x)
-        # x = self._rotate_input(x)
-
-        x = self._scale_input(x)
-
-        return x
-
-    def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-
-        x = self._reshape_input(x)
-
-        x = self._descale_input(x)
-
-        # x = self._reverse_rotate_input(x)
-        x = self._reverse_offset_input(x)
-
-        return x
+    #     return x
 
     def _check_global_minimum(self) -> np.ndarray:
         global_minimum_method = getattr(self, "get_global_minimum", None)

@@ -70,7 +70,7 @@ class AbaqusSimulator(Simulator):
             script_path=self.folder_info["sim_path"],
         )
 
-        ## begin to run abaqus simulation and submit the job to get the .odb file
+        # begin to run abaqus simulation and submit the job to get the .odb file
         print_banner("START ABAQUS ANALYSIS")
 
         self._run_abaqus_sim(new_python_filename)
@@ -136,7 +136,7 @@ class AbaqusSimulator(Simulator):
             file.write("main(input_dict)\n")
         file.close()
 
-    ## --------- run the abaqus python file -----------------
+    # --------- run the abaqus python file -----------------
 
     def _run_abaqus(self, python_filename: str):
         proc = subprocess.Popen("abaqus cae noGUI=" + python_filename + " -mesa", shell=True)

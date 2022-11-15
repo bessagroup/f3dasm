@@ -30,7 +30,7 @@ optimizers:
   ]
 
 sampler:
-  sampler_name: LatinHypercubeSampling
+  sampler_name: LatinHypercube
   number_of_samples: 30
 
 execution:

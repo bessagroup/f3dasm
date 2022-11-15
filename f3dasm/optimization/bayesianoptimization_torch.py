@@ -4,7 +4,7 @@ from typing import Any, Tuple, List
 import numpy as np
 import pandas as pd
 import torch
-from botorch.acquisition import UpperConfidenceBound, InverseCostWeightedUtility
+from botorch.acquisition import InverseCostWeightedUtility, UpperConfidenceBound
 from botorch.models import AffineFidelityCostModel
 from botorch.optim import optimize_acqf, optimize_acqf_mixed
 
@@ -31,8 +31,10 @@ def cost_model(lf, cost_ratio):
     return cost_model
 
 
+
 def cost_aware_utility(self):
     return InverseCostWeightedUtility(cost_model=self.cost_model())
+
 
 
 def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, Any]:
@@ -138,15 +140,16 @@ class BayesianOptimizationTorch(Optimizer):
         # )
 
 @dataclass
+
 class MFBayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
     mffun: MultiFidelityFunction = None
 
     def init_parameters(self) -> None:
         # train_x_space = self.data.data.iloc[:, 1:-1].values
-        # train_x_fid = self.data.data['input', 'fid'].values[:, None]
+        # train_x_fid = self.data.data["input", 'fid'].values[:, None]
         # train_x = np.hstack((train_x_space, train_x_fid))
-        # train_y = self.data.data['output'].values
+        # train_y = self.data.data["output"].values
         #
         # regressor = Stmf(
         #     mf_train_input_data=train_x,

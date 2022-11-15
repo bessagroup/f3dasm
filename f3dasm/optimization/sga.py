@@ -1,15 +1,28 @@
 from dataclasses import dataclass
+
 import pygmo as pg
 
-from .adapters.pygmo_implementations import PygmoAlgorithm
 from ..base.optimization import OptimizerParameters
+from .adapters.pygmo_implementations import PygmoAlgorithm
 
 
 @dataclass
 class SGA_Parameters(OptimizerParameters):
-    """Hyperparameters for SGA optimizer"""
+    """Hyperparameters for SGA optimizer
 
-    gen: int = 1
+    Args:
+        cr (float): _description_ (Default = 0.9)
+        eta_c (float): _description_ (Default = 1.0)
+        m (float): _description_ (Default = 0.02)
+        param_m (float): _description_ (Default = 1.0)
+        param_s (float): _description_ (Default = 2)
+        crossover (str): _description_ (Default = 'exponential')
+        mutation (str): _description_ (Default = 'polynomial')
+        selection (float): _description_ (Default = 'tournament')
+        population (int): _description_ (Default = 30)
+
+    """
+
     cr: float = 0.9
     eta_c: float = 1.0
     m: float = 0.02
@@ -29,7 +42,7 @@ class SGA(PygmoAlgorithm):
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.sga(
-                gen=self.parameter.gen,
+                gen=1,
                 cr=self.parameter.cr,
                 eta_c=self.parameter.eta_c,
                 m=self.parameter.m,

@@ -1,16 +1,20 @@
 from dataclasses import dataclass
+
 import pygmo as pg
 
-from .adapters.pygmo_implementations import PygmoAlgorithm
 from ..base.optimization import OptimizerParameters
+from .adapters.pygmo_implementations import PygmoAlgorithm
 
 
 @dataclass
 class SEA_Parameters(OptimizerParameters):
-    """Hyperparameters for SEA optimizer"""
+    """Hyperparameters for SEA optimizer
+
+    Args:
+        population (int): desc (Default = 30)
+    """
 
     population: int = 30
-    gen: int = 1
 
 
 class SEA(PygmoAlgorithm):
@@ -21,7 +25,7 @@ class SEA(PygmoAlgorithm):
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.sea(
-                gen=self.parameter.gen,
+                gen=1,
                 seed=self.seed,
             )
         )

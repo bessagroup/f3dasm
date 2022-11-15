@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-import pygmo as pg
 
+import pygmo as pg
 
 from ..base.optimization import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
@@ -54,10 +54,18 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class DifferentialEvolution_Parameters(OptimizerParameters):
-    """Hyperparameters for DifferentialEvolution optimizer"""
+    """Hyperparameters for DifferentialEvolution optimizer
+
+    Args:
+        population (int): _description_ (Default = 30)
+        F (float): _description_ (Default = 0.8)
+        CR (float): _description_ (Default = 0.9)
+        variant (int): _description_ (Default = 2)
+        ftol (float): _description_ (Default = 0.0)
+        xtol (float): _description_ (Default = 0.0)
+    """
 
     population: int = 30
-    gen: int = 1
     F: float = 0.8
     CR: float = 0.9
     variant: int = 2
@@ -73,7 +81,7 @@ class DifferentialEvolution(PygmoAlgorithm):
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.de(
-                gen=self.parameter.gen,
+                gen=1,
                 F=self.parameter.F,
                 CR=self.parameter.CR,
                 variant=self.parameter.variant,

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-import pygmo as pg
 
+import pygmo as pg
 
 from ..base.optimization import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
@@ -8,7 +8,17 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class SimulatedAnnealing_Parameters(OptimizerParameters):
-    """Hyperparameters for DifferentialEvolution optimizer"""
+    """Hyperparameters for Simulated Annealing optimizer
+
+    Args:
+        population (int): _description_ (Default = 30)
+        Ts (float): _description_ (Default = 10.0)
+        Tf (float): _description_ (Default = 0.1)
+        n_T_adj (int): _description_ (Default = 10)
+        n_range_adj (int): _description_ (Default = 10)
+        bin_size (int): _description_ (Default = 10)
+        start_range (float): _description_ (Default = 1.0)
+    """
 
     population: int = 30
     Ts: float = 10.0

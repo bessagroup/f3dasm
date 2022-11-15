@@ -1,17 +1,20 @@
 from dataclasses import dataclass
+
 import pygmo as pg
 
-from .adapters.pygmo_implementations import PygmoAlgorithm
 from ..base.optimization import OptimizerParameters
+from .adapters.pygmo_implementations import PygmoAlgorithm
 
 
 @dataclass
 class CMAES_Parameters(OptimizerParameters):
-    """Hyperparameters for CMAES optimizer"""
+    """Hyperparameters for CMAES optimizer
+
+    Args:
+        population (int): desc (Default = 30)
+    """
 
     population: int = 30
-    gen: int = 1
-    memory: bool = True
 
 
 class CMAES(PygmoAlgorithm):
@@ -22,8 +25,8 @@ class CMAES(PygmoAlgorithm):
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.cmaes(
-                gen=self.parameter.gen,
-                memory=self.parameter.memory,
+                gen=1,
+                memory=True,
                 seed=self.seed,
                 force_bounds=self.parameter.force_bounds,
             )

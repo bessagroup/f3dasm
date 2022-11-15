@@ -1,18 +1,22 @@
 from dataclasses import dataclass
 
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 from ..base.optimization import OptimizerParameters
+from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 
-@dataclass
+# @dataclass
 class CG_Parameters(OptimizerParameters):
-    """Hyperparameters for CG optimizer"""
+    """_summary_
+
+    Args:
+        gtol (float): _description_ (Default = 0.0)
+    """
 
     gtol: float = 0.0
-    method: str = "CG"
 
 
 class CG(SciPyMinimizeOptimizer):
     """CG"""
 
+    method: str = "CG"
     parameter: CG_Parameters = CG_Parameters()

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 import autograd.numpy as np
 
 from ..base.function import Function

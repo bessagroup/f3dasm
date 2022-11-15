@@ -8,12 +8,35 @@ F3DASM
 
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
+   :caption: General
    :hidden:
    :glob:
        
    gettingstarted
-   capabilities/*
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Base classes
+   :hidden:
+   :glob:
+
+   base/*
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Implementations
+   :hidden:
+   :glob:
+
+   implementations/*
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples
+   :hidden:
+   :glob:
+
    examples/*
 
 .. include:: readme.rst

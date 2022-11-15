@@ -12,7 +12,7 @@ optimizer:
   hyperparameters: {}
 
 sampler:
-  sampler_name: RandomUniformSampling
+  sampler_name: RandomUniform
   number_of_samples: 30
 
 execution:

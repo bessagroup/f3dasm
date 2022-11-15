@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-import pygmo as pg
 
+import pygmo as pg
 
 from ..base.optimization import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
@@ -8,11 +8,13 @@ from .adapters.pygmo_implementations import PygmoAlgorithm
 
 @dataclass
 class PSO_Parameters(OptimizerParameters):
-    """Hyperparameters for PSO optimizer"""
+    """Hyperparameters for PSO optimizer
+
+    Args:
+        population (int): desc (Default = 30)
+    """
 
     population: int = 30
-    gen: int = 1
-    memory: bool = True
 
 
 class PSO(PygmoAlgorithm):
@@ -23,8 +25,8 @@ class PSO(PygmoAlgorithm):
     def set_algorithm(self):
         self.algorithm = pg.algorithm(
             pg.pso_gen(
-                gen=self.parameter.gen,
-                memory=self.parameter.memory,
+                gen=1,
+                memory=True,
                 seed=self.seed,
             )
         )

@@ -1,14 +1,24 @@
 from dataclasses import dataclass
 
-from ..base.optimization import OptimizerParameters
-
-from .adapters.tensorflow_implementations import TensorflowOptimizer
 import tensorflow as tf
+
+from ..base.optimization import OptimizerParameters
+from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 
 @dataclass
 class Ftrl_Parameters(OptimizerParameters):
-    """Hyperparameters for Ftrl optimizer"""
+    """Hyperparameters for Ftrl optimizer
+
+    Args:
+        learning_rate (float): _description_ (Default = 0.001)
+        learning_rate_power (float): _description_ (Default = -0.5)
+        initial_accumulator_value (float): _description_ (Default = 0.1)
+        l1_regularization-strength (float): _description_ (Default = 0.0)
+        l2_regularization-strength (float): _description_ (Default = 0.0)
+        l2_shrinkage_regularization_strength (float): _description_ (Default = 0.0)
+        beta (float): _description_ (Default = 0.0)
+    """
 
     learning_rate: float = 0.001
     learning_rate_power: float = -0.5

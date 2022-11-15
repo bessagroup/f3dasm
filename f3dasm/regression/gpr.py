@@ -85,7 +85,6 @@ class Stmf_Parameters:
     linear_truncated: bool = False
     data_fidelity: int = 0
 
-
 class Stmf(TorchGPRegressor):
     def __init__(
         self,

@@ -1,7 +1,8 @@
-from dataclasses import dataclass
 import logging
 import time
+from dataclasses import dataclass
 from typing import Any, List
+
 import numpy as np
 
 # import f3dasm
@@ -13,6 +14,11 @@ from f3dasm.base.samplingmethod import SamplingInterface
 from f3dasm.base.function import Function, MultiFidelityFunction
 
 from pathos.helpers import mp
+
+from .base.data import Data
+from .base.function import Function
+from .base.optimization import Optimizer
+from .base.samplingmethod import SamplingInterface
 
 
 @dataclass

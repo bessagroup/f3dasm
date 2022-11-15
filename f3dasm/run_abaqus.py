@@ -1,5 +1,7 @@
 import os
+
 import numpy as np
+
 import f3dasm
 
 
@@ -14,7 +16,7 @@ def main():
     space = f3dasm.make_nd_continuous_design(np.tile([bounds[0], bounds[1]], (dimensionality, 1)), dimensionality)
     data = f3dasm.Data(design=space)
 
-    sampler = f3dasm.sampling.LatinHypercubeSampling(design=space)
+    sampler = f3dasm.sampling.LatinHypercube(design=space)
     sampler.get_samples(N)
 
     data = f3dasm.Data(design=space)

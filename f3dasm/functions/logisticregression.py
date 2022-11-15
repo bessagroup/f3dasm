@@ -1,4 +1,5 @@
 import autograd.numpy as np
+
 from ..base.function import Function
 
 

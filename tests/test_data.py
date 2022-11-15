@@ -9,7 +9,7 @@ from f3dasm.base.space import (
     ContinuousParameter,
     DiscreteParameter,
 )
-from f3dasm.sampling.samplers import RandomUniformSampling
+from f3dasm.sampling.randomuniform import RandomUniform
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def data():
     output_space = [y1, y2]
     design = DesignSpace(input_space=input_space, output_space=output_space)
 
-    random_sampler = RandomUniformSampling(design=design, seed=seed)
+    random_sampler = RandomUniform(design=design, seed=seed)
     data = random_sampler.get_samples(numsamples=N)
 
     return data

@@ -31,7 +31,7 @@ Create a new environment from the :code:`f3dasm_environment.yml` file
 
 .. code-block:: console
 
-  $ cd testthings
+  $ cd F3DASM
   $ conda env create -f f3dasm_environment.yml
 
 Test if the installation was successful
@@ -65,7 +65,7 @@ Create a new python 3.10 environment
 
 .. code-block:: console
 
-  $ cd testthings
+  $ cd F3DASM
   $ conda create -n f3dasm_env python=3.10
 
 Now install the package in editable mode:
@@ -90,7 +90,7 @@ As a last resort, you could also create a new python 3.10 environment and instal
 
 .. code-block:: console
 
-  $ cd testthings
+  $ cd F3DASM
   $ conda create -n f3dasm_env python=3.10
   $ pip install -e .
   $ conda install autograd numdifftools tensorflow pygmo pathos pytest pytest-cov
