@@ -17,7 +17,7 @@ For Windows
 
 .. code-block:: console
 
-  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.0.0 --single-branch
+  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.1.0 --single-branch
 
 * Open Anaconda Prompt (search for :code:`Anaconda Prompt (miniconda3)`) and add :code:`conda-forge` to the channels
 
