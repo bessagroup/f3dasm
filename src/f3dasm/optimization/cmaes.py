@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import pygmo as pg
 
+from ..base.function import Function
 from ..base.optimization import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
 

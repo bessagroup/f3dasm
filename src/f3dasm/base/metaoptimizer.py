@@ -1,29 +1,26 @@
 from abc import ABC
 from copy import copy
+from dataclasses import dataclass
+from typing import List, Tuple
 
 from ..base.data import Data
 from ..base.function import Function
 from ..base.optimization import Optimizer
 
 
+@dataclass
+class OptimizationOrder:
+    number_of_iterations: int
+    optimizer: Optimizer
+
+
 class Strategy(ABC):
-    def get_optimizer(iteration_number: int) -> Optimizer:
-        """Get the optimizer from the strategy at the particular iterations number
-
-        Parameters
-        ----------
-        iteration_number
-            Iteratation number
-
-        Returns
-        -------
-            An optimizerS
-        """
+    def create_strategy(self, iterations: int) -> Tuple[OptimizationOrder]:
         ...
 
 
-class BiOptimizer_Strategy(Strategy):
-    def __init__(self, optimizer_1: Optimizer, optimizer_2: Optimizer):
+class EqualParts_Strategy(Strategy):
+    def __init__(self, optimizers: List[Optimizer]):
         """Meta optimization strategy where we use one optimizer for half of the time and the other one for the second half
 
         Parameters
@@ -33,28 +30,17 @@ class BiOptimizer_Strategy(Strategy):
         optimizer_2
             Optimizer to be used for the second half of the total number of iterations
         """
-        self.optimizer_1 = optimizer_1
-        self.optimizer_2 = optimizer_2
+        self.optimizers = optimizers
 
-    def set_total_number_of_iterations(self, iterations: int):
-        """Set the total number of iterations
+    def create_strategy(self, iterations: int) -> Tuple[OptimizationOrder]:
+        strategy: Tuple[OptimizationOrder] = tuple(
+            OptimizationOrder(number_of_iterations=iterations // len(self.optimizers), optimizer=optimizer)
+            for optimizer in self.optimizers
+        )
+        # Add the remained of the iterations to the last part
+        strategy[-1].number_of_iterations += iterations % len(self.optimizers)
 
-        Parameters
-        ----------
-        iterations
-            number of iterations in total
-        """
-        self.total_iterations = iterations
-
-    def get_optimizer(self, iteration_progress: float) -> Optimizer:
-        # If first half of total number of iterations, pick first optimizer
-        if iteration_progress < 0.5:
-            print(f"({iteration_progress}) selected optimizer_1")
-            return self.optimizer_1
-
-        else:
-            print(f"({iteration_progress}) selected optimizer_2")
-            return self.optimizer_2
+        return strategy
 
 
 class MetaOptimizer:
@@ -62,23 +48,20 @@ class MetaOptimizer:
         self.data = data
         self.strategy = strategy
 
-    def update_step(self, function: Function, optimizer: Optimizer):
+    def update_step(self, iterations: int, function: Function, optimizer: Optimizer):
         optimizer.set_data(self.data)
-        optimizer.iterate(iterations=optimizer.parameter.population, function=function)
+        optimizer.iterate(iterations=iterations, function=function)
         self.data = optimizer.extract_data()
 
     def iterate(self, iterations: int, function: Function):
-        initial_samples = self.data.get_number_of_datapoints()
-        while self.data.get_number_of_datapoints() < (iterations + initial_samples):
-            self.update_step(
-                function=function,
-                optimizer=self.strategy.get_optimizer(
-                    self.data.get_number_of_datapoints() / (iterations + initial_samples)
-                ),
-            )
+        number_of_initial_samples = self.data.get_number_of_datapoints()
+        optimization_order: Tuple[OptimizationOrder] = self.strategy.create_strategy(iterations)
+
+        for order in optimization_order:
+            self.update_step(iterations=order.number_of_iterations, function=function, optimizer=order.optimizer)
 
         # Remove overiterations
-        self.data.remove_rows_bottom(self.data.get_number_of_datapoints() - iterations + initial_samples)
+        self.data.remove_rows_bottom(self.data.get_number_of_datapoints() - iterations - number_of_initial_samples)
 
     def extract_data(self) -> Data:
         """Returns a copy of the data

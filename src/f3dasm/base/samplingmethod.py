@@ -13,9 +13,12 @@ from .design import DesignSpace
 class SamplingInterface(ABC):
     """Interface for sampling method
 
-    :param design: design of experiments object
-    :param seed: seed for sampling
-
+    Parameters
+    ----------
+    design
+        design of experiments object
+    seed
+        seed for sampling
     """
 
     design: DesignSpace
@@ -25,11 +28,13 @@ class SamplingInterface(ABC):
         if self.seed:
             np.random.seed(self.seed)
 
-    def set_seed(self, seed: int) -> None:
-        """
-        Some summary on what this function does
+    def set_seed(self, seed: int):
+        """Set the seed of the sampler
 
-        :param seed: the seed to be used
+        Parameters
+        ----------
+        seed
+            the seed to be used
         """
         np.random.seed(seed)
         self.seed = seed
@@ -45,9 +50,14 @@ class SamplingInterface(ABC):
     def get_samples(self, numsamples: int) -> Data:
         """Receive samples of the search space
 
-        :param numsamples: number of samples
+        Parameters
+        ----------
+        numsamples
+            number of samples
 
-        :returns: Data objects with the samples
+        Returns
+        -------
+            Data objects with the samples
         """
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples)

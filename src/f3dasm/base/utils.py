@@ -102,3 +102,15 @@ def write_pickle(name: str, obj: Any):
     """
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
+
+
+def _number_of_updates(iterations: int, population: int):
+    return iterations // population + (iterations % population > 0)
+
+
+def _number_of_overiterations(iterations: int, population: int) -> int:
+    overiterations: int = iterations % population
+    if overiterations == 0:
+        return overiterations
+    else:
+        return population - overiterations

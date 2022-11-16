@@ -6,6 +6,7 @@ import autograd.numpy as np
 
 from ..base.data import Data
 from ..base.function import Function
+from ..base.utils import _number_of_overiterations, _number_of_updates
 
 
 @dataclass
@@ -75,7 +76,7 @@ class Optimizer:
         ----------
         seed
             seed for the random number generator
-        """        
+        """
         pass
 
     def init_parameters(self):
@@ -108,7 +109,7 @@ class Optimizer:
         ----------
         data
             data object
-        """        
+        """
         self.data = data
 
     def _set_hyperparameters(self):
@@ -125,6 +126,16 @@ class Optimizer:
             )
         return
 
+    def _construct_model(self, function: Function):
+        """Construct a model necessary for iteration with input of to be evaluated function
+
+        Parameters
+        ----------
+        function
+            function to be evaluated
+        """
+        pass
+
     def iterate(self, iterations: int, function: Function):
         """Calls the update_step function multiple times.
 
@@ -135,25 +146,18 @@ class Optimizer:
         function
             objective function to evaluate
         """
+        self._construct_model(function)
+
         self._check_number_of_datapoints()
 
-        for _ in range(self._number_of_updates(iterations)):
+        for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
             self.update_step(function=function)
 
         # Remove overiterations
-        self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
+        self.data.remove_rows_bottom(_number_of_overiterations(iterations, population=self.parameter.population))
+        print(f"Optimizing for {iterations} iterations with {self.get_name()}")
 
-    def _number_of_updates(self, iterations: int):
-        return iterations // self.parameter.population + (iterations % self.parameter.population > 0)
-
-    def _number_of_overiterations(self, iterations: int) -> int:
-        overiterations: int = iterations % self.parameter.population
-        if overiterations == 0:
-            return overiterations
-        else:
-            return self.parameter.population - overiterations
-
-    def extract_data(self) -> Data:        
+    def extract_data(self) -> Data:
         """Returns a copy of the data
 
         Returns
@@ -168,5 +172,5 @@ class Optimizer:
         Returns
         -------
             name of the optimizer
-        """        
+        """
         return self.__class__.__name__
