@@ -63,12 +63,6 @@ class Optimizer:
         self.set_algorithm()
 
     @staticmethod
-    def _force_bounds(x: np.ndarray, scale_bounds: np.ndarray) -> np.ndarray:
-        x = np.where(x < scale_bounds[:, 0], scale_bounds[:, 0], x)
-        x = np.where(x > scale_bounds[:, 1], scale_bounds[:, 1], x)
-        return x
-
-    @staticmethod
     def set_seed(seed: int):
         """Set the seed of the optimizer. Needs to be inherited
 

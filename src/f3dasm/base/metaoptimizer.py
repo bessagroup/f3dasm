@@ -1,17 +1,25 @@
 from abc import ABC
 from copy import copy
-from dataclasses import dataclass
 from typing import List, Tuple
 
 from ..base.data import Data
 from ..base.function import Function
-from ..base.optimization import Optimizer
+from ..base.optimization import Optimizer, OptimizerParameters
 
 
-@dataclass
 class OptimizationOrder:
-    number_of_iterations: int
-    optimizer: Optimizer
+    def __init__(self, number_of_iterations: int, optimizer: Optimizer):
+        """Order for the optimizer to execute
+
+        Parameters
+        ----------
+        number_of_iterations
+            number of points to iterate
+        optimizer
+            optimizer that determines the update step
+        """
+        self.number_of_iterations = number_of_iterations
+        self.optimizer = optimizer
 
 
 class Strategy(ABC):
@@ -25,10 +33,8 @@ class EqualParts_Strategy(Strategy):
 
         Parameters
         ----------
-        optimizer_1
-            Optimizer to be used first half of the total number of iterations
-        optimizer_2
-            Optimizer to be used for the second half of the total number of iterations
+        optimizers
+            List of optimizers in order
         """
         self.optimizers = optimizers
 
@@ -43,10 +49,22 @@ class EqualParts_Strategy(Strategy):
         return strategy
 
 
-class MetaOptimizer:
-    def __init__(self, data: Data, strategy: Strategy):
-        self.data = data
+class MetaOptimizer(Optimizer):
+    def __init__(self, data: Data, strategy: Strategy, seed: int):
+        """Meta optimizer class: executing multiple optimizers during training
+
+        Parameters
+        ----------
+        data
+            data object
+        strategy
+            optimization strategy
+        seed
+            seed for random number generator
+        """
         self.strategy = strategy
+        self.parameter = OptimizerParameters()
+        super().__init__(data=data, seed=seed)
 
     def update_step(self, iterations: int, function: Function, optimizer: Optimizer):
         optimizer.set_data(self.data)
@@ -62,12 +80,3 @@ class MetaOptimizer:
 
         # Remove overiterations
         self.data.remove_rows_bottom(self.data.get_number_of_datapoints() - iterations - number_of_initial_samples)
-
-    def extract_data(self) -> Data:
-        """Returns a copy of the data
-
-        Returns
-        -------
-            copy of the data
-        """
-        return copy(self.data)

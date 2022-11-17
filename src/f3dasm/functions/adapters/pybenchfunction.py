@@ -1,6 +1,5 @@
-from abc import ABC
-from dataclasses import field
-from typing import Any, List
+from copy import copy
+from typing import Any
 
 import autograd.numpy as np
 
@@ -114,8 +113,17 @@ class PyBenchFunction(Function):
     def _add_noise(self, y: np.ndarray) -> np.ndarray:
         # TODO: change noise calculation to work with autograd.numpy
         # sigma = 0.2  # Hard coded amount of noise
-        noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
-        y_noise = y + noise
+        if hasattr(y, "_value"):
+            yy = copy(y._value)
+            if hasattr(yy, "_value"):
+                yy = copy(yy._value)
+        else:
+            yy = copy(y)
+
+        scale = abs(self.noise * yy)
+
+        noise: np.ndarray = np.random.normal(loc=0.0, scale=scale, size=y.shape)
+        y_noise = y + float(noise)
         return y_noise
 
     def check_if_within_bounds(self, x: np.ndarray) -> bool:

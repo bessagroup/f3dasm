@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, TypeVar
 
+import autograd.numpy as np
 import pandas as pd
 
 from ..base.space import CategoricalParameter, ContinuousParameter, DiscreteParameter, ParameterInterface
@@ -177,6 +178,17 @@ class DesignSpace:
             list of names of categorical input parameters
         """
         return self._get_names(CategoricalParameter, self.input_space)
+
+    def get_bounds(self) -> np.ndarray:
+        """Return the boundary constraints of the continuous input parameters
+
+        Returns
+        -------
+            numpy array with lower and upper bound for each continuous inpu dimension
+        """
+        return np.array(
+            [[parameter.lower_bound, parameter.upper_bound] for parameter in self.get_continuous_input_parameters()]
+        )
 
     def _get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
