@@ -65,8 +65,10 @@ API Documentation
 
 .. automodule:: f3dasm.base.space
    :members:
+   :noindex:
    :show-inheritance:
 
 .. automodule:: f3dasm.base.design
    :members:
+   :noindex:
    :show-inheritance:

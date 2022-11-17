@@ -46,7 +46,7 @@ Latin Hypercube sampling
 
 .. automodule:: f3dasm.sampling.latinhypercube
    :members:
-   :undoc-members:
+   :noindex:
    :show-inheritance:
 
 Random Uniform sampling
@@ -54,7 +54,7 @@ Random Uniform sampling
 
 .. automodule:: f3dasm.sampling.randomuniform
    :members:
-   :undoc-members:
+   :noindex:
    :show-inheritance:
 
 Sobol sequence sampling
@@ -62,4 +62,5 @@ Sobol sequence sampling
 
 .. automodule:: f3dasm.sampling.sobolsequence
    :members:
+   :noindex:
    :show-inheritance:

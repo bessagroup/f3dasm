@@ -51,8 +51,8 @@ class SimpelModel(Model):
             dtype=tf.float32,
             constraint=lambda x: tf.clip_by_value(
                 x,
-                clip_value_min=args["function"].scale_bounds[:, 0],
-                clip_value_max=args["function"].scale_bounds[:, 1],
+                clip_value_min=args["bounds"][:, 0],
+                clip_value_max=args["bounds"][:, 1],
             ),
         )  # S:ADDED
 
@@ -81,7 +81,7 @@ class TensorflowOptimizer(Optimizer):
             args={
                 "dim": function.dimensionality,
                 "x0": self.data.get_n_best_input_parameters_numpy(self.parameter.population),
-                "function": function,
+                "bounds": self.data.design.get_bounds(),
             },
         )  # Build the model
         self.args["tvars"] = self.args["model"].trainable_variables

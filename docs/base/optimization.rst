@@ -9,4 +9,5 @@ API Documentation
 
 .. automodule:: f3dasm.base.optimization
    :members:
+   :noindex:
    :show-inheritance:
