@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from typing import Tuple
 
 import autograd.numpy as np
@@ -8,16 +7,19 @@ import pandas as pd
 from ..base.design import DesignSpace
 
 
-@dataclass
 class Data:
-    """Class that contains data
+    def __init__(self, design: DesignSpace):
+        """Class that contains data
 
-    :param data: data stored in a DataFrame
-    :param design: designspace
-    """
-
-    design: DesignSpace
-    data: pd.DataFrame = field(init=False)
+        Parameters
+        ----------
+        data
+            data stored in a DataFrame
+        design
+            designspace
+        """
+        self.design = design
+        self.__post_init__()
 
     def __post_init__(self):
         self.data = self.design.get_empty_dataframe()
