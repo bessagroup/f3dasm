@@ -106,3 +106,6 @@ outputs/
 data/
 notebooks/archive/
 *.obj
+
+# Exclude obj files in tests folder
+!tests/*/*.obj

@@ -1,22 +1,68 @@
 Getting Started
 ===============
 
+For Windows
+-----------
+
+
+* Download `Miniconda for Windows <https://docs.conda.io/en/latest/miniconda.html#windows-installers>`_
+
+* Open command prompt (Type :code:`Ctrl+R` and type :code:`cmd`) and install git by executing the following command:
+
+.. code-block:: console
+
+  winget install --id Git.Git -e --source winget
+
+* Open a new command prompt and clone from the GitHub repository by executing the following command
+
+.. code-block:: console
+
+  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.1.0 --single-branch
+
+* Open Anaconda Prompt (search for :code:`Anaconda Prompt (miniconda3)`) and add :code:`conda-forge` to the channels
+
+.. code-block:: console
+
+  $ conda config --add channels conda-forge
+
+* Creata new environment named :code:`f3dasm_env`, install the :code:`f3dasm` package in editable mode and install some other packages:
+
+.. code-block:: console
+
+  $ conda create -n f3dasm_env python=3.10
+  $ cd F3DASM
+  $ pip install -e .
+  $ conda install autograd numdifftools tensorflow pygmo pathos pytest pytest-cov
+
+
+* Run the tests to check if everything works!
+
+.. code-block:: console
+
+  $ pytest -v -s -m smoke
+
+
+
+For Linux
+---------
+
+
 The installation consists of two steps
 
 * Installing and configuring miniconda
 * Installing :code:`f3dasm`
 
 Installing and configuring miniconda
-------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Download `Miniconda <https://docs.conda.io/en/latest/miniconda.html#linux-installers>`_ and add :code:`conda-forge` to the channels:
+Download `Miniconda for Linux <https://docs.conda.io/en/latest/miniconda.html#linux-installers>`_ and add :code:`conda-forge` to the channels:
 
 .. code-block:: console
 
   $ conda config --add channels conda-forge
 
 Installing :code:`f3dasm`
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Clone from the GitHub repository
 
