@@ -4,7 +4,13 @@ from typing import List, TypeVar
 import autograd.numpy as np
 import pandas as pd
 
-from ..base.space import CategoricalParameter, ContinuousParameter, DiscreteParameter, ParameterInterface
+from ..base.space import (
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    ParameterInterface,
+)
 
 
 @dataclass
@@ -178,6 +184,24 @@ class DesignSpace:
             list of names of categorical input parameters
         """
         return self._get_names(CategoricalParameter, self.input_space)
+
+    def get_constant_input_parameters(self) -> List[ConstantParameter]:
+        """Obtain all the constant input parameters
+
+        Returns
+        -------
+            space of constant input parameters
+        """
+        return self._get_parameters(ConstantParameter, self.input_space)
+
+    def get_constant_input_names(self) -> List[str]:
+        """Receive the names of the constant input parameters
+
+        Returns
+        -------
+            list of names of constant input parameters
+        """
+        return self._get_names(ConstantParameter, self.input_space)
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters

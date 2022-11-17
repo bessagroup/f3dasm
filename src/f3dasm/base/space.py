@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, List
 
 import autograd.numpy as np
 
@@ -16,6 +16,22 @@ class ParameterInterface:
 
     name: str
     _type: str = field(init=False)
+
+
+@dataclass
+class ConstantParameter(ParameterInterface):
+    """Create a search space parameter that is constant
+
+    Parameters
+    ----------
+    name
+        name of the parameter
+    value
+        value of the parameters
+    """
+
+    value: Any
+    _type: str = field(init=False, default="category")
 
 
 @dataclass
