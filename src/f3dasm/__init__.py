@@ -10,6 +10,7 @@ from .base.space import *
 from .base.data import *
 from .base.design import *
 from .base.optimization import *
+from .base.metaoptimizer import *
 from .base.samplingmethod import *
 from .base.function import *
 from .base.utils import *
