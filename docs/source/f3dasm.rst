@@ -35,14 +35,6 @@ f3dasm.run\_optimization module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.temp module
-------------------
-
-.. automodule:: f3dasm.temp
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 
