@@ -1,6 +1,6 @@
 from copy import copy
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Tuple
 
 import autograd.numpy as np
 
@@ -81,13 +81,18 @@ class Optimizer:
         """If necessary, the algorithm needs to be set"""
         pass
 
-    def update_step(self, function: Function):
-        """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
+    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
+        """One iteration of the algorithm.
 
         Parameters
         ----------
         function
             Objective function to evaluate
+
+        Returns
+        -------
+            tuple of new input vector and resulting output vector
+
 
         Raises
         ------
@@ -145,11 +150,24 @@ class Optimizer:
         self._check_number_of_datapoints()
 
         for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
-            self.update_step(function=function)
+            x, y = self.update_step(function=function)
+            self.add_iteration_to_data(x, y)
 
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(iterations, population=self.parameter.population))
         print(f"Optimizing for {iterations} iterations with {self.get_name()}")
+
+    def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
+        """Add the iteration to the dataframe
+
+        Parameters
+        ----------
+        x
+            input data
+        y
+            output data
+        """
+        self.data.add_numpy_arrays(input=x, output=y)
 
     def extract_data(self) -> Data:
         """Returns a copy of the data

@@ -171,7 +171,6 @@ class PyBenchFunction(Function):
         """
         if self.is_dim_compatible(self.dimensionality):
             y = []
-            x = np.atleast_2d(x)
             for xi in x:
 
                 xi = self._offset_input(xi)
@@ -187,4 +186,7 @@ class PyBenchFunction(Function):
 
                 y.append(yi)
 
-            return np.array(y).reshape(-1, 1)
+        else:
+            raise ValueError("Dimension is not compatible with function!")
+
+        return np.array(y).reshape(-1, 1)

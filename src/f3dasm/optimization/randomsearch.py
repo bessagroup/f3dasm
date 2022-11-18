@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import autograd.numpy as np
 
@@ -18,7 +19,7 @@ class RandomSearch(Optimizer):
 
     parameter: RandomSearch_Parameters = RandomSearch_Parameters()
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
 
         x_new = np.atleast_2d(
             [
@@ -27,4 +28,5 @@ class RandomSearch(Optimizer):
             ]
         )
 
-        self.data.add_numpy_arrays(input=x_new, output=function(x_new))
+        return x_new, function(x_new)
+        # self.data.add_numpy_arrays(input=x_new, output=function(x_new))

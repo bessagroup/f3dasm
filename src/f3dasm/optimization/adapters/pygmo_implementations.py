@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Tuple
 
 import autograd.numpy as np
 import pygmo as pg
@@ -82,7 +82,7 @@ class PygmoAlgorithm(Optimizer):
         """
         pg.set_global_rng_seed(seed=seed)
 
-    def update_step(self, function: Function):
+    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
         """Update step of the algorithm
 
         :param function: function to be evaluated
@@ -110,5 +110,4 @@ class PygmoAlgorithm(Optimizer):
         # Iterate one step
         pop = self.algorithm.evolve(pop)
 
-        # Add new population to data
-        self.data.add_numpy_arrays(input=pop.get_x(), output=pop.get_f())
+        return pop.get_x(), pop.get_f()

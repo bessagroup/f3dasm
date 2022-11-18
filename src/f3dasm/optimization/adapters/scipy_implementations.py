@@ -1,3 +1,4 @@
+from typing import Tuple
 import autograd.numpy as np
 from scipy.optimize import minimize
 
@@ -11,7 +12,7 @@ class SciPyOptimizer(Optimizer):
 
     def update_step(self):
         """Update step function"""
-        pass
+        raise ValueError("Scipy optimizers don't have an update steps. Multiple iterations are directly called througout scipy.minimize.")
 
     def run_algorithm(self, iterations: int, function: Function):
         """Run the algorithm for a number of iterations
@@ -48,8 +49,7 @@ class SciPyOptimizer(Optimizer):
             repeated_last_element = np.tile(self.x_new[-1], (iterations - len(self.x_new), 1))
             self.x_new = np.r_[self.x_new, repeated_last_element]
 
-        self.data.add_numpy_arrays(input=self.x_new, output=function(self.x_new))
-
+        self.add_iteration_to_data(x=self.x_new, y=function(self.x_new))
 
 class SciPyMinimizeOptimizer(SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function):

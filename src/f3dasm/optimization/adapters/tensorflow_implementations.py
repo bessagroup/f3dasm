@@ -1,5 +1,8 @@
+from typing import Tuple
+
 import autograd
 import autograd.core
+import autograd.numpy as np
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
@@ -64,7 +67,7 @@ class TensorflowOptimizer(Optimizer):
     def init_parameters(self):
         self.args = {}
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
         with tf.GradientTape() as tape:
             tape.watch(self.args["tvars"])
             logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
@@ -73,7 +76,9 @@ class TensorflowOptimizer(Optimizer):
         grads = tape.gradient(loss, self.args["tvars"])
         self.algorithm.apply_gradients(zip(grads, self.args["tvars"]))
 
-        self.data.add_numpy_arrays(input=logits.numpy().copy(), output=loss.numpy().copy())
+        x = logits.numpy().copy()
+        y = loss.numpy().copy()
+        return x, y
 
     def _construct_model(self, function: Function):
         self.args["model"] = SimpelModel(
