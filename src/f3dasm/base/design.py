@@ -24,6 +24,16 @@ class DesignSpace:
     input_space: List[ParameterInterface] = field(default_factory=list)
     output_space: List[ParameterInterface] = field(default_factory=list)
 
+    def __post_init__(self):
+        self._check_names()
+
+    def _check_names(self):
+        if len(self.get_input_names()) != len(set(self.get_input_names())):
+            raise ValueError("Duplicate names found in input names!")
+
+        if len(self.get_output_names()) != len(set(self.get_output_names())):
+            raise ValueError("Duplicate names found in output names!")
+
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space
 

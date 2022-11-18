@@ -4,11 +4,7 @@ import pytest
 pytestmark = pytest.mark.smoke
 
 from f3dasm.base.design import DesignSpace
-from f3dasm.base.space import (
-    CategoricalParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-)
+from f3dasm.base.space import CategoricalParameter, ContinuousParameter, DiscreteParameter
 
 
 @pytest.fixture
@@ -113,34 +109,6 @@ def test_get_output_space(doe: DesignSpace):
     assert doe.output_space == doe.get_output_space()
 
 
-# def test_get_empty_dataframe(doe: DoE):
-#     df = doe.get_empty_dataframe()
-#     expected_columns = {
-#         ("input", "x1"),
-#         ("input", "x2"),
-#         ("input", "x3"),
-#         ("input", "x4"),
-#         ("input", "x5"),
-#         ("output", "y1"),
-#         ("output", "y2"),
-#     }
-
-#     types = {
-#         ("input", "x1"): "float",
-#         ("input", "x2"): "int",
-#         ("input", "x3"): "float",
-#         ("input", "x4"): "category",
-#         ("input", "x5"): "int",
-#         ("output", "y1"): "float",
-#         ("output", "y2"): "float",
-#     }
-#     # print(df)
-
-#     df_expected = pd.DataFrame(columns=expected_columns).astype(types)
-#     print(df_expected)
-#     assert df == df_expected
-
-
 def test_all_input_continuous_False(doe: DesignSpace):
     assert doe._all_input_continuous() is False
 
@@ -178,6 +146,17 @@ def test_cast_types_dataframe_output(doe: DesignSpace):
     }
 
     assert doe._cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
+
+
+def test_same_name_of_parameters_error():
+    x1 = ContinuousParameter(name="x0", lower_bound=2.4, upper_bound=10.3)
+    x2 = ContinuousParameter(name="x0", lower_bound=10.0, upper_bound=380.3)
+
+    y1 = ContinuousParameter(name="y1")
+    designspace = [x1, x2]
+    output_space = [y1]
+    with pytest.raises(ValueError):
+        doe = DesignSpace(input_space=designspace, output_space=output_space)
 
 
 if __name__ == "__main__":  # pragma: no cover
