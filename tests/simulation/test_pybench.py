@@ -3,6 +3,8 @@ from typing import List
 import numpy as np
 import pytest
 
+from f3dasm.functions.adapters.pybenchfunction import PyBenchFunction
+
 pytestmark = pytest.mark.smoke
 
 from f3dasm.base.function import Function
@@ -92,12 +94,24 @@ def test_scaling_2(function: Function, scale_bounds_list: List[float]):
     assert func._descale_input(func._scale_input(x)) == pytest.approx(x)
 
 
-# @pytest.mark.parametrize("function", get_functions(d=2) + get_functions(d=6) + get_functions(d=3) + get_functions(d=4))
-# def test_global_min_within_window(function: Function):
-#     seed = np.random.randint(low=0, high=1e5)
-#     func = function(noise=False, seed=seed, dimensionality=function.dimensionality)
+@pytest.mark.parametrize("function", get_functions(d=2))
+@pytest.mark.parametrize("scale_bounds_list", ([-1.0, 0.0], [-1.0, 1.0], [0.0, 1.0], [-3.0, 1.0]))
+def test_global_minimum_within_bounds(function: PyBenchFunction, scale_bounds_list: List[float]):
 
-#     assert func.check_if_within_bounds(func.get_global_minimum(func.dimensionality)[0])
+    dim = 6
+    if not function.is_dim_compatible(dim):
+        dim = 4
+        if not function.is_dim_compatible(dim):
+            dim = 3
+            if not function.is_dim_compatible(dim):
+                dim = 2
+
+    seed = np.random.randint(low=0, high=1e5)
+    scale_bounds = np.tile(scale_bounds_list, (dim, 1))
+    func = function(noise=False, seed=seed, scale_bounds=scale_bounds, dimensionality=dim)
+
+    if func.get_global_minimum(func.dimensionality)[0] is not None:
+        assert func.check_if_within_bounds(func.get_global_minimum(func.dimensionality)[0])
 
 
 if __name__ == "__main__":  # pragma: no cover

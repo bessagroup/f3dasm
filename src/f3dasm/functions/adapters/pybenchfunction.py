@@ -150,8 +150,14 @@ class PyBenchFunction(Function):
 
         x = self._reshape_input(x)
 
+        # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+        # x = s.reverse_augment(x)
         x = self._descale_input(x)
+
+        # o = Offset(offset=self.offset)
+        # x = o.reverse_augment(x)
         x = self._reverse_offset_input(x)
+
         # x_out = self.augmentor.augment_reverse_input(x)
         return x
 
@@ -173,7 +179,12 @@ class PyBenchFunction(Function):
             y = []
             for xi in x:
 
+                # o = Offset(offset=self.offset)
+                # xi = o.augment(xi)
                 xi = self._offset_input(xi)
+
+                # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+                # xi = s.augment(xi)
                 xi = self._scale_input(xi)
 
                 # xi = self.augmentor.augment_input(xi)
