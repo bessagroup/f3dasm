@@ -1,7 +1,8 @@
 import pickle
-from typing import Any
+from typing import Any, List
 
 import autograd.numpy as np
+import pandas as pd
 
 from ..base.data import Data
 from ..base.design import DesignSpace
@@ -114,3 +115,9 @@ def _number_of_overiterations(iterations: int, population: int) -> int:
         return overiterations
     else:
         return population - overiterations
+
+
+def calculate_mean_std(results):
+    mean_y = pd.concat([d.get_output_data().cummin() for d in results], axis=1).mean(axis=1)
+    std_y = pd.concat([d.get_output_data().cummin() for d in results], axis=1).std(axis=1)
+    return mean_y, std_y
