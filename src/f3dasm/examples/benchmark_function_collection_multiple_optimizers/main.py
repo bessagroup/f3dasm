@@ -1,11 +1,13 @@
 import logging
-from typing import List
-import numpy as np
-import hydra
-from hydra.core.config_store import ConfigStore
 import pickle
-import f3dasm
+from typing import List
+
+import hydra
+import numpy as np
 from config import Config
+from hydra.core.config_store import ConfigStore
+
+import f3dasm
 
 
 def convert_config_to_input(config: Config) -> List[dict]:

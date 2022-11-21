@@ -9,12 +9,12 @@ function:
 
 optimizers:
   optimizers_names: [
+    CMAESAdam,
     Adam,
     SGD,
     CG,
     CMAES,
-    DifferentialEvolution,
-    DualAnnealing,
+    SimulatedAnnealing,
     LBFGSB,
     NelderMead,
     PSO,

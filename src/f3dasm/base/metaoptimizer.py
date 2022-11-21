@@ -80,3 +80,12 @@ class MetaOptimizer(Optimizer):
 
         # Remove overiterations
         self.data.remove_rows_bottom(self.data.get_number_of_datapoints() - iterations - number_of_initial_samples)
+
+    def get_name(self) -> str:
+        """Retrieve the name of the optimizers
+
+        Returns
+        -------
+            name of the optimizer
+        """
+        return f"{self.__class__.__name__}_{self.strategy.__class__.__name__}"

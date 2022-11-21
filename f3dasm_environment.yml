@@ -296,6 +296,7 @@ dependencies:
   - zstd=1.5.2=h6239696_4
   - pip:
     - alabaster==0.7.12
+    - antlr4-python3-runtime==4.9.3
     - babel==2.11.0
     - contourpy==1.0.5
     - cycler==0.11.0
@@ -308,12 +309,14 @@ dependencies:
     - gpy==1.10.0
     - gpyopt==1.2.6
     - gpytorch==1.9.0
+    - hydra-core==1.2.0
     - hypothesis==6.56.3
     - imagesize==1.4.1
     - kiwisolver==1.4.4
     - linear-operator==0.2.0
     - matplotlib==3.6.1
     - mccabe==0.7.0
+    - omegaconf==2.2.3
     - paramz==0.9.5
     - plotly==5.11.0
     - pycodestyle==2.9.1

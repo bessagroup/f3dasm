@@ -24,9 +24,12 @@ from .adamax import Adamax, Adamax_Parameters
 from .ftrl import Ftrl, Ftrl_Parameters
 from .sade import SADE, SADE_Parameters
 
+from.cmaesadam import CMAESAdam
+
 # from .cobyla import COBYLA, COBYLA_Parameters
 
 OPTIMIZERS = [
+    CMAESAdam,
     Adam,
     SGD,
     CG,
