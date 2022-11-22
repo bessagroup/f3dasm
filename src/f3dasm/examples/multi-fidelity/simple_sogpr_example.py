@@ -3,9 +3,9 @@ import numpy as np
 
 import f3dasm
 
-dim = 2
+dim = 1
 
-fun_class = f3dasm.functions.Brown
+fun_class = f3dasm.functions.AlpineN2
 
 print(fun_class.is_dim_compatible(dim))
 
@@ -39,3 +39,6 @@ test_input_data: f3dasm.Data = sampler.get_samples(numsamples=500)
 mean, var = surrogate.predict(test_input_data=test_input_data)
 
 # print(mean)
+
+# plt.scatter(test_input_data.data['input'], mean)
+# plt.show()

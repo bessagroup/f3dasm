@@ -38,7 +38,7 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
         dimensionality=dim,
     )
 
-    fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fid)
+    fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=np.floor(fid))
     parameter_DesignSpace.add_input_space(fidelity_parameter)
 
     sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
@@ -68,7 +68,7 @@ mffun = f3dasm.base.function.MultiFidelityFunction(
 
 mf_train_data[-1].data = pd.concat([d.data for d in mf_train_data], ignore_index=True)
 
-regressor = f3dasm.regression.gpr.Stmf(
+regressor = f3dasm.regression.gpr.Mtask(
     mf_train_data=mf_train_data[-1],
     mf_design=mf_train_data[-1].design,
 )

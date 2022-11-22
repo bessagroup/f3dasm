@@ -237,6 +237,66 @@ class Adjiman(PyBenchFunction):
         res = np.cos(x) * np.sin(y) - x / (y**2 + 1)
         return res
 
+class AlpineN1(PyBenchFunction):
+    name = 'Alpine N. 1'
+    continuous = True
+    convex = False
+    separable = True
+    differentiable = False
+    multimodal = True
+    randomized_term = False
+    parametric = False
+
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (isinstance(d, int) and (not d < 0)), "The dimension d must be None or a positive integer"
+        return (d is None) or (d > 0)
+
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[0, 10] for _ in range(d)])
+
+    def get_param(self):
+        return {}
+
+    def get_global_minimum(self, d):
+        X = np.array([0 for i in range(d)])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+
+    def evaluate(self, X):
+        res = np.sum(np.abs(X * np.sin(X) + 0.1 * X))
+        return res
+
+
+class AlpineN2(PyBenchFunction):
+    name = 'Alpine N. 2'
+    continuous = True
+    convex = False
+    separable = True
+    differentiable = True
+    multimodal = True
+    randomized_term = False
+    parametric = False
+
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (isinstance(d, int) and (not d < 0)), "The dimension d must be None or a positive integer"
+        return (d is None) or (d > 0)
+
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[0, 10] for _ in range(d)])
+
+    def get_param(self):
+        return {}
+
+    def get_global_minimum(self, d):
+        X = np.array([7.917 for i in range(d)])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+
+    def evaluate(self, X):
+        res = -np.prod(np.sqrt(X) * np.sin(X))
+        return res
 
 class Bartels(PyBenchFunction):
     """.. image:: ../img/functions/Bartels.png"""

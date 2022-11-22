@@ -28,12 +28,14 @@ class TorchGPSurrogate(Surrogate):
     ) -> List[Data]:
         test_y_list = self.model.posterior(
             torch.from_numpy(
+                # test_input_data.data['input', 'x0'].to_numpy()[:, None]
                 test_input_data.data['input'].to_numpy()
                 )  # .to(**tkwargs)
         ).mean.cpu().detach().numpy()
 
         test_y_var_list = self.model.posterior(
             torch.from_numpy(
+                # test_input_data.data['input', 'x0'].to_numpy()[:, None]
                 test_input_data.data['input'].to_numpy()
             )  # .to(**tkwargs)
         ).mvn.covariance_matrix.diag().cpu().detach().numpy()[:, None]
