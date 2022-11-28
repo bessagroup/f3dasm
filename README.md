@@ -17,6 +17,7 @@ Current developers: [M.P. van der Schelling](https://github.com/mpvanderschellin
 * Link to [documentation](https://bessagroup.github.io/F3DASM/)
 * Link to [GitHub repository](https://github.com/bessagroup/F3DASM/tree/versionmartin)
 * Link to [PyPI package](https://pypi.org/project/f3dasm/)
+* Link to [Practical sessions](https://github.com/mpvanderschelling/F3DASM_practical)
 
 
 ## Referencing

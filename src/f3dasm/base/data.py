@@ -145,7 +145,7 @@ class Data:
         """
         return len(self.data)
 
-    def plot(self, input_par1: str, input_par2: str = None) -> Tuple[plt.Figure, plt.Axes]:
+    def plot(self, input_par1: str = "x0", input_par2: str = "x1") -> Tuple[plt.Figure, plt.Axes]:
 
         """Plot the data of two parameters in a figure
 

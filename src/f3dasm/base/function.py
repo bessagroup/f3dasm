@@ -103,14 +103,31 @@ class Function:
         -------
             gradient
         """
-        # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
-        grad = nd.Gradient(self)
-        x = self._reshape_input(x)
-        output = np.empty(shape=(1, len(x[0, :])))
-        for i in range(len(x)):
-            output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
 
-        return output[1:]  # Cut of the first one because that is the empty array input
+        def central_differences(x: float, h: float):
+            g = (self(x + h) - self(x - h)) / (2 * dx)
+            return g.ravel().tolist()
+
+        dx = 1e-8
+
+        grad = []
+        for index, param in enumerate(x):
+            # print(f"{index} {param}")
+            h = np.zeros(x.shape)
+            h[index] = dx
+            grad.append(central_differences(x=param, h=h))
+
+        grad = np.array(grad)
+        return grad.ravel()
+
+        # # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
+        # grad = nd.Gradient(self)
+        # x = self._reshape_input(x)
+        # output = np.empty(shape=(1, len(x[0, :])))
+        # for i in range(len(x)):
+        #     output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
+
+        # return output[1:]  # Cut of the first one because that is the empty array input
 
     def get_name(self) -> str:
         """Get the name of the function

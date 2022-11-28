@@ -125,6 +125,23 @@ class Optimizer:
             )
         return
 
+    def _force_bounds(self, x: np.ndarray) -> np.ndarray:
+        """Force the input vector to be within the design boundaries
+
+        Parameters
+        ----------
+        x
+            input vector
+
+        Returns
+        -------
+            Input vector clipped to the bounds of the search space
+        """        
+        if self.parameter.force_bounds:
+            x = x.clip(min=self.data.design.get_bounds()[:,0], max=self.data.design.get_bounds()[:,1])
+        
+        return x 
+
     def _construct_model(self, function: Function):
         """Construct a model necessary for iteration with input of to be evaluated function
 
