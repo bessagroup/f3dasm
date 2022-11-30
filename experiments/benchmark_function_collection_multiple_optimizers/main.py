@@ -1,5 +1,4 @@
 import logging
-import pickle
 from typing import List
 
 import hydra
@@ -28,10 +27,10 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     bounds = np.tile([config.design.lower_bound, config.design.upper_bound], (dimensionality, 1))
 
-    function = function_class(
-        dimensionality=dimensionality, noise=config.function.noise, scale_bounds=bounds, seed=seed
-    )
     design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=dimensionality)
+    function = function_class(
+        dimensionality=dimensionality, noise=config.function.noise, scale_bounds=design.get_bounds(), seed=seed
+    )
     data = f3dasm.Data(design=design)
 
     optimizers = [optimizer(data=data, seed=seed) for optimizer in optimizers_class]

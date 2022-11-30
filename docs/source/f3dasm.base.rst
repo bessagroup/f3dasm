@@ -17,6 +17,7 @@ f3dasm.base.design module
 
 .. automodule:: f3dasm.base.design
    :members:
+   :noindex:
    :undoc-members:
    :show-inheritance:
 

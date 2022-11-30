@@ -5,7 +5,8 @@ F3DASM
 This is the initalizer of the F3DASM package
 """
 
-__version__ = "0.2.8"
+__version__ = "0.2.9"
+
 import logging
 
 # Configuration file structure
@@ -25,9 +26,6 @@ from .base.utils import *
 
 # Import main scripts
 from .run_optimization import *
-
-# __version__ = "0.2.4"
-
 
 # Logging things
 
