@@ -1,5 +1,5 @@
 <center>
-	<img src="./docs/img/f3dasm-logo.png" alt="F3DASM logo" />
+	<img src="./docs/img/f3dasm-logo.svg" alt="F3DASM logo" />
 </center>
 
 ***
