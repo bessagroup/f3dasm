@@ -1,13 +1,29 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any, Tuple
 
+# Third-party
 import torch
-from botorch.acquisition import InverseCostWeightedUtility, UpperConfidenceBound
+from botorch.acquisition import (InverseCostWeightedUtility,
+                                 UpperConfidenceBound)
 from botorch.models import AffineFidelityCostModel
 from botorch.optim import optimize_acqf, optimize_acqf_mixed
 
+# Locals
 from .. import Function, Optimizer, OptimizerParameters
 from ..regression.gpr import Sogpr
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Leo Guo', 'Martin van der Schelling']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -21,7 +37,8 @@ class BayesianOptimizationTorch_Parameters(OptimizerParameters):
 def cost_model(self):
     lf = self.fidelities[0]
     a = (1 - 1 / self.cost_ratio) / (1 - lf)
-    cost_model = AffineFidelityCostModel(fidelity_weights={self.objective_function.dim - 1: a}, fixed_cost=1 - a)
+    cost_model = AffineFidelityCostModel(
+        fidelity_weights={self.objective_function.dim - 1: a}, fixed_cost=1 - a)
     return cost_model
 
 
@@ -99,7 +116,8 @@ class BayesianOptimizationTorch(Optimizer):
         self.algorithm = None
 
     def update_step(self, function: Function):
-        new_x, new_obj = optimize_acq_and_get_observation(self.parameter.acquisition, function)
+        new_x, new_obj = optimize_acq_and_get_observation(
+            self.parameter.acquisition, function)
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)
 
@@ -166,7 +184,8 @@ class MFBayesianOptimizationTorch(Optimizer):
         self.algorithm = None
 
     def update_step(self, function: Function):
-        new_x, new_obj = optimize_acq_and_get_observation(self.parameter.acquisition, function)
+        new_x, new_obj = optimize_acq_and_get_observation(
+            self.parameter.acquisition, function)
 
         self.data.add_numpy_arrays(input=new_x, output=new_obj)
 

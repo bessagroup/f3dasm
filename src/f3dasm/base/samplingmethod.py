@@ -1,12 +1,27 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, List
 
+# Third-party
 import autograd.numpy as np
 import pandas as pd
 
+# Locals
 from ..base.data import Data
-from .design import DesignSpace
+from ..base.design import DesignSpace
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -72,7 +87,8 @@ class SamplingInterface(ABC):
         samples_constant = self._sample_constant(numsamples=numsamples)
 
         # Merge samples into array
-        samples = np.hstack((samples_continuous, samples_discrete, samples_categorical, samples_constant))
+        samples = np.hstack(
+            (samples_continuous, samples_discrete, samples_categorical, samples_constant))
 
         # TODO #60 : Fix this ordering issue
         # Get the column names in this particular order
@@ -84,7 +100,8 @@ class SamplingInterface(ABC):
             + self.design.get_constant_input_names()
         ]
 
-        data = self._cast_to_data_object(samples=samples, columnnames=columnnames)
+        data = self._cast_to_data_object(
+            samples=samples, columnnames=columnnames)
         return data
 
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
@@ -117,7 +134,8 @@ class SamplingInterface(ABC):
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, _ in enumerate(discrete):
             samples[:, dim] = np.random.choice(
-                range(discrete[dim].lower_bound, discrete[dim].upper_bound + 1),
+                range(discrete[dim].lower_bound,
+                      discrete[dim].upper_bound + 1),
                 size=numsamples,
             )
 
@@ -128,7 +146,8 @@ class SamplingInterface(ABC):
         categorical = self.design.get_categorical_input_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, _ in enumerate(categorical):
-            samples[:, dim] = np.random.choice(categorical[dim].categories, size=numsamples)
+            samples[:, dim] = np.random.choice(
+                categorical[dim].categories, size=numsamples)
 
         return samples
 
@@ -137,7 +156,8 @@ class SamplingInterface(ABC):
         continuous = self.design.get_continuous_input_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
-                samples[:, dim] * (continuous[dim].upper_bound - continuous[dim].lower_bound)
+                samples[:, dim] * (continuous[dim].upper_bound -
+                                   continuous[dim].lower_bound)
                 + continuous[dim].lower_bound
             )
 

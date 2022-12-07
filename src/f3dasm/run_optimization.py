@@ -1,15 +1,30 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import logging
 import time
 from dataclasses import dataclass
 from typing import Any, List
 
+# Third-party
 import numpy as np
 from pathos.helpers import mp
 
+# Locals
 from .base.data import Data
 from .base.function import Function
 from .base.optimization import Optimizer
 from .base.samplingmethod import SamplingInterface
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -115,12 +130,14 @@ def run_multiple_realizations(
 
     if parallelization:
         args = [
-            (optimizer, function, sampler, iterations, seed + index, number_of_samples)
+            (optimizer, function, sampler, iterations,
+             seed + index, number_of_samples)
             for index, _ in enumerate(range(realizations))
         ]
 
         with mp.Pool() as pool:
-            results = pool.starmap(run_optimization, args)  # maybe implement pool.starmap_async ?
+            # maybe implement pool.starmap_async ?
+            results = pool.starmap(run_optimization, args)
 
     else:
         results = []

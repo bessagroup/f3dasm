@@ -1,7 +1,21 @@
+#                                                                       Modules
+# =============================================================================
+
+# Third-party
 import autograd.numpy as np
 from SALib.sample import latin
 
+# Locals
 from ..base.samplingmethod import SamplingInterface
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class LatinHypercube(SamplingInterface):
@@ -13,12 +27,12 @@ class LatinHypercube(SamplingInterface):
         Parameters
         ----------
         numsamples
-            numeber of samples
+            number of samples
 
         Returns
         -------
             samples
-        """        
+        """
         continuous = self.design.get_continuous_input_parameters()
         problem = {
             "num_vars": len(continuous),

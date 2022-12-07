@@ -1,9 +1,24 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from abc import ABC
 from typing import List
 
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from f3dasm.base.utils import _descale_vector, _scale_vector
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 class Augmentor(ABC):
@@ -45,7 +60,8 @@ class Noise(Augmentor):
         :return: augmented vector
         """
         # TODO: change noise calculation to work with autograd.numpy
-        noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * input), size=input.shape)
+        noise: np.ndarray = np.random.normal(
+            loc=0.0, scale=abs(self.noise * input), size=input.shape)
         y_noise = input + noise
         return y_noise
 
@@ -56,7 +72,8 @@ class Noise(Augmentor):
         :return: original input vector
         """
         # TODO: change noise calculation to work with autograd.numpy
-        noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * output), size=output.shape)
+        noise: np.ndarray = np.random.normal(
+            loc=0.0, scale=abs(self.noise * output), size=output.shape)
         y_noise = output - noise
         return y_noise
 

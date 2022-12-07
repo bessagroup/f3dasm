@@ -1,9 +1,24 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 
+# Third-party
 import pygmo as pg
 
+# Locals
 from ..base.optimization import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass

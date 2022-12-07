@@ -1,12 +1,27 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any, Tuple
 
+# Third-party
 import autograd.numpy as np
 import pygmo as pg
 
+# Locals
 from ...base.design import DesignSpace
 from ...base.function import Function
 from ...base.optimization import Optimizer
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -101,8 +116,10 @@ class PygmoAlgorithm(Optimizer):
         pop = pg.population(prob, size=self.parameter.population)
 
         # Set the population to the latest datapoints
-        pop_x = self.data.get_input_data().iloc[-self.parameter.population :].to_numpy()
-        pop_fx = self.data.get_output_data().iloc[-self.parameter.population :].to_numpy()
+        pop_x = self.data.get_input_data(
+        ).iloc[-self.parameter.population:].to_numpy()
+        pop_fx = self.data.get_output_data(
+        ).iloc[-self.parameter.population:].to_numpy()
 
         for index, (x, fx) in enumerate(zip(pop_x, pop_fx)):
             pop.set_xf(index, x, fx)

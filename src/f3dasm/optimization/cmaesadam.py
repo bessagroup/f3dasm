@@ -1,9 +1,23 @@
+#                                                                       Modules
+# =============================================================================
+
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ..base.data import Data
 from ..base.metaoptimizer import EqualParts_Strategy, MetaOptimizer
 from .adam import Adam
 from .cmaes import CMAES
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class CMAESAdam(MetaOptimizer):

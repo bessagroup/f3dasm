@@ -1,16 +1,30 @@
-from gpytorch.kernels.kernel import Kernel
-from gpytorch.kernels.scale_kernel import ScaleKernel
+#                                                                       Modules
+# =============================================================================
 
+# Standard
 from typing import Optional
-import torch
-from torch import Tensor
+
+# Third-party
 import GPy
 import numpy as np
-
-from emukit.multi_fidelity.kernels import LinearMultiFidelityKernel
+import torch
 from botorch.models.gp_regression import SingleTaskGP
 from botorch.models.transforms.input import InputTransform
 from botorch.models.transforms.outcome import OutcomeTransform
+from emukit.multi_fidelity.kernels import LinearMultiFidelityKernel
+from gpytorch.kernels.kernel import Kernel
+from gpytorch.kernels.scale_kernel import ScaleKernel
+from torch import Tensor
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
+
 
 tkwargs = {
     "dtype": torch.double,
@@ -50,15 +64,19 @@ class CoKrigingKernel(Kernel):
     def forward(self, x1, x2, diag=False, last_dim_is_batch=False, **params):
         if self.noise_fix:
             kernels = [
-                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
+                self.base_kernel(
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
                 + GPy.kern.White(x1.shape[-1] - 1),
-                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()),
+                self.base_kernel(
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()),
             ]
         else:
             kernels = [
-                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
+                self.base_kernel(
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
                 + GPy.kern.White(x1.shape[-1] - 1),
-                self.base_kernel(x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
+                self.base_kernel(
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
                 + GPy.kern.White(x1.shape[-1] - 1),
             ]
         lin_mf_kernel = LinearMultiFidelityKernel(kernels)
@@ -71,7 +89,8 @@ class CoKrigingKernel(Kernel):
             x1 = x1[0]
             x2 = x2[0]
 
-        covar_cokg_np = lin_mf_kernel.K(x1.cpu().detach().numpy(), x2.cpu().detach().numpy()) + 1e-6
+        covar_cokg_np = lin_mf_kernel.K(
+            x1.cpu().detach().numpy(), x2.cpu().detach().numpy()) + 1e-6
 
         if x_len == 4:
             covar_cokg_np = np.expand_dims(covar_cokg_np, axis=(0, 1))

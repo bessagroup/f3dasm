@@ -4,8 +4,7 @@ F3DASM
 
 This is the initalizer of the F3DASM package
 """
-
-__version__ = "0.2.9"
+__version__ = '0.2.9'
 
 import logging
 
@@ -19,11 +18,9 @@ from .base.metaoptimizer import *
 from .base.optimization import *
 from .base.samplingmethod import *
 from .base.simulation import *
-
 # Import base class in main namespace
 from .base.space import *
 from .base.utils import *
-
 # Import main scripts
 from .run_optimization import *
 

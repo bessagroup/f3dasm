@@ -1,11 +1,26 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from copy import copy
 from typing import Any
 
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ...base.function import Function
 from ...base.utils import _descale_vector, _scale_vector
 from .augmentor import FunctionAugmentor, Noise, Offset, Scale
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class PyBenchFunction(Function):
@@ -54,7 +69,8 @@ class PyBenchFunction(Function):
 
         input_augmentors = [
             Offset(offset=self.offset),
-            Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain),
+            Scale(scale_bounds=self.scale_bounds,
+                  input_domain=self.input_domain),
         ]
         output_augmentors = []
 
@@ -87,7 +103,8 @@ class PyBenchFunction(Function):
 
         unscaled_offset = np.atleast_1d(
             [
-                np.random.uniform(low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
+                np.random.uniform(
+                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
                 for d in range(self.dimensionality)
             ]
         )
@@ -122,7 +139,8 @@ class PyBenchFunction(Function):
 
         scale = abs(self.noise * yy)
 
-        noise: np.ndarray = np.random.normal(loc=0.0, scale=scale, size=y.shape)
+        noise: np.ndarray = np.random.normal(
+            loc=0.0, scale=scale, size=y.shape)
         y_noise = y + float(noise)
         return y_noise
 

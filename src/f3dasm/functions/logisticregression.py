@@ -1,6 +1,23 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
+
+
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ..base.function import Function
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 class LogisticRegression(Function):  # 4D, minimal 2D!
@@ -10,8 +27,10 @@ class LogisticRegression(Function):  # 4D, minimal 2D!
         _labels = np.array([0, 1])
 
         self._xi, self._yi = [], []
-        xx1 = np.random.multivariate_normal(_means[0], np.dot(_cov[:, :, 0], _cov[:, :, 0].T), size=50)
-        xx2 = np.random.multivariate_normal(_means[1], np.dot(_cov[:, :, 1], _cov[:, :, 1].T), size=50)
+        xx1 = np.random.multivariate_normal(
+            _means[0], np.dot(_cov[:, :, 0], _cov[:, :, 0].T), size=50)
+        xx2 = np.random.multivariate_normal(
+            _means[1], np.dot(_cov[:, :, 1], _cov[:, :, 1].T), size=50)
 
         self._xi = np.r_[xx1, xx2]
         self._yi = np.array([0] * 50 + [1] * 50)
@@ -30,7 +49,8 @@ class LogisticRegression(Function):  # 4D, minimal 2D!
             / 100
             * sum(
                 self._yi * np.log10(self._s_func(np.inner(ww, self._xi) + bb))
-                + (1 - self._yi) * np.log10(1 - self._s_func(np.inner(ww, self._xi) + bb))
+                + (1 - self._yi) * np.log10(1 -
+                                            self._s_func(np.inner(ww, self._xi) + bb))
                 + l_term / 2 * (np.sqrt(ww.dot(ww))) ** 2
             )
         )

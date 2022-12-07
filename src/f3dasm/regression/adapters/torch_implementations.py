@@ -1,19 +1,36 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any, List
 
+# Third-party
 import torch
 from botorch import fit_gpytorch_model
 from botorch.models.transforms import Normalize, Standardize
 from gpytorch import ExactMarginalLogLikelihood
 
-from f3dasm import Data, ContinuousParameter
-from f3dasm.base.regression import Regressor, Surrogate
+# Locals
+from ...base.data import Data
+from ...base.design import ContinuousParameter
+from ...base.regression import Regressor, Surrogate
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.Guo@tudelft.nl'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 def _continuousInputSpace_to_tensor(input_space: List[ContinuousParameter]) -> torch.tensor:
     input_space_list = []
     for continuousParameter in input_space:
-        input_space_list.append([continuousParameter.lower_bound, continuousParameter.upper_bound])
+        input_space_list.append(
+            [continuousParameter.lower_bound, continuousParameter.upper_bound])
     input_space_tensor = torch.tensor(input_space_list).T
     return input_space_tensor
 
@@ -67,14 +84,16 @@ class TorchGPRegressor(Regressor):
                 train_Y=torch.tensor(self.train_output_data),
                 input_transform=Normalize(
                     d=len(self.design.input_space),
-                    bounds=_continuousInputSpace_to_tensor(self.design.input_space),
+                    bounds=_continuousInputSpace_to_tensor(
+                        self.design.input_space),
                 ),
                 outcome_transform=Standardize(m=1),
                 **self.kwargs,
             )
         )
 
-        mll = ExactMarginalLogLikelihood(surrogate.model.likelihood, surrogate.model)
+        mll = ExactMarginalLogLikelihood(
+            surrogate.model.likelihood, surrogate.model)
         fit_gpytorch_model(mll)
 
         return surrogate

@@ -1,16 +1,33 @@
+#                                                                       Modules
+# =============================================================================
+
+
+# Standard
 from typing import Tuple
 
+# Third-party
 import autograd
 import autograd.core
 import autograd.numpy as np
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
+# Locals
 from ...base.function import Function
 from ...base.optimization import Optimizer
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling', 'Surya Manoj Sanu']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
-def convert_autograd_to_tensorflow(func):  # S:func is completely written in numpy autograd
+
+# S:func is completely written in numpy autograd
+def convert_autograd_to_tensorflow(func):
     """Convert autograd function to tensorflow funciton
 
     :param func: function
@@ -71,7 +88,8 @@ class TensorflowOptimizer(Optimizer):
         with tf.GradientTape() as tape:
             tape.watch(self.args["tvars"])
             logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
-            loss = self.args["func"](tf.reshape(logits, (function.dimensionality)))
+            loss = self.args["func"](tf.reshape(
+                logits, (function.dimensionality)))
 
         grads = tape.gradient(loss, self.args["tvars"])
         self.algorithm.apply_gradients(zip(grads, self.args["tvars"]))

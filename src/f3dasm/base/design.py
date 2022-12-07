@@ -1,16 +1,27 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
 from typing import List, TypeVar
 
+# Third-party
 import autograd.numpy as np
 import pandas as pd
 
-from ..base.space import (
-    CategoricalParameter,
-    ConstantParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-    ParameterInterface,
-)
+# Local
+from ..base.space import (CategoricalParameter, ConstantParameter,
+                          ContinuousParameter, DiscreteParameter,
+                          ParameterInterface)
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -221,7 +232,8 @@ class DesignSpace:
             numpy array with lower and upper bound for each continuous inpu dimension
         """
         return np.array(
-            [[parameter.lower_bound, parameter.upper_bound] for parameter in self.get_continuous_input_parameters()]
+            [[parameter.lower_bound, parameter.upper_bound]
+                for parameter in self.get_continuous_input_parameters()]
         )
 
     def _get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:

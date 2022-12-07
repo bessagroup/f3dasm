@@ -1,7 +1,21 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
 from typing import Any, List
 
+# Third-party
 import autograd.numpy as np
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -59,7 +73,8 @@ class ContinuousParameter(ParameterInterface):
     def _check_types(self):
         """Check if the boundaries are actually floats"""
         if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
-            raise TypeError(f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+            raise TypeError(
+                f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
@@ -95,7 +110,8 @@ class DiscreteParameter(ParameterInterface):
     def _check_types(self):
         """Check if the boundaries are actually ints"""
         if not isinstance(self.lower_bound, int) or not isinstance(self.upper_bound, int):
-            raise TypeError(f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+            raise TypeError(
+                f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""

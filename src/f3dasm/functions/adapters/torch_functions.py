@@ -1,11 +1,27 @@
-import torch
-from torch import Tensor
+#                                                                       Modules
+# =============================================================================
+
+# Third-party
 import numpy as np
+import torch
 from botorch.test_functions import SyntheticTestFunction
+from torch import Tensor
+
+# Locals
+from ...functions.pybenchfunction import PyBenchFunction
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+
 
 # from MFBO import Comsol_Sim_low, Comsol_Sim_high
 
-from f3dasm.functions.pybenchfunction import PyBenchFunction
 
 tkwargs = {
     "dtype": torch.double,
@@ -87,7 +103,8 @@ class AugmentedTestFunction(SyntheticTestFunction):
             # res_low = torch.mean(res_high)
             res_low = 0
         else:
-            res_low = stdev * white_noise + torch.mean(res_high)  # + 500 * brown_noise
+            res_low = stdev * white_noise + \
+                torch.mean(res_high)  # + 500 * brown_noise
 
         # Noise ideas ###
         # noise = 2 * (torch.rand(res_high.shape) - 0.5)

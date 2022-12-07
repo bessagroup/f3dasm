@@ -1,12 +1,27 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional, Tuple
 
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ..base.data import Data
 from ..base.function import Function
 from ..base.utils import _number_of_overiterations, _number_of_updates
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -99,7 +114,8 @@ class Optimizer:
         NotImplementedError
             You should implement an update step for your algorithm!
         """
-        raise NotImplementedError("You should implement an update step for your algorithm!")
+        raise NotImplementedError(
+            "You should implement an update step for your algorithm!")
 
     def set_data(self, data: Data):
         """Overwrite the data attribute
@@ -136,11 +152,12 @@ class Optimizer:
         Returns
         -------
             Input vector clipped to the bounds of the search space
-        """        
+        """
         if self.parameter.force_bounds:
-            x = x.clip(min=self.data.design.get_bounds()[:,0], max=self.data.design.get_bounds()[:,1])
-        
-        return x 
+            x = x.clip(min=self.data.design.get_bounds()[
+                       :, 0], max=self.data.design.get_bounds()[:, 1])
+
+        return x
 
     def _construct_model(self, function: Function):
         """Construct a model necessary for iteration with input of to be evaluated function
@@ -171,7 +188,8 @@ class Optimizer:
             self.add_iteration_to_data(x, y)
 
         # Remove overiterations
-        self.data.remove_rows_bottom(_number_of_overiterations(iterations, population=self.parameter.population))
+        self.data.remove_rows_bottom(_number_of_overiterations(
+            iterations, population=self.parameter.population))
         print(f"Optimizing for {iterations} iterations with {self.get_name()}")
 
     def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):

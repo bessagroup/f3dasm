@@ -1,12 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
+
 import pickle
 from typing import Any, List
 
+# Third-party
 import autograd.numpy as np
 import pandas as pd
 
+# Locals
 from ..base.data import Data
 from ..base.design import DesignSpace
 from ..base.space import ContinuousParameter
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> DesignSpace:
@@ -25,7 +41,8 @@ def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> Design
     """
     input_space, output_space = [], []
     for dim in range(dimensionality):
-        input_space.append(ContinuousParameter(name=f"x{dim}", lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1]))
+        input_space.append(ContinuousParameter(
+            name=f"x{dim}", lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1]))
 
     output_space.append(ContinuousParameter(name="y"))
 
@@ -37,7 +54,8 @@ def _from_data_to_numpy_array_benchmarkfunction(
 ) -> np.ndarray:
     """Check if doe is in right format"""
     if not data.design.is_single_objective_continuous():
-        raise TypeError("All inputs and outputs need to be continuous parameters and output single objective")
+        raise TypeError(
+            "All inputs and outputs need to be continuous parameters and output single objective")
 
     return data.get_input_data().to_numpy()
 
@@ -118,6 +136,8 @@ def _number_of_overiterations(iterations: int, population: int) -> int:
 
 
 def calculate_mean_std(results):
-    mean_y = pd.concat([d.get_output_data().cummin() for d in results], axis=1).mean(axis=1)
-    std_y = pd.concat([d.get_output_data().cummin() for d in results], axis=1).std(axis=1)
+    mean_y = pd.concat([d.get_output_data().cummin()
+                       for d in results], axis=1).mean(axis=1)
+    std_y = pd.concat([d.get_output_data().cummin()
+                      for d in results], axis=1).std(axis=1)
     return mean_y, std_y

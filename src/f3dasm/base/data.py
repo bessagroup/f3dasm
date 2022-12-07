@@ -1,10 +1,25 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from typing import Tuple
 
+# Third-party
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+# Local
 from ..base.design import DesignSpace
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class Data:
@@ -47,8 +62,10 @@ class Data:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self.data = self.data.astype(self.design._cast_types_dataframe(self.design.input_space, "input"))
-        self.data = self.data.astype(self.design._cast_types_dataframe(self.design.output_space, "output"))
+        self.data = self.data.astype(
+            self.design._cast_types_dataframe(self.design.input_space, "input"))
+        self.data = self.data.astype(self.design._cast_types_dataframe(
+            self.design.output_space, "output"))
 
     def add_output(self, output: np.ndarray, label: str = "y"):
         """Add a numpy array to the output column of the dataframe
@@ -72,7 +89,8 @@ class Data:
         output
             2d numpy array added to output data
         """
-        df = pd.DataFrame(np.hstack((input, output)), columns=self.data.columns)
+        df = pd.DataFrame(np.hstack((input, output)),
+                          columns=self.data.columns)
         self.add(df, ignore_index=True)
 
     def remove_rows_bottom(self, number_of_rows: int):
@@ -146,7 +164,6 @@ class Data:
         return len(self.data)
 
     def plot(self, input_par1: str = "x0", input_par2: str = "x1") -> Tuple[plt.Figure, plt.Axes]:
-
         """Plot the data of two parameters in a figure
 
         Parameters
@@ -162,7 +179,8 @@ class Data:
         """
         fig, ax = plt.figure(), plt.axes()
 
-        ax.scatter(self.data[("input", input_par1)], self.data[("input", input_par2)], s=3)
+        ax.scatter(self.data[("input", input_par1)],
+                   self.data[("input", input_par2)], s=3)
 
         ax.set_xlabel(input_par1)
         ax.set_ylabel(input_par2)

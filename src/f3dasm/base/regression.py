@@ -1,8 +1,22 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
-from .. import DesignSpace
+# Locals
 from ..base.data import Data
+from ..base.design import DesignSpace
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass

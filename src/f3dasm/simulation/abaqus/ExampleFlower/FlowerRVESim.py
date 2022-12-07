@@ -36,15 +36,17 @@ def main(sim_info):
     RVEcenter = [1.75000, 1.75000]  # Center position of RVE
     Mesh_size = 0.05000  # Mesh parameter
     ### MODEL PARAMETERS ###
-    NUMBER_OF_POINTS = 100  # NUMBER OF POINTS TO GENERATE THE CENTER HOLE THROUGH THE PARAMETRIC FUNCTION
+    # NUMBER OF POINTS TO GENERATE THE CENTER HOLE THROUGH THE PARAMETRIC FUNCTION
+    NUMBER_OF_POINTS = 100
     RO = 1.0
     TOL = 1e-5
 
-    ## define names of modeling
+    # define names of modeling
 
     # Begin to construct the model
     executeOnCaeStartup()
-    session.viewports["Viewport: 1"].partDisplay.geometryOptions.setValues(referenceRepresentation=ON)
+    session.viewports["Viewport: 1"].partDisplay.geometryOptions.setValues(
+        referenceRepresentation=ON)
     Mdb()
     model = mdb.models["Model-1"]
 
@@ -64,7 +66,8 @@ def main(sim_info):
     for i in xrange(NUMBER_OF_POINTS):
         THETA = THETAALL[i]
         rr = RO * (1.0 + C1 * cos(4.0 * THETA) + C2 * cos(8.0 * THETA))
-        POINTS.append((RVEcenter[0] + rr * cos(THETA), RVEcenter[1] + rr * sin(THETA)))
+        POINTS.append((RVEcenter[0] + rr * cos(THETA),
+                      RVEcenter[1] + rr * sin(THETA)))
         if i == 0:
             xFirst = RVEcenter[0] + rr * cos(THETA)
             yFirst = RVEcenter[1] + rr * sin(THETA)
@@ -73,16 +76,18 @@ def main(sim_info):
 
     ### GENERATE SPLINE SHAPE ###
     sketch.Spline(points=POINTS)
-    part = model.Part(name="FinalRVE", dimensionality=TWO_D_PLANAR, type=DEFORMABLE_BODY)
+    part = model.Part(
+        name="FinalRVE", dimensionality=TWO_D_PLANAR, type=DEFORMABLE_BODY)
     part.BaseShell(sketch=sketch)
     del model.sketches["__profile__"]
 
     ### CREATING ASSEMBLY ###
     model_assembly = model.rootAssembly
     # INSTANCE DEFINITION
-    Instance_Full = model_assembly.Instance(dependent=ON, name="FinalRVE", part=part)
+    Instance_Full = model_assembly.Instance(
+        dependent=ON, name="FinalRVE", part=part)
 
-    ## create sets for faces, edges, and vertexes
+    # create sets for faces, edges, and vertexes
 
     # All faces:
     f = part.faces
@@ -169,12 +174,13 @@ def main(sim_info):
     part.Set(vertices=vertexLT, name="VertexLT")
 
     ##########################################################
-    ## create materials
+    # create materials
 
     if mat_name == "Arruda":
         material = model.Material(name="Arruda")
         material.Density(table=((1e-21,),))
-        material.Expansion(table=((5.8e-05, 0.0), (5.8e-05, 200.0)), zero=120.0, temperatureDependency=ON)
+        material.Expansion(table=((5.8e-05, 0.0), (5.8e-05, 200.0)),
+                           zero=120.0, temperatureDependency=ON)
         material.Hyperelastic(
             materialType=ISOTROPIC,
             testData=OFF,
@@ -182,7 +188,8 @@ def main(sim_info):
             volumetricResponse=VOLUMETRIC_DATA,
             table=((166.0, 2.8, 0.0025),),
         )
-        model.HomogeneousSolidSection(name="Section-1", material="Arruda", thickness=None)
+        model.HomogeneousSolidSection(
+            name="Section-1", material="Arruda", thickness=None)
         part.SectionAssignment(
             region=part.sets["Phase_1"],
             sectionName="Section-1",
@@ -195,7 +202,8 @@ def main(sim_info):
     elif mat_name == "Neohookean":
         material = model.Material(name="neohookean")
         material.Density(table=((1e-21,),))
-        material.Expansion(table=((5.8e-05, 0.0), (5.8e-05, 200.0)), zero=120.0, temperatureDependency=ON)
+        material.Expansion(table=((5.8e-05, 0.0), (5.8e-05, 200.0)),
+                           zero=120.0, temperatureDependency=ON)
         material.Hyperelastic(
             materialType=ISOTROPIC,
             testData=OFF,
@@ -203,7 +211,8 @@ def main(sim_info):
             volumetricResponse=VOLUMETRIC_DATA,
             table=((961.538, 0.0005),),
         )
-        model.HomogeneousSolidSection(name="Section-1", material="neohookean", thickness=None)
+        model.HomogeneousSolidSection(
+            name="Section-1", material="neohookean", thickness=None)
         part.SectionAssignment(
             region=part.sets["Phase_1"],
             sectionName="Section-1",
@@ -216,16 +225,20 @@ def main(sim_info):
         print("Name of the material is wrong !")
 
     # define the dummy node by using the reference points
-    RF_Right_id = model_assembly.ReferencePoint(point=(RVEcenter[0] + Lx / 2, 0.0, 0.0)).id
-    RF_Top_id = model_assembly.ReferencePoint(point=(0.0, RVEcenter[1] + Ly / 2, 0.0)).id
+    RF_Right_id = model_assembly.ReferencePoint(
+        point=(RVEcenter[0] + Lx / 2, 0.0, 0.0)).id
+    RF_Top_id = model_assembly.ReferencePoint(
+        point=(0.0, RVEcenter[1] + Ly / 2, 0.0)).id
     refpoints = model_assembly.referencePoints
-    model_assembly.Set(name="Ref-R", referencePoints=((refpoints[RF_Right_id],)))
+    model_assembly.Set(
+        name="Ref-R", referencePoints=((refpoints[RF_Right_id],)))
     model_assembly.Set(name="Ref-T", referencePoints=((refpoints[RF_Top_id],)))
 
-    ## mesh for the RVE
+    # mesh for the RVE
     niter = 1  # iteration number for meshing procedure
     status_mesh = 0  # flag signaling if mesh was created
-    refine_factor = 1.25000  # Parameter used to refine mesh (should be larger than 1)
+    # Parameter used to refine mesh (should be larger than 1)
+    refine_factor = 1.25000
 
     def get_node_y(node):
         return node.coordinates[1]
@@ -246,10 +259,14 @@ def main(sim_info):
         elemType2 = mesh.ElemType(elemCode=CPS3, elemLibrary=STANDARD)
         part.setElementType(regions=(faces,), elemTypes=(elemType1, elemType2))
         part.seedPart(size=Mesh_size, deviationFactor=0.4, minSizeFactor=0.4)
-        part.seedEdgeBySize(edges=edgesLEFT, size=Mesh_size, deviationFactor=0.4, constraint=FIXED)
-        part.seedEdgeBySize(edges=edgesRIGHT, size=Mesh_size, deviationFactor=0.4, constraint=FIXED)
-        part.seedEdgeBySize(edges=edgesTOP, size=Mesh_size, deviationFactor=0.4, constraint=FIXED)
-        part.seedEdgeBySize(edges=edgesBOT, size=Mesh_size, deviationFactor=0.4, constraint=FIXED)
+        part.seedEdgeBySize(edges=edgesLEFT, size=Mesh_size,
+                            deviationFactor=0.4, constraint=FIXED)
+        part.seedEdgeBySize(edges=edgesRIGHT, size=Mesh_size,
+                            deviationFactor=0.4, constraint=FIXED)
+        part.seedEdgeBySize(edges=edgesTOP, size=Mesh_size,
+                            deviationFactor=0.4, constraint=FIXED)
+        part.seedEdgeBySize(edges=edgesBOT, size=Mesh_size,
+                            deviationFactor=0.4, constraint=FIXED)
         part.generateMesh()
 
         # judge if the nodes of each edge pair are the same or not
@@ -291,24 +308,28 @@ def main(sim_info):
         else:
             status_mesh = 1
 
-    ## create PBC for RVE
+    # create PBC for RVE
     import assembly
 
     session.viewports["Viewport: 1"].setValues(displayedObject=model_assembly)
     model_assembly.regenerate()
     # find out the Vertices
     NodeLB = part.sets["VertexLB"].nodes
-    model_assembly.SetFromNodeLabels(name="NodeLB", nodeLabels=(("FinalRVE", (NodeLB[0].label,)),), unsorted=True)
+    model_assembly.SetFromNodeLabels(name="NodeLB", nodeLabels=(
+        ("FinalRVE", (NodeLB[0].label,)),), unsorted=True)
     # a.Set(name='NodeLB', nodes=(NodeLB,))
     NodeRB = part.sets["VertexRB"].nodes
-    model_assembly.SetFromNodeLabels(name="NodeRB", nodeLabels=(("FinalRVE", (NodeRB[0].label,)),), unsorted=True)
+    model_assembly.SetFromNodeLabels(name="NodeRB", nodeLabels=(
+        ("FinalRVE", (NodeRB[0].label,)),), unsorted=True)
     # a.Set(name='NodeRB', nodes=(NodeRB,))
     NodeLT = part.sets["VertexLT"].nodes
-    model_assembly.SetFromNodeLabels(name="NodeLT", nodeLabels=(("FinalRVE", (NodeLT[0].label,)),), unsorted=True)
+    model_assembly.SetFromNodeLabels(name="NodeLT", nodeLabels=(
+        ("FinalRVE", (NodeLT[0].label,)),), unsorted=True)
     # a.Set(name='NodeLT', nodes=(NodeLT,))
     NodeRT = part.sets["VertexRT"].nodes
     # a.Set(name='NodeRT', nodes=(NodeRT,))
-    model_assembly.SetFromNodeLabels(name="NodeRT", nodeLabels=(("FinalRVE", (NodeRT[0].label,)),), unsorted=True)
+    model_assembly.SetFromNodeLabels(name="NodeRT", nodeLabels=(
+        ("FinalRVE", (NodeRT[0].label,)),), unsorted=True)
 
     # for Vertices left_bottom and right_upper
     model.Equation(
@@ -325,23 +346,26 @@ def main(sim_info):
         name="LT_RB_2", terms=((1, "NodeRB", 2), (-1, "NodeLT", 2), (-1 * Lx, "Ref-R", 2), (1 * Ly, "Ref-T", 2))
     )
 
-    ## define the equations for the left and right edges
+    # define the equations for the left and right edges
     if len(RightEdge_nodes_sorted) == len(LeftEdge_nodes_sorted):
         for ii in range(1, len(RightEdge_nodes_sorted) - 1):
             model_assembly.SetFromNodeLabels(
                 name="LEFT_" + str(ii),
-                nodeLabels=(("FinalRVE", tuple([LeftEdge_nodes_sorted[ii].label])),),
+                nodeLabels=(
+                    ("FinalRVE", tuple([LeftEdge_nodes_sorted[ii].label])),),
                 unsorted=True,
             )
             model_assembly.SetFromNodeLabels(
                 name="RIGHT_" + str(ii),
-                nodeLabels=(("FinalRVE", tuple([RightEdge_nodes_sorted[ii].label])),),
+                nodeLabels=(
+                    ("FinalRVE", tuple([RightEdge_nodes_sorted[ii].label])),),
                 unsorted=True,
             )
             for jj in range(1, 3):
                 model.Equation(
                     name="LEFT_RIGHT_" + str(ii) + "_" + str(jj),
-                    terms=((1, "RIGHT_" + str(ii), jj), (-1, "LEFT_" + str(ii), jj), (-1 * Lx, "Ref-R", jj)),
+                    terms=((1, "RIGHT_" + str(ii), jj), (-1, "LEFT_" +
+                           str(ii), jj), (-1 * Lx, "Ref-R", jj)),
                 )
     else:
         print("the number of nodes between the two sides are not the same")
@@ -352,23 +376,26 @@ def main(sim_info):
         for ii in range(1, len(TopEdge_nodes_sorted) - 1):
             model_assembly.SetFromNodeLabels(
                 name="TOP_" + str(ii),
-                nodeLabels=(("FinalRVE", tuple([TopEdge_nodes_sorted[ii].label])),),
+                nodeLabels=(
+                    ("FinalRVE", tuple([TopEdge_nodes_sorted[ii].label])),),
                 unsorted=True,
             )
             model_assembly.SetFromNodeLabels(
                 name="BOT_" + str(ii),
-                nodeLabels=(("FinalRVE", tuple([BotEdge_nodes_sorted[ii].label])),),
+                nodeLabels=(
+                    ("FinalRVE", tuple([BotEdge_nodes_sorted[ii].label])),),
                 unsorted=True,
             )
             for jj in range(1, 3):
                 model.Equation(
                     name="TOP_BOT_" + str(ii) + "_" + str(jj),
-                    terms=((1, "TOP_" + str(ii), jj), (-1, "BOT_" + str(ii), jj), (-1 * Ly, "Ref-T", jj)),
+                    terms=((1, "TOP_" + str(ii), jj), (-1, "BOT_" +
+                           str(ii), jj), (-1 * Ly, "Ref-T", jj)),
                 )
     else:
         print("the number of nodes between the two sides are not the same")
 
-    ## create step
+    # create step
     model.StaticStep(
         name="Step-1",
         previous="Initial",
@@ -388,18 +415,20 @@ def main(sim_info):
         crossSectionDistribution=CONSTANT_THROUGH_THICKNESS,
         magnitudes=(120.0,),
     )
-    ## create Final-outputs
+    # create Final-outputs
     model.fieldOutputRequests["F-Output-1"].setValues(
         variables=("S", "E", "LE", "ENER", "ELEN", "ELEDEN", "EVOL", "IVOL"), timeInterval=0.1
     )
-    model.FieldOutputRequest(name="F-Output-2", createStepName="Step-1", variables=("U", "RF"), timeInterval=0.1)
+    model.FieldOutputRequest(
+        name="F-Output-2", createStepName="Step-1", variables=("U", "RF"), timeInterval=0.1)
     model.historyOutputRequests["H-Output-1"].setValues(
         variables=("ALLAE", "ALLCD", "ALLIE", "ALLKE", "ALLPD", "ALLSE", "ALLWK", "ETOTAL"), timeInterval=0.1
     )
 
-    model.SmoothStepAmplitude(name="Amp-1", timeSpan=STEP, data=((0.0, 0.0), (1.0, 1.0)))
+    model.SmoothStepAmplitude(
+        name="Amp-1", timeSpan=STEP, data=((0.0, 0.0), (1.0, 1.0)))
 
-    ## create loads
+    # create loads
     # adding the macro strain to the
     model.DisplacementBC(
         name="E_11",
@@ -458,7 +487,7 @@ def main(sim_info):
     model.boundaryConditions["E_21"].setValues(amplitude="Amp-1")
     model.boundaryConditions["E_22"].setValues(amplitude="Amp-1")
 
-    ## create a job
+    # create a job
     mdb.Job(
         name=job_name,
         model="Model-1",

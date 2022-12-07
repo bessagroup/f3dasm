@@ -1,12 +1,27 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from typing import Any, Tuple
 
+# Third-party
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 import numdifftools as nd
 
+# Locals
 from ..base.data import Data
 from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class Function:
@@ -169,7 +184,8 @@ class Function:
         )
         x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
         x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=25, c="red", marker="*", edgecolors="red")
+        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
+                   marker="*", edgecolors="red")
         return fig, ax
 
     def _create_mesh(self, px: int, domain: np.ndarray):
@@ -194,7 +210,8 @@ class Function:
 
         for i in range(len(X1)):
             for j in range(len(X1)):
-                xy = np.array([X1[i, j], X2[i, j]] + [0.0] * (self.dimensionality - 2))
+                xy = np.array([X1[i, j], X2[i, j]] + [0.0]
+                              * (self.dimensionality - 2))
                 Y[i, j] = self(xy)
 
         dx = (domain[0, 1] - domain[0, 0]) / px
@@ -238,7 +255,8 @@ class Function:
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.LogNorm())  # mcol.LogNorm()
+            ax.pcolormesh(xv, yv, Y, cmap="viridis",
+                          norm=mcol.LogNorm())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":

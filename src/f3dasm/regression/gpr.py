@@ -1,13 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 
+# Third-party
 import gpytorch.kernels
 from botorch.models import MultiTaskGP, SingleTaskMultiFidelityGP
 from botorch.models.gp_regression import SingleTaskGP
-from gpytorch.kernels import ScaleKernel, RBFKernel
+from gpytorch.kernels import RBFKernel, ScaleKernel
 
+# Locals
 from .adapters.torch_implementations import TorchGPRegressor
 from .kernels import cokgj_kernel
 from .kernels.cokgj_kernel import CoKrigingGP
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass

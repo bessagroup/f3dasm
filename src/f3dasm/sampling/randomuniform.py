@@ -1,6 +1,20 @@
+#                                                                       Modules
+# =============================================================================
+
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ..base.samplingmethod import SamplingInterface
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class RandomUniform(SamplingInterface):
@@ -17,7 +31,7 @@ class RandomUniform(SamplingInterface):
         Returns
         -------
             samples
-        """    
+        """
         continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 

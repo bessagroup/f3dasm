@@ -1,10 +1,24 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from abc import ABC
 from copy import copy
 from typing import List, Tuple
 
+# Locals
 from ..base.data import Data
 from ..base.function import Function
 from ..base.optimization import Optimizer, OptimizerParameters
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class OptimizationOrder:
@@ -29,7 +43,8 @@ class Strategy(ABC):
 
 class EqualParts_Strategy(Strategy):
     def __init__(self, optimizers: List[Optimizer]):
-        """Meta optimization strategy where we use one optimizer for half of the time and the other one for the second half
+        """Meta optimization strategy where we use one optimizer for half of the time 
+        and the other one for the second half
 
         Parameters
         ----------
@@ -40,7 +55,8 @@ class EqualParts_Strategy(Strategy):
 
     def create_strategy(self, iterations: int) -> Tuple[OptimizationOrder]:
         strategy: Tuple[OptimizationOrder] = tuple(
-            OptimizationOrder(number_of_iterations=iterations // len(self.optimizers), optimizer=optimizer)
+            OptimizationOrder(number_of_iterations=iterations //
+                              len(self.optimizers), optimizer=optimizer)
             for optimizer in self.optimizers
         )
         # Add the remained of the iterations to the last part
@@ -73,13 +89,16 @@ class MetaOptimizer(Optimizer):
 
     def iterate(self, iterations: int, function: Function):
         number_of_initial_samples = self.data.get_number_of_datapoints()
-        optimization_order: Tuple[OptimizationOrder] = self.strategy.create_strategy(iterations)
+        optimization_order: Tuple[OptimizationOrder] = self.strategy.create_strategy(
+            iterations)
 
         for order in optimization_order:
-            self.update_step(iterations=order.number_of_iterations, function=function, optimizer=order.optimizer)
+            self.update_step(iterations=order.number_of_iterations,
+                             function=function, optimizer=order.optimizer)
 
         # Remove overiterations
-        self.data.remove_rows_bottom(self.data.get_number_of_datapoints() - iterations - number_of_initial_samples)
+        self.data.remove_rows_bottom(
+            self.data.get_number_of_datapoints() - iterations - number_of_initial_samples)
 
     def get_name(self) -> str:
         """Retrieve the name of the optimizers
