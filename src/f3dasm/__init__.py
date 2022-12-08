@@ -4,13 +4,14 @@ F3DASM
 
 This is the initalizer of the F3DASM package
 """
-__version__ = '0.2.9'
+__version__ = '0.2.91'
 
 import logging
 
 # Configuration file structure
 # Import implementation modules in separate namespaces
 from . import config, functions, optimization, sampling, simulation
+from ._show_versions import show_versions
 from .base.data import *
 from .base.design import *
 from .base.function import *
@@ -25,6 +26,4 @@ from .base.utils import *
 from .run_optimization import *
 
 # Logging things
-
-
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)

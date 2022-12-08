@@ -20,6 +20,8 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     function_class = np.random.choice(functions_list)
 
+    function_noise = float(np.random.choice([config.function.noise, 0.0]))
+
     optimizers_class: List[f3dasm.Optimizer] = [
         f3dasm.find_class(f3dasm.optimization, optimizer_name) for optimizer_name in config.optimizers.optimizers_names
     ]
@@ -29,7 +31,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=dimensionality)
     function = function_class(
-        dimensionality=dimensionality, noise=config.function.noise, scale_bounds=design.get_bounds(), seed=seed
+        dimensionality=dimensionality, noise=function_noise, scale_bounds=design.get_bounds(), seed=seed
     )
     data = f3dasm.Data(design=design)
 
@@ -62,10 +64,12 @@ def main(cfg: Config):
         for options in options_list:
             results.append(f3dasm.run_multiple_realizations(**options))
 
-        f3dasm.write_pickle(
-            f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}",
-            results,
-        )
+        filename: str = f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}"
+        f3dasm.write_pickle(filename, results)
+
+        df = f3dasm.margin_of_victory(results)
+
+        f3dasm.write_pickle('mov_'+filename, df)
 
 
 cs = ConfigStore.instance()

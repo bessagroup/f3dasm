@@ -5,7 +5,7 @@ design:
   dimensionality_upper_bound: 5
 
 function:
-  noise: None
+  noise: 0.2
 
 optimizers:
   optimizers_names: [
@@ -32,7 +32,7 @@ sampler:
   number_of_samples: 30
 
 execution:
-  number_of_functions: 10
+  number_of_functions: 3
   iterations: 500
   realizations: 10
   parallelization: True

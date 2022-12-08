@@ -137,7 +137,8 @@ class Optimizer:
         """Check if available data => population size"""
         if self.data.get_number_of_datapoints() < self.parameter.population:
             raise ValueError(
-                f"There are {self.data.get_number_of_datapoints()} datapoints available, need {self.parameter.population} for update step!"
+                f'There are {self.data.get_number_of_datapoints()} datapoints available, \
+                     need {self.parameter.population} for update step!'
             )
         return
 

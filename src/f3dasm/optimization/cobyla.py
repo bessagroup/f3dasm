@@ -29,7 +29,8 @@ class COBYLA_Parameters(OptimizerParameters):
 
 
 class COBYLA(SciPyMinimizeOptimizer):
-    """Minimize a scalar function of one or more variables using the Constrained Optimization BY Linear Approximation (COBYLA) algorithm."""
+    """Minimize a scalar function of one or more variables using the 
+    Constrained Optimization BY Linear Approximation (COBYLA) algorithm."""
 
     method: str = "COBYLA"
     parameter: COBYLA_Parameters = COBYLA_Parameters()

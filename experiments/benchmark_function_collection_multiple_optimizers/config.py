@@ -12,7 +12,7 @@ class DesignConfig:
 
 @dataclass
 class FunctionConfig:
-    noise: float or Any
+    noise: float
 
 
 @dataclass

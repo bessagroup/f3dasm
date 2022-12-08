@@ -48,6 +48,15 @@ class Data:
         print(self.data)
         return
 
+    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Convert the data to a tuple numpy arrays
+
+        Returns
+        -------
+            tuple of np.ndarrays: first of input columns, second one of output columns
+        """
+        return self.get_input_data().to_numpy(), self.get_output_data().to_numpy()
+
     def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """Add data
 

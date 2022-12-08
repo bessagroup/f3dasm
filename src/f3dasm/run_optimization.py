@@ -9,13 +9,16 @@ from typing import Any, List
 
 # Third-party
 import numpy as np
+import pandas as pd
 from pathos.helpers import mp
+from sklearn import preprocessing
 
 # Locals
 from .base.data import Data
 from .base.function import Function
 from .base.optimization import Optimizer
 from .base.samplingmethod import SamplingInterface
+from .base.utils import calculate_mean_std
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -51,7 +54,8 @@ class OptimizationResult:
     def __post_init__(self):
         # Log
         logging.info(
-            f"Optimized {self.function.get_name()} function (seed={self.function.seed}, dim={self.function.dimensionality}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
+            f"Optimized {self.function.get_name()} function (seed={self.function.seed}, \
+dim={self.function.dimensionality}, noise={self.function.noise}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
         )
 
 
@@ -167,3 +171,41 @@ def run_multiple_realizations(
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
     )
+
+
+def margin_of_victory(results: List[OptimizationResult]) -> pd.DataFrame:
+
+    # Create df with all results
+    df = pd.concat([calculate_mean_std(results[i])[0] for i, _ in enumerate(results)], axis=1)
+
+    # Change columnnames
+    optimizer_names = [results[i].optimizer for i, _ in enumerate(results)]
+    df.columns = optimizer_names
+
+    # Normalize
+    min_max_scaler = preprocessing.MinMaxScaler()
+
+    # Reshape to 1D array
+    df_numpy = df.values  # returns a numpy array
+    df_numpy_reshaped = df_numpy.reshape(-1, 1)
+
+    x_scaled = min_max_scaler.fit_transform(df_numpy_reshaped)
+
+    # Transform back
+    x_scaled = x_scaled.reshape(df_numpy.shape)
+    df = pd.DataFrame(x_scaled)
+    df.columns = optimizer_names
+
+    # Calculate margin of victory
+    mov = []
+    for name in optimizer_names:
+        df_dropped = df.drop(name, axis=1)
+        mov.append(df_dropped.min(axis=1) - df[name])
+
+    # Create df with all MoV
+    df_margin_of_victory = pd.concat(mov, axis=1)
+
+    # Change columnnames
+    df_margin_of_victory.columns = optimizer_names
+
+    return df_margin_of_victory

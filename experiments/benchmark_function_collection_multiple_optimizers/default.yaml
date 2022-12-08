@@ -5,7 +5,7 @@ design:
   dimensionality_upper_bound: 5
 
 function:
-  noise: None
+  noise: 0.0
 
 optimizers:
   optimizers_names: [

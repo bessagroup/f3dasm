@@ -135,9 +135,9 @@ def _number_of_overiterations(iterations: int, population: int) -> int:
         return population - overiterations
 
 
-def calculate_mean_std(results):
+def calculate_mean_std(results):  # OptimizationResult
     mean_y = pd.concat([d.get_output_data().cummin()
-                       for d in results], axis=1).mean(axis=1)
+                       for d in results.data], axis=1).mean(axis=1)
     std_y = pd.concat([d.get_output_data().cummin()
-                      for d in results], axis=1).std(axis=1)
+                      for d in results.data], axis=1).std(axis=1)
     return mean_y, std_y
