@@ -26,6 +26,8 @@ class PSO_Parameters(OptimizerParameters):
     """Hyperparameters for PSO optimizer"""
 
     population: int = 30
+    eta1: float = 2.05
+    eta2: float = 2.05
 
 
 class PSO(PygmoAlgorithm):
@@ -39,5 +41,7 @@ class PSO(PygmoAlgorithm):
                 gen=1,
                 memory=True,
                 seed=self.seed,
+                eta1=self.parameter.eta1,
+                eta2=self.parameter.eta2,
             )
         )

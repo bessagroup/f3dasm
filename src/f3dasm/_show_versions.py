@@ -3,12 +3,23 @@ Utility methods to print system info for debugging
 
 adapted from :func:`sklearn.show_versions`
 """
-# License: BSD 3 clause
+#                                                                       Modules
+# =============================================================================
 
+# Standard
 import importlib
 import platform
 import sys
-from typing import Any, List
+from typing import List
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling', 'Scikit-learn']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 def _get_sys_info() -> dict:
