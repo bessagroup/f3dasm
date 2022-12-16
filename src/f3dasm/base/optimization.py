@@ -101,11 +101,11 @@ class Optimizer:
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
-    def update_step_mf(self, mffunction: MultiFidelityFunction, iteration: int,) -> None:
+    def update_step_mf(self, multifidelity_function: MultiFidelityFunction, iteration: int,) -> None:
         """One iteration of the algorithm. Adds the new input vector and resulting output immediately to the data attribute
 
         Args:
-            mffunction (MultiFidelityFunction): Objective function to evaluate
+            multifidelity_function (MultiFidelityFunction): Objective function to evaluate
             iteration (int): iteration
 
         """
@@ -153,19 +153,25 @@ class Optimizer:
         # Remove overiterations
         self.data.remove_rows_bottom(self._number_of_overiterations(iterations))
 
-    def iterate_mf(self, iterations: int, mffunction: MultiFidelityFunction) -> None:
+    def iterate_mf(self, iterations: int, multifidelity_function: MultiFidelityFunction, budget: float,) -> None:
         """Calls the update_step function multiple times.
 
         Args:
             iterations (int): number of iterations
-            mffunction (MultiFidelityFunction): Objective function to evaluate
+            mffunction (MultiFidelityFunction): Multi-fidelity function containing fidelity functions to evaluate
+            budget (float): optimization algorithm terminates when this budget threshold is exceeded
         """
 
         # self._check_number_of_datapoints()
-
+        cumulative_cost = 0
         for _ in range(self._number_of_updates(iterations)):
-            print('iteration', _)#, self.data[-1].data)
-            self.update_step_mf(mffunction=mffunction, iteration=_)
+            if cumulative_cost < budget:
+                print('iteration', _)#, self.data[-1].data)
+                print('cumulative cost', float(cumulative_cost))
+                self.update_step_mf(multifidelity_function=multifidelity_function, iteration=_)
+                cumulative_cost += self.cost
+            else:
+                break
 
         # Remove overiterations
         self.data[-1].remove_rows_bottom(self._number_of_overiterations(iterations))

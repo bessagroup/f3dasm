@@ -60,6 +60,7 @@ class Data:
         """
         self.data[("output", label)] = output
 
+    # TODO: #77 add possibility to insert ONLY input numpy array (leave output array as NaNs)
     def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
         """Append a numpy array to the datafram
 

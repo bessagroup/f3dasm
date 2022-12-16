@@ -91,33 +91,36 @@ def run_optimization(
 
     return res
 
-def run_mf_optimization(
+def run_multi_fidelity_optimization(
     optimizer: Optimizer,
-    mffunction: MultiFidelityFunction,
-    sampler: SamplingInterface,
+    multifidelity_function: MultiFidelityFunction,
+    multifidelity_samplers: List[SamplingInterface],
     iterations: int,
     seed: int,
-    number_of_samples: List[int]
+    numbers_of_samples: List[int],
+    budget: int,
 ) -> Data:
     """Run optimization on some benchmark function"""
 
     # Set function seed
     # function.set_seed(seed)
-    optimizer.set_seed(seed)
+    # optimizer.set_seed(seed)
     # sampler.set_seed(seed)
 
-    # mfsamples = []
-    # for fid_no, samp_no in enumerate(number_of_samples):
-    #     samples = sampler.get_samples(numsamples=samp_no)
+    multifidelity_samples = []
 
-    #     samples.add_output(output=mffunction.funs[fid_no](samples))
+    for i, fidelity_function_i in enumerate(multifidelity_function.fidelity_functions):
 
-    #     mfsamples.append(samples)
+        samples = multifidelity_samplers[i].get_samples(numsamples=numbers_of_samples[i])
 
-    # optimizer.set_data(mfsamples)
+        samples.add_output(output=fidelity_function_i(samples))
+
+        multifidelity_samples.append(samples)
+
+    optimizer.set_data(multifidelity_samples)
 
     # Iterate
-    optimizer.iterate_mf(iterations=iterations, mffunction=mffunction)
+    optimizer.iterate_mf(iterations=iterations, multifidelity_function=multifidelity_function, budget=budget)
     res = optimizer.extract_data()
 
     # Reset the parameters

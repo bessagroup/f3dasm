@@ -3,11 +3,13 @@ from matplotlib import pyplot as plt
 
 import f3dasm
 
+import botorch
+import gpytorch
+
 dim = 1
-iterations = 40
+iterations = 20
 seed = 123
 number_of_samples = 10
-samp_no = 8
 
 fun = f3dasm.functions.Schwefel(
     dimensionality=dim,
@@ -15,20 +17,24 @@ fun = f3dasm.functions.Schwefel(
     )
 
 parameter_DesignSpace = f3dasm.make_nd_continuous_design(
-    bounds=fun.input_domain.astype(float),
+    bounds=np.tile([0.0, 1.0], (dim, 1)),
     dimensionality=dim,
 )
 
-sampler = f3dasm.sampling.SobolSequenceSampling(design=parameter_DesignSpace)
-
-init_train_data = sampler.get_samples(numsamples=samp_no)
-init_train_data.add_output(output=fun(init_train_data))
+sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
 optimizer = f3dasm.optimization.BayesianOptimizationTorch(
-    # data=f3dasm.Data(design=parameter_DesignSpace),
-    data=init_train_data,
+    data=f3dasm.Data(design=parameter_DesignSpace),
     )
 optimizer.init_parameters()
+optimizer.parameter.noise_fix = False
+# optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.CosineKernel())
+# optimizer.parameter.acquisition = botorch.acquisition.ExpectedImprovement
+# optimizer.parameter.acquisition_hyperparameters = {
+#     'best_f': np.inf,
+#     'maximize': False,
+# }
+
 
 res = f3dasm.run_optimization(
     optimizer=optimizer,
@@ -39,7 +45,9 @@ res = f3dasm.run_optimization(
     number_of_samples=number_of_samples,
 )
 
-plot_x = np.linspace(fun.input_domain[0, 0], fun.input_domain[0, 1], 500)[:, None]
-plt.plot(plot_x, fun(plot_x))
-plt.scatter(res.data['input'], res.data['output'])
-plt.show()
+print(res)
+
+# plot_x = np.linspace(fun.input_domain[0, 0], fun.input_domain[0, 1], 500)[:, None]
+# plt.plot(plot_x, fun(plot_x))
+# plt.scatter(res.data['input'], res.data['output'])
+# plt.show()

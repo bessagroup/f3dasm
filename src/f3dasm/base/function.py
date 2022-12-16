@@ -292,11 +292,11 @@ class AugmentedFunction(Function):
 
 @dataclass
 class MultiFidelityFunction:
-    funs: List[Function] = None
-    fids: List[float] = None
+    fidelity_functions: List[Function] = None
+    fidelity_parameters: List[float] = None
     costs: List[float] = None
 
-    def get_fun_by_fid(self, fid):
-        for i, fid_i in enumerate(self.fids):
-            if fid == fid_i:
-                return self.funs[i]
+    def get_fidelity_function_by_parameter(self, fidelity_parameter: float):
+        for i, fidelity_parameter_i in enumerate(self.fidelity_parameters):
+            if fidelity_parameter == fidelity_parameter_i:
+                return self.fidelity_functions[i]

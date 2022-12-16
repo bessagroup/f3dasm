@@ -7,73 +7,76 @@ from f3dasm import AugmentedFunction, Data
 from f3dasm.base import function
 
 dim = 1
-iterations = 40
+iterations = 10
 seed = 123
-number_of_samples = 10
-samp_nos = [20, 10]
+numbers_of_samples = [20, 5]
 
-fids = [0.1, 1.]
+fidelity_parameters = [0.5, 1.]
 costs = [0.5, 1.]
 
-base_fun = f3dasm.functions.Griewank(
+base_fun = f3dasm.functions.Schwefel(
     dimensionality=dim,
     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
     )
 
-funs = []
-mf_design_space = []
-mf_sampler = []
-mf_train_data = []
+fidelity_functions = []
+multifidelity_samplers = []
 
-for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
+for i, fidelity_parameter in enumerate(fidelity_parameters):
 
     fun = AugmentedFunction(
             base_fun=base_fun,
-            fid=fid,
+            fid=fidelity_parameter,
             )
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
         dimensionality=dim,
     )
-    fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fid)
+    fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fidelity_parameter)
     parameter_DesignSpace.add_input_space(fidelity_parameter)
 
     sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
-    init_train_data = sampler.get_samples(numsamples=samp_no)
-    init_train_data.add_output(output=fun(init_train_data))
+    fidelity_functions.append(fun)
+    multifidelity_samplers.append(sampler)
 
-    funs.append(fun)
-    mf_design_space.append(parameter_DesignSpace)
-    mf_sampler.append(sampler)
-    mf_train_data.append(init_train_data)
-
-mffun = function.MultiFidelityFunction(
-    funs=funs,
-    fids=fids,
+multifidelity_function = function.MultiFidelityFunction(
+    fidelity_functions=fidelity_functions,
+    fidelity_parameters=fidelity_parameters,
     costs=costs,
 )
 
 optimizer = f3dasm.optimization.MFBayesianOptimizationTorch(
-    data=mf_train_data,
-    mffun=mffun,
+    data=f3dasm.Data(design=parameter_DesignSpace),
+    multifidelity_function=multifidelity_function,
 )
 
 optimizer.init_parameters()
-# print(optimizer)
 
-res = f3dasm.run_mf_optimization(
+res = f3dasm.run_multi_fidelity_optimization(
     optimizer=optimizer,
-    mffunction=mffun,
-    sampler=mf_sampler[-1],
-    iterations=25,
+    multifidelity_function=multifidelity_function,
+    multifidelity_samplers=multifidelity_samplers,
+    iterations=iterations,
     seed=123,
-    number_of_samples=samp_nos,
-    # budget=10 # add budget to optimization iterator
+    numbers_of_samples=numbers_of_samples,
+    budget=10 # add budget to optimization iterator
 )
 
-print(res)
+print(res[-1].data)
+
+# res[-1].data.to_csv('test_hist.csv')
+
+# x_plot = np.linspace(0, 1, 500)[:, None]
+# y_plot_high = base_fun(x_plot)
+# plt.plot(x_plot, y_plot_high)
+
+# init_data = res[-1].data.loc[:np.sum(samp_nos)]
+# init_data_x = init_data['input', 'x0']
+# init_data_y = init_data['output']
+# plt.scatter(init_data_x, init_data_y, color='black')#, alpha=np.arange(len(init_data_y) + 1) / (len(init_data_y) + 1))
+# plt.show()
 
 # plot_x = np.linspace(fun.base_fun.input_domain[0, 0], fun.base_fun.input_domain[0, 1], 500)[:, None]
 # plt.plot(plot_x, fun(np.hstack((np.ones_like(plot_x), plot_x))))

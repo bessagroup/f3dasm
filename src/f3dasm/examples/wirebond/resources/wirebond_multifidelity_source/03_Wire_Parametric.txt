@@ -1,0 +1,271 @@
+/prep7 
+
+WT = 1 				!Wire Type
+
+
+!!                                                                                                !!
+!!                                                                                                !!
+!! 										 Wire Geometric ATTRIBUTES                                !!
+!!                                                                                                !!
+!!                                                                                                !!
+
+N_L%WT% = 3  				!Number of Loops 
+N_F%WT% = N_L%WT%+1			!Number of Foots
+WD%WT% = WThk				!Wire Diameter
+
+!Foot Parameters
+F_B%WT% = WD%WT%				!Foot Bottom
+F_M_1%WT% = WD%WT%*1.1333		!Foot Middle 1
+F_M_2%WT% = WD%WT%*0.8666		!Foot Middle 2
+F_H%WT%   = WD%WT%*0.8933
+F_H_1%WT% = F_H%WT%/2
+F_H_2%WT% = F_H%WT%*0.86
+
+!Heel Parameters
+!HRA = 90  !Heel Rotation Angle
+
+!Half Right Loop Lengths
+*del,HRLL%WT%                          
+*dim,HRLL%WT%,ARRAY,N_L%WT%
+
+HRLL%WT%(1) = L_L1,L_L2,L_L3 !Lengths of the loop from 1 to N
+
+!Half Left Loop Lengths
+*del,HLLL%WT%                          
+*dim,HLLL%WT%,ARRAY,N_L%WT%
+
+HLLL%WT%(1) = L_L1,L_L2,L_L3
+
+!Loop Heights
+*del,LH%WT%
+*dim,LH%WT%,ARRAY,N_L%WT%
+
+LH%WT%(1) = L_H1,L_H2,L_H3
+
+!Foot Lengths
+*del,FL%WT%
+*dim,FL%WT%,ARRAY,N_F%WT%
+
+FL%WT%(1) = FL,FL,FL,FL
+
+!Foot_Offset_in_Z_Direction
+*del,FZO%WT%                        !With Reference from Foot 1 Which is at Z = 0
+*dim,FZO%WT%,ARRAY,N_F%WT%
+
+*if,N_F%WT%,EQ,2,THEN
+FZO%WT%(1) = 0,FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)
+*elseif,N_F%WT%,EQ,3,THEN
+FZO%WT%(1) = 0,FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1),FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2)
+*elseif,N_F%WT%,EQ,4,THEN
+FZO%WT%(1) = 0,FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1),FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2),FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2)+FL%WT%(3)+HLLL%WT%(3)+HRLL%WT%(3)
+*endif
+
+!Foot_Offset_in_Y_Direction
+*del,FYO%WT%                        !With Reference from Foot 1 Which is at Y = 0
+*dim,FYO%WT%,ARRAY,N_F%WT%
+
+FYO%WT%(1) = 0,FYO,FYO,FYO
+
+!Number of Divisions in Each Foot
+*del,NFD%WT%
+*dim,NFD%WT%,ARRAY,N_F%WT%
+
+NFD%WT%(1) = NEF2,NEF2,NEF2,NEF2
+
+
+
+!!                                        Foot Parameters                                         !!
+
+!								                                                         
+!                                        
+!										  /            \         !
+!                                      /__________________\        ! 
+!								      /               	   \	   !		                      
+!							     	 /	                    \      !                            
+!								    /________________________\     !  = F_H            
+!								    \                        /     !                           
+!								     \                      /      !                             
+!								      \____________________/       !                              
+!										     F_B%WT%                                           
+
+
+
+!Sub Areas in Foots
+*del,SA%WT%
+*dim,SA%WT%,ARRAY,N_F%WT%
+
+*do,nth_SA%WT%,1,N_F%WT%,1
+	SA%WT%(nth_SA%WT%) = 4
+*enddo
+
+!Keypoints Per Sub Areas
+*del,KP_SA%WT%
+*dim,KP_SA%WT%,array,4,N_F%WT%
+
+*do,nth_KP_SA%WT%,1,N_F%WT%,1
+	KP_SA%WT%(1,nth_KP_SA%WT%) = 4,4,4,4
+*enddo
+
+!Keypoints For Foots 
+*del,X_Foot%WT%,array
+*dim,X_Foot%WT%,array,4,4,N_F%WT%
+*del,Y_Foot%WT%,array
+*dim,Y_Foot%WT%,array,4,4,N_F%WT%
+*del,Z_Foot%WT%,array
+*dim,Z_Foot%WT%,array,4,4,N_F%WT%
+
+
+*do,X%WT%,1,N_F%WT%,1
+	X_Foot%WT%(1,1,X%WT%) = 0,F_B%WT%/2,F_M_1%WT%/2,0
+	X_Foot%WT%(1,2,X%WT%) = 0,F_M_1%WT%/2,F_M_2%WT%/2,0
+	X_Foot%WT%(1,3,X%WT%) = -F_M_1%WT%/2,0,0,-F_M_2%WT%/2
+	X_Foot%WT%(1,4,X%WT%) = -F_B%WT%/2,0,0,-F_M_1%WT%/2
+*enddo
+
+*do,Y%WT%,1,N_F%WT%,1
+	Y_Foot%WT%(1,1,Y%WT%) = 0,0,F_H_1%WT%,F_H_1%WT%
+	Y_Foot%WT%(1,2,Y%WT%) = F_H_1%WT%,F_H_1%WT%,F_H_2%WT%,F_H%WT%
+	Y_Foot%WT%(1,3,Y%WT%) = F_H_1%WT%,F_H_1%WT%,F_H%WT%,F_H_2%WT%
+	Y_Foot%WT%(1,4,Y%WT%) = 0,0,F_H_1%WT%,F_H_1%WT%
+*enddo
+
+
+*do,Z%WT%,1,N_F%WT%,1
+	Z_Foot%WT%(1,1,Z%WT%) = FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%)
+	Z_Foot%WT%(1,2,Z%WT%) = FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%)
+	Z_Foot%WT%(1,3,Z%WT%) = FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%)
+	Z_Foot%WT%(1,4,Z%WT%) = FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%),FZO%WT%(Z%WT%)
+*enddo
+
+
+! Loop for each foot:
+*do,nthFoot%WT%,1,N_F%WT%,1
+	
+	WPOFFS,100,100,50
+	
+	WPOFFS,,FYO%WT%(nthFoot%WT%),
+
+    AreaCount_F%WT%=SA%WT%(nthFoot%WT%)
+
+    *do,nthAreas_F%WT%,1,AreaCount_F%WT%,1
+
+        KP_Count_F%WT%=KP_SA%WT%(nthAreas_F%WT%,nthFoot%WT%)
+
+        *del,kplist_F%WT%
+        *dim,kplist_F%WT%,array,KP_Count_F%WT%+1
+
+        *do,nthKP_F%WT%,1,KP_Count_F%WT%,1
+            *get,kmaxd_F%WT%,kp,,num,maxd
+            knew_F%WT%=kmaxd_F%WT%+1
+            xLLC_F%WT%=X_Foot%WT%(nthKP_F%WT%,nthAreas_F%WT%,nthFoot%WT%)
+            yLLC_F%WT%=Y_Foot%WT%(nthKP_F%WT%,nthAreas_F%WT%,nthFoot%WT%)
+            zLLC_F%WT%=Z_Foot%WT%(nthKP_F%WT%,nthAreas_F%WT%,nthFoot%WT%)
+            k,knew_F%WT%,xLLC_F%WT%,yLLC_F%WT%,zLLC_F%WT%,
+            kplist_F%WT%(nthKP_F%WT%)=knew_F%WT%
+        *enddo
+
+        kplist_F%WT%(KP_Count_F%WT%+1)=kplist_F%WT%(1)
+        lsel,u,line,,all
+		
+		*do,nthLine_F%WT%,1,KP_Count_F%WT%
+            k1_F%WT%=kplist_F%WT%(nthLine_F%WT%)
+            k2_F%WT%=kplist_F%WT%(nthLine_F%WT%+1)
+            l,k1_F%WT%,k2_F%WT%
+        *enddo
+		
+		cm,compl_perimeter_F%WT%,line
+	    al,compl_perimeter_F%WT%
+
+    *enddo
+	WPCSYS,1,0
+	CSYS,4
+*enddo
+
+ALLSEL
+NUMMRG,KP
+
+CM,COMPA_base_F%WT%,AREA
+
+
+*do,Foot_Vext%WT%,1,N_F%WT%,1
+	WPOFFS,100,100,50 $ CSYS,4
+    VSEL,U,VOLU,,ALL
+    Foot_thk%WT%=FL%WT%(Foot_Vext%WT%)
+	asel,s,LOC,Z,FZO%WT%(Foot_Vext%WT%)
+	!ET,1,PLANE182  
+	MSHKEY,0
+	AESIZE,ALL,MeshSize_XY,
+	lsla
+	lesize,all,,,NEF1/2
+	AMESH,ALL
+	!ET,2,SOLID185
+	esize,,NFD%WT%(Foot_Vext%WT%)
+    CMSEL,R,COMPA_base_F%WT%
+	vext,all,,,,,Foot_thk%WT%
+	WPCSYS,1,0 $ CSYS,4
+*enddo
+
+ALLSEL
+NUMMRG,KP
+WPCSYS,1,0
+
+/INPUT,04_Right_Heels,txt,,,
+/INPUT,05_Left_Heels,txt,,,
+/INPUT,06_AL_Heel_Right,txt,,,
+/INPUT,07_AL_Heel_Left,txt,,,
+/INPUT,08_VA_Heel_Right,txt,,,
+/INPUT,09_VA_Heel_Left,txt,,,
+/INPUT,10_Loop_Splines,txt,,,
+/INPUT,11_AL_Loop_Left,txt,,,
+/INPUT,12_AL_Loop_Right,txt,,,
+/INPUT,13_VA_Loop_Right,txt,,,
+/INPUT,14_VA_Loop_Left,txt,,,
+/INPUT,15_Mesh_Loops,txt,,,
+/INPUT,16_Mesh_Heels,txt,,,
+
+
+
+WPCSYS,1,0 $ CSYS,4
+WPOFFS,100,100,50 $ CSYS,4
+vsel,s,loc,z,0,15
+CM,Bond_Wire,VOLU
+eslv,s
+CM,wire,ELEM
+/COLOR,CM,LGRA,wire
+
+LOCAL,11,1,100,100,50, , -90,,1,1,
+CSYS,11,
+VGEN, ,Bond_Wire, , ,0,-180,0, , ,1 
+
+LOCAL,13,2,100,100,50,,,-90,1,1,
+CSYS,13,
+VGEN, ,Bond_Wire, , ,0,-90,0, , ,1
+
+WPCSYS,1,0 $ CSYS,4
+WPOFFS,100,100,50 $ CSYS,4
+vsel,s,loc,y,0,15
+CM,Bond_Wire,VOLU
+
+
+VGEN,,Bond_Wire,,,-100,-100,-50, , ,1
+
+VGEN,,Bond_Wire,,,108.2,84.2,30, , ,1
+
+VGEN,,Bond_Wire,,,-(X_off-(WThk/2)),-80.2,-(30-LL5), , ,1  !30-5.319
+
+WPCSYS,1,0 $ CSYS,4
+
+CMSEL,S,wire,ELEM
+/COLOR,CM,RED,wire
+
+alls
+asel,all
+aclear,all
+NUMMRG,KP
+NUMCMP,ALL
+NUMMRG,ALL
+
+ 
+
+/triad,lbot
+

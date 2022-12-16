@@ -1,0 +1,10 @@
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      +a: 1, 2, 3
+  sweep:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: a=${a}
+  job:
+    chdir: True

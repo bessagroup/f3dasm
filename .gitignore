@@ -101,6 +101,7 @@ ENV/
 
 # Hydra
 outputs/
+multirun/
 
 # Data
 data/

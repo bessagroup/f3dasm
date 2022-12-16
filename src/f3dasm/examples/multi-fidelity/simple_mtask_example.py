@@ -55,9 +55,9 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
     mf_sampler.append(sampler)
     mf_train_data.append(train_data)
 
-mffun = f3dasm.base.function.MultiFidelityFunction(
-    funs=funs,
-    fids=fids,
+mffun = f3dasm.MultiFidelityFunction(
+    fidelity_functions=funs,
+    fidelity_parameters=fids,
     costs=costs,
 )
 

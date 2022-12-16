@@ -8,6 +8,9 @@ from botorch.utils import t_batch_mode_transform
 from torch import Tensor
 
 
+class Acquisition: #TODO: implement class
+    pass
+
 class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
     r"""Single-outcome Upper Confidence Bound (UCB).
 

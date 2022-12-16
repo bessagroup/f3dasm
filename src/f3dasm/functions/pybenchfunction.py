@@ -91,7 +91,7 @@ class AckleyN2(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN2.png"""
 
     name = "Ackley N. 2"
-    continuous = False
+    continuous = False #TODO: #79 change to True
     convex = True
     separable = False
     differentiable = True
@@ -126,7 +126,7 @@ class AckleyN3(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN3.png"""
 
     name = "Ackley N. 3"
-    continuous = False
+    continuous = False #TODO: #80 change to True
     convex = False
     separable = False
     differentiable = True
@@ -162,7 +162,7 @@ class AckleyN4(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN4.png"""
 
     name = "Ackley N. 4"
-    continuous = False
+    continuous = False #TODO: #81 change to True
     convex = False
     separable = False
     differentiable = True
@@ -302,7 +302,7 @@ class Bartels(PyBenchFunction):
     """.. image:: ../img/functions/Bartels.png"""
 
     name = "Bartels"
-    continuous = False
+    continuous = False #TODO: #82 change to True
     convex = False
     separable = False
     differentiable = False
@@ -1028,7 +1028,7 @@ class EggHolder(PyBenchFunction):
     """.. image:: ../img/functions/EggHolder.png"""
 
     name = "Egg Holder"
-    continuous = False
+    continuous = False #TODO: #83 change to True
     convex = False
     separable = False
     differentiable = True
@@ -1100,7 +1100,7 @@ class GoldsteinPrice(PyBenchFunction):
     """.. image:: ../img/functions/GoldsteinPrice.png"""
 
     name = "Goldstein-Price"
-    continuous = False
+    continuous = False #TODO: #84 change to True
     convex = False
     separable = False
     differentiable = True
@@ -2576,7 +2576,7 @@ class Sphere(PyBenchFunction):
         return res
 
 
-class StyblinskiTank(PyBenchFunction):
+class StyblinskiTank(PyBenchFunction): #TODO: #87 Correct names to StyblinskiTang
     """.. image:: ../img/functions/StyblinskiTank.png"""
 
     name = "Styblinski Tank"
@@ -2717,7 +2717,7 @@ class Trid(PyBenchFunction):
         X = np.array([i * (d + 1 - i) for i in range(1, d + 1)])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
+    def evaluate(self, X): #TODO: #78 correct formula should be np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1]). Remove unused d and i variables.
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
@@ -2802,7 +2802,7 @@ class XinSheYangN2(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN2.png"""
 
     name = "Xin She Yang N.2"
-    continuous = False
+    continuous = False #TODO: #85 change to True
     convex = False
     separable = False
     differentiable = False
@@ -2913,7 +2913,7 @@ class Zakharov(PyBenchFunction):
     """.. image:: ../img/functions/Zakharov.png"""
 
     name = "Zakharov"
-    continuous = False
+    continuous = False #TODO: #86 change to True
     convex = False
     separable = False
     differentiable = False

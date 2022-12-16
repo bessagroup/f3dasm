@@ -1,0 +1,188 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!SECTION: MATERIAL INPUT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 1: Baseplate!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mat_Cu_Baseplate=1 $ matn = 1
+
+!Isotropic Elastic Properties:
+MPTEMP            			
+MPTEMP,1, 215, 301, 354, 407, 460, 513          				
+MPDATA,EX,mat_Cu_Baseplate,1, 128000, 124000, 115000, 107000, 100000, 92000
+MPDATA,PRXY,mat_Cu_Baseplate,1, 0.34, 0.34, 0.34, 0.34, 0.34, 0.34
+
+!Bilinear Kinematic Hardening (Plastic Properties):
+TB,BKIN,mat_Cu_Baseplate,3,,1
+TBTEMP,233
+TBDATA,1,100,(165-100)/0.0492  			!C1 yield stress, C2 tangent modulus
+TBTEMP,403
+TBDATA,1,95,(150-95)/0.0492  
+TBTEMP,533
+TBDATA,1,80,(138-80)/0.0492  
+
+!Coefficients of Thermal EXpansion:
+MP,CTEX,mat_Cu_Baseplate,16.9E-6
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 2: Solder!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mat_Solder1=2 $ matn = 2
+
+!Isotropic Elastic Properties:
+MPTEMP            			
+MPTEMP,1, 273, 473          				
+MPDATA,EX,mat_Solder1,1, 45281, 33581
+MPDATA,PRXY,mat_Solder1,1, 0.36, 0.36
+
+!Coefficients of Thermal EXpansion:
+MP,CTEX,mat_Solder1,2.0E-6
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 3 and 5: DCB Copper!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mat_Cu_DCB=3 $ matn = 3
+
+!Isotropic Elastic Properties: 
+MPTEMP           			
+MPTEMP,1, 215, 301, 354, 407, 460, 513          				
+MPDATA,EX,mat_Cu_DCB,1, 128000, 124000, 115000, 107000, 100000, 92000
+MPDATA,PRXY,mat_Cu_DCB,1, 0.34, 0.34, 0.34, 0.34, 0.34, 0.34
+
+!Bilinear Kinematic Hardening (Plastic Properties):
+TB,BKIN,mat_Cu_DCB,3,,1
+TBTEMP,233
+TBDATA,1,100,(165-100)/0.0492  			!C1 yield stress, C2 tangent modulus
+TBTEMP,403
+TBDATA,1,95,(150-95)/0.0492  
+TBTEMP,533
+TBDATA,1,80,(138-80)/0.0492  
+
+!Coefficients of Thermal EXpansion:
+MP,CTEX,mat_Cu_DCB,16.9E-6
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 4: DCB Ceramic!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+mat_DCB_Ceramic=4 $ matn = 4
+
+!Isotropic Elastic Properties: 
+MPTEMP
+MPTEMP,1,295.15          				
+MPDATA,EX,mat_DCB_Ceramic,1, 32000
+MPDATA,PRXY,mat_DCB_Ceramic,1, 0.25
+
+
+!Instantaneous Coefficient of Thermal EXpansion (CTE):
+MPTEMP
+MPTEMP,1,575
+MPDATA,CTEX,mat_DCB_Ceramic,1,6.8E-6
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 6: Die Attach (Solder)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+mat_Solder2=5 $ matn = 5
+
+!Isotropic Elastic Properties:
+MPTEMP            			
+MPTEMP,1,218,483        				
+MPDATA,EX,mat_Solder2,1, 48500, 33000
+MPDATA,PRXY,mat_Solder2,1, 0.36, 0.36
+
+!Coefficients of Thermal EXpansion:
+MPTEMP
+MPTEMP,1,373
+MPDATA,CTEX,mat_Solder2,1,21.0E-6
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 7: SiC Chip!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mat_SiC_Chip = 6 $ matn = 6
+
+!Isotropic Elastic Properties:
+MP,EX,mat_SiC_Chip,395000                    			
+MP,PRXY,mat_SiC_Chip,0.17
+
+
+!Coefficients of Thermal EXpansion:
+MP,CTEX,mat_SiC_Chip,4.8E-6
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 7: Si Chip!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+mat_Si_Chip = 7 $ matn = 7
+
+!Isotropic Elastic Properties:
+!MPTEMP
+!MPTEMP,1,295.15          				
+!MPDATA,EX,mat_Si_Chip,1,154000
+!MPDATA,PRXY,mat_Si_Chip,1, 0.3 
+
+MP,EX,mat_Si_Chip,154000                   			
+MP,PRXY,mat_Si_Chip,0.3            			
+
+
+!Instantaneous Coefficient of Thermal EXpansion (CTE):
+!MPTEMP
+!MPTEMP,1,295.15
+!MPDATA,CTEX,mat_Si_Chip,1,2.8E-6
+
+MP,CTEX,mat_Si_Chip,2.8E-6
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer 8: Aluminium Pad!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Metallization Layer 
+
+mat_AL_Pad=8 $ matn = 8
+
+!Isotropic Elastic Properties:
+MPTEMP
+MPTEMP,1, 210, 373, 423, 473, 533, 593         				
+MPDATA,EX,mat_AL_Pad,1, 68600, 67000, 65000, 61000, 54000, 48000
+MPDATA,PRXY,mat_AL_Pad,1, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3
+
+!Bilinear Kinematic Hardening (Plastic Properties):
+TB,BKIN,mat_AL_Pad,6,,1
+TBTEMP,210
+TBDATA,1,216.94,100.02 			!C1 yield stress, C2 tangent modulus
+TBTEMP,373
+TBDATA,1,212.77,100.15
+TBTEMP,423
+TBDATA,1,189.83,99.62 
+TBTEMP,473
+TBDATA,1,148.11,99.99
+TBTEMP,533
+TBDATA,1,83.44,99.98
+TBTEMP,593
+TBDATA,1,62.58,100.01 
+
+!Instantaneous Coefficient of Thermal EXpansion (CTE):
+MPTEMP
+MPTEMP,1, 210, 373, 423, 473, 533, 593 
+MPDATA,CTEX,mat_AL_Pad,1,23.E-6, 23.E-6, 23.E-6, 24.E-6, 24.E-6, 24.E-6  
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Module Layer _: Al Bonding Wire!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+mat_Al_Wire = 9 $ matn = 9
+
+!Isotropic Elastic Properties:
+MPTEMP
+MPTEMP,1, 233, 453        				
+MPDATA,EX,mat_Al_Wire,1, 72000, 69000
+MPDATA,PRXY,mat_Al_Wire,1, 0.35, 0.35
+
+!Bilinear Kinematic Hardening (Plastic Properties):
+TB,BKIN,mat_Al_Wire,4,,1
+TBTEMP,233
+TBDATA,1,68,670			!C1 yield stress, C2 tangent modulus
+TBTEMP,298
+TBDATA,1,66,660
+TBTEMP,428
+TBDATA,1,53,560 
+TBTEMP,448
+TBDATA,1,55,500 
+
+!Instantaneous Coefficient of Thermal EXpansion (CTE):
+MPTEMP
+MPTEMP,1, 295.15 
+MPDATA,CTEX,mat_Al_Wire,1,23.E-6
+
