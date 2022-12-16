@@ -4,7 +4,7 @@
 # Standard
 
 import pickle
-from typing import Any, List
+from typing import Any
 
 # Third-party
 import autograd.numpy as np

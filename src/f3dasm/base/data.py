@@ -8,6 +8,7 @@ from typing import Tuple
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sb
 
 # Local
 from ..base.design import DesignSpace
@@ -201,6 +202,5 @@ class Data:
         Plot a matrix of 2D plots that visualize the spread of the samples for each dimension.
         Requires seaborn to be installed.
         """
-        import seaborn as sb
 
         sb.pairplot(data=self.get_input_data())

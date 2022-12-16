@@ -1,10 +1,12 @@
+"""
+Module to optimize benchmark optimization functions
+"""
 #                                                                       Modules
 # =============================================================================
 
 # Standard
 import logging
 import time
-from dataclasses import dataclass
 from typing import Any, List
 
 # Third-party
@@ -30,28 +32,38 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-@dataclass
 class OptimizationResult:
-    """Optimization results object
+    def __init__(self, data: List[Data], optimizer: str, hyperparameters: dict, function: Function, sampler: str,
+                 number_of_samples: int, seeds: List[int]):
+        """Optimizaiton results object
 
-    :param data: Data objects for each realization
-    :param optimizer: classname of the optimizer used
-    :param hyperparameters: hyperparameters of the optimizer
-    :param function: function that was optimized
-    :param sampler: classname of the initial sampling strategy
-    :param number_of_samples: number of initial samples, sampled by the sampling strategy
-    :param seeds: list of seeds that were used for each realization
-    """
+        Parameters
+        ----------
+        data
+            Data objects for each realization
+        optimizer
+            classname of the optimizer used
+        hyperparameters
+            hyperparameters of the optimizer
+        function
+            function that was optimized
+        sampler
+            classname of the initial sampling strategy
+        number_of_samples
+            number of initial samples, sampled by the sampling strategy
+        seeds
+            list of seeds that were used for each realization
+        """
+        self.data = data
+        self.optimizer = optimizer
+        self.hyperparameters = hyperparameters
+        self.function = function
+        self.sampler = sampler
+        self.number_of_samples = number_of_samples
+        self.seeds = seeds
+        self._log()
 
-    data: List[Data]
-    optimizer: str
-    hyperparameters: dict
-    function: Function
-    sampler: str
-    number_of_samples: int
-    seeds: List[int]
-
-    def __post_init__(self):
+    def _log(self):
         # Log
         logging.info(
             f"Optimized {self.function.get_name()} function (seed={self.function.seed}, \
@@ -70,14 +82,26 @@ def run_optimization(
 ) -> Data:
     """Run optimization on some benchmark function
 
-    :param optimizer: the optimizer used
-    :param function: the function to be optimized
-    :param sampler: the sampling strategy
-    :param iterations: number of iterations
-    :param seed: seed for the random number generator
-    :param number_of_samples: number of initial samples, sampled by the sampling strategy
-    :return: Data object with the optimization data results
+    Parameters
+    ----------
+    optimizer
+        the optimizer used
+    function
+        the function to be optimized
+    sampler
+        the sampling strategy
+    iterations
+        number of iterations
+    seed
+        seed for the random number generator
+    number_of_samples, optional
+        number of initial samples, sampled by the sampling strategy
+
+    Returns
+    -------
+        Data object with the optimization data results
     """
+
     # Set function seed
     # function.set_seed(seed)
     optimizer.set_seed(seed)
@@ -116,18 +140,31 @@ def run_multiple_realizations(
 ) -> OptimizationResult:
     """Run multiple realizations of the same algorithm on a benchmark function
 
-    :param optimizer: the optimizer used
-    :param function: the function to be optimized
-    :param sampler: the sampling strategy
-    :param iterations: number of iterations
-    :param realizations: number of realizations
-    :param number_of_samples: number of initial samples, sampled by the sampling strategy
-    :param parallelization: set True to enable parallelization
-    :param verbal: set True to have more debug messages
-    :param seed: seed for the random number generator
-    :return: Object with the optimization data results
-    """
+    Parameters
+    ----------
+    optimizer
+        the optimizer used
+    function
+        the function to be optimized
+    sampler
+        the sampling strategy
+    iterations
+        number of iterations
+    realizations
+        number of realizations
+    number_of_samples, optional
+        number of initial samples, sampled by the sampling strategy
+    parallelization, optional
+        set True to enable parallel execution of each realization
+    verbal, optional
+        set True to have more debug message
+    seed, optional
+        seed for the random number generator
 
+    Returns
+    -------
+        Object with the optimization data results
+    """
     start_t = time.perf_counter()
 
     if seed is None:
