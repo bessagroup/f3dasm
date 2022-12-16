@@ -30,20 +30,29 @@ class PyBenchFunction(Function):
         noise: Any or float = None,
         seed: Any or int = None,
         scale_bounds: Any or np.ndarray = None,
+        no_offset: bool = False
     ):
-        """Adapter for pybenchfunctions, created by Axel Thevenot (2020).
+        """Adapter for pybenchfunction, created by Axel Thevenot (2020).
         Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 
-
-        :param dimensionality: number of dimensions
-        :param noise: inflict Gaussian noise on the input
-        :param seed: seed for the random number generator
-        :param scale_bounds: array containing the lower and upper bound of the scaling factor of the input data
+        Parameters
+        ----------
+        dimensionality, optional
+            number of dimensions, by default 2
+        noise, optional
+            inflict Gaussian noise on the input
+        seed, optional
+            seed for the random number generator
+        scale_bounds, optional
+            array containing the lower and upper bound of the scaling factor of the input data
+        no_offset, optional
+            set this True to not randomly off-set the pybenchfunction
         """
         self.noise = noise
         self.offset = np.zeros(dimensionality)
         self.input_domain: Any or np.ndarray = None
         self.augmentor = FunctionAugmentor()
+        self.no_offset = no_offset
 
         super().__init__(dimensionality=dimensionality, seed=seed)
 
@@ -87,6 +96,9 @@ class PyBenchFunction(Function):
 
     def _create_offset(self):
         self.offset = np.zeros(self.dimensionality)
+
+        if self.no_offset:
+            return
 
         global_minimum_method = getattr(self, "get_global_minimum", None)
         if callable(global_minimum_method):
