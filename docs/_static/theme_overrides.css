@@ -1,10 +1,115 @@
 /* override table width restrictions as found on https://github.com/getpelican/pelican/issues/1311 */
-.wy-table-responsive table td, .wy-table-responsive table th {
+.wy-table-responsive table td,
+.wy-table-responsive table th {
     /* !important prevents the common CSS stylesheets from
        overriding this as on RTD they are loaded after this stylesheet */
     white-space: normal !important;
 }
- 
+
 .wy-table-responsive {
     overflow: visible !important;
+}
+
+/* Installation quickstart */
+/* This quickstart installation is a hack of the awesome
+   https://spacy.io/usage/#quickstart page.
+   See the original javascript implementation
+   https://github.com/ines/quickstart */
+
+/* style input radio and checkbox */
+
+div.install>input {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    opacity: 0;
+}
+
+/* Style the button */
+div.install>label {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 5px 11px;
+    background-color: #96c4e2;
+    border: none;
+    border-radius: 3px;
+    color: black;
+}
+
+div.install>label:hover {
+    cursor: pointer;
+}
+
+/* Style the button when the checkbox is checked */
+div.install>input:checked+label {
+    background-color: #2980b9;
+    color: white;
+}
+
+/* Hide expandable content by default */
+.sk-expandable {
+    display: none;
+}
+
+/* div.highlight span.sk-expandable:before {
+    content: "$ ";
+} */
+
+/* Show hidden content when the checkbox is checked */
+/* for conda */
+#quickstart-conda:checked~* [data-packager="conda"] {
+    display: block;
+}
+
+#quickstart-conda:checked~#quickstart-venv~label[for="quickstart-venv"] {
+    display: none;
+}
+
+/* for pip */
+#quickstart-pip:checked~* [data-packager="pip"] {
+    display: block;
+}
+
+#quickstart-pip:checked~label[for="quickstart-venv"]:before {
+    content: "Use pip virtualenv";
+}
+
+#quickstart-win:not(:checked)~* [data-os="windows"] {
+    display: none;
+}
+
+#quickstart-lin:not(:checked)~* [data-os="linux"] {
+    display: none;
+}
+
+#quickstart-mac:not(:checked)~* [data-os="mac"] {
+    display: none;
+}
+
+#quickstart-venv:not(:checked)~* [data-venv=""] {
+    display: none;
+}
+
+#quickstart-venv:checked~* [data-venv="no"] {
+    display: none;
+}
+
+
+code {
+    color: #222;
+    background-color: #ecf0f3;
+    border-radius: 0.2rem;
+    padding: 0.15rem;
+    word-break: normal;
+}
+
+div.highlight {
+    border: 1px solid #ddd;
+    margin-bottom: 1rem;
+}
+
+div.highlight pre {
+    padding: 0.2rem 0.5rem;
+    margin-bottom: 0;
+    line-height: 1.2rem;
 }
