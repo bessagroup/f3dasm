@@ -4,10 +4,10 @@
 Getting Started
 ===============
 
-There are different ways to install scikit-learn:
+There are different ways to install f3dasm:
 
   * :ref:`Install the latest official release <install_official_release>`. This
-    is the best approach for most users that want to use the :code:`f3dasm` package.
+    is the best approach for most users that want to use the f3dasm package.
 
   * :ref:`Building the package from source
     <install_from_source>`. This is for users who wish to contribute to the
@@ -20,7 +20,7 @@ There are different ways to install scikit-learn:
 Installing the latest release
 =============================
 
-:code:`f3dasm` is compatible with Python version 3.8
+f3dasm is compatible with Python version 3.8
 
 
 ----
@@ -77,6 +77,7 @@ Then run:
           ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>pip install -U f3dasm</span
           ></pre></div></div>
 
+----
 
 In order to check your installation you can use
 
@@ -87,10 +88,56 @@ In order to check your installation you can use
   >>>    f3dasm: 0.2.92
   >>>    ...
 
-This will show the installed version of :code:`f3dasm` and the versions of the dependencies.
+This will show the installed version of f3dasm and the versions of the dependencies.
 
 
 .. _install_from_source:
 
 Installing from source
 ======================
+
+
+Building from source is required to work on a contribution (bug fix, new
+feature, code or documentation improvement). We recommend using a `Linux distribution system <https://releases.ubuntu.com/focal/>`_.
+
+.. _git_repo:
+
+#. Use `Git <https://git-scm.com/>`_ to check out the latest source from the
+   `f3dasm repository <https://github.com/bessagroup/f3dasm>`_ on
+   Github.:
+
+   .. code-block:: console
+
+     git clone https://github.com/bessagroup/F3DASM.git  # add --depth 1 if your connection is slow
+     cd F3DASM
+
+
+#. Install a recent version of Python (3.8 is recommended at the time of writing)
+   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_.
+   If you installed Python with conda, we recommend to create a dedicated
+   conda environment with all the build dependencies of f3dasm:
+
+   .. code-block:: console
+
+     conda create -n f3dasm_env python=3.8
+     conda activate f3dasm_env
+
+#. If you run the development version, it is annoying to reinstall the package each time you update the sources.
+   Therefore it is recommended that you install the package from a local source, allowing you to edit the code in-place. 
+   This builds the extension in place and creates a link to the development directory (see `the pip docs <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_).
+
+   .. code-block:: console
+
+     pip install --verbose --no-build-isolation --editable .
+
+#. In order to check your installation you can use
+
+  .. code-block:: console
+
+     $ python -c "import f3dasm; f3dasm.show_versions()"
+     >>> F3DASM:
+     >>>    f3dasm: 0.2.92
+     >>>    ...
+
+
+  You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm.  
