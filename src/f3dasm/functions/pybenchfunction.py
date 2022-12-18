@@ -109,7 +109,7 @@ class AckleyN2(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN2.png"""
 
     name = "Ackley N. 2"
-    continuous = False
+    continuous = True
     convex = True
     separable = False
     differentiable = True
@@ -144,7 +144,7 @@ class AckleyN3(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN3.png"""
 
     name = "Ackley N. 3"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -180,7 +180,7 @@ class AckleyN4(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN4.png"""
 
     name = "Ackley N. 4"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -259,7 +259,7 @@ class Bartels(PyBenchFunction):
     """.. image:: ../img/functions/Bartels.png"""
 
     name = "Bartels"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = False
@@ -996,7 +996,7 @@ class EggHolder(PyBenchFunction):
     """.. image:: ../img/functions/EggHolder.png"""
 
     name = "Egg Holder"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -1069,7 +1069,7 @@ class GoldsteinPrice(PyBenchFunction):
     """.. image:: ../img/functions/GoldsteinPrice.png"""
 
     name = "Goldstein-Price"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -2557,10 +2557,10 @@ class Sphere(PyBenchFunction):
         return res
 
 
-class StyblinskiTank(PyBenchFunction):
-    """.. image:: ../img/functions/StyblinskiTank.png"""
+class StyblinskiTang(PyBenchFunction):
+    """.. image:: ../img/functions/StyblinskiTang.png"""
 
-    name = "Styblinski Tank"
+    name = "Styblinski Tang"
     continuous = True
     convex = False
     separable = True
@@ -2701,7 +2701,7 @@ class Trid(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
-        res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
+        res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
         return res
 
 
@@ -2745,7 +2745,7 @@ class XinSheYang(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYang.png"""
 
     name = "Xin She Yang"
-    continuous = False
+    continuous = True
     convex = False
     separable = True
     differentiable = False
@@ -2897,7 +2897,7 @@ class Zakharov(PyBenchFunction):
     """.. image:: ../img/functions/Zakharov.png"""
 
     name = "Zakharov"
-    continuous = False
+    continuous = True
     convex = False
     separable = False
     differentiable = False
