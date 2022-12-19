@@ -7,8 +7,12 @@ import pickle
 from typing import Any
 
 # Third-party
+import autograd
+import autograd.core
 import autograd.numpy as np
 import pandas as pd
+import tensorflow as tf
+from autograd import elementwise_grad as egrad
 
 # Locals
 from ..base.data import Data
@@ -141,3 +145,59 @@ def calculate_mean_std(results):  # OptimizationResult
     std_y = pd.concat([d.get_output_data().cummin()
                       for d in results.data], axis=1).std(axis=1)
     return mean_y, std_y
+
+
+# FUNCTIONS FOR CALCULATING THE GRADIENT
+
+# S:func is completely written in numpy autograd
+def convert_autograd_to_tensorflow(func):
+    """Convert autograd function to tensorflow funciton
+
+    :param func: function
+    :return: wrapper
+    """
+
+    @tf.custom_gradient
+    def wrapper(x):
+        vjp, ans = autograd.core.make_vjp(func, x.numpy())
+
+        def first_grad(dy):
+            @tf.custom_gradient
+            def jacobian(a):
+                vjp2, ans2 = autograd.core.make_vjp(egrad(func), a.numpy())
+                return ans2, vjp2  # hessian
+
+            return dy * jacobian(x)
+
+        return ans, first_grad
+
+    return wrapper
+
+
+class Model(tf.keras.Model):
+    def __init__(self, seed=None, args=None):
+        super().__init__()
+        self.seed = seed
+        self.env = args
+
+
+class SimpelModel(Model):
+    """
+    The class for performing optimization in the input space of the functions.
+    """
+
+    def __init__(self, seed=None, args=None):
+        super().__init__(seed)
+        self.z = tf.Variable(
+            args["x0"],
+            trainable=True,
+            dtype=tf.float32,
+            constraint=lambda x: tf.clip_by_value(
+                x,
+                clip_value_min=args["bounds"][:, 0],
+                clip_value_max=args["bounds"][:, 1],
+            ),
+        )  # S:ADDED
+
+    def call(self, inputs=None):
+        return self.z

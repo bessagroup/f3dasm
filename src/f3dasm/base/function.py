@@ -8,11 +8,13 @@ from typing import Any, Tuple
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
-import numdifftools as nd
+import tensorflow as tf
 
 # Locals
 from ..base.data import Data
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..base.utils import (SimpelModel,
+                          _from_data_to_numpy_array_benchmarkfunction,
+                          convert_autograd_to_tensorflow)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -45,6 +47,20 @@ class Function:
             self.set_seed(self.seed)
 
         self._set_parameters()
+        self._tf_gradient_setup()
+
+    def _tf_gradient_setup(self):
+        self.args = {}
+
+        self.args["model"] = SimpelModel(
+            None,
+            args={
+                "dim": self.dimensionality,
+                "x0": np.zeros(self.dimensionality),
+            },
+        )  # Build the model
+        self.args["tvars"] = self.args["model"].trainable_variables
+        self.args["func"] = convert_autograd_to_tensorflow(self.__call__)
 
     def set_seed(self, seed: int):
         """Set the numpy seed of the random generator
@@ -107,6 +123,18 @@ class Function:
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
+        self.args["model"].z.assign(x)
+
+        with tf.GradientTape() as tape:
+            tape.watch(self.args["tvars"])
+            logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
+            loss = self.args["func"](tf.reshape(
+                logits, (self.dimensionality)))
+
+        grads = tape.gradient(loss, self.args["tvars"])
+        return grads[0].numpy().copy()
+
+    def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
         """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
 
         Parameters
@@ -123,7 +151,7 @@ class Function:
             g = (self(x + h) - self(x - h)) / (2 * dx)
             return g.ravel().tolist()
 
-        dx = 1e-8
+        # dx = 1e-8
 
         grad = []
         for index, param in enumerate(x):
@@ -154,7 +182,7 @@ class Function:
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
+        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]), numsamples=None
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contout plot with the datapoints as scatter
 
@@ -182,6 +210,19 @@ class Function:
             cmap="Blues",
             edgecolors="black",
         )
+
+        # Mark selected point
+        if numsamples is not None:
+            x_selected = data.get_input_data().iloc[numsamples]
+            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
+                       marker="*", edgecolors="cyan")
+
+        # Mark last point
+        x_last = data.get_input_data().iloc[-1]
+        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
+                   marker="*", edgecolors="magenta")
+
+        # Best point
         x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
         x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
