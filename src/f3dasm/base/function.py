@@ -182,7 +182,7 @@ class Function:
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]), numsamples=None
+        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]), numsamples=None, arrow=False
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contout plot with the datapoints as scatter
 
@@ -210,6 +210,13 @@ class Function:
             cmap="Blues",
             edgecolors="black",
         )
+        if arrow:
+            for p_index in range(len(x1)-1):
+                dx = (x1[p_index+1] - x1[p_index])
+                dy = (x2[p_index+1] - x2[p_index])
+                length = 1/np.sqrt(dx**2 + dy**2)
+                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
+                         length_includes_head=True)
 
         # Mark selected point
         if numsamples is not None:
