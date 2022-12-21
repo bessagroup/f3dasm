@@ -2,10 +2,11 @@ hydra:
   mode: MULTIRUN
   sweeper:
     params:
-      +trial_number: range(1)
+      +trial_number: range(10)
+      +design.dimensionality: range(1, 5)
   sweep:
-    dir: outputs/${optimizer.optimizer_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: trial_${trial_number}
+    dir: outputs/default/${optimizer.optimizer_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: dim_${design.dimensionality}/trial_${trial_number}
   job:
     chdir: True
 
@@ -15,7 +16,6 @@ defaults:
 design:
   lower_bound: 0.0
   upper_bound: 1.0
-  dimensionality: 1
 
 functions:
   function_names: [
@@ -56,7 +56,8 @@ optimizer:
 
 sampler:
   sampler_name: SobolSequence
-  number_of_samples: 5
+  number_of_samples: ${eval:'2 ** ${design.dimensionality}'}
 
 execution:
-  iterations: 20
+  iterations: ${eval:'5 * 2 ** ${design.dimensionality}'}
+  seed: 123

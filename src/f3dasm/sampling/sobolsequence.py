@@ -1,5 +1,7 @@
 import autograd.numpy as np
-from SALib.sample import sobol_sequence
+# from SALib.sample import sobol_sequence
+
+from torch.quasirandom import SobolEngine
 
 from ..base.samplingmethod import SamplingInterface
 
@@ -22,7 +24,10 @@ class SobolSequence(SamplingInterface):
         continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 
-        samples = sobol_sequence.sample(numsamples, dimensions)
+        sobolengine = SobolEngine(dimension=dimensions, scramble=True, seed=self.seed)
+        samples = sobolengine.draw(numsamples).numpy()
+
+        # samples = sobol_sequence.sample(numsamples, dimensions)
 
         # stretch samples
         samples = self._stretch_samples(samples)

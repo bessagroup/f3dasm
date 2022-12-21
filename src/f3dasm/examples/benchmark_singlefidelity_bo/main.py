@@ -10,10 +10,14 @@ import itertools
 import copy
 import gpytorch
 
+from omegaconf import OmegaConf
+OmegaConf.register_new_resolver("eval", eval)
+
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    seed = np.random.randint(low=0, high=1e5)
+    # seed = np.random.randint(low=0, high=1e5)
+    seed = config.execution.seed
 
     function_class: List[f3dasm.Function] = [
         f3dasm.find_class(f3dasm.functions, function_name) for function_name in config.functions.function_names
@@ -35,7 +39,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     optimizer.init_parameters()
     optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(base_kernel=gpytorch.kernels.RBFKernel())
-    optimizer.parameter.noise_fix = False
+    optimizer.parameter.noise_fix = True
 
     sampler = sampler_class(design=data.design, seed=seed)
 
@@ -59,10 +63,6 @@ def main(cfg: Config):
     results = []
 
     for options in options_list:
-
-        # options['optimizer'].init_parameters()
-        # options['optimizer'].parameter.kernel = gpytorch.kernels.ScaleKernel(base_kernel=gpytorch.kernels.RBFKernel())
-        # options['optimizer'].parameter.noise_fix = False
 
         result = f3dasm.run_optimization(**options)
         result.data.to_csv(options['function'].name + '.csv')
