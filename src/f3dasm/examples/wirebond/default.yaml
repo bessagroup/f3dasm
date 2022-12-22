@@ -31,3 +31,4 @@ sampler:
 execution:
   iterations: 1
   budget: 10
+  seed: 123

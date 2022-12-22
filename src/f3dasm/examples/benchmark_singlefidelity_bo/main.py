@@ -37,9 +37,9 @@ def convert_config_to_input(config: Config) -> List[dict]:
     ]
     optimizer = optimizer_class(data=data, seed=seed)
 
-    optimizer.init_parameters()
-    optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(base_kernel=gpytorch.kernels.RBFKernel())
-    optimizer.parameter.noise_fix = True
+    # optimizer.init_parameters()
+    # optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(base_kernel=gpytorch.kernels.RBFKernel())
+    # optimizer.parameter.noise_fix = True
 
     sampler = sampler_class(design=data.design, seed=seed)
 
@@ -63,6 +63,12 @@ def main(cfg: Config):
     results = []
 
     for options in options_list:
+
+        optimizer = options['optimizer']
+
+        optimizer.init_parameters()
+        optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(base_kernel=gpytorch.kernels.RBFKernel())
+        optimizer.parameter.noise_fix = True
 
         result = f3dasm.run_optimization(**options)
         result.data.to_csv(options['function'].name + '.csv')

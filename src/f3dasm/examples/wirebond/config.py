@@ -32,6 +32,7 @@ class ExecutionConfig:
     iterations: int
     realizations: int
     parallelization: bool
+    seed: int
 
 
 @dataclass

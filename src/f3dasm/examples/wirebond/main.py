@@ -27,15 +27,15 @@ class Wirebond_function(f3dasm.Function):
 
         for i, xi in enumerate(x):
 
-            WThk = 0.39 * xi[0] + 0.1
-            FL = 0.7 * xi[1] + 0.5
+            WThk = round(0.39 * xi[0] + 0.1, 8)
+            FL = round(0.7 * xi[1] + 0.5, 8)
 
-            MeshSize_XY = 2 - 1.9 * self.fidelity_value
+            MeshSize_XY = round(2 - 0.9 * self.fidelity_value, 8)
         
             work_folder_name = 'wirebond_multifidelity'
-            out_path = work_folder_name + '/Max_Strain_WThk=' + str(round(WThk, 8)) \
-                + '_FL=' +  str(round(FL, 8)) \
-                + '_MeshSizeXY=' + str(round(MeshSize_XY, 8)) + '.txt'
+            out_path = work_folder_name + '/Max_Strain_WThk=' + str(WThk) \
+                + '_FL=' +  str(FL) \
+                + '_MeshSizeXY=' + str(MeshSize_XY) + '.txt'
 
             geometric_inputs = work_folder_name + '/01_Geometric_Inputs.txt'
             mesh_parameters = work_folder_name + '/02_Mesh_Parameters.txt'
@@ -44,6 +44,7 @@ class Wirebond_function(f3dasm.Function):
                 # os.mkdir(work_folder_name)
                 shutil.copytree(
                     "/home/leoguo/Documents/GitHub/F3DASM/src/f3dasm/examples/wirebond/resources/wirebond_multifidelity_source",
+                    # "/home/leoguo/wirebondBO/F3DASM/src/f3dasm/examples/wirebond/resources/wirebond_multifidelity_source",
                      work_folder_name
                      )
 
@@ -84,7 +85,8 @@ class Wirebond_function(f3dasm.Function):
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    seed = np.random.randint(low=0, high=1e5)
+    # seed = np.random.randint(low=0, high=1e5)
+    seed = config.execution.seed
 
     optimizer_class: f3dasm.Optimizer = f3dasm.find_class(f3dasm.optimization, config.optimizer.optimizer_name)
 
