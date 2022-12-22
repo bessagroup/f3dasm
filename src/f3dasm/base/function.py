@@ -182,7 +182,8 @@ class Function:
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]), numsamples=None, arrow=False
+        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+        numsamples=None, arrow=False
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contout plot with the datapoints as scatter
 

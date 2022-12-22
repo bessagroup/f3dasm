@@ -1,16 +1,13 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-from typing import Tuple
-
 # Third-party
 import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from ...base.function import Function
 from ...base.optimization import Optimizer
+from .._protocol import Function
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -82,11 +79,11 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
         minimize(
             fun=lambda x: function(x).item(),
             method=self.method,
-            jac=lambda x: function.dfdx_legacy(x).ravel(),  # TODO: #89 Fix that this works with the newest gradient method!
+            jac=lambda x: function.dfdx_legacy(x).ravel(),  # TODO: #89 Fix this with the newest gradient method!
             x0=self.data.get_n_best_input_parameters_numpy(
                 nosamples=1).ravel(),
             callback=self._callback,
             options=self.parameter.__dict__,
-            bounds=function.scale_bounds,
+            bounds=self.data.design.get_bounds(),
             tol=0.0,
         )

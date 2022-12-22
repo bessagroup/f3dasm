@@ -236,6 +236,18 @@ class DesignSpace:
                 for parameter in self.get_continuous_input_parameters()]
         )
 
+    def get_bounds_pygmo(self) -> tuple:
+        """Box-constrained boundaries of the problem. Necessary for pygmo library
+
+        :return: box constraints
+        """
+        # Box-constrained boundaries of the problem. Necessary for pygmo library
+        return (
+            [parameter.lower_bound for parameter in self.get_continuous_input_parameters()],
+            [parameter.upper_bound for parameter in self.get_continuous_input_parameters()],
+        )
+
+
     def _get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
 

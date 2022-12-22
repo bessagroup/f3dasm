@@ -9,7 +9,7 @@ from typing import Tuple
 import autograd.numpy as np
 
 # Locals
-from ..base.function import Function
+from ._protocol import Function
 from ..base.optimization import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits
@@ -39,8 +39,8 @@ class RandomSearch(Optimizer):
         x_new = np.atleast_2d(
             [
                 np.random.uniform(
-                    low=function.scale_bounds[d, 0], high=function.scale_bounds[d, 1])
-                for d in range(function.dimensionality)
+                    low=self.data.design.get_bounds()[d, 0], high=self.data.design.get_bounds()[d, 1])
+                for d in range(self.data.design.get_number_of_input_parameters())
             ]
         )
 

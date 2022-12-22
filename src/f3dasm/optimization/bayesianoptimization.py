@@ -10,7 +10,7 @@ import GPy
 import GPyOpt
 
 # Locals
-from ..base.function import Function
+from ._protocol import Function
 from ..base.optimization import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits

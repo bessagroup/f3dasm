@@ -5,9 +5,6 @@ Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimiz
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-
-
 # Third-party
 import autograd.numpy as np
 

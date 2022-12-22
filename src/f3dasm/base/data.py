@@ -2,13 +2,14 @@
 # =============================================================================
 
 # Standard
-from typing import Tuple
+from typing import List, Tuple
 
 # Third-party
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sb
+from sklearn.model_selection import train_test_split
 
 # Local
 from ..base.design import DesignSpace
@@ -204,3 +205,35 @@ class Data:
         """
 
         sb.pairplot(data=self.get_input_data())
+
+    # THESE FUNCTION ARE FOR INPUT DATA OF ML MODELS
+
+    def split_to_batches(self, data: pd.DataFrame, number_of_batches: int) -> List[pd.DataFrame]:
+        """Split a dataframe to several batches
+
+        Parameters
+        ----------
+        data
+            pandas Dataframe to split
+        number_of_batches
+            number of batches you will create
+
+        Returns
+        -------
+            list of dataframes
+        """        
+        return np.array_split(data, number_of_batches)
+
+    def split_to_train_test(self, test_size: float) -> List[pd.DataFrame]:
+        """Split the content of the data object into a train and test set
+
+        Parameters
+        ----------
+        test_size
+            fraction of the entire dataframe that is reserved for testing
+
+        Returns
+        -------
+            list of dataframes, first training then testing
+        """        
+        return train_test_split(self.data, test_size=test_size)
