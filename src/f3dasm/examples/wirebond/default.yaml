@@ -29,6 +29,6 @@ sampler:
   numbers_of_samples: [10, 5]
 
 execution:
-  iterations: 1
-  budget: 10
+  iterations: 10
+  budget: 20
   seed: 123

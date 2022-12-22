@@ -16,8 +16,12 @@ OmegaConf.register_new_resolver("eval", eval)
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    # seed = np.random.randint(low=0, high=1e5)
-    seed = config.execution.seed
+    seed = np.random.randint(low=0, high=1e5)
+    # seed = config.execution.seed
+
+    f = open('seed.txt', "w")
+    f.write(str(seed))
+    f.close()
 
     function_class: List[f3dasm.Function] = [
         f3dasm.find_class(f3dasm.functions, function_name) for function_name in config.functions.function_names

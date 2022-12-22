@@ -8,6 +8,7 @@ from config import Config
 import os
 import shutil
 import fileinput
+import pandas as pd
 
 class Wirebond_function(f3dasm.Function):
 
@@ -24,13 +25,23 @@ class Wirebond_function(f3dasm.Function):
     def f(self, x: np.ndarray):
 
         res = []
+        history_file = 'history.csv'
 
-        for i, xi in enumerate(x):
+        for xi in x:
 
-            WThk = round(0.39 * xi[0] + 0.1, 8)
-            FL = round(0.7 * xi[1] + 0.5, 8)
+            WThk = round(0.39 * xi[0] + 0.1, 6)
+            FL = round(0.7 * xi[1] + 0.5, 6)
 
-            MeshSize_XY = round(2 - 0.9 * self.fidelity_value, 8)
+            MeshSize_XY = round(2 - 0.9 * self.fidelity_value, 6)
+
+            if not os.path.exists(history_file):
+                df = pd.DataFrame(columns=['WThk', 'FL', 'MeshSize_XY', 'MaxEPS'])
+                df.to_csv(history_file, index=False)
+            
+            df = pd.read_csv(history_file)
+            df_update = pd.DataFrame([[WThk, FL, MeshSize_XY, np.nan]], columns=['WThk', 'FL', 'MeshSize_XY', 'MaxEPS'])
+            df = pd.concat([df, df_update])
+            df.to_csv(history_file, index=False)
         
             work_folder_name = 'wirebond_multifidelity'
             out_path = work_folder_name + '/Max_Strain_WThk=' + str(WThk) \
@@ -74,13 +85,18 @@ class Wirebond_function(f3dasm.Function):
             else:
                 # resi = np.random.rand()
                 resi = np.nan
-                f = open(out_path,"w")
+                f = open(out_path, "w")
                 f.write(str(resi))
 
                 raise 'nan value'
+
+            df.iloc[-1]['MaxEPS'] = resi
+            df.to_csv(history_file, index=False)
             
             res.append(resi)
 
+            shutil.rmtree(work_folder_name)
+            
         return np.array(res).reshape(-1, 1)
 
 def convert_config_to_input(config: Config) -> List[dict]:
@@ -98,7 +114,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     optimizer = optimizer_class(data=data, seed=seed)
     optimizer.init_parameters()
-    optimizer.parameter.noise_fix = False
+    optimizer.parameter.noise_fix = True
 
     sampler = sampler_class(design=data.design, seed=seed)
 
