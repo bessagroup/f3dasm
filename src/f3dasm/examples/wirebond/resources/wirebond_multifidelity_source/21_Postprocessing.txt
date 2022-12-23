@@ -72,9 +72,10 @@ ESORT,ETAB,EPS_v
 *GET,EPS_max,SORT,,MAX
 
 
-*CFOPEN,Max_Strain_%WThk%,txt
-*VWRITE,'EPS_max'
-(A8)
+!*CFOPEN,Max_Strain_%WThk%,txt
+*CFOPEN,Max_Strain_WThk=%WThk%_FL=%FL%_MeshSizeXY=%MeshSize_XY%,txt
+!*VWRITE,'EPS_max'
+!(A8)
 *VWRITE,EPS_max
 (E15.8)
 *CFCLOS
