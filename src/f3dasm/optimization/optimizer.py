@@ -12,7 +12,6 @@ import autograd.numpy as np
 # Locals
 from ..base.data import Data
 from ..base.function import Function
-from ..base.utils import _number_of_overiterations, _number_of_updates
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -191,7 +190,7 @@ class Optimizer:
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(
             iterations, population=self.parameter.population))
-        print(f"Optimizing for {iterations} iterations with {self.get_name()}")
+        # print(f"Optimizing for {iterations} iterations with {self.get_name()}")
 
     def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
         """Add the iteration to the dataframe
@@ -222,3 +221,41 @@ class Optimizer:
             name of the optimizer
         """
         return self.__class__.__name__
+
+
+def _number_of_updates(iterations: int, population: int):
+    """Calculate number of update steps to acquire the correct number of iterations
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steps
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of consecutive update steps
+    """
+    return iterations // population + (iterations % population > 0)
+
+
+def _number_of_overiterations(iterations: int, population: int) -> int:
+    """Calculate the number of iterations that are over the iteration limit
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steos
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of iterations that are over the limit
+    """
+    overiterations: int = iterations % population
+    if overiterations == 0:
+        return overiterations
+    else:
+        return population - overiterations

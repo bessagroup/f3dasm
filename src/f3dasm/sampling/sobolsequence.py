@@ -6,7 +6,7 @@ import autograd.numpy as np
 from SALib.sample import sobol_sequence
 
 # Locals
-from ..base.samplingmethod import SamplingInterface
+from .sampler import Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -18,7 +18,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class SobolSequence(SamplingInterface):
+class SobolSequence(Sampler):
     """Sampling via Sobol Sequencing with SALib"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
@@ -27,7 +27,7 @@ class SobolSequence(SamplingInterface):
         Parameters
         ----------
         numsamples
-            numeber of samples
+            number of samples
 
         Returns
         -------

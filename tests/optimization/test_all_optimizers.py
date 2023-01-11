@@ -5,7 +5,7 @@ import pytest
 
 from f3dasm.base.data import Data
 from f3dasm.base.function import Function
-from f3dasm.base.optimization import Optimizer
+from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.base.utils import make_nd_continuous_design
 from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Ackley, Levy, Sphere
 from f3dasm.optimization import OPTIMIZERS

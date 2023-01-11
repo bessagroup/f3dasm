@@ -126,19 +126,6 @@ def write_pickle(name: str, obj: Any):
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
 
-
-def _number_of_updates(iterations: int, population: int):
-    return iterations // population + (iterations % population > 0)
-
-
-def _number_of_overiterations(iterations: int, population: int) -> int:
-    overiterations: int = iterations % population
-    if overiterations == 0:
-        return overiterations
-    else:
-        return population - overiterations
-
-
 def calculate_mean_std(results):  # OptimizationResult
     mean_y = pd.concat([d.get_output_data().cummin()
                        for d in results.data], axis=1).mean(axis=1)
@@ -173,7 +160,6 @@ def convert_autograd_to_tensorflow(func):
 
     return wrapper
 
-
 class Model(tf.keras.Model):
     def __init__(self, seed=None, args=None):
         super().__init__()
@@ -201,3 +187,32 @@ class SimpelModel(Model):
 
     def call(self, inputs=None):
         return self.z
+
+# class Model(tf.keras.Model):
+#     def __init__(self, seed=None, args=None):
+#         super().__init__()
+#         self.seed = seed
+#         self.env = args
+
+
+# class SimpelModel(Model):
+#     """
+#     The class for performing optimization in the input space of the functions.
+#     """
+
+#     def __init__(self, seed=None, args=None):
+#         super().__init__(seed)
+#         self.z = tf.Variable(
+#             args["x0"],
+#             trainable=True,
+#             dtype=tf.float32,
+#             constraint=lambda x: tf.clip_by_value(
+#                 x,
+#                 clip_value_min=args["bounds"][:, 0],
+#                 clip_value_max=args["bounds"][:, 1],
+#             ),
+#         )  # S:ADDED
+
+#     def call(self, inputs=None):
+#         return self.z
+

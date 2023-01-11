@@ -40,7 +40,7 @@ __status__ = 'Stable'
 
 # List of all available optimizers
 OPTIMIZERS = [
-    CMAESAdam,
+    # CMAESAdam,
     Adam,
     SGD,
     CG,

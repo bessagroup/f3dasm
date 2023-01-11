@@ -6,7 +6,7 @@ import autograd.numpy as np
 from SALib.sample import latin
 
 # Locals
-from ..base.samplingmethod import SamplingInterface
+from .sampler import Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -18,7 +18,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class LatinHypercube(SamplingInterface):
+class LatinHypercube(Sampler):
     """Sampling via Latin Hypercube Sampling"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:

@@ -10,8 +10,9 @@ import autograd.numpy as np
 import pygmo as pg
 
 # Locals
-from ...base.optimization import Optimizer
+# from ...base.optimization import Optimizer
 from .._protocol import DesignSpace, Function
+from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -58,7 +59,17 @@ class PygmoProblem:
         return self.fitness(x)
 
     def get_bounds(self) -> tuple:
-        return self.design.get_bounds_pygmo()
+        """Box-constrained boundaries of the problem. Necesary for pygmo library
+
+        Returns
+        -------
+            box constraints
+        """       
+        return (
+            [parameter.lower_bound for parameter in self.design.get_continuous_input_parameters()],
+            [parameter.upper_bound for parameter in self.design.get_continuous_input_parameters()],
+        )
+
 
     def gradient(self, x: np.ndarray):
         """Gradient in pygmo accepted format

@@ -10,7 +10,7 @@ import autograd.numpy as np
 
 # Locals
 from ._protocol import Function
-from ..base.optimization import Optimizer, OptimizerParameters
+from .optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -5,7 +5,7 @@
 import autograd.numpy as np
 
 # Locals
-from ..base.samplingmethod import SamplingInterface
+from .sampler import Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -17,7 +17,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class RandomUniform(SamplingInterface):
+class RandomUniform(Sampler):
     """Sampling via random uniform sampling"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
@@ -26,7 +26,7 @@ class RandomUniform(SamplingInterface):
         Parameters
         ----------
         numsamples
-            numeber of samples
+            number of samples
 
         Returns
         -------

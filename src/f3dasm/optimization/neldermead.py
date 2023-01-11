@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 
 # Locals
-from ..base.optimization import OptimizerParameters
+from .optimizer import OptimizerParameters
 from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 #                                                          Authorship & Credits

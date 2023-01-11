@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.smoke
 
 from f3dasm.base.design import DesignSpace
-from f3dasm.base.samplingmethod import SamplingInterface
+from f3dasm.sampling.sampler import Sampler
 from f3dasm.base.space import (
     CategoricalParameter,
     ContinuousParameter,
@@ -38,7 +38,7 @@ def design():
 def test_sampling_interface_not_implemented_error():
     seed = 42
 
-    class NewSamplingStrategy(SamplingInterface):
+    class NewSamplingStrategy(Sampler):
         pass
 
     # Define the parameters

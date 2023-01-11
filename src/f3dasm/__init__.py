@@ -20,8 +20,8 @@ from .base.data import *
 from .base.design import *
 from .base.function import *
 from .base.metaoptimizer import *
-from .base.optimization import *
-from .base.samplingmethod import *
+from .optimization.optimizer import *
+from .sampling.sampler import *
 from .base.simulation import *
 from .base.space import *
 from .base.utils import *

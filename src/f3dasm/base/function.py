@@ -73,7 +73,7 @@ class Function:
         self.seed = seed
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
+    def __call__(self, input_x: np.ndarray or Data, *args, **kwargs) -> np.ndarray or Data:
         """Evaluate the objective function
 
         Parameters
@@ -123,11 +123,12 @@ class Function:
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
+        # Need to ravel x to be shape = (dim,)
         self.args["model"].z.assign(x)
 
         with tf.GradientTape() as tape:
             tape.watch(self.args["tvars"])
-            logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
+            logits = 0.0 + self.args["model"](None)  # tf.cast(self.args["model"](None), tf.float64)
             loss = self.args["func"](tf.reshape(
                 logits, (self.dimensionality)))
 
@@ -162,15 +163,6 @@ class Function:
 
         grad = np.array(grad)
         return grad.ravel()
-
-        # # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
-        # grad = nd.Gradient(self)
-        # x = self._reshape_input(x)
-        # output = np.empty(shape=(1, len(x[0, :])))
-        # for i in range(len(x)):
-        #     output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
-
-        # return output[1:]  # Cut of the first one because that is the empty array input
 
     def get_name(self) -> str:
         """Get the name of the function
@@ -342,7 +334,10 @@ class Function:
 
     def _reshape_input(self, x: np.ndarray) -> np.ndarray:
         # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf, doenst work with autograd.numpy
-        if x.ndim == 1:
-            x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        try:
+            if x.ndim == 1:
+                x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        except AttributeError:
+            return x
 
         return x

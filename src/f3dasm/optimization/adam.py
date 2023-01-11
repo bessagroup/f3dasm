@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import tensorflow as tf
 
 # Locals
-from ..base.optimization import OptimizerParameters
+from .optimizer import OptimizerParameters
 from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 #                                                          Authorship & Credits

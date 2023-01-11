@@ -16,6 +16,8 @@ from botorch.optim import optimize_acqf, optimize_acqf_mixed
 from .. import Function, Optimizer, OptimizerParameters
 from ..regression.gpr import Sogpr
 
+# from .adapters.optimization import Optimizer
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'

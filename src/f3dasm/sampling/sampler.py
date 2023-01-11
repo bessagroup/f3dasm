@@ -25,7 +25,7 @@ __status__ = 'Stable'
 
 
 @dataclass
-class SamplingInterface(ABC):
+class Sampler(ABC):
     """Interface for sampling method
 
     Parameters

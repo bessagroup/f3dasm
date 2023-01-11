@@ -21,8 +21,7 @@ __status__ = 'Stable'
 
 class DesignSpace(Protocol):
     """Protocol class for the designspace"""
-    def get_bounds_pygmo(self) -> tuple:
-        """Retrieve the boundaries of the search space"""
+    def get_continuous_input_parameters(self):  # List[ContinuousParameter]
         ...
 
 class Function(Protocol):

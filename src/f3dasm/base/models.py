@@ -1,11 +1,26 @@
-from functools import partial
-from typing import List
+#                                                                       Modules
+# =============================================================================
 
+# Standard
+from functools import partial
+from typing import List, Protocol, Tuple
+
+# Third-party
 import numpy as np
 import tensorflow as tf
 
+from f3dasm.base.data import Data
 
-def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_arrays: List[np.ndarray]) ->  List[np.ndarray]:
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling', 'https://d2l.ai/']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
+
+def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
     total_array = []
     index = 0
     for mimic_array in list_of_arrays:
@@ -13,7 +28,7 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_array
         current_array = np.array(flat_array[index:index+number_of_values])
 
         if number_of_values > 1:
-            current_array = current_array.reshape(-1,1) # Make 2D array
+            current_array = current_array.reshape(-1, 1)  # Make 2D array
 
         total_array.append(current_array)
         index += number_of_values
@@ -23,24 +38,27 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_array
 def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]: # technically not a np array input!
     return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])
 
-class MLArchitecture(tf.keras.Model):
+class Model(Protocol):
+    def forward(self, X):
+        ...
+    
+    def get_model_weights(self):
+        ...
+
+    def set_model_weights(self):
+        ...
+
+class TensorflowModel(tf.keras.Model, Model):
     def __init__(self):
         super().__init__()
         self.model = tf.keras.models.Sequential()
-        # self.model.add(tf.keras.layers.InputLayer(input_shape=(dimensionality,)))
 
-    def _forward(self, X):
+    def forward(self, X):
         assert hasattr(self, 'model'), 'model is defined'
         return self.model(X)
 
-    def call(self, X, *args, **kwargs): # Shape: (samples, dim)
-        return self._forward(X, *args)
-
-    def loss(self, Y_pred, Y_true): #Y_hat = model output, Y = labels
-        return self._loss_function(Y_pred, Y_true)
-
-    def _loss_function(Y_pred, Y_true):
-        raise NotImplementedError
+    def call(self, X, *args, **kwargs):  # Shape: (samples, dim)
+        return self.forward(X, *args)
 
     def get_model_weights(self) -> List[np.ndarray]:
         return get_flat_array_from_list_of_arrays(self.model.get_weights())
@@ -50,21 +68,24 @@ class MLArchitecture(tf.keras.Model):
         reshaped_weights = get_reshaped_array_from_list_of_arrays(flat_array=weights.ravel(), list_of_arrays=self.model.get_weights())
         self.model.set_weights(reshaped_weights)
 
-    # RECONSIDER THESE METHODS
-
-    def training_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
-        return l
-
-    def validation_step(self, batch):
-        l = self.loss(self(*batch[:-1]), batch[-1])
-
 
 # -------------------------------------------------------------
 
-class SimpleModel(MLArchitecture):
-    def __init__(self, loss_function): # introduce loss_function parameter because no data to compare to!
+class PassthroughLayer(tf.keras.layers.Layer):
+    def __init__(self, input_shape, units=1):
+        super().__init__(input_shape=input_shape)
+        self.units = units
+
+    def build(self, input_shape):  # Create the state of the layer (weights)
+        self.w = self.add_weight(shape=(input_shape[-1], self.units), initializer='random_normal', trainable=True)
+
+    def call(self, inputs):  # Defines the computation from inputs to outputs
+        return self.w
+
+class SimpleModel(TensorflowModel):
+    def __init__(self, loss_function, dimensionality: int):  # introduce loss_function parameter because no data to compare to!
         super().__init__()
+        self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
 
         # Loss function is a benchmark function
         self._loss_function = loss_function
@@ -72,23 +93,19 @@ class SimpleModel(MLArchitecture):
         # We don't have labels for benchmark function loss
         self.loss = partial(self.loss, Y_true=None)
 
-    def get_weights():
-        return NotImplementedError("There are no trainable weights to for this type of models!")
-
-    def set_weights():
-        return NotImplementedError("There are no trainable weights to for this type of models!")
-
 # -------------------------------------------------------------
 
-class LinearRegression(MLArchitecture):
-    def __init__(self, dimensionality: int): # introduce a dimensionality parameter because trainable weights!
+class LinearRegression(TensorflowModel):
+    def __init__(self, dimensionality: int):  # introduce a dimensionality parameter because trainable weights!
         super().__init__()
         self.model.add(tf.keras.layers.Dense(1, input_shape=(dimensionality,)))
 
-    def _loss_function(self, y_hat, y):
-        fn = tf.keras.losses.MeanSquaredError()
-        return fn(y, y_hat)
 
+def MeanSquaredError(Y_pred, Y_true):
+    fn = tf.keras.losses.MeanSquaredError()
+    return fn(Y_true, Y_pred)
+
+# -------------------------------------------------------------
 
 class DataModule:
     """Defined in :numref:`subsec_oo-design-models`"""
@@ -112,71 +129,39 @@ class DataModule:
             buffer_size=shuffle_buffer).batch(self.batch_size)
 
 
-class Trainer:
-    """Defined in :numref:`subsec_oo-design-models`"""
-    def __init__(self, max_epochs, gradient_clip_val=0):
-        self.max_epochs = max_epochs
-        self.gradient_clip_val = gradient_clip_val
-
-        # self.optim = tf.keras.optimizers.SGD(0.03)
-
-    def prepare_data(self, data: DataModule):
-        self.train_dataloader = data.train_dataloader()
-        self.val_dataloader = data.val_dataloader()
-        self.num_train_batches = len(self.train_dataloader)
-        self.num_val_batches = (len(self.val_dataloader)
-                                if self.val_dataloader is not None else 0)
-
-    def prepare_model(self, model: MLArchitecture):
+class Trainer():  # Dit moet eigenlijk een soort Function worden, maar dan met een ML architectuur en Data ...
+    def __init__(self, model: Model = None, data: Data = None, loss_function=None):
         self.model = model
+        self.data = data
+        self.loss_function = loss_function
 
-    def prepare_optimizer(self, optimizer):
-        self.optimizer = optimizer
+        # self.dimensionality = data.design.get_number_of_input_parameters()
+        
+    def evaluate(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:  # Two 2D arrays: loss (1,1), grad (dim, 1)
 
-    def fit(self, model: MLArchitecture, data: DataModule, optimizer):
-        self.prepare_data(data)
-        self.prepare_model(model)
-        self.prepare_optimizer(optimizer)
-        # self.optim = model.configure_optimizers()
-        self.epoch = 0
-        self.train_batch_idx = 0
-        self.val_batch_idx = 0
-        for self.epoch in range(self.max_epochs):
-            self.fit_epoch()
+        self.model.set_model_weights(x)
 
-    def extract_model(self):
-        return self.model
+        if self.data is None:
+            X_data = x
+            y_data = None
+        else:
+            X_data = self.data.get_input_data().to_numpy()
+            y_data = self.data.get_output_data().to_numpy()
 
-    def prepare_batch(self, batch):
-        """Defined in :numref:`sec_linear_scratch`"""
-        return batch
-
-    def evaluate(self, X, Y_true):
         with tf.GradientTape() as tape:
-            loss = self.model.loss(self.model(X), Y_true)
-
+            loss = self.loss_function(Y_pred=self.model(X_data), Y_true=y_data)
+            # loss = self.model.loss(Y_pred=self.model(X_data), Y_true=y_data)
         grads = tape.gradient(loss, self.model.trainable_variables)
-        return loss, grads
+        return np.atleast_2d(loss.numpy()), get_flat_array_from_list_of_arrays(grads)
 
+    def f(self, x: np.ndarray):
+        loss, _ = self.evaluate(x)
+        return loss
 
+    def __call__(self, x: np.ndarray):
+        return self.f(x)
 
-    def fit_epoch(self):
-        """Defined in :numref:`sec_linear_scratch`"""
-        # self.model.training = True
-        for batch in self.train_dataloader:
-            loss, grads = self.evaluate(*batch[:-1],batch[-1])
+    def dfdx(self, x: np.ndarray):
+        _, grads = self.evaluate(x)
+        return grads
 
-            # Optimization update
-            w = self.model.get_model_weights()
-            update = w - (0.03 * get_flat_array_from_list_of_arrays(grads))
-            self.model.set_model_weights(update)
-
-            self.train_batch_idx += 1
-
-
-        if self.val_dataloader is None:
-            return        
-        # self.model.training = False
-        for batch in self.val_dataloader:
-            self.model.validation_step(self.prepare_batch(batch))
-            self.val_batch_idx += 1

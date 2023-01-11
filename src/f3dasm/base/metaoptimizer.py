@@ -9,7 +9,7 @@ from typing import List, Tuple
 # Locals
 from ..base.data import Data
 from ..base.function import Function
-from ..base.optimization import Optimizer, OptimizerParameters
+from ..optimization.optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -18,9 +18,9 @@ from sklearn import preprocessing
 # Locals
 from .base.data import Data
 from .base.function import Function
-from .base.optimization import Optimizer
-from .base.samplingmethod import SamplingInterface
 from .base.utils import calculate_mean_std
+from .optimization.optimizer import Optimizer
+from .sampling.sampler import Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -75,7 +75,7 @@ class OptimizationResult:
 def run_optimization(
     optimizer: Optimizer,
     function: Function,
-    sampler: SamplingInterface,
+    sampler: Sampler,
     iterations: int,
     seed: int,
     number_of_samples: int = 30,
@@ -130,7 +130,7 @@ def run_optimization(
 def run_multiple_realizations(
     optimizer: Optimizer,
     function: Function,
-    sampler: SamplingInterface,
+    sampler: Sampler,
     iterations: int,
     realizations: int,
     number_of_samples: int = 30,

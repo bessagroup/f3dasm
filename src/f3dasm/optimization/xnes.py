@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pygmo as pg
 
 # Locals
-from ..base.optimization import OptimizerParameters
+from .optimizer import OptimizerParameters
 from .adapters.pygmo_implementations import PygmoAlgorithm
 
 #                                                          Authorship & Credits

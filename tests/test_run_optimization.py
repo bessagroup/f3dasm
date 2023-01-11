@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from f3dasm.base.data import Data
 from f3dasm.base.function import Function
-from f3dasm.base.optimization import Optimizer
+from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.base.utils import make_nd_continuous_design
 
 from f3dasm.run_optimization import run_multiple_realizations

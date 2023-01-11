@@ -12,10 +12,10 @@ import autograd.numpy as np
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
+from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
 # Locals
 from .._protocol import Function
-from ...base.optimization import Optimizer
-from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
+from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
