@@ -5,32 +5,11 @@ import pytest
 pytestmark = pytest.mark.smoke
 
 from f3dasm.base.design import DesignSpace
-from f3dasm.sampling.sampler import Sampler
-from f3dasm.base.space import (
-    CategoricalParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-)
-
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.base.space import ContinuousParameter
 from f3dasm.sampling.latinhypercube import LatinHypercube
+from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.sampling.sampler import Sampler
 from f3dasm.sampling.sobolsequence import SobolSequence
-
-
-@pytest.fixture
-def design():
-    # Define the parameters
-    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
-    x2 = DiscreteParameter(name="x2", lower_bound=5, upper_bound=80)
-    x3 = ContinuousParameter(name="x3", lower_bound=10.0, upper_bound=380.3)
-    x4 = CategoricalParameter(name="x4", categories=["test1", "test2", "test3"])
-    x5 = ContinuousParameter(name="x5", lower_bound=0.6, upper_bound=7.3)
-
-    # Create the design space
-    space = [x1, x2, x3, x4, x5]
-    design = DesignSpace(space)
-    return design
-
 
 # Sampling interface
 
@@ -51,10 +30,10 @@ def test_sampling_interface_not_implemented_error():
         _ = new_sampler.sample_continuous(numsamples=5)
 
 
-def test_correct_sampling_ran(design: DesignSpace):
+def test_correct_sampling_ran(design3: DesignSpace):
     seed = 42
     # Construct sampler
-    random_sequencing = RandomUniform(design=design, seed=seed)
+    random_sequencing = RandomUniform(design=design3, seed=seed)
 
     numsamples = 5
 
@@ -69,7 +48,7 @@ def test_correct_sampling_ran(design: DesignSpace):
     )
 
     columnnames = [
-        ["input"] * design.get_number_of_input_parameters(),
+        ["input"] * design3.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
@@ -91,11 +70,11 @@ def test_correct_sampling_ran(design: DesignSpace):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_sobol(design: DesignSpace):
+def test_correct_sampling_sobol(design3: DesignSpace):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequence(design=design, seed=seed)
+    sobol_sequencing = SobolSequence(design=design3, seed=seed)
 
     numsamples = 5
 
@@ -110,7 +89,7 @@ def test_correct_sampling_sobol(design: DesignSpace):
     )
 
     columnnames = [
-        ["input"] * design.get_number_of_input_parameters(),
+        ["input"] * design3.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
@@ -132,11 +111,11 @@ def test_correct_sampling_sobol(design: DesignSpace):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_lhs(design: DesignSpace):
+def test_correct_sampling_lhs(design3: DesignSpace):
     seed = 42
 
     # Construct sampler
-    lhs_sampler = LatinHypercube(design=design, seed=seed)
+    lhs_sampler = LatinHypercube(design=design3, seed=seed)
 
     numsamples = 5
 
@@ -151,7 +130,7 @@ def test_correct_sampling_lhs(design: DesignSpace):
     )
 
     columnnames = [
-        ["input"] * design.get_number_of_input_parameters(),
+        ["input"] * design3.get_number_of_input_parameters(),
         ["x1", "x2", "x3", "x4", "x5"],
     ]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
