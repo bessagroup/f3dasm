@@ -26,6 +26,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+
 class TensorflowOptimizer(Optimizer):
     def init_parameters(self):
         self.args = {}

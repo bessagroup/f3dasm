@@ -19,13 +19,17 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+
 class DesignSpace(Protocol):
     """Protocol class for the designspace"""
+
     def get_continuous_input_parameters(self):  # List[ContinuousParameter]
         ...
 
+
 class Function(Protocol):
     """Protocol class for the function"""
+
     def __call__(self) -> np.ndarray:
         """Evaluate the lossfunction"""
         ...

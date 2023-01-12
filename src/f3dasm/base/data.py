@@ -221,7 +221,7 @@ class Data:
         Returns
         -------
             list of dataframes
-        """        
+        """
         return np.array_split(data, number_of_batches)
 
     def split_to_train_test(self, test_size: float) -> List[pd.DataFrame]:
@@ -235,5 +235,5 @@ class Data:
         Returns
         -------
             list of dataframes, first training then testing
-        """        
+        """
         return train_test_split(self.data, test_size=test_size)

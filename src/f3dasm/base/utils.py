@@ -126,6 +126,7 @@ def write_pickle(name: str, obj: Any):
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
 
+
 def calculate_mean_std(results):  # OptimizationResult
     mean_y = pd.concat([d.get_output_data().cummin()
                        for d in results.data], axis=1).mean(axis=1)
@@ -160,6 +161,7 @@ def convert_autograd_to_tensorflow(func):
 
     return wrapper
 
+
 class Model(tf.keras.Model):
     def __init__(self, seed=None, args=None):
         super().__init__()
@@ -188,6 +190,7 @@ class SimpelModel(Model):
     def call(self, inputs=None):
         return self.z
 
+
 def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
     total_array = []
     index = 0
@@ -203,5 +206,7 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_array
 
     return total_array
 
-def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]: # technically not a np array input!
+
+# technically not a np array input!
+def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
     return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])
