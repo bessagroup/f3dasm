@@ -4,7 +4,7 @@
 # Standard
 
 import pickle
-from typing import Any
+from typing import Any, List
 
 # Third-party
 import autograd
@@ -15,9 +15,9 @@ import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
 # Locals
-from ..base.data import Data
-from ..base.design import DesignSpace
-from ..base.space import ContinuousParameter
+from .data import Data
+from .design import DesignSpace
+from .space import ContinuousParameter
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -188,31 +188,20 @@ class SimpelModel(Model):
     def call(self, inputs=None):
         return self.z
 
-# class Model(tf.keras.Model):
-#     def __init__(self, seed=None, args=None):
-#         super().__init__()
-#         self.seed = seed
-#         self.env = args
+def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
+    total_array = []
+    index = 0
+    for mimic_array in list_of_arrays:
+        number_of_values = np.product(mimic_array.shape)
+        current_array = np.array(flat_array[index:index+number_of_values])
 
+        if number_of_values > 1:
+            current_array = current_array.reshape(-1, 1)  # Make 2D array
 
-# class SimpelModel(Model):
-#     """
-#     The class for performing optimization in the input space of the functions.
-#     """
+        total_array.append(current_array)
+        index += number_of_values
 
-#     def __init__(self, seed=None, args=None):
-#         super().__init__(seed)
-#         self.z = tf.Variable(
-#             args["x0"],
-#             trainable=True,
-#             dtype=tf.float32,
-#             constraint=lambda x: tf.clip_by_value(
-#                 x,
-#                 clip_value_min=args["bounds"][:, 0],
-#                 clip_value_max=args["bounds"][:, 1],
-#             ),
-#         )  # S:ADDED
+    return total_array
 
-#     def call(self, inputs=None):
-#         return self.z
-
+def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]: # technically not a np array input!
+    return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])

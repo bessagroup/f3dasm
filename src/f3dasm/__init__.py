@@ -14,18 +14,19 @@ __version__ = '0.2.93'
 import logging
 
 # Locals
-from . import config, functions, optimization, sampling, simulation
+from . import (config, functions, machinelearning, optimization, sampling,
+               simulation)
 from ._show_versions import show_versions
 from .base.data import *
 from .base.design import *
 from .base.function import *
 from .base.metaoptimizer import *
-from .optimization.optimizer import *
-from .sampling.sampler import *
 from .base.simulation import *
 from .base.space import *
 from .base.utils import *
+from .optimization.optimizer import *
 from .run_optimization import *
+from .sampling.sampler import *
 
 #                                                          Authorship & Credits
 # =============================================================================
