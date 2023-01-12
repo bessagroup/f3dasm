@@ -10,7 +10,7 @@ We will use the CMAES optimizer to find the minimum. We can find an implementati
 
     optimizer = f3dasm.optimization.CMAES(data=samples_lhs)
 
-By calling the :func:`~f3dasm.optimization.Optimizer.iterate` method and specifying the function and the number of iterations, we will start the optimization process:
+By calling the :func:`~f3dasm.optimization.optimizer.Optimizer.iterate` method and specifying the function and the number of iterations, we will start the optimization process:
 
 .. code-block:: python
 

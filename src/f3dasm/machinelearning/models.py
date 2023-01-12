@@ -23,13 +23,24 @@ __status__ = 'Alpha'
 
 
 class Model(Protocol):
+    """Base class for all machine learning models"""
+
     def forward(self, X):
+        """Forward pass of the model: calculate an output by giving it an input
+
+        Parameters
+        ----------
+        X
+            Input of the model
+        """
         ...
 
     def get_model_weights(self):
+        """Retrieve the model weights as a 1D array"""
         ...
 
     def set_model_weights(self):
+        """Set the model weights with a 1D array"""
         ...
 
 
@@ -60,7 +71,7 @@ class Evaluator():  # Dit moet eigenlijk een soort Function worden, maar dan met
         with tf.GradientTape() as tape:
             loss = self.loss_function(Y_pred=self.model(X_data), Y_true=y_data)
             # loss = self.model.loss(Y_pred=self.model(X_data), Y_true=y_data)
-        grads = tape.gradient(loss, self.model.trainable_variables)
+        grads = tape.gradient(loss, self.model.trainable_variables)  # = dependent on tensorflow !!
         return np.atleast_2d(loss.numpy()), get_flat_array_from_list_of_arrays(grads)
 
     def f(self, x: np.ndarray):

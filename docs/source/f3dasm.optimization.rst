@@ -60,6 +60,14 @@ f3dasm.optimization.cmaes module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.cmaesadam module
+------------------------------------
+
+.. automodule:: f3dasm.optimization.cmaesadam
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.cobyla module
 ---------------------------------
 
@@ -104,6 +112,14 @@ f3dasm.optimization.neldermead module
 -------------------------------------
 
 .. automodule:: f3dasm.optimization.neldermead
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.optimizer module
+------------------------------------
+
+.. automodule:: f3dasm.optimization.optimizer
    :members:
    :undoc-members:
    :show-inheritance:

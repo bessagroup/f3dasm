@@ -7,14 +7,14 @@ Usage
 A new sampler can be created by initializing the sampler with:
 
 * A :class:`~f3dasm.base.design.DesignSpace`
-* A random :attr:`~f3dasm.base.samplingmethod.SamplingInterface.seed` (optional)
+* A random :attr:`~f3dasm.sampling.sampler.Sampler.seed` (optional)
 
 
 .. code-block:: python
 
   ran = f3dasm.sampling.RandomUniformSampling(design=design, seed=42)
   
-Then we can evoke sampling by calling the :meth:`~f3dasm.base.samplingmethod.SamplingInterface.get_samples` method:
+Then we can evoke sampling by calling the :meth:`~f3dasm.sampling.sampler.Sampler.get_samples` method:
 
 .. code-block:: python
 
