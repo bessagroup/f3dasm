@@ -13,28 +13,6 @@ from f3dasm.optimization.cmaesadam import CMAESAdam
 from f3dasm.sampling.randomuniform import RandomUniform
 
 
-@pytest.mark.parametrize("function", FUNCTIONS_2D)
-def test_plotting(function: Function):
-    f = function(dimensionality=2)
-    f.plot(px=10, show=False)
-
-
-# @pytest.mark.smoke
-# @pytest.mark.parametrize("seed", [42])
-# @pytest.mark.parametrize("optimizer", [CMAESAdam])
-# @pytest.mark.parametrize("function", [Levy])
-# def test_all_optimizers_temp(seed: int, function: Function, optimizer: Optimizer):
-#     test_all_optimizers_and_functions(seed, function, optimizer)
-
-
-@pytest.mark.smoke
-@pytest.mark.parametrize("seed", [42])
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
-def test_all_optimizers_3_functions(seed: int, function: Function, optimizer: Optimizer):
-    test_all_optimizers_and_functions(seed, function, optimizer)
-
-
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("function", FUNCTIONS)
@@ -68,6 +46,23 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     data1 = opt1.extract_data()
     data2 = opt2.extract_data()
     assert all(data1.data == data2.data)
+
+    
+@pytest.mark.parametrize("function", FUNCTIONS_2D)
+def test_plotting(function: Function):
+    f = function(dimensionality=2)
+    f.plot(px=10, show=False)
+
+
+
+@pytest.mark.smoke
+@pytest.mark.parametrize("seed", [42])
+@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
+def test_all_optimizers_3_functions(seed: int, function: Function, optimizer: Optimizer):
+    test_all_optimizers_and_functions(seed, function, optimizer)
+
+
 
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)

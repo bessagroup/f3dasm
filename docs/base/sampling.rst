@@ -25,7 +25,7 @@ This :func:`~f3dasm.sampling.sampler.Sampler.sample_continuous` function inputs 
 API Documentation
 -----------------
 
-.. automodule:: f3dasm.base.samplingmethod
+.. automodule:: f3dasm.sampling.sampler
    :members:
    :noindex:
    :show-inheritance:

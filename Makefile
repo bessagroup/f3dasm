@@ -19,7 +19,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help doc-clean html apidoc latexpdf init init-dev test test-html build upload build-upload
+.PHONY: help doc-clean html apidoc latexpdf init test test-html build upload build-upload
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -61,9 +61,6 @@ latexpdf:
 init:
 	pip install -r requirements.txt
 	
-init-dev:
-	pip install -r requirements_dev.txt
-
 test:
 	pytest
 	@echo

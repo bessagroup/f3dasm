@@ -57,7 +57,7 @@ In order to use the optimizer, we call the :func:`~f3dasm.optimization.optimizer
 API Documentation
 -----------------
 
-.. automodule:: f3dasm.base.optimization
+.. automodule:: f3dasm.optimization.optimizer
    :members:
    :noindex:
    :show-inheritance:

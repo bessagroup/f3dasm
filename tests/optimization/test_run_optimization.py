@@ -1,14 +1,16 @@
 from random import Random
+
 import numpy as np
 import pytest
+
 from f3dasm.base.data import Data
 from f3dasm.base.function import Function
-from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.base.utils import make_nd_continuous_design
-
-from f3dasm.run_optimization import run_multiple_realizations
-from f3dasm.functions import FUNCTIONS_2D, FUNCTIONS, FUNCTIONS_7D, Ackley, Levy, Griewank, Schwefel, Rastrigin, Sphere
+from f3dasm.functions import (FUNCTIONS, FUNCTIONS_2D, FUNCTIONS_7D, Ackley,
+                              Griewank, Levy, Rastrigin, Schwefel, Sphere)
 from f3dasm.optimization import OPTIMIZERS
+from f3dasm.optimization.optimizer import Optimizer
+from f3dasm.run_optimization import run_multiple_realizations
 from f3dasm.sampling.randomuniform import RandomUniform
 
 

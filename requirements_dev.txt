@@ -1,0 +1,11 @@
+# Package requirements
+-r ./requirements.txt
+
+# Linting
+flake8
+
+# Testing
+-r ./tests/requirements.txt
+
+# Documentation
+-r ./docs/requirements.txt

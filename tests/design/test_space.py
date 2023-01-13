@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
 
+from f3dasm.base.space import (CategoricalParameter, ContinuousParameter,
+                               DiscreteParameter)
+
 pytestmark = pytest.mark.smoke
 
-from f3dasm.base.space import (
-    ContinuousParameter,
-    DiscreteParameter,
-    CategoricalParameter,
-)
 
 # Continuous space tests
 

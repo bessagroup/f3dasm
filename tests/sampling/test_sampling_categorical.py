@@ -1,9 +1,10 @@
 import numpy as np
 import pytest
 
+from f3dasm.sampling.randomuniform import RandomUniform
+
 pytestmark = pytest.mark.smoke
 
-from f3dasm.sampling.randomuniform import RandomUniform
 
 def test_correct_discrete_sampling_1(design):
     seed = 42
