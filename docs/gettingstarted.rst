@@ -140,4 +140,10 @@ feature, code or documentation improvement). We recommend using a `Linux distrib
      >>>    ...
 
 
-  You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm.  
+  You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm. 
+
+#. Install the developement requirements:
+
+   .. code-block:: console
+
+     pip install -r requirements_dev.txt

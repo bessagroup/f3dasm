@@ -9,3 +9,8 @@ flake8
 
 # Documentation
 -r ./docs/requirements.txt
+
+# Building
+setuptools>=43.0.0
+build
+wheel
