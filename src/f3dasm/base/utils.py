@@ -191,7 +191,8 @@ class SimpelModel(Model):
         return self.z
 
 
-def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
+def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
+                                           list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
     total_array = []
     index = 0
     for mimic_array in list_of_arrays:

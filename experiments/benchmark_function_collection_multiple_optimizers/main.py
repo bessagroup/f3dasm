@@ -64,7 +64,8 @@ def main(cfg: Config):
         for options in options_list:
             results.append(f3dasm.run_multiple_realizations(**options))
 
-        filename: str = f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}_dim{options_list[0]['function'].dimensionality}"
+        filename: str = f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}\
+            _dim{options_list[0]['function'].dimensionality}"
         f3dasm.write_pickle(filename, results)
 
         df = f3dasm.margin_of_victory(results)

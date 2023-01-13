@@ -4,9 +4,9 @@
 # Standard
 from dataclasses import dataclass
 
+from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 # Locals
 from .optimizer import OptimizerParameters
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,7 +29,7 @@ class COBYLA_Parameters(OptimizerParameters):
 
 
 class COBYLA(SciPyMinimizeOptimizer):
-    """Minimize a scalar function of one or more variables using the 
+    """Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm."""
 
     method: str = "COBYLA"

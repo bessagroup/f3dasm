@@ -43,7 +43,7 @@ class Strategy(ABC):
 
 class EqualParts_Strategy(Strategy):
     def __init__(self, optimizers: List[Optimizer]):
-        """Meta optimization strategy where we use one optimizer for half of the time 
+        """Meta optimization strategy where we use one optimizer for half of the time
         and the other one for the second half
 
         Parameters
@@ -55,8 +55,8 @@ class EqualParts_Strategy(Strategy):
 
     def create_strategy(self, iterations: int) -> Tuple[OptimizationOrder]:
         strategy: Tuple[OptimizationOrder] = tuple(
-            OptimizationOrder(number_of_iterations=iterations //
-                              len(self.optimizers), optimizer=optimizer)
+            OptimizationOrder(number_of_iterations=iterations // len(self.optimizers),
+                              optimizer=optimizer)
             for optimizer in self.optimizers
         )
         # Add the remained of the iterations to the last part

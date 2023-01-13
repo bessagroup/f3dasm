@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 
 def make_dir(current_folder: str, dirname: str) -> None:
@@ -72,8 +72,8 @@ def print_banner(message: str, sign: str = "#", length: int = 50, suspend: bool 
     if not suspend:
         print(sign * (length))
         print(
-            sign * ((length - len(message) - 2) // 2) + " " +
-            message + " " + sign * ((length - len(message) - 2) // 2)
+            sign * ((length - len(message) - 2) // 2) + " " + message + " " + sign * (
+                (length - len(message) - 2) // 2)
         )
         print(sign * (length))
     return

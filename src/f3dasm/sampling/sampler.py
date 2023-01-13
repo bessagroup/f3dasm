@@ -94,10 +94,10 @@ class Sampler(ABC):
         # Get the column names in this particular order
         columnnames = [
             ("input", name)
-            for name in self.design.get_continuous_input_names()
-            + self.design.get_discrete_input_names()
-            + self.design.get_categorical_input_names()
-            + self.design.get_constant_input_names()
+            for name in self.design.get_continuous_input_names(
+            ) + self.design.get_discrete_input_names(
+            ) + self.design.get_categorical_input_names(
+            ) + self.design.get_constant_input_names()
         ]
 
         data = self._cast_to_data_object(
@@ -156,9 +156,9 @@ class Sampler(ABC):
         continuous = self.design.get_continuous_input_parameters()
         for dim, _ in enumerate(continuous):
             samples[:, dim] = (
-                samples[:, dim] * (continuous[dim].upper_bound -
-                                   continuous[dim].lower_bound)
-                + continuous[dim].lower_bound
+                samples[:, dim] * (
+                    continuous[dim].upper_bound - continuous[dim].lower_bound
+                ) + continuous[dim].lower_bound
             )
 
         return samples

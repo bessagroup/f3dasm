@@ -1,20 +1,16 @@
 # import system packages
 import os
+import pickle
+import subprocess
 import sys
 import time
-import subprocess
-import pickle
+
 import numpy as np
 
-# import local functions
-from .abaqus_utils import (
-    make_dir,
-    write_json,
-    kill_abaqus_processes,
-    print_banner,
-)
-
 from ...base.simulation import Simulator
+# import local functions
+from .abaqus_utils import (kill_abaqus_processes, make_dir, print_banner,
+                           write_json)
 
 
 class AbaqusSimulator(Simulator):
@@ -144,8 +140,7 @@ class AbaqusSimulator(Simulator):
     # --------- run the abaqus python file -----------------
 
     def _run_abaqus(self, python_filename: str):
-        proc = subprocess.Popen("abaqus cae noGUI=" +
-                                python_filename + " -mesa", shell=True)
+        proc = subprocess.Popen("abaqus cae noGUI=" + python_filename + " -mesa", shell=True)
         return proc
 
     def _run_abaqus_sim(self, python_filename: str):

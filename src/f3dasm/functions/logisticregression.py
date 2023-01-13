@@ -45,13 +45,11 @@ class LogisticRegression(Function):  # 4D, minimal 2D!
         ww = x[:-1]
         bb = x[-1]
         c = (
-            -1
-            / 100
-            * sum(
-                self._yi * np.log10(self._s_func(np.inner(ww, self._xi) + bb))
-                + (1 - self._yi) * np.log10(1 -
-                                            self._s_func(np.inner(ww, self._xi) + bb))
-                + l_term / 2 * (np.sqrt(ww.dot(ww))) ** 2
+            -1 / 100 * sum(
+                self._yi * np.log10(self._s_func(
+                    np.inner(ww, self._xi) + bb)) + (1 - self._yi) * np.log10(
+                        1 - self._s_func(np.inner(ww, self._xi) + bb)) + l_term / 2 * (
+                            np.sqrt(ww.dot(ww))) ** 2
             )
         )
 

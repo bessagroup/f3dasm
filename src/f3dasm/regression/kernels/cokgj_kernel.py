@@ -65,19 +65,19 @@ class CoKrigingKernel(Kernel):
         if self.noise_fix:
             kernels = [
                 self.base_kernel(
-                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
-                + GPy.kern.White(x1.shape[-1] - 1),
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()) + GPy.kern.White(
+                        x1.shape[-1] - 1),
                 self.base_kernel(
                     x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()),
             ]
         else:
             kernels = [
                 self.base_kernel(
-                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
-                + GPy.kern.White(x1.shape[-1] - 1),
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()) + GPy.kern.White(
+                        x1.shape[-1] - 1),
                 self.base_kernel(
-                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy())
-                + GPy.kern.White(x1.shape[-1] - 1),
+                    x1.shape[-1] - 1, lengthscale=self.lengthscale.cpu().detach().numpy()) + GPy.kern.White(
+                        x1.shape[-1] - 1),
             ]
         lin_mf_kernel = LinearMultiFidelityKernel(kernels)
 
@@ -185,7 +185,8 @@ class CoKrigingKernel(Kernel):
 #             # prev_model: Optional[SingleTaskGP] = None,
 #     ) -> None:
 #         hf_volume = torch.sum(train_X[:, -1] == 1)
-#         train_X_low, train_X_high = train_X[hf_volume:, :-1].detach().numpy(), train_X[:hf_volume, :-1].detach().numpy()
+#         train_X_low, train_X_high = train_X[hf_volume:, :-1].detach().numpy(),
+#                   train_X[:hf_volume, :-1].detach().numpy()
 #         train_Y_low, train_Y_high = train_Y[hf_volume:].detach().numpy(), train_Y[:hf_volume].detach().numpy()
 #         self.gpy_models = GPy.models.multiGPRegression([train_X_low, train_X_high], [train_Y_low, train_Y_high])
 #

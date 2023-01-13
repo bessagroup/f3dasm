@@ -209,8 +209,8 @@ class AckleyN4(PyBenchFunction):
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
-        res = np.sum(np.exp(-0.2) * np.sqrt(X**2 + Xp1**2) +
-                     3 * np.cos(2 * X) + np.sin(2 * Xp1))
+        res = np.sum(np.exp(-0.2) * np.sqrt(
+            X**2 + Xp1**2) + 3 * np.cos(2 * X) + np.sin(2 * Xp1))
         return res
 
 
@@ -321,8 +321,7 @@ class Beale(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x *
-                                        y**2) ** 2 + (2.625 - x + x * y**3) * 2
+        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) * 2
         return res
 
 
@@ -707,11 +706,11 @@ class BukinN6(PyBenchFunction):
         #         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
         #     def evaluate(self, X):
-        x1, x2, x3, x4 = X
-        res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
-        res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
-                                                     ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
-        return res
+        # x1, x2, x3, x4 = X
+        # res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
+        # res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
+        #                                             ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
+        # return res
 
 
 class CrossInTray(PyBenchFunction):
@@ -754,8 +753,8 @@ class CrossInTray(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = (
-            -0.0001
-            * (np.abs(np.sin(x) * np.sin(y)) * np.exp(np.abs(100 - np.sqrt(x**2 + y**2) / np.pi)) + 1) ** 0.1
+            -0.0001 * (np.abs(np.sin(x) * np.sin(y)) * np.exp(
+                np.abs(100 - np.sqrt(x**2 + y**2) / np.pi)) + 1) ** 0.1
         )
         return res
 
@@ -874,8 +873,8 @@ class DixonPrice(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = (X[0] - 1) ** 2 + np.sum([(i + 1) *
-                                        (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
+        res = (X[0] - 1) ** 2 + np.sum(
+            [(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
         return res
 
 
@@ -1094,10 +1093,9 @@ class GoldsteinPrice(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 *
-                                      x**2 - 14 * y + 6 * x * y + 3 * y**2)
-        res *= 30 + (2 * x - 3 * y) ** 2 * (18 - 32 * x + 12 *
-                                            x**2 + 48 * y - 36 * x * y + 27 * y**2)
+        res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
+        res *= 30 + (2 * x - 3 * y) ** 2 * (
+            18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
         return res
 
 
@@ -1259,8 +1257,8 @@ class HolderTable(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -np.abs(np.sin(x) * np.cos(y) *
-                      np.exp(np.abs(1 - np.sqrt(x**2 + y**2) / np.pi)))
+        res = -np.abs(np.sin(x) * np.cos(y) * np.exp(
+            np.abs(1 - np.sqrt(x**2 + y**2) / np.pi)))
         return res
 
 
@@ -1338,9 +1336,9 @@ class Langermann(PyBenchFunction):
         d = X.shape[0]
         res = np.sum(
             [
-                self.c[i]
-                * np.exp(-1 / np.pi * np.sum((X - self.A[i]) ** 2))
-                * np.cos(np.pi * np.sum((X - self.A[i]) ** 2))
+                self.c[i] * np.exp(-1 / np.pi * np.sum(
+                    (X - self.A[i]) ** 2)) * np.cos(
+                        np.pi * np.sum((X - self.A[i]) ** 2))
                 for i in range(self.m)
             ]
         )
@@ -1416,10 +1414,10 @@ class Levy(PyBenchFunction):
     def evaluate(self, X):
         z = 1 + (X - 1) / 4
         res = (
-            np.sin(np.pi * z[0]) ** 2
-            + sum((z[:-1] - 1) ** 2 * (1 + 10 *
-                  np.sin(np.pi * z[:-1] + 1) ** 2))
-            + (z[-1] - 1) ** 2 * (1 + np.sin(2 * np.pi * z[-1]) ** 2)
+            np.sin(np.pi * z[0]) ** 2 + sum(
+                (z[:-1] - 1) ** 2 * (1 + 10 * np.sin(
+                    np.pi * z[:-1] + 1) ** 2)) + (
+                        z[-1] - 1) ** 2 * (1 + np.sin(2 * np.pi * z[-1]) ** 2)
         )
         return res
 
@@ -1457,9 +1455,9 @@ class LevyN13(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = (
-            np.sin(3 * np.pi * x) ** 2
-            + (x - 1) ** 2 * (1 + np.sin(3 * np.pi * y) ** 2)
-            + (y - 1) ** 2 * (1 + np.sin(2 * np.pi * y) ** 2)
+            np.sin(3 * np.pi * x) ** 2 + (x - 1) ** 2 * (
+                1 + np.sin(3 * np.pi * y) ** 2) + (y - 1) ** 2 * (
+                    1 + np.sin(2 * np.pi * y) ** 2)
         )
         return res
 
@@ -1689,8 +1687,8 @@ class PermDBeta(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         j = np.arange(1, d + 1)
-        res = np.sum([np.sum((j**i + self.beta) * ((X / j) ** i - 1))
-                     ** 2 for i in range(1, d + 1)])
+        res = np.sum([np.sum((j**i + self.beta) * (
+            (X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
         return res
 
 
@@ -2108,8 +2106,9 @@ class SchaffelN3(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.sin(np.cos(np.abs(x**2 + y**2))) **
-                     2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.sin(np.cos(
+            np.abs(x**2 + y**2))) ** 2 - 0.5) / (
+                1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
@@ -2145,8 +2144,9 @@ class SchaffelN4(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.cos(np.sin(np.abs(x**2 + y**2))) **
-                     2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.cos(np.sin(np.abs(
+            x**2 + y**2))) ** 2 - 0.5) / (
+                1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 

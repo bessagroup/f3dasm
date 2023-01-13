@@ -33,7 +33,7 @@ class PassthroughLayer(tf.keras.layers.Layer):
 
 
 class SimpleModel(TensorflowModel):
-    def __init__(self, loss_function, dimensionality: int):  # introduce loss_function parameter because no data to compare to!
+    def __init__(self, loss_function, dimensionality: int):
         super().__init__()
         self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
 
