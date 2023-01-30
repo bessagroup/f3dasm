@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pandas as pd
 import shutil
+import sys
 
 import f3dasm
 
@@ -31,8 +32,7 @@ class Wirebond_function(f3dasm.Function):
 
             WThk = round(0.39 * xi[0] + 0.1, 6)
             FL = round(0.7 * xi[1] + 0.5, 6)
-
-
+            
             if not os.path.exists(history_file):
                 df = pd.DataFrame(columns=['WThk', 'FL', 'MeshSize_XY', 'MaxEPS'])
                 df.to_csv(history_file, index=False)
@@ -99,6 +99,7 @@ class Wirebond_function(f3dasm.Function):
             
         return np.array(res).reshape(-1, 1)
 
+# fun = Wirebond_function(fidelity_value=float(sys.argv[1]) / 2)
 fun = Wirebond_function(fidelity_value=0.5)
 
 parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
@@ -108,6 +109,6 @@ parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
 
 sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
 
-train_data: f3dasm.Data = sampler.get_samples(numsamples=200)
+train_data: f3dasm.Data = sampler.get_samples(numsamples=128)
 
 train_data.add_output(output=fun(train_data))

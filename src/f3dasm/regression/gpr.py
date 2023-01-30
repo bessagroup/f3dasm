@@ -6,6 +6,10 @@ from botorch.models import MultiTaskGP, SingleTaskMultiFidelityGP
 from botorch.models.gp_regression import SingleTaskGP
 from gpytorch.kernels import ScaleKernel, RBFKernel
 
+from gpytorch.models import ExactGP
+
+import torch
+
 # from f3dasm.base.data import Data
 
 # from ..base.regression import Regressor, Surrogate
@@ -19,31 +23,57 @@ from .kernels.cokgj_kernel import CoKrigingGP
 # # sys.path.insert(0, 'GPy')
 # import GPy
 
+# We will use the simplest form of GP model, exact inference
+class ExactGPModel(gpytorch.models.ExactGP):
+
+    num_outputs = 1
+
+    def __init__(self, train_x, train_y, likelihood, mean_module, covar_module):
+        super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
+        self.mean_module = mean_module
+        self.covar_module = covar_module
+    
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 @dataclass
 class Sogpr_Parameters:
+    """(Pre-initialized) hyperparameters for single-fidelity Gaussian process regression in pytorch"""
+
+    likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    mean: gpytorch.means.Mean = gpytorch.means.ZeroMean()
     kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
+    noise_fix: bool = False
+    opt_algo: torch.optim.Optimizer = torch.optim.Adam
+    verbose_training: bool = False
+    training_iter: int = 50
 
 
 class Sogpr(TorchGPRegressor):
     def __init__(
         self,
-        regressor=SingleTaskGP,
-        parameter=Sogpr_Parameters(),
+        regressor=ExactGPModel,#SingleTaskGP,
+        parameter: Sogpr_Parameters = Sogpr_Parameters(),
         train_data=None,
         design=None,
-        noise_fix: bool = False
+        # noise_fix: bool = False
     ):
 
         super().__init__(
+            regressor=regressor,
+            parameter=parameter,
             train_data=train_data,
-            covar_module=parameter.kernel,
+            # covar_module=parameter.kernel,
+            # mean_module=parameter.mean,
             design=design,
-            noise_fix=noise_fix,
+            # noise_fix=noise_fix,
         )
 
-        self.regressor = regressor
-        self.kernel = parameter.kernel
+        # self.regressor = regressor
+        # self.mean = parameter.mean
+        # self.kernel = parameter.kernel
 
 
 @dataclass
