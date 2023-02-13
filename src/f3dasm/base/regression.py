@@ -23,8 +23,8 @@ class Surrogate:
 
 @dataclass
 class Regressor:
-    train_data: Data
-    design: DesignSpace
+    train_data: Data or List[Data]
+    design: DesignSpace or List[DesignSpace]
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
 
     def set_train_data(

@@ -5,6 +5,7 @@ import gpytorch
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+from typing import Any
 
 from sklearn.preprocessing import StandardScaler
 
@@ -12,25 +13,36 @@ from sklearn.preprocessing import StandardScaler
 
 dim = 1
 seed = 123
-noisy_data_bool = 1
-numsamples = 100
-fun_class = f3dasm.functions.Sphere
+noisy_data_bool = 0
+numsamples = 4
+fun_class = f3dasm.functions.AlpineN2
 opt_algo = torch.optim.Adam
 training_iter = 50
 mean = gpytorch.means.ZeroMean()
-kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel()) \
+kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel()) \
      #+ gpytorch.kernels.ScaleKernel(gpytorch.kernels.CosineKernel())
 # plot_mll = 1
 # plot_gpr = 1
 # train_surrogate = True
 n_test = 500
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
+train_data_supplied = 0
 
 ###
 
-fun = fun_class(
-    dimensionality=dim,
-    scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
-    )
+class Forrester(f3dasm.functions.Function):
+    def __init__(self, dimensionality: int, seed: Any or int = None):
+        super().__init__(dimensionality, seed)
+
+    def f(self, x):
+        return (6 * x - 2) ** 2 * np.sin(12 * x - 4)
+
+fun = Forrester(dimensionality=1)
+
+# fun = fun_class(
+#     dimensionality=dim,
+#     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+#     )
 
 parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
     bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -39,8 +51,19 @@ parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
 
 sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
 
-train_data: f3dasm.Data = sampler.get_samples(numsamples=numsamples)
+# train_data: f3dasm.Data = sampler.get_samples(numsamples=numsamples)
 # opt_retries = 50
+if train_data_supplied:
+    train_data = f3dasm.Data(design=parameter_DesignSpace)
+
+    input_array = np.array([0., 0.4, 0.6, 1.])[:, None]
+
+    train_data.add_numpy_arrays(
+        input=input_array, 
+        output=np.full_like(input_array, np.nan)
+        )
+else:
+    train_data = sampler.get_samples(numsamples=numsamples)
 
 output = fun(train_data) 
 # train_data.add_output(output=output)
@@ -63,8 +86,9 @@ param = f3dasm.regression.gpr.Sogpr_Parameters(
     mean=mean,
     noise_fix=1- noisy_data_bool,
     opt_algo=opt_algo,
-    verbose_training=False,
+    verbose_training=1,
     training_iter=training_iter,
+    likelihood=likelihood,
     )
 
 regressor = f3dasm.regression.gpr.Sogpr(
@@ -116,5 +140,14 @@ surrogate.plot_mll(
     train_x=train_x,
     train_y_scaled=train_y_scaled,
 )
+
+metrics_df = surrogate.gp_metrics(
+    scaler=scaler,
+    observed_pred=observed_pred,
+    exact_y=exact_y.flatten(),
+)
+
+print()
+print(metrics_df)
 
 plt.show()

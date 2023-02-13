@@ -3,9 +3,9 @@ from typing import Any, List
 
 import torch
 import gpytorch
-from botorch import fit_gpytorch_model
-from botorch.models.transforms import Normalize, Standardize
-from gpytorch import ExactMarginalLogLikelihood
+# from botorch import fit_gpytorch_model
+# from botorch.models.transforms import Normalize, Standardize
+# from gpytorch import ExactMarginalLogLikelihood
 
 from f3dasm import Data, ContinuousParameter
 from f3dasm.base.regression import Regressor, Surrogate
@@ -20,6 +20,7 @@ from sklearn.preprocessing import StandardScaler
 class TorchGPSurrogate(Surrogate):
     likelihood: Any = None
     regressor_class: Any = None
+    parameter: Any = None
 
     def _data_processor(
         self,
@@ -35,26 +36,6 @@ class TorchGPSurrogate(Surrogate):
 
         return input_array
 
-    # def predict_old(
-    #         self,
-    #         test_input_data: Data,
-    # ) -> List[Data]:
-
-    #     input_array = self._data_processor(test_input_data=test_input_data)
-
-    #     torch_posterior = self.model.posterior(
-    #         torch.from_numpy(input_array)  # .to(**tkwargs)
-    #     )
-
-    #     if self.regressor_class.__name__ == 'Mtask':
-    #         test_y_list = torch_posterior.mean.cpu().detach().numpy().squeeze(axis=1)[:, 1][:, None]
-    #         test_y_var_list = torch_posterior.variance.detach().numpy().squeeze(axis=1)[:, 1][:, None]
-    #     else:
-    #         test_y_list = torch_posterior.mean.cpu().detach().numpy()
-    #         test_y_var_list = torch_posterior.mvn.covariance_matrix.diag().cpu().detach().numpy()[:, None]
-
-    #     return [test_y_list, test_y_var_list]
-
     def predict(
         self,
         test_x
@@ -62,6 +43,14 @@ class TorchGPSurrogate(Surrogate):
         # Get into evaluation (predictive posterior) mode
         self.model.eval()
         self.model.likelihood.eval()
+
+        if self.parameter.prediction_strategy is not None:
+            self.model.prediction_strategy = self.parameter.prediction_strategy(
+                train_inputs=self.model.train_x,
+                train_prior_dist=self.model.forward(self.model.train_x),
+                train_labels=self.model.train_y,
+                likelihood=self.parameter.likelihood,
+            )
 
         # # Make predictions by feeding model through likelihood
         with torch.no_grad(), gpytorch.settings.fast_pred_var():            
@@ -251,22 +240,17 @@ class TorchGPRegressor(Regressor):
             self,
             regressor=None,
             parameter=None,
-            train_data: Data = None,
+            train_data: Data or List[Data] = None,
             design=None,
-            # noise_fix: bool = False,
-            # **kwargs
     ):
         super().__init__(
             train_data=train_data,
             design=design,
         )
         self.regressor = regressor
-        # self.noise_fix = noise_fix
-        # self.kwargs = kwargs
         self.parameter = parameter
 
-        self.train_x = torch.tensor(self.train_data.get_input_data().values)
-        self.train_y = torch.tensor(self.train_data.get_output_data().values).flatten()
+        self.train_x, self.train_y = self.data_to_x_y()
 
         self.surrogate = TorchGPSurrogate(
             model=self.regressor(
@@ -283,14 +267,17 @@ class TorchGPRegressor(Regressor):
                 mean_module=self.parameter.mean,
                 # **self.kwargs,
             ),
-            regressor_class=self.__class__
+            regressor_class=self.__class__,
+            parameter=self.parameter
         )
+
+    def data_to_x_y(self):
+        train_x = torch.tensor(self.train_data.get_input_data().values)
+        train_y = torch.tensor(self.train_data.get_output_data().values).flatten()
+        return train_x, train_y
 
     def train(
         self,
-        # opt_algo: torch.optim.Optimizer = torch.optim.Adam,
-        # verbose_optimization: bool = True,
-        # training_iter: int = 50,
     ) -> Surrogate:
 
         if self.parameter.noise_fix:
@@ -302,7 +289,8 @@ class TorchGPRegressor(Regressor):
         self.surrogate.model.likelihood.train()
 
         # Use the adam optimizer
-        optimizer = self.parameter.opt_algo(self.surrogate.model.parameters(), lr=0.1)  # Includes GaussianLikelihood parameters
+        optimizer = self.parameter.opt_algo(self.surrogate.model.parameters(), **self.parameter.opt_algo_kwargs)  # Includes GaussianLikelihood parameters
+        # optimizer = self.parameter.opt_algo(self.surrogate.model.parameters(), lr=0.25)  # Includes GaussianLikelihood parameters
 
         # "Loss" for GPs - the marginal log likelihood
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.surrogate.model.likelihood, self.surrogate.model)
@@ -311,20 +299,22 @@ class TorchGPRegressor(Regressor):
             # Zero gradients from previous iteration
             optimizer.zero_grad()
             # Output from model
-            output = self.surrogate.model(self.train_x)
+            output = self.surrogate.model.forward(self.train_x)
             # Calculate loss and backprop gradients
+            if type(self.train_y) is list:
+                self.train_y = torch.cat(self.train_y)
             loss = -mll(output, self.train_y)
             loss.backward()
             if self.parameter.verbose_training:#i % 10 == 0:
                 print()
                 print('Iter %d/%d' % (i + 1, self.parameter.training_iter), end=' - ')
                 print('loss', "%.3f" % loss.item(), end=' - ')
-                for k in range(len(list(self.surrogate.model.parameters()))):
-                    print(
-                        list(self.surrogate.model.named_parameters())[k][0],
-                        "%.3f" % list(self.surrogate.model.constraints())[k].transform(list(self.surrogate.model.parameters())[k]).flatten().item(),
-                        end=' - '
-                    )
+                # for k in range(len(list(self.surrogate.model.parameters()))):
+                #     print(
+                #         list(self.surrogate.model.named_parameters())[k][0],
+                #         "%.3f" % list(self.surrogate.model.constraints())[k].transform(list(self.surrogate.model.parameters())[k]).flatten().item(),
+                #         end=' - '
+                #     )
             optimizer.step()
 
         return self.surrogate

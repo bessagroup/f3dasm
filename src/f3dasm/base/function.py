@@ -282,7 +282,7 @@ class AugmentedFunction(Function):
         self.aug_mode = aug_mode
 
     def f(self, x) -> np.ndarray:
-        x_space = x[:, :-1]
+        x_space = x#[:, :-1]
 
         res_hf = self.base_fun(x_space)
         res_lf = np.zeros_like(res_hf)

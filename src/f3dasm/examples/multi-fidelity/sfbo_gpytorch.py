@@ -59,11 +59,11 @@ optimizer.parameter.n_init = number_of_samples
 optimizer.parameter.regressor_hyperparameters = reg_parameters
 # optimizer.parameter.regressor_hyperparameters.noise_fix = True
 # optimizer.parameter.kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.CosineKernel())
-optimizer.parameter.acquisition = f3dasm.base.acquisition.ExpectedImprovement
-optimizer.parameter.acquisition_hyperparameters = f3dasm.optimization.bayesianoptimization_torch.Acquisition_Parameters(
-    best_f=-np.inf,
-    maximize=False,
-)
+# optimizer.parameter.acquisition = f3dasm.base.acquisition.ExpectedImprovement
+# optimizer.parameter.acquisition_hyperparameters = f3dasm.optimization.bayesianoptimization_torch.Acquisition_Parameters(
+#     best_f=-np.inf,
+#     maximize=False,
+# )
 optimizer.parameter.visualize_gp = True
 # optimizer.parameter.acquisition_hyperparameters = {
 #     'best_f': np.inf,
