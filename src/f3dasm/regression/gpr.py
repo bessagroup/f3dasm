@@ -99,7 +99,71 @@ class Mtask(TorchGPRegressor):
         self.kernel = parameter.kernel
 
 
-class CokgjPredictionStrategy(DefaultPredictionStrategy):
+class MultifidelityGPModel(gpytorch.models.ExactGP):
+
+    def __init__(self, train_x, train_y, likelihood):
+        super(MultifidelityGPModel, self).__init__(train_x, train_y, likelihood)
+
+    def __call__(self, *args, **kwargs):
+        train_inputs = list(self.train_inputs) if self.train_inputs is not None else []
+        # inputs = [i.unsqueeze(-1) if i.ndimension() == 1 else i for i in args]
+        inputs = args[0]
+
+        # Training mode: optimizing
+        if self.training:
+            if self.train_inputs is None:
+                raise RuntimeError(
+                    "train_inputs, train_targets cannot be None in training mode. "
+                    "Call .eval() for prior predictions, or call .set_train_data() to add training data."
+                )
+            if settings.debug.on():
+                if not all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
+                    raise RuntimeError("You must train on the training inputs!")
+            res = super().__call__(*inputs, **kwargs)
+            return res
+
+        # Prior mode
+        elif settings.prior_mode.on() or self.train_inputs is None or self.train_targets is None:
+            full_inputs = args
+            full_output = super(ExactGP, self).__call__(*full_inputs, **kwargs)
+            if settings.debug().on():
+                if not isinstance(full_output, MultivariateNormal):
+                    raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
+            return full_output
+
+        # Posterior mode
+        else:
+            if settings.debug.on():
+                if all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
+                    warnings.warn(
+                        "The input matches the stored training data. Did you forget to call model.train()?",
+                        GPInputWarning,
+                    )
+
+            # Compute full output
+            full_output = super(ExactGP, self).__call__(train_inputs, inputs, **kwargs)
+
+            if settings.debug().on():
+                if not isinstance(full_output, MultivariateNormal):
+                    raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
+            full_mean, full_covar = full_output.loc, full_output.lazy_covariance_matrix
+
+            # Determine the shape of the joint distribution
+            batch_shape = full_output.batch_shape
+            joint_shape = full_output.event_shape
+            tasks_shape = joint_shape[1:]  # For multitask learning
+            test_shape = torch.Size([joint_shape[0] - self.prediction_strategy.train_shape[0], *tasks_shape])
+
+            # Make the prediction
+            with settings.cg_tolerance(settings.eval_cg_tolerance.value()):
+                predictive_mean, predictive_covar = self.prediction_strategy.exact_prediction(full_mean.float(), full_covar.float())
+
+            # Reshape predictive mean to match the appropriate event shape
+            predictive_mean = predictive_mean.view(*batch_shape, *test_shape).contiguous()
+            return full_output.__class__(predictive_mean, predictive_covar)
+
+
+class MultiFidelityPredictionStrategy(DefaultPredictionStrategy):
     def __init__(self, train_inputs, train_prior_dist, train_labels, likelihood, root=None, inv_root=None):
         super().__init__(torch.cat(train_inputs), train_prior_dist, torch.cat(train_labels), likelihood, root, inv_root)
     
@@ -141,11 +205,11 @@ class Cokgj_Parameters:
     opt_algo_kwargs: dict = field(default_factory=dict)
     verbose_training: bool = False
     training_iter: int = 50
-    prediction_strategy: CokgjPredictionStrategy = CokgjPredictionStrategy
+    prediction_strategy: MultiFidelityPredictionStrategy = MultiFidelityPredictionStrategy
 
     # kernel: gpytorch.kernels.Kernel = cokgj_kernel.CoKrigingKernel()
 
-class CokgjModel(gpytorch.models.ExactGP):
+class CokgjModel(MultifidelityGPModel):
 
     def __init__(self, train_x, train_y, likelihood, mean_module, covar_module, rho=[1.87], noise=[0., 0.]):
         super(CokgjModel, self).__init__(train_x, train_y, likelihood)
@@ -155,9 +219,9 @@ class CokgjModel(gpytorch.models.ExactGP):
         self.mean_module_list = mean_module
         self.covar_module_list = covar_module
         # self.rho = rho
-        # self.noise = noise
+        self.noise = noise # noiseless Forrester problem
         self.rho = torch.nn.Parameter(torch.zeros(1)) #TODO: add parameter bounds (rho)
-        self.noise = torch.nn.Parameter(torch.ones(2)) #TODO: add parameter bounds (noises)
+        # self.noise = torch.nn.Parameter(torch.ones(2)) #TODO: add parameter bounds (noises)
         # self.prediction_strategy = self._set_prediction_strategy()
 
     def forward(self, x, x2=None):
@@ -237,80 +301,6 @@ class CokgjModel(gpytorch.models.ExactGP):
                 
         return cov_block_matrix 
 
-    def __call__(self, *args, **kwargs):
-        train_inputs = list(self.train_inputs) if self.train_inputs is not None else []
-        # inputs = [i.unsqueeze(-1) if i.ndimension() == 1 else i for i in args]
-        inputs = args[0]
-
-        # Training mode: optimizing
-        if self.training:
-            if self.train_inputs is None:
-                raise RuntimeError(
-                    "train_inputs, train_targets cannot be None in training mode. "
-                    "Call .eval() for prior predictions, or call .set_train_data() to add training data."
-                )
-            if settings.debug.on():
-                if not all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
-                    raise RuntimeError("You must train on the training inputs!")
-            res = super().__call__(*inputs, **kwargs)
-            return res
-
-        # Prior mode
-        elif settings.prior_mode.on() or self.train_inputs is None or self.train_targets is None:
-            full_inputs = args
-            full_output = super(ExactGP, self).__call__(*full_inputs, **kwargs)
-            if settings.debug().on():
-                if not isinstance(full_output, MultivariateNormal):
-                    raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
-            return full_output
-
-        # Posterior mode
-        else:
-            if settings.debug.on():
-                if all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
-                    warnings.warn(
-                        "The input matches the stored training data. Did you forget to call model.train()?",
-                        GPInputWarning,
-                    )
-
-            # Get the terms that only depend on training data
-            if self.prediction_strategy is None:
-                train_output = self.forward(*train_inputs, **kwargs)
-
-                # Create the prediction strategy for
-                self.prediction_strategy = CokgjPredictionStrategy(
-                    train_inputs=train_inputs,
-                    train_prior_dist=train_output,
-                    train_labels=self.train_targets,
-                    likelihood=self.likelihood,
-                )
-
-            # Concatenate the input to the training input
-            full_inputs = []
-            batch_shape = train_inputs[0].shape[:-2]
-
-            # Fill out full output matrix blocks
-            full_output = super(ExactGP, self).__call__(train_inputs, inputs, **kwargs)
-
-            if settings.debug().on():
-                if not isinstance(full_output, MultivariateNormal):
-                    raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
-            full_mean, full_covar = full_output.loc.float(), full_output.lazy_covariance_matrix
-
-            # Determine the shape of the joint distribution
-            batch_shape = full_output.batch_shape
-            joint_shape = full_output.event_shape
-            tasks_shape = joint_shape[1:]  # For multitask learning
-            test_shape = torch.Size([joint_shape[0] - self.prediction_strategy.train_shape[0], *tasks_shape])
-
-            # Make the prediction
-            # with settings.cg_tolerance(settings.eval_cg_tolerance.value()):
-            predictive_mean, predictive_covar = self.prediction_strategy.exact_prediction(full_mean, full_covar)
-
-            # Reshape predictive mean to match the appropriate event shape
-            predictive_mean = predictive_mean.view(*batch_shape, *test_shape).contiguous()
-            return full_output.__class__(predictive_mean, predictive_covar)
-
 
 class Cokgj(TorchGPRegressor):
     def __init__(
@@ -340,29 +330,94 @@ class Cokgj(TorchGPRegressor):
         return train_x_list, train_y_list
 
 
+class MultitaskGPModel(MultifidelityGPModel):
+    def __init__(self, train_x, train_y, likelihood, mean_module, covar_module):
+        super(MultitaskGPModel, self).__init__(train_x, train_y, likelihood)
+        self.train_x = train_x
+        self.train_y = train_y
+        self.mean_module = mean_module # gpytorch.means.ConstantMean()
+        self.covar_module = covar_module # gpytorch.kernels.RBFKernel()
+
+        # We learn an IndexKernel for 2 tasks
+        # (so we'll actually learn 2x2=4 tasks with correlations)
+        self.task_covar_module = gpytorch.kernels.IndexKernel(num_tasks=2, rank=1)
+
+    # def forward(self, x, i):
+    def forward(self, x, x2=None):
+        # assume: x is a list; x[0] contains design points of the lowest fidelity
+        # and x[-1] contains design points of the highest fidelity
+
+        if x2 is not None:
+            for k, (x_k, x2_k) in enumerate(zip(x, x2)):
+                x[k] = torch.cat([x_k, x2_k])
+
+        i = []
+        for k, x_k in enumerate(x):
+            i.append(k * torch.ones(x_k.shape))
+
+        i = torch.cat(i)
+        x = torch.cat(x)
+
+        mean_x = self.mean_module(x)
+
+        # Get input-input covariance
+        covar_x = self.covar_module(x)
+        # Get task-task covariance
+        covar_i = self.task_covar_module(i)
+        # Multiply the two together to get the covariance we want
+        covar = covar_x.mul(covar_i)
+
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar)
+    
+
 @dataclass
 class Stmf_Parameters:
-    linear_truncated: bool = False
-    data_fidelity: int = -1
+    """(Pre-initialized) hyperparameters for single-fidelity Gaussian process regression in pytorch"""
+
+    likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    mean: gpytorch.means.Mean or List[gpytorch.means.Mean] = gpytorch.means.ZeroMean()
+    kernel: gpytorch.kernels.Kernel or List[gpytorch.kernels.Kernel] = ScaleKernel(RBFKernel())
+    noise_fix: bool = False
+    opt_algo: torch.optim.Optimizer = torch.optim.Adam
+    opt_algo_kwargs: dict = field(default_factory=dict)
+    verbose_training: bool = False
+    training_iter: int = 50
+    prediction_strategy: MultiFidelityPredictionStrategy = MultiFidelityPredictionStrategy
+    # linear_truncated: bool = False
+    # data_fidelity: int = -1
 
 class Stmf(TorchGPRegressor):
     def __init__(
         self,
-        regressor=SingleTaskMultiFidelityGP,
+        # regressor=SingleTaskMultiFidelityGP,
+        regressor=MultitaskGPModel,
         parameter=Stmf_Parameters(),
         mf_train_data=None,
-        mf_design=None,
-        noise_fix: bool = False
+        design=None,
+        # noise_fix: bool = False
     ):
         super().__init__(
             train_data=mf_train_data,
-            linear_truncated=parameter.linear_truncated,
-            data_fidelity=parameter.data_fidelity,
-            design=mf_design,
-            noise_fix=noise_fix,
+            # linear_truncated=parameter.linear_truncated,
+            # data_fidelity=parameter.data_fidelity,
+            regressor=regressor,
+            parameter=parameter,
+            design=design,
+            # noise_fix=noise_fix,
         )
 
         self.regressor = regressor
+
+    def data_to_x_y(self):
+        train_x_list = []
+        train_y_list = []
+        for train_data_fid in self.train_data:
+            train_x = torch.tensor(train_data_fid.get_input_data().values)
+            train_y = torch.tensor(train_data_fid.get_output_data().values).flatten()
+
+            train_x_list.append(train_x)
+            train_y_list.append(train_y)
+        return train_x_list, train_y_list
 
 # @dataclass
 # class Cokgd_Parameters:
