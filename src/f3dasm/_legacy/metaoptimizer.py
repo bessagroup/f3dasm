@@ -7,7 +7,7 @@ from copy import copy
 from typing import List, Tuple
 
 # Locals
-from ..base.data import Data
+from ..design.experimentdata import ExperimentData
 from ..base.function import Function
 from ..optimization.optimizer import Optimizer, OptimizerParameters
 
@@ -66,7 +66,7 @@ class EqualParts_Strategy(Strategy):
 
 
 class MetaOptimizer(Optimizer):
-    def __init__(self, data: Data, strategy: Strategy, seed: int):
+    def __init__(self, data: ExperimentData, strategy: Strategy, seed: int):
         """Meta optimizer class: executing multiple optimizers during training
 
         Parameters

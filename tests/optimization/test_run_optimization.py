@@ -3,7 +3,7 @@ from random import Random
 import numpy as np
 import pytest
 
-from f3dasm.base.data import Data
+from f3dasm.design.experimentdata import ExperimentData
 from f3dasm.base.function import Function
 from f3dasm.base.utils import make_nd_continuous_design
 from f3dasm.functions import (FUNCTIONS, FUNCTIONS_2D, FUNCTIONS_7D, Ackley,
@@ -32,7 +32,7 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
 
     design = make_nd_continuous_design(dimensionality=dimensionality, bounds=domain)
     func = function(dimensionality=dimensionality, scale_bounds=domain)
-    data = Data(design=design)
+    data = ExperimentData(design=design)
     opt = optimizer(data=data)
     sampler = RandomUniform(design=design)
 

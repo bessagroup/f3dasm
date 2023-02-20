@@ -15,10 +15,10 @@ import pandas as pd
 from pathos.helpers import mp
 from sklearn import preprocessing
 
-# Locals
-from .base.data import Data
 from .base.function import Function
 from .base.utils import calculate_mean_std
+# Locals
+from .design.experimentdata import ExperimentData
 from .optimization.optimizer import Optimizer
 from .sampling.sampler import Sampler
 
@@ -33,8 +33,8 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[Data], optimizer: str, hyperparameters: dict, function: Function, sampler: str,
-                 number_of_samples: int, seeds: List[int]):
+    def __init__(self, data: List[ExperimentData], optimizer: str, hyperparameters: dict,
+                 function: Function, sampler: str, number_of_samples: int, seeds: List[int]):
         """Optimizaiton results object
 
         Parameters
@@ -79,7 +79,7 @@ def run_optimization(
     iterations: int,
     seed: int,
     number_of_samples: int = 30,
-) -> Data:
+) -> ExperimentData:
     """Run optimization on some benchmark function
 
     Parameters

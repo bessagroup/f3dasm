@@ -9,10 +9,10 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 
-# Local
-from ..models import Model
 from ...base.utils import (get_flat_array_from_list_of_arrays,
                            get_reshaped_array_from_list_of_arrays)
+# Local
+from ..model import Model
 
 #                                                          Authorship & Credits
 # =============================================================================

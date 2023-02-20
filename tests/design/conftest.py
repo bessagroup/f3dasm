@@ -1,8 +1,8 @@
 import pytest
 
-from f3dasm.base.design import DesignSpace
-from f3dasm.base.space import (CategoricalParameter, ContinuousParameter,
-                               DiscreteParameter)
+from f3dasm.design.design import DesignSpace
+from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
+                                     DiscreteParameter)
 
 
 @pytest.fixture(scope="package")

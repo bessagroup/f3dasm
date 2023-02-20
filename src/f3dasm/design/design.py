@@ -9,10 +9,10 @@ from typing import List, TypeVar
 import autograd.numpy as np
 import pandas as pd
 
+from .constraint import Constraint
 # Local
-from ..base.space import (CategoricalParameter, ConstantParameter,
-                          ContinuousParameter, DiscreteParameter,
-                          ParameterInterface)
+from .parameter import (CategoricalParameter, ConstantParameter,
+                        ContinuousParameter, DiscreteParameter, Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -32,8 +32,9 @@ class DesignSpace:
     :param output_space: list of parameters
     """
 
-    input_space: List[ParameterInterface] = field(default_factory=list)
-    output_space: List[ParameterInterface] = field(default_factory=list)
+    input_space: List[Parameter] = field(default_factory=list)
+    output_space: List[Parameter] = field(default_factory=list)
+    constraints: List[Constraint] = field(default_factory=list)
 
     def __post_init__(self):
         self._check_names()
@@ -64,7 +65,7 @@ class DesignSpace:
 
         return pd.concat([df_input, df_output])
 
-    def add_input_space(self, space: ParameterInterface):
+    def add_input_space(self, space: Parameter):
         """Add a new parameter to the searchspace
 
         Parameters
@@ -75,7 +76,7 @@ class DesignSpace:
         self.input_space.append(space)
         return
 
-    def add_output_space(self, space: ParameterInterface):
+    def add_output_space(self, space: Parameter):
         """Add a new parameter to the searchspace
 
         Parameters
@@ -85,7 +86,7 @@ class DesignSpace:
         """
         self.output_space.append(space)
 
-    def get_input_space(self) -> List[ParameterInterface]:
+    def get_input_space(self) -> List[Parameter]:
         """Get the input space
 
         Returns
@@ -94,7 +95,7 @@ class DesignSpace:
         """
         return self.input_space
 
-    def get_output_space(self) -> List[ParameterInterface]:
+    def get_output_space(self) -> List[Parameter]:
         """Get the output space
 
         Returns
@@ -247,10 +248,10 @@ class DesignSpace:
             [parameter.upper_bound for parameter in self.get_continuous_input_parameters()],
         )
 
-    def _get_names(self, type: TypeVar, space: List[ParameterInterface]) -> List[str]:
+    def _get_names(self, type: TypeVar, space: List[Parameter]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
 
-    def _get_parameters(self, type: TypeVar, space: List[ParameterInterface]) -> List[ParameterInterface]:
+    def _get_parameters(self, type: TypeVar, space: List[Parameter]) -> List[Parameter]:
         return list(
             filter(
                 lambda parameter: isinstance(parameter, type),
@@ -258,11 +259,11 @@ class DesignSpace:
             )
         )
 
-    def _cast_types_dataframe(self, space: List[ParameterInterface], label: str) -> dict:
+    def _cast_types_dataframe(self, space: List[Parameter], label: str) -> dict:
         # Make a dictionary that provides the datatype of each parameter
         return {(label, parameter.name): parameter._type for parameter in space}
 
-    def _check_space_on_type(self, type: TypeVar, space: List[ParameterInterface]) -> bool:
+    def _check_space_on_type(self, type: TypeVar, space: List[Parameter]) -> bool:
         return all(isinstance(parameter, type) for parameter in space)
 
     def _all_input_continuous(self) -> bool:

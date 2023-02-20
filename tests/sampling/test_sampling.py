@@ -2,14 +2,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
-pytestmark = pytest.mark.smoke
-
-from f3dasm.base.design import DesignSpace
-from f3dasm.base.space import ContinuousParameter
+from f3dasm.design.design import DesignSpace
+from f3dasm.design.parameter import ContinuousParameter
 from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.sampler import Sampler
 from f3dasm.sampling.sobolsequence import SobolSequence
+
+pytestmark = pytest.mark.smoke
+
 
 # Sampling interface
 

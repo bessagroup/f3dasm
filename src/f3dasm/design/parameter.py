@@ -19,7 +19,7 @@ __status__ = 'Stable'
 
 
 @dataclass
-class ParameterInterface:
+class Parameter:
     """Interface class of a search space parameter
 
     Parameters
@@ -33,7 +33,7 @@ class ParameterInterface:
 
 
 @dataclass
-class ConstantParameter(ParameterInterface):
+class ConstantParameter(Parameter):
     """Create a search space parameter that is constant
 
     Parameters
@@ -49,7 +49,7 @@ class ConstantParameter(ParameterInterface):
 
 
 @dataclass
-class ContinuousParameter(ParameterInterface):
+class ContinuousParameter(Parameter):
     """Create a search space parameter that is continuous
 
     Parameters
@@ -86,7 +86,7 @@ class ContinuousParameter(ParameterInterface):
 
 
 @dataclass
-class DiscreteParameter(ParameterInterface):
+class DiscreteParameter(Parameter):
     """Create a search space parameter that is discrete
 
     Parameters
@@ -123,7 +123,7 @@ class DiscreteParameter(ParameterInterface):
 
 
 @dataclass
-class CategoricalParameter(ParameterInterface):
+class CategoricalParameter(Parameter):
     """Create a search space parameter that is categorical
 
     Parameters

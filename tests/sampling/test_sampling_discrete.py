@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-pytestmark = pytest.mark.smoke
-
 from f3dasm.sampling.randomuniform import RandomUniform
+
+pytestmark = pytest.mark.smoke
 
 
 def test_correct_discrete_sampling_1(design4):

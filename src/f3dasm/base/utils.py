@@ -15,9 +15,9 @@ import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
 # Locals
-from .data import Data
-from .design import DesignSpace
-from .space import ContinuousParameter
+from ..design.experimentdata import ExperimentData
+from ..design.design import DesignSpace
+from ..design.parameter import ContinuousParameter
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -54,7 +54,7 @@ def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> Design
 
 
 def _from_data_to_numpy_array_benchmarkfunction(
-    data: Data,
+    data: ExperimentData,
 ) -> np.ndarray:
     """Check if doe is in right format"""
     if not data.design.is_single_objective_continuous():

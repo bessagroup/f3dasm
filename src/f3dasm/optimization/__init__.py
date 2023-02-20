@@ -11,7 +11,7 @@ from .bayesianoptimization import (BayesianOptimization,
                                    BayesianOptimization_Parameters)
 from .cg import CG, CG_Parameters
 from .cmaes import CMAES, CMAES_Parameters
-from .cmaesadam import CMAESAdam
+# from .cmaesadam import CMAESAdam
 from .differentialevolution import (DifferentialEvolution,
                                     DifferentialEvolution_Parameters)
 from .ftrl import Ftrl, Ftrl_Parameters

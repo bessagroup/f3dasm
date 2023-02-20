@@ -10,11 +10,11 @@ import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 import tensorflow as tf
 
-# Locals
-from ..base.data import Data
 from ..base.utils import (SimpelModel,
                           _from_data_to_numpy_array_benchmarkfunction,
                           convert_autograd_to_tensorflow)
+# Locals
+from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -73,7 +73,7 @@ class Function:
         self.seed = seed
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray or Data, *args, **kwargs) -> np.ndarray or Data:
+    def __call__(self, input_x: np.ndarray or ExperimentData, *args, **kwargs) -> np.ndarray or ExperimentData:
         """Evaluate the objective function
 
         Parameters
@@ -86,7 +86,7 @@ class Function:
             output of the objective function
         """
         # If the input is a Data object
-        if isinstance(input_x, Data):
+        if isinstance(input_x, ExperimentData):
             x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
 
         else:
@@ -97,7 +97,7 @@ class Function:
         y = np.atleast_1d(self.f(x))
 
         # If the input is a Data object
-        if isinstance(input_x, Data):
+        if isinstance(input_x, ExperimentData):
             input_x.add_output(y)
             # return input_x
 
@@ -174,7 +174,7 @@ class Function:
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
         numsamples=None, arrow=False
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contout plot with the datapoints as scatter

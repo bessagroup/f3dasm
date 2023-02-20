@@ -30,12 +30,12 @@ def main():
 
     space = f3dasm.make_nd_continuous_design(
         np.tile([bounds[0], bounds[1]], (dimensionality, 1)), dimensionality)
-    data = f3dasm.Data(design=space)
+    data = f3dasm.ExperimentData(design=space)
 
     sampler = f3dasm.sampling.LatinHypercube(design=space)
     sampler.get_samples(N)
 
-    data = f3dasm.Data(design=space)
+    data = f3dasm.ExperimentData(design=space)
     data.add(sampler.get_samples(N).data)
 
     # 1.99419533e-01, 7.24177347e-02

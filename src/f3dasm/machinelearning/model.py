@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 # Locals
-from ..base.data import Data
+from ..design.experimentdata import ExperimentData
 from ..base.utils import get_flat_array_from_list_of_arrays
 
 #                                                          Authorship & Credits
@@ -50,7 +50,7 @@ def MeanSquaredError(Y_pred, Y_true):
 
 
 class Evaluator():  # Dit moet eigenlijk een soort Function worden, maar dan met een ML architectuur en Data ...
-    def __init__(self, model: Model = None, data: Data = None, loss_function=None):
+    def __init__(self, model: Model = None, data: ExperimentData = None, loss_function=None):
         self.model = model
         self.data = data
         self.loss_function = loss_function

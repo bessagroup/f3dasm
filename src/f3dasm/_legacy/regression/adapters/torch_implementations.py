@@ -12,9 +12,9 @@ from botorch.models.transforms import Normalize, Standardize
 from gpytorch import ExactMarginalLogLikelihood
 
 # Locals
-from ...base.data import Data
-from ...base.design import ContinuousParameter
-from ...base.regression import Regressor, Surrogate
+from ....design.experimentdata import ExperimentData
+from ....design.parameter import ContinuousParameter
+from ....base.regression import Regressor, Surrogate
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -41,8 +41,8 @@ class TorchGPSurrogate(Surrogate):
 
     def predict(
             self,
-            test_input_data: Data,
-    ) -> List[Data]:
+            test_input_data: ExperimentData,
+    ) -> List[ExperimentData]:
         test_y_list = self.model.posterior(
             torch.from_numpy(test_input_data)  # .to(**tkwargs)
         ).mean.cpu().detach().numpy()

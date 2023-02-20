@@ -5,8 +5,8 @@
 import autograd.numpy as np
 
 # Locals
-from ..base.data import Data
-from ..base.metaoptimizer import EqualParts_Strategy, MetaOptimizer
+from .._legacy.metaoptimizer import EqualParts_Strategy, MetaOptimizer
+from ..design.experimentdata import ExperimentData
 from .adam import Adam
 from .cmaes import CMAES
 
@@ -23,7 +23,7 @@ __status__ = 'Stable'
 class CMAESAdam(MetaOptimizer):
     """CMAES-Adam Metaoptimizer"""
 
-    def __init__(self, data: Data, seed: int = np.random.randint(low=0, high=1e5), hyperparameters=None):
+    def __init__(self, data: ExperimentData, seed: int = np.random.randint(low=0, high=1e5), hyperparameters=None):
         optimizers = [
             CMAES(data=data, seed=seed),
             Adam(data=data, seed=seed),

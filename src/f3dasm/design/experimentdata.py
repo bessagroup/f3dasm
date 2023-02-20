@@ -12,7 +12,7 @@ import seaborn as sb
 from sklearn.model_selection import train_test_split
 
 # Local
-from ..base.design import DesignSpace
+from .design import DesignSpace
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -24,9 +24,9 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class Data:
+class ExperimentData:
     def __init__(self, design: DesignSpace):
-        """Class that contains data
+        """Class that contains data for experiments
 
         Parameters
         ----------

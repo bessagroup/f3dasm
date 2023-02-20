@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 
-from ...base.simulation import Simulator
+from ..simulator import Simulator
 # import local functions
 from .abaqus_utils import (kill_abaqus_processes, make_dir, print_banner,
                            write_json)

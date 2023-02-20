@@ -9,9 +9,9 @@ from typing import Any, Mapping, Optional, Tuple
 # Third-party
 import autograd.numpy as np
 
-# Locals
-from ..base.data import Data
 from ..base.function import Function
+# Locals
+from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -62,7 +62,7 @@ class Optimizer:
         When number of datapoints is lower than the population
     """
 
-    data: Data
+    data: ExperimentData
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
     seed: int = np.random.randint(low=0, high=1e5)
     algorithm: Any = field(init=False)
@@ -116,7 +116,7 @@ class Optimizer:
         raise NotImplementedError(
             "You should implement an update step for your algorithm!")
 
-    def set_data(self, data: Data):
+    def set_data(self, data: ExperimentData):
         """Overwrite the data attribute
 
         Parameters
@@ -204,7 +204,7 @@ class Optimizer:
         """
         self.data.add_numpy_arrays(input=x, output=y)
 
-    def extract_data(self) -> Data:
+    def extract_data(self) -> ExperimentData:
         """Returns a copy of the data
 
         Returns

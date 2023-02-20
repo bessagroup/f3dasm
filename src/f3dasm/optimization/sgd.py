@@ -7,9 +7,9 @@ from dataclasses import dataclass
 # Third-party
 import tensorflow as tf
 
+from .adapters.tensorflow_implementations import TensorflowOptimizer
 # Locals
 from .optimizer import OptimizerParameters
-from .adapters.tensorflow_implementations import TensorflowOptimizer
 
 #                                                          Authorship & Credits
 # =============================================================================

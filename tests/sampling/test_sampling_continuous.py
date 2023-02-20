@@ -1,14 +1,14 @@
 # # -*- coding: utf-8 -*-
 
+from f3dasm.sampling.sobolsequence import SobolSequence
+from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.sampling.latinhypercube import LatinHypercube
+from f3dasm.design.design import DesignSpace
 import numpy as np
 import pytest
 
 pytestmark = pytest.mark.smoke
 
-from f3dasm.base.design import DesignSpace
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.sobolsequence import SobolSequence
 
 # Random Uniform Sampling
 

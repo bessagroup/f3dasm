@@ -11,8 +11,8 @@ import autograd.numpy as np
 import pandas as pd
 
 # Locals
-from ..base.data import Data
-from ..base.design import DesignSpace
+from ..design.experimentdata import ExperimentData
+from ..design.design import DesignSpace
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -62,7 +62,7 @@ class Sampler(ABC):
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: int) -> Data:
+    def get_samples(self, numsamples: int) -> ExperimentData:
         """Receive samples of the search space
 
         Parameters
@@ -104,9 +104,9 @@ class Sampler(ABC):
             samples=samples, columnnames=columnnames)
         return data
 
-    def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> Data:
+    def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
         """Cast the samples to a Data object"""
-        data = Data(design=self.design)
+        data = ExperimentData(design=self.design)
 
         # First get an empty reference frame from the DoE
         empty_frame = self.design.get_empty_dataframe()

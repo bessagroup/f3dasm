@@ -2,14 +2,15 @@ from typing import Callable, List
 
 import numpy as np
 import pytest
+from hypothesis import given, settings
+from hypothesis.strategies import (SearchStrategy, composite, floats, integers,
+                                   text)
+
+from f3dasm.design.design import DesignSpace
+from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
+                                     DiscreteParameter, Parameter)
 
 pytestmark = pytest.mark.smoke
-
-from hypothesis import given, settings
-from hypothesis.strategies import SearchStrategy, composite, floats, integers, text
-
-from f3dasm.base.design import DesignSpace
-from f3dasm.base.space import CategoricalParameter, ContinuousParameter, DiscreteParameter, ParameterInterface
 
 
 @composite
@@ -18,14 +19,14 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
     number_of_output_parameters = draw(integers(min_value, max_value))
     _name = text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10)
 
-    def get_space(number_of_parameters: int) -> List[ParameterInterface]:
+    def get_space(number_of_parameters: int) -> List[Parameter]:
         space = []
         names = []
         for _ in range(number_of_parameters):
             names.append(_name.filter(lambda x: x not in names))
 
         for i in range(number_of_parameters):
-            parameter: ParameterInterface = np.random.choice(
+            parameter: Parameter = np.random.choice(
                 a=["ContinuousSpace", "DiscreteSpace", "CategoricalSpace"]
             )
             name = names[i]
