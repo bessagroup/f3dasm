@@ -5,7 +5,7 @@ F3DASM
 This is the initalizer of the F3DASM package
 """
 
-__version__ = '0.2.95'
+__version__ = '0.2.96'
 
 #                                                                       Modules
 # =============================================================================
