@@ -25,7 +25,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
     optimizers_class: List[f3dasm.Optimizer] = [
         f3dasm.find_class(f3dasm.optimization, optimizer_name) for optimizer_name in config.optimizers.optimizers_names
     ]
-    sampler_class: f3dasm.SamplingInterface = f3dasm.find_class(f3dasm.sampling, config.sampler.sampler_name)
+    sampler_class: f3dasm.Sampler = f3dasm.find_class(f3dasm.sampling, config.sampler.sampler_name)
 
     bounds = np.tile([config.design.lower_bound, config.design.upper_bound], (dimensionality, 1))
 
