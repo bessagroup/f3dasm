@@ -1,6 +1,11 @@
-name: Checks on push
+name: Pull request automated checks
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches:
+      - versionmartin
+      - master
+      - "pr/**"
 
 jobs:
   check-coding-style:
