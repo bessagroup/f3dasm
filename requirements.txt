@@ -12,7 +12,7 @@ tensorflow>=2.11.0
 pathos>=0.3.0
 pytest>=7.2.0
 pygmo>=2.16.1
-scikit-learn>=1.1.3
+scikit-learn
 hydra-core>=1.2.0
 hydra>=2.5
 seaborn>=0.6.2
