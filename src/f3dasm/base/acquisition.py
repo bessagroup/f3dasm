@@ -102,9 +102,11 @@ class UpperConfidenceBound(AnalyticAcquisitionFunction):
         delta = (self.beta.expand_as(mean) * variance).sqrt()
 
         if self.maximize:
-            return (mean + delta).flatten()#.reshape(X.shape)
+            res = (mean + delta).flatten()#.reshape(X.shape)
         else:
-            return (-mean + delta).flatten()#.reshape(X.shape)
+            res = (-mean + delta).flatten()#.reshape(X.shape)
+        
+        return res
 
 
 class ExpectedImprovement(AnalyticAcquisitionFunction):
@@ -254,7 +256,7 @@ class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
         self.var = var
 
     @t_batch_mode_transform(expected_q=1)
-    def forward(self, X: Tensor) -> Tensor:
+    def forward(self, X: Tensor, fid: int) -> Tensor:
         r"""Evaluate the Upper Confidence Bound on the candidate set X.
 
         Args:
@@ -265,37 +267,33 @@ class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
             given design points `X`.
         """
         # self.beta = self.beta.to(X)
-        X_high = X.clone()
-        X_high[0, 0, -1] = 1
-        posterior_high = self.model.posterior(
-            X=X_high, posterior_transform=self.posterior_transform
-        )
-        mean_high = posterior_high.mean
-        view_shape = mean_high.shape[:-2] if mean_high.shape[-2] == 1 else mean_high.shape[:-1]
-        mean_high = mean_high.view(view_shape)
-        variance_high = posterior_high.variance.view(view_shape)
 
-        if X_high[0, 0, -1] != X[0, 0, -1]:
-            posterior_low = self.model.posterior(
-                X=X, posterior_transform=self.posterior_transform
-            )
+        self.model.eval()
+        self.model.likelihood.eval()
 
-            variance_low = posterior_low.variance.view(view_shape)
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+            observed_pred_high = self.model([torch.empty(0, X.shape[-1]), X[0]])
+            observed_pred_low = self.model([X[0], torch.empty(0, X.shape[-1])])
 
-            sigma = self.cr * variance_low.sqrt()
+        mean_high = observed_pred_high.mean
+        variance_low = observed_pred_low.variance
+        variance_high = observed_pred_high.variance
 
+        if fid == 0:
+            sigma = torch.sqrt(variance_low)
+            CR = torch.tensor(self.cr)
         else:
-
-            sigma = variance_high.sqrt()
+            sigma = torch.sqrt(variance_low + variance_high)
+            CR = torch.tensor(1.)
 
         omega_1, omega_2 = self.weights()
 
         if self.maximize:
-            res = omega_1 * mean_high + omega_2 * sigma
+            res = omega_1 * mean_high + omega_2 * sigma * CR
         else:
-            res = -omega_1 * mean_high + omega_2 * sigma
+            res = -omega_1 * mean_high + omega_2 * sigma * CR
 
-        return res
+        return res.flatten()
 
     def weights(self):
         sample_mean_lf = torch.mean(torch.tensor(self.mean[0]))

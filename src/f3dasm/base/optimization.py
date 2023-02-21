@@ -174,7 +174,7 @@ class Optimizer:
                 break
 
         # Remove overiterations
-        self.data[-1].remove_rows_bottom(self._number_of_overiterations(iterations))
+        # self.data[-1].remove_rows_bottom(self._number_of_overiterations(iterations))
 
     def _number_of_updates(self, iterations: int):
         return iterations // self.parameter.population + (iterations % self.parameter.population > 0)

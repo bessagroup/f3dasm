@@ -9,7 +9,7 @@ import torch
 
 ### reg parameters
 
-dim = 1
+dim = 2
 seed = None
 noisy_data_bool = 0
 numsamples = 100
@@ -27,6 +27,7 @@ reg_parameters = f3dasm.regression.gpr.Sogpr_Parameters(
     kernel=kernel,
     noise_fix=1 - noisy_data_bool,
     training_iter=training_iter,
+    verbose_training=1,
 )
 
 ###
@@ -34,7 +35,7 @@ reg_parameters = f3dasm.regression.gpr.Sogpr_Parameters(
 ### opt parameters
 
 iterations = 10
-number_of_samples = 5
+number_of_samples = 15
 
 ###
 
@@ -64,7 +65,7 @@ optimizer.parameter.regressor_hyperparameters = reg_parameters
 #     best_f=-np.inf,
 #     maximize=False,
 # )
-optimizer.parameter.visualize_gp = True
+optimizer.parameter.visualize_gp = False
 # optimizer.parameter.acquisition_hyperparameters = {
 #     'best_f': np.inf,
 #     'maximize': False,

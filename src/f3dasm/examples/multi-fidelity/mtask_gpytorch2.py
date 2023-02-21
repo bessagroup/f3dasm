@@ -124,7 +124,7 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
 ###
 
-param = f3dasm.regression.gpr.Stmf_Parameters(
+param = f3dasm.regression.gpr.Multitask_Parameters(
     likelihood=likelihood,
     kernel=covar_module,
     mean=mean_module,
@@ -135,7 +135,7 @@ param = f3dasm.regression.gpr.Stmf_Parameters(
     training_iter=training_iter,
     )
 
-regressor = f3dasm.regression.gpr.Stmf(
+regressor = f3dasm.regression.gpr.MultitaskGPR(
     mf_train_data=mf_train_data, 
     design=train_data.design,
     parameter=param,

@@ -11,7 +11,7 @@ from botorch.optim import optimize_acqf, optimize_acqf_mixed
 
 from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
-from ..regression.gpr import Cokgj, Sogpr, Stmf, Sogpr_Parameters
+from ..regression.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters
 import f3dasm
 from sklearn.preprocessing import StandardScaler
 
@@ -38,93 +38,97 @@ class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     visualize_gp: bool = False
 
 
-def cost_model(lf, cost_ratio):
-    a = (1 - 1 / cost_ratio) / (1 - lf)
-    cost_model = AffineFidelityCostModel(
-        fidelity_weights={-1: a},
-        fixed_cost=1 - a
-    )
-    return cost_model
+# def cost_model(lf, cost_ratio):
+#     a = (1 - 1 / cost_ratio) / (1 - lf)
+#     cost_model = AffineFidelityCostModel(
+#         fidelity_weights={-1: a},
+#         fixed_cost=1 - a
+#     )
+#     return cost_model
 
 
-def cost_aware_utility(self):
-    return InverseCostWeightedUtility(cost_model=self.cost_model())
+# def cost_aware_utility(self):
+#     return InverseCostWeightedUtility(cost_model=self.cost_model())
 
 
-def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, Any]:
-    candidates, _ = optimize_acqf(
-        acq_function=acq_f,
-        # bounds=torch.tensor(function.input_domain.T, dtype=torch.float64),
-        bounds=torch.tile(torch.tensor([[0.0], [1.0]]), (1, function.dimensionality)),
-        q=1,
-        num_restarts=10,
-        raw_samples=15,
-    )
-    new_x = candidates.numpy()
-    new_obj = function(new_x)
-    return new_x, new_obj
+# def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, Any]:
+#     candidates, _ = optimize_acqf(
+#         acq_function=acq_f,
+#         # bounds=torch.tensor(function.input_domain.T, dtype=torch.float64),
+#         bounds=torch.tile(torch.tensor([[0.0], [1.0]]), (1, function.dimensionality)),
+#         q=1,
+#         num_restarts=10,
+#         raw_samples=15,
+#     )
+#     new_x = candidates.numpy()
+#     new_obj = function(new_x)
+#     return new_x, new_obj
 
 
-def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, multifidelity_function: MultiFidelityFunction) -> Tuple[Any, Any, Any]:
+# def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, multifidelity_function: MultiFidelityFunction) -> Tuple[Any, Any, Any]:
 
-    dim = multifidelity_function.fidelity_functions[0].dimensionality
-    fixed_features_list = [{dim: float(lf)},
-                           {dim: 1.0}]
+#     dim = multifidelity_function.fidelity_functions[0].dimensionality
+#     fixed_features_list = [{dim: float(lf)},
+#                            {dim: 1.0}]
 
-    # design_bounds = torch.tensor(base_fun.input_domain.T, dtype=torch.float64)
-    design_bounds = torch.tile(torch.tensor([[0.0], [1.0]]), (1, dim))
-    fidelity_bounds = torch.tensor([[0.0], [1.0]], dtype=torch.float64)
-    augmented_bounds = torch.hstack((design_bounds, fidelity_bounds))
+#     # design_bounds = torch.tensor(base_fun.input_domain.T, dtype=torch.float64)
+#     design_bounds = torch.tile(torch.tensor([[0.0], [1.0]]), (1, dim))
+#     fidelity_bounds = torch.tensor([[0.0], [1.0]], dtype=torch.float64)
+#     augmented_bounds = torch.hstack((design_bounds, fidelity_bounds))
 
-    candidates, _ = optimize_acqf_mixed(
-        acq_function=acq_f,
-        bounds=augmented_bounds,
-        fixed_features_list=fixed_features_list,
-        q=1,
-        num_restarts=10,
-        raw_samples=15,
-        options={"batch_limit": 1, "maxiter": 200},
-        sequential=True,
-    )
+#     candidates, _ = optimize_acqf_mixed(
+#         acq_function=acq_f,
+#         bounds=augmented_bounds,
+#         fixed_features_list=fixed_features_list,
+#         q=1,
+#         num_restarts=10,
+#         raw_samples=15,
+#         options={"batch_limit": 1, "maxiter": 200},
+#         sequential=True,
+#     )
 
-    cost = cost_model(lf, cost_ratio=2)(candidates).sum()
-    new_x = candidates.numpy()
-    function = multifidelity_function.get_fidelity_function_by_parameter(fidelity_parameter=new_x[0, -1])
-    new_obj = function(new_x)
+#     cost = cost_model(lf, cost_ratio=2)(candidates).sum()
+#     new_x = candidates.numpy()
+#     function = multifidelity_function.get_fidelity_function_by_parameter(fidelity_parameter=new_x[0, -1])
+#     new_obj = function(new_x)
 
-    print(new_x, new_obj)
+#     print(new_x, new_obj)
 
-    return new_x, new_obj, cost
+#     return new_x, new_obj, cost
 
 
 def optimize_acquisition(acq_f, function):
     res = scipy.optimize.minimize(
-        fun=lambda x: -acq_f(x), 
-        x0=np.array([0.5] * function.dimensionality),
+        fun=lambda x: -acq_f(torch.tensor(x[None, :])),
+        x0=np.random.rand(function.dimensionality),
         method='L-BFGS-B', 
-        bounds=scipy.optimize.Bounds(lb=function.scale_bounds[:, 0], ub=function.scale_bounds[:, 1])
+        bounds=scipy.optimize.Bounds(lb=function.scale_bounds[:, 0], ub=function.scale_bounds[:, 1]),
+        options={'disp': False, 'eps': 1e-4},
      )
     new_x = res.x[None, :]
+    acq_val = -res.fun
     new_obj = function(new_x)
-    return new_x, new_obj
+    return new_x, new_obj, acq_val
+
+def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_function, test_x_hf):
+    acq_val_tot = -torch.inf
+    for fid, cost in enumerate(multifidelity_function.costs):
+        acq_f = lambda x: multifidelity_acq_f(torch.tensor(x[:, None]), fid=fid)
+
+        new_x, new_obj, acq_val = optimize_acquisition(acq_f, multifidelity_function.fidelity_functions[fid])
+        if acq_val > acq_val_tot:
+            new_x_tot = new_x
+            new_obj_tot = new_obj
+            acq_val_tot = acq_val
+            cost_tot = cost
+            fid_tot = fid
+    return new_x_tot, new_obj_tot, cost_tot, fid_tot
 
 class BayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
     """Bayesian optimization implementation based on the gpytorch library"""
 
     parameter: BayesianOptimizationTorch_Parameters = BayesianOptimizationTorch_Parameters()
-
-    # def init_parameters(self):
-
-    #     # Default acquisition hyperparameters
-    #     options = {
-    #         "acquisition_hyperparameters": {
-    #             'beta': 4,
-    #             'maximize': False,
-    #         }
-    #     }
-
-    #     self.parameter = BayesianOptimizationTorch_Parameters(**options)
 
     def set_algorithm(self):
         self.algorithm = None
@@ -192,7 +196,7 @@ class BayesianOptimizationTorch(Optimizer):
         )
 
         # new_x, new_obj = optimize_acq_and_get_observation(acquisition, function)
-        new_x, new_obj = optimize_acquisition(acquisition, function)
+        new_x, new_obj, _ = optimize_acquisition(acquisition, function)
 
         self.data.add_numpy_arrays(input=new_x, output=self.scaler.transform(new_obj))
 
@@ -200,16 +204,20 @@ class BayesianOptimizationTorch(Optimizer):
 class MFBayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for MFBayesianOptimizationTorch optimizer"""
 
-    regressor: f3dasm.Regressor = Stmf
+    regressor: f3dasm.Regressor = MultitaskGPR
     acquisition: Any = VFUpperConfidenceBound
-    acquisition_hyperparameters: Any = None
-    noise_fix: bool = False
+
+    regressor_hyperparameters: f3dasm.regression.Cokgj_Parameters = f3dasm.regression.Cokgj_Parameters()
+    acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
+    n_init: int = 10
+    visualize_gp: bool = False
 
 
 @dataclass
 class MFBayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation from the botorch library"""
     multifidelity_function: MultiFidelityFunction = None
+    parameter: MFBayesianOptimizationTorch_Parameters = MFBayesianOptimizationTorch_Parameters()
 
     def init_parameters(self) -> None:
 
@@ -228,19 +236,13 @@ class MFBayesianOptimizationTorch(Optimizer):
 
     def update_step_mf(self, multifidelity_function: MultiFidelityFunction, iteration: int,) -> None:
 
-        if iteration == 0:
-            self.data[-1].data = pd.concat([d.data for d in self.data], ignore_index=True)
-
-        train_data = self.data[-1]
-
-        regressor = Stmf(
-            mf_train_data=train_data,
-            mf_design=train_data.design,
-            noise_fix=self.parameter.noise_fix,
+        regressor = f3dasm.regression.gpr.Cokgj(
+            mf_train_data=self.data, 
+            design=self.data[0].design,
+            parameter=self.parameter.regressor_hyperparameters,
         )
 
         surrogate = regressor.train()
-        model = surrogate.model
 
         low_sampler = f3dasm.sampling.SobolSequence(design=self.data[0].design)
         high_sampler = f3dasm.sampling.SobolSequence(design=self.data[1].design)
@@ -248,8 +250,11 @@ class MFBayesianOptimizationTorch(Optimizer):
         test_x_lf = low_sampler.get_samples(numsamples=500)
         test_x_hf = high_sampler.get_samples(numsamples=500)
 
-        mean_high, _ = surrogate.predict(test_x_hf)
-        mean_low, _ = surrogate.predict(test_x_lf)
+        # mean_high = surrogate.predict([torch.tensor([])[:, None], torch.tensor(test_x_hf.get_input_data().values)]).mean
+        mean_high = surrogate.predict([torch.empty(0, multifidelity_function.fidelity_functions[0].dimensionality), 
+            torch.tensor(test_x_hf.get_input_data().values)]).mean
+        mean_low = surrogate.predict([torch.tensor(test_x_lf.get_input_data().values), 
+            torch.empty(0, multifidelity_function.fidelity_functions[0].dimensionality)]).mean
 
         cr = multifidelity_function.costs[1] / multifidelity_function.costs[0]
 
@@ -261,24 +266,23 @@ class MFBayesianOptimizationTorch(Optimizer):
         #     cr=cr,
         # )
 
-        self.parameter.acquisition = VFUpperConfidenceBound(
-            model=model,
+        acquisition = self.parameter.acquisition(
+            model=surrogate.model,
             mean=[mean_low, mean_high],
             cr=cr,
-            **self.parameter.acquisition_hyperparameters,
+            **self.parameter.acquisition_hyperparameters.__dict__,
         )
 
-        new_x, new_obj, cost = optimize_mfacq_and_get_observation(
-            acq_f=self.parameter.acquisition,
+        new_x, new_obj, cost, fid = optimize_multifidelity_acquisition(
+            multifidelity_acq_f=acquisition,
             multifidelity_function=multifidelity_function,
-            lf=multifidelity_function.fidelity_parameters[0],
-            cost_model=cost_model
+            test_x_hf=test_x_hf,
         )
 
         self.cost = cost
         print("This iteration cost:", float(self.cost))
 
-        self.data[-1].add_numpy_arrays(input=new_x, output=new_obj)
+        self.data[fid].add_numpy_arrays(input=new_x, output=new_obj)
 
 def mf_data_compiler(
         mfdata: List[Data],

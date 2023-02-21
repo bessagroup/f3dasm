@@ -29,7 +29,7 @@ training_iter = 150
 # train_surrogate = True
 n_test = 500
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
-train_data_supplied = 1
+train_data_supplied = 0
 
 mean_module_list = torch.nn.ModuleList([
     gpytorch.means.ZeroMean(),
@@ -87,12 +87,12 @@ class Forrester_lf(f3dasm.functions.Function):
     def f(self, x):
         return 0.5 * (6 * x - 2) ** 2 * np.sin(12 * x - 4) + 10 * (x - 0.5) - 5
 
-# base_fun = f3dasm.functions.AlpineN2(
-#     dimensionality=dim,
-#     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
-#     )
+base_fun = f3dasm.functions.AlpineN2(
+    dimensionality=dim,
+    scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    )
 
-base_fun = Forrester(dimensionality=1)
+# base_fun = Forrester(dimensionality=1)
 
 fids = [0.5, 1.0]
 costs = [0.5, 1.0]
@@ -105,15 +105,15 @@ mf_train_data = []
 
 for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
-    # fun = AugmentedFunction(
-    #         base_fun=base_fun,
-    #         fid=fid,
-    #         )
+    fun = AugmentedFunction(
+            base_fun=base_fun,
+            fid=fid,
+            )
 
-    if fid_no == 0:
-        fun = Forrester_lf(dimensionality=1)
-    else:
-        fun = Forrester(dimensionality=1)
+    # if fid_no == 0:
+    #     fun = Forrester_lf(dimensionality=1)
+    # else:
+    #     fun = Forrester(dimensionality=1)
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -207,7 +207,8 @@ with torch.no_grad(), gpytorch.settings.fast_pred_var():
         test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
    
     # observed_pred = surrogate.predict([test_x, test_x])
-    observed_pred = surrogate.predict([torch.tensor([])[:, None], test_x])
+    # observed_pred = surrogate.predict([torch.tensor([])[:, None], test_x])
+    observed_pred = surrogate.predict([torch.empty(0, dim), test_x])
     # observed_pred = surrogate.predict([test_x, torch.tensor([])[:, None]])
     exact_y = fun(test_x.numpy())#[:, None])
 

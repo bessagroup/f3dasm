@@ -75,28 +75,28 @@ class Sogpr(TorchGPRegressor):
         )
 
 
-@dataclass
-class Mtask_Parameters:
-    kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
+# @dataclass
+# class Mtask_Parameters:
+#     kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
 
 
-class Mtask(TorchGPRegressor):
-    def __init__(
-        self,
-        regressor=MultiTaskGP,
-        parameter=Mtask_Parameters(),
-        mf_train_data=None,
-        mf_design=None,
-    ):
-        super().__init__(
-            train_data=mf_train_data,
-            covar_module=parameter.kernel,
-            design=mf_design,
-            task_feature=-1,
-        )
+# class Mtask(TorchGPRegressor):
+#     def __init__(
+#         self,
+#         regressor=MultiTaskGP,
+#         parameter=Mtask_Parameters(),
+#         mf_train_data=None,
+#         mf_design=None,
+#     ):
+#         super().__init__(
+#             train_data=mf_train_data,
+#             covar_module=parameter.kernel,
+#             design=mf_design,
+#             task_feature=-1,
+#         )
 
-        self.regressor = regressor
-        self.kernel = parameter.kernel
+#         self.regressor = regressor
+#         self.kernel = parameter.kernel
 
 
 class MultifidelityGPModel(gpytorch.models.ExactGP):
@@ -210,6 +210,8 @@ class Cokgj_Parameters:
     # kernel: gpytorch.kernels.Kernel = cokgj_kernel.CoKrigingKernel()
 
 class CokgjModel(MultifidelityGPModel):
+    
+    num_outputs = 1
 
     def __init__(self, train_x, train_y, likelihood, mean_module, covar_module, rho=[1.87], noise=[0., 0.]):
         super(CokgjModel, self).__init__(train_x, train_y, likelihood)
@@ -371,7 +373,7 @@ class MultitaskGPModel(MultifidelityGPModel):
     
 
 @dataclass
-class Stmf_Parameters:
+class Multitask_Parameters:
     """(Pre-initialized) hyperparameters for single-fidelity Gaussian process regression in pytorch"""
 
     likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -386,12 +388,12 @@ class Stmf_Parameters:
     # linear_truncated: bool = False
     # data_fidelity: int = -1
 
-class Stmf(TorchGPRegressor):
+class MultitaskGPR(TorchGPRegressor):
     def __init__(
         self,
         # regressor=SingleTaskMultiFidelityGP,
         regressor=MultitaskGPModel,
-        parameter=Stmf_Parameters(),
+        parameter=Multitask_Parameters(),
         mf_train_data=None,
         design=None,
         # noise_fix: bool = False

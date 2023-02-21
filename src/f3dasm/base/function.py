@@ -274,12 +274,14 @@ class AugmentedFunction(Function):
         base_fun: Function = None,
         fid: float = None,
         aug_mode: Any = None,
+        scale_bounds: Any = None,
         ):
         super().__init__(dimensionality, seed)
 
         self.base_fun = base_fun
         self.fid = fid
         self.aug_mode = aug_mode
+        self.scale_bounds = scale_bounds
 
     def f(self, x) -> np.ndarray:
         x_space = x#[:, :-1]
