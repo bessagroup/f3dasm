@@ -30,6 +30,8 @@ umask 0077
 # cd ${TMP}
 # #################################################### 
 
+JOB_ID=$(echo "${PBS_JOBID}" | sed 's/\[[^][]*\]//g')
+
 module load use.own
 module load miniconda3
 cd $PBS_O_WORKDIR
@@ -46,7 +48,7 @@ export OMP_NUM_THREADS=12
 
 #Executing my python program
 
-python main.py hydra.run.dir=outputs/${now:%Y-%m-%d}/${PBS_JOBID}
+python main.py hydra.run.dir=outputs/${now:%Y-%m-%d}/${JOBID}
 
 # job done, copy everything back
 # echo "Copying from ${TMP}/ to ${PBS_O_WORKDIR}/"
