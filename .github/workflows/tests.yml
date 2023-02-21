@@ -3,8 +3,7 @@ name: Pull request automated checks
 on:
   pull_request:
     branches:
-      - versionmartin
-      - master
+      - main
       - "pr/**"
 
 jobs:

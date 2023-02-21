@@ -11,7 +11,10 @@ import f3dasm
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
+    # Set the seed
     seed = np.random.randint(low=0, high=1e5)
+
+    # Sample a dimension
     dimensionality = np.random.randint(
         low=config.design.dimensionality_lower_bound, high=config.design.dimensionality_upper_bound + 1
     )
@@ -33,7 +36,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
     function = function_class(
         dimensionality=dimensionality, noise=function_noise, scale_bounds=design.get_bounds(), seed=seed
     )
-    data = f3dasm.Data(design=design)
+    data = f3dasm.ExperimentData(design=design)
 
     optimizers = [optimizer(data=data, seed=seed) for optimizer in optimizers_class]
     sampler = sampler_class(design=data.design, seed=seed)

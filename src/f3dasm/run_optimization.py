@@ -46,7 +46,7 @@ class OptimizationResult:
         hyperparameters
             hyperparameters of the optimizer
         function
-            function that was optimized
+            functionname that was optimized
         sampler
             classname of the initial sampling strategy
         number_of_samples
@@ -57,18 +57,16 @@ class OptimizationResult:
         self.data = data
         self.optimizer = optimizer
         self.hyperparameters = hyperparameters
-        self.function = function
+        self.function = function.get_name()
         self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
-        self._log()
+        self._log(function)
 
-    def _log(self):
+    def _log(self, function):
         # Log
         logging.info(
-            f"Optimized {self.function.get_name()} function (seed={self.function.seed}, \
-            dim={self.function.dimensionality}, noise={self.function.noise}) with {self.optimizer} \
-            optimizer for {len(self.data)} realizations!"
+            f"Optimized {self.function} function (seed={function.seed},dim={function.dimensionality}, noise={function.noise}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
         )
 
 
