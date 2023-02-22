@@ -66,7 +66,8 @@ class OptimizationResult:
     def _log(self, function):
         # Log
         logging.info(
-            f"Optimized {self.function} function (seed={function.seed},dim={function.dimensionality}, noise={function.noise}) with {self.optimizer} optimizer for {len(self.data)} realizations!"
+            (f"Optimized {self.function} function (seed={function.seed},dim={function.dimensionality}, "
+             f"noise={function.noise}) with {self.optimizer} optimizer for {len(self.data)} realizations!")
         )
 
 
