@@ -49,7 +49,7 @@ class PyBenchFunction(Function):
             set this True to not randomly off-set the pybenchfunction
         """
         self.noise = noise
-        self.offset = np.zeros(dimensionality)
+        self.offset: np.ndarray = np.zeros(dimensionality)
         self.input_domain: Any or np.ndarray = None
         self.augmentor = FunctionAugmentor()
         self.no_offset = no_offset
@@ -73,6 +73,20 @@ class PyBenchFunction(Function):
         :return:
         """
         pass
+
+    def get_info(self) -> dict:
+        """Returns the information to recreate this object
+
+        Returns
+        -------
+            Dictionary to store and recreate the same object
+        """
+        return {'noise': self.noise,
+                'offset': self.offset.tolist(),
+                'dimensionality': self.dimensionality,
+                'no_offset': self.no_offset,
+                'seed': self.seed,
+                'scale_bounds': self.scale_bounds.tolist()}
 
     def _construct_augmentor(self) -> FunctionAugmentor:
 
