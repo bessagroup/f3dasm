@@ -1,4 +1,4 @@
-f3dasm.regression package
+f3dasm.simulation package
 =========================
 
 Subpackages
@@ -7,16 +7,15 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   f3dasm.regression.adapters
-   f3dasm.regression.kernels
+   f3dasm.simulation.abaqus
 
 Submodules
 ----------
 
-f3dasm.regression.gpr module
-----------------------------
+f3dasm.simulation.simulator module
+----------------------------------
 
-.. automodule:: f3dasm.regression.gpr
+.. automodule:: f3dasm.simulation.simulator
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +23,7 @@ f3dasm.regression.gpr module
 Module contents
 ---------------
 
-.. automodule:: f3dasm.regression
+.. automodule:: f3dasm.simulation
    :members:
    :undoc-members:
    :show-inheritance:

@@ -63,7 +63,7 @@ jobs:
           pip install -r docs/requirements.txt
       - name: Build documentation
         run: |
-          sphinx-build -b html ./docs ./docs/_build/html
+          sphinx-build -b html ./docs/source ./docs/build/html
   build-package:
     strategy:
       matrix:
