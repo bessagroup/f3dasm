@@ -71,6 +71,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -112,4 +113,6 @@ notebooks/archive/
 
 # Notebooks
 notebooks/*.ipynb
+
+# .. but include tutorial notebooks!
 !notebooks/tutorials/
