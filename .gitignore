@@ -109,3 +109,7 @@ notebooks/archive/
 
 # Exclude obj files in tests folder
 !tests/*/*.obj
+
+# Notebooks
+notebooks/*.ipynb
+!notebooks/tutorials/
