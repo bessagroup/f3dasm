@@ -87,6 +87,21 @@ class Optimizer:
         """
         pass
 
+    def get_info(self) -> Tuple[dict, str]:
+        """Returns the information to recreate this object
+
+        Returns
+        -------
+            Tuple with dictionary to store and recreate the same object and name of the object
+        """
+        args: dict = {'data': self.data,
+                      'hyperparameters': self.hyperparameters,
+                      'seed': self.seed,
+                      }
+
+        name: str = self.get_name()
+        return args, name
+
     def init_parameters(self):
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
