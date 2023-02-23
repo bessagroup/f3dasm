@@ -13,6 +13,5 @@ pathos>=0.3.0
 pytest>=7.2.0
 scikit-learn
 hydra-core>=1.2.0
-hydra>=2.5
 seaborn>=0.6.2
 pygmo>=2.16.1; platform_system == "Linux"
