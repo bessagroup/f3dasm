@@ -33,7 +33,7 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[ExperimentData], optimizer: str, hyperparameters: dict,
+    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, hyperparameters: dict,
                  function: Function, sampler: str, number_of_samples: int, seeds: List[int]):
         """Optimizaiton results object
 
@@ -55,9 +55,9 @@ class OptimizationResult:
             list of seeds that were used for each realization
         """
         self.data = data
-        self.optimizer = optimizer
+        self.optimizer = optimizer.get_name()
         self.hyperparameters = hyperparameters
-        self.function = function.get_name()
+        self.function = function.get_info()
         self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
@@ -201,7 +201,7 @@ def run_multiple_realizations(
 
     return OptimizationResult(
         data=results,
-        optimizer=optimizer.get_name(),
+        optimizer=optimizer,
         hyperparameters=optimizer.parameter,
         function=function,
         sampler=sampler,
