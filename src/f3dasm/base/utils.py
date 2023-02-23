@@ -14,9 +14,9 @@ import pandas as pd
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
+from ..design.design import DesignSpace
 # Locals
 from ..design.experimentdata import ExperimentData
-from ..design.design import DesignSpace
 from ..design.parameter import ContinuousParameter
 
 #                                                          Authorship & Credits
@@ -209,5 +209,5 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
 
 
 # technically not a np array input!
-def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
+def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> np.ndarray:
     return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])
