@@ -170,17 +170,3 @@ class ConstraintInterface:
     """Interface for constraints"""
 
     pass
-
-
-# Create designspace from info and name tuple
-def create_parameter_from_dict(info: dict, name: str) -> Parameter:
-    # Really dirty :(
-    if name == CategoricalParameter.get_name():
-        return CategoricalParameter(**info)
-    elif name == DiscreteParameter.get_name():
-        return DiscreteParameter(**info)
-    elif name == ContinuousParameter.get_name():
-        return ContinuousParameter(**info)
-    elif name == ConstantParameter.get_name():
-        return ConstantParameter(**info)
-    return ValueError("Invalid parameter name!")

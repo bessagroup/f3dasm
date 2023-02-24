@@ -13,8 +13,7 @@ import pandas as pd
 from .constraint import Constraint
 # Local
 from .parameter import (CategoricalParameter, ConstantParameter,
-                        ContinuousParameter, DiscreteParameter, Parameter,
-                        create_parameter_from_dict)
+                        ContinuousParameter, DiscreteParameter, Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -281,23 +280,3 @@ class DesignSpace:
     def _all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
         return self._check_space_on_type(ContinuousParameter, self.output_space)
-
-
-# Create designspace from json file
-def create_design_from_json(json_string: str) -> DesignSpace:
-    # Load JSON string
-    design_dict = json.loads(json_string)
-    return create_design_from_dict(design_dict)
-
-# Create designspace from dictionary
-
-
-def create_design_from_dict(design_dict: dict) -> DesignSpace:
-    for key, space in design_dict.items():
-        parameters = []
-        for parameter in space:
-            parameters.append(create_parameter_from_dict(*parameter))
-
-        design_dict[key] = parameters
-
-    return DesignSpace(**design_dict)

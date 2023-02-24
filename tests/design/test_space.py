@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
+from f3dasm.design import create_parameter_from_dict
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter, Parameter,
-                                     create_parameter_from_dict)
+                                     DiscreteParameter, Parameter)
 
 pytestmark = pytest.mark.smoke
 

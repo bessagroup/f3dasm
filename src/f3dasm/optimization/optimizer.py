@@ -11,10 +11,8 @@ from typing import Any, Mapping, Optional, Tuple
 import autograd.numpy as np
 
 from ..base.function import Function
-from ..base.utils import find_class
 # Locals
-from ..design.experimentdata import (ExperimentData,
-                                     create_experimentdata_from_dict)
+from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -277,17 +275,3 @@ def _number_of_overiterations(iterations: int, population: int) -> int:
         return overiterations
     else:
         return population - overiterations
-
-
-def create_optimizer_from_json(json_string: str):
-    optimizer_dict, name = json.loads(json_string)
-    return create_experimentdata_from_dict(optimizer_dict, name)
-
-
-# Stub!
-def create_optimizer_from_dict(optimizer_dict: dict, name: str):
-    # Stub!
-    optimizer_dict['data'] = create_experimentdata_from_dict(optimizer_dict['data'])
-
-    # Here, code to find the optimizer class with matches name (like f3dasm.find_class())
-    return None
