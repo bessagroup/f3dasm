@@ -1,0 +1,1135 @@
+!Area 1 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,z,0
+	ksel,r,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	!lsel,NONE $ lsel,all $ lplot
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	ksel,s,loc,y,0
+	lslk,u,0
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	!lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	ksel,r,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+*enddo
+
+!Area 2 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,x,-((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,x,-((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	ksel,s,loc,y,0
+	lslk,u,0
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	ksel,r,loc,x,-((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+*enddo
+
+!Area 3 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	ksel,r,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+*enddo
+
+
+!Area 4 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	ksel,r,loc,x,-((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,((sin(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+*enddo
+
+!Area 5 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	ksel,r,loc,x,((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+*enddo
+
+
+!Area 6 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	ksel,r,loc,x,-((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+
+
+!Area 7 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,((cos(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+
+!Area 8 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,-((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,-((cos(theta_1%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,x,-((cos(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	lslk,s,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-((sin(theta_1%WT%))*(WD%WT%/2))
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+
+!Area 9 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,-(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,0
+	ksel,r,loc,x,0
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+
+!Area 10 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,0
+	ksel,r,loc,x,0
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+	
+
+!Area 11 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,0
+	ksel,r,loc,x,0
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+	
+!Area 12 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT% 
+	!Line 1
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	ksel,s,loc,x,0
+	ksel,r,loc,y,0
+	lslk,r,0
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	!line 3
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,x,-(WD%WT%/2)
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,x,-(WD%WT%/2)
+	ksel,r,loc,z,0
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	!line 4
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	ksel,s,loc,y,0
+	ksel,r,loc,x,0
+	lslk,s,0
+	ksel,r,loc,z,0
+	lslk,r,0
+	lsel,u,radius,,(WD%WT%/2)
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	X_Factor%WT% = WD%WT% $ Y_Factor%WT% = WD%WT% $ Z_Factor%WT% = HLLL%WT%(lp_n)
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	ksel,s,loc,y,0
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	lsel,NONE $ lsel,all $ lplot
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+
+!Area 13 Left Side Loop
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	!line 1
+	WPCSYS,1,0 $ CSYS,4
+	WPOFFS,100,100,50 $ CSYS,4
+	lp_n = nth_Heel_L%WT%
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+	WPOFFS,0,LH%WT%(lp_n),-HLLL%WT%(lp_n) $ CSYS,4
+	lsel,s,loc,z,0
+	lsel,r,loc,x,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	CM,L_1%WT%,LINE
+	
+	!line 2
+	lsel,s,loc,z,0
+	lsel,r,loc,y,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	CM,L_2%WT%,LINE
+	
+	!line 3
+	lsel,s,loc,z,0
+	ksel,s,loc,x,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_3%WT%,LINE
+	
+	!line 4
+	lsel,s,loc,z,0
+	ksel,s,loc,y,(WD%WT%/2)
+	lslk,r,0
+	ksel,s,loc,x,((cos(theta_2%WT%))*(WD%WT%/2))
+	lslk,r,0
+	CM,L_4%WT%,LINE
+	
+	CMSEL,S,L_1%WT%,LINE $ CMSEL,A,L_2%WT%,LINE $ CMSEL,A,L_3%WT%,LINE $ CMSEL,A,L_4%WT%,LINE
+	
+	AL,ALL $ CMSEL,NONE $ LSEL,NONE
+	WPCSYS,1,0 $ CSYS,4
+	
+	lplot
+	aplot
+	
+*enddo
+	
+
+	
+
+	

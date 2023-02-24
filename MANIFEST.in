@@ -1,4 +1,4 @@
 include README.md
-include VERSION
 include LICENSE
 include tests/*
+include requirements.txt

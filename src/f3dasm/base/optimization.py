@@ -4,7 +4,7 @@ from typing import Any, Mapping, Optional, List
 
 import autograd.numpy as np
 
-from ..base.data import Data
+from ..design import ExperimentData
 from ..base.function import Function, MultiFidelityFunction
 
 
@@ -47,7 +47,7 @@ class Optimizer:
         When number of datapoints is lower than the population
     """
 
-    data: Data or List[Data]
+    data: ExperimentData or List[ExperimentData]
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
     seed: int = np.random.randint(low=0, high=1e5)
     algorithm: Any = field(init=False)
@@ -111,7 +111,7 @@ class Optimizer:
         """
         raise NotImplementedError("You should implement an update step for your algorithm!")
 
-    def set_data(self, data: Data):
+    def set_data(self, data: ExperimentData):
         """Overwrite the data attribute
 
         Parameters
@@ -186,7 +186,7 @@ class Optimizer:
         else:
             return self.parameter.population - overiterations
 
-    def extract_data(self) -> Data:        
+    def extract_data(self) -> ExperimentData:        
         """Returns a copy of the data
 
         Returns

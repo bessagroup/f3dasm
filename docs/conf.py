@@ -63,6 +63,8 @@ autoclass_content = "both"
 autodoc_preserve_defaults = True
 autodoc_typehints_format = "short"
 
+autodoc_mock_imports = ["abaqus", "odbAccess", "abaqusConstants", "cPickle", "caeModules"]
+
 always_document_param_types = True
 typehints_defaults = "comma"
 typehints_use_rtype = False

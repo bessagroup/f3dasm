@@ -1,0 +1,98 @@
+/post1 
+
+ETABLE,ERASE
+alls
+
+save
+
+ESEL,ALL  
+
+EPS_Cycle = 2 
+
+!EPS_Cycle = 1, Means Accumulated EPS From TC -40°C (First Time = Load Step 14) to -40°C (Second Time = Load Step 32)
+!EPS_Cycle = 2, Means Accumulated EPS From TC -40°C (Second Time = Load Step 32) to -40°C (Third Time = Load Step 50)
+!EPS_Cycle = 3, Means Accumulated EPS From TC +125°C (First Time = Load Step 23) to +125°C (Second Time = Load Step 41)
+
+
+*if,EPS_Cycle,EQ,1,then
+
+		ESEL,ALL             
+		
+		SET,32,LAST						!Load Step 32, Sub Step = Last 
+		ETAB,EPS32,NL,EPEQ
+		
+		SET,14,LAST						!Load Step 14, Sub Step = Last
+		ETAB,EPS14,NL,EPEQ
+
+		ETAB,EVOL,VOLU 
+		
+		SADD,EPS1,EPS32,EPS14,1,-1		!Delta Accumulated EPS
+		SMULT,EPS_v,EPS1,EVOL,1,1    	!Multiplied accross the selected volumes 
+		
+
+*elseif,EPS_Cycle,EQ,2,then
+
+		ESEL,ALL             
+		
+		SET,50,LAST						!Load Step 50, Sub Step = Last 
+		ETAB,EPS50,NL,EPEQ
+		
+		SET,32,LAST						!Load Step 32, Sub Step = Last
+		ETAB,EPS32,NL,EPEQ
+		
+		ETAB,EVOL,VOLU 
+
+		SADD,EPS2,EPS50,EPS32,1,-1		!Delta Accumulated EPS
+		SMULT,EPS_v,EPS2,EVOL,1,1    	!Multiplied accross the selected volumes 
+		
+*elseif,EPS_Cycle,EQ,3,then
+
+		ESEL,ALL             
+		
+		SET,41,LAST						!Load Step 41, Sub Step = Last 
+		ETAB,EPS41,NL,EPEQ
+		
+		SET,23,LAST						!Load Step 23, Sub Step = Last
+		ETAB,EPS23,NL,EPEQ
+		
+		ETAB,EVOL,VOLU 
+
+		SADD,EPS3,EPS41,EPS23,1,-1		!Delta Accumulated EPS
+		SMULT,EPS_v,EPS3,EVOL,1,1    	!Multiplied accross the selected volumes
+*endif
+
+
+alls
+
+!PLETAB,EPS_v,AVG
+
+!*GET,EPS_max,PLNSOL,,MAX
+
+ESORT,ETAB,EPS_v
+*GET,EPS_max,SORT,,MAX
+
+
+!*CFOPEN,Max_Strain_%WThk%,txt
+*CFOPEN,Max_Strain_WThk=%WThk%_FL=%FL%_MeshSizeXY=%MeshSize_XY%,txt
+!*VWRITE,'EPS_max'
+!(A8)
+*VWRITE,EPS_max
+(E15.8)
+*CFCLOS
+
+
+save 
+
+
+  
+  
+  
+  
+  
+ 
+  
+  
+  
+  
+  
+  

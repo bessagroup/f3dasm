@@ -1,23 +1,25 @@
 <center>
-	<img src="./docs/img/f3dasm-logo.png" alt="F3DASM logo" />
+	<img src="./docs/img/f3dasm-logo.svg" alt="F3DASM logo" />
 </center>
 
 ***
+
+[![Python](https://img.shields.io/badge/python-3.7-blue)](https://www.python.org)
+[![pypi](https://img.shields.io/pypi/v/f3dasm.svg)](https://pypi.org/project/f3dasm/)
+[![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/optuna/optuna)
+
+[**Docs**](https://bessagroup.github.io/F3DASM/)
+| [**Installation**](https://bessagroup.github.io/F3DASM/gettingstarted.html)
+| [**GitHub**](https://github.com/bessagroup/F3DASM/tree/versionmartin)
+| [**PyPI**](https://pypi.org/project/f3dasm/)
+| [**Practical sessions**](https://github.com/mpvanderschelling/F3DASM_practical)
 
 This code intends to facilitate the design and analysis of materials & structures/metamaterials
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
 
-Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
-
-Current developers: [M.P. van der Schelling](https://github.com/mpvanderschelling/)
-
-## Links
-
-* Link to [documentation](https://bessagroup.github.io/F3DASM/)
-* Link to [GitHub repository](https://github.com/bessagroup/F3DASM/tree/versionmartin)
-* Link to [PyPI package](https://pypi.org/project/f3dasm/)
-
+* Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
+* Current developer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
 
 ## Referencing
 

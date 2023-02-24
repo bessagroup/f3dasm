@@ -1,22 +1,16 @@
+# Package requirements
+-r ./requirements.txt
+
+# Linting
 flake8
 
-tox==3.25.0
-tox-conda
+# Testing
+-r ./tests/requirements.txt
 
-sphinx
-sphinx_rtd_theme
-sphinx-autodoc-typehints
+# Documentation
+-r ./docs/requirements.txt
 
-
-numpy
-scipy
-pandas
-salib==1.4.5
-matplotlib==3.5.2
-numdifftools
-gpy
-gpyopt
-pytest
-hypothesis
-tensorflow
-autograd
+# Building
+setuptools>=43.0.0
+build
+wheel

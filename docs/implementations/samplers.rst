@@ -7,14 +7,14 @@ Usage
 A new sampler can be created by initializing the sampler with:
 
 * A :class:`~f3dasm.base.design.DesignSpace`
-* A random :attr:`~f3dasm.base.samplingmethod.SamplingInterface.seed` (optional)
+* A random :attr:`~f3dasm.sampling.sampler.Sampler.seed` (optional)
 
 
 .. code-block:: python
 
   ran = f3dasm.sampling.RandomUniformSampling(design=design, seed=42)
   
-Then we can evoke sampling by calling the :meth:`~f3dasm.base.samplingmethod.SamplingInterface.get_samples` method:
+Then we can evoke sampling by calling the :meth:`~f3dasm.sampling.sampler.Sampler.get_samples` method:
 
 .. code-block:: python
 
@@ -46,7 +46,7 @@ Latin Hypercube sampling
 
 .. automodule:: f3dasm.sampling.latinhypercube
    :members:
-   :undoc-members:
+   :noindex:
    :show-inheritance:
 
 Random Uniform sampling
@@ -54,7 +54,7 @@ Random Uniform sampling
 
 .. automodule:: f3dasm.sampling.randomuniform
    :members:
-   :undoc-members:
+   :noindex:
    :show-inheritance:
 
 Sobol sequence sampling
@@ -62,4 +62,5 @@ Sobol sequence sampling
 
 .. automodule:: f3dasm.sampling.sobolsequence
    :members:
+   :noindex:
    :show-inheritance:

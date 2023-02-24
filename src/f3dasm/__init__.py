@@ -5,35 +5,35 @@ F3DASM
 This is the initalizer of the F3DASM package
 """
 
-# Import base class in main namespace
-from .base.space import *
-from .base.data import *
-from .base.design import *
-from .base.optimization import *
-from .base.samplingmethod import *
+__version__ = '0.2.96'
+
+#                                                                       Modules
+# =============================================================================
+
+# Standard
+import logging
+
+# Locals
+from . import functions, machinelearning, optimization, sampling, simulation
+from ._show_versions import show_versions
 from .base.function import *
 from .base.utils import *
-from .base.utils_mf import *
-from .base.regression import *
-
-from .base.simulation import *
-
-# Import implementation modules in separate namespaces
-from . import optimization
-from . import functions
-from . import sampling
-from . import simulation
-from . import regression
-
-# Import main scripts
+from .design.design import *
+from .design.experimentdata import *
+from .design.parameter import *
+from .optimization.optimizer import *
 from .run_optimization import *
+from .sampling.sampler import *
 
-# Configuration file structure
-from . import config
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 # Logging things
-
-import logging
-
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)

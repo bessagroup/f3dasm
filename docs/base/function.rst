@@ -11,4 +11,5 @@ API Documentation
 
 .. automodule:: f3dasm.base.function
    :members:
+   :nodindex:
    :show-inheritance:

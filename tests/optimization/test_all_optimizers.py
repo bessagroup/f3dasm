@@ -1,28 +1,15 @@
+import copy
+
 import numpy as np
 import pytest
-from f3dasm.base.data import Data
-from f3dasm.base.utils import make_nd_continuous_design
-from f3dasm.base.optimization import Optimizer
+
 from f3dasm.base.function import Function
-from f3dasm.sampling.randomuniform import (
-    RandomUniform,
-)
-from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Levy, Ackley, Sphere
+from f3dasm.base.utils import make_nd_continuous_design
+from f3dasm.design.experimentdata import ExperimentData
+from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Ackley, Levy, Sphere
 from f3dasm.optimization import OPTIMIZERS
-
-
-@pytest.mark.parametrize("function", FUNCTIONS_2D)
-def test_plotting(function: Function):
-    f = function(dimensionality=2)
-    f.plot(px=10, show=False)
-
-
-@pytest.mark.smoke
-@pytest.mark.parametrize("seed", [42])
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
-def test_all_optimizers_3_functions(seed: int, function: Function, optimizer: Optimizer):
-    test_all_optimizers_and_functions(seed, function, optimizer)
+from f3dasm.optimization.optimizer import Optimizer
+from f3dasm.sampling.randomuniform import RandomUniform
 
 
 @pytest.mark.parametrize("seed", [42])
@@ -50,15 +37,28 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     # Evaluate the initial samples
     data.add_output(output=func(data), label="y")
 
-    opt1 = optimizer(data=data, seed=seed)
-    opt2 = optimizer(data=data, seed=seed)
+    opt1 = optimizer(data=copy.copy(data), seed=seed)
+    opt2 = optimizer(data=copy.copy(data), seed=seed)
 
     opt1.iterate(iterations=i, function=func)
     opt2.iterate(iterations=i, function=func)
-    data = opt1.extract_data()
+    data1 = opt1.extract_data()
     data2 = opt2.extract_data()
+    assert all(data1.data == data2.data)
 
-    assert all(data.data == data2.data)
+
+@pytest.mark.parametrize("function", FUNCTIONS_2D)
+def test_plotting(function: Function):
+    f = function(dimensionality=2)
+    f.plot(px=10, show=False)
+
+
+@pytest.mark.smoke
+@pytest.mark.parametrize("seed", [42])
+@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
+def test_all_optimizers_3_functions(seed: int, function: Function, optimizer: Optimizer):
+    test_all_optimizers_and_functions(seed, function, optimizer)
 
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
@@ -82,7 +82,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
 
     # Sampler
     ran_sampler = RandomUniform(design=design, seed=seed)
-    data: Data = ran_sampler.get_samples(numsamples=numsamples)
+    data: ExperimentData = ran_sampler.get_samples(numsamples=numsamples)
 
     func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 

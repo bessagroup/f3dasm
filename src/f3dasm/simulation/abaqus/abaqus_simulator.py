@@ -1,20 +1,16 @@
 # import system packages
 import os
+import pickle
+import subprocess
 import sys
 import time
-import subprocess
-import pickle
+
 import numpy as np
 
+from ..simulator import Simulator
 # import local functions
-from .abaqus_utils import (
-    make_dir,
-    write_json,
-    kill_abaqus_processes,
-    print_banner,
-)
-
-from ...base.simulation import Simulator
+from .abaqus_utils import (kill_abaqus_processes, make_dir, print_banner,
+                           write_json)
 
 
 class AbaqusSimulator(Simulator):
@@ -55,10 +51,12 @@ class AbaqusSimulator(Simulator):
         new_python_filename = "abqScript.py"
 
         # folder operations
-        make_dir(current_folder=self.main_work_directory, dirname=self.current_work_directory)
+        make_dir(current_folder=self.main_work_directory,
+                 dirname=self.current_work_directory)
 
         # change work directory
-        os.chdir(os.path.join(self.main_work_directory, self.current_work_directory))
+        os.chdir(os.path.join(self.main_work_directory,
+                 self.current_work_directory))
 
         print(f"Current working directory: {os.getcwd()}")
 
@@ -79,7 +77,8 @@ class AbaqusSimulator(Simulator):
         os.chdir(self.main_work_directory)
 
     def post_process(self):
-        os.chdir(os.path.join(self.main_work_directory, self.current_work_directory))
+        os.chdir(os.path.join(self.main_work_directory,
+                 self.current_work_directory))
 
         print_banner("START ABAQUS POST PROCESSING")
         # path with the python-script
@@ -109,7 +108,8 @@ class AbaqusSimulator(Simulator):
         -------
 
         """
-        os.chdir(os.path.join(self.main_work_directory, self.current_work_directory))
+        os.chdir(os.path.join(self.main_work_directory,
+                 self.current_work_directory))
 
         with open("results.p", "rb") as fd:
             results = pickle.load(fd, fix_imports=True, encoding="latin1")
@@ -128,7 +128,8 @@ class AbaqusSimulator(Simulator):
             file.write("import os \n")
             file.write("import sys \n")
             file.write("import json \n")
-            file.write("sys.path.extend(['" + self.folder_info["script_path"] + "']) \n")
+            file.write(
+                "sys.path.extend(['" + self.folder_info["script_path"] + "']) \n")
             file.write("from " + script_path + " import main" + "\n")
             file.write("file = '" + self.sim_info_name + "' \n")
             file.write("with open(file, 'r') as f:\n")
@@ -178,7 +179,8 @@ class AbaqusSimulator(Simulator):
 
     def _remove_file(self, directory, file_type: str):
         files_in_directory = os.listdir(directory)
-        filtered_files = [file for file in files_in_directory if file.endswith(file_type)]
+        filtered_files = [
+            file for file in files_in_directory if file.endswith(file_type)]
         for file in filtered_files:
             path_to_file = os.path.join(directory, file)
             if os.path.exists(path_to_file):
@@ -193,7 +195,8 @@ class AbaqusSimulator(Simulator):
             os.remove(lck_file)
         directory = os.getcwd()
 
-        list_of_removed_filetypes = [".SMABulk", ".rec", ".SMAFocus", ".exception", ".simlog"]
+        list_of_removed_filetypes = [
+            ".SMABulk", ".rec", ".SMAFocus", ".exception", ".simlog"]
 
         for filetype in list_of_removed_filetypes:
             self._remove_file(directory, filetype)

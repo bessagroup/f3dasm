@@ -1,9 +1,24 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 
+# Third-party
 import tensorflow as tf
 
-from ..base.optimization import OptimizerParameters
+# Locals
+from .optimizer import OptimizerParameters
 from .adapters.tensorflow_implementations import TensorflowOptimizer
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass

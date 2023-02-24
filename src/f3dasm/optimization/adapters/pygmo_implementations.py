@@ -1,12 +1,27 @@
-from dataclasses import dataclass
-from typing import Any
+#                                                                       Modules
+# =============================================================================
 
+# Standard
+from dataclasses import dataclass
+from typing import Any, Tuple
+
+# Third-party
 import autograd.numpy as np
 import pygmo as pg
 
-from ...base.design import DesignSpace
-from ...base.function import Function
-from ...base.optimization import Optimizer
+# Locals
+# from ...base.optimization import Optimizer
+from .._protocol import DesignSpace, Function
+from ..optimizer import Optimizer
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -44,11 +59,12 @@ class PygmoProblem:
         return self.fitness(x)
 
     def get_bounds(self) -> tuple:
-        """Box-constrained boundaries of the problem. Necessary for pygmo library
+        """Box-constrained boundaries of the problem. Necesary for pygmo library
 
-        :return: box constraints
+        Returns
+        -------
+            box constraints
         """
-        # Box-constrained boundaries of the problem. Necessary for pygmo library
         return (
             [parameter.lower_bound for parameter in self.design.get_continuous_input_parameters()],
             [parameter.upper_bound for parameter in self.design.get_continuous_input_parameters()],
@@ -82,7 +98,7 @@ class PygmoAlgorithm(Optimizer):
         """
         pg.set_global_rng_seed(seed=seed)
 
-    def update_step(self, function: Function):
+    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
         """Update step of the algorithm
 
         :param function: function to be evaluated
@@ -101,8 +117,10 @@ class PygmoAlgorithm(Optimizer):
         pop = pg.population(prob, size=self.parameter.population)
 
         # Set the population to the latest datapoints
-        pop_x = self.data.get_input_data().iloc[-self.parameter.population :].to_numpy()
-        pop_fx = self.data.get_output_data().iloc[-self.parameter.population :].to_numpy()
+        pop_x = self.data.get_input_data(
+        ).iloc[-self.parameter.population:].to_numpy()
+        pop_fx = self.data.get_output_data(
+        ).iloc[-self.parameter.population:].to_numpy()
 
         for index, (x, fx) in enumerate(zip(pop_x, pop_fx)):
             pop.set_xf(index, x, fx)
@@ -110,5 +128,4 @@ class PygmoAlgorithm(Optimizer):
         # Iterate one step
         pop = self.algorithm.evolve(pop)
 
-        # Add new population to data
-        self.data.add_numpy_arrays(input=pop.get_x(), output=pop.get_f())
+        return pop.get_x(), pop.get_f()

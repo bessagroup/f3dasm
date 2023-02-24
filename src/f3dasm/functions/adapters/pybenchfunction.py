@@ -1,12 +1,26 @@
-from abc import ABC
-from dataclasses import field
-from typing import Any, List
+#                                                                       Modules
+# =============================================================================
 
+# Standard
+from copy import copy
+from typing import Any
+
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ...base.function import Function
 from ...base.utils import _descale_vector, _scale_vector
 from .augmentor import FunctionAugmentor, Noise, Offset, Scale
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class PyBenchFunction(Function):
@@ -16,20 +30,29 @@ class PyBenchFunction(Function):
         noise: Any or float = None,
         seed: Any or int = None,
         scale_bounds: Any or np.ndarray = None,
+        no_offset: bool = False
     ):
-        """Adapter for pybenchfunctions, created by Axel Thevenot (2020).
+        """Adapter for pybenchfunction, created by Axel Thevenot (2020).
         Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 
-
-        :param dimensionality: number of dimensions
-        :param noise: inflict Gaussian noise on the input
-        :param seed: seed for the random number generator
-        :param scale_bounds: array containing the lower and upper bound of the scaling factor of the input data
+        Parameters
+        ----------
+        dimensionality, optional
+            number of dimensions, by default 2
+        noise, optional
+            inflict Gaussian noise on the input
+        seed, optional
+            seed for the random number generator
+        scale_bounds, optional
+            array containing the lower and upper bound of the scaling factor of the input data
+        no_offset, optional
+            set this True to not randomly off-set the pybenchfunction
         """
         self.noise = noise
         self.offset = np.zeros(dimensionality)
         self.input_domain: Any or np.ndarray = None
         self.augmentor = FunctionAugmentor()
+        self.no_offset = no_offset
 
         super().__init__(dimensionality=dimensionality, seed=seed)
 
@@ -55,7 +78,8 @@ class PyBenchFunction(Function):
 
         input_augmentors = [
             Offset(offset=self.offset),
-            Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain),
+            Scale(scale_bounds=self.scale_bounds,
+                  input_domain=self.input_domain),
         ]
         output_augmentors = []
 
@@ -73,6 +97,9 @@ class PyBenchFunction(Function):
     def _create_offset(self):
         self.offset = np.zeros(self.dimensionality)
 
+        if self.no_offset:
+            return
+
         global_minimum_method = getattr(self, "get_global_minimum", None)
         if callable(global_minimum_method):
             g = self.get_global_minimum(d=self.dimensionality)[0]
@@ -88,7 +115,8 @@ class PyBenchFunction(Function):
 
         unscaled_offset = np.atleast_1d(
             [
-                np.random.uniform(low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
+                np.random.uniform(
+                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
                 for d in range(self.dimensionality)
             ]
         )
@@ -114,8 +142,18 @@ class PyBenchFunction(Function):
     def _add_noise(self, y: np.ndarray) -> np.ndarray:
         # TODO: change noise calculation to work with autograd.numpy
         # sigma = 0.2  # Hard coded amount of noise
-        noise: np.ndarray = np.random.normal(loc=0.0, scale=abs(self.noise * y), size=y.shape)
-        y_noise = y + noise
+        if hasattr(y, "_value"):
+            yy = copy(y._value)
+            if hasattr(yy, "_value"):
+                yy = copy(yy._value)
+        else:
+            yy = copy(y)
+
+        scale = abs(self.noise * yy)
+
+        noise: np.ndarray = np.random.normal(
+            loc=0.0, scale=scale, size=y.shape)
+        y_noise = y + float(noise)
         return y_noise
 
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
@@ -142,8 +180,14 @@ class PyBenchFunction(Function):
 
         x = self._reshape_input(x)
 
+        # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+        # x = s.reverse_augment(x)
         x = self._descale_input(x)
+
+        # o = Offset(offset=self.offset)
+        # x = o.reverse_augment(x)
         x = self._reverse_offset_input(x)
+
         # x_out = self.augmentor.augment_reverse_input(x)
         return x
 
@@ -163,10 +207,14 @@ class PyBenchFunction(Function):
         """
         if self.is_dim_compatible(self.dimensionality):
             y = []
-            x = np.atleast_2d(x)
             for xi in x:
 
+                # o = Offset(offset=self.offset)
+                # xi = o.augment(xi)
                 # xi = self._offset_input(xi)
+
+                # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+                # xi = s.augment(xi)
                 xi = self._scale_input(xi)
 
                 # xi = self.augmentor.augment_input(xi)
@@ -179,4 +227,7 @@ class PyBenchFunction(Function):
 
                 y.append(yi)
 
-            return np.array(y).reshape(-1, 1)
+        else:
+            raise ValueError("Dimension is not compatible with function!")
+
+        return np.array(y).reshape(-1, 1)

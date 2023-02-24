@@ -36,26 +36,10 @@ f3dasm.base.metaoptimizer module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.base.optimization module
--------------------------------
-
-.. automodule:: f3dasm.base.optimization
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 f3dasm.base.regression module
 -----------------------------
 
 .. automodule:: f3dasm.base.regression
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.base.samplingmethod module
----------------------------------
-
-.. automodule:: f3dasm.base.samplingmethod
    :members:
    :undoc-members:
    :show-inheritance:

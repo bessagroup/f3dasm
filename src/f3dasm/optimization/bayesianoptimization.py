@@ -1,11 +1,26 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any
 
+# Third-party
 import GPy
 import GPyOpt
 
-from ..base.function import Function
-from ..base.optimization import Optimizer, OptimizerParameters
+# Locals
+from ._protocol import Function
+from .optimizer import Optimizer, OptimizerParameters
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 @dataclass
@@ -34,7 +49,8 @@ class BayesianOptimization(Optimizer):
             for index, parameter in enumerate(self.data.design.get_continuous_input_parameters())
         ]
 
-        kernel = GPy.kern.RBF(input_dim=self.data.design.get_number_of_input_parameters())
+        kernel = GPy.kern.RBF(
+            input_dim=self.data.design.get_number_of_input_parameters())
 
         model = GPyOpt.models.gpmodel.GPModel(
             kernel=kernel,
@@ -46,7 +62,8 @@ class BayesianOptimization(Optimizer):
 
         space = GPyOpt.Design_space(space=domain)
         acquisition_optimizer = GPyOpt.optimization.AcquisitionOptimizer(space)
-        acquisition = GPyOpt.acquisitions.AcquisitionEI(model, space, acquisition_optimizer)
+        acquisition = GPyOpt.acquisitions.AcquisitionEI(
+            model, space, acquisition_optimizer)
         evaluator = GPyOpt.core.evaluators.Sequential(acquisition)
 
         # Default hyperparamaters
@@ -74,7 +91,8 @@ class BayesianOptimization(Optimizer):
 
     def update_step(self, function: Function):
 
-        self.algorithm.objective = GPyOpt.core.task.SingleObjective(function.__call__)
+        self.algorithm.objective = GPyOpt.core.task.SingleObjective(
+            function.__call__)
         self.algorithm.X = self.data.get_input_data().to_numpy()
         self.algorithm.Y = self.data.get_output_data().to_numpy()
 

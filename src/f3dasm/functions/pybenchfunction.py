@@ -2,9 +2,23 @@
 Created by Axel Thevenot (2020)
 Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 """
+#                                                                       Modules
+# =============================================================================
+
+# Third-party
 import autograd.numpy as np
 
+# Locals
 from ..functions.adapters.pybenchfunction import PyBenchFunction
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class Thevenot(PyBenchFunction):
@@ -28,7 +42,8 @@ class Thevenot(PyBenchFunction):
 
     def _set_parameters(self, m=5, beta=15):
         d = self.dimensionality
-        self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
+        self.input_domain = np.array(
+            [[-2 * np.pi, 2 * np.pi] for _ in range(d)])
         self.m = m
         self.beta = beta
 
@@ -91,7 +106,7 @@ class AckleyN2(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN2.png"""
 
     name = "Ackley N. 2"
-    continuous = False #TODO: #79 change to True
+    continuous = True
     convex = True
     separable = False
     differentiable = True
@@ -126,7 +141,7 @@ class AckleyN3(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN3.png"""
 
     name = "Ackley N. 3"
-    continuous = False #TODO: #80 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -162,7 +177,7 @@ class AckleyN4(PyBenchFunction):
     """.. image:: ../img/functions/AckleyN4.png"""
 
     name = "Ackley N. 4"
-    continuous = False #TODO: #81 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -196,7 +211,8 @@ class AckleyN4(PyBenchFunction):
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
-        res = np.sum(np.exp(-0.2) * np.sqrt(X**2 + Xp1**2) + 3 * np.cos(2 * X) + np.sin(2 * Xp1))
+        res = np.sum(np.exp(-0.2) * np.sqrt(
+            X**2 + Xp1**2) + 3 * np.cos(2 * X) + np.sin(2 * Xp1))
         return res
 
 
@@ -302,7 +318,7 @@ class Bartels(PyBenchFunction):
     """.. image:: ../img/functions/Bartels.png"""
 
     name = "Bartels"
-    continuous = False #TODO: #82 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = False
@@ -330,7 +346,8 @@ class Bartels(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = np.abs(x**2 + y**2 + x * y) + np.abs(np.sin(x)) + np.abs(np.cos(y))
+        res = np.abs(x**2 + y**2 + x * y) + \
+            np.abs(np.sin(x)) + np.abs(np.cos(y))
         return res
 
 
@@ -391,7 +408,8 @@ class Bird(PyBenchFunction):
 
     def _set_parameters(self):
         d = self.dimensionality
-        self.input_domain = np.array([[-2 * np.pi, 2 * np.pi], [-2 * np.pi, 2 * np.pi]])
+        self.input_domain = np.array(
+            [[-2 * np.pi, 2 * np.pi], [-2 * np.pi, 2 * np.pi]])
 
     def get_param(self):
         return {}
@@ -439,7 +457,8 @@ class BohachevskyN1(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x) - 0.4 * np.cos(4 * np.pi * y) + 0.7
+        res = x**2 + 2 * y**2 - 0.3 * \
+            np.cos(3 * np.pi * x) - 0.4 * np.cos(4 * np.pi * y) + 0.7
         return res
 
 
@@ -475,7 +494,8 @@ class BohachevskyN2(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x) * np.cos(4 * np.pi * y) + 0.3
+        res = x**2 + 2 * y**2 - 0.3 * \
+            np.cos(3 * np.pi * x) * np.cos(4 * np.pi * y) + 0.3
         return res
 
 
@@ -511,7 +531,8 @@ class BohachevskyN3(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = x**2 + 2 * y**2 - 0.3 * np.cos(3 * np.pi * x + 4 * np.pi * y) * np.cos(4 * np.pi * y) + 0.3
+        res = x**2 + 2 * y**2 - 0.3 * \
+            np.cos(3 * np.pi * x + 4 * np.pi * y) * np.cos(4 * np.pi * y) + 0.3
         return res
 
 
@@ -749,10 +770,11 @@ class BukinN6(PyBenchFunction):
         #         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
         #     def evaluate(self, X):
-        x1, x2, x3, x4 = X
-        res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
-        res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1) ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
-        return res
+        # x1, x2, x3, x4 = X
+        # res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
+        # res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
+        #                                             ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
+        # return res
 
 
 class CrossInTray(PyBenchFunction):
@@ -795,8 +817,8 @@ class CrossInTray(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = (
-            -0.0001
-            * (np.abs(np.sin(x) * np.sin(y)) * np.exp(np.abs(100 - np.sqrt(x**2 + y**2) / np.pi)) + 1) ** 0.1
+            -0.0001 * (np.abs(np.sin(x) * np.sin(y)) * np.exp(
+                np.abs(100 - np.sqrt(x**2 + y**2) / np.pi)) + 1) ** 0.1
         )
         return res
 
@@ -825,7 +847,8 @@ class DeJongN5(PyBenchFunction):
         self.input_domain = np.array([[-65.536, 65.536], [-65.536, 65.536]])
         if a is None:
             l_parameter = [-32, -16, 0, 16, 32]
-            self.a = np.array([[x, y] for x in l_parameter for y in l_parameter])
+            self.a = np.array([[x, y]
+                              for x in l_parameter for y in l_parameter])
         else:
             self.a = a
 
@@ -839,7 +862,8 @@ class DeJongN5(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = (
-            0.002 + np.sum([1 / ((i + 1) + (x - a1) ** 6 + (y - a2) ** 6) for i, (a1, a2) in enumerate(self.a)])
+            0.002 + np.sum([1 / ((i + 1) + (x - a1) ** 6 + (y - a2) ** 6)
+                           for i, (a1, a2) in enumerate(self.a)])
         ) ** -1
         return res
 
@@ -907,12 +931,14 @@ class DixonPrice(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        X = np.array([2 ** ((-(2 ** (i)) - 2) / 2**i) for i in range(1, d + 1)])
+        X = np.array([2 ** ((-(2 ** (i)) - 2) / 2**i)
+                     for i in range(1, d + 1)])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = (X[0] - 1) ** 2 + np.sum([(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
+        res = (X[0] - 1) ** 2 + np.sum(
+            [(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
         return res
 
 
@@ -948,7 +974,8 @@ class DropWave(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -(1 + np.cos(12 * np.sqrt(x**2 + y**2))) / (0.5 * (x**2 + y**2) + 2)
+        res = -(1 + np.cos(12 * np.sqrt(x**2 + y**2))) / \
+            (0.5 * (x**2 + y**2) + 2)
         return res
 
 
@@ -984,7 +1011,8 @@ class Easom(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi) ** 2) - (y - np.pi) ** 2)
+        res = -np.cos(x) * np.cos(y) * \
+            np.exp(-((x - np.pi) ** 2) - (y - np.pi) ** 2)
         return res
 
 
@@ -1028,7 +1056,7 @@ class EggHolder(PyBenchFunction):
     """.. image:: ../img/functions/EggHolder.png"""
 
     name = "Egg Holder"
-    continuous = False #TODO: #83 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -1056,7 +1084,8 @@ class EggHolder(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -(y + 47) * np.sin(np.sqrt(np.abs(y + x / 2 + 47))) - x * np.sin(np.sqrt(np.abs(x - y - 47)))
+        res = -(y + 47) * np.sin(np.sqrt(np.abs(y + x / 2 + 47))) - \
+            x * np.sin(np.sqrt(np.abs(x - y - 47)))
         return res
 
 
@@ -1100,7 +1129,7 @@ class GoldsteinPrice(PyBenchFunction):
     """.. image:: ../img/functions/GoldsteinPrice.png"""
 
     name = "Goldstein-Price"
-    continuous = False #TODO: #84 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = True
@@ -1129,7 +1158,8 @@ class GoldsteinPrice(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
-        res *= 30 + (2 * x - 3 * y) ** 2 * (18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
+        res *= 30 + (2 * x - 3 * y) ** 2 * (
+            18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
         return res
 
 
@@ -1204,7 +1234,8 @@ class HappyCat(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         norm = np.sum(X**2)
-        res = ((norm - d) ** 2) ** self.alpha + (1 / d) * (0.5 * norm + np.sum(X)) + 0.5
+        res = ((norm - d) ** 2) ** self.alpha + \
+            (1 / d) * (0.5 * norm + np.sum(X)) + 0.5
         return res
 
 
@@ -1290,7 +1321,8 @@ class HolderTable(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -np.abs(np.sin(x) * np.cos(y) * np.exp(np.abs(1 - np.sqrt(x**2 + y**2) / np.pi)))
+        res = -np.abs(np.sin(x) * np.cos(y) * np.exp(
+            np.abs(1 - np.sqrt(x**2 + y**2) / np.pi)))
         return res
 
 
@@ -1358,7 +1390,8 @@ class Langermann(PyBenchFunction):
         self.input_domain = np.array([[0, 10] for _ in range(d)])
         self.m = m if m is not None else 5
         self.c = c if c is not None else np.array([1, 2, 5, 2, 3])
-        self.A = A if A is not None else np.array([[3, 5], [5, 2], [2, 1], [1, 4], [7, 9]])
+        self.A = A if A is not None else np.array(
+            [[3, 5], [5, 2], [2, 1], [1, 4], [7, 9]])
 
     def get_param(self):
         return {"m": self.m, "c": self.c, "A": self.A}
@@ -1371,9 +1404,9 @@ class Langermann(PyBenchFunction):
         d = X.shape[0]
         res = np.sum(
             [
-                self.c[i]
-                * np.exp(-1 / np.pi * np.sum((X - self.A[i]) ** 2))
-                * np.cos(np.pi * np.sum((X - self.A[i]) ** 2))
+                self.c[i] * np.exp(-1 / np.pi * np.sum(
+                    (X - self.A[i]) ** 2)) * np.cos(
+                        np.pi * np.sum((X - self.A[i]) ** 2))
                 for i in range(self.m)
             ]
         )
@@ -1449,9 +1482,10 @@ class Levy(PyBenchFunction):
     def evaluate(self, X):
         z = 1 + (X - 1) / 4
         res = (
-            np.sin(np.pi * z[0]) ** 2
-            + sum((z[:-1] - 1) ** 2 * (1 + 10 * np.sin(np.pi * z[:-1] + 1) ** 2))
-            + (z[-1] - 1) ** 2 * (1 + np.sin(2 * np.pi * z[-1]) ** 2)
+            np.sin(np.pi * z[0]) ** 2 + sum(
+                (z[:-1] - 1) ** 2 * (1 + 10 * np.sin(
+                    np.pi * z[:-1] + 1) ** 2)) + (
+                        z[-1] - 1) ** 2 * (1 + np.sin(2 * np.pi * z[-1]) ** 2)
         )
         return res
 
@@ -1489,9 +1523,9 @@ class LevyN13(PyBenchFunction):
     def evaluate(self, X):
         x, y = X
         res = (
-            np.sin(3 * np.pi * x) ** 2
-            + (x - 1) ** 2 * (1 + np.sin(3 * np.pi * y) ** 2)
-            + (y - 1) ** 2 * (1 + np.sin(2 * np.pi * y) ** 2)
+            np.sin(3 * np.pi * x) ** 2 + (x - 1) ** 2 * (
+                1 + np.sin(3 * np.pi * y) ** 2) + (y - 1) ** 2 * (
+                    1 + np.sin(2 * np.pi * y) ** 2)
         )
         return res
 
@@ -1679,7 +1713,8 @@ class PermZeroDBeta(PyBenchFunction):
         d = X.shape[0]
         res = np.sum(
             [
-                (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1))) for j in range(d)])) ** 2
+                (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1)))
+                 for j in range(d)])) ** 2
                 for i in range(d)
             ]
         )
@@ -1720,7 +1755,8 @@ class PermDBeta(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         j = np.arange(1, d + 1)
-        res = np.sum([np.sum((j**i + self.beta) * ((X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
+        res = np.sum([np.sum((j**i + self.beta) * (
+            (X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
         return res
 
 
@@ -1950,7 +1986,8 @@ class Rosenbrock(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (self.a - X[:-1]) ** 2))
+        res = np.sum(
+            np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (self.a - X[:-1]) ** 2))
         return res
 
 
@@ -2063,7 +2100,8 @@ class SchaffelN1(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.sin((x**2 + y**2) ** 2) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.sin((x**2 + y**2) ** 2) ** 2 - 0.5) / \
+            (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
@@ -2099,7 +2137,8 @@ class SchaffelN2(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.sin((x**2 + y**2)) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.sin((x**2 + y**2)) ** 2 - 0.5) / \
+            (1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
@@ -2135,7 +2174,9 @@ class SchaffelN3(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.sin(np.cos(np.abs(x**2 + y**2))) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.sin(np.cos(
+            np.abs(x**2 + y**2))) ** 2 - 0.5) / (
+                1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
@@ -2171,7 +2212,9 @@ class SchaffelN4(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 0.5 + (np.cos(np.sin(np.abs(x**2 + y**2))) ** 2 - 0.5) / (1 + 0.001 * (x**2 + y**2)) ** 2
+        res = 0.5 + (np.cos(np.sin(np.abs(
+            x**2 + y**2))) ** 2 - 0.5) / (
+                1 + 0.001 * (x**2 + y**2)) ** 2
         return res
 
 
@@ -2457,7 +2500,8 @@ class Shubert(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         for i in range(0, d):
-            res = np.prod(np.sum([i * np.cos((j + 1) * X[i] + j) for j in range(1, 5 + 1)]))
+            res = np.prod(np.sum([i * np.cos((j + 1) * X[i] + j)
+                          for j in range(1, 5 + 1)]))
         return res
 
 
@@ -2496,7 +2540,8 @@ class ShubertN3(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.sum([j * np.sin((j + 1) * X + j) for j in range(1, 5 + 1)]))
+        res = np.sum(np.sum([j * np.sin((j + 1) * X + j)
+                     for j in range(1, 5 + 1)]))
         return res
 
 
@@ -2534,7 +2579,8 @@ class ShubertN4(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.sum([j * np.cos((j + 1) * X + j) for j in range(1, 5 + 1)]))
+        res = np.sum(np.sum([j * np.cos((j + 1) * X + j)
+                     for j in range(1, 5 + 1)]))
         return res
 
 
@@ -2576,10 +2622,10 @@ class Sphere(PyBenchFunction):
         return res
 
 
-class StyblinskiTank(PyBenchFunction): #TODO: #87 Correct names to StyblinskiTang
-    """.. image:: ../img/functions/StyblinskiTank.png"""
+class StyblinskiTang(PyBenchFunction):
+    """.. image:: ../img/functions/StyblinskiTang.png"""
 
-    name = "Styblinski Tank"
+    name = "Styblinski Tang"
     continuous = True
     convex = False
     separable = True
@@ -2720,7 +2766,7 @@ class Trid(PyBenchFunction):
     def evaluate(self, X): #TODO: #78 correct formula should be np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1]). Remove unused d and i variables.
         d = X.shape[0]
         i = np.arange(1, d + 1)
-        res = np.sum(X - 1) ** 2 - np.sum(X[1:] * X[:-1])
+        res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
         return res
 
 
@@ -2764,7 +2810,7 @@ class XinSheYang(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYang.png"""
 
     name = "Xin She Yang"
-    continuous = False
+    continuous = True
     convex = False
     separable = True
     differentiable = False
@@ -2819,7 +2865,8 @@ class XinSheYangN2(PyBenchFunction):
 
     def _set_parameters(self):
         d = self.dimensionality
-        self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
+        self.input_domain = np.array(
+            [[-2 * np.pi, 2 * np.pi] for _ in range(d)])
 
     def get_param(self):
         return {}
@@ -2855,7 +2902,8 @@ class XinSheYangN3(PyBenchFunction):
 
     def _set_parameters(self, m=5, beta=15):
         d = self.dimensionality
-        self.input_domain = np.array([[-2 * np.pi, 2 * np.pi] for _ in range(d)])
+        self.input_domain = np.array(
+            [[-2 * np.pi, 2 * np.pi] for _ in range(d)])
         self.m = m
         self.beta = beta
 
@@ -2905,7 +2953,8 @@ class XinSheYangN4(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.sin(X) ** 2 - np.exp(-np.sum(X) ** 2)) * np.exp(-np.sum(np.sin(np.sqrt(np.abs(X))) ** 2))
+        res = np.sum(np.sin(X) ** 2 - np.exp(-np.sum(X) ** 2)) * \
+            np.exp(-np.sum(np.sin(np.sqrt(np.abs(X))) ** 2))
         return res
 
 
@@ -2913,7 +2962,7 @@ class Zakharov(PyBenchFunction):
     """.. image:: ../img/functions/Zakharov.png"""
 
     name = "Zakharov"
-    continuous = False #TODO: #86 change to True
+    continuous = True
     convex = False
     separable = False
     differentiable = False
@@ -2942,5 +2991,6 @@ class Zakharov(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
-        res = np.sum(X**2) + np.sum(0.5 * i * X) ** 2 + np.sum(0.5 * i * X) ** 4
+        res = np.sum(X**2) + np.sum(0.5 * i * X) ** 2 + \
+            np.sum(0.5 * i * X) ** 4
         return res

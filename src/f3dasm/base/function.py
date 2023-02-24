@@ -1,13 +1,30 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any, List, Tuple
 
+# Third-party
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
-import numdifftools as nd
+import tensorflow as tf
 
-from ..base.data import Data
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..base.utils import (SimpelModel,
+                          _from_data_to_numpy_array_benchmarkfunction,
+                          convert_autograd_to_tensorflow)
+# Locals
+from ..design.experimentdata import ExperimentData
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class Function:
@@ -31,6 +48,20 @@ class Function:
             self.set_seed(self.seed)
 
         self._set_parameters()
+        self._tf_gradient_setup()
+
+    def _tf_gradient_setup(self):
+        self.args = {}
+
+        self.args["model"] = SimpelModel(
+            None,
+            args={
+                "dim": self.dimensionality,
+                "x0": np.zeros(self.dimensionality),
+            },
+        )  # Build the model
+        self.args["tvars"] = self.args["model"].trainable_variables
+        self.args["func"] = convert_autograd_to_tensorflow(self.__call__)
 
     def set_seed(self, seed: int):
         """Set the numpy seed of the random generator
@@ -43,7 +74,7 @@ class Function:
         self.seed = seed
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray or Data) -> np.ndarray or Data:
+    def __call__(self, input_x: np.ndarray or ExperimentData, *args, **kwargs) -> np.ndarray or ExperimentData:
         """Evaluate the objective function
 
         Parameters
@@ -56,7 +87,7 @@ class Function:
             output of the objective function
         """
         # If the input is a Data object
-        if isinstance(input_x, Data):
+        if isinstance(input_x, ExperimentData):
             x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
 
         else:
@@ -67,7 +98,7 @@ class Function:
         y = np.atleast_1d(self.f(x))
 
         # If the input is a Data object
-        if isinstance(input_x, Data):
+        if isinstance(input_x, ExperimentData):
             input_x.add_output(y)
             # return input_x
 
@@ -93,6 +124,19 @@ class Function:
         raise NotImplementedError("Subclasses should implement this method.")
 
     def dfdx(self, x: np.ndarray) -> np.ndarray:
+        # Need to ravel x to be shape = (dim,)
+        self.args["model"].z.assign(x)
+
+        with tf.GradientTape() as tape:
+            tape.watch(self.args["tvars"])
+            logits = 0.0 + self.args["model"](None)  # tf.cast(self.args["model"](None), tf.float64)
+            loss = self.args["func"](tf.reshape(
+                logits, (self.dimensionality)))
+
+        grads = tape.gradient(loss, self.args["tvars"])
+        return grads[0].numpy().copy()
+
+    def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
         """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
 
         Parameters
@@ -104,14 +148,22 @@ class Function:
         -------
             gradient
         """
-        # TODO : fix the output shape (now it is shape=(dim*samples+1,), should be shape=(samples,1))
-        grad = nd.Gradient(self)
-        x = self._reshape_input(x)
-        output = np.empty(shape=(1, len(x[0, :])))
-        for i in range(len(x)):
-            output = np.r_[output, np.atleast_2d(grad(np.atleast_2d(x[i, :])))]
 
-        return output[1:]  # Cut of the first one because that is the empty array input
+        def central_differences(x: float, h: float):
+            g = (self(x + h) - self(x - h)) / (2 * dx)
+            return g.ravel().tolist()
+
+        # dx = 1e-8
+
+        grad = []
+        for index, param in enumerate(x):
+            # print(f"{index} {param}")
+            h = np.zeros(x.shape)
+            h[index] = dx
+            grad.append(central_differences(x=param, h=h))
+
+        grad = np.array(grad)
+        return grad.ravel()
 
     def get_name(self) -> str:
         """Get the name of the function
@@ -123,7 +175,8 @@ class Function:
         return self.__class__.__name__
 
     def plot_data(
-        self, data: Data, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
+        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+        numsamples=None, arrow=False
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
         """Create a 2D contout plot with the datapoints as scatter
 
@@ -151,9 +204,30 @@ class Function:
             cmap="Blues",
             edgecolors="black",
         )
+        if arrow:
+            for p_index in range(len(x1)-1):
+                dx = (x1[p_index+1] - x1[p_index])
+                dy = (x2[p_index+1] - x2[p_index])
+                length = 1/np.sqrt(dx**2 + dy**2)
+                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
+                         length_includes_head=True)
+
+        # Mark selected point
+        if numsamples is not None:
+            x_selected = data.get_input_data().iloc[numsamples]
+            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
+                       marker="*", edgecolors="cyan")
+
+        # Mark last point
+        x_last = data.get_input_data().iloc[-1]
+        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
+                   marker="*", edgecolors="magenta")
+
+        # Best point
         x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
         x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=25, c="red", marker="*", edgecolors="red")
+        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
+                   marker="*", edgecolors="red")
         return fig, ax
 
     def _create_mesh(self, px: int, domain: np.ndarray):
@@ -178,7 +252,8 @@ class Function:
 
         for i in range(len(X1)):
             for j in range(len(X1)):
-                xy = np.array([X1[i, j], X2[i, j]] + [0.0] * (self.dimensionality - 2))
+                xy = np.array([X1[i, j], X2[i, j]] + [0.0]
+                              * (self.dimensionality - 2))
                 Y[i, j] = self(xy)
 
         dx = (domain[0, 1] - domain[0, 0]) / px
@@ -222,7 +297,8 @@ class Function:
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(xv, yv, Y, cmap="viridis", norm=mcol.LogNorm())  # mcol.LogNorm()
+            ax.pcolormesh(xv, yv, Y, cmap="viridis",
+                          norm=mcol.LogNorm())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":
@@ -259,8 +335,11 @@ class Function:
 
     def _reshape_input(self, x: np.ndarray) -> np.ndarray:
         # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf, doenst work with autograd.numpy
-        if x.ndim == 1:
-            x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        try:
+            if x.ndim == 1:
+                x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
+        except AttributeError:
+            return x
 
         return x
 

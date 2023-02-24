@@ -1,3 +1,5 @@
+.. image:: img/f3dasm-logo.png
+
 Welcome to the documentation page of the 'Framework for Data-Driven Design and Analysis of Structures and Materials' (F3DASM).
 
 Here you will find all information on installing, using and contributing to the Python package, as well as the assignment of the Fundamentals of AI Project.

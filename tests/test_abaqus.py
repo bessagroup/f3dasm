@@ -1,8 +1,10 @@
 import pytest
+
 from f3dasm.run_abaqus import main
 
 
-# @pytest.mark.smoke
+@pytest.mark.requires_dependency("abaqus")
+@pytest.mark.smoke
 def test_abaqus():
     main()
 

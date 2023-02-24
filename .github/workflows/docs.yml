@@ -1,67 +1,42 @@
-name: CI
+name: Release
 
 on:
   push:
-    branches:    
+    branches:
       - versionmartin
 
 jobs:
-  documentation:
-
+  publish-sphinx-documentation:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-
-
-    - name: Set up Python 3.8
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        channels: conda-forge
-        channel-priority: strict
-        python-version: 3.8
-
-    - uses: s-weigand/setup-conda@v1
-    - run: conda install pygmo
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements_dev.txt
-
-
-    - name: Build Document
-      run: |
-        cd docs
-        make apidoc
-        make html
-        cd ../
-
-    # Great extra actions to compose with:
-    # Create an artifact of the html output.
-    - uses: actions/upload-artifact@v1
-      with:
-        name: DocumentationHTML
-        path: docs/_build/html/
-
-    # Publish built docs to gh-pages branch.
-    # ===============================
-    - name: Commit documentation changes
-      run: |
-        git clone https://github.com/bessagroup/F3DASM.git --branch gh-pages --single-branch gh-pages
-        cp -r docs/_build/html/* gh-pages/
-        cd gh-pages
-        touch .nojekyll
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        git commit -m "Update documentation" -a || true
-        # The above command will fail if no changes were present, so we ignore
-        # that.
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        branch: gh-pages
-        directory: gh-pages
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-    # ===============================
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+          cache: "pip" # caching pip dependencies
+      - name: Install package requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install Sphinx
+        run: python -m pip install -U sphinx
+      - name: Install Sphinx requirements
+        run: |
+          pip install -r docs/requirements.txt
+      - name: Build documentation
+        run: |
+          sphinx-build -b html ./docs ./docs/_build/html
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: html-docs
+          path: docs/_build/html/
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          force_orphan: false

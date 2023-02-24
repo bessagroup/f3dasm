@@ -1,17 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
 from typing import Any, Tuple, List
 
+# Third-party
 import scipy
 import numpy as np
 import pandas as pd
 import torch
-from botorch.acquisition import InverseCostWeightedUtility#, UpperConfidenceBound
+from botorch.acquisition import (InverseCostWeightedUtility,
+                                 UpperConfidenceBound)
 from botorch.models import AffineFidelityCostModel
 from botorch.optim import optimize_acqf, optimize_acqf_mixed
 
-from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
+# Locals
+# from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
+from ..optimization.optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
+from ..design.experimentdata import ExperimentData
+from ..base.function import Function, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
-from ..regression.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters
+# from ..regression.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters
+from ..machinelearning.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters, Cokgj_Parameters
 import f3dasm
 from sklearn.preprocessing import StandardScaler
 
@@ -25,12 +36,23 @@ class Acquisition_Parameters():
     beta: float = 0.4
     maximize: bool = False
 
+# from .adapters.optimization import Optimizer
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Leo Guo', 'Martin van der Schelling']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
+
 
 @dataclass
 class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for BayesianOptimizationTorch optimizer"""
 
-    regressor: f3dasm.Regressor = Sogpr
+    regressor = Sogpr
     acquisition: Any = UpperConfidenceBound
     regressor_hyperparameters: Sogpr_Parameters = Sogpr_Parameters()
     acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
@@ -161,7 +183,7 @@ class BayesianOptimizationTorch(Optimizer):
         train_x=torch.tensor(self.data.get_input_data().values), 
         train_y=torch.tensor(self.scaler.inverse_transform(self.data.get_output_data().values)))
 
-    def update_step(self, function: Function) -> None:
+    def update_step(self, function: Function) -> Tuple:
 
         if self.parameter.acquisition_hyperparameters.best_f is not None:
             best_f_old = self.parameter.acquisition_hyperparameters.best_f
@@ -198,23 +220,25 @@ class BayesianOptimizationTorch(Optimizer):
         # new_x, new_obj = optimize_acq_and_get_observation(acquisition, function)
         new_x, new_obj, _ = optimize_acquisition(acquisition, function)
 
-        self.data.add_numpy_arrays(input=new_x, output=self.scaler.transform(new_obj))
+        # self.data.add_numpy_arrays(input=new_x, output=self.scaler.transform(new_obj))
+
+        return new_x, self.scaler.transform(new_obj)
 
 @dataclass
 class MFBayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for MFBayesianOptimizationTorch optimizer"""
 
-    regressor: f3dasm.Regressor = MultitaskGPR
+    regressor = MultitaskGPR
     acquisition: Any = VFUpperConfidenceBound
 
-    regressor_hyperparameters: f3dasm.regression.Cokgj_Parameters = f3dasm.regression.Cokgj_Parameters()
+    regressor_hyperparameters = Cokgj_Parameters()
     acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
     n_init: int = 10
     visualize_gp: bool = False
 
 
 @dataclass
-class MFBayesianOptimizationTorch(Optimizer):
+class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
     """Bayesian optimization implementation from the botorch library"""
     multifidelity_function: MultiFidelityFunction = None
     parameter: MFBayesianOptimizationTorch_Parameters = MFBayesianOptimizationTorch_Parameters()
@@ -234,9 +258,9 @@ class MFBayesianOptimizationTorch(Optimizer):
     def set_algorithm(self):
         self.algorithm = None
 
-    def update_step_mf(self, multifidelity_function: MultiFidelityFunction, iteration: int,) -> None:
+    def update_step(self, multifidelity_function: MultiFidelityFunction,) -> None:
 
-        regressor = f3dasm.regression.gpr.Cokgj(
+        regressor = f3dasm.machinelearning.gpr.Cokgj(
             mf_train_data=self.data, 
             design=self.data[0].design,
             parameter=self.parameter.regressor_hyperparameters,
@@ -279,15 +303,17 @@ class MFBayesianOptimizationTorch(Optimizer):
             test_x_hf=test_x_hf,
         )
 
-        self.cost = cost
-        print("This iteration cost:", float(self.cost))
+        # self.cost = cost
+        # print("This iteration cost:", float(self.cost))
 
-        self.data[fid].add_numpy_arrays(input=new_x, output=new_obj)
+        # self.data[fid].add_numpy_arrays(input=new_x, output=new_obj)
+
+        return new_x, new_obj, cost, fid
 
 def mf_data_compiler(
-        mfdata: List[Data],
+        mfdata: List[ExperimentData],
         fids: List[float],
-) -> Data:
+) -> ExperimentData:
     for mfdata_level, fid in zip(mfdata, fids):
         mfdata_level.data['input', 'fid'] = fid * np.ones_like(mfdata_level.data['output'])
         mfdata_level.data = mfdata_level.data.sort_index(axis=1)

@@ -1,143 +1,149 @@
+.. _installation-instructions:
+
+===============
 Getting Started
 ===============
 
-For Windows
------------
+There are different ways to install f3dasm:
 
+  * :ref:`Install the latest official release <install_official_release>`. This
+    is the best approach for most users that want to use the f3dasm package.
 
-* Download `Miniconda for Windows <https://docs.conda.io/en/latest/miniconda.html#windows-installers>`_
-
-* Open command prompt (Type :code:`Ctrl+R` and type :code:`cmd`) and install git by executing the following command:
-
-.. code-block:: console
-
-  winget install --id Git.Git -e --source winget
-
-* Open a new command prompt and clone from the GitHub repository by executing the following command
-
-.. code-block:: console
-
-  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.1.0 --single-branch
-
-* Open Anaconda Prompt (search for :code:`Anaconda Prompt (miniconda3)`) and add :code:`conda-forge` to the channels
-
-.. code-block:: console
-
-  $ conda config --add channels conda-forge
-
-* Creata new environment named :code:`f3dasm_env`, install the :code:`f3dasm` package in editable mode and install some other packages:
-
-.. code-block:: console
-
-  $ conda create -n f3dasm_env python=3.10
-  $ cd F3DASM
-  $ pip install -e .
-  $ conda install autograd numdifftools tensorflow pygmo pathos pytest pytest-cov
-
-
-* Run the tests to check if everything works!
-
-.. code-block:: console
-
-  $ pytest -v -s -m smoke
+  * :ref:`Building the package from source
+    <install_from_source>`. This is for users who wish to contribute to the
+    project.
 
 
 
-For Linux
----------
+.. _install_official_release:
+
+Installing the latest release
+=============================
+
+f3dasm is compatible with Python version 3.8
 
 
-The installation consists of two steps
+----
 
-* Installing and configuring miniconda
-* Installing :code:`f3dasm`
+.. This quickstart installation is a hack of the awesome
+   https://spacy.io/usage/#quickstart page.
+   See the original javascript implementation
+   https://github.com/ines/quickstart. 
+   I took the implementation of scikit-learn 
+   (https://scikit-learn.org/stable/_sources/install.rst.txt)
 
-Installing and configuring miniconda
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. raw:: html
 
-Download `Miniconda for Linux <https://docs.conda.io/en/latest/miniconda.html#linux-installers>`_ and add :code:`conda-forge` to the channels:
+  <div class="install">
+       <strong>Operating System</strong>
+          <input type="radio" name="os" id="quickstart-win" checked>
+          <label for="quickstart-win">Windows</label>
+          <input type="radio" name="os" id="quickstart-mac">
+          <label for="quickstart-mac">macOS</label>
+          <input type="radio" name="os" id="quickstart-lin">
+          <label for="quickstart-lin">Linux</label><br />
+       <strong>Packager</strong>
+          <input type="radio" name="packager" id="quickstart-pip" checked>
+          <label for="quickstart-pip">pip</label>
+          <input type="radio" name="packager" id="quickstart-conda">
+          <label for="quickstart-conda">conda</label><br />
+       </span>
 
-.. code-block:: console
+----
 
-  $ conda config --add channels conda-forge
+.. raw:: html
 
-Installing :code:`f3dasm`
-^^^^^^^^^^^^^^^^^^^^^^^^^
+       <div>
+         <span class="sk-expandable" data-packager="pip" data-os="windows">Install the 64bit version of Python 3.8, for instance from <a href="https://www.python.org/">https://www.python.org</a>.</span
+         ><span class="sk-expandable" data-packager="pip" data-os="mac">Install Python 3.8 using <a href="https://brew.sh/">homebrew</a> (<code>brew install python</code>) or by manually installing the package from <a href="https://www.python.org">https://www.python.org</a>.</span
+         ><span class="sk-expandable" data-packager="pip" data-os="linux">Install python3 and python3-pip using the package manager of the Linux Distribution.</span
+         ><span class="sk-expandable" data-packager="conda"
+            >Install conda using the <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">Anaconda or miniconda</a>
+             installers (no administrator permission required for any of those).</span>
+       </div>
 
-Clone from the GitHub repository
+|
+Then run:
 
-.. code-block:: console
+.. raw:: html
 
-  $ git clone https://github.com/bessagroup/F3DASM.git --branch v1.0.0 --single-branch
+        <div class="highlight-console notranslate"><div class="highlight"><pre><span></span
+          ><span class="sk-expandable" data-packager="pip" data-os="mac"><span class="gp">$ </span>pip install -U f3dasm</span
+          ><span class="sk-expandable" data-packager="pip" data-os="windows"><span class="gp">$ </span>pip install -U f3dasm</span
+          ><span class="sk-expandable" data-packager="pip" data-os="linux"><span class="gp">$ </span>pip install -U f3dasm</span
+          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda create -n f3dasm_env python=3.8</span
+          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda activate f3dasm_env</span
+          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda install pip</span
+          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>pip install -U f3dasm</span
+          ></pre></div></div>
 
-Preferred way
-^^^^^^^^^^^^^
+----
 
-Create a new environment from the :code:`f3dasm_environment.yml` file
-
-.. code-block:: console
-
-  $ cd F3DASM
-  $ conda env create -f f3dasm_environment.yml
-
-Test if the installation was successful
+In order to check your installation you can use
 
 .. code-block:: console
 
-  $ conda activate f3dasm_env
-  $ make test-smoke
+  $ python -c "import f3dasm; f3dasm.show_versions()"
+  >>> F3DASM:
+  >>>    f3dasm: 0.2.92
+  >>>    ...
 
-If the smoke tests pass the installation is successful!
-Now install the package in editable mode:
+This will show the installed version of f3dasm and the versions of the dependencies.
 
-.. code-block:: console
 
-  $ pip install -e .
+.. _install_from_source:
 
-You can now use :code:`import f3dasm`
+Installing from source
+======================
 
-.. code-block:: console
 
-  $ python
-  >>> import f3dasm
+Building from source is required to work on a contribution (bug fix, new
+feature, code or documentation improvement). We recommend using a `Linux distribution system <https://releases.ubuntu.com/focal/>`_.
 
-If no errors occur when importing the package, then you have succesfully installed the :code:`f3dasm` package!
+.. _git_repo:
 
-If things fail
-^^^^^^^^^^^^^^
+#. Use `Git <https://git-scm.com/>`_ to check out the latest source from the
+   `f3dasm repository <https://github.com/bessagroup/f3dasm>`_ on
+   Github.:
 
-You can also create the required conda environment from scratch.
-Create a new python 3.10 environment
+   .. code-block:: console
 
-.. code-block:: console
+     git clone https://github.com/bessagroup/F3DASM.git  # add --depth 1 if your connection is slow
+     cd F3DASM
 
-  $ cd F3DASM
-  $ conda create -n f3dasm_env python=3.10
 
-Now install the package in editable mode:
+#. Install a recent version of Python (3.8 is recommended at the time of writing)
+   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_.
+   If you installed Python with conda, we recommend to create a dedicated
+   conda environment with all the build dependencies of f3dasm:
 
-.. code-block:: console
+   .. code-block:: console
 
-  $ pip install -e .
+     conda create -n f3dasm_env python=3.8
+     conda activate f3dasm_env
 
-You can now use :code:`import f3dasm`
+#. If you run the development version, it is annoying to reinstall the package each time you update the sources.
+   Therefore it is recommended that you install the package from a local source, allowing you to edit the code in-place. 
+   This builds the extension in place and creates a link to the development directory (see `the pip docs <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_).
 
-.. code-block:: console
+   .. code-block:: console
 
-  $ python
-  >>> import f3dasm
+     pip install --verbose --no-build-isolation --editable .
 
-If no errors occur when importing the package, then you have succesfully installed the :code:`f3dasm` package!
+#. In order to check your installation you can use
 
-Installing all packages manually
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  .. code-block:: console
 
-As a last resort, you could also create a new python 3.10 environment and install the required packages directly:
+     $ python -c "import f3dasm; f3dasm.show_versions()"
+     >>> F3DASM:
+     >>>    f3dasm: 0.2.92
+     >>>    ...
 
-.. code-block:: console
 
-  $ cd F3DASM
-  $ conda create -n f3dasm_env python=3.10
-  $ pip install -e .
-  $ conda install autograd numdifftools tensorflow pygmo pathos pytest pytest-cov
-  $ make test-smoke
+  You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm. 
+
+#. Install the developement requirements:
+
+   .. code-block:: console
+
+     pip install -r requirements_dev.txt

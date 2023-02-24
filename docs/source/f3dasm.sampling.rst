@@ -20,6 +20,14 @@ f3dasm.sampling.randomuniform module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.sampling.sampler module
+------------------------------
+
+.. automodule:: f3dasm.sampling.sampler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.sampling.sobolsequence module
 ------------------------------------
 

@@ -10,7 +10,7 @@ We will use the CMAES optimizer to find the minimum. We can find an implementati
 
     optimizer = f3dasm.optimization.CMAES(data=samples_lhs)
 
-By calling the :func:`~f3dasm.optimization.Optimizer.iterate` method and specifying the function and the number of iterations, we will start the optimization process:
+By calling the :func:`~f3dasm.optimization.optimizer.Optimizer.iterate` method and specifying the function and the number of iterations, we will start the optimization process:
 
 .. code-block:: python
 
@@ -105,6 +105,7 @@ Adam
 
 .. automodule:: f3dasm.optimization.adam
    :members:
+   :noindex:
    :show-inheritance:
 
 Adamax
@@ -112,6 +113,7 @@ Adamax
 
 .. automodule:: f3dasm.optimization.adamax
    :members:
+   :noindex:
    :show-inheritance:
 
 Bayesian Optimization
@@ -119,6 +121,7 @@ Bayesian Optimization
 
 .. automodule:: f3dasm.optimization.bayesianoptimization
    :members:
+   :noindex:
    :show-inheritance:
 
 Bayesian Optimization Torch
@@ -126,6 +129,7 @@ Bayesian Optimization Torch
 
 .. automodule:: f3dasm.optimization.bayesianoptimization_torch
    :members:
+   :noindex:
    :show-inheritance:
 
 Conjugate Gradient
@@ -133,6 +137,7 @@ Conjugate Gradient
 
 .. automodule:: f3dasm.optimization.cg
    :members:
+   :noindex:
    :show-inheritance:
 
 CMAES
@@ -140,6 +145,7 @@ CMAES
 
 .. automodule:: f3dasm.optimization.cmaes
    :members:
+   :noindex:
    :show-inheritance:
 
 COBYLA
@@ -147,6 +153,7 @@ COBYLA
 
 .. automodule:: f3dasm.optimization.cobyla
    :members:
+   :noindex:
    :show-inheritance:
 
 Differential Evolution
@@ -154,6 +161,7 @@ Differential Evolution
 
 .. automodule:: f3dasm.optimization.differentialevolution
    :members:
+   :noindex:
    :show-inheritance:
 
 FTRL
@@ -161,6 +169,7 @@ FTRL
 
 .. automodule:: f3dasm.optimization.ftrl
    :members:
+   :noindex:
    :show-inheritance:
 
 LBFGSB
@@ -168,6 +177,7 @@ LBFGSB
 
 .. automodule:: f3dasm.optimization.lbfgsb
    :members:
+   :noindex:
    :show-inheritance:
 
 Nadam
@@ -175,6 +185,7 @@ Nadam
 
 .. automodule:: f3dasm.optimization.nadam
    :members:
+   :noindex:
    :show-inheritance:
 
 Nelder Mead
@@ -182,6 +193,7 @@ Nelder Mead
 
 .. automodule:: f3dasm.optimization.neldermead
    :members:
+   :noindex:
    :show-inheritance:
 
 PSO
@@ -189,6 +201,7 @@ PSO
 
 .. automodule:: f3dasm.optimization.pso
    :members:
+   :noindex:
    :show-inheritance:
 
 Random Search
@@ -196,6 +209,7 @@ Random Search
 
 .. automodule:: f3dasm.optimization.randomsearch
    :members:
+   :noindex:
    :show-inheritance:
 
 RMSprop
@@ -203,6 +217,7 @@ RMSprop
 
 .. automodule:: f3dasm.optimization.rmsprop
    :members:
+   :noindex:
    :show-inheritance:
 
 SADE
@@ -210,6 +225,7 @@ SADE
 
 .. automodule:: f3dasm.optimization.sade
    :members:
+   :noindex:
    :show-inheritance:
 
 SEA
@@ -217,6 +233,7 @@ SEA
 
 .. automodule:: f3dasm.optimization.sea
    :members:
+   :noindex:
    :show-inheritance:
 
 SGA
@@ -224,6 +241,7 @@ SGA
 
 .. automodule:: f3dasm.optimization.sga
    :members:
+   :noindex:
    :show-inheritance:
 
 SGD
@@ -231,6 +249,7 @@ SGD
 
 .. automodule:: f3dasm.optimization.sgd
    :members:
+   :noindex:
    :show-inheritance:
 
 Simulated Annealing
@@ -238,6 +257,7 @@ Simulated Annealing
 
 .. automodule:: f3dasm.optimization.simulatedannealing
    :members:
+   :noindex:
    :show-inheritance:
 
 XNES
@@ -245,4 +265,5 @@ XNES
 
 .. automodule:: f3dasm.optimization.xnes
    :members:
+   :noindex:
    :show-inheritance:

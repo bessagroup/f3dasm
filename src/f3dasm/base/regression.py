@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
-from ..base.design import DesignSpace
-from ..base.data import Data
+from ..design import ExperimentData, DesignSpace
+# from ..data import Data
 
 
 
@@ -12,8 +12,8 @@ class Surrogate:
 
     def predict(
             self,
-            test_input_data: Data,
-    ) -> Data or List[Data]:
+            test_input_data: ExperimentData,
+    ) -> ExperimentData or List[ExperimentData]:
         pass
 
     def save_model(self):
@@ -23,13 +23,13 @@ class Surrogate:
 
 @dataclass
 class Regressor:
-    train_data: Data or List[Data]
+    train_data: ExperimentData or List[ExperimentData]
     design: DesignSpace or List[DesignSpace]
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
 
     def set_train_data(
         self,
-        train_data: Data,
+        train_data: ExperimentData,
     ) -> None:
         self.train_data = train_data
 

@@ -1,0 +1,57 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Meshing Inputs!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+! Mesh size in the XY plane
+! Overall Mesh Size of IGBT Components Except Wire
+! Lower the MeshSize_XY value finer is the mesh and higher is the MeshSize_XY value coarser is the mesh
+
+MeshSize_XY = 1.0
+!min: 0.1 and max: 2					
+
+Factor = 10/MeshSize_XY
+
+!Mesh Divisions Along Thickness of Each Layer: Z-direction 
+MD1 = Factor/2
+MD2 = Factor/10 
+MD3 = Factor/6
+MD4 = Factor/5
+MD5 = Factor/6
+MD6 = Factor/10 
+MD7 = Factor/6
+MD8 = Factor/10
+
+! Mesh divisions along thickness (Z direction) for each layer
+*del,MeshDiv_thk
+*dim,MeshDiv_thk,ARRAY,LayerCount
+MeshDiv_thk(1)= MD1,MD2,MD3,MD4,MD5,MD6,MD7,MD8
+
+!Bonding Wire Foot's Mesh:
+!Number of Elements Across Cross Section of the Foot:
+NEF1 = 2    !Default, don't change it
+
+!Number of Elements Along the Length of the Foot:
+NEF2 = Factor/2
+
+
+!Loop Meshing:
+Loop_Ndiv = NEF2*2
+!Spacing Ratio of Loop's Mesh:
+Sp_Rt1 = NEF2/2
+
+!!!Spacing ratio. 
+!If positive, nominal ratio of last division size to first division size 
+!(if > 1.0, sizes increase, if < 1.0, sizes decrease). 
+!If negative, |SPACE| is nominal ratio of center division(s) size to end divisions size. 
+!Ratio defaults to 1.0 (uniform spacing). For layer-meshing, a value of 1.0 normally is used. 
+!If SPACE = FREE, ratio is determined by other considerations
+
+
+!Heel Meshing:
+Heel_Ndiv = Factor/4
+!Spacing Ratio of Heels's Mesh:
+Sp_Rt2 = 1
+
+
+
