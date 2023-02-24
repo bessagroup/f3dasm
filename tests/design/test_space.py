@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter)
+                                     DiscreteParameter, Parameter,
+                                     create_parameter_from_dict)
 
 pytestmark = pytest.mark.smoke
 
@@ -129,6 +130,14 @@ def test_duplicates_categories_categorical_space():
     categories = ["test1", "test2", "test1"]
     with pytest.raises(ValueError):
         categorical = CategoricalParameter(name="test", categories=categories)
+
+
+@pytest.mark.parametrize("parameter_name", ['categorical_parameter', 'discrete_parameter', 'continuous_parameter'])
+def test_check_reproducibility(parameter_name: str, request):
+    parameter: Parameter = request.getfixturevalue(parameter_name)
+    info, name = parameter.get_info()
+    parameter_new = create_parameter_from_dict(info, name)
+    assert parameter == parameter_new
 
 
 if __name__ == "__main__":  # pragma: no cover

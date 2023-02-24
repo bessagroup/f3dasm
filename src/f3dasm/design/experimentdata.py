@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from typing import List, Tuple
 
@@ -12,7 +13,7 @@ import seaborn as sb
 from sklearn.model_selection import train_test_split
 
 # Local
-from .design import DesignSpace
+from .design import DesignSpace, create_design_from_dict
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -49,6 +50,10 @@ class ExperimentData:
         """Print the data to the console"""
         print(self.data)
         return
+
+    def get_info(self):
+        return {'design': self.design.get_info(),
+                'data': self.data.to_json()}
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Convert the data to a tuple numpy arrays
@@ -237,3 +242,32 @@ class ExperimentData:
             list of dataframes, first training then testing
         """
         return train_test_split(self.data, test_size=test_size)
+
+
+def create_experimentdata_from_json(json_string: str) -> ExperimentData:
+    # Read JSON
+    experimentdata_dict = json.loads(json_string)
+    return create_experimentdata_from_dict(experimentdata_dict)
+
+
+def create_experimentdata_from_dict(experimentdata_dict: dict) -> ExperimentData:
+    # Read design from json_data_loaded
+    new_design = create_design_from_dict(experimentdata_dict['design'])
+
+    # Read data from json string
+    new_data = pd.read_json(experimentdata_dict['data'])
+
+    # Create tuples of indices
+    columntuples = tuple(tuple(entry[1:-1].replace("'", "").split(', ')) for entry in new_data.columns.values)
+
+    # Create MultiIndex object
+    columnlabels = pd.MultiIndex.from_tuples(columntuples)
+
+    # Overwrite columnlabels
+    new_data.columns = columnlabels
+
+    # Create
+    new_experimentdata = ExperimentData(design=new_design)
+    new_experimentdata.add(data=new_data)
+
+    return new_experimentdata

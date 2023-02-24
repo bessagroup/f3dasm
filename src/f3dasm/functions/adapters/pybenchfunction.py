@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from copy import copy
 from typing import Any, Tuple
@@ -249,3 +250,18 @@ class PyBenchFunction(Function):
             raise ValueError("Dimension is not compatible with function!")
 
         return np.array(y).reshape(-1, 1)
+
+
+def create_function_from_json(json_string: str) -> PyBenchFunction:
+    # Read JSON
+    function_dict, name = json.loads(json_string)
+    return create_function_from_dict(function_dict, name)
+
+
+def create_function_from_dict(function_dict: dict, name: str) -> PyBenchFunction:
+    # Stub!
+    function_dict['scale_bounds'] = np.array(function_dict['scale_bounds'])
+
+    # Here, code to find the function class with matches name (like f3dasm.find_class())
+    return None
+    ...

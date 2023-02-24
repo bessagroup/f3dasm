@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from dataclasses import dataclass, field
 from typing import List, TypeVar
@@ -12,7 +13,8 @@ import pandas as pd
 from .constraint import Constraint
 # Local
 from .parameter import (CategoricalParameter, ConstantParameter,
-                        ContinuousParameter, DiscreteParameter, Parameter)
+                        ContinuousParameter, DiscreteParameter, Parameter,
+                        create_parameter_from_dict)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -45,6 +47,12 @@ class DesignSpace:
 
         if len(self.get_output_names()) != len(set(self.get_output_names())):
             raise ValueError("Duplicate names found in output names!")
+
+    def get_info(self):
+        # Missing constraints
+        return {'input_space': [parameter.get_info() for parameter in self.input_space],
+                'output_space': [parameter.get_info() for parameter in self.output_space]
+                }
 
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space
@@ -273,3 +281,23 @@ class DesignSpace:
     def _all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
         return self._check_space_on_type(ContinuousParameter, self.output_space)
+
+
+# Create designspace from json file
+def create_design_from_json(json_string: str) -> DesignSpace:
+    # Load JSON string
+    design_dict = json.loads(json_string)
+    return create_design_from_dict(design_dict)
+
+# Create designspace from dictionary
+
+
+def create_design_from_dict(design_dict: dict) -> DesignSpace:
+    for key, space in design_dict.items():
+        parameters = []
+        for parameter in space:
+            parameters.append(create_parameter_from_dict(*parameter))
+
+        design_dict[key] = parameters
+
+    return DesignSpace(**design_dict)
