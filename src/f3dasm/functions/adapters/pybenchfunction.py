@@ -1,10 +1,10 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import json
 from copy import copy
-from typing import Any, Tuple
+from typing import Any
 
 # Third-party
 import autograd.numpy as np

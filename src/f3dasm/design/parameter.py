@@ -1,8 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import json
 from dataclasses import dataclass, field
 from typing import Any, List, Tuple
 

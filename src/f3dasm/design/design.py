@@ -1,8 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import json
 from dataclasses import dataclass, field
 from typing import List, TypeVar
 
@@ -10,8 +10,8 @@ from typing import List, TypeVar
 import autograd.numpy as np
 import pandas as pd
 
-from .constraint import Constraint
 # Local
+from .constraint import Constraint
 from .parameter import (CategoricalParameter, ConstantParameter,
                         ContinuousParameter, DiscreteParameter, Parameter)
 
