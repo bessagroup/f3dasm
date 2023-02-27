@@ -5,6 +5,7 @@ Module to optimize benchmark optimization functions
 # =============================================================================
 
 # Standard
+import json
 import logging
 import time
 from typing import Any, List
@@ -15,12 +16,13 @@ import pandas as pd
 from pathos.helpers import mp
 from sklearn import preprocessing
 
+# Locals
 from .base.function import Function
 from .base.utils import calculate_mean_std
-# Locals
-from .design.experimentdata import ExperimentData
-from .optimization.optimizer import Optimizer
-from .sampling.sampler import Sampler
+from .design import ExperimentData, create_experimentdata_from_json
+from .functions import create_function_from_json
+from .optimization import Optimizer, create_optimizer_from_json
+from .sampling import Sampler, create_sampler_from_json
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,8 +35,8 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, hyperparameters: dict,
-                 function: Function, sampler: str, number_of_samples: int, seeds: List[int]):
+    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, function: Function,
+                 sampler: Sampler, number_of_samples: int, seeds: List[int]):
         """Optimizaiton results object
 
         Parameters
@@ -43,8 +45,6 @@ class OptimizationResult:
             Data objects for each realization
         optimizer
             classname of the optimizer used
-        hyperparameters
-            hyperparameters of the optimizer
         function
             functionname that was optimized
         sampler
@@ -55,20 +55,49 @@ class OptimizationResult:
             list of seeds that were used for each realization
         """
         self.data = data
-        self.optimizer = optimizer.get_name()
-        self.hyperparameters = hyperparameters
-        self.function = function.get_info()
+        self.optimizer = optimizer
+        self.function = function
         self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
-        self._log(function)
+        self._log()
 
-    def _log(self, function):
+    def to_json(self):
+        args = {'data': [d.to_json() for d in self.data],
+                'optimizer': self.optimizer.to_json(),
+                'function': self.function.to_json(),
+                'sampler': self.sampler.to_json(),
+                'number_of_samples': self.number_of_samples,
+                'seeds': self.seeds
+                }
+
+        return json.dumps(args)
+
+    def _log(self):
         # Log
         logging.info(
-            (f"Optimized {self.function} function (seed={function.seed},dim={function.dimensionality}, "
-             f"noise={function.noise}) with {self.optimizer} optimizer for {len(self.data)} realizations!")
+            (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
+             f"dim={self.function.dimensionality}, "
+             f"noise={self.function.noise}) with {self.optimizer.get_name()} optimizer for "
+             f"{len(self.data)} realizations!")
         )
+
+
+def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
+    optimizationresult_dict = json.loads(json_string)
+    return _create_optimizationresult_from_dict(optimizationresult_dict)
+
+
+def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
+    args = {
+        'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
+        'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
+        'function': create_function_from_json(optimizationresult_dict['function']),
+        'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
+        'number_of_samples': optimizationresult_dict['number_of_samples'],
+        'seeds': optimizationresult_dict['seeds'],
+    }
+    return OptimizationResult(**args)
 
 
 def run_optimization(
@@ -202,7 +231,6 @@ def run_multiple_realizations(
     return OptimizationResult(
         data=results,
         optimizer=optimizer,
-        hyperparameters=optimizer.parameter,
         function=function,
         sampler=sampler,
         number_of_samples=number_of_samples,
