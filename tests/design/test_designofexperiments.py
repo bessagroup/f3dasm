@@ -147,7 +147,7 @@ def test_same_name_of_parameters_error():
 
 
 def test_check_reproducibility(doe: DesignSpace):
-    design_json = json.dumps(doe.get_info())
+    design_json = doe.to_json()
     doe_new = create_design_from_json(design_json)
     assert doe == doe_new
 
