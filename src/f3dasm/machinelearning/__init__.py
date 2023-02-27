@@ -4,6 +4,7 @@
 # Local
 from .linear_regression import LinearRegression
 from .passthrough_model import SimpleModel
+from . import neural_repara_models
 
 #                                                          Authorship & Credits
 # =============================================================================
