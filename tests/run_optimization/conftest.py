@@ -19,6 +19,11 @@ def design() -> DesignSpace:
 
 
 @pytest.fixture(scope="package")
+def design_7d() -> DesignSpace:
+    return make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (7, 1)), dimensionality=7)
+
+
+@pytest.fixture(scope="package")
 def sampler(design: DesignSpace) -> Sampler:
     return LatinHypercube(design=design, seed=SEED)
 

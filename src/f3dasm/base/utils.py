@@ -3,6 +3,7 @@
 
 # Standard
 
+import json
 import pickle
 from typing import Any, List
 
@@ -119,12 +120,27 @@ def write_pickle(name: str, obj: Any):
     Parameters
     ----------
     name
-        name of file to write without file exentions .obj
+        name of file to write without file extension .obj
     obj
         object to store
     """
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
+
+
+def write_json(name: str, json_string: str):
+    """Write a JSON-strint to a file
+
+    Parameters
+    ----------
+    name
+        name of file toe write without file extension .json
+    json_string
+        JSON string to store
+    """
+
+    with open(f"{name}.json", "w", encoding='utf-8') as f:
+        json.dump(json_string, f, ensure_ascii=False)
 
 
 def calculate_mean_std(results):  # OptimizationResult
