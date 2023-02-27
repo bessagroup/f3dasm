@@ -1,11 +1,9 @@
-name: Pull request automated checks
+name: Pull request to main branch
 
 on:
   pull_request:
     branches:
-      - versionmartin
-      - master
-      - "pr/**"
+      - main
 
 jobs:
   check-coding-style:
@@ -23,7 +21,10 @@ jobs:
       - name: Run Flake8
         run: flake8 .
   run-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -64,7 +65,10 @@ jobs:
         run: |
           sphinx-build -b html ./docs ./docs/_build/html
   build-package:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3

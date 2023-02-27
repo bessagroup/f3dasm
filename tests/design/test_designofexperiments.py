@@ -1,6 +1,9 @@
+import json
+
 import pandas as pd
 import pytest
 
+from f3dasm.design import create_design_from_json
 from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
@@ -141,6 +144,12 @@ def test_same_name_of_parameters_error():
     output_space = [y1]
     with pytest.raises(ValueError):
         doe = DesignSpace(input_space=designspace, output_space=output_space)
+
+
+def test_check_reproducibility(doe: DesignSpace):
+    design_json = doe.to_json()
+    doe_new = create_design_from_json(design_json)
+    assert doe == doe_new
 
 
 if __name__ == "__main__":  # pragma: no cover

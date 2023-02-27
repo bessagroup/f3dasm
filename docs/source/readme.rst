@@ -7,7 +7,7 @@ Here you will find all information on installing, using and contributing to the 
 Useful links
 ^^^^^^^^^^^^
 
-* Link to the `GitHub repository <https://github.com/bessagroup/F3DASM/tree/versionmartin>`_
+* Link to the `GitHub repository <https://github.com/bessagroup/F3DASM/tree/main>`_
 * Link to this `documentation on, hosted on Github Pages <https://bessagroup.github.io/F3DASM/>`_
 * Link to the `wiki for development <https://github.com/bessagroup/F3DASM/wiki>`_
 * Link to my `MSc thesis: 'A data-driven heuristic decision strategy for data-scarce optimization' <https://repository.tudelft.nl/islandora/object/uuid%3Ad58271d6-21bb-470c-a5ee-4584b3b8ee29?collection=education>`_ 

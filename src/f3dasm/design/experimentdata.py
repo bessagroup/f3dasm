@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from typing import List, Tuple
 
@@ -49,6 +50,12 @@ class ExperimentData:
         """Print the data to the console"""
         print(self.data)
         return
+
+    def to_json(self) -> str:
+        args = {'design': self.design.to_json(),
+                'data': self.data.to_json()}
+
+        return json.dumps(args)
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Convert the data to a tuple numpy arrays

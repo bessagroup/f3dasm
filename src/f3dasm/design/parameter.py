@@ -1,9 +1,10 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Tuple
 
 # Third-party
 import autograd.numpy as np
@@ -30,6 +31,16 @@ class Parameter:
 
     name: str
     _type: str = field(init=False)
+
+    @classmethod
+    def get_name(self) -> str:
+        return self.__name__
+
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        args = self.__dict__
+        name = self.get_name()
+        return json.dumps((args, name))
+        # return self.__dict__, self.get_name()
 
 
 @dataclass
