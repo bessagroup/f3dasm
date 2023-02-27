@@ -36,8 +36,11 @@ class Parameter:
     def get_name(self) -> str:
         return self.__name__
 
-    def get_info(self) -> Tuple[dict, str]:
-        return self.__dict__, self.get_name()
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        args = self.__dict__
+        name = self.get_name()
+        return json.dumps((args, name))
+        # return self.__dict__, self.get_name()
 
 
 @dataclass

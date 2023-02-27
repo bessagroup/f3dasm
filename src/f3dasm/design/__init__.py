@@ -30,22 +30,22 @@ def find_parameter(query: str) -> Parameter:
 
 
 def create_parameter_from_json(json_string: str):
-    """Create a Model object from a json string
+    """Create a Parameter object from a json string
 
     Parameters
     ----------
     json_string
-        json string representation of the information to construct the Model
+        json string representation of the information to construct the Parameter
 
     Returns
     -------
-        Requested Model object
+        Requested Parameter object
     """
     parameter_dict, name = json.loads(json_string)
-    return create_parameter_from_dict(parameter_dict, name)
+    return _create_parameter_from_dict(parameter_dict, name)
 
 
-def create_parameter_from_dict(parameter_dict: dict, name: str) -> Parameter:
+def _create_parameter_from_dict(parameter_dict: dict, name: str) -> Parameter:
     """Create a Model object from a dictionary
 
     Parameters
@@ -64,18 +64,29 @@ def create_parameter_from_dict(parameter_dict: dict, name: str) -> Parameter:
 
 # Create designspace from json file
 def create_design_from_json(json_string: str) -> DesignSpace:
+    """Createa DesignSpace object from a JSON-string
+
+    Parameters
+    ----------
+    json_string
+        JSON string encoding the DesignSpace object
+
+    Returns
+    -------
+        DesignSpace object
+    """
     # Load JSON string
     design_dict = json.loads(json_string)
-    return create_design_from_dict(design_dict)
+    return _create_design_from_dict(design_dict)
 
 # Create designspace from dictionary
 
 
-def create_design_from_dict(design_dict: dict) -> DesignSpace:
+def _create_design_from_dict(design_dict: dict) -> DesignSpace:
     for key, space in design_dict.items():
         parameters = []
         for parameter in space:
-            parameters.append(create_parameter_from_dict(*parameter))
+            parameters.append(create_parameter_from_json(parameter))
 
         design_dict[key] = parameters
 
@@ -83,14 +94,25 @@ def create_design_from_dict(design_dict: dict) -> DesignSpace:
 
 
 def create_experimentdata_from_json(json_string: str) -> ExperimentData:
+    """Create a ExperimentData object from a JSON-string
+
+    Parameters
+    ----------
+    json_string
+        JSON string encoding the ExperimentData object
+
+    Returns
+    -------
+        ExperimentData object
+    """
     # Read JSON
     experimentdata_dict = json.loads(json_string)
-    return create_experimentdata_from_dict(experimentdata_dict)
+    return _create_experimentdata_from_dict(experimentdata_dict)
 
 
-def create_experimentdata_from_dict(experimentdata_dict: dict) -> ExperimentData:
+def _create_experimentdata_from_dict(experimentdata_dict: dict) -> ExperimentData:
     # Read design from json_data_loaded
-    new_design = create_design_from_dict(experimentdata_dict['design'])
+    new_design = create_design_from_json(experimentdata_dict['design'])
 
     # Read data from json string
     new_data = pd.read_json(experimentdata_dict['data'])

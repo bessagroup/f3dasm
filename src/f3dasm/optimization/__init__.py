@@ -6,7 +6,7 @@ Some API information about the opitmizers
 
 import json
 
-from ..design import create_experimentdata_from_dict
+from ..design import create_experimentdata_from_json
 from .adam import Adam, Adam_Parameters
 from .adamax import Adamax, Adamax_Parameters
 from .bayesianoptimization import (BayesianOptimization,
@@ -128,5 +128,5 @@ def create_optimizer_from_dict(optimizer_dict: dict, name: str) -> Optimizer:
     -------
         Requested Optimizer object
     """
-    optimizer_dict['data'] = create_experimentdata_from_dict(optimizer_dict['data'])
+    optimizer_dict['data'] = create_experimentdata_from_json(optimizer_dict['data'])
     return find_optimizer(name)(**optimizer_dict)

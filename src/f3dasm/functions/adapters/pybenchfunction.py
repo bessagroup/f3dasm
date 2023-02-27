@@ -75,7 +75,7 @@ class PyBenchFunction(Function):
         """
         pass
 
-    def get_info(self) -> Tuple[dict, str]:
+    def to_json(self) -> str:  # Tuple[dict, str]:
         """Returns the information to recreate this object
 
         Returns
@@ -89,7 +89,7 @@ class PyBenchFunction(Function):
                       'scale_bounds': self.scale_bounds.tolist()}
 
         name: str = self.get_name()
-        return args, name
+        return json.dumps((args, name))
 
     def _construct_augmentor(self) -> FunctionAugmentor:
 

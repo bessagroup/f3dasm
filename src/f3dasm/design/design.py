@@ -47,11 +47,12 @@ class DesignSpace:
         if len(self.get_output_names()) != len(set(self.get_output_names())):
             raise ValueError("Duplicate names found in output names!")
 
-    def get_info(self):
+    def to_json(self) -> str:
         # Missing constraints
-        return {'input_space': [parameter.get_info() for parameter in self.input_space],
-                'output_space': [parameter.get_info() for parameter in self.output_space]
+        args = {'input_space': [parameter.to_json() for parameter in self.input_space],
+                'output_space': [parameter.to_json() for parameter in self.output_space]
                 }
+        return json.dumps(args)
 
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space

@@ -2,6 +2,7 @@
 # =============================================================================
 
 # Standard
+import json
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any, List
@@ -10,9 +11,9 @@ from typing import Any, List
 import autograd.numpy as np
 import pandas as pd
 
+from ..design.design import DesignSpace
 # Locals
 from ..design.experimentdata import ExperimentData
-from ..design.design import DesignSpace
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -42,6 +43,12 @@ class Sampler(ABC):
     def __post_init__(self):
         if self.seed:
             np.random.seed(self.seed)
+
+    def to_json(self):
+        args = {'design': self.design.to_json(),
+                'seed': self.seed}
+        name = self.__class__.__name__
+        return json.dumps((args, name))
 
     def set_seed(self, seed: int):
         """Set the seed of the sampler
