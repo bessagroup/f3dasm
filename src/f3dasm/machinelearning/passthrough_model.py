@@ -3,6 +3,7 @@
 
 # Standard
 from functools import partial
+from typing import Any
 
 # Third-party
 import tensorflow as tf
@@ -27,18 +28,21 @@ class PassthroughLayer(tf.keras.layers.Layer):
 
     def build(self, input_shape):  # Create the state of the layer (weights)
         self.w = self.add_weight(shape=(input_shape[-1], self.units), initializer='random_normal', trainable=True)
-
+        # self.w = self.add_weight(shape=(self.units, input_shape[-1]), initializer='random_normal', trainable=True)
     def call(self, inputs):  # Defines the computation from inputs to outputs
-        return self.w
+        # Whatever you put through the model, it will just output the weights!
+        # But transposed!
+        w_transpose = tf.transpose(self.w)
+        return w_transpose  # self.w
 
 
-class SimpleModel(TensorflowModel):
-    def __init__(self, loss_function, dimensionality: int):
+class PassthroughModel(TensorflowModel):
+    def __init__(self, dimensionality: int):  # loss_function
         super().__init__()
         self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
 
-        # Loss function is a benchmark function
-        self._loss_function = loss_function
+        # # Loss function is a benchmark function
+        # self._loss_function = loss_function
 
-        # We don't have labels for benchmark function loss
-        self.loss = partial(self.loss, Y_true=None)
+        # # We don't have labels for benchmark function loss
+        # self.loss = partial(self.loss, Y_true=None)
