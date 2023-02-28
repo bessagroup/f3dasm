@@ -8,10 +8,10 @@ from typing import Any, Callable, Tuple, Union
 import autograd.numpy as np
 import tensorflow as tf
 
+from ..data.learningdata import LearningData
 # Locals
 from ..machinelearning.model import Model
 from ..machinelearning.passthrough_model import PassthroughModel
-from .learningdata import LearningData
 from .utils import get_flat_array_from_list_of_arrays
 
 #                                                          Authorship & Credits
@@ -79,8 +79,8 @@ class Evaluator():
             X_data = weights  # or None !
             y_data = None
         else:
-            X_data = self.learning_data.get_input_data().to_numpy()
-            y_data = self.learning_data.get_labels().to_numpy()
+            X_data = self.learning_data.get_input_data()
+            y_data = self.learning_data.get_labels()
 
         # If there is no model
         if self.model is None:

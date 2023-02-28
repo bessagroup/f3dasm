@@ -14,7 +14,8 @@ __version__ = '0.2.97'
 import logging
 
 # Locals
-from . import functions, machinelearning, optimization, sampling, simulation
+from . import (data, functions, machinelearning, optimization, sampling,
+               simulation)
 from ._show_versions import show_versions
 from .base.evaluator import Evaluator
 from .base.function import *
