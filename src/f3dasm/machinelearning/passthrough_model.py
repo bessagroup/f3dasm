@@ -38,5 +38,12 @@ class PassthroughLayer(tf.keras.layers.Layer):
 
 class PassthroughModel(TensorflowModel):
     def __init__(self, dimensionality: int):  # loss_function
+        self.dimensionality = dimensionality
         super().__init__()
         self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'dimensionality': self.dimensionality, })
+        return config

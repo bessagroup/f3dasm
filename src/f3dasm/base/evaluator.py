@@ -108,3 +108,6 @@ class Evaluator():
     def dfdx(self, x: np.ndarray):
         _, grads = self.evaluate(x)
         return grads
+
+    def dfdx_legacy(self, x: np.ndarray):
+        return self.dfdx(x)
