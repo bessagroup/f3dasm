@@ -162,7 +162,7 @@ def convert_autograd_to_tensorflow(func):
     """
 
     @tf.custom_gradient
-    def wrapper(x):
+    def wrapper(x, *args, **kwargs):
         vjp, ans = autograd.core.make_vjp(func, x.numpy())
 
         def first_grad(dy):
