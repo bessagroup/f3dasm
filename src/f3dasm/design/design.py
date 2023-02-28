@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from dataclasses import dataclass, field
 from typing import List, TypeVar
@@ -45,6 +46,13 @@ class DesignSpace:
 
         if len(self.get_output_names()) != len(set(self.get_output_names())):
             raise ValueError("Duplicate names found in output names!")
+
+    def to_json(self) -> str:
+        # Missing constraints
+        args = {'input_space': [parameter.to_json() for parameter in self.input_space],
+                'output_space': [parameter.to_json() for parameter in self.output_space]
+                }
+        return json.dumps(args)
 
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space

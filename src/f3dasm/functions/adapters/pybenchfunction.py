@@ -1,9 +1,10 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from copy import copy
-from typing import Any
+from typing import Any, Tuple
 
 # Third-party
 import autograd.numpy as np
@@ -49,7 +50,7 @@ class PyBenchFunction(Function):
             set this True to not randomly off-set the pybenchfunction
         """
         self.noise = noise
-        self.offset = np.zeros(dimensionality)
+        self.offset: np.ndarray = np.zeros(dimensionality)
         self.input_domain: Any or np.ndarray = None
         self.augmentor = FunctionAugmentor()
         self.no_offset = no_offset
@@ -74,6 +75,22 @@ class PyBenchFunction(Function):
         """
         pass
 
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        """Returns the information to recreate this object
+
+        Returns
+        -------
+            Tuple with dictionary to store and recreate the same object and name of the object
+        """
+        args: dict = {'noise': self.noise,
+                      'dimensionality': self.dimensionality,
+                      'no_offset': self.no_offset,
+                      'seed': self.seed,
+                      'scale_bounds': self.scale_bounds.tolist()}
+
+        name: str = self.get_name()
+        return json.dumps((args, name))
+
     def _construct_augmentor(self) -> FunctionAugmentor:
 
         input_augmentors = [
@@ -91,6 +108,8 @@ class PyBenchFunction(Function):
     def _create_scale_bounds(self, input: Any):
         if input is None:
             self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
+        elif isinstance(input, list):
+            self.scale_bounds = np.array(input)
         else:
             self.scale_bounds = input
 

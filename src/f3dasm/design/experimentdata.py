@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from typing import List, Tuple
 
@@ -50,6 +51,12 @@ class ExperimentData:
         print(self.data)
         return
 
+    def to_json(self) -> str:
+        args = {'design': self.design.to_json(),
+                'data': self.data.to_json()}
+
+        return json.dumps(args)
+
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Convert the data to a tuple numpy arrays
 
@@ -90,17 +97,17 @@ class ExperimentData:
         """
         self.data[("output", label)] = output
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input_rows: np.ndarray, output_rows: np.ndarray):
         """Append a numpy array to the datafram
 
         Parameters
         ----------
-        input
+        input_rows
             2d numpy array added to input data
-        output
+        output_rows
             2d numpy array added to output data
         """
-        df = pd.DataFrame(np.hstack((input, output)),
+        df = pd.DataFrame(np.hstack((input_rows, output_rows)),
                           columns=self.data.columns)
         self.add(df, ignore_index=True)
 

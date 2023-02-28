@@ -62,6 +62,9 @@ class Function:
         self.args["tvars"] = self.args["model"].trainable_variables
         self.args["func"] = convert_autograd_to_tensorflow(self.__call__)
 
+    def get_info(self):
+        pass
+
     def set_seed(self, seed: int):
         """Set the numpy seed of the random generator
 
