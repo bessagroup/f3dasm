@@ -7,7 +7,7 @@ import json
 # Local
 from .linear_regression import LinearRegression
 from .model import Model
-from .passthrough_model import SimpleModel
+from .passthrough_model import PassthroughModel
 
 #                                                          Authorship & Credits
 # =============================================================================
