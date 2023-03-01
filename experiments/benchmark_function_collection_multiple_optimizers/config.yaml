@@ -2,30 +2,37 @@ design:
   lower_bound: -1.0
   upper_bound: 1.0
   dimensionality_lower_bound: 2
-  dimensionality_upper_bound: 10
+  dimensionality_upper_bound: 5
 
 function:
   noise: 0.2
 
 optimizers:
-  optimizers_names: [Adam, PSO, CMAES, RandomSearch, SGD]
+  optimizers_names: [
+    CMAESAdam,
+    Adam,
+    SGD,
+    CG,
+    CMAES,
+    SimulatedAnnealing,
+    LBFGSB,
+    NelderMead,
+    PSO,
+    RandomSearch,
+    SGA,
+    XNES,
+    RMSprop,
+    Nadam,
+    Adamax,
+    Ftrl,
+  ]
 
-# CG,
-# SimulatedAnnealing,
-# LBFGSB,
-# NelderMead,
-# SGA,
-# XNES,
-# RMSprop,
-# Nadam,
-# Adamax,
-# Ftrl,
 sampler:
-  sampler_name: LatinHypercube
+  sampler_name: RandomUniform
   number_of_samples: 30
 
 execution:
-  number_of_functions: 1
-  iterations: 1000
+  number_of_functions: 3
+  iterations: 500
   realizations: 10
   parallelization: True

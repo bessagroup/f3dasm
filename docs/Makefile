@@ -5,15 +5,14 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
-SOURCEDIR	  = source
-BUILDDIR      = build
-APIDOCDIR     = apisource
+BUILDDIR      = _build
+APIDOCDIR     = source
 PACKAGENAME   = f3dasm
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
@@ -45,7 +44,7 @@ clean:
 	-rm -rf $(BUILDDIR)/*
 
 html:
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(SOURCEDIR) $(BUILDDIR)/html 
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 	
@@ -54,8 +53,8 @@ html-open:
 	xdg-open ./$(BUILDDIR)/html/index.html
 
 apidoc:
-	-rm -rf ./$(SOURCEDIR)$(APIDOCDIR)/*
-	sphinx-apidoc -o ./$(SOURCEDIR)/$(APIDOCDIR)/ ../src/$(PACKAGENAME)
+	-rm -rf $(APIDOCDIR)/*
+	sphinx-apidoc -o $(APIDOCDIR)/ ../src/$(PACKAGENAME)
 	@echo
 	@echo "Created API documentation using sphinx-apidoc. The source files are in $(APIDOCDIR)."
 

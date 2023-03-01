@@ -1,9 +1,6 @@
-name: Pull request to main branch
+name: Checks on push
 
-on:
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
   check-coding-style:
@@ -21,10 +18,7 @@ jobs:
       - name: Run Flake8
         run: flake8 .
   run-tests:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -65,10 +59,7 @@ jobs:
         run: |
           sphinx-build -b html ./docs ./docs/_build/html
   build-package:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3

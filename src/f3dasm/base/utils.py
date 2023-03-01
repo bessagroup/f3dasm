@@ -3,7 +3,6 @@
 
 # Standard
 
-import json
 import pickle
 from typing import Any, List
 
@@ -15,9 +14,9 @@ import pandas as pd
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
-from ..design.design import DesignSpace
 # Locals
 from ..design.experimentdata import ExperimentData
+from ..design.design import DesignSpace
 from ..design.parameter import ContinuousParameter
 
 #                                                          Authorship & Credits
@@ -120,27 +119,12 @@ def write_pickle(name: str, obj: Any):
     Parameters
     ----------
     name
-        name of file to write without file extension .obj
+        name of file to write without file exentions .obj
     obj
         object to store
     """
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
-
-
-def write_json(name: str, json_string: str):
-    """Write a JSON-strint to a file
-
-    Parameters
-    ----------
-    name
-        name of file toe write without file extension .json
-    json_string
-        JSON string to store
-    """
-
-    with open(f"{name}.json", "w", encoding='utf-8') as f:
-        json.dump(json_string, f, ensure_ascii=False)
 
 
 def calculate_mean_std(results):  # OptimizationResult
@@ -225,5 +209,5 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
 
 
 # technically not a np array input!
-def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> np.ndarray:
+def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
     return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])
