@@ -3,7 +3,6 @@ import pytest
 from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
-from f3dasm.sampling import LatinHypercube, RandomUniform, SobolSequence
 
 
 @pytest.fixture(scope="package")
@@ -83,18 +82,3 @@ def design5():
     design = DesignSpace(space)
 
     return design
-
-
-@pytest.fixture
-def random_sampler(design5: DesignSpace):
-    return RandomUniform(design=design5, seed=42)
-
-
-@pytest.fixture
-def latinhypercube_sampler(design5: DesignSpace):
-    return LatinHypercube(design=design5, seed=42)
-
-
-@pytest.fixture
-def sobolsequence_sampler(design5: DesignSpace):
-    return SobolSequence(design=design5, seed=42)

@@ -34,7 +34,7 @@ class PygmoProblem:
     """
 
     design: DesignSpace
-    func: Function  # TODO: Change this to Evaluator or so
+    func: Function
     seed: Any or int = None
 
     def __post_init__(self):

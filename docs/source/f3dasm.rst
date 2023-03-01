@@ -8,10 +8,11 @@ Subpackages
    :maxdepth: 4
 
    f3dasm.base
-   f3dasm.design
+   f3dasm.config
    f3dasm.functions
    f3dasm.machinelearning
    f3dasm.optimization
+   f3dasm.regression
    f3dasm.sampling
    f3dasm.simulation
 
