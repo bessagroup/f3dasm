@@ -20,10 +20,10 @@ f3dasm.machinelearning.linear\_regression module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.machinelearning.models module
-------------------------------------
+f3dasm.machinelearning.model module
+-----------------------------------
 
-.. automodule:: f3dasm.machinelearning.models
+.. automodule:: f3dasm.machinelearning.model
    :members:
    :undoc-members:
    :show-inheritance:
