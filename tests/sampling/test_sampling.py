@@ -67,8 +67,6 @@ def test_correct_sampling_ran(design3: DesignSpace):
     samples = random_sequencing.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
 
-    # print(df_ground_truth.dtypes)
-    # print(samples.dtypes)
     assert df_ground_truth.equals(samples)
 
 
@@ -107,9 +105,6 @@ def test_correct_sampling_sobol(design3: DesignSpace):
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
-    print(samples)
-    print(df_ground_truth)
-
     assert df_ground_truth.equals(samples)
 
 
@@ -149,7 +144,6 @@ def test_correct_sampling_lhs(design3: DesignSpace):
     samples = lhs_sampler.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
 
-    print(samples)
     assert df_ground_truth.equals(samples)
 
 

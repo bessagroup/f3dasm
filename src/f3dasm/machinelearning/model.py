@@ -31,7 +31,7 @@ class Model(Protocol):
         Parameters
         ----------
         X
-            Input of the model
+            Learningdata of the model
         """
         # The model should handle the case when X is None!
         ...
@@ -40,7 +40,7 @@ class Model(Protocol):
         """Retrieve the model weights as a 1D array"""
         ...
 
-    def set_model_weights(self):
+    def set_model_weights(self, weights):
         """Set the model weights with a 1D array"""
         ...
 

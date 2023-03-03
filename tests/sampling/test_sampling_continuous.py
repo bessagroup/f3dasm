@@ -1,11 +1,12 @@
 # # -*- coding: utf-8 -*-
 
-from f3dasm.sampling.sobolsequence import SobolSequence
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.design.design import DesignSpace
 import numpy as np
 import pytest
+
+from f3dasm.design.design import DesignSpace
+from f3dasm.sampling.latinhypercube import LatinHypercube
+from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.sampling.sobolsequence import SobolSequence
 
 pytestmark = pytest.mark.smoke
 
@@ -74,7 +75,6 @@ def test_correct_sobolsequence_sampling(design3):
         ]
     )
     samples = sobol_sequencing.sample_continuous(numsamples=numsamples)
-    print(samples)
     assert samples == pytest.approx(ground_truth_samples)
 
 
