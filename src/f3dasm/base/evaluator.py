@@ -98,6 +98,31 @@ class Evaluator():
 
         return y, dydx
 
+    def tf_apply_gradients(self, weights: np.ndarray, optimizer: tf.keras.optimizers.Optimizer):
+        # If there is no learning data
+        if self.learning_data is None:
+            X_data = weights  # or None !
+            y_data = None
+        else:
+            X_data = self.learning_data.get_input_data()
+            y_data = self.learning_data.get_labels()
+
+        # If there is no model
+        if self.model is None:
+            # Create the passthroughmodel based on the dimensionality
+            self.model = PassthroughModel(dimensionality=weights.size)  # product of x.shape
+
+        self.model.set_model_weights(weights)
+
+        with tf.GradientTape() as tape:
+            loss = self.loss_function(self.model(X_data), Y_true=y_data)
+        grads = tape.gradient(loss, self.model.trainable_variables)  # = dependent on tensorflow !!
+
+        optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        x = self.model.get_model_weights().T
+        y = self(x)
+        return x, y
+
     def f(self, x: np.ndarray):
         x = np.atleast_2d(x)
         y = []

@@ -80,7 +80,8 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
         minimize(
             fun=lambda x: function(x).item(),
             method=self.method,
-            jac=lambda x: function.dfdx_legacy(x).ravel(),  # TODO: #89 Fix this with the newest gradient method!
+            jac=lambda x: np.float64(function.dfdx_legacy(x).ravel()),
+            # jac=lambda x: function.dfdx_legacy(x).ravel(),  # TODO: #89 Fix this with the newest gradient method!
             x0=self.data.get_n_best_input_parameters_numpy(
                 nosamples=1).ravel(),
             callback=self._callback,
