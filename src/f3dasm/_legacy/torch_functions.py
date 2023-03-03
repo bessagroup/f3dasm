@@ -8,7 +8,7 @@ from botorch.test_functions import SyntheticTestFunction
 from torch import Tensor
 
 # Locals
-from ...functions.pybenchfunction import PyBenchFunction
+from ..functions.pybenchfunction import PyBenchFunction
 
 #                                                          Authorship & Credits
 # =============================================================================
