@@ -38,6 +38,13 @@ class PassthroughLayer(tf.keras.layers.Layer):
 
 class PassthroughModel(TensorflowModel):
     def __init__(self, dimensionality: int):  # loss_function
+        """Model that passed through the input layer directly to the output layer
+
+        Parameters
+        ----------
+        dimensionality
+            number of input parameters
+        """
         self.dimensionality = dimensionality
         super().__init__()
         self.model.add(PassthroughLayer(input_shape=(dimensionality,)))

@@ -5,7 +5,7 @@
 
 import json
 import pickle
-from typing import Any, List
+from typing import Any, Callable, List
 
 # Third-party
 import autograd
@@ -154,13 +154,18 @@ def calculate_mean_std(results):  # OptimizationResult
 # FUNCTIONS FOR CALCULATING THE GRADIENT
 
 # S:func is completely written in numpy autograd
-def convert_autograd_to_tensorflow(func):
-    """Convert autograd function to tensorflow funciton
+def convert_autograd_to_tensorflow(func: Callable):
+    """Convert autograd function to tensorflow function
 
-    :param func: function
-    :return: wrapper
+    Parameters
+    ----------
+    func
+        callable function to convert
+
+    Returns
+    -------
+        wrapper to convert autograd function to tensorflow function
     """
-
     @tf.custom_gradient
     def wrapper(x, *args, **kwargs):
         vjp, ans = autograd.core.make_vjp(func, x.numpy())

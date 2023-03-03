@@ -239,6 +239,17 @@ def run_multiple_realizations(
 
 
 def margin_of_victory(results: List[OptimizationResult]) -> pd.DataFrame:
+    """Calculate the margin of victory of optimizationresults
+
+    Parameters
+    ----------
+    results
+        OptimizationResults object
+
+    Returns
+    -------
+        DataFrame containing the algorithms and the margin of victory
+    """
 
     # Create df with all results
     df = pd.concat([calculate_mean_std(results[i])[0] for i, _ in enumerate(results)], axis=1)

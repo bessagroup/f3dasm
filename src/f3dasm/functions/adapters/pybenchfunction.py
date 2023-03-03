@@ -68,10 +68,16 @@ class PyBenchFunction(Function):
 
     @classmethod
     def is_dim_compatible(cls, d: int) -> bool:
-        """Check if the functdion is compatible with a certain number of dimenions
+        """Check if the function is compatible with the requested number of dimensions
 
-        :param d: number of dimensions
-        :return:
+        Parameters
+        ----------
+        d
+            number of dimensions
+
+        Returns
+        -------
+            boolean value if function is compatible or not
         """
         pass
 
@@ -178,8 +184,14 @@ class PyBenchFunction(Function):
     def check_if_within_bounds(self, x: np.ndarray) -> bool:
         """Check if the input vector is between the given scaling bounds
 
-        :param x: input vector
-        :return: wheter the vector is within the boundaries
+        Parameters
+        ----------
+        x
+            input vector
+
+        Returns
+        -------
+            boolean value whether the vector is within the boundaries
         """
         return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
 
@@ -213,16 +225,34 @@ class PyBenchFunction(Function):
     def evaluate(x: np.ndarray):
         """Evaluate the objective function
 
-        :param x: input fector
-        :raises NotImplementedError: If no function is implemented
+        Parameters
+        ----------
+        x
+            input vector
+
+        Raises
+        ------
+        NotImplementedError
+            If no function is implemented
         """
         raise NotImplementedError("No function implemented!")
 
     def f(self, x: np.ndarray):
         """Analytical form of the objective function
 
-        :param x: input vector
-        :return: objective value
+        Parameters
+        ----------
+        x
+            input vector
+
+        Returns
+        -------
+            objective value
+
+        Raises
+        ------
+        ValueError
+            If the dimension is not compatible with the function
         """
         if self.is_dim_compatible(self.dimensionality):
             y = []

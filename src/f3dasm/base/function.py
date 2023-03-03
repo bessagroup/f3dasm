@@ -125,19 +125,6 @@ class Function:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def dfdx(self, x: np.ndarray) -> np.ndarray:
-        # Need to ravel x to be shape = (dim,)
-        self.args["model"].z.assign(x)
-
-        with tf.GradientTape() as tape:
-            tape.watch(self.args["tvars"])
-            logits = 0.0 + self.args["model"](None)  # tf.cast(self.args["model"](None), tf.float64)
-            loss = self.args["func"](tf.reshape(
-                logits, (self.dimensionality)))
-
-        grads = tape.gradient(loss, self.args["tvars"])
-        return grads[0].numpy().copy()
-
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
         """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
 
