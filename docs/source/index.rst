@@ -17,27 +17,36 @@ F3DASM
 
 .. toctree::
    :maxdepth: 2
-   :caption: Base classes
+   :caption: Design & Sampling
    :hidden:
    :glob:
 
-   base/*
+   classes/design/*
+   classes/sampling/*
 
 .. toctree::
    :maxdepth: 2
-   :caption: Implementations
+   :caption: Simulation
    :hidden:
    :glob:
 
-   implementations/*
+   classes/simulation/*
 
 .. toctree::
    :maxdepth: 2
-   :caption: Examples
+   :caption: Machine Learning
    :hidden:
    :glob:
 
-   examples/*
+   classes/machinelearning/*
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Optimization
+   :hidden:
+   :glob:
+
+   classes/optimization/*
 
 .. include:: readme.rst
 
