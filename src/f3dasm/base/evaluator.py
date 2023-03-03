@@ -99,14 +99,30 @@ class Evaluator():
         return y, dydx
 
     def f(self, x: np.ndarray):
-        loss, _ = self.evaluate(x)
+        x = np.atleast_2d(x)
+        y = []
+        for xi in x:
+            yi, _ = self.evaluate(xi)
+            y.append(yi)
+
+        loss = np.array(y).reshape(-1, 1)
+
+        # loss, _ = self.evaluate(x)
         return loss
 
     def __call__(self, x: np.ndarray):
         return self.f(x)
 
     def dfdx(self, x: np.ndarray):
-        _, grads = self.evaluate(x)
+        x = np.atleast_2d(x)
+        dfdx = []
+        for xi in x:
+            _, dfdxi = self.evaluate(xi)
+            dfdx.append(dfdxi)
+
+        grads = np.array(dfdx).reshape(-1, 1)
+
+        # _, grads = self.evaluate(x)
         return grads
 
     def dfdx_legacy(self, x: np.ndarray):
