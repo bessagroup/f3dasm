@@ -64,8 +64,14 @@ class Sampler(ABC):
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Create N samples within the search space
 
-        :param numsamples: number of samples
-        :returns: samples
+        Parameters
+        ----------
+        numsamples
+            number of samples
+
+        Returns
+        -------
+            samples
         """
         raise NotImplementedError("Subclasses should implement this method.")
 

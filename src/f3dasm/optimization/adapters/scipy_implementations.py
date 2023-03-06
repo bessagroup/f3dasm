@@ -33,16 +33,24 @@ class SciPyOptimizer(Optimizer):
     def run_algorithm(self, iterations: int, function: Function):
         """Run the algorithm for a number of iterations
 
-        :param iterations: number of iterations
-        :param function: function to be evaluated
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            function to be evaluated
         """
         pass
 
     def iterate(self, iterations: int, function: Function):
-        """Iterating on a funtion
+        """Iterating on a function
 
-        :param iterations: number of iterations
-        :param function: function to be evaluated
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            function to be evaluated
         """
         self.x_new = []
 
@@ -74,13 +82,18 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function):
         """Run the algorithm for a number of iterations
 
-        :param iterations: number of iterations
-        :param function: function to be evaluated
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            function to be evaluated
         """
         minimize(
             fun=lambda x: function(x).item(),
             method=self.method,
-            jac=lambda x: function.dfdx_legacy(x).ravel(),  # TODO: #89 Fix this with the newest gradient method!
+            # TODO: #89 Fix this with the newest gradient method!
+            jac=lambda x: np.float64(function.dfdx_legacy(x).ravel()),
             x0=self.data.get_n_best_input_parameters_numpy(
                 nosamples=1).ravel(),
             callback=self._callback,

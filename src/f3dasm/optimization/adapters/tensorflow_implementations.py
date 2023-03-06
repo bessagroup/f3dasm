@@ -12,6 +12,7 @@ import autograd.numpy as np
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
+from ...base.evaluator import Evaluator
 from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
 # Locals
 from .._protocol import Function
@@ -32,17 +33,22 @@ class TensorflowOptimizer(Optimizer):
         self.args = {}
 
     def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
-        with tf.GradientTape() as tape:
-            tape.watch(self.args["tvars"])
-            logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
-            loss = self.args["func"](tf.reshape(
-                logits, (self.data.design.get_number_of_input_parameters())))
+        if isinstance(function, Evaluator):
+            logits = self.data.get_input_data().iloc[-1].to_numpy()
+            x, y = function.tf_apply_gradients(weights=logits, optimizer=self.algorithm)
+        else:
+            with tf.GradientTape() as tape:
+                tape.watch(self.args["tvars"])
+                logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
+                loss = self.args["func"](tf.reshape(
+                    logits, (self.data.design.get_number_of_input_parameters())))
 
-        grads = tape.gradient(loss, self.args["tvars"])
-        self.algorithm.apply_gradients(zip(grads, self.args["tvars"]))
+            grads = tape.gradient(loss, self.args["tvars"])
+            self.algorithm.apply_gradients(zip(grads, self.args["tvars"]))
 
-        x = logits.numpy().copy()
-        y = loss.numpy().copy()
+            x = logits.numpy().copy()
+            y = loss.numpy().copy()
+
         return x, y
 
     def _construct_model(self, function: Function):
@@ -55,4 +61,5 @@ class TensorflowOptimizer(Optimizer):
             },
         )  # Build the model
         self.args["tvars"] = self.args["model"].trainable_variables
+
         self.args["func"] = convert_autograd_to_tensorflow(function.__call__)

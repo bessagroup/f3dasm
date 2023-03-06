@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 
 from f3dasm import run_optimization, make_nd_continuous_design
 from f3dasm.functions import pybenchfunction
-from f3dasm.optimization.bayesianoptimization_torch import BayesianOptimizationTorch
+from f3dasm._legacy.bayesianoptimization_torch import BayesianOptimizationTorch
 from f3dasm.sampling import SobolSequence
 
 

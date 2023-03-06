@@ -10,9 +10,9 @@ from typing import Any, Mapping, Optional, Tuple
 # Third-party
 import autograd.numpy as np
 
-from ..base.function import Function
 # Locals
 from ..design.experimentdata import ExperimentData
+from ..functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -218,7 +218,7 @@ class Optimizer:
         y
             output data
         """
-        self.data.add_numpy_arrays(input=x, output=y)
+        self.data.add_numpy_arrays(input_rows=x, output_rows=y)
 
     def extract_data(self) -> ExperimentData:
         """Returns a copy of the data

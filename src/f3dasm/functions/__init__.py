@@ -9,10 +9,9 @@ from typing import List
 # Third-party
 import numpy as np
 
-# Local
-from ..base.function import Function
 from . import pybenchfunction
 from .adapters.augmentor import *
+from .function import Function
 from .pybenchfunction import *
 
 #                                                          Authorship & Credits

@@ -1,8 +1,8 @@
-Optimizers
-==========
+Implemented optimizers
+======================
 
-Usage
------
+Creat an optimizer
+------------------
 
 We will use the CMAES optimizer to find the minimum. We can find an implementation in the :mod:`f3dasm.optimization` module:
 
@@ -60,7 +60,7 @@ Name                      Docs of the Python class                              
 CG                       :class:`~f3dasm.optimization.cg.CG`                                        `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
 LBFGSB                   :class:`~f3dasm.optimization.lbfgsb.LBFGSB`                                `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
 NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`                        `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
-NelderMead               :class:`~f3dasm.optimization.cobyla.COBYLA`                                `scipy.minimize COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_
+COBYLA                   :class:`~f3dasm.optimization.cobyla.COBYLA`                                `scipy.minimize COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_
 
 ======================== ========================================================================= ===============================================================================================
 
@@ -97,173 +97,58 @@ Name                      Docs of the Python class                              
 RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                 self implemented
 ======================== ====================================================================== ==================
 
-API Documentation
------------------
+Implement your own optimizer
+----------------------------
 
-Adam
-^^^^
+First, we create a class storing the potential hyper-parameters for our optimizers. Even if we our optimizer doesn't have hyper-parameters, you still have to create class
 
-.. automodule:: f3dasm.optimization.adam
-   :members:
-   :noindex:
-   :show-inheritance:
+This class has to be inhereted from the :class:`~f3dasm.optimization.optimizer.OptimizerParameters` class. This inhereted class consists two mandatory attributes: 
 
-Adamax
-^^^^^^
+* :attr:`~f3dasm.optimization.optimizer.OptimizerParameters.population`: how many points are created for each update step. Defaults to 1
+* :attr:`~f3dasm.optimization.optimizer.OptimizerParameters.force_bounds`: if the optimizer is forced to stay between the design bounds. Defaults to True. Currently does not work when set to False!
 
-.. automodule:: f3dasm.optimization.adamax
-   :members:
-   :noindex:
-   :show-inheritance:
+.. code-block:: python
 
-Bayesian Optimization
-^^^^^^^^^^^^^^^^^^^^^
+    @dataclass
+    class NewOptimizer_Parameters(f3dasm.OptimizerParameters):
+    """Example of hyperparameters"""
 
-.. automodule:: f3dasm.optimization.bayesianoptimization
-   :members:
-   :noindex:
-   :show-inheritance:
+    example_hyperparameter_1: float = 0.999
+    example_hyperparameter_2: bool = True
 
-Bayesian Optimization Torch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: f3dasm.optimization.bayesianoptimization_torch
-   :members:
-   :noindex:
-   :show-inheritance:
+Next, we create an new optimizer by inheriting from the :class:`~f3dasm.optimization.optimizer.Optimizer` class
 
-Conjugate Gradient
-^^^^^^^^^^^^^^^^^^
+* We create a class attribute :attr:`~f3dasm.optimization.optimizer.Optimizer.parameter` and initialize it without any arguments in order to use the defaults specified above
+* The only function we have to implement is the :func:`~f3dasm.optimization.optimizer.Optimizer.update_step` function, which takes a :class:`~f3dasm.base.function.Function` and outputs a tuple containing the position and evaluated value of the next iteration
+* The :func:`~f3dasm.optimization.optimizer.Optimizer.init_parameters` function is optional. It can be used to store dynamic hyper-parameters that update throughout updating
 
-.. automodule:: f3dasm.optimization.cg
-   :members:
-   :noindex:
-   :show-inheritance:
 
-CMAES
-^^^^^
+.. code-block:: python
 
-.. automodule:: f3dasm.optimization.cmaes
-   :members:
-   :noindex:
-   :show-inheritance:
+    class NewOptimizer(f3dasm.Optimizer):
+    """Example of implement your own optimizer"""
 
-COBYLA
-^^^^^^
+    parameter: NewOptimizer_Parameters = NewOptimizer_Parameters()
 
-.. automodule:: f3dasm.optimization.cobyla
-   :members:
-   :noindex:
-   :show-inheritance:
+    def init_parameters(self):
+        """Set the dynamic initialization parameters. These are resetted every time the iterate method is called."""
+        pass
 
-Differential Evolution
-^^^^^^^^^^^^^^^^^^^^^^
+    def update_step(self, function: f3dasm.Function) -> Tuple[np.ndarray, np.ndarray]:
+        """Custom update step for your own optimizer
 
-.. automodule:: f3dasm.optimization.differentialevolution
-   :members:
-   :noindex:
-   :show-inheritance:
+        Parameters
+        ----------
+        function
+            objective function that is being optimized
 
-FTRL
-^^^^
+        Returns
+        -------
+            tuple of resulting input and output parameter
+        """
+        return x, y
 
-.. automodule:: f3dasm.optimization.ftrl
-   :members:
-   :noindex:
-   :show-inheritance:
+In order to use the optimizer, we call the :func:`~f3dasm.optimization.optimizer.Optimizer.iterate` method, which for-loops over the :func:`~f3dasm.optimization.optimizer.Optimizer.update_step` method, appending the :code:`x` and :code:`y` values to the internal :attr:`~f3dasm.optimization.optimizer.Optimizer.data` attribute.
 
-LBFGSB
-^^^^^^
 
-.. automodule:: f3dasm.optimization.lbfgsb
-   :members:
-   :noindex:
-   :show-inheritance:
-
-Nadam
-^^^^^
-
-.. automodule:: f3dasm.optimization.nadam
-   :members:
-   :noindex:
-   :show-inheritance:
-
-Nelder Mead
-^^^^^^^^^^^
-
-.. automodule:: f3dasm.optimization.neldermead
-   :members:
-   :noindex:
-   :show-inheritance:
-
-PSO
-^^^
-
-.. automodule:: f3dasm.optimization.pso
-   :members:
-   :noindex:
-   :show-inheritance:
-
-Random Search
-^^^^^^^^^^^^^
-
-.. automodule:: f3dasm.optimization.randomsearch
-   :members:
-   :noindex:
-   :show-inheritance:
-
-RMSprop
-^^^^^^^
-
-.. automodule:: f3dasm.optimization.rmsprop
-   :members:
-   :noindex:
-   :show-inheritance:
-
-SADE
-^^^^
-
-.. automodule:: f3dasm.optimization.sade
-   :members:
-   :noindex:
-   :show-inheritance:
-
-SEA
-^^^
-
-.. automodule:: f3dasm.optimization.sea
-   :members:
-   :noindex:
-   :show-inheritance:
-
-SGA
-^^^
-
-.. automodule:: f3dasm.optimization.sga
-   :members:
-   :noindex:
-   :show-inheritance:
-
-SGD
-^^^
-
-.. automodule:: f3dasm.optimization.sgd
-   :members:
-   :noindex:
-   :show-inheritance:
-
-Simulated Annealing
-^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: f3dasm.optimization.simulatedannealing
-   :members:
-   :noindex:
-   :show-inheritance:
-
-XNES
-^^^^
-
-.. automodule:: f3dasm.optimization.xnes
-   :members:
-   :noindex:
-   :show-inheritance:

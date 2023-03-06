@@ -1,5 +1,0 @@
-Regression
-==========
-
-API Documentation
------------------

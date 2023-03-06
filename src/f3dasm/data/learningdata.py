@@ -1,11 +1,11 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import tensorflow as tf
+# Standard
 
-# Local
-from .adapters.tensorflow_implementations import TensorflowModel
+# Third-party
+
+# Locals
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -17,14 +17,13 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class LinearRegression(TensorflowModel):
-    def __init__(self, dimensionality: int):  # introduce a dimensionality parameter because trainable weights!
-        self.dimensionality = dimensionality
-        super().__init__()
-        self.model.add(tf.keras.layers.Dense(1, input_shape=(dimensionality,)))
+class LearningData:
+    """Class that holds data used for training or validating machine learning models"""
 
-    def get_config(self):
-        config = super().get_config().copy()
-        config.update({
-            'dimensionality': self.dimensionality, })
-        return config
+    def get_input_data(self):
+        """Get the input data for the machine learning model"""
+        ...
+
+    def get_labels(self):
+        """Retrieve the labels of the data"""
+        ...
