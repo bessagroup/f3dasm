@@ -108,7 +108,7 @@ class PyBenchFunction(Function):
 
         Returns
         -------
-            Returns a numpy array containing the global 
+            Returns a numpy array containing the global
             minimum or all zeroes if no global minimum exists
         """
         global_minimum_method = getattr(self, "get_global_minimum", None)
