@@ -15,6 +15,7 @@ from ..base.utils import (SimpelModel,
                           convert_autograd_to_tensorflow)
 # Locals
 from ..design.experimentdata import ExperimentData
+from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -27,67 +28,32 @@ __status__ = 'Stable'
 
 
 class Function:
-    def __init__(self, dimensionality: int, seed: Any or int = None):
-        """Interface of a continuous benchmark function
+    def __init__(self, seed=None):
+        """Class for an analytical function
 
         Parameters
         ----------
-        dimensionality :
-            number of input dimensions
-        seed : Any, optional
-            value to seed the random generator, by default None
+        seed, optional
+            seed for the random number generator, by default None
         """
-        self.dimensionality = dimensionality
+        self.augmentor = FunctionAugmentor()
         self.seed = seed
-        self.__post_init__()
 
-    def __post_init__(self):
+        self.set_seed(seed)
 
-        if self.seed:
-            self.set_seed(self.seed)
-
-        self._set_parameters()
-        self._tf_gradient_setup()
-
-    def _tf_gradient_setup(self):
-        self.args = {}
-
-        self.args["model"] = SimpelModel(
-            None,
-            args={
-                "dim": self.dimensionality,
-                "x0": np.zeros(self.dimensionality),
-            },
-        )  # Build the model
-        self.args["tvars"] = self.args["model"].trainable_variables
-        self.args["func"] = convert_autograd_to_tensorflow(self.__call__)
-
-    def get_info(self):
-        pass
-
-    def set_seed(self, seed: int):
-        """Set the numpy seed of the random generator
+    def set_seed(self, seed):
+        """Set the seed of the random number generator. By default the numpy generator
 
         Parameters
         ----------
         seed
-            seed for random number generator
+            seed for the random number generator
         """
-        self.seed = seed
+        if seed is None:
+            return
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray or ExperimentData, *args, **kwargs) -> np.ndarray or ExperimentData:
-        """Evaluate the objective function
-
-        Parameters
-        ----------
-        input_x
-            input to be evaluated
-
-        Returns
-        -------
-            output of the objective function
-        """
+    def __call__(self, input_x: np.ndarray):
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
             x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
@@ -95,35 +61,52 @@ class Function:
         else:
             x = input_x
 
-        x = self._reshape_input(x)
+        x = np.atleast_2d(x)
+        y = []
+        for xi in x:
+            xxi = self.augmentor.augment_input(xi)
+            yi = self.evaluate(xxi)
 
-        y = np.atleast_1d(self.f(x))
+            yyi = self.augmentor.augment_output(yi)
+            y.append(yyi)
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            input_x.add_output(y)
-            # return input_x
+            input_x.add_output(np.array(y).reshape(-1, 1))
 
-        return y
+        return np.array(y).reshape(-1, 1)
 
-    def f(self, x) -> np.ndarray:
-        """Analytical function of the objective function. Needs to be implemented by inhereted class
+    def _retrieve_original_input(self, x: np.ndarray):
+        """Retrieve the original input vector if the input is augmented
+
+        Parameters
+        ----------
+        x
+            augmented input vector
+
+        Returns
+        -------
+            original input vector
+        """
+        x = np.atleast_2d(x)
+        xxi = self.augmentor.augment_reverse_input(x)
+        return xxi
+
+    def check_if_within_bounds(self, x: np.ndarray, bounds=np.ndarray) -> bool:
+        """Check if the input vector is between the given scaling bounds
 
         Parameters
         ----------
         x
             input vector
+        bounds
+            boundaries for each dimension
 
         Returns
         -------
-            output vector
-
-        Raises
-        ------
-        NotImplementedError
-            Raised when not implemented. Subclasses should implement this method.
+            boolean value whether the vector is within the boundaries
         """
-        raise NotImplementedError("Subclasses should implement this method.")
+        return ((bounds[:, 0] <= x) & (x <= bounds[:, 1])).all()
 
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
         """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
@@ -154,6 +137,21 @@ class Function:
         grad = np.array(grad)
         return grad.ravel()
 
+    def evaluate(self, x: np.ndarray) -> np.ndarray:
+        """Analytical expression to calculate the objective value
+        To be inherited by subclasses
+
+        Parameters
+        ----------
+        x
+            input_vector
+
+        Returns
+        -------
+            objective value(s)
+        """
+        ...
+
     def get_name(self) -> str:
         """Get the name of the function
 
@@ -162,62 +160,6 @@ class Function:
             name of the function
         """
         return self.__class__.__name__
-
-    def plot_data(
-        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
-        numsamples=None, arrow=False
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contout plot with the datapoints as scatter
-
-        Parameters
-        ----------
-        data
-            Data object containing samples
-        px, optional
-            number of pixels on each axis
-        domain, optional
-            domain that needs to be plotted
-
-        Returns
-        -------
-            matplotlib figure and axes
-        """
-        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        x1 = data.get_input_data().iloc[:, 0]
-        x2 = data.get_input_data().iloc[:, 1]
-        ax.scatter(
-            x=x1,
-            y=x2,
-            s=10,
-            c=np.linspace(0, 1, len(x1)),
-            cmap="Blues",
-            edgecolors="black",
-        )
-        if arrow:
-            for p_index in range(len(x1)-1):
-                dx = (x1[p_index+1] - x1[p_index])
-                dy = (x2[p_index+1] - x2[p_index])
-                length = 1/np.sqrt(dx**2 + dy**2)
-                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
-                         length_includes_head=True)
-
-        # Mark selected point
-        if numsamples is not None:
-            x_selected = data.get_input_data().iloc[numsamples]
-            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
-                       marker="*", edgecolors="cyan")
-
-        # Mark last point
-        x_last = data.get_input_data().iloc[-1]
-        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
-                   marker="*", edgecolors="magenta")
-
-        # Best point
-        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
-        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
-                   marker="*", edgecolors="red")
-        return fig, ax
 
     def _create_mesh(self, px: int, domain: np.ndarray):
         """Create mesh to use for plotting
@@ -319,15 +261,58 @@ class Function:
 
         return fig, ax
 
-    def _set_parameters(self):
-        pass
+    def plot_data(
+        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+        numsamples=None, arrow=False
+    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+        """Create a 2D contout plot with the datapoints as scatter
 
-    def _reshape_input(self, x: np.ndarray) -> np.ndarray:
-        # x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf, doenst work with autograd.numpy
-        try:
-            if x.ndim == 1:
-                x = np.reshape(x, (-1, len(x)))  # reshape into 2d array
-        except AttributeError:
-            return x
+        Parameters
+        ----------
+        data
+            Data object containing samples
+        px, optional
+            number of pixels on each axis
+        domain, optional
+            domain that needs to be plotted
 
-        return x
+        Returns
+        -------
+            matplotlib figure and axes
+        """
+        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
+        x1 = data.get_input_data().iloc[:, 0]
+        x2 = data.get_input_data().iloc[:, 1]
+        ax.scatter(
+            x=x1,
+            y=x2,
+            s=10,
+            c=np.linspace(0, 1, len(x1)),
+            cmap="Blues",
+            edgecolors="black",
+        )
+        if arrow:
+            for p_index in range(len(x1)-1):
+                dx = (x1[p_index+1] - x1[p_index])
+                dy = (x2[p_index+1] - x2[p_index])
+                length = 1/np.sqrt(dx**2 + dy**2)
+                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
+                         length_includes_head=True)
+
+        # Mark selected point
+        if numsamples is not None:
+            x_selected = data.get_input_data().iloc[numsamples]
+            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
+                       marker="*", edgecolors="cyan")
+
+        # Mark last point
+        x_last = data.get_input_data().iloc[-1]
+        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
+                   marker="*", edgecolors="magenta")
+
+        # Best point
+        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
+        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
+        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
+                   marker="*", edgecolors="red")
+        return fig, ax

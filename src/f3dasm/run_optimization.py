@@ -78,7 +78,7 @@ class OptimizationResult:
         logging.info(
             (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
              f"dim={self.function.dimensionality}, "
-             f"noise={self.function.noise}) with {self.optimizer.get_name()} optimizer for "
+             f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations!")
         )
 
