@@ -33,14 +33,6 @@ Bayesian Optimization
    :noindex:
    :show-inheritance:
 
-Bayesian Optimization Torch
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. automodule:: f3dasm.optimization.bayesianoptimization_torch
-   :members:
-   :noindex:
-   :show-inheritance:
-
 Conjugate Gradient
 ^^^^^^^^^^^^^^^^^^
 
