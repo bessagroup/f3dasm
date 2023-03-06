@@ -10,9 +10,9 @@ from typing import Any, Mapping, Optional, Tuple
 # Third-party
 import autograd.numpy as np
 
-from ..base.function import Function
 # Locals
 from ..design.experimentdata import ExperimentData
+from ..functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================

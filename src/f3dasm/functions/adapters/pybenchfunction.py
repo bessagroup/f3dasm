@@ -8,7 +8,7 @@ import json
 import autograd.numpy as np
 
 # Locals
-from ...base.function import Function
+from ..function import Function
 from .augmentor import Noise, Offset, Scale
 
 #                                                          Authorship & Credits

@@ -3,7 +3,7 @@ import copy
 import numpy as np
 import pytest
 
-from f3dasm.base.function import Function
+from f3dasm.functions.function import Function
 from f3dasm.base.utils import make_nd_continuous_design
 from f3dasm.design.experimentdata import ExperimentData
 from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Ackley, Levy, Sphere

@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 
-from f3dasm.base.function import Function
+from f3dasm.functions.function import Function
 from f3dasm.functions import FUNCTIONS_2D, get_functions
 
 pytestmark = pytest.mark.smoke
