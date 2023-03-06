@@ -44,10 +44,6 @@ class LinearRegressionData(LearningData):
 
     def _create(self):
         w: tf.Tensor = tf.constant(self.w, dtype=float)
-        dim = len(self.w)
-        num_train = self.n // 2
-        num_val = self.n - num_train
-
         noise = tf.random.normal((self.n, 1)) * self.noise_multiplier
 
         self.X: tf.Tensor = tf.random.normal((self.n, w.shape[0]))  # (num, dim)

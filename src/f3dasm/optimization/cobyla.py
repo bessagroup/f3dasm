@@ -4,8 +4,8 @@
 # Standard
 from dataclasses import dataclass
 
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 # Locals
+from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 from .optimizer import OptimizerParameters
 
 #                                                          Authorship & Credits

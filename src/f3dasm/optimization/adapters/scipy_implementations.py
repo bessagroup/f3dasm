@@ -6,7 +6,6 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-# from ...base.optimization import Optimizer
 from .._protocol import Function
 from ..optimizer import Optimizer
 

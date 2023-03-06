@@ -10,7 +10,6 @@ import autograd.numpy as np
 import pygmo as pg
 
 # Locals
-# from ...base.optimization import Optimizer
 from .._protocol import DesignSpace, Function
 from ..optimizer import Optimizer
 

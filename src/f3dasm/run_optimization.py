@@ -16,10 +16,10 @@ import pandas as pd
 from pathos.helpers import mp
 from sklearn import preprocessing
 
+# Locals
 from .base.utils import calculate_mean_std
 from .design import ExperimentData, create_experimentdata_from_json
 from .functions import create_function_from_json
-# Locals
 from .functions.function import Function
 from .optimization import Optimizer, create_optimizer_from_json
 from .sampling import Sampler, create_sampler_from_json

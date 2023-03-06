@@ -8,8 +8,8 @@ from typing import Callable, Tuple, Union
 import autograd.numpy as np
 import tensorflow as tf
 
-from ..data.learningdata import LearningData
 # Locals
+from ..data.learningdata import LearningData
 from ..machinelearning.model import Model
 from ..machinelearning.passthrough_model import PassthroughModel
 from .utils import get_flat_array_from_list_of_arrays

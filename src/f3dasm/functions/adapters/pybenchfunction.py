@@ -14,7 +14,7 @@ from .augmentor import Noise, Offset, Scale
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
+__credits__ = ['Martin van der Schelling', 'Axel Thevenot']
 __status__ = 'Stable'
 # =============================================================================
 #
@@ -54,7 +54,7 @@ class PyBenchFunction(Function):
         self._configure_noise()
         self._configure_offset()
 
-    def to_json(self) -> str:  # Tuple[dict, str]:
+    def to_json(self) -> str:
         """Returns the information to recreate this object
 
         Returns
