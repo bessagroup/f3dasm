@@ -4,9 +4,9 @@ from typing import List
 
 import numpy as np
 
-from ..base.function import Function
 from . import pybenchfunction
 from .adapters.augmentor import *
+from .function import Function
 from .pybenchfunction import *
 
 _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)

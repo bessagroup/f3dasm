@@ -1,6 +1,6 @@
 import pytest
 
-from f3dasm.base.function import Function
+from f3dasm.functions.function import Function
 from f3dasm.design import DesignSpace
 from f3dasm.functions import FUNCTIONS_7D
 from f3dasm.optimization import OPTIMIZERS, Optimizer

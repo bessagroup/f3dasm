@@ -16,11 +16,11 @@ import pandas as pd
 from pathos.helpers import mp
 from sklearn import preprocessing
 
-# Locals
-from .base.function import Function
 from .base.utils import calculate_mean_std
 from .design import ExperimentData, create_experimentdata_from_json
 from .functions import create_function_from_json
+# Locals
+from .functions.function import Function
 from .optimization import Optimizer, create_optimizer_from_json
 from .sampling import Sampler, create_sampler_from_json
 
@@ -78,7 +78,7 @@ class OptimizationResult:
         logging.info(
             (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
              f"dim={self.function.dimensionality}, "
-             f"noise={self.function.noise}) with {self.optimizer.get_name()} optimizer for "
+             f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations!")
         )
 

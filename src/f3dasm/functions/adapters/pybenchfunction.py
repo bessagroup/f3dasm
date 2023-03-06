@@ -1,18 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
-from copy import copy
-from typing import Any, Tuple
+import json
 
 # Third-party
 import autograd.numpy as np
 
 # Locals
-from ...base.function import Function
-from ...base.utils import _descale_vector, _scale_vector
-from .augmentor import FunctionAugmentor, Noise, Offset, Scale
+from ..function import Function
+from .augmentor import Noise, Offset, Scale
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,61 +22,37 @@ __status__ = 'Stable'
 
 
 class PyBenchFunction(Function):
-    def __init__(
-        self,
-        dimensionality: int = 2,
-        noise: Any or float = None,
-        seed: Any or int = None,
-        scale_bounds: Any or np.ndarray = None,
-        no_offset: bool = False
-    ):
+    def __init__(self, dimensionality: int, scale_bounds=None, noise=None, offset=True, seed=None):
         """Adapter for pybenchfunction, created by Axel Thevenot (2020).
         Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 
         Parameters
         ----------
-        dimensionality, optional
-            number of dimensions, by default 2
-        noise, optional
-            inflict Gaussian noise on the input
-        seed, optional
-            seed for the random number generator
-        scale_bounds, optional
-            array containing the lower and upper bound of the scaling factor of the input data
-        no_offset, optional
-            set this True to not randomly off-set the pybenchfunction
-        """
-        self.noise = noise
-        self.offset: np.ndarray = np.zeros(dimensionality)
-        self.input_domain: Any or np.ndarray = None
-        self.augmentor = FunctionAugmentor()
-        self.no_offset = no_offset
-
-        super().__init__(dimensionality=dimensionality, seed=seed)
-
-        self._create_scale_bounds(scale_bounds)
-
-        self._create_offset()
-
-        # TEMP
-        # self.offset = np.zeros(dimensionality)
-
-        self.augmentor = self._construct_augmentor()
-
-    @classmethod
-    def is_dim_compatible(cls, d: int) -> bool:
-        """Check if the function is compatible with the requested number of dimensions
-
-        Parameters
-        ----------
-        d
+        dimensionality
             number of dimensions
-
-        Returns
-        -------
-            boolean value if function is compatible or not
+        scale_bounds, optional
+            array containing the lower and upper bound of the scaling factor of the input data, by default None
+        noise, optional
+            inflict Gaussian noise on the input, by default None
+        offset, optional
+            set this True to randomly off-set the pybenchfunction, by default True
+        seed, optional
+            seed for the random number genrator, by default None
         """
-        pass
+        super().__init__(seed=seed)
+        self.dimensionality = dimensionality
+        self.scale_bounds = scale_bounds
+        self.noise = noise
+        self.offset = offset
+
+        self.__post_init__()
+
+    def __post_init__(self):
+        self._set_parameters()
+
+        self._configure_scale_bounds()
+        self._configure_noise()
+        self._configure_offset()
 
     def to_json(self) -> str:  # Tuple[dict, str]:
         """Returns the information to recreate this object
@@ -90,53 +63,34 @@ class PyBenchFunction(Function):
         """
         args: dict = {'noise': self.noise,
                       'dimensionality': self.dimensionality,
-                      'no_offset': self.no_offset,
+                      'offset': self.offset,
                       'seed': self.seed,
                       'scale_bounds': self.scale_bounds.tolist()}
 
         name: str = self.get_name()
         return json.dumps((args, name))
 
-    def _construct_augmentor(self) -> FunctionAugmentor:
+    def _configure_scale_bounds(self):
+        """Create a Scale augmentor"""
+        if self.scale_bounds is None:
+            return
+        s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+        self.augmentor.add_input_augmentor(s)
 
-        input_augmentors = [
-            Offset(offset=self.offset),
-            Scale(scale_bounds=self.scale_bounds,
-                  input_domain=self.input_domain),
-        ]
-        output_augmentors = []
-
-        if self.noise not in [None, "None"]:
-            output_augmentors.append(Noise(noise=self.noise))
-
-        return FunctionAugmentor(input_augmentors=input_augmentors, output_augmentors=output_augmentors)
-
-    def _create_scale_bounds(self, input: Any):
-        if input is None:
-            self.scale_bounds = np.tile([0.0, 1.0], (self.dimensionality, 1))
-        elif isinstance(input, list):
-            self.scale_bounds = np.array(input)
-        else:
-            self.scale_bounds = input
-
-    def _create_offset(self):
-        self.offset = np.zeros(self.dimensionality)
-
-        if self.no_offset:
+    def _configure_noise(self):
+        """Create a Noise augmentor"""
+        if self.noise is None:
             return
 
-        global_minimum_method = getattr(self, "get_global_minimum", None)
-        if callable(global_minimum_method):
-            g = self.get_global_minimum(d=self.dimensionality)[0]
+        n = Noise(noise=self.noise)
+        self.augmentor.add_output_augmentor(n)
 
-            if g is None:
-                g = np.zeros(self.dimensionality)
+    def _configure_offset(self):
+        """Create an Offset augmentor"""
+        if not self.offset or self.scale_bounds is None:
+            return
 
-            if g.ndim == 2:
-                g = g[0]
-
-        else:
-            g = np.zeros(self.dimensionality)
+        g = self._get_global_minimum_for_offset_calculation()
 
         unscaled_offset = np.atleast_1d(
             [
@@ -146,9 +100,17 @@ class PyBenchFunction(Function):
             ]
         )
 
-        self.offset = unscaled_offset
+        o = Offset(offset=unscaled_offset)
+        self.augmentor.insert_input_augmentor(position=0, augmentor=o)
 
-    def _check_global_minimum(self) -> np.ndarray:
+    def _get_global_minimum_for_offset_calculation(self):
+        """Get the global minimum used for offset calculations
+
+        Returns
+        -------
+            Returns a numpy array containing the global
+            minimum or all zeroes if no global minimum exists
+        """
         global_minimum_method = getattr(self, "get_global_minimum", None)
         if callable(global_minimum_method):
             g = self.get_global_minimum(d=self.dimensionality)[0]
@@ -164,119 +126,7 @@ class PyBenchFunction(Function):
 
         return g
 
-    def _add_noise(self, y: np.ndarray) -> np.ndarray:
-        # TODO: change noise calculation to work with autograd.numpy
-        # sigma = 0.2  # Hard coded amount of noise
-        if hasattr(y, "_value"):
-            yy = copy(y._value)
-            if hasattr(yy, "_value"):
-                yy = copy(yy._value)
-        else:
-            yy = copy(y)
-
-        scale = abs(self.noise * yy)
-
-        noise: np.ndarray = np.random.normal(
-            loc=0.0, scale=scale, size=y.shape)
-        y_noise = y + float(noise)
-        return y_noise
-
-    def check_if_within_bounds(self, x: np.ndarray) -> bool:
-        """Check if the input vector is between the given scaling bounds
-
-        Parameters
-        ----------
-        x
-            input vector
-
-        Returns
-        -------
-            boolean value whether the vector is within the boundaries
-        """
-        return ((self.scale_bounds[:, 0] <= x) & (x <= self.scale_bounds[:, 1])).all()
-
-    def _scale_input(self, x: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(x, scale=self.scale_bounds), scale=self.input_domain)
-
-    def _descale_input(self, x: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(x, scale=self.input_domain), scale=self.scale_bounds)
-
-    def _offset_input(self, x: np.ndarray) -> np.ndarray:
-        return x - self.offset
-
-    def _reverse_offset_input(self, x: np.ndarray) -> np.ndarray:
-        return x + self.offset
-
-    def _retrieve_original_input(self, x: np.ndarray) -> np.ndarray:
-
-        x = self._reshape_input(x)
-
-        # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
-        # x = s.reverse_augment(x)
-        x = self._descale_input(x)
-
-        # o = Offset(offset=self.offset)
-        # x = o.reverse_augment(x)
-        x = self._reverse_offset_input(x)
-
-        # x_out = self.augmentor.augment_reverse_input(x)
-        return x
-
-    def evaluate(x: np.ndarray):
-        """Evaluate the objective function
-
-        Parameters
-        ----------
-        x
-            input vector
-
-        Raises
-        ------
-        NotImplementedError
-            If no function is implemented
-        """
-        raise NotImplementedError("No function implemented!")
-
-    def f(self, x: np.ndarray):
-        """Analytical form of the objective function
-
-        Parameters
-        ----------
-        x
-            input vector
-
-        Returns
-        -------
-            objective value
-
-        Raises
-        ------
-        ValueError
-            If the dimension is not compatible with the function
-        """
-        if self.is_dim_compatible(self.dimensionality):
-            y = []
-            for xi in x:
-
-                # o = Offset(offset=self.offset)
-                # xi = o.augment(xi)
-                xi = self._offset_input(xi)
-
-                # s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
-                # xi = s.augment(xi)
-                xi = self._scale_input(xi)
-
-                # xi = self.augmentor.augment_input(xi)
-
-                yi = self.evaluate(xi)
-
-                # add noise
-                if self.noise not in [None, "None"]:
-                    yi = self._add_noise(yi)
-
-                y.append(yi)
-
-        else:
-            raise ValueError("Dimension is not compatible with function!")
-
-        return np.array(y).reshape(-1, 1)
+    def _set_parameters(self):
+        """Function where certain parameters of pybenchfunctions are set.
+        Inhereted by subclasses"""
+        ...
