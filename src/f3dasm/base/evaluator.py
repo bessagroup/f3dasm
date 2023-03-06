@@ -2,7 +2,7 @@
 # =============================================================================
 
 # Standard
-from typing import Any, Callable, Tuple, Union
+from typing import Callable, Tuple, Union
 
 # Third-party
 import autograd.numpy as np
