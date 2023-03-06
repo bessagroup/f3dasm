@@ -1,7 +1,7 @@
 Design space
 ============
 
-The design space can be created with the :class:`~f3dasm.base.design.DesignSpace` class.
+The design space can be created with the :class:`~f3dasm.design.design.DesignSpace` class.
 
 Usage
 -----
@@ -10,9 +10,9 @@ Usage
 Creating parameters
 ^^^^^^^^^^^^^^^^^^^
 
-There are three types of parameters that can be created: continous, discrete and categorical:
+There are four types of parameters that can be created: continous, discrete, categorical and constant:
 
-* We can create **continous** parameters with a :attr:`~f3dasm.base.space.ContinuousParameter.lower_bound` and :attr:`~f3dasm.base.space.ContinuousParameter.upper_bound` with the :class:`~f3dasm.base.space.ContinuousParameter` class
+* We can create **continous** parameters with a :attr:`~f3dasm.design.parameter.ContinuousParameter.lower_bound` and :attr:`~f3dasm.design.parameter.ContinuousParameter.upper_bound` with the :class:`~f3dasm.design.parameter.ContinuousParameter` class
 
 .. code-block:: python
 
@@ -20,29 +20,34 @@ There are three types of parameters that can be created: continous, discrete and
   x2 = f3dasm.ContinuousParameter(name='x2', lower_bound=0.0, upper_bound=4.0)
   y = f3dasm.ContinuousParameter('y') # the default bounds are -np.inf, np.inf
   
-* We can create **discrete** parameters with a :attr:`~f3dasm.base.space.DiscreteParameter.lower_bound` and :attr:`~f3dasm.base.space.DiscreteParameter.upper_bound` with the :class:`~f3dasm.base.space.DiscreteParameter` class
+* We can create **discrete** parameters with a :attr:`~f3dasm.design.parameter.DiscreteParameter.lower_bound` and :attr:`~f3dasm.design.parameter.DiscreteParameter.upper_bound` with the :class:`~f3dasm.design.parameter.DiscreteParameter` class
 
 .. code-block:: python
 
   x3 = f3dasm.DiscreteParameter('x3', lower_bound=2, upper_bound=4)
   x4 = f3dasm.DiscreteParameter('x4', lower_bound=74, upper_bound=99)
 
-* We can create **categorical** parameters with a list of strings (:attr:`~f3dasm.base.space.CategoricalParameter.categories`) with the :attr:`~f3dasm.base.space.CategoricalParameter` class
+* We can create **categorical** parameters with a list of strings (:attr:`~f3dasm.design.parameter.CategoricalParameter.categories`) with the :attr:`~f3dasm.design.parameter.CategoricalParameter` class
 
 .. code-block:: python
 
   x5 = f3dasm.CategoricalParameter('x5', categories=['test1','test2','test3','test4'])
   x6 = f3dasm.CategoricalParameter('x6', categories=['material1','material2','material3'])
 
+* We can create **constant** parameters with any value (:attr:`~f3dasm.design.parameter.ConstantParameter.value`) with the :attr:`~f3dasm.design.parameter.ConstantParameter` class
+
+.. code-block:: python
+
+  x7 = f3dasm.ConstantParameter('x7', value=0.9)
 
 
 Creating the design space
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The design space is then constructed by calling the :class:`~f3dasm.base.design.DesignSpace` class and providing:
+The design space is then constructed by calling the :class:`~f3dasm.design.design.DesignSpace` class and providing:
 
-* a list of input parameters (:attr:`~f3dasm.base.design.DesignSpace.input_space`)
-* a list of output parameters (:attr:`~f3dasm.base.design.DesignSpace.output_space`):
+* a list of input parameters (:attr:`~f3dasm.design.design.DesignSpace.input_space`)
+* a list of output parameters (:attr:`~f3dasm.design.design.DesignSpace.output_space`):
 
 .. code-block:: python
 
@@ -63,12 +68,12 @@ We can make a n-dimensional continous, single-objective design space with the he
 API Documentation
 -----------------
 
-.. automodule:: f3dasm.base.space
+.. automodule:: f3dasm.design.parameter
    :members:
    :noindex:
    :show-inheritance:
 
-.. automodule:: f3dasm.base.design
+.. automodule:: f3dasm.design.design
    :members:
    :noindex:
    :show-inheritance:

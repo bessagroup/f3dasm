@@ -24,6 +24,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        version: ["3.8", "3.9", "3.10"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -31,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.version }}
           cache: "pip" # caching pip dependencies
       - name: Install test dependencies
         run: pip install -r tests/requirements.txt
@@ -68,6 +69,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        version: ["3.8", "3.9", "3.10"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -75,7 +77,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.version }}
           cache: "pip" # caching pip dependencies
       - name: Install build dependencies
         run: python -m pip install -U setuptools wheel build

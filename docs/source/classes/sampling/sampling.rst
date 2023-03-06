@@ -1,12 +1,12 @@
 Sampling
 ========
 
-Usage
------
+Creating a sampler
+------------------
 
 A new sampler can be created by initializing the sampler with:
 
-* A :class:`~f3dasm.base.design.DesignSpace`
+* A :class:`~f3dasm.design.design.DesignSpace`
 * A random :attr:`~f3dasm.sampling.sampler.Sampler.seed` (optional)
 
 
@@ -21,7 +21,7 @@ Then we can evoke sampling by calling the :meth:`~f3dasm.sampling.sampler.Sample
   N = 100 # Number of samples
   data_ran = ran.get_samples(numsamples=N)
   
-This will return a :class:`~f3dasm.base.data.Data` object filled with the requested samples.
+This will return a :class:`~f3dasm.design.experimentdata.ExperimentData` object filled with the requested samples.
 
 
 Implemented samplers
@@ -38,29 +38,23 @@ Sobol Sequence sampling  :class:`f3dasm.sampling.sobolsequence.SobolSequence`   
 
 ======================== ====================================================================== ===========================================================================================================
 
-API Documentation
------------------
+Implement your own sampler
+--------------------------
 
-Latin Hypercube sampling
-^^^^^^^^^^^^^^^^^^^^^^^^
+Implementing a new sampler goes as follows
 
-.. automodule:: f3dasm.sampling.latinhypercube
-   :members:
-   :noindex:
-   :show-inheritance:
+* We create a new class inhereting from the :class:`~f3dasm.sampling.sampler.Sampler` class
+* We have to implement our own :func:`~f3dasm.sampling.sampler.Sampler.sample_continuous` function:
 
-Random Uniform sampling
-^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
 
-.. automodule:: f3dasm.sampling.randomuniform
-   :members:
-   :noindex:
-   :show-inheritance:
+   We can also implement sampling strategies for all the other parameters but this is not necessary
 
-Sobol sequence sampling
-^^^^^^^^^^^^^^^^^^^^^^^
+This :func:`~f3dasm.sampling.sampler.Sampler.sample_continuous` function inputs the number of samples you want to create and returns a 2D numpy-array with the coordinates of those samples
 
-.. automodule:: f3dasm.sampling.sobolsequence
-   :members:
-   :noindex:
-   :show-inheritance:
+.. code-block:: python
+
+   class NewSampler(f3dasm.Sampler):
+      def sample_continuous(self, numsamples: int) -> np.ndarray:
+         ...
+
