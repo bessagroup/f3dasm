@@ -3,8 +3,9 @@
 
 # Standard
 
+import json
 import pickle
-from typing import Any, List
+from typing import Any, Callable, List
 
 # Third-party
 import autograd
@@ -15,8 +16,8 @@ import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
 # Locals
-from ..design.experimentdata import ExperimentData
 from ..design.design import DesignSpace
+from ..design.experimentdata import ExperimentData
 from ..design.parameter import ContinuousParameter
 
 #                                                          Authorship & Credits
@@ -119,12 +120,27 @@ def write_pickle(name: str, obj: Any):
     Parameters
     ----------
     name
-        name of file to write without file exentions .obj
+        name of file to write without file extension .obj
     obj
         object to store
     """
     with open(f"{name}.obj", "wb") as f:
         pickle.dump(obj, f)
+
+
+def write_json(name: str, json_string: str):
+    """Write a JSON-strint to a file
+
+    Parameters
+    ----------
+    name
+        name of file toe write without file extension .json
+    json_string
+        JSON string to store
+    """
+
+    with open(f"{name}.json", "w", encoding='utf-8') as f:
+        json.dump(json_string, f, ensure_ascii=False)
 
 
 def calculate_mean_std(results):  # OptimizationResult
@@ -138,15 +154,20 @@ def calculate_mean_std(results):  # OptimizationResult
 # FUNCTIONS FOR CALCULATING THE GRADIENT
 
 # S:func is completely written in numpy autograd
-def convert_autograd_to_tensorflow(func):
-    """Convert autograd function to tensorflow funciton
+def convert_autograd_to_tensorflow(func: Callable):
+    """Convert autograd function to tensorflow function
 
-    :param func: function
-    :return: wrapper
+    Parameters
+    ----------
+    func
+        callable function to convert
+
+    Returns
+    -------
+        wrapper to convert autograd function to tensorflow function
     """
-
     @tf.custom_gradient
-    def wrapper(x):
+    def wrapper(x, *args, **kwargs):
         vjp, ans = autograd.core.make_vjp(func, x.numpy())
 
         def first_grad(dy):
@@ -209,5 +230,5 @@ def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
 
 
 # technically not a np array input!
-def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
+def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> np.ndarray:
     return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])

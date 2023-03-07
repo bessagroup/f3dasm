@@ -5,7 +5,7 @@ F3DASM
 This is the initalizer of the F3DASM package
 """
 
-__version__ = '0.2.96'
+__version__ = '0.2.97'
 
 #                                                                       Modules
 # =============================================================================
@@ -14,13 +14,15 @@ __version__ = '0.2.96'
 import logging
 
 # Locals
-from . import functions, machinelearning, optimization, sampling, simulation
+from . import (data, functions, machinelearning, optimization, sampling,
+               simulation)
 from ._show_versions import show_versions
-from .base.function import *
+from .base.evaluator import Evaluator
 from .base.utils import *
 from .design.design import *
 from .design.experimentdata import *
 from .design.parameter import *
+from .functions.function import *
 from .optimization.optimizer import *
 from .run_optimization import *
 from .sampling.sampler import *

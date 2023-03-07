@@ -2,7 +2,6 @@
 # =============================================================================
 
 # Standard
-from functools import partial
 
 # Third-party
 import tensorflow as tf
@@ -25,20 +24,45 @@ class PassthroughLayer(tf.keras.layers.Layer):
         super().__init__(input_shape=input_shape)
         self.units = units
 
-    def build(self, input_shape):  # Create the state of the layer (weights)
-        self.w = self.add_weight(shape=(input_shape[-1], self.units), initializer='random_normal', trainable=True)
+    def build(self, input_shape):
+        """Create the state of the layer (weights)
 
-    def call(self, inputs):  # Defines the computation from inputs to outputs
-        return self.w
+        Parameters
+        ----------
+        input_shape
+            input shape of the layer
+        """
+        self.w = self.add_weight(shape=(input_shape[-1], self.units), initializer='random_normal',
+                                 trainable=True, dtype=tf.float64)
+
+    def call(self, inputs):
+        """Defines the computation from inputs to outputs
+
+        Parameters
+        ----------
+        inputs
+            input of the layer
+        """
+        # Whatever you put through the model, it will just output the weights, but transposed!
+        w_transpose = tf.transpose(self.w)
+        return w_transpose
 
 
-class SimpleModel(TensorflowModel):
-    def __init__(self, loss_function, dimensionality: int):
+class PassthroughModel(TensorflowModel):
+    def __init__(self, dimensionality: int):  # loss_function
+        """Model that passed through the input layer directly to the output layer
+
+        Parameters
+        ----------
+        dimensionality
+            number of input parameters
+        """
+        self.dimensionality = dimensionality
         super().__init__()
         self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
 
-        # Loss function is a benchmark function
-        self._loss_function = loss_function
-
-        # We don't have labels for benchmark function loss
-        self.loss = partial(self.loss, Y_true=None)
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'dimensionality': self.dimensionality, })
+        return config

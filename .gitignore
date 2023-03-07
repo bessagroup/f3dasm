@@ -71,6 +71,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -107,5 +108,18 @@ data/
 notebooks/archive/
 *.obj
 
+# But exclude the data modeul of f3dasm!
+!src/f3dasm/data/
+!tests/data/
+
 # Exclude obj files in tests folder
 !tests/*/*.obj
+
+# Exclude .json files folder
+*.json
+
+# Notebooks
+notebooks/*.ipynb
+
+# .. but include tutorial notebooks!
+!notebooks/tutorials/

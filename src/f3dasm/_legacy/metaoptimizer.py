@@ -3,12 +3,11 @@
 
 # Standard
 from abc import ABC
-from copy import copy
 from typing import List, Tuple
 
 # Locals
 from ..design.experimentdata import ExperimentData
-from ..base.function import Function
+from ..functions.function import Function
 from ..optimization.optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits

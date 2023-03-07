@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+import json
 # Standard
 from copy import copy
 from dataclasses import dataclass, field
@@ -9,9 +10,9 @@ from typing import Any, Mapping, Optional, Tuple
 # Third-party
 import autograd.numpy as np
 
-from ..base.function import Function
 # Locals
 from ..design.experimentdata import ExperimentData
+from ..functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -86,6 +87,21 @@ class Optimizer:
             seed for the random number generator
         """
         pass
+
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        """Returns the information to recreate this object
+
+        Returns
+        -------
+            Tuple with dictionary to store and recreate the same object and name of the object
+        """
+        args: dict = {'data': self.data.to_json(),
+                      'hyperparameters': self.hyperparameters,
+                      'seed': self.seed,
+                      }
+
+        name: str = self.get_name()
+        return json.dumps((args, name))
 
     def init_parameters(self):
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
@@ -202,7 +218,7 @@ class Optimizer:
         y
             output data
         """
-        self.data.add_numpy_arrays(input=x, output=y)
+        self.data.add_numpy_arrays(input_rows=x, output_rows=y)
 
     def extract_data(self) -> ExperimentData:
         """Returns a copy of the data
