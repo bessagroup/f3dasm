@@ -2,8 +2,6 @@
 # =============================================================================
 
 # Standard
-from functools import partial
-from typing import Any
 
 # Third-party
 import tensorflow as tf

@@ -2,15 +2,12 @@
 # =============================================================================
 
 # Standard
-from typing import List, Protocol, Tuple
+from typing import Protocol
 
 # Third-party
-import numpy as np
 import tensorflow as tf
 
-from ..base.utils import get_flat_array_from_list_of_arrays
 # Locals
-from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================

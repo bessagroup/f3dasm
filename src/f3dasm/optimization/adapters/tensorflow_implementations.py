@@ -6,11 +6,8 @@
 from typing import Tuple
 
 # Third-party
-import autograd
-import autograd.core
 import autograd.numpy as np
 import tensorflow as tf
-from autograd import elementwise_grad as egrad
 
 from ...base.evaluator import Evaluator
 from ...base.utils import SimpelModel, convert_autograd_to_tensorflow

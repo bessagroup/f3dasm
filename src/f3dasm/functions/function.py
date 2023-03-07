@@ -2,20 +2,17 @@
 # =============================================================================
 
 # Standard
-from typing import Any, Tuple
+from ..functions.adapters.augmentor import FunctionAugmentor
+from ..design.experimentdata import ExperimentData
+from typing import Tuple
 
 # Third-party
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
-import tensorflow as tf
 
-from ..base.utils import (SimpelModel,
-                          _from_data_to_numpy_array_benchmarkfunction,
-                          convert_autograd_to_tensorflow)
 # Locals
-from ..design.experimentdata import ExperimentData
-from ..functions.adapters.augmentor import FunctionAugmentor
+from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 
 #                                                          Authorship & Credits
 # =============================================================================

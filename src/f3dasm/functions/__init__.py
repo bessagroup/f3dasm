@@ -1,13 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import inspect
 import json
 from typing import List
 
+# Third-party
 import numpy as np
 
 from . import pybenchfunction
 from .adapters.augmentor import *
 from .function import Function
 from .pybenchfunction import *
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+
 
 _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)
 

@@ -1,12 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import json
 
+# Third-party
 import pandas as pd
 
+# Local
 from .constraint import *
 from .design import DesignSpace
 from .experimentdata import ExperimentData
 from .parameter import (CategoricalParameter, ConstantParameter,
                         ContinuousParameter, DiscreteParameter, Parameter)
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+
 
 PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
 

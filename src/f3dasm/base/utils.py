@@ -15,8 +15,8 @@ import pandas as pd
 import tensorflow as tf
 from autograd import elementwise_grad as egrad
 
-from ..design.design import DesignSpace
 # Locals
+from ..design.design import DesignSpace
 from ..design.experimentdata import ExperimentData
 from ..design.parameter import ContinuousParameter
 
