@@ -36,14 +36,6 @@ f3dasm.optimization.bayesianoptimization module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.bayesianoptimization\_torch module
-------------------------------------------------------
-
-.. automodule:: f3dasm.optimization.bayesianoptimization_torch
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 f3dasm.optimization.cg module
 -----------------------------
 
@@ -56,14 +48,6 @@ f3dasm.optimization.cmaes module
 --------------------------------
 
 .. automodule:: f3dasm.optimization.cmaes
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.optimization.cmaesadam module
-------------------------------------
-
-.. automodule:: f3dasm.optimization.cmaesadam
    :members:
    :undoc-members:
    :show-inheritance:

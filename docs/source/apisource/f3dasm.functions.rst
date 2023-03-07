@@ -12,6 +12,14 @@ Subpackages
 Submodules
 ----------
 
+f3dasm.functions.function module
+--------------------------------
+
+.. automodule:: f3dasm.functions.function
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.functions.logisticregression module
 ------------------------------------------
 
