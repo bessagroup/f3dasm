@@ -34,8 +34,8 @@ making it easier to understand, modify, and share with others. Within the :code:
 .. image:: ../img/f3dasm-blocks.svg
 
 
-Overview of classes
--------------------
+Overview of implementations and base classes
+--------------------------------------------
 
 ================= =============================== ========================================================================== =======================================================
 Block             Submodule                       Base                                                                       Implementations
@@ -48,6 +48,23 @@ Machine learning  :mod:`~f3dasm.machinelearning`  :class:`~f3dasm.machinelearnin
 Optimization      :mod:`~f3dasm.optimization`     :class:`~f3dasm.optimization.optimizer.Optimizer`                          :ref:`List of optimizers <implemented optimizers>`
 ================= =============================== ========================================================================== =======================================================
 
+Overview of other classes
+-------------------------
 
+=============================================================== ===================================================================================
+Class                                                           Short description
+=============================================================== ===================================================================================
+:class:`~f3dasm.design.constraint.Constraint`                   Class that represent a constraint for the design-of-experiments
+:class:`~f3dasm.base.evaluator.Evaluator`                       Class that combines a machine learning model, loss-function and learning data
+:class:`~f3dasm.design.experimentdata.ExperimentData`           Datastructure denoting samples from a design-of-experiments                                     
+:class:`~f3dasm.functions.function.Function`                    Class that represents an analytical function used for benchmarking
+:class:`~f3dasm.functions.adapters.augmentor.Augmentor`         Class that can be used to manipulate data for data-augmentation
+:class:`~f3dasm.optimization.optimizer.OptimizerParameters`     Class that represents the hyper-parameters for a particular optimizer
+:class:`~f3dasm.run_optimization.OptimizationResult`            Class used to store optimization results for several epochs
+=============================================================== ===================================================================================
+
+
+References
+----------
 
 .. bibliography::

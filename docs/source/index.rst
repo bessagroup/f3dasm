@@ -44,6 +44,7 @@ F3DASM
 
 
    classes/machinelearning/models
+   classes/machinelearning/learningdata
    classes/machinelearning/apidoc
 
 .. toctree::
