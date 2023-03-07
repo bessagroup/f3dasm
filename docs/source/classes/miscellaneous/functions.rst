@@ -15,7 +15,7 @@ First we make a 2-dimensional continous design space with the helper function :f
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
   design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
 
-Then we create an object of the :class:`~f3dasm.functions.pybenchfunction.Sphere` class, specifying the :attr:`~f3dasm.base.function.Function.dimensionality`:
+Then we create an object of the :class:`~f3dasm.functions.pybenchfunction.Sphere` class, specifying the :attr:`~f3dasm.functions.function.Function.dimensionality`:
 
 .. code-block:: python
  

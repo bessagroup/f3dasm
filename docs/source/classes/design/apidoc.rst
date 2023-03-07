@@ -1,5 +1,3 @@
-
-
 API Documentation
 =================
 
@@ -27,8 +25,11 @@ Experiment data
    :noindex:
    :show-inheritance:
 
+Sampling
+^^^^^^^^
+
 Latin Hypercube sampling
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. automodule:: f3dasm.sampling.latinhypercube
    :members:
@@ -36,7 +37,7 @@ Latin Hypercube sampling
    :show-inheritance:
 
 Random Uniform sampling
-^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. automodule:: f3dasm.sampling.randomuniform
    :members:
@@ -44,7 +45,7 @@ Random Uniform sampling
    :show-inheritance:
 
 Sobol sequence sampling
-^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 .. automodule:: f3dasm.sampling.sobolsequence
    :members:
@@ -52,7 +53,7 @@ Sobol sequence sampling
    :show-inheritance:
 
 Sampler class
-^^^^^^^^^^^^^
+------------------------
 
 .. automodule:: f3dasm.sampling.sampler
    :members:
