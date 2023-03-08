@@ -35,14 +35,14 @@ The function can be evaluated by directly calling the object
 Gradient
 ^^^^^^^^
 
-The gradient of a function can be estimated by calling the :func:`~f3dasm.base.function.Function.dfdx` function:
+The gradient of a function can be estimated by calling the :func:`~f3dasm.base.function.Function.dfdx_legacy` function:
 
 .. code-block:: python
 
-  >>> sphere_function.dfdx(x)
+  >>> sphere_function.dfdx_legacy(x)
   ... array([[26.2144 , 41.94304]])
   
-The gradient is estimated using the numdifftools package.
+The gradient is estimated with the central differences method.
 
 Plotting
 ^^^^^^^^

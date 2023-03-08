@@ -63,6 +63,7 @@ F3DASM
    :glob:
 
    classes/miscellaneous/functions
+   classes/miscellaneous/augmentor
    classes/miscellaneous/utilities
 
 .. include:: readme.rst
