@@ -2,8 +2,6 @@
 from dataclasses import dataclass, field
 
 import gpytorch.kernels
-from botorch.models import MultiTaskGP, SingleTaskMultiFidelityGP
-from botorch.models.gp_regression import SingleTaskGP
 from gpytorch.kernels import ScaleKernel, RBFKernel
 from gpytorch import settings
 from gpytorch.models import ExactGP
@@ -25,8 +23,15 @@ import torch
 
 import math
 from .adapters.torch_implementations import TorchGPRegressor
-# from .kernels import cokgj_kernel
-# from .kernels.cokgj_kernel import CoKrigingGP
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 # We will use the simplest form of GP model, exact inference
 class ExactGPModel(gpytorch.models.ExactGP):

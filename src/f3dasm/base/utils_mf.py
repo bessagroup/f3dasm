@@ -8,6 +8,15 @@ from ..base.function import AugmentedFunction, Function, MultiFidelityFunction
 
 import numpy as np
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
+
 def create_analytical_mf_problem(
     base_fun: Function,
     dim: int,

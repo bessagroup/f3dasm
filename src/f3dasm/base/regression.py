@@ -4,7 +4,14 @@ from typing import Any, List, Mapping, Optional
 from ..design import ExperimentData, DesignSpace
 # from ..data import Data
 
-
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 @dataclass
 class Surrogate:

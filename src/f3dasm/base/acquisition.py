@@ -10,6 +10,14 @@ from torch.distributions import Normal
 
 import gpytorch
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
 
 class Acquisition: #TODO: implement class
     pass

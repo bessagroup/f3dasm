@@ -17,6 +17,15 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo']
+__status__ = 'Alpha'
+# =============================================================================
+#
+# =============================================================================
+
 @dataclass
 class TorchGPSurrogate(Surrogate):
     likelihood: Any = None
@@ -179,7 +188,7 @@ class TorchGPSurrogate(Surrogate):
         plt.xlabel("Length-scale")
         # plt.ylabel("Noise-level")
         plt.ylabel("Output-scale")
-        plt.title("Log-marginal-likelihood")
+        plt.title("Negative marginal log likelihood")
         plt.legend()
         plt.tight_layout()
 

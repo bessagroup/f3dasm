@@ -20,7 +20,7 @@ from ..design.experimentdata import ExperimentData
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
+__credits__ = ['Martin van der Schelling', 'Leo Guo']
 __status__ = 'Stable'
 # =============================================================================
 #

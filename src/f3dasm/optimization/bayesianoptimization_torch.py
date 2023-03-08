@@ -40,7 +40,7 @@ class Acquisition_Parameters():
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
 __credits__ = ['Leo Guo', 'Martin van der Schelling']
 __status__ = 'Alpha'
 # =============================================================================
@@ -52,7 +52,7 @@ __status__ = 'Alpha'
 class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for BayesianOptimizationTorch optimizer"""
 
-    regressor = Sogpr
+    regressor: Any = Sogpr
     acquisition: Any = UpperConfidenceBound
     regressor_hyperparameters: Sogpr_Parameters = Sogpr_Parameters()
     acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
@@ -147,7 +147,6 @@ def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_functi
     return new_x_tot, new_obj_tot, cost_tot, fid_tot
 
 class BayesianOptimizationTorch(Optimizer):
-    """Bayesian optimization implementation from the botorch library"""
     """Bayesian optimization implementation based on the gpytorch library"""
 
     parameter: BayesianOptimizationTorch_Parameters = BayesianOptimizationTorch_Parameters()
@@ -228,10 +227,10 @@ class BayesianOptimizationTorch(Optimizer):
 class MFBayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for MFBayesianOptimizationTorch optimizer"""
 
-    regressor = MultitaskGPR
+    regressor: Any = MultitaskGPR
     acquisition: Any = VFUpperConfidenceBound
 
-    regressor_hyperparameters = Cokgj_Parameters()
+    regressor_hyperparameters: Any = Cokgj_Parameters()
     acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
     n_init: int = 10
     visualize_gp: bool = False
