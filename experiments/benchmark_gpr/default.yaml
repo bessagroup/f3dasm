@@ -1,0 +1,31 @@
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      +trial_number: range(1)
+      +dimensionality: range(1, 2)
+  sweep:
+    dir: outputs/default/${regressor.regressor_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: dim_${dimensionality}/trial_${trial_number}
+  job:
+    chdir: True
+  # hydra_logging: disabled
+  # job_logging: disabled
+
+function:
+  function_names: [
+    AlpineN2,
+  ]
+  noisy: False
+
+design:
+  dimensionality: ${eval:'${dimensionality}'}
+
+regressor:
+  regressor_name: Sogpr
+  kernel_name: RBFKernel
+  mean_name: ZeroMean
+
+sampler:
+  sampler_name: SobolSequence
+  number_of_samples: 5

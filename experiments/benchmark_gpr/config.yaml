@@ -1,0 +1,66 @@
+hydra:
+  mode: MULTIRUN
+  sweeper:
+    params:
+      +trial_number: range(10)
+      +dimensionality: range(1, 4)
+  sweep:
+    dir: outputs/${regressor.regressor_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: dim_${dimensionality}/trial_${trial_number}
+  job:
+    chdir: True
+
+defaults:
+  - default
+
+design:
+  dimensionality: ${eval:'${dimensionality}'}
+
+function:
+  function_names: [
+    Ackley,
+    AlpineN1,
+    AlpineN2,
+    DixonPrice,
+    Exponential,
+    Griewank,
+    HappyCat,
+    Levy,
+    Michalewicz,
+    Periodic,
+    PermDBeta,
+    PermZeroDBeta,
+    Powell,
+    Qing,
+    Rastrigin,
+    Ridge,
+    RotatedHyperEllipsoid,
+    Salomon,
+    Schwefel,
+    Schwefel2_20,
+    Schwefel2_21,
+    Schwefel2_22,
+    Schwefel2_23,
+    Shubert,
+    ShubertN3,
+    ShubertN4,
+    Sphere,
+    StyblinskiTang,
+    SumSquares,
+    Thevenot,
+    Trid,
+    XinSheYangN2,
+    XinSheYangN3,
+    XinSheYangN4,
+    Zakharov,
+  ]
+  noisy: False
+
+regressor:
+  regressor_name: Sogpr
+  kernel_name: RBFKernel
+  mean_name: ZeroMean
+
+sampler:
+  sampler_name: SobolSequence
+  number_of_samples: ${eval:'5 ** ${dimensionality}'}
