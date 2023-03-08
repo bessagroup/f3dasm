@@ -255,7 +255,7 @@ def margin_of_victory(results: List[OptimizationResult]) -> pd.DataFrame:
     df = pd.concat([calculate_mean_std(results[i])[0] for i, _ in enumerate(results)], axis=1)
 
     # Change columnnames
-    optimizer_names = [results[i].optimizer for i, _ in enumerate(results)]
+    optimizer_names = [results[i].optimizer.get_name() for i, _ in enumerate(results)]
     df.columns = optimizer_names
 
     # Normalize
