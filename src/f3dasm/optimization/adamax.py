@@ -6,6 +6,7 @@ Information on the Adamax optimizer
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import tensorflow as tf
@@ -46,3 +47,6 @@ class Adamax(TensorflowOptimizer):
             beta_2=self.parameter.beta_2,
             epsilon=self.parameter.epsilon,
         )
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Single-Solution']

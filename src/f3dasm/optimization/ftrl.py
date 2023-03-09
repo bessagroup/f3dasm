@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import tensorflow as tf
@@ -49,3 +50,6 @@ class Ftrl(TensorflowOptimizer):
             l2_shrinkage_regularization_strength=self.parameter.l2_shrinkage_regularization_strength,
             beta=self.parameter.beta,
         )
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Single-Solution']

@@ -6,6 +6,7 @@ Information on the Adam optimizer
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import tensorflow as tf
@@ -48,3 +49,6 @@ class Adam(TensorflowOptimizer):
             epsilon=self.parameter.epsilon,
             amsgrad=self.parameter.amsgrad,
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Global', 'First-Order', 'Single-Solution']

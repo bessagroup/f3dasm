@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import pygmo as pg
@@ -51,3 +52,6 @@ class SimulatedAnnealing(PygmoAlgorithm):
                 seed=self.seed,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Global', 'Derivative-Free', 'Single-Solution']

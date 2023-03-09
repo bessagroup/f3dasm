@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Locals
 from .optimizer import OptimizerParameters
@@ -31,3 +32,6 @@ class LBFGSB(SciPyMinimizeOptimizer):
 
     method: str = "L-BFGS-B"
     parameter: LBFGSB_Parameters = LBFGSB_Parameters()
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'First-Order', 'Single-Solution']

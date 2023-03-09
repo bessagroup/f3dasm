@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Locals
 from .optimizer import OptimizerParameters
@@ -30,3 +31,6 @@ class CG(SciPyMinimizeOptimizer):
 
     method: str = "CG"
     parameter: CG_Parameters = CG_Parameters()
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'First-Order', 'Single-Solution']

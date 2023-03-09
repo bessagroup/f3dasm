@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import tensorflow as tf
@@ -45,3 +46,6 @@ class RMSprop(TensorflowOptimizer):
             epsilon=self.parameter.epsilon,
             centered=self.parameter.centered,
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Single-Solution']

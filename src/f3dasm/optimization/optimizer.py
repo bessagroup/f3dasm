@@ -5,7 +5,7 @@ import json
 # Standard
 from copy import copy
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Optional, Tuple
 
 # Third-party
 import autograd.numpy as np
@@ -237,6 +237,15 @@ class Optimizer:
             name of the optimizer
         """
         return self.__class__.__name__
+
+    def get_info(self) -> List[str]:
+        """Give a list of characteristic features of this optimizer
+
+        Returns
+        -------
+            List of strings denoting the characteristics of this optimizer
+        """
+        return []
 
 
 def _number_of_updates(iterations: int, population: int):

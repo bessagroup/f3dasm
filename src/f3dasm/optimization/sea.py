@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import pygmo as pg
@@ -40,3 +41,6 @@ class SEA(PygmoAlgorithm):
                 seed=self.seed,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Global', 'Derivative-Free', 'Population-Based']
