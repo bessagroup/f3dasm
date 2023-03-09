@@ -1,0 +1,31 @@
+
+
+	*do,step,1,8,1
+		*if,step,lt,5,then
+			tm=0.15*delta_T/Ramp_down1
+			BF,all,TEMP,T_max-(tm*step*Ramp_down1)
+			time,TIMETOT + tm*step
+		*elseif,step,eq,5,then
+			tm5=0.25*delta_T/Ramp_down1
+			BF,all,TEMP,T_max-(tm*4*Ramp_down1)-(tm5*Ramp_down2)
+			time,TIMETOT + tm*4 + tm5
+		*elseif,step,eq,6,then
+			tm6=0.25*delta_T/Ramp_down1
+			BF,all,TEMP,T_max-(tm*4*Ramp_down1)-(tm5*Ramp_down2)-(tm6*Ramp_down3)
+			time,TIMETOT + tm*4 + tm5 + tm6
+		*elseif,step,eq,7,then
+			tm7=0.25*delta_T/Ramp_down1
+			BF,all,TEMP,T_max-(tm*4*Ramp_down1)-(tm5*Ramp_down2)-(tm6*Ramp_down3)-(tm7*Ramp_down4)
+			time,TIMETOT + tm*4 + tm5 + tm6 + tm7			
+		*else
+			tm8=0.45*delta_T/Ramp_down1
+			BF,all,TEMP,T_min
+			time,TIMETOT + tm*4 + tm5 + tm6 + tm7 + tm8
+		*endif	
+		nsubst,2,100,2,on
+		SOLVE
+	*enddo
+	
+	TIMETOT = TIMETOT + tm*4 + tm5 + tm6 + tm7 + tm8	
+	save
+	

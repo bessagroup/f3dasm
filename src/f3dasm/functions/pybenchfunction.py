@@ -936,6 +936,7 @@ class DixonPrice(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = (X[0] - 1) ** 2 + np.sum(
             [(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
@@ -1194,6 +1195,7 @@ class Griewank(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = 1 + np.sum(X**2 / 4000) - np.prod(np.cos(X / np.sqrt(i)))
@@ -1232,6 +1234,7 @@ class HappyCat(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         norm = np.sum(X**2)
         res = ((norm - d) ** 2) ** self.alpha + \
@@ -1480,6 +1483,7 @@ class Levy(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         z = 1 + (X - 1) / 4
         res = (
             np.sin(np.pi * z[0]) ** 2 + sum(
@@ -1636,6 +1640,7 @@ class Michalewicz(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = -np.sum(np.sin(X) * np.sin(i * X**2 / np.pi) ** (2 * self.m))
@@ -1832,6 +1837,7 @@ class Qing(PyBenchFunction):
         return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         X1 = np.power(X, 2)
 
@@ -1947,6 +1953,7 @@ class Ridge(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = X[0] + self.beta * np.sum(X[1:] ** 2) ** self.alpha
         return res
@@ -1969,7 +1976,7 @@ class Rosenbrock(PyBenchFunction):
         assert (d is None) or (
             isinstance(d, int) and (not d < 0)
         ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+        return d > 1 # (d is None) or (d > 0)
 
     def _set_parameters(self, a=1, b=100):
         d = self.dimensionality
@@ -2498,10 +2505,12 @@ class Shubert(PyBenchFunction):
         return (None, None)
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
-        for i in range(0, d):
-            res = np.prod(np.sum([i * np.cos((j + 1) * X[i] + j)
-                          for j in range(1, 5 + 1)]))
+        res = np.prod(
+            [np.sum([(j + 1) * np.cos((j + 1) * X[i] + j) for j in range(1, 5 + 1)]
+                    ) for i in range(d)]
+            )
         return res
 
 
@@ -2691,6 +2700,7 @@ class SumSquares(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(i * X**2)
@@ -2809,7 +2819,7 @@ class Trid(PyBenchFunction):
 class XinSheYang(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYang.png"""
 
-    name = "Xin She Yang"
+    name = "Xin-She Yang"
     continuous = True
     convex = False
     separable = True
@@ -2837,6 +2847,7 @@ class XinSheYang(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         rand = np.random.random(d)
@@ -2847,7 +2858,7 @@ class XinSheYang(PyBenchFunction):
 class XinSheYangN2(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN2.png"""
 
-    name = "Xin She Yang N.2"
+    name = "Xin-She Yang N.2"
     continuous = False #TODO: #85 change to True
     convex = False
     separable = False
@@ -2884,7 +2895,7 @@ class XinSheYangN2(PyBenchFunction):
 class XinSheYangN3(PyBenchFunction):
     """.. image:: ../img/functions/XinSheYangN3.png"""
 
-    name = "Xin She Yang N.3"
+    name = "Xin-She Yang N.3"
     continuous = True
     convex = True
     separable = False
@@ -2989,6 +3000,7 @@ class Zakharov(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(X**2) + np.sum(0.5 * i * X) ** 2 + \

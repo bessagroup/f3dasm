@@ -1,0 +1,178 @@
+!!!!!!!!!!!!!!!!Left Side Heel!!!!!!!!!!!!!!!!!!
+
+*del,X_L_Heel%WT%
+*dim,X_L_Heel%WT%,array,N_F%WT%-1
+
+!X Offset of foots w.r.t each other 
+*do,nth_X_L_Heel%WT%,1,N_F%WT%-1,1
+	X_L_Heel%WT%(nth_X_L_Heel%WT%) = 0
+*enddo
+
+*del,Y_L_Heel%WT%
+*dim,Y_L_Heel%WT%,array,N_F%WT%-1
+
+!Y Offset of foots w.r.t each other 
+*do,nth_Y_L_Heel%WT%,1,N_F%WT%-1,1
+	Y_L_Heel%WT%(nth_Y_L_Heel%WT%) = FYO%WT%(nth_Y_L_Heel%WT%+1)
+*enddo
+
+*del,Z_L_Heel%WT%
+*dim,Z_L_Heel%WT%,array,N_F%WT%-1
+
+*if,N_F%WT%,EQ,2,THEN
+Z_L_Heel%WT%(1) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)
+*elseif,N_F%WT%,EQ,3,THEN
+Z_L_Heel%WT%(1) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)
+Z_L_Heel%WT%(2) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2)
+*elseif,N_F%WT%,EQ,4,THEN
+Z_L_Heel%WT%(1) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)
+Z_L_Heel%WT%(2) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2)
+Z_L_Heel%WT%(3) = FL%WT%(1)+HLLL%WT%(1)+HRLL%WT%(1)+FL%WT%(2)+HLLL%WT%(2)+HRLL%WT%(2)+FL%WT%(3)+HLLL%WT%(3)+HRLL%WT%(3)
+*endif
+
+
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+		lp_n = nth_Heel_L%WT%
+		WPOFFS,100,100,50 $ CSYS,4
+		WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n)
+		CSYS,4
+		X_Factor%WT% = WD%WT%
+		Y_Factor%WT% = WD%WT%
+		Z_Factor%WT% = HLLL%WT%(lp_n)
+		Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+		k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+		KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+		WPROTA, 0, Angle_Factor%WT%, 0
+		CYL4,0,0,WD%WT%/2,0,WD%WT%/2,90
+		CYL4,0,0,WD%WT%/2,90,WD%WT%/2,180
+		CYL4,0,0,WD%WT%/2,180,WD%WT%/2,270
+		CYL4,0,0,WD%WT%/2,270,WD%WT%/2,360
+		k,%lp_n%111,0,-(WD%WT%/2),0
+		k,%lp_n%211,((cos(theta_1%WT%))*(WD%WT%/2)),-((sin(theta_1%WT%))*(WD%WT%/2)),0
+		k,%lp_n%311,(WD%WT%/2),0,0
+		k,%lp_n%411,((cos(theta_2%WT%))*(WD%WT%/2)),((sin(theta_2%WT%))*(WD%WT%/2)),0
+		k,%lp_n%511,0,(WD%WT%/2),0
+		k,%lp_n%611,-((cos(theta_2%WT%))*(WD%WT%/2)),((sin(theta_2%WT%))*(WD%WT%/2)),0
+		k,%lp_n%711,-(WD%WT%/2),0,0
+		k,%lp_n%811,-((cos(theta_1%WT%))*(WD%WT%/2)),-((sin(theta_1%WT%))*(WD%WT%/2)),0
+		k,%lp_n%911,0,0,0
+		WPCSYS,1,0 $ CSYS,4
+		WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n) $ CSYS,4
+		k,%lp_n%1011,0,LH%WT%(lp_n),-HLLL%WT%(lp_n)	
+		!bspline,%nth_Heel_L%906,%nth_Heel_L%1011,%nth_Heel_L%911
+		WPCSYS,1,0 $ CSYS,4
+*enddo
+
+
+
+
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+		lp_n = nth_Heel_L%WT%
+		WPOFFS,100,100,50 $ CSYS,4
+		WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n)
+		CSYS,4
+		
+		X_Factor%WT% = WD%WT%
+		Y_Factor%WT% = WD%WT%
+		Z_Factor%WT% = HLLL%WT%(lp_n)
+		
+		! Spline 1
+		k,%lp_n%107,X_Factor%WT%*0,Y_Factor%WT%*0.06,-Z_Factor%WT%*0.02516
+		k,%lp_n%108,X_Factor%WT%*0,Y_Factor%WT%*0.2043,-Z_Factor%WT%*0.04838
+		k,%lp_n%109,X_Factor%WT%*0,Y_Factor%WT%*0.41,-Z_Factor%WT%*0.0696
+		k,%lp_n%110,X_Factor%WT%*0,Y_Factor%WT%*0.61,-Z_Factor%WT%*0.08926
+		bspline,kp(0,0,0),%lp_n%107,%lp_n%108,%lp_n%109,%lp_n%110,%lp_n%111
+		
+		
+		!Spline 2
+		k,%lp_n%207,X_Factor%WT%*0.486,Y_Factor%WT%*0.0667,-Z_Factor%WT%*0.02374
+		k,%lp_n%208,X_Factor%WT%*0.4596,Y_Factor%WT%*0.265,-Z_Factor%WT%*0.0453
+		k,%lp_n%209,X_Factor%WT%*0.4253,Y_Factor%WT%*0.5106,-Z_Factor%WT%*0.06452
+		k,%lp_n%210,X_Factor%WT%*0.400333,Y_Factor%WT%*0.7826,-Z_Factor%WT%*0.08254
+		bspline,kp(F_B%WT%/2,0,0),%lp_n%207,%lp_n%208,%lp_n%209,%lp_n%210,%lp_n%211
+
+		!Spline 3
+		k,%lp_n%307,X_Factor%WT%*0.555,Y_Factor%WT%*0.5123,-Z_Factor%WT%*0.02042
+		k,%lp_n%308,X_Factor%WT%*0.540,Y_Factor%WT%*0.6626,-Z_Factor%WT%*0.0389
+		k,%lp_n%309,X_Factor%WT%*0.5166,Y_Factor%WT%*0.8676,-Z_Factor%WT%*0.05548
+		k,%lp_n%310,X_Factor%WT%*0.502,Y_Factor%WT%*1.0946,-Z_Factor%WT%*0.07124
+		bspline,kp(F_M_1%WT%/2,F_H_1%WT%,0),%lp_n%307,%lp_n%308,%lp_n%309,%lp_n%310,%lp_n%311
+
+		!Spline 4
+		k,%lp_n%407,X_Factor%WT%*0.4276,Y_Factor%WT%*0.8207,-Z_Factor%WT%*0.0179
+		k,%lp_n%408,X_Factor%WT%*0.412,Y_Factor%WT%*0.957,-Z_Factor%WT%*0.03406
+		k,%lp_n%409,X_Factor%WT%*0.3973,Y_Factor%WT%*1.142,-Z_Factor%WT%*0.04846
+		k,%lp_n%410,X_Factor%WT%*0.383,Y_Factor%WT%*1.3397,-Z_Factor%WT%*0.06228
+		bspline,kp(F_M_2%WT%/2,F_H_2%WT%,0),%lp_n%407,%lp_n%408,%lp_n%409,%lp_n%410,%lp_n%411
+
+		!Spline 5
+		k,%lp_n%507,X_Factor%WT%*0,Y_Factor%WT%*0.98,-Z_Factor%WT%*0.01636
+		k,%lp_n%508,X_Factor%WT%*0,Y_Factor%WT%*1.25,-Z_Factor%WT%*0.03134
+		k,%lp_n%509,X_Factor%WT%*0,Y_Factor%WT%*1.50,-Z_Factor%WT%*0.04418
+		k,%lp_n%510,X_Factor%WT%*0,Y_Factor%WT%*1.68,-Z_Factor%WT%*0.05626
+		bspline,kp(0,F_H%WT%,0),%lp_n%507,%lp_n%508,%lp_n%509,%lp_n%510,%lp_n%511
+		
+		!Spline 6
+		k,%lp_n%607,-X_Factor%WT%*0.4276,Y_Factor%WT%*0.8207,-Z_Factor%WT%*0.0179
+		k,%lp_n%608,-X_Factor%WT%*0.412,Y_Factor%WT%*0.957,-Z_Factor%WT%*0.03406
+		k,%lp_n%609,-X_Factor%WT%*0.3973,Y_Factor%WT%*1.142,-Z_Factor%WT%*0.04846
+		k,%lp_n%610,-X_Factor%WT%*0.383,Y_Factor%WT%*1.3397,-Z_Factor%WT%*0.06228
+		bspline,kp(-F_M_2%WT%/2,F_H_2%WT%,0),%lp_n%607,%lp_n%608,%lp_n%609,%lp_n%610,%lp_n%611
+
+		!Spline 7
+		k,%lp_n%707,-X_Factor%WT%*0.555,Y_Factor%WT%*0.5123,-Z_Factor%WT%*0.02042
+		k,%lp_n%708,-X_Factor%WT%*0.540,Y_Factor%WT%*0.6626,-Z_Factor%WT%*0.0389
+		k,%lp_n%709,-X_Factor%WT%*0.517,Y_Factor%WT%*0.8676,-Z_Factor%WT%*0.05548
+		k,%lp_n%710,-X_Factor%WT%*0.502,Y_Factor%WT%*1.0946,-Z_Factor%WT%*0.07124
+		bspline,kp(-F_M_1%WT%/2,F_H_1%WT%,0),%lp_n%707,%lp_n%708,%lp_n%709,%lp_n%710,%lp_n%711
+
+		!Spline 8
+		k,%lp_n%807,-X_Factor%WT%*0.486,Y_Factor%WT%*0.0667,-Z_Factor%WT%*0.02374
+		k,%lp_n%808,-X_Factor%WT%*0.4596,Y_Factor%WT%*0.265,-Z_Factor%WT%*0.0453
+		k,%lp_n%809,-X_Factor%WT%*0.4253,Y_Factor%WT%*0.5106,-Z_Factor%WT%*0.06452
+		k,%lp_n%810,-X_Factor%WT%*0.4003,Y_Factor%WT%*0.7826,-Z_Factor%WT%*0.08254
+		bspline,kp(-F_B%WT%/2,0,0),%lp_n%807,%lp_n%808,%lp_n%809,%lp_n%810,%lp_n%811
+
+		! Spline 9
+		k,%lp_n%907,X_Factor%WT%*0,Y_Factor%WT%*0.5123,-Z_Factor%WT%*0.02042
+		k,%lp_n%908,X_Factor%WT%*0,Y_Factor%WT%*0.663,-Z_Factor%WT%*0.0389
+		k,%lp_n%909,X_Factor%WT%*0,Y_Factor%WT%*0.868,-Z_Factor%WT%*0.05548
+		k,%lp_n%910,X_Factor%WT%*0,Y_Factor%WT%*1.095,-Z_Factor%WT%*0.07124
+		bspline,kp(0,F_H_1%WT%,0),%lp_n%907,%lp_n%908,%lp_n%909,%lp_n%910,%lp_n%911
+		
+		WPCSYS,1,0
+		CSYS,4
+*enddo
+
+*do,nth_Heel_L%WT%,1,N_F%WT%-1,1
+	lp_n = nth_Heel_L%WT%
+	WPOFFS,100,100,50 $ CSYS,4
+	WPOFFS,X_L_Heel%WT%(lp_n),Y_L_Heel%WT%(lp_n),Z_L_Heel%WT%(lp_n)
+	CSYS,4
+		
+	X_Factor%WT% = WD%WT%
+	Y_Factor%WT% = WD%WT%
+	Z_Factor%WT% = HLLL%WT%(lp_n)
+		
+	Angle_Factor%WT% = HLLL%WT%(lp_n)*9
+	k,,X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09
+	KWPAVE,kp(X_Factor%WT%*0,Y_Factor%WT%*1.3,-Z_Factor%WT%*0.09)
+	WPROTA, 0, Angle_Factor%WT%, 0
+	lsel,s,loc,z,0
+	lsel,r,radius,,(WD%WT%/2)
+	CM,NL_%lp_n%_3,LINE
+	lsel,NONE $ lsel,all $ lplot
+
+	lsel,s,loc,z,0.01,Z_Factor%WT%*0.09
+	CM,NL_%lp_n%_4,LINE
+	lsel,NONE $ lsel,all $ lplot
+
+	LSBL,NL_%lp_n%_3,NL_%lp_n%_4,,DELETE,KEEP
+	WPCSYS,1,0
+	CSYS,4
+*enddo
+
+ALLSEL
+NUMMRG,KP
+
+!Done

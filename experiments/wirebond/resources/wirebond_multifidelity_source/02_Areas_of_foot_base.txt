@@ -1,0 +1,74 @@
+!!!!!!!!!!!!Cluster 2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	wpoffs,100,80,30 $ CSYS,4
+	
+	Cl = 5 !Cluster
+	
+	N_Loops%Cl% = 3
+	N_Foot%Cl% = N_Loops%Cl%+1
+	
+	!Half Right Loop Lengths
+	*del,HRLL%Cl%                          
+	*dim,HRLL%Cl%,ARRAY,N_Loops%Cl%
+
+	HRLL%Cl%(1) = L_L1,L_L2,L_L3 !Lengths of the loop from 1 to N
+
+	!Half Left Loop Lengths
+	*del,HLLL%Cl%                          
+	*dim,HLLL%Cl%,ARRAY,N_Loops%Cl%
+
+	HLLL%Cl%(1) = L_L1,L_L2,L_L3
+	
+	
+	!Foot Lengths
+	*del,FL%Cl%
+	*dim,FL%Cl%,ARRAY,N_Foot%Cl%
+
+	FL%Cl%(1) = FL,FL,FL,FL
+	
+	F_B%Cl% = WThk 
+	
+	!Location of Cluster 1 from origin
+	X_L_C_1%Cl% = 8.2 !X_Location_Cluster 1
+	Y_L_C_1%Cl% = 4.2!Y_Location_Cluster 1
+	Z_L_C_1%Cl% = 0		 !Z_Location_Cluster 1
+	
+	wpoffs,X_L_C_1%Cl%,Y_L_C_1%Cl%,Z_L_C_1%Cl% $ CSYS,4
+	
+	*do,Foot_nthArea%Cl%,1,N_Foot%Cl%-1,1
+		lp_n = Foot_nthArea%Cl%
+		BLC4,0,0,F_B%Cl%,FL%Cl%(lp_n)
+		wpoffs,0,FL%Cl%(lp_n)+HRLL%Cl%(lp_n)+HLLL%Cl%(lp_n),0 $ CSYS,4
+	*enddo
+	
+	BLC4,0,0,F_B%Cl%,FL%Cl%(Foot_nthArea%Cl%+1)
+
+
+	asel,s,loc,z,0
+	
+	WPCSYS,1,0 $ CSYS,4
+	wpoffs,100,80,30 $ CSYS,4
+	
+	asel,s,loc,z,0
+	
+	offset = (1-WThk)/2
+	
+	X_off = 108.2-(offset)
+	
+	AGEN, ,all, , ,-X_off,-80.2,-30, , ,1 
+	
+	WPCSYS,1,0 $ CSYS,4
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
