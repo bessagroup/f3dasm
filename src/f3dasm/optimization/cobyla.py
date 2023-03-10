@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Locals
 from .adapters.scipy_implementations import SciPyMinimizeOptimizer
@@ -34,3 +35,6 @@ class COBYLA(SciPyMinimizeOptimizer):
 
     method: str = "COBYLA"
     parameter: COBYLA_Parameters = COBYLA_Parameters()
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Derivative-Free', 'Single-Solution']
