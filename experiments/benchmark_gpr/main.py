@@ -16,8 +16,8 @@ OmegaConf.register_new_resolver("eval", eval)
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    # seed = np.random.randint(low=0, high=1e5)
-    seed = 123
+    seed = np.random.randint(low=0, high=1e5)
+    # seed = 123
 
     with open('seed.txt', "w") as f:
         f.write(str(seed))
@@ -41,7 +41,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
         noise_fix=1 - config.function.noisy,
         opt_algo=torch.optim.Adam,
         opt_algo_kwargs=dict(lr=0.1),
-        verbose_training=True,
+        verbose_training=False,
         training_iter=50,
         )
 
@@ -72,8 +72,6 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
         ## Scaled data added to the training data
         train_data.add_output(output=train_y_scaled)
-        print(fun.get_name())
-        print(train_data.data)
         
         ## Define regressor
         regressor = regressor_class(
@@ -104,7 +102,6 @@ def main(cfg: Config):
         regressor = options['regressor']
         torch.manual_seed(123)
         surrogate = regressor.train()
-        print()
 
         n_test = 500
 
@@ -130,7 +127,6 @@ def main(cfg: Config):
         )
 
         metrics_df.to_csv(options['function'].name + '.csv')
-        print(metrics_df)
 
 cs = ConfigStore.instance()
 cs.store(name="f3dasm_config", node=Config)
