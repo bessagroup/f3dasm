@@ -1,14 +1,14 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import json
 from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional, Tuple
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 
 # Locals
 from ..design.experimentdata import ExperimentData

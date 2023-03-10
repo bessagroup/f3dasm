@@ -6,7 +6,7 @@ import json
 from typing import List, Tuple
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sb

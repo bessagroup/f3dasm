@@ -5,7 +5,7 @@
 
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 
 # Locals
 from .function import Function

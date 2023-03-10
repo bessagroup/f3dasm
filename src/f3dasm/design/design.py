@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List, TypeVar
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 import pandas as pd
 
 # Local

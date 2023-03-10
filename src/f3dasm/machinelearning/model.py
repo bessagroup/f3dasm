@@ -40,21 +40,3 @@ class Model(Protocol):
     def set_model_weights(self, weights):
         """Set the model weights with a 1D array"""
         ...
-
-
-def MeanSquaredError(Y_pred, Y_true):
-    """Mean squared error (MSE) loss function
-
-    Parameters
-    ----------
-    Y_pred
-        Predicted labels
-    Y_true
-        True labels
-
-    Returns
-    -------
-        Float value denoting the mean squared error of the model
-    """
-    fn = tf.keras.losses.MeanSquaredError()
-    return fn(Y_true, Y_pred)

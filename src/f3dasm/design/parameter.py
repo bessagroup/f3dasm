@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, List
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================

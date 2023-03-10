@@ -1,9 +1,6 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-from ..functions.adapters.augmentor import FunctionAugmentor
-from ..design.experimentdata import ExperimentData
 from typing import Tuple
 
 # Third-party
@@ -13,6 +10,9 @@ import matplotlib.pyplot as plt
 
 # Locals
 from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..design.experimentdata import ExperimentData
+# Standard
+from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -10,6 +10,8 @@ import tensorflow as tf
 
 # Locals
 from ..data.learningdata import LearningData
+from ..machinelearning.adapters.tensorflow_implementations import \
+    MeanSquaredError
 from ..machinelearning.model import Model
 from ..machinelearning.passthrough_model import PassthroughModel
 from .utils import get_flat_array_from_list_of_arrays
@@ -22,24 +24,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-def MeanSquaredError(Y_pred, Y_true):
-    """MSE loss
-
-    Parameters
-    ----------
-    Y_pred
-        Predicted labels
-    Y_true
-        True labels
-
-    Returns
-    -------
-        MSE loss
-    """
-    fn = tf.keras.losses.MeanSquaredError()
-    return fn(Y_true, Y_pred)
 
 
 class Evaluator():
