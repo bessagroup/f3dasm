@@ -22,8 +22,8 @@ def test_linearregression():
 
     model = LinearRegression(dimensionality=DIMENSIONALITY)
     evaluator = Evaluator(learning_data=learning_data, model=model)
-    x = np.array([0.2]*(DIMENSIONALITY+1))
-    y, dydx = evaluator.evaluate(x)
+    weights = np.array([0.2]*(DIMENSIONALITY+1))
+    y, dydx = evaluator.evaluate(weights)
 
 
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
@@ -47,7 +47,7 @@ def test_linearregression_optimizer(optimizer: Optimizer):
     w = data.get_n_best_input_parameters_numpy(30)
     data.add_output(output=evaluator(w))
 
-    opt = optimizer(data=data, seed=42)
+    opt: Optimizer = optimizer(data=data, seed=42)
     opt.iterate(iterations=10, function=evaluator)
 
 
