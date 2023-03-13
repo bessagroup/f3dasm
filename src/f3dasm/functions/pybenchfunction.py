@@ -1715,10 +1715,11 @@ class PermZeroDBeta(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = np.sum(
             [
-                (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1)))
+                (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - 1 / (j + 1) ** (i + 1)))
                  for j in range(d)])) ** 2
                 for i in range(d)
             ]
@@ -1758,6 +1759,7 @@ class PermDBeta(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         j = np.arange(1, d + 1)
         res = np.sum([np.sum((j**i + self.beta) * (
@@ -1914,6 +1916,7 @@ class Rastrigin(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = 10 * d + np.sum(X**2 - 10 * np.cos(2 * np.pi * X))
         return res
@@ -2031,6 +2034,7 @@ class RotatedHyperEllipsoid(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = np.sum([np.sum(X[: i + 1] ** 2) for i in range(d)])
         return res
@@ -2258,6 +2262,7 @@ class Schwefel(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
+        X = X.flatten()
         d = X.shape[0]
         res = 418.9829 * d - np.sum(X * np.sin(np.sqrt(np.abs(X))))
         return res
@@ -2774,6 +2779,7 @@ class Trid(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X): #TODO: #78 correct formula should be np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1]). Remove unused d and i variables.
+        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
