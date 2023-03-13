@@ -5,13 +5,12 @@ F3DASM
 This is the initalizer of the F3DASM package
 """
 
-__version__ = '0.2.97'
-
 #                                                                       Modules
 # =============================================================================
 
 # Standard
 import logging
+from pathlib import Path
 
 # Locals
 from . import (data, functions, machinelearning, optimization, sampling,
@@ -32,6 +31,12 @@ from .sampling.sampler import *
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
+
+# version
+here = Path(__file__).absolute().parent
+with open(here.joinpath("VERSION"), "r") as f:
+    __version__ = f.read()
+
 # =============================================================================
 #
 # =============================================================================

@@ -1,0 +1,4 @@
+setuptools>=43.0.0
+build
+wheel
+flake8
