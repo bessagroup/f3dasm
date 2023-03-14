@@ -2,6 +2,8 @@
 # =============================================================================
 
 # Standard
+from dataclasses import dataclass
+from typing import List, Any
 from ..functions.adapters.augmentor import FunctionAugmentor
 from ..design.experimentdata import ExperimentData
 from typing import Tuple
@@ -313,3 +315,42 @@ class Function:
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
+
+class AugmentedFunction(Function):
+
+    def __init__(
+        self, 
+        dimensionality: int = None, 
+        seed: Any or int = None,
+        base_fun: Function = None,
+        fid: float = None,
+        aug_mode: Any = None,
+        scale_bounds: Any = None,
+        ):
+        super().__init__(seed)
+
+        self.base_fun = base_fun
+        self.fid = fid
+        self.aug_mode = aug_mode
+        self.scale_bounds = scale_bounds
+        self.dimensionality = dimensionality
+
+    def evaluate(self, x) -> np.ndarray:
+        x_space = x#[:, :-1]
+
+        res_hf = self.base_fun(x_space)
+        res_lf = np.zeros_like(res_hf)
+        res = self.fid * res_hf + (1 - self.fid) * res_lf
+
+        return res
+
+@dataclass
+class MultiFidelityFunction:
+    fidelity_functions: List[Function] = None
+    fidelity_parameters: List[float] = None
+    costs: List[float] = None
+
+    def get_fidelity_function_by_parameter(self, fidelity_parameter: float):
+        for i, fidelity_parameter_i in enumerate(self.fidelity_parameters):
+            if fidelity_parameter == fidelity_parameter_i:
+                return self.fidelity_functions[i]

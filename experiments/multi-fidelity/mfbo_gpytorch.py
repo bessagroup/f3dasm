@@ -8,7 +8,7 @@ import botorch
 import gpytorch
 import torch
 
-from f3dasm.base.function import AugmentedFunction, MultiFidelityFunction
+from f3dasm.functions import AugmentedFunction, MultiFidelityFunction
 
 ### reg parameters
 
@@ -56,7 +56,7 @@ reg_parameters = f3dasm.machinelearning.gpr.Cokgj_Parameters(
 
 ### opt parameters
 
-iterations = 10
+iterations = 1
 numbers_of_samples = [20, 5]
 fidelity_parameters = [0.5, 1.]
 costs = [0.5, 1.]

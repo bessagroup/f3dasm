@@ -9,7 +9,7 @@ from typing import Any
 
 from sklearn.preprocessing import StandardScaler
 
-from f3dasm.base.function import AugmentedFunction
+from f3dasm.functions import AugmentedFunction
 
 from f3dasm.design import ExperimentData
 
@@ -76,17 +76,17 @@ covar_module_list = torch.nn.ModuleList([
 ###
 
 class Forrester(f3dasm.functions.Function):
-    def __init__(self, dimensionality: int, seed: Any or int = None):
-        super().__init__(dimensionality, seed)
+    def __init__(self, seed: Any or int = None):
+        super().__init__(seed)
 
-    def f(self, x):
+    def evaluate(self, x):
         return (6 * x - 2) ** 2 * np.sin(12 * x - 4)
 
 class Forrester_lf(f3dasm.functions.Function):
-    def __init__(self, dimensionality: int, seed: Any or int = None):
-        super().__init__(dimensionality, seed)
+    def __init__(self, seed: Any or int = None):
+        super().__init__(seed)
 
-    def f(self, x):
+    def evaluate(self, x):
         return 0.5 * (6 * x - 2) ** 2 * np.sin(12 * x - 4) + 10 * (x - 0.5) - 5
 
 base_fun = f3dasm.functions.AlpineN2(
@@ -113,9 +113,9 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
     #         )
 
     if fid_no == 0:
-        fun = Forrester_lf(dimensionality=1)
+        fun = Forrester_lf()
     else:
-        fun = Forrester(dimensionality=1)
+        fun = Forrester()
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -136,8 +136,8 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
             input_array = np.linspace(0, 1, 11)[:, None]
 
         train_data.add_numpy_arrays(
-            input=input_array, 
-            output=np.full_like(input_array, np.nan)
+            input_rows=input_array, 
+            output_rows=np.full_like(input_array, np.nan)
             )
     else:
         train_data = sampler.get_samples(numsamples=samp_no)

@@ -40,7 +40,7 @@ try:
 except ImportError:
     has_pygmo = False  # skip these optimizers if pygmo is not installed
 from .bayesianoptimization import BayesianOptimization, BayesianOptimization_Parameters
-from .bayesianoptimization_torch import BayesianOptimizationTorch, BayesianOptimizationTorch_Parameters, MFBayesianOptimizationTorch
+from .._legacy.bayesianoptimization_torch import BayesianOptimizationTorch, BayesianOptimizationTorch_Parameters, MFBayesianOptimizationTorch
 
 #                                                          Authorship & Credits
 # =============================================================================

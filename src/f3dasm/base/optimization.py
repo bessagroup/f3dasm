@@ -5,7 +5,7 @@ from typing import Any, Mapping, Optional, List
 import autograd.numpy as np
 
 from ..design import ExperimentData
-from ..base.function import Function, MultiFidelityFunction
+from ..functions import Function, MultiFidelityFunction
 
 
 @dataclass

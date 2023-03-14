@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 
 import f3dasm
-from f3dasm.base.function import AugmentedFunction, MultiFidelityFunction
-from f3dasm.functions import FUNCTIONS, get_functions
+from f3dasm.functions import FUNCTIONS, get_functions, AugmentedFunction, MultiFidelityFunction
 from f3dasm.design import ExperimentData
 
 import gpytorch
@@ -183,7 +182,7 @@ def test_bo_gpytorch():
     optimizer.parameter.n_init = number_of_samples
     optimizer.parameter.regressor_hyperparameters = reg_parameters
     optimizer.parameter.acquisition = f3dasm.base.acquisition.ExpectedImprovement
-    optimizer.parameter.acquisition_hyperparameters = f3dasm.optimization.bayesianoptimization_torch.Acquisition_Parameters(
+    optimizer.parameter.acquisition_hyperparameters = f3dasm._legacy.bayesianoptimization_torch.Acquisition_Parameters(
         best_f=-np.inf,
         maximize=False,
     )
@@ -226,17 +225,17 @@ def test_cokgj_forrester_gpytorch():
     ])
 
     class Forrester(f3dasm.functions.Function):
-        def __init__(self, dimensionality: int, seed: Any or int = None):
-            super().__init__(dimensionality, seed)
+        def __init__(self, seed: Any or int = None):
+            super().__init__(seed)
 
-        def f(self, x):
+        def evaluate(self, x):
             return (6 * x - 2) ** 2 * np.sin(12 * x - 4)
 
     class Forrester_lf(f3dasm.functions.Function):
-        def __init__(self, dimensionality: int, seed: Any or int = None):
-            super().__init__(dimensionality, seed)
+        def __init__(self, seed: Any or int = None):
+            super().__init__(seed)
 
-        def f(self, x):
+        def evaluate(self, x):
             return 0.5 * (6 * x - 2) ** 2 * np.sin(12 * x - 4) + 10 * (x - 0.5) - 5
 
     # base_fun = fun_class(
@@ -256,9 +255,9 @@ def test_cokgj_forrester_gpytorch():
     for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
         if fid_no == 0:
-            fun = Forrester_lf(dimensionality=1)
+            fun = Forrester_lf()
         else:
-            fun = Forrester(dimensionality=1)
+            fun = Forrester()
 
         # fun = AugmentedFunction(
         #         base_fun=base_fun,
@@ -281,8 +280,8 @@ def test_cokgj_forrester_gpytorch():
                 input_array = np.linspace(0, 1, 11)[:, None]
 
             train_data.add_numpy_arrays(
-                input=input_array, 
-                output=np.full_like(input_array, np.nan)
+                input_rows=input_array, 
+                output_rows=np.full_like(input_array, np.nan)
                 )
         else:
             train_data = sampler.get_samples(numsamples=samp_no)
@@ -418,8 +417,8 @@ def test_cokgj_gpytorch():
                 input_array = np.linspace(0, 1, 11)[:, None]
 
             train_data.add_numpy_arrays(
-                input=input_array, 
-                output=np.full_like(input_array, np.nan)
+                input_rows=input_array, 
+                output_rows=np.full_like(input_array, np.nan)
                 )
         else:
             train_data = sampler.get_samples(numsamples=samp_no)
@@ -514,17 +513,17 @@ def test_mtask_forrester_gpytorch():
     ###
 
     class Forrester(f3dasm.functions.Function):
-        def __init__(self, dimensionality: int, seed: Any or int = None):
-            super().__init__(dimensionality, seed)
+        def __init__(self, seed: Any or int = None):
+            super().__init__(seed)
 
-        def f(self, x):
+        def evaluate(self, x):
             return (6 * x - 2) ** 2 * np.sin(12 * x - 4)
 
     class Forrester_lf(f3dasm.functions.Function):
-        def __init__(self, dimensionality: int, seed: Any or int = None):
-            super().__init__(dimensionality, seed)
+        def __init__(self, seed: Any or int = None):
+            super().__init__(seed)
 
-        def f(self, x):
+        def evaluate(self, x):
             return 0.5 * (6 * x - 2) ** 2 * np.sin(12 * x - 4) + 10 * (x - 0.5) - 5
 
     # base_fun = fun_class(
@@ -549,9 +548,9 @@ def test_mtask_forrester_gpytorch():
         #         )
 
         if fid_no == 0:
-            fun = Forrester_lf(dimensionality=1)
+            fun = Forrester_lf()
         else:
-            fun = Forrester(dimensionality=1)
+            fun = Forrester()
         
         parameter_DesignSpace = f3dasm.make_nd_continuous_design(
             bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -569,8 +568,8 @@ def test_mtask_forrester_gpytorch():
                 input_array = np.array([0., 0.4, 0.6, 1.])[:, None]
 
             train_data.add_numpy_arrays(
-                input=input_array, 
-                output=np.full_like(input_array, np.nan)
+                input_rows=input_array, 
+                output_rows=np.full_like(input_array, np.nan)
                 )
         else:
             train_data = sampler.get_samples(numsamples=samp_no)

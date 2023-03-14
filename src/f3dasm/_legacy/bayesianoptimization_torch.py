@@ -19,7 +19,7 @@ from botorch.optim import optimize_acqf, optimize_acqf_mixed
 # from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
 from ..optimization.optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
 from ..design.experimentdata import ExperimentData
-from ..base.function import Function, MultiFidelityFunction
+from ..functions import Function, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
 # from ..regression.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters
 from ..machinelearning.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters, Cokgj_Parameters

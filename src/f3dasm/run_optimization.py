@@ -16,7 +16,7 @@ import numpy as np
 # import f3dasm
 
 from f3dasm.base.optimization import Optimizer
-from f3dasm.base.function import Function, MultiFidelityFunction
+from .functions import Function, MultiFidelityFunction
 
 import pandas as pd
 from pathos.helpers import mp
