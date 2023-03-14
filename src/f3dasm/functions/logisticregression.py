@@ -8,7 +8,7 @@
 import autograd.numpy as np
 
 # Locals
-from ..base.function import Function
+from .function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================

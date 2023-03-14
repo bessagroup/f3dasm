@@ -4,6 +4,7 @@ import pytest
 
 from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import ContinuousParameter
+from f3dasm.sampling import create_sampler_from_json
 from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.sampler import Sampler
@@ -66,8 +67,6 @@ def test_correct_sampling_ran(design3: DesignSpace):
     samples = random_sequencing.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
 
-    # print(df_ground_truth.dtypes)
-    # print(samples.dtypes)
     assert df_ground_truth.equals(samples)
 
 
@@ -106,9 +105,6 @@ def test_correct_sampling_sobol(design3: DesignSpace):
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
-    print(samples)
-    print(df_ground_truth)
-
     assert df_ground_truth.equals(samples)
 
 
@@ -148,8 +144,15 @@ def test_correct_sampling_lhs(design3: DesignSpace):
     samples = lhs_sampler.get_samples(numsamples=numsamples)
     samples = samples.data.round(6)
 
-    print(samples)
     assert df_ground_truth.equals(samples)
+
+
+@pytest.mark.parametrize("sampler_name", ['random_sampler', 'latinhypercube_sampler', 'sobolsequence_sampler'])
+def test_check_reproducibility(sampler_name: str, request):
+    sampler: Sampler = request.getfixturevalue(sampler_name)
+    json_string = sampler.to_json()
+    sampler_new = create_sampler_from_json(json_string)
+    assert sampler == sampler_new
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import pygmo as pg
@@ -49,3 +50,6 @@ class SADE(PygmoAlgorithm):
                 seed=self.seed,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Population-Based', 'Single-Solution']

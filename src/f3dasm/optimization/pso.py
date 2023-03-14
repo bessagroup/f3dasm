@@ -3,13 +3,14 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import pygmo as pg
 
+from .adapters.pygmo_implementations import PygmoAlgorithm
 # Locals
 from .optimizer import OptimizerParameters
-from .adapters.pygmo_implementations import PygmoAlgorithm
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -45,3 +46,6 @@ class PSO(PygmoAlgorithm):
                 eta2=self.parameter.eta2,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Global', 'Derivative-Free', 'Population-Based', 'Single-Solution']

@@ -2,6 +2,7 @@
 # =============================================================================
 
 # Standard
+import json
 from dataclasses import dataclass, field
 from typing import List, TypeVar
 
@@ -9,8 +10,8 @@ from typing import List, TypeVar
 import autograd.numpy as np
 import pandas as pd
 
-from .constraint import Constraint
 # Local
+from .constraint import Constraint
 from .parameter import (CategoricalParameter, ConstantParameter,
                         ContinuousParameter, DiscreteParameter, Parameter)
 
@@ -26,10 +27,17 @@ __status__ = 'Stable'
 
 @dataclass
 class DesignSpace:
-    """Main class for the design of experiments
+    """Main class for the design of experiments space
 
-    :param input_space: list of parameters
-    :param output_space: list of parameters
+
+    Parameters
+    ----------
+    input_space
+        list of input parameters
+    output_space
+        list of output parameters
+    constraints
+        list of constraints
     """
 
     input_space: List[Parameter] = field(default_factory=list)
@@ -45,6 +53,13 @@ class DesignSpace:
 
         if len(self.get_output_names()) != len(set(self.get_output_names())):
             raise ValueError("Duplicate names found in output names!")
+
+    def to_json(self) -> str:
+        # Missing constraints
+        args = {'input_space': [parameter.to_json() for parameter in self.input_space],
+                'output_space': [parameter.to_json() for parameter in self.output_space]
+                }
+        return json.dumps(args)
 
     def get_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with the information of the input and output space
@@ -237,16 +252,18 @@ class DesignSpace:
                 for parameter in self.get_continuous_input_parameters()]
         )
 
-    def get_bounds_pygmo(self) -> tuple:
-        """Box-constrained boundaries of the problem. Necessary for pygmo library
+    # def get_bounds_pygmo(self) -> tuple:
+    #     """Box-constrained boundaries of the problem. Necessary for pygmo library
 
-        :return: box constraints
-        """
-        # Box-constrained boundaries of the problem. Necessary for pygmo library
-        return (
-            [parameter.lower_bound for parameter in self.get_continuous_input_parameters()],
-            [parameter.upper_bound for parameter in self.get_continuous_input_parameters()],
-        )
+    #     Returns
+    #     -------
+    #         box constraints
+    #     """
+    #     # Box-constrained boundaries of the problem. Necessary for pygmo library
+    #     return (
+    #         [parameter.lower_bound for parameter in self.get_continuous_input_parameters()],
+    #         [parameter.upper_bound for parameter in self.get_continuous_input_parameters()],
+    #     )
 
     def _get_names(self, type: TypeVar, space: List[Parameter]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
@@ -260,7 +277,7 @@ class DesignSpace:
         )
 
     def _cast_types_dataframe(self, space: List[Parameter], label: str) -> dict:
-        # Make a dictionary that provides the datatype of each parameter
+        """Make a dictionary that provides the datatype of each parameter"""
         return {(label, parameter.name): parameter._type for parameter in space}
 
     def _check_space_on_type(self, type: TypeVar, space: List[Parameter]) -> bool:

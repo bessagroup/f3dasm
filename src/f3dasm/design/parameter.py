@@ -2,6 +2,7 @@
 # =============================================================================
 
 # Standard
+import json
 from dataclasses import dataclass, field
 from typing import Any, List
 
@@ -31,24 +32,16 @@ class Parameter:
     name: str
     _type: str = field(init=False)
 
-# @dataclass
-# class ConstantParameter(ParameterInterface):
-#     """Creates a search space parameter that is constant
+    @classmethod
+    def get_name(self) -> str:
+        return self.__name__
 
-#     Args:
-#         constant_value (float): value of constant search space
-#     """
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        args = self.__dict__
+        name = self.get_name()
+        return json.dumps((args, name))
+        # return self.__dict__, self.get_name()
 
-#     constant_value: float = field(default=0)
-#     _type: str = field(init=False, default="float")
-
-#     def __post_init__(self):
-#         self._check_types()
-
-#     def _check_types(self) -> None:
-#         """Check if the boundaries are actually floats"""
-#         if not isinstance(self.constant_value, float):
-#             raise TypeError(f"Expect float, got {type(self.constant_value)}")
 
 @dataclass
 class ConstantParameter(Parameter):

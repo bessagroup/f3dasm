@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Third-party
 import pygmo as pg
@@ -42,3 +43,6 @@ class CMAES(PygmoAlgorithm):
                 force_bounds=self.parameter.force_bounds,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Global', 'Population-Based']

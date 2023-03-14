@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from f3dasm import make_nd_continuous_design, ContinuousParameter
 from f3dasm.functions import pybenchfunction
-from f3dasm.functions.adapters.torch_functions import AugmentedTestFunction, botorch_TestFunction
+from f3dasm._legacy.torch_functions import AugmentedTestFunction, botorch_TestFunction
 from f3dasm.machinelearning.gpr import Cokgj, Mtask, Stmf
 from f3dasm.sampling import SobolSequence
 

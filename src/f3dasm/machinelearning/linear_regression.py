@@ -18,6 +18,20 @@ __status__ = 'Stable'
 
 
 class LinearRegression(TensorflowModel):
-    def __init__(self, dimensionality: int):  # introduce a dimensionality parameter because trainable weights!
+    def __init__(self, dimensionality: int):
+        """Linear Regression model
+
+        Parameters
+        ----------
+        dimensionality
+            number of neurons in the first layer
+        """
+        self.dimensionality = dimensionality
         super().__init__()
         self.model.add(tf.keras.layers.Dense(1, input_shape=(dimensionality,)))
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'dimensionality': self.dimensionality, })
+        return config
