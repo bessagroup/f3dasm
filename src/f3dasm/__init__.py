@@ -24,7 +24,8 @@ from .design.parameter import *
 from .functions.function import *
 from .optimization.optimizer import *
 from .run_optimization import *
-from .sampling.sampler import *
+from .sampling.sampler import Sampler
+from .sampling.utils import *
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -1,12 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import autograd.numpy as np
-from SALib.sample import sobol_sequence
-
 # Locals
+from .._imports import try_import
 from .sampler import Sampler
+
+# Third-party
+with try_import('sampling') as _imports:
+    import autograd.numpy as np
+    from SALib.sample import sobol_sequence
+
 
 #                                                          Authorship & Credits
 # =============================================================================

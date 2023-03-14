@@ -1,12 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import autograd.numpy as np
-from SALib.sample import latin
-
 # Locals
 from .sampler import Sampler
+from .._imports import try_import
+
+# Third-party
+with try_import('sampling') as _imports:
+    import autograd.numpy as np
+    from SALib.sample import latin
+
 
 #                                                          Authorship & Credits
 # =============================================================================

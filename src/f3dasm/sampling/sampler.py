@@ -11,8 +11,8 @@ from typing import Any, List
 import autograd.numpy as np
 import pandas as pd
 
-from ..design.design import DesignSpace
 # Locals
+from ..design.design import DesignSpace
 from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits

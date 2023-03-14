@@ -22,7 +22,7 @@ from .design import ExperimentData, create_experimentdata_from_json
 from .functions import create_function_from_json
 from .functions.function import Function
 from .optimization import Optimizer, create_optimizer_from_json
-from .sampling import Sampler, create_sampler_from_json
+from f3dasm.sampling import Sampler, create_sampler_from_json
 
 #                                                          Authorship & Credits
 # =============================================================================
