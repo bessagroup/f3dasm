@@ -3,16 +3,17 @@
 
 
 # Standard
-from typing import Tuple
+from typing import Callable, Tuple
 
 # Third-party core
+import autograd.core
 import autograd.numpy as np
+import pandas as pd
+from autograd import elementwise_grad as egrad
 
 # Locals
 from ..._imports import try_import
-from ...base.evaluator import Evaluator
-from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
-from .._protocol import Function
+from ...functions import Function
 from ..optimizer import Optimizer
 
 # Third-party extension
@@ -39,7 +40,7 @@ class TensorflowOptimizer(Optimizer):
         self.args = {}
 
     def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
-        if isinstance(function, Evaluator):
+        if not isinstance(function, Function):
             logits = self.data.get_input_data().iloc[-1].to_numpy()
             x, y = function.tf_apply_gradients(weights=logits, optimizer=self.algorithm)
         else:
@@ -58,7 +59,7 @@ class TensorflowOptimizer(Optimizer):
         return x, y
 
     def _construct_model(self, function: Function):
-        self.args["model"] = SimpelModel(
+        self.args["model"] = _SimpelModel(
             None,
             args={
                 "dim": self.data.design.get_number_of_input_parameters(),
@@ -68,4 +69,62 @@ class TensorflowOptimizer(Optimizer):
         )  # Build the model
         self.args["tvars"] = self.args["model"].trainable_variables
 
-        self.args["func"] = convert_autograd_to_tensorflow(function.__call__)
+        self.args["func"] = _convert_autograd_to_tensorflow(function.__call__)
+
+
+def _convert_autograd_to_tensorflow(func: Callable):
+    """Convert autograd function to tensorflow function
+
+    Parameters
+    ----------
+    func
+        callable function to convert
+
+    Returns
+    -------
+        wrapper to convert autograd function to tensorflow function
+    """
+    @tf.custom_gradient
+    def wrapper(x, *args, **kwargs):
+        vjp, ans = autograd.core.make_vjp(func, x.numpy())
+
+        def first_grad(dy):
+            @tf.custom_gradient
+            def jacobian(a):
+                vjp2, ans2 = autograd.core.make_vjp(egrad(func), a.numpy())
+                return ans2, vjp2  # hessian
+
+            return dy * jacobian(x)
+
+        return ans, first_grad
+
+    return wrapper
+
+
+class _Model(tf.keras.Model):
+    def __init__(self, seed=None, args=None):
+        super().__init__()
+        self.seed = seed
+        self.env = args
+
+
+class _SimpelModel(_Model):
+    """
+    The class for performing optimization in the input space of the functions.
+    """
+
+    def __init__(self, seed=None, args=None):
+        super().__init__(seed)
+        self.z = tf.Variable(
+            args["x0"],
+            trainable=True,
+            dtype=tf.float32,
+            constraint=lambda x: tf.clip_by_value(
+                x,
+                clip_value_min=args["bounds"][:, 0],
+                clip_value_max=args["bounds"][:, 1],
+            ),
+        )  # S:ADDED
+
+    def call(self, inputs=None):
+        return self.z

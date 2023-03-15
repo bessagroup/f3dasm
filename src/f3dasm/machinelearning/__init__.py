@@ -25,11 +25,13 @@ __status__ = 'Stable'
 # =============================================================================
 
 _import_structure: dict = {
-    "utils": ["find_model", "create_model_from_json", "create_model_from_dict"],
+    "utils": ["find_model", "create_model_from_json", "create_model_from_dict", "MeanSquaredError"],
     "model": ["Model"],
     "linear_regression": ["LinearRegression"],
     "passthrough_model": ["PassthroughModel"],
+    "evaluator": ["Evaluator"],
     "all_models": ["MODELS"],
+    "loss_functions": ["MeanSquaredError"],
 }
 
 if not TYPE_CHECKING:

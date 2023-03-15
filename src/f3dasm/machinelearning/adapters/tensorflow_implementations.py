@@ -3,6 +3,7 @@
 
 # Standard
 from typing import List
+from unittest import mock
 
 # Third-party core
 import numpy as np
@@ -16,6 +17,7 @@ from ..model import Model
 # Third-party extension
 with try_import('machinelearning') as _imports:
     import tensorflow as tf
+    from keras import Model as tf_Model
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -27,7 +29,8 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class TensorflowModel(tf.keras.Model, Model):
+class TensorflowModel(tf_Model, Model):
+
     def __init__(self):
         _imports.check()
         super().__init__()
@@ -48,21 +51,3 @@ class TensorflowModel(tf.keras.Model, Model):
         reshaped_weights = get_reshaped_array_from_list_of_arrays(
             flat_array=weights.ravel(), list_of_arrays=self.model.get_weights())
         self.model.set_weights(reshaped_weights)
-
-
-def MeanSquaredError(Y_pred, Y_true):
-    """Mean squared error (MSE) loss function
-
-    Parameters
-    ----------
-    Y_pred
-        Predicted labels
-    Y_true
-        True labels
-
-    Returns
-    -------
-        Float value denoting the mean squared error of the model
-    """
-    fn = tf.keras.losses.MeanSquaredError()
-    return fn(Y_true, Y_pred)

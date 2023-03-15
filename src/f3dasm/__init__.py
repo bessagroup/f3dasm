@@ -16,7 +16,6 @@ from pathlib import Path
 from . import (data, functions, machinelearning, optimization, sampling,
                simulation)
 from ._show_versions import show_versions
-from .base.evaluator import Evaluator
 from .base.utils import *
 from .design.design import *
 from .design.experimentdata import *

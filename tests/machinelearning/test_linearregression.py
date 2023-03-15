@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from f3dasm import make_nd_continuous_design
-from f3dasm.base.evaluator import Evaluator
+from f3dasm.machinelearning.evaluator import Evaluator
 from f3dasm.data.linearregression_data import LinearRegressionData
 from f3dasm.machinelearning.linear_regression import LinearRegression
 from f3dasm.optimization import OPTIMIZERS, Optimizer

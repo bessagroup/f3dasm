@@ -3,11 +3,12 @@
 
 # Local
 from .._imports import try_import
-from .adapters.tensorflow_implementations import TensorflowModel
 
 # Third-party extension
 with try_import('machinelearning') as _imports:
     import tensorflow as tf
+
+from .adapters.tensorflow_implementations import TensorflowModel
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,7 +22,6 @@ __status__ = 'Stable'
 
 class _PassthroughLayer(tf.keras.layers.Layer):
     def __init__(self, input_shape, units=1):
-        _imports.check()
         super().__init__(input_shape=input_shape)
         self.units = units
 
@@ -58,6 +58,7 @@ class PassthroughModel(TensorflowModel):
         dimensionality
             number of input parameters
         """
+        _imports.check()
         self.dimensionality = dimensionality
         super().__init__()
         self.model.add(_PassthroughLayer(input_shape=(dimensionality,)))
