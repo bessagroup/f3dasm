@@ -10,7 +10,7 @@ from typing import List
 import autograd.numpy as np
 
 # Locals
-from f3dasm.base.utils import _descale_vector, _scale_vector
+from ...base.utils import _descale_vector, _scale_vector
 
 #                                                          Authorship & Credits
 # =============================================================================
