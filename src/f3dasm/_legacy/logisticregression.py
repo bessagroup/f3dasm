@@ -8,7 +8,7 @@
 import numpy as np
 
 # Locals
-from .function import Function
+from ..functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================
