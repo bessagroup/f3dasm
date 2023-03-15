@@ -8,8 +8,8 @@ from typing import Tuple
 # Third-party core
 import autograd.numpy as np
 
-from ..._imports import try_import
 # Locals
+from ..._imports import try_import
 from ...base.evaluator import Evaluator
 from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
 from .._protocol import Function
@@ -31,6 +31,10 @@ __status__ = 'Stable'
 
 
 class TensorflowOptimizer(Optimizer):
+    @staticmethod
+    def _check_imports():
+        _imports.check()
+
     def init_parameters(self):
         self.args = {}
 

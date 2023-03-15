@@ -28,7 +28,7 @@ __status__ = 'Stable'
 
 
 @dataclass
-class PygmoProblem:
+class _PygmoProblem:
     """Convert a testproblem from the problemset to pygmo object
 
     Parameters
@@ -121,6 +121,11 @@ class PygmoAlgorithm(Optimizer):
     defaults
         Default hyperparameter arguments
     """
+
+    @staticmethod
+    def _check_imports():
+        _imports.check()
+
     @staticmethod
     def set_seed(seed: int):
         """Set the seed for pygmo
@@ -146,7 +151,7 @@ class PygmoAlgorithm(Optimizer):
         """
         # Construct the PygmoProblem
         prob = pg.problem(
-            PygmoProblem(
+            _PygmoProblem(
                 design=self.data.design,
                 func=function,
                 seed=self.seed,
