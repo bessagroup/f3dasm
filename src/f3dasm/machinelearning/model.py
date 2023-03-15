@@ -4,11 +4,6 @@
 # Standard
 from typing import Protocol
 
-# Third-party
-import tensorflow as tf
-
-# Locals
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'

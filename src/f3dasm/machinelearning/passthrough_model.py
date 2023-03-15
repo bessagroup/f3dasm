@@ -1,13 +1,13 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-
-# Third-party
-import tensorflow as tf
-
 # Local
+from .._imports import try_import
 from .adapters.tensorflow_implementations import TensorflowModel
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow as tf
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,8 +19,9 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class PassthroughLayer(tf.keras.layers.Layer):
+class _PassthroughLayer(tf.keras.layers.Layer):
     def __init__(self, input_shape, units=1):
+        _imports.check()
         super().__init__(input_shape=input_shape)
         self.units = units
 
@@ -59,7 +60,7 @@ class PassthroughModel(TensorflowModel):
         """
         self.dimensionality = dimensionality
         super().__init__()
-        self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
+        self.model.add(_PassthroughLayer(input_shape=(dimensionality,)))
 
     def get_config(self):
         config = super().get_config().copy()

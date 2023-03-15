@@ -1,12 +1,13 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import tensorflow as tf
-
 # Local
+from .._imports import try_import
 from .adapters.tensorflow_implementations import TensorflowModel
 
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow as tf
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -26,6 +27,7 @@ class LinearRegression(TensorflowModel):
         dimensionality
             number of neurons in the first layer
         """
+        _imports.check()
         self.dimensionality = dimensionality
         super().__init__()
         self.model.add(tf.keras.layers.Dense(1, input_shape=(dimensionality,)))

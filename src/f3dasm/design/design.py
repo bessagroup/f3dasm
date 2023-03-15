@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, field
 from typing import List, TypeVar
 
-# Third-party
+# Third-party core
 import numpy as np
 import pandas as pd
 

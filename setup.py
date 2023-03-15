@@ -33,10 +33,12 @@ REQUIREMENTS_DEV = list(chain(read_requirements('documentation'),
                               read_requirements('test'), read_requirements('build')))
 
 REQUIREMENTS_SAMPLING = read_requirements('sampling')
+REQUIREMENTS_MACHINELEARNING = read_requirements('machinelearning')
 
 install_requires = read_requirements('core')
 extra_requires = {"development": REQUIREMENTS_DEV,
-                  "sampling": REQUIREMENTS_SAMPLING}
+                  "sampling": REQUIREMENTS_SAMPLING,
+                  "machinelearning": REQUIREMENTS_MACHINELEARNING}
 
 setup(
     name="f3dasm",

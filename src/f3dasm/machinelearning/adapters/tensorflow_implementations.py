@@ -1,18 +1,21 @@
 #                                                                       Modules
 # =============================================================================
 
-
 # Standard
 from typing import List
 
-# Third-party
+# Third-party core
 import numpy as np
-import tensorflow as tf
 
+# Local
+from ..._imports import try_import
 from ...base.utils import (get_flat_array_from_list_of_arrays,
                            get_reshaped_array_from_list_of_arrays)
-# Local
 from ..model import Model
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow as tf
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,6 +29,7 @@ __status__ = 'Stable'
 
 class TensorflowModel(tf.keras.Model, Model):
     def __init__(self):
+        _imports.check()
         super().__init__()
         self.model = tf.keras.models.Sequential()
 

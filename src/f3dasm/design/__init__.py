@@ -4,7 +4,7 @@
 # Standard
 import json
 
-# Third-party
+# Third-party core
 import pandas as pd
 
 # Local
