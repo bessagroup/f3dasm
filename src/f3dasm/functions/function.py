@@ -106,7 +106,7 @@ class Function:
         return ((bounds[:, 0] <= x) & (x <= bounds[:, 1])).all()
 
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
-        """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
+        """Compute the gradient at a particular point in space. Gradient is computed by central differences
 
         Parameters
         ----------

@@ -95,7 +95,6 @@ def show_versions():
         'GPyOpt',
         'GPy',
         'autograd',
-        'numdifftools',
         'tensorflow',
         'pathos',
         'pytest',

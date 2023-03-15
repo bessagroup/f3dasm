@@ -5,13 +5,17 @@
 from dataclasses import dataclass
 from typing import Any, List, Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
-import pygmo as pg
 
 # Locals
+from ..._imports import try_import
 from .._protocol import DesignSpace, Function
 from ..optimizer import Optimizer
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import pygmo as pg
 
 #                                                          Authorship & Credits
 # =============================================================================

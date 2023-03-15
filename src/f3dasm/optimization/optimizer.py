@@ -7,7 +7,7 @@ from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional, Tuple
 
-# Third-party
+# Third-party core
 import numpy as np
 
 # Locals

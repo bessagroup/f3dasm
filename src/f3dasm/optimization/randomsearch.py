@@ -3,9 +3,9 @@
 
 # Standard
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import List, Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 
 # Locals

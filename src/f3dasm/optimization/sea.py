@@ -5,12 +5,15 @@
 from dataclasses import dataclass
 from typing import List
 
-# Third-party
-import pygmo as pg
-
 # Locals
-from .optimizer import OptimizerParameters
+from .._imports import try_import
 from .adapters.pygmo_implementations import PygmoAlgorithm
+from .optimizer import OptimizerParameters
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import pygmo as pg
+
 
 #                                                          Authorship & Credits
 # =============================================================================

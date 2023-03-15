@@ -5,13 +5,16 @@
 from dataclasses import dataclass
 from typing import Any, List
 
-# Third-party
-import GPy
-import GPyOpt
-
 # Locals
+from .._imports import try_import
 from ._protocol import Function
 from .optimizer import Optimizer, OptimizerParameters
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import GPy
+    import GPyOpt
+
 
 #                                                          Authorship & Credits
 # =============================================================================

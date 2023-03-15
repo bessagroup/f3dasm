@@ -5,15 +5,20 @@
 # Standard
 from typing import Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
-import tensorflow as tf
 
+from ..._imports import try_import
+# Locals
 from ...base.evaluator import Evaluator
 from ...base.utils import SimpelModel, convert_autograd_to_tensorflow
-# Locals
 from .._protocol import Function
 from ..optimizer import Optimizer
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import tensorflow as tf
+
 
 #                                                          Authorship & Credits
 # =============================================================================
