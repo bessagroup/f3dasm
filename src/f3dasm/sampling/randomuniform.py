@@ -1,13 +1,11 @@
 #                                                                       Modules
 # =============================================================================
 
-from .._imports import try_import
+# Third-party core
+import numpy as np
+
 # Locals
 from .sampler import Sampler
-
-# Third-party
-with try_import('sampling') as _imports:
-    import autograd.numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================

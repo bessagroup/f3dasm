@@ -3,12 +3,10 @@
 
 # Standard
 import json
-from abc import ABC
-from dataclasses import dataclass
-from typing import Any, List
+from typing import Any, List, Union
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
+import numpy as np
 import pandas as pd
 
 # Locals
@@ -25,8 +23,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-@dataclass
-class Sampler(ABC):
+class Sampler:
     """Interface for sampling method
 
     Parameters
@@ -37,12 +34,17 @@ class Sampler(ABC):
         seed for sampling
     """
 
-    design: DesignSpace
-    seed: Any or int = None
+    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None):
+        self.design = design
+        self.seed = seed
+        self.__post_init__()
 
     def __post_init__(self):
         if self.seed:
             np.random.seed(self.seed)
+
+    def __eq__(self, __o: object) -> bool:
+        return all((self.design == __o.design, self.seed == __o.seed))
 
     def to_json(self):
         args = {'design': self.design.to_json(),

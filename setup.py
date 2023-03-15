@@ -9,15 +9,10 @@ from setuptools import find_packages, setup
 # version
 
 here = Path(__file__).absolute().parent
-# version
 version_data = {}
 with open(here.joinpath("src", "f3dasm", "VERSION"), "r") as f:
     version = f.read()
 
-# version_data = {}
-# with open(here.joinpath("src", "f3dasm", "__init__.py"), "r") as f:
-#     exec(f.read(), version_data)
-# version = version_data.get("__version__", "0.0")
 
 # Get the long description from the README file
 with open("README.md", encoding="utf-8") as f:
@@ -37,9 +32,11 @@ def read_requirements(file: str):
 REQUIREMENTS_DEV = list(chain(read_requirements('documentation'),
                               read_requirements('test'), read_requirements('build')))
 
+REQUIREMENTS_SAMPLING = read_requirements('sampling')
 
 install_requires = read_requirements('core')
-extra_requires = {"development": REQUIREMENTS_DEV}
+extra_requires = {"development": REQUIREMENTS_DEV,
+                  "sampling": REQUIREMENTS_SAMPLING}
 
 setup(
     name="f3dasm",
@@ -49,7 +46,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/bessagroup/F3DASM",
     project_urls={
-        "Documentation": "https://bessagrextras_requireoup.github.io/F3DASM/",
+        "Documentation": "https://bessagroup.github.io/F3DASM/",
         "Wiki": "https://github.com/bessagroup/F3DASM/wiki",
     },
     author="Martin van der Schelling",

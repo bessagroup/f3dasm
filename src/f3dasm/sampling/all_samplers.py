@@ -20,11 +20,12 @@ __status__ = 'Stable'
 # List of available samplers
 SAMPLERS: List[Sampler] = []
 
+# Core samplers
+SAMPLERS.append(randomuniform.RandomUniform)
+
+# Extension samplers
 if latinhypercube._imports.is_successful():
     SAMPLERS.append(latinhypercube.LatinHypercube)
-
-if randomuniform._imports.is_successful():
-    SAMPLERS.append(randomuniform.RandomUniform)
 
 if sobolsequence._imports.is_successful():
     SAMPLERS.append(sobolsequence.SobolSequence)
