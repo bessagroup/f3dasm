@@ -1,9 +1,10 @@
 #                                                                       Modules
 # =============================================================================
 
+# Standard
 from typing import Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
@@ -11,7 +12,6 @@ import matplotlib.pyplot as plt
 # Locals
 from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 from ..design.experimentdata import ExperimentData
-# Standard
 from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
