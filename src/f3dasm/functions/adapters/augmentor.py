@@ -9,9 +9,6 @@ from typing import List
 # Third-party
 import autograd.numpy as np
 
-# Locals
-from ...base.utils import _descale_vector, _scale_vector
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -245,3 +242,13 @@ class FunctionAugmentor:
             y = augmentor.reverse_augment(y)
 
         return y
+
+
+def _scale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
+    """Scale a vector x to a given scale"""
+    return (scale[:, 1] - scale[:, 0]) * x + scale[:, 0]
+
+
+def _descale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
+    """Inverse of the _scale_vector() function"""
+    return (x - scale[:, 0]) / (scale[:, 1] - scale[:, 0])

@@ -7,11 +7,10 @@ from typing import Union
 # Third-party
 import numpy as np
 
-from ..base.utils import make_nd_continuous_design
-from ..design import DesignSpace
+# Locals
+from ..design import DesignSpace, make_nd_continuous_design
 from ..functions import Function, PyBenchFunction
 from ..sampling import RandomUniform
-# Locals
 from .learningdata import LearningData
 
 #                                                          Authorship & Credits

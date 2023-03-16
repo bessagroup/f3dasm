@@ -252,19 +252,6 @@ class DesignSpace:
                 for parameter in self.get_continuous_input_parameters()]
         )
 
-    # def get_bounds_pygmo(self) -> tuple:
-    #     """Box-constrained boundaries of the problem. Necessary for pygmo library
-
-    #     Returns
-    #     -------
-    #         box constraints
-    #     """
-    #     # Box-constrained boundaries of the problem. Necessary for pygmo library
-    #     return (
-    #         [parameter.lower_bound for parameter in self.get_continuous_input_parameters()],
-    #         [parameter.upper_bound for parameter in self.get_continuous_input_parameters()],
-    #     )
-
     def _get_names(self, type: TypeVar, space: List[Parameter]) -> List[str]:
         return [parameter.name for parameter in space if isinstance(parameter, type)]
 
@@ -290,3 +277,27 @@ class DesignSpace:
     def _all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
         return self._check_space_on_type(ContinuousParameter, self.output_space)
+
+
+def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> DesignSpace:
+    """Helper function to make an continuous design space with a single-objective continuous output
+
+    Parameters
+    ----------
+    bounds
+        lower and upper bounds of every dimension
+    dimensionality
+        number of dimensions
+
+    Returns
+    -------
+        continuous, single-objective designspace
+    """
+    input_space, output_space = [], []
+    for dim in range(dimensionality):
+        input_space.append(ContinuousParameter(
+            name=f"x{dim}", lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1]))
+
+    output_space.append(ContinuousParameter(name="y"))
+
+    return DesignSpace(input_space=input_space, output_space=output_space)

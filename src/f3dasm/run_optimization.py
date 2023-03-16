@@ -15,12 +15,10 @@ import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer  # , create_optimizer_from_json
+from f3dasm.optimization import Optimizer, create_optimizer_from_json
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
 # Locals
-from .base.utils import calculate_mean_std
-from .base.utils_optimizer import create_optimizer_from_json
 from .design import ExperimentData, create_experimentdata_from_json
 from .functions import create_function_from_json
 from .functions.function import Function
@@ -237,3 +235,11 @@ def run_multiple_realizations(
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
     )
+
+
+def calculate_mean_std(results):  # OptimizationResult
+    mean_y = pd.concat([d.get_output_data().cummin()
+                       for d in results.data], axis=1).mean(axis=1)
+    std_y = pd.concat([d.get_output_data().cummin()
+                      for d in results.data], axis=1).std(axis=1)
+    return mean_y, std_y

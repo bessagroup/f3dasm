@@ -10,7 +10,6 @@ import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 
 # Locals
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
 from ..design.experimentdata import ExperimentData
 from ..functions.adapters.augmentor import FunctionAugmentor
 
@@ -313,3 +312,14 @@ class Function:
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
+
+
+def _from_data_to_numpy_array_benchmarkfunction(
+    data: ExperimentData,
+) -> np.ndarray:
+    """Check if doe is in right format"""
+    if not data.design.is_single_objective_continuous():
+        raise TypeError(
+            "All inputs and outputs need to be continuous parameters and output single objective")
+
+    return data.get_input_data().to_numpy()

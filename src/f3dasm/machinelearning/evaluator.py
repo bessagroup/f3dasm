@@ -9,8 +9,9 @@ import autograd.numpy as np
 
 # Locals
 from .._imports import try_import
-from ..base.utils import get_flat_array_from_list_of_arrays
 from ..data.learningdata import LearningData
+from .adapters.tensorflow_implementations import \
+    get_flat_array_from_list_of_arrays
 from .loss_functions import MeanSquaredError
 from .model import Model
 from .passthrough_model import PassthroughModel

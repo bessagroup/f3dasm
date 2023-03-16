@@ -10,23 +10,26 @@ This is the initalizer of the F3DASM package
 
 # Standard
 import logging
-from pathlib import Path
 
-# Locals
+# Submodules
 from f3dasm import (data, functions, machinelearning, optimization, sampling,
                     simulation)
 
-from ._show_versions import show_versions
-from .base.utils import *
-from .design.design import *
-from .design.experimentdata import *
-from .design.parameter import *
-from .functions.function import *
+# Other utility functions
+from ._show_versions import __version__, show_versions
+# Design classes are accessible from the root
+from .design.design import DesignSpace, make_nd_continuous_design
+from .design.experimentdata import ExperimentData
+from .design.parameter import (CategoricalParameter, ConstantParameter,
+                               ConstraintInterface, ContinuousParameter,
+                               DiscreteParameter)
+# Base classes that are accessible from the root
+from .functions.function import Function
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
                                run_optimization)
 from .sampling.sampler import Sampler
-from .sampling.utils import *
+from .utils import find_class, write_json
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -34,10 +37,6 @@ __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 
-# version
-here = Path(__file__).absolute().parent
-with open(here.joinpath("VERSION"), "r") as f:
-    __version__ = f.read()
 
 # =============================================================================
 #
