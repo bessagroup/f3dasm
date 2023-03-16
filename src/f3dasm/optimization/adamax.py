@@ -16,7 +16,7 @@ from .optimizer import OptimizerParameters
 # Third-party extension
 with try_import('optimization') as _imports:
     import tensorflow as tf
-    
+
 
 #                                                          Authorship & Credits
 # =============================================================================
