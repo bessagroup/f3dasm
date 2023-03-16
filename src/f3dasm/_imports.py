@@ -1,6 +1,24 @@
+"""Classes that manage importing and exceptions of submodules with extension.
+This code was adapted from Optuna (https://github.com/optuna/optuna/blob/master/optuna/_imports.py)
+and modified to fit the specific case of f3dasm.
+"""
+
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import importlib
 from types import ModuleType, TracebackType
 from typing import Any, Optional, Tuple, Type
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class _DeferredImportExceptionContextManager:
