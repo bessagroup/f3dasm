@@ -37,8 +37,8 @@ if TYPE_CHECKING:
     from .sgd import SGD, SGD_Parameters
     from .simulatedannealing import (SimulatedAnnealing,
                                      SimulatedAnnealing_Parameters)
-    from .utils import (create_optimizer_from_dict, create_optimizer_from_json,
-                        find_optimizer)
+    from .utils_optimizer import (create_optimizer_from_dict,
+                                  create_optimizer_from_json, find_optimizer)
     from .xnes import XNES, XNES_Parameters
 
 #                                                          Authorship & Credits
@@ -51,9 +51,8 @@ __status__ = 'Stable'
 # =============================================================================
 
 _import_structure: dict = {
-    "utils": ["find_optimizer", "create_optimizer_from_json", "create_optimizer_from_dict"],
+    "utils_optimizer": ["create_optimizer_from_json", "create_optimizer_from_dict", "find_optimizer"],
     "optimizer": ["Optimizer"],
-    "all_optimizers": ["OPTIMIZERS"],
     "adam": ["Adam", "Adam_Parameters"],
     "adamax": ["Adamax", "Adamax_Parameters"],
     "bayesianoptimization": ["BayesianOptimization", "BayesianOptimization_Parameters"],
@@ -72,7 +71,8 @@ _import_structure: dict = {
     "sga": ["SGA", "SGA_Parameters"],
     "sgd": ["SGD", "SGD_Parameters"],
     "simulatedannealing": ["SimulatedAnnealing", "SimulatedAnnealing_Parameters"],
-    "xnes": ["XNES", "XNES_Parameters"]
+    "xnes": ["XNES", "XNES_Parameters"],
+    "all_optimizers": ["OPTIMIZERS"],
 }
 
 if not TYPE_CHECKING:

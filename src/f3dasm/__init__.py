@@ -13,16 +13,18 @@ import logging
 from pathlib import Path
 
 # Locals
-from . import (data, functions, machinelearning, optimization, sampling,
-               simulation)
+from f3dasm import (data, functions, machinelearning, optimization, sampling,
+                    simulation)
+
 from ._show_versions import show_versions
 from .base.utils import *
 from .design.design import *
 from .design.experimentdata import *
 from .design.parameter import *
 from .functions.function import *
-from .optimization.optimizer import *
-from .run_optimization import *
+from .optimization.optimizer import Optimizer
+from .run_optimization import (OptimizationResult, run_multiple_realizations,
+                               run_optimization)
 from .sampling.sampler import Sampler
 from .sampling.utils import *
 
