@@ -4,12 +4,9 @@ from typing import List
 
 from setuptools import find_packages, setup
 
-# # workround for enabling editable user pip installs
-# site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
+here = Path(__file__).absolute().parent
 
 # version
-
-here = Path(__file__).absolute().parent
 version_data = {}
 with open(here.joinpath("src", "f3dasm", "VERSION"), "r") as f:
     version = f.read()
@@ -77,8 +74,8 @@ setup(
         "Operating System :: MacOS",
     ],
     extras_require=extras_require,
-    keywords="recommendations recommendation recommenders recommender system engine "
-    "machine learning python spark gpu",
+    keywords="data-driven materials framework"
+    "machine learning",
     install_requires=install_requires,
     package_dir={'': "src"},
     python_requires=">=3.7, <3.11",
