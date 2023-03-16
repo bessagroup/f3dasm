@@ -7,8 +7,9 @@ from .._imports import try_import
 # Third-party extension
 with try_import('machinelearning') as _imports:
     import tensorflow as tf
+    from keras.layers import Layer
 
-from .adapters.tensorflow_implementations import TensorflowModel
+    from .adapters.tensorflow_implementations import TensorflowModel
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,8 +20,12 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+if not _imports.is_successful():
+    Layer = object  # NOQA
+    TensorflowModel = object # NOQA
 
-class _PassthroughLayer(tf.keras.layers.Layer):
+
+class _PassthroughLayer(Layer):
     def __init__(self, input_shape, units=1):
         super().__init__(input_shape=input_shape)
         self.units = units

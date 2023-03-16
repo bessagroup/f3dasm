@@ -28,6 +28,9 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+if not _imports.is_successful():
+    tf_Model = object  # NOQA
+
 
 class TensorflowModel(tf_Model, Model):
 

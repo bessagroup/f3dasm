@@ -3,11 +3,14 @@
 
 # Local
 from .._imports import try_import
-from .adapters.tensorflow_implementations import TensorflowModel
 
 # Third-party extension
 with try_import('machinelearning') as _imports:
+    import tensorflow
     import tensorflow as tf
+
+    from .adapters.tensorflow_implementations import TensorflowModel
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -16,6 +19,9 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+if not _imports.is_successful():
+    TensorflowModel = object  # NOQA
 
 
 class LinearRegression(TensorflowModel):
