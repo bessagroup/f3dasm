@@ -19,6 +19,7 @@ from ..optimizer import Optimizer
 # Third-party extension
 with try_import('optimization') as _imports:
     import tensorflow as tf
+    from keras import Model
 
 
 #                                                          Authorship & Credits
@@ -29,6 +30,9 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+if not _imports.is_successful():
+    Model = object  # NOQA
 
 
 class TensorflowOptimizer(Optimizer):
@@ -101,7 +105,7 @@ def _convert_autograd_to_tensorflow(func: Callable):
     return wrapper
 
 
-class _Model(tf.keras.Model):
+class _Model(Model):
     def __init__(self, seed=None, args=None):
         super().__init__()
         self.seed = seed
