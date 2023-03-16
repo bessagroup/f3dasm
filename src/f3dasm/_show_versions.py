@@ -90,16 +90,9 @@ def show_versions():
         'scipy',
         'pandas',
         'matplotlib',
-        'SALib',
-        'hypothesis',
-        'GPyOpt',
-        'GPy',
-        'autograd',
-        'tensorflow',
         'pathos',
-        'pytest',
-        'hypothesis',
-        'pygmo',
+        'hydra',
+        'autograd',
     ]
 
     sys_info = _get_sys_info()
