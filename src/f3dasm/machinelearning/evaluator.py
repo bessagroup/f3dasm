@@ -4,15 +4,22 @@
 # Standard
 from typing import Callable, Tuple, Union
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
-import tensorflow as tf
 
 # Locals
+from .._imports import try_import
 from ..data.learningdata import LearningData
-from ..machinelearning.model import Model
-from ..machinelearning.passthrough_model import PassthroughModel
-from .utils import get_flat_array_from_list_of_arrays
+from .adapters.tensorflow_implementations import \
+    get_flat_array_from_list_of_arrays
+from .loss_functions import MeanSquaredError
+from .model import Model
+from .passthrough_model import PassthroughModel
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow as tf
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,24 +29,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-def MeanSquaredError(Y_pred, Y_true):
-    """MSE loss
-
-    Parameters
-    ----------
-    Y_pred
-        Predicted labels
-    Y_true
-        True labels
-
-    Returns
-    -------
-        MSE loss
-    """
-    fn = tf.keras.losses.MeanSquaredError()
-    return fn(Y_true, Y_pred)
 
 
 class Evaluator():
@@ -56,6 +45,7 @@ class Evaluator():
         learning_data, optional
             Data to go through the model to calculate the predicted labesl, by default None
         """
+        _imports.check()
         self.loss_function = loss_function
         self.model = model
         self.learning_data = learning_data

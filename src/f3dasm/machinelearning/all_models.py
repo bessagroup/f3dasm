@@ -1,14 +1,12 @@
-"""
-Protocol classes from types outside the optimization submodule
-"""
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Protocol
+from typing import List
 
-# Third-party core
-import numpy as np
+# Locals
+from . import linear_regression, passthrough_model
+from .model import Model
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,21 +17,14 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+# List of available models
+MODELS: List[Model] = []
 
-class DesignSpace(Protocol):
-    """Protocol class for the designspace"""
+# Core models
 
-    def get_continuous_input_parameters(self):  # List[ContinuousParameter]
-        ...
+# Extension samplers
+if passthrough_model._imports.is_successful():
+    MODELS.append(passthrough_model.PassthroughModel)
 
-
-class Function(Protocol):
-    """Protocol class for the function"""
-
-    def __call__(self) -> np.ndarray:
-        """Evaluate the lossfunction"""
-        ...
-
-    def dfdx_legacy(x: np.ndarray) -> np.ndarray:
-        """Retrieve the gradient. Legacy code!"""
-        ...
+if linear_regression._imports.is_successful():
+    MODELS.append(linear_regression.LinearRegression)

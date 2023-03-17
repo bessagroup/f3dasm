@@ -1,14 +1,14 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import json
 from copy import copy
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional, Tuple
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
+import numpy as np
 
 # Locals
 from ..design.experimentdata import ExperimentData
@@ -70,6 +70,7 @@ class Optimizer:
     parameter: OptimizerParameters = field(init=False)
 
     def __post_init__(self):
+        self._check_imports()
         if self.seed:
             self.set_seed(self.seed)
 
@@ -87,6 +88,10 @@ class Optimizer:
             seed for the random number generator
         """
         pass
+
+    @staticmethod
+    def _check_imports():
+        ...
 
     def to_json(self) -> str:  # Tuple[dict, str]:
         """Returns the information to recreate this object

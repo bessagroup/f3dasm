@@ -1,14 +1,8 @@
-"""
-Protocol classes from types outside the optimization submodule
-"""
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Protocol
-
-# Third-party core
-import numpy as np
+import json
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -20,20 +14,33 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class DesignSpace(Protocol):
-    """Protocol class for the designspace"""
+def find_class(module, query: str):
+    """Find a class from a string
 
-    def get_continuous_input_parameters(self):  # List[ContinuousParameter]
-        ...
+    Parameters
+    ----------
+    module
+        (sub)module to be searching
+    query
+        string to search for
+
+    Returns
+    -------
+        class
+    """
+    return getattr(module, query)
 
 
-class Function(Protocol):
-    """Protocol class for the function"""
+def write_json(name: str, json_string: str):
+    """Write a JSON-strint to a file
 
-    def __call__(self) -> np.ndarray:
-        """Evaluate the lossfunction"""
-        ...
+    Parameters
+    ----------
+    name
+        name of file toe write without file extension .json
+    json_string
+        JSON string to store
+    """
 
-    def dfdx_legacy(x: np.ndarray) -> np.ndarray:
-        """Retrieve the gradient. Legacy code!"""
-        ...
+    with open(f"{name}.json", "w", encoding='utf-8') as f:
+        json.dump(json_string, f, ensure_ascii=False)

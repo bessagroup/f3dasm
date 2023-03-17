@@ -6,8 +6,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, List
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
+import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -1,10 +1,11 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party core
-import numpy as np
+# Standard
+from typing import List
 
 # Locals
+from . import latinhypercube, randomuniform, sobolsequence
 from .sampler import Sampler
 
 #                                                          Authorship & Credits
@@ -16,27 +17,15 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+# List of available samplers
+SAMPLERS: List[Sampler] = []
 
-class RandomUniform(Sampler):
-    """Sampling via random uniform sampling"""
+# Core samplers
+SAMPLERS.append(randomuniform.RandomUniform)
 
-    def sample_continuous(self, numsamples: int) -> np.ndarray:
-        """Sample from continuous space
+# Extension samplers
+if latinhypercube._imports.is_successful():
+    SAMPLERS.append(latinhypercube.LatinHypercube)
 
-        Parameters
-        ----------
-        numsamples
-            number of samples
-
-        Returns
-        -------
-            samples
-        """
-        continuous = self.design.get_continuous_input_parameters()
-        dimensions = len(continuous)
-
-        samples = np.random.uniform(size=(numsamples, dimensions))
-
-        # stretch samples
-        samples = self._stretch_samples(samples)
-        return samples
+if sobolsequence._imports.is_successful():
+    SAMPLERS.append(sobolsequence.SobolSequence)
