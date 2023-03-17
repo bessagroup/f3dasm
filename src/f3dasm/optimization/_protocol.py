@@ -7,7 +7,7 @@ Protocol classes from types outside the optimization submodule
 # Standard
 from typing import Protocol
 
-# Third-party
+# Third-party core
 import numpy as np
 
 #                                                          Authorship & Credits

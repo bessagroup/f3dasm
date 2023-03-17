@@ -3,6 +3,7 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
 # Locals
 from .optimizer import OptimizerParameters
@@ -32,3 +33,6 @@ class NelderMead(SciPyMinimizeOptimizer):
 
     method: str = "Nelder-Mead"
     parameter: NelderMead_Parameters = NelderMead_Parameters()
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Global', 'First-Order', 'Single-Solution']

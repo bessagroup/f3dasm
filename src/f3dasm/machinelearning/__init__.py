@@ -2,12 +2,18 @@
 # =============================================================================
 
 # Standard
-import json
+import sys
+from itertools import chain
+from os import path
+from typing import TYPE_CHECKING
 
 # Local
-from .linear_regression import LinearRegression
-from .model import MeanSquaredError, Model
-from .passthrough_model import PassthroughModel
+from .._imports import _IntegrationModule
+
+if TYPE_CHECKING:
+    from .linear_regression import LinearRegression
+    from .model import Model
+    from .passthrough_model import PassthroughModel
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -18,56 +24,21 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-MODELS = [LinearRegression,
-          ]
+_import_structure: dict = {
+    "utils": ["find_model", "create_model_from_json", "create_model_from_dict", "MeanSquaredError"],
+    "model": ["Model"],
+    "linear_regression": ["LinearRegression"],
+    "passthrough_model": ["PassthroughModel"],
+    "evaluator": ["Evaluator"],
+    "all_models": ["MODELS"],
+    "loss_functions": ["MeanSquaredError"],
+}
 
+if not TYPE_CHECKING:
+    class _LocalIntegrationModule(_IntegrationModule):
+        __file__ = globals()["__file__"]
+        __path__ = [path.dirname(__file__)]
+        __all__ = list(chain.from_iterable(_import_structure.values()))
+        _import_structure = _import_structure
 
-def find_model(query: str) -> Model:
-    """Find a machine learning model from the f3dasm.machinelearning submodule
-
-    Parameters
-    ----------
-    query
-        string representation of the requested model
-
-    Returns
-    -------
-        class of the requested model
-    """
-    try:
-        return list(filter(lambda model: model.__name__ == query, MODELS))[0]
-    except IndexError:
-        return ValueError(f'Model {query} not found!')
-
-
-def create_model_from_json(json_string: str):
-    """Create a Model object from a json string
-
-    Parameters
-    ----------
-    json_string
-        json string representation of the information to construct the Model
-
-    Returns
-    -------
-        Requested Model object
-    """
-    function_dict, name = json.loads(json_string)
-    return create_model_from_dict(function_dict, name)
-
-
-def create_model_from_dict(model_dict: dict, name: str) -> Model:
-    """Create a Model object from a dictionary
-
-    Parameters
-    ----------
-    model_dict
-        dictionary representation of the information to construct the Model
-    name
-        name of the class
-
-    Returns
-    -------
-        Requested Model object
-    """
-    return find_model(name)(**model_dict)
+    sys.modules[__name__] = _LocalIntegrationModule(__name__)

@@ -2,17 +2,16 @@
 # =============================================================================
 
 # Standard
-from ..functions.adapters.augmentor import FunctionAugmentor
-from ..design.experimentdata import ExperimentData
 from typing import Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 
 # Locals
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..design.experimentdata import ExperimentData
+from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -106,7 +105,7 @@ class Function:
         return ((bounds[:, 0] <= x) & (x <= bounds[:, 1])).all()
 
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
-        """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
+        """Compute the gradient at a particular point in space. Gradient is computed by central differences
 
         Parameters
         ----------
@@ -313,3 +312,14 @@ class Function:
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
+
+
+def _from_data_to_numpy_array_benchmarkfunction(
+    data: ExperimentData,
+) -> np.ndarray:
+    """Check if doe is in right format"""
+    if not data.design.is_single_objective_continuous():
+        raise TypeError(
+            "All inputs and outputs need to be continuous parameters and output single objective")
+
+    return data.get_input_data().to_numpy()
