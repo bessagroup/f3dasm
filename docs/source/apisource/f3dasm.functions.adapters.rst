@@ -20,14 +20,6 @@ f3dasm.functions.adapters.pybenchfunction module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.functions.adapters.torch\_functions module
--------------------------------------------------
-
-.. automodule:: f3dasm.functions.adapters.torch_functions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

@@ -23,6 +23,7 @@ Then we can evoke sampling by calling the :meth:`~f3dasm.sampling.sampler.Sample
   
 This will return a :class:`~f3dasm.design.experimentdata.ExperimentData` object filled with the requested samples.
 
+.. _implemented samplers:
 
 Implemented samplers
 --------------------
@@ -35,7 +36,6 @@ Name                      Docs of the Python class                              
 Random Uniform sampling  :class:`f3dasm.sampling.randomuniform.RandomUniform`                   `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
 Latin Hypercube sampling :class:`f3dasm.sampling.latinhypercube.LatinHypercube`                 `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
 Sobol Sequence sampling  :class:`f3dasm.sampling.sobolsequence.SobolSequence`                   `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
-
 ======================== ====================================================================== ===========================================================================================================
 
 Implement your own sampler

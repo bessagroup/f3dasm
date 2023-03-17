@@ -12,8 +12,8 @@ F3DASM
    :hidden:
    :glob:
        
-   gettingstarted
-
+   general/gettingstarted
+   general/overview
 
 .. toctree::
    :maxdepth: 2
@@ -21,8 +21,11 @@ F3DASM
    :hidden:
    :glob:
 
-   classes/design/*
-   classes/sampling/*
+   classes/design/parameters
+   classes/design/design
+   classes/design/experimentdata
+   classes/sampling/sampling
+   classes/design/apidoc
 
 .. toctree::
    :maxdepth: 2
@@ -30,7 +33,8 @@ F3DASM
    :hidden:
    :glob:
 
-   classes/simulation/*
+   classes/simulation/simulation
+   classes/simulation/apidoc
 
 .. toctree::
    :maxdepth: 2
@@ -38,7 +42,10 @@ F3DASM
    :hidden:
    :glob:
 
-   classes/machinelearning/*
+
+   classes/machinelearning/models
+   classes/machinelearning/learningdata
+   classes/machinelearning/apidoc
 
 .. toctree::
    :maxdepth: 2
@@ -46,7 +53,18 @@ F3DASM
    :hidden:
    :glob:
 
-   classes/optimization/*
+   classes/optimization/optimizers
+   classes/optimization/apidoc
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Miscellaneous
+   :hidden:
+   :glob:
+
+   classes/miscellaneous/functions
+   classes/miscellaneous/augmentor
+   classes/miscellaneous/utilities
 
 .. include:: readme.rst
 

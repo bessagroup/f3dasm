@@ -34,7 +34,7 @@ extensions = [
     "sphinx.ext.napoleon",
     # "sphinx_autodoc_defaultargs",
     "sphinx_autodoc_typehints",
-    # "sphinxcontrib.bibtex",
+    "sphinxcontrib.bibtex",
     "sphinx.ext.intersphinx",
 ]
 

@@ -4,18 +4,10 @@ f3dasm.base package
 Submodules
 ----------
 
-f3dasm.base.function module
----------------------------
+f3dasm.base.evaluator module
+----------------------------
 
-.. automodule:: f3dasm.base.function
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.base.learningdata module
--------------------------------
-
-.. automodule:: f3dasm.base.learningdata
+.. automodule:: f3dasm.base.evaluator
    :members:
    :undoc-members:
    :show-inheritance:
