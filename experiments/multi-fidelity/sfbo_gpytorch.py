@@ -43,6 +43,7 @@ number_of_samples = 15
 fun = fun_class(
     dimensionality=dim,
     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    offset=False,
     )
 
 parameter_DesignSpace = f3dasm.make_nd_continuous_design(

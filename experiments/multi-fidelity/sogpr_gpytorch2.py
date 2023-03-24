@@ -43,6 +43,7 @@ class Forrester(f3dasm.functions.Function):
 fun = fun_class(
     dimensionality=dim,
     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    offset=False,
     )
 
 parameter_DesignSpace: f3dasm.DesignSpace = f3dasm.make_nd_continuous_design(
@@ -118,19 +119,19 @@ with torch.no_grad(), gpytorch.settings.fast_pred_var():
     test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
     
     if dim == 1:
-        test_x = torch.linspace(0, 1, n_test)
+        test_x = torch.linspace(0, 1, n_test)[:, None]
     else:
         test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
     
     # observed_pred = surrogate.model.likelihood(surrogate.model(test_x))
     observed_pred = surrogate.predict(test_x)
-    exact_y = fun(test_x.numpy()[:, None])
+    exact_y = fun(test_x.numpy())
 
 ###
 
 if dim == 1:
     surrogate.plot_gpr(
-        test_x=test_x, 
+        test_x=test_x.flatten(), 
         scaler=scaler, 
         exact_y=exact_y, 
         observed_pred=observed_pred,

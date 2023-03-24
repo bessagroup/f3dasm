@@ -15,8 +15,8 @@ from f3dasm.design import ExperimentData
 
 ###
 
-dim = 1
-seed = 123
+dim = 3
+seed = None
 noisy_data_bool = 1
 # numsamples = 10
 # fun_class = f3dasm.functions.Sphere
@@ -29,9 +29,9 @@ training_iter = 150
 # plot_mll = 1
 # plot_gpr = 1
 # train_surrogate = True
-n_test = 500
+n_test = 1500
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
-train_data_supplied = 1
+train_data_supplied = 0
 
 mean_module_list = torch.nn.ModuleList([
     gpytorch.means.ZeroMean(),
@@ -92,13 +92,14 @@ class Forrester_lf(f3dasm.functions.Function):
 base_fun = f3dasm.functions.AlpineN2(
     dimensionality=dim,
     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    offset=False,
     )
 
 # base_fun = Forrester(dimensionality=1)
 
 fids = [0.5, 1.0]
 costs = [0.5, 1.0]
-samp_nos = [11, 4]
+samp_nos = [200, 25]
 
 funs = []
 mf_design_space = []
@@ -107,15 +108,15 @@ mf_train_data = []
 
 for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
-    # fun = AugmentedFunction(
-    #         base_fun=base_fun,
-    #         fid=fid,
-    #         )
+    fun = AugmentedFunction(
+            base_fun=base_fun,
+            fid=fid,
+            )
 
-    if fid_no == 0:
-        fun = Forrester_lf()
-    else:
-        fun = Forrester()
+    # if fid_no == 0:
+    #     fun = Forrester_lf()
+    # else:
+    #     fun = Forrester()
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -179,7 +180,7 @@ param = f3dasm.machinelearning.gpr.Cokgj_Parameters(
     )
 
 regressor = f3dasm.machinelearning.gpr.Cokgj(
-    mf_train_data=mf_train_data, 
+    train_data=mf_train_data, 
     design=train_data.design,
     parameter=param,
 )
