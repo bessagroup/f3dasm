@@ -10,7 +10,7 @@ for fun in fun_list:
     for dim in range(1, 4):
         df_trial = []
         for trial in range(10):
-            path = 'notebooks/tutorials/multifidelity_benchmark/outputs/Sogpr/2023-03-09/15-49-14/dim_%d/trial_%d/%s.csv' % (dim, trial, fun)
+            path = 'notebooks/tutorials/multifidelity_benchmark/outputs/Sogpr/2023-03-15/15-37-06/dim_%d/trial_%d/%s.csv' % (dim, trial, fun)
             df = pd.read_csv(path)
             df_trial.append(df['2'][3])
         print(np.mean(df_trial))
