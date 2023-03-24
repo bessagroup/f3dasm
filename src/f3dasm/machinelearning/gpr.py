@@ -315,13 +315,13 @@ class Cokgj(TorchGPRegressor):
         # regressor=CoKrigingGP,
         regressor=CokgjModel,
         parameter=Cokgj_Parameters(),
-        mf_train_data=None,
+        train_data=None,
         design=None,
     ):
         super().__init__(
             parameter=parameter,
             regressor=regressor,
-            train_data=mf_train_data,
+            train_data=train_data,
             design=design,
         )
     
