@@ -936,7 +936,6 @@ class DixonPrice(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = (X[0] - 1) ** 2 + np.sum(
             [(i + 1) * (2 * X[i] ** 2 - X[i - 1]) ** 2 for i in range(1, d)])
@@ -1195,7 +1194,6 @@ class Griewank(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = 1 + np.sum(X**2 / 4000) - np.prod(np.cos(X / np.sqrt(i)))
@@ -1234,7 +1232,6 @@ class HappyCat(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         norm = np.sum(X**2)
         res = ((norm - d) ** 2) ** self.alpha + \
@@ -1483,7 +1480,6 @@ class Levy(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         z = 1 + (X - 1) / 4
         res = (
             np.sin(np.pi * z[0]) ** 2 + sum(
@@ -1640,7 +1636,6 @@ class Michalewicz(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = -np.sum(np.sin(X) * np.sin(i * X**2 / np.pi) ** (2 * self.m))
@@ -1715,7 +1710,6 @@ class PermZeroDBeta(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = np.sum(
             [
@@ -1759,7 +1753,6 @@ class PermDBeta(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         j = np.arange(1, d + 1)
         res = np.sum([np.sum((j**i + self.beta) * (
@@ -1839,7 +1832,6 @@ class Qing(PyBenchFunction):
         return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         X1 = np.power(X, 2)
 
@@ -1916,7 +1908,6 @@ class Rastrigin(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = 10 * d + np.sum(X**2 - 10 * np.cos(2 * np.pi * X))
         return res
@@ -1956,7 +1947,6 @@ class Ridge(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = X[0] + self.beta * np.sum(X[1:] ** 2) ** self.alpha
         return res
@@ -2034,7 +2024,6 @@ class RotatedHyperEllipsoid(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = np.sum([np.sum(X[: i + 1] ** 2) for i in range(d)])
         return res
@@ -2262,7 +2251,6 @@ class Schwefel(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = 418.9829 * d - np.sum(X * np.sin(np.sqrt(np.abs(X))))
         return res
@@ -2510,7 +2498,6 @@ class Shubert(PyBenchFunction):
         return (None, None)
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         res = np.prod(
             [np.sum([(j + 1) * np.cos((j + 1) * X[i] + j) for j in range(1, 5 + 1)]
@@ -2705,7 +2692,6 @@ class SumSquares(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(i * X**2)
@@ -2779,7 +2765,6 @@ class Trid(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X): #TODO: #78 correct formula should be np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1]). Remove unused d and i variables.
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
@@ -2853,7 +2838,6 @@ class XinSheYang(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         rand = np.random.random(d)
@@ -3006,7 +2990,6 @@ class Zakharov(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        X = X.flatten()
         d = X.shape[0]
         i = np.arange(1, d + 1)
         res = np.sum(X**2) + np.sum(0.5 * i * X) ** 2 + \
