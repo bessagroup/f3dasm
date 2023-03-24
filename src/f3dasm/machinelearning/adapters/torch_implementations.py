@@ -83,6 +83,7 @@ class TorchGPSurrogate(Surrogate):
         observed_pred: gpytorch.distributions.multivariate_normal.MultivariateNormal,
         train_x=None,
         train_y=None,
+        savefig=False,
         ):
 
         # input_array = self._data_processor(test_input_data=test_input_data)
@@ -113,6 +114,8 @@ class TorchGPSurrogate(Surrogate):
             else:
                 ax.legend(['Ground truth', 'Mean', 'Confidence'])
             plt.tight_layout()
+            if savefig:
+                plt.savefig('regression result.png')
 
     def plot_mll(self, train_x, train_y_scaled):
 
