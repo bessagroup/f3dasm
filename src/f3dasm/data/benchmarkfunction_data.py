@@ -8,7 +8,7 @@ from typing import Union
 import numpy as np
 
 # Locals
-from ..design import DesignSpace, make_nd_continuous_design
+from ..design import DesignSpace, ExperimentData, make_nd_continuous_design
 from ..functions import Function, PyBenchFunction
 from ..sampling import RandomUniform
 from .learningdata import LearningData
@@ -26,6 +26,23 @@ __status__ = 'Stable'
 class BenchmarkFunctionData(LearningData):
     def __init__(self, n: int, dimensionality: int, bounds: np.ndarray,
                  function_class: PyBenchFunction, noise: Union[None, int] = None, seed: Union[None, int] = None):
+        """Create noisy sampled points of a benchmarkfunction
+
+        Parameters
+        ----------
+        n
+            number of points
+        dimensionality
+            number of dimensions
+        bounds
+            box-constraint boundaries of the sampling points
+        function_class
+            PyBench function
+        noise, optional
+            standard deviation of the noise, by default None
+        seed, optional
+            seed for the random number generator, by default None
+        """
 
         self.n = n
         self.dimensionality = dimensionality
@@ -41,9 +58,9 @@ class BenchmarkFunctionData(LearningData):
                               scale_bounds=self.bounds, noise=self.noise, seed=self.seed, offset=False)
 
     def _create_datapoints(self):
-        design = make_nd_continuous_design(bounds=self.bounds, dimensionality=self.dimensionality)
+        design: DesignSpace = make_nd_continuous_design(bounds=self.bounds, dimensionality=self.dimensionality)
         sampler = RandomUniform(design=design)
-        data = sampler.get_samples(numsamples=self.n)
+        data: ExperimentData = sampler.get_samples(numsamples=self.n)
 
         data.add_output(output=self.function(data))
 

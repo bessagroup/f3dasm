@@ -30,7 +30,7 @@ class Parameter:
     """
 
     name: str
-    _type: str = field(init=False)
+    _type: str = field(init=False, default="object")
 
     @classmethod
     def get_name(self) -> str:

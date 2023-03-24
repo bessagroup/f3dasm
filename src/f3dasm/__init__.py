@@ -26,8 +26,9 @@ from .design.parameter import (CategoricalParameter, ConstantParameter,
 # Base classes that are accessible from the root
 from .functions.function import Function
 from .optimization.optimizer import Optimizer
-from .run_optimization import (OptimizationResult, run_multiple_realizations,
-                               run_optimization)
+from .run_optimization import (OptimizationResult,
+                               create_optimizationresult_from_json,
+                               run_multiple_realizations, run_optimization)
 from .sampling.sampler import Sampler
 from .utils import find_class, write_json
 

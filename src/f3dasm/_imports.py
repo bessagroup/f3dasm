@@ -14,7 +14,7 @@ from typing import Any, Optional, Tuple, Type, Union
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
+__credits__ = ['Martin van der Schelling', 'Optuna']
 __status__ = 'Stable'
 # =============================================================================
 #
