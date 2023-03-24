@@ -128,3 +128,5 @@ res = f3dasm.run_multi_fidelity_optimization(
 print(res[0].data)
 print()
 print(res[1].data)
+
+plt.show()
