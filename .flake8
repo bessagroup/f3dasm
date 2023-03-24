@@ -19,7 +19,7 @@ extend-exclude =
 	tests
 	.git
 	src/f3dasm/simulation/abaqus/ExampleFlower
-	experiments
+	studies
 
 # <<< UPDATE ACCORDING WITH YOUR PYTHON PROJECT
 
