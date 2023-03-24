@@ -52,7 +52,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
         torch.manual_seed(seed=seed)
 
         fun_class: f3dasm.Function = f3dasm.find_class(f3dasm.functions, name) 
-        fun = fun_class(dimensionality=config.design.dimensionality, scale_bounds=bounds, seed=seed)
+        fun = fun_class(dimensionality=config.design.dimensionality, scale_bounds=bounds, seed=seed, offset=False)
 
         ## Generate training samples with the sampler
         train_data: f3dasm.ExperimentData = sampler.get_samples(numsamples=config.sampler.number_of_samples)
@@ -94,7 +94,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     return options_list
 
-@hydra.main(config_path=".", config_name="config")
+@hydra.main(config_path=".", config_name="default")
 def main(cfg: Config):
     options_list = convert_config_to_input(config=cfg)
 
@@ -117,7 +117,7 @@ def main(cfg: Config):
             # test_x = torch.linspace(0, 1, n_test)
             
             observed_pred = surrogate.predict(test_x)
-            exact_y = options['function'](test_x.numpy()[:, None])
+            exact_y = options['function'](test_x.numpy())
         
         ## Calculate and store metrics
         metrics_df = surrogate.gp_metrics(
