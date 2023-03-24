@@ -1025,40 +1025,40 @@ class EggHolder(PyBenchFunction):
         return res
 
 
-class Exponential(PyBenchFunction):
-    """.. image:: ../img/functions/Exponential.png"""
+# class Exponential(PyBenchFunction):
+#     """.. image:: ../img/functions/Exponential.png"""
 
-    name = "Exponential"
-    continuous = True
-    convex = True
-    separable = True
-    differentiable = True
-    multimodal = False
-    randomized_term = False
-    parametric = False
+#     name = "Exponential"
+#     continuous = True
+#     convex = True
+#     separable = True
+#     differentiable = True
+#     multimodal = False
+#     randomized_term = False
+#     parametric = False
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return (d is None) or (d > 0)
 
-    def _set_parameters(self):
-        d = self.dimensionality
-        self.input_domain = np.array([[-1, 1] for _ in range(d)])
+#     def _set_parameters(self):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[-1, 1] for _ in range(d)])
 
-    def get_param(self):
-        return {}
+#     def get_param(self):
+#         return {}
 
-    def get_global_minimum(self, d):
-        X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = np.array([0 for _ in range(d)])
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        d = X.shape[0]
-        res = -np.exp(-0.5 * np.sum(X**2))
-        return res
+#     def evaluate(self, X):
+#         d = X.shape[0]
+#         res = -np.exp(-0.5 * np.sum(X**2))
+#         return res
 
 
 class GoldsteinPrice(PyBenchFunction):
@@ -2264,42 +2264,42 @@ class Schwefel2_21(PyBenchFunction):
         return res
 
 
-class Schwefel2_22(PyBenchFunction):
-    """.. image:: ../img/functions/Schwefel2_22.png"""
+# class Schwefel2_22(PyBenchFunction):
+#     """.. image:: ../img/functions/Schwefel2_22.png"""
 
-    name = "Schwefel 2.22"
-    continuous = True
-    convex = True
-    separable = True
-    differentiable = False
-    multimodal = False
-    randomized_term = False
-    parametric = False
+#     name = "Schwefel 2.22"
+#     continuous = True
+#     convex = True
+#     separable = True
+#     differentiable = False
+#     multimodal = False
+#     randomized_term = False
+#     parametric = False
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return (d is None) or (d > 0)
 
-    def _set_parameters(
-        self,
-    ):
-        d = self.dimensionality
-        self.input_domain = np.array([[-100, 100] for _ in range(d)])
+#     def _set_parameters(
+#         self,
+#     ):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[-100, 100] for _ in range(d)])
 
-    def get_param(self):
-        return {}
+#     def get_param(self):
+#         return {}
 
-    def get_global_minimum(self, d):
-        X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = np.array([0 for _ in range(d)])
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        d = X.shape[0]
-        res = np.sum(np.abs(X)) + np.prod(np.abs(X))
-        return res
+#     def evaluate(self, X):
+#         d = X.shape[0]
+#         res = np.sum(np.abs(X)) + np.prod(np.abs(X))
+#         return res
 
 
 class Schwefel2_23(PyBenchFunction):
