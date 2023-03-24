@@ -12,8 +12,8 @@ This is the initalizer of the F3DASM package
 import logging
 
 # Submodules
-from f3dasm import (data, functions, machinelearning, optimization, sampling,
-                    simulation)
+from f3dasm import (data, experiment, functions, machinelearning, optimization,
+                    sampling, simulation)
 
 # Other utility functions
 from ._show_versions import __version__, show_versions
@@ -25,6 +25,7 @@ from .design.parameter import (CategoricalParameter, ConstantParameter,
                                DiscreteParameter)
 # Base classes that are accessible from the root
 from .functions.function import Function
+from .machinelearning.model import Model
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult,
                                create_optimizationresult_from_json,
