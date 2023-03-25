@@ -25,7 +25,7 @@ class Simulator:
         pass
         # raise NotImplementedError("No pre-process function implemented!")
 
-    def execute(self, x: np.ndarray) -> None:
+    def execute(self) -> None:
         """Function that calls the FEM simulator the pre-processing"""
         raise NotImplementedError("No execute function implemented!")
 
@@ -34,7 +34,9 @@ class Simulator:
         pass
         # raise NotImplementedError("No post-process function implemented!")
 
-    def run(self, x: np.ndarray) -> None:
+    def run(self) -> None:
         self.pre_process()
-        self.execute(x)
-        self.post_process()
+        self.execute()
+        self.post_process() 
+
+    

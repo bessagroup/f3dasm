@@ -1,201 +1,302 @@
-# import system packages
+#                                                                       Modules
+# =============================================================================
+# Standard
 import os
 import pickle
 import subprocess
 import time
 
-import numpy as np
+from simulation import Simulator
+from .abaqus_utils import create_dir, print_banner, write_json, AssertInputs
 
-from ..simulator import Simulator
-# import local functions
-from .abaqus_utils import (kill_abaqus_processes, make_dir, print_banner,
-                           write_json)
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = "Jiaxiang Yi (J.Yi@tudelft.nl)"
+__credits__ = ["Jiaxiang Yi"]
+__status__ = "Stable"
+# =============================================================================
+#
+# =============================================================================
 
 
-class AbaqusSimulator(Simulator):
-    """ """
+class AbaqusSimulator(Simulator, AssertInputs):
+    """Abaqus simulator
+    Parameters
+    ----------
+    Simulator : class
+        simulator interface
+    AssertInputs: class
+        assert inputs
+    """
 
-    def __init__(self, sim_info: dict, folder_info: dict):
-        """
+    def __init__(self, sim_info: dict, folder_info: dict) -> None:
+        """initilization of abaqussimulator
         Parameters
         ----------
-        sim_info:
-        folder_info
+        sim_info : dict
+            dict for defining abaqus simulation
+        folder_info : dict
+            dict indicating abaqus scripts and working folders
         """
+
         self.sim_info = sim_info
         self.folder_info = folder_info
+        # to assert the needed information is proper defined
+        self.is_inputs_proper_defined(
+            folder_info=folder_info, sim_info=sim_info
+        )
+
+        # details of variables
         self.job_name = sim_info["job_name"]
         self.main_work_directory = folder_info["main_work_directory"]
         self.current_work_directory = folder_info["current_work_directory"]
+
+        # script information
         self.script_path = folder_info["script_path"]
         self.sim_path = folder_info["sim_path"]
+        self.sim_script = folder_info["sim_script"]
+
+        # only used on 'ubuntu' platform
         self.post_path = folder_info["post_path"]
+        self.post_script = folder_info["post_script"]
+        #
+        self.platform = sim_info["platform"]
 
-        self.sim_info_name = "sim_info.json"
+        # define the name of json file
+        self.abaqus_input_file = "sim_info.json"
 
-    def execute(self, x) -> None:
-        """
-        Parameters
-        ----------
-        sim_info: contain the information that used for the abaqus simulation
-        folder_info: folder operation so that the needed information is restored in corresponding folders
-        test_data; the data used to test
-        Returns
-        -------
-        """
-
-        self.set_input_parameters(x)
+    def execute(
+        self,
+        max_time: float = None,
+        sleep_time: float = 20.0,
+        refresh_time: float = 5.0,
+    ) -> str:
 
         # hidden name information
-        new_python_filename = "abqScript.py"
-
+        abaqus_py_script = "abaScript.py"
         # folder operations
-        make_dir(current_folder=self.main_work_directory,
-                 dirname=self.current_work_directory)
-
+        new_path = create_dir(
+            current_folder=self.main_work_directory,
+            dir_name=self.current_work_directory,
+        )
         # change work directory
-        os.chdir(os.path.join(self.main_work_directory,
-                 self.current_work_directory))
+        os.chdir(new_path)
+        # print the current working folder to the screen
+        print(new_path)
 
-        print(f"Current working directory: {os.getcwd()}")
+        # write sim_info dict to a json file
+        write_json(sim_info=self.sim_info, file_name=self.abaqus_input_file)
 
-        # output the sim_info dict to a json file
-        write_json(sim_info=self.sim_info, filename=self.sim_info_name)
-
+        # create new script for running abaqus simulation
         self.make_new_script(
-            new_file_name=new_python_filename,
-            script_path=self.folder_info["sim_path"],
+            file_name=abaqus_py_script,
+            status="simulation",
         )
 
-        # begin to run abaqus simulation and submit the job to get the .odb file
-        print_banner("START ABAQUS ANALYSIS")
+        # run abaqus simulation and submit the job
+        print_banner("start abaqus simulation")
+        # system command for running abaqus
+        command = "abaqus cae noGUI=" + str(abaqus_py_script) + " -mesa"
 
-        self._run_abaqus_sim(new_python_filename)
-        self._remove_files()
-
-        os.chdir(self.main_work_directory)
-
-    def post_process(self):
-        os.chdir(os.path.join(self.main_work_directory,
-                 self.current_work_directory))
-
-        print_banner("START ABAQUS POST PROCESSING")
-        # path with the python-script
-
-        post_process_python_filename = "get_results.py"
-
-        self.make_new_script(
-            new_file_name=post_process_python_filename,
-            script_path=self.folder_info["post_path"],
+        # run (flag is for advanced usage)
+        flag = self._run_abaqus_simulation(
+            command=command,
+            max_time=max_time,
+            sleep_time=sleep_time,
+            refresh_time=refresh_time,
         )
 
-        self._run_abaqus(post_process_python_filename)
-        self._remove_files()
+        return flag
 
-        # change the work directory back the main one
-        os.chdir(self.main_work_directory)
-
-    def set_input_parameters(self, x: np.ndarray) -> None:
-        # Input paramaters
-        self.sim_info["C1"] = x[0]
-        self.sim_info["C2"] = x[1]
-
-    def read_back_results(self):
+    def post_process(self, delete_odb: bool = True) -> None:
+        """post process
+        Parameters
+        ----------
+        delete_odb : bool, optional
+            delete odb file to save memory, by default True
         """
 
-        Returns
-        -------
+        if self.platform == "ubuntu":
+            print_banner("abaqus post analysis")
+            # path with the python-script
+            postprocess_script = "getResults.py"
+            self.make_new_script(
+                file_name=postprocess_script,
+                status="post_process",
+            )
+            command = "abaqus cae noGUI=" + str(postprocess_script) + " -mesa"
+            os.system(command)
 
-        """
-        os.chdir(os.path.join(self.main_work_directory,
-                 self.current_work_directory))
+            # remove files that influence the simulation process
+            self.remove_files(directory=os.getcwd())
 
-        with open("results.p", "rb") as fd:
+        # remove the odb file to save memory
+        if delete_odb:
+            self.remove_files(directory=os.getcwd(), file_types=[".odb"])
+
+    def read_back_results(self, file_name: str = "results.p") -> dict:
+
+        with open(file_name, "rb") as fd:
             results = pickle.load(fd, fix_imports=True, encoding="latin1")
 
         os.chdir(self.main_work_directory)
 
         return results
 
+    def _run_abaqus_simulation(
+        self,
+        command: str,
+        max_time: float = None,
+        sleep_time: float = 20.0,
+        refresh_time: float = 5.0,
+    ) -> str:
+
+        if self.platform == "ubuntu":
+
+            proc = subprocess.Popen(command, shell=True)
+
+            start_time = time.time()
+            time.sleep(sleep_time)
+            while True:
+
+                time.sleep(
+                    refresh_time - ((time.time() - start_time) % refresh_time)
+                )
+                end_time = time.time()
+                #
+                try:
+                    file = open(self.job_name + ".msg")
+                    word1 = "THE ANALYSIS HAS BEEN COMPLETED"
+                    if word1 in file.read():
+                        proc.kill()
+                        self.kill_abaqus_process()
+                        flag = "finished"
+                        break
+                except:
+                    print(
+                        "abaqus license is not enough,"
+                        "waiting for license authorization"
+                    )
+                # over time killing
+                if max_time is not None:
+                    if (end_time - start_time) > max_time:
+                        proc.kill()
+                        self.kill_abaqus_process()
+                        print("overtime kill")
+                        flag = "killed"
+                        break
+            print(f"simulation time :{(end_time - start_time):2f} s")
+            # remove files that influence the simulation process
+            self.remove_files(directory=os.getcwd())
+        elif self.platform == "cluster":
+            start_time = time.time()
+            os.system(command)
+            flag = "finished"
+            end_time = time.time()
+            print(f"simulation time :{(end_time - start_time):2f} s")
+
+        else:
+            raise NotImplementedError("platform not be implemented")
+
+        return flag
+
     def make_new_script(
         self,
-        new_file_name: str,
-        script_path: str,
+        file_name: str,
+        status: str = "simulation",
     ) -> None:
 
-        with open(new_file_name, "w") as file:
-            file.write("import os \n")
-            file.write("import sys \n")
-            file.write("import json \n")
-            file.write(
-                "sys.path.extend(['" + self.folder_info["script_path"] + "']) \n")
-            file.write("from " + script_path + " import main" + "\n")
-            file.write("file = '" + self.sim_info_name + "' \n")
-            file.write("with open(file, 'r') as f:\n")
-            file.write("	input_dict = json.load(f)\n")
-            file.write("main(input_dict)\n")
-        file.close()
+        if status == "simulation":
+            with open(file_name, "w") as file:
+                file.write("import os \n")
+                file.write("import sys \n")
+                file.write("import json \n")
+                file.write(
+                    "sys.path.extend(['"
+                    + str(self.folder_info["script_path"])
+                    + "']) \n"
+                )
+                file.write(
+                    "from "
+                    + str(self.folder_info["sim_path"])
+                    + " import "
+                    + str(self.folder_info["sim_script"])
+                    + "\n"
+                )
+                line = "file = '" + str(self.abaqus_input_file) + "' \n"
+                file.write(line)
+                file.write("with open(file, 'r') as f:\n")
+                file.write("	dict = json.load(f)\n")
+                file.write(str(self.folder_info["sim_script"]) + "(dict)\n")
+            file.close()
+        elif status == "post_process":
+            with open(file_name, "w") as file:
+                file.write("import os\n")
+                file.write("import sys\n")
+                file.write(
+                    "sys.path.extend(['"
+                    + str(self.folder_info["script_path"])
+                    + "']) \n"
+                )
+                file.write(
+                    "from "
+                    + str(self.folder_info["post_path"])
+                    + " import "
+                    + str(self.folder_info["post_script"])
+                    + "\n"
+                )
+                file.write(
+                    str(self.folder_info["post_script"])
+                    + "('"
+                    + str(self.job_name)
+                    + "')\n"
+                )
+            file.close()
+        else:
+            raise KeyError("provide correct status of simulation \n")
 
-    # --------- run the abaqus python file -----------------
+    @staticmethod
+    def kill_abaqus_process() -> None:
+        """kill abaqus simulation process"""
+        standard_solver = "pkill standard"
+        os.system(standard_solver)
+        ABQcaeK = "pkill ABQcaeK"
+        os.system(ABQcaeK)
+        SMAPython = "pkill SMAPython"
+        os.system(SMAPython)
 
-    def _run_abaqus(self, python_filename: str):
-        proc = subprocess.Popen("abaqus cae noGUI=" + python_filename + " -mesa", shell=True)
-        return proc
-
-    def _run_abaqus_sim(self, python_filename: str):
+    @staticmethod
+    def remove_files(
+        directory: str,
+        file_types: list = [
+            ".log",
+            ".lck",
+            ".SMABulk",
+            ".rec",
+            ".SMAFocus",
+            ".exception",
+            ".simlog",
+            ".023",
+            ".exception",
+        ],
+    ) -> None:
+        """remove file
+        Parameters
+        ----------
+        directory : str
+            target folder
+        file_type : str
+            file name
         """
-        This function is used to run abaqus simulation
-        Returns:  do not return any thing but need to teminate the simulation process
-        The reason is the abaqus software has some problems in this desktop
-        -------
-        """
-        # my_cmd_job = command
-        proc = self._run_abaqus(python_filename)
-        # proc = subprocess.Popen("abaqus cae noGUI=" + python_filename + " -mesa", shell=True)
-        start_time = time.time()
-
-        while True:
-            # in this part: check the job is finish or not !
-            #  check the word in msg file existed or not (THE ANALYSIS HAS BEEN COMPLETED)
-            time.sleep(20.0 - ((time.time() - start_time) % 20.0))
-            msg_name = self.job_name + ".msg"
-            file = open(msg_name)
-            word1 = "THE ANALYSIS HAS BEEN COMPLETED"
-            word2 = "ABAQUS/standard rank 0 terminated by signal 11 (Segmentation fault)"
-            if word1 in file.read():
-                print("Simulation successfully finished! \n")
-                proc.kill()
-                kill_abaqus_processes()
-                break
-            elif word2 in file.read():
-                print("Simulation failed due to error! \n")
-                proc.kill()
-                kill_abaqus_processes()
-                break
-
-        end_time = time.time()
-        print(f"the simulation time is :{end_time - start_time} !")
-
-    def _remove_file(self, directory, file_type: str):
-        files_in_directory = os.listdir(directory)
-        filtered_files = [
-            file for file in files_in_directory if file.endswith(file_type)]
-        for file in filtered_files:
-            path_to_file = os.path.join(directory, file)
-            if os.path.exists(path_to_file):
-                os.remove(path_to_file)
-
-    def _remove_files(self):
-        log_file = self.job_name + ".log"
-        if os.path.exists(log_file):
-            os.remove(log_file)
-        lck_file = self.job_name + ".lck"
-        if os.path.exists(lck_file):
-            os.remove(lck_file)
-        directory = os.getcwd()
-
-        list_of_removed_filetypes = [
-            ".SMABulk", ".rec", ".SMAFocus", ".exception", ".simlog"]
-
-        for filetype in list_of_removed_filetypes:
-            self._remove_file(directory, filetype)
+        # get all files in this folder
+        all_files = os.listdir(directory)
+        for target_file in file_types:
+            # get the target file names
+            filtered_files = [
+                file for file in all_files if file.endswith(target_file)
+            ]
+            # remove the target files is existed
+            for file in filtered_files:
+                path_to_file = os.path.join(directory, file)
+                if os.path.exists(path_to_file):
+                    os.remove(path_to_file)

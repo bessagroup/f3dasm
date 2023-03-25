@@ -1,79 +1,143 @@
+#                                                                       Modules
+# =============================================================================
+# Standard
 import json
 import os
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = "Jiaxiang Yi (J.Yi@tudelft.nl)"
+__credits__ = ["Jiaxiang Yi"]
+__status__ = "Stable"
+# =============================================================================
+#
+# =============================================================================
 
-def make_dir(current_folder: str, dirname: str) -> None:
-    """
-    Make directories
+
+def create_dir(current_folder: str, dir_name: str) -> str:
+    """create new directory
     Parameters
     ----------
-    current_folder (str): cwd
-    dirname (str): folder that needs to be created
-    """
-
-    path = os.path.join(current_folder, dirname)
-    try:
-        os.makedirs(path, exist_ok=True)
-
-    except OSError as error:
-        print(f"Directory {dirname} can not be created")
-
-    print(f"Directory {dirname} created successfully")
-
-
-def write_json(sim_info: dict, filename: str) -> None:
-    """
-
-    Parameters
-    ----------
-    sim_info: a dict that contains the information for simulation
-    filename: a string of the new .py file
-
+    current_folder : str
+        current working folder
+    dirname : str
+        new folder name
     Returns
     -------
-
+    str
+        path of created folder
     """
-    with open(filename, "w") as fp:
+
+    path = os.path.join(current_folder, dir_name)
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError as error:
+        print(f"Directory {dir_name} can not be created")
+
+    return path
+
+
+def write_json(sim_info: dict, file_name: str) -> None:
+    """write json file for abaqus
+    Parameters
+    ----------
+    sim_info : dict
+        dict that constains
+    file_name : str
+        file name of json file
+    """
+
+    with open(file_name, "w") as fp:
         json.dump(sim_info, fp)
 
 
-def make_new_script(
-    new_file_name: str,
-    folder_path: str,
-    script_path: str,
-    sim_info_name: str = "sim_info.json",
-) -> None:
-
-    with open(new_file_name, "w") as file:
-        file.write("import os \n")
-        file.write("import sys \n")
-        file.write("import json \n")
-        file.write("sys.path.extend(['" + folder_path + "']) \n")
-        file.write("from " + script_path + " import main" + "\n")
-        file.write("file = '" + str(sim_info_name) + "' \n")
-        file.write("with open(file, 'r') as f:\n")
-        file.write("	input_dict = json.load(f)\n")
-        file.write("main(input_dict)\n")
-    file.close()
-
-
-def kill_abaqus_processes():
-    # os.kill(name, signal.SIGKILL)
-    name_1 = "pkill standard"
-    aa = os.system(name_1)
-    name_2 = "pkill ABQcaeK"
-    bb = os.system(name_2)
-    name_3 = "pkill SMAPython"
-    cc = os.system(name_3)
-    print(aa + bb + cc)
+def print_banner(message: str, sign="#", length=50) -> None:
+    """print banner
+    Parameters
+    ----------
+    message : str
+        string output to the screen
+    sign : str, optional
+        pattern, by default "#"
+    length : int, optional
+        length of output, by default 50
+    """
+    print(sign * length)
+    print(
+        sign * ((length - len(message) - 2) // 2)
+        + " "
+        + message
+        + " "
+        + sign * ((length - len(message) - 2) // 2)
+    )
+    print(sign * length)
 
 
-def print_banner(message: str, sign: str = "#", length: int = 50, suspend: bool = True) -> None:
-    if not suspend:
-        print(sign * (length))
-        print(
-            sign * ((length - len(message) - 2) // 2) + " " + message + " " + sign * (
-                (length - len(message) - 2) // 2)
-        )
-        print(sign * (length))
-    return
+class AssertInputs:
+    @classmethod
+    def is_inputs_proper_defined(
+        cls, folder_info: dict, sim_info: dict
+    ) -> None:
+        cls.is_mwd_in_folder_info(folder_info=folder_info)
+        cls.is_script_path_in_folder_info(folder_info=folder_info)
+        cls.is_cwd_in_folder_info(folder_info=folder_info)
+        cls.is_sim_path_in_folder_info(folder_info=folder_info)
+        cls.is_sim_script_in_folder_info(folder_info=folder_info)
+        cls.is_post_path_in_folder_info(folder_info=folder_info)
+        cls.is_post_script_in_folder_info(folder_info=folder_info)
+        cls.is_job_name_in_sim_info(sim_info=sim_info)
+        cls.is_platform_in_sim_info(sim_info=sim_info)
+
+    @classmethod
+    def is_mwd_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "main_work_directory" in folder_info.keys()
+        ), "main_work_directory should in folder_info dict"
+
+    @classmethod
+    def is_script_path_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "script_path" in folder_info.keys()
+        ), "script_path should in folder_info dict"
+
+    @classmethod
+    def is_cwd_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "current_work_directory" in folder_info.keys()
+        ), "current_work_directory should in folder_info dict"
+
+    @classmethod
+    def is_sim_path_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "sim_path" in folder_info.keys()
+        ), "sim_path should in folder_info dict"
+
+    @classmethod
+    def is_sim_script_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "sim_script" in folder_info.keys()
+        ), "sim_script should in folder_info dict"
+
+    @classmethod
+    def is_post_path_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "post_path" in folder_info.keys()
+        ), "post_path should in folder_info dict"
+
+    @classmethod
+    def is_post_script_in_folder_info(cls, folder_info: dict) -> None:
+        assert (
+            "post_script" in folder_info.keys()
+        ), "post_script should in folder_info dict"
+
+    @classmethod
+    def is_job_name_in_sim_info(cls, sim_info: dict) -> None:
+        assert (
+            "job_name" in sim_info.keys()
+        ), "job_name should in folder_info dict"
+
+    @classmethod
+    def is_platform_in_sim_info(cls, sim_info: dict) -> None:
+        assert (
+            "platform" in sim_info.keys()
+        ), "platform should in folder_info dict"
