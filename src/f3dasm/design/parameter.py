@@ -2,11 +2,12 @@
 # =============================================================================
 
 # Standard
+import json
 from dataclasses import dataclass, field
 from typing import Any, List
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
+import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,7 +30,17 @@ class Parameter:
     """
 
     name: str
-    _type: str = field(init=False)
+    _type: str = field(init=False, default="object")
+
+    @classmethod
+    def get_name(self) -> str:
+        return self.__name__
+
+    def to_json(self) -> str:  # Tuple[dict, str]:
+        args = self.__dict__
+        name = self.get_name()
+        return json.dumps((args, name))
+        # return self.__dict__, self.get_name()
 
 
 @dataclass

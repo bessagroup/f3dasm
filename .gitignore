@@ -51,6 +51,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage_html_report/
 *,cover
 .hypothesis/
 
@@ -71,6 +72,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
 
 # PyBuilder
 target/
@@ -94,6 +96,7 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+.spyproject/
 
 # Rope project settings
 .ropeproject
@@ -107,5 +110,18 @@ data/
 notebooks/archive/
 *.obj
 
+# But exclude the data modeul of f3dasm!
+!src/f3dasm/data/
+!tests/data/
+
 # Exclude obj files in tests folder
 !tests/*/*.obj
+
+# Exclude .json files folder
+*.json
+
+# Notebooks
+notebooks/*.ipynb
+
+# .. but include tutorial notebooks!
+!notebooks/tutorials/

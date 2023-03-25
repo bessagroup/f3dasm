@@ -3,9 +3,9 @@
 
 # Standard
 from dataclasses import dataclass
-from typing import Tuple
+from typing import List, Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 
 # Locals
@@ -46,3 +46,6 @@ class RandomSearch(Optimizer):
 
         return x_new, function(x_new)
         # self.data.add_numpy_arrays(input=x_new, output=function(x_new))
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Single-Solution']

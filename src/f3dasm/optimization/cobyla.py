@@ -3,9 +3,10 @@
 
 # Standard
 from dataclasses import dataclass
+from typing import List
 
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 # Locals
+from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 from .optimizer import OptimizerParameters
 
 #                                                          Authorship & Credits
@@ -34,3 +35,6 @@ class COBYLA(SciPyMinimizeOptimizer):
 
     method: str = "COBYLA"
     parameter: COBYLA_Parameters = COBYLA_Parameters()
+
+    def get_info(self) -> List[str]:
+        return ['Fast', 'Derivative-Free', 'Single-Solution']

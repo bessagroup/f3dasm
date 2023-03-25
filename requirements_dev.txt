@@ -1,5 +1,10 @@
-# Package requirements
+# Core package requirements
 -r ./requirements.txt
+
+# All extensions
+-r ./requirements/sampling.txt 
+-r ./requirements/machinelearning.txt 
+-r ./requirements/optimization.txt
 
 # Linting
 flake8

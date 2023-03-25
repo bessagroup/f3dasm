@@ -2,14 +2,13 @@
 # =============================================================================
 
 # Standard
+import json
 from typing import List, Tuple
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import seaborn as sb
-from sklearn.model_selection import train_test_split
 
 # Local
 from .design import DesignSpace
@@ -49,6 +48,12 @@ class ExperimentData:
         """Print the data to the console"""
         print(self.data)
         return
+
+    def to_json(self) -> str:
+        args = {'design': self.design.to_json(),
+                'data': self.data.to_json()}
+
+        return json.dumps(args)
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Convert the data to a tuple numpy arrays
@@ -90,17 +95,17 @@ class ExperimentData:
         """
         self.data[("output", label)] = output
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input_rows: np.ndarray, output_rows: np.ndarray):
         """Append a numpy array to the datafram
 
         Parameters
         ----------
-        input
+        input_rows
             2d numpy array added to input data
-        output
+        output_rows
             2d numpy array added to output data
         """
-        df = pd.DataFrame(np.hstack((input, output)),
+        df = pd.DataFrame(np.hstack((input_rows, output_rows)),
                           columns=self.data.columns)
         self.add(df, ignore_index=True)
 
@@ -197,43 +202,3 @@ class ExperimentData:
         ax.set_ylabel(input_par2)
 
         return fig, ax
-
-    def plot_pairs(self):
-        """
-        Plot a matrix of 2D plots that visualize the spread of the samples for each dimension.
-        Requires seaborn to be installed.
-        """
-
-        sb.pairplot(data=self.get_input_data())
-
-    # THESE FUNCTION ARE FOR INPUT DATA OF ML MODELS
-
-    def split_to_batches(self, data: pd.DataFrame, number_of_batches: int) -> List[pd.DataFrame]:
-        """Split a dataframe to several batches
-
-        Parameters
-        ----------
-        data
-            pandas Dataframe to split
-        number_of_batches
-            number of batches you will create
-
-        Returns
-        -------
-            list of dataframes
-        """
-        return np.array_split(data, number_of_batches)
-
-    def split_to_train_test(self, test_size: float) -> List[pd.DataFrame]:
-        """Split the content of the data object into a train and test set
-
-        Parameters
-        ----------
-        test_size
-            fraction of the entire dataframe that is reserved for testing
-
-        Returns
-        -------
-            list of dataframes, first training then testing
-        """
-        return train_test_split(self.data, test_size=test_size)
