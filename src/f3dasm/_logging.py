@@ -19,3 +19,5 @@ __status__ = 'Stable'
 # Logging things
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
+
+logging.info("Imported f3dasm")
