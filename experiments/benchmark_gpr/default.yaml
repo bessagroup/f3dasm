@@ -3,29 +3,35 @@ hydra:
   sweeper:
     params:
       +trial_number: range(1)
+      +function_name: "Sphere"
       +dimensionality: range(1, 2)
+      +regressor_name: "choice(
+        'Sogpr', 
+        'Cokgj'
+        )"
+      +aug_type: 'noise'
+      +hf_fraction_replaced: 0.2
   sweep:
-    dir: outputs/default/${regressor.regressor_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: dim_${dimensionality}/trial_${trial_number}
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${regressor_name}/dim_${dimensionality}/trial_${trial_number}
   job:
     chdir: True
   # hydra_logging: disabled
   # job_logging: disabled
 
-function:
-  function_names: [
-    AlpineN2,
-  ]
-  noisy: False
-
 design:
   dimensionality: ${eval:'${dimensionality}'}
 
+# regressor_name: None
+
 regressor:
-  regressor_name: Sogpr
   kernel_name: RBFKernel
   mean_name: ZeroMean
 
 sampler:
   sampler_name: SobolSequence
-  number_of_samples: 5
+  number_of_samples: ${eval:'5 ** ${dimensionality}'}
+  number_of_hf_samples: ${eval:'${hf_fraction_replaced} * 5 ** ${dimensionality}'}
+  number_of_lf_samples: ${eval:'${hf_fraction_replaced} * 10 * 5 ** ${dimensionality}'}
+
+aug_coeffs: [0.5, 1.]

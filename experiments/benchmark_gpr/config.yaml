@@ -3,7 +3,63 @@ hydra:
   sweeper:
     params:
       +trial_number: range(10)
+      +function_name: "choice(
+        "Ackley",
+        "AlpineN1",
+        "AlpineN2",
+        "DixonPrice",
+        "Exponential",
+        "Griewank",
+        "HappyCat",
+        "Levy",
+        "Michalewicz",
+        "Periodic",
+        "PermDBeta",
+        "PermZeroDBeta",
+        "Powell",
+        "Qing",
+        "Rastrigin",
+        "Ridge",
+        "RotatedHyperEllipsoid",
+        "Salomon",
+        "Schwefel",
+        "Schwefel2_20",
+        "Schwefel2_21",
+        "Schwefel2_22",
+        "Schwefel2_23",
+        "Shubert",
+        "ShubertN3",
+        "ShubertN4",
+        "Sphere",
+        "StyblinskiTang",
+        "SumSquares",
+        "Thevenot",
+        "Trid",
+        "XinSheYangN2",
+        "XinSheYangN3",
+        "XinSheYangN4",
+        "Zakharov",
+        )"
       +dimensionality: range(1, 4)
+      +regressor_name: "choice(
+        'Sogpr', 
+        'Cokgj', 
+        'MultitaskGPR'
+        )"
+      +aug_parameter: "choice(
+        0.1, 
+        0.5,
+        0.9
+        )"
+      +aug_type: "choice(
+        'noise',
+        'bias'
+        )"
+      +hf_fraction_replaced: "choice(
+        0.2, 
+        0.5, 
+        0.8
+        )"
   sweep:
     dir: outputs/${regressor.regressor_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: dim_${dimensionality}/trial_${trial_number}
@@ -11,56 +67,17 @@ hydra:
     chdir: True
 
 defaults:
-  - default
+  - default2
 
 design:
   dimensionality: ${eval:'${dimensionality}'}
 
-function:
-  function_names: [
-    Ackley,
-    AlpineN1,
-    AlpineN2,
-    DixonPrice,
-    Exponential,
-    Griewank,
-    HappyCat,
-    Levy,
-    Michalewicz,
-    Periodic,
-    PermDBeta,
-    PermZeroDBeta,
-    Powell,
-    Qing,
-    Rastrigin,
-    Ridge,
-    RotatedHyperEllipsoid,
-    Salomon,
-    Schwefel,
-    Schwefel2_20,
-    Schwefel2_21,
-    Schwefel2_22,
-    Schwefel2_23,
-    Shubert,
-    ShubertN3,
-    ShubertN4,
-    Sphere,
-    StyblinskiTang,
-    SumSquares,
-    Thevenot,
-    Trid,
-    XinSheYangN2,
-    XinSheYangN3,
-    XinSheYangN4,
-    Zakharov,
-  ]
-  noisy: False
-
 regressor:
-  regressor_name: Sogpr
   kernel_name: RBFKernel
   mean_name: ZeroMean
 
 sampler:
   sampler_name: SobolSequence
   number_of_samples: ${eval:'5 ** ${dimensionality}'}
+  number_of_hf_samples: ${eval:'ceil(${hf_fraction_replaced} * 5 ** ${dimensionality})'}
+  number_of_lf_samples: ${eval:'${hf_fraction_replaced} * 10 * 5 ** ${dimensionality}'}
