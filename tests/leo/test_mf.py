@@ -182,7 +182,7 @@ def test_bo_gpytorch():
     optimizer.parameter.n_init = number_of_samples
     optimizer.parameter.regressor_hyperparameters = reg_parameters
     optimizer.parameter.acquisition = f3dasm.base.acquisition.ExpectedImprovement
-    optimizer.parameter.acquisition_hyperparameters = f3dasm._legacy.bayesianoptimization_torch.Acquisition_Parameters(
+    optimizer.parameter.acquisition_hyperparameters = f3dasm.optimization.bayesianoptimization_torch.Acquisition_Parameters(
         best_f=-np.inf,
         maximize=False,
     )
@@ -321,7 +321,7 @@ def test_cokgj_forrester_gpytorch():
         )
 
     regressor = f3dasm.machinelearning.gpr.Cokgj(
-        mf_train_data=mf_train_data, 
+        train_data=mf_train_data, 
         design=train_data.design,
         parameter=param,
     )
@@ -458,7 +458,7 @@ def test_cokgj_gpytorch():
         )
 
     regressor = f3dasm.machinelearning.gpr.Cokgj(
-        mf_train_data=mf_train_data, 
+        train_data=mf_train_data, 
         design=train_data.design,
         parameter=param,
     )
