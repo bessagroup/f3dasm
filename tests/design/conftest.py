@@ -23,6 +23,22 @@ def doe():
 
 
 @pytest.fixture(scope="package")
+def design_space():
+
+    input_space = [
+        ContinuousParameter("x1", -5.12, 5.12),
+        DiscreteParameter("x2", -3, 3),
+        CategoricalParameter("x3", ["red", "green", "blue"])
+    ]
+
+    output_space = [
+        ContinuousParameter("y", -10.0, 10.0)
+    ]
+
+    return DesignSpace(input_space=input_space, output_space=output_space)
+
+
+@pytest.fixture(scope="package")
 def continuous_parameter():
     lower_bound = 3.3
     upper_bound = 3.8

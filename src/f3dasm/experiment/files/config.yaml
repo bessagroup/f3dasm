@@ -1,0 +1,7 @@
+files:
+  recommender: "../../notebooks/datafiles"
+  raw: "../../notebooks/optimizerresults"
+  outputfilename: "margin_of_victory_recommender"
+
+hpc:
+  jobid: 1
