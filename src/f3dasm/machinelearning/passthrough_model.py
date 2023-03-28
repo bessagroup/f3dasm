@@ -1,13 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-
-# Third-party
-import tensorflow as tf
-
 # Local
-from .adapters.tensorflow_implementations import TensorflowModel
+from .._imports import try_import
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow as tf
+    from keras.layers import Layer
+
+    from .adapters.tensorflow_implementations import TensorflowModel
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -18,8 +20,12 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+if not _imports.is_successful():
+    Layer = object  # NOQA
+    TensorflowModel = object # NOQA
 
-class PassthroughLayer(tf.keras.layers.Layer):
+
+class _PassthroughLayer(Layer):
     def __init__(self, input_shape, units=1):
         super().__init__(input_shape=input_shape)
         self.units = units
@@ -57,9 +63,10 @@ class PassthroughModel(TensorflowModel):
         dimensionality
             number of input parameters
         """
+        _imports.check()
         self.dimensionality = dimensionality
         super().__init__()
-        self.model.add(PassthroughLayer(input_shape=(dimensionality,)))
+        self.model.add(_PassthroughLayer(input_shape=(dimensionality,)))
 
     def get_config(self):
         config = super().get_config().copy()

@@ -1,8 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
+import numpy as np
 
 # Locals
 from .sampler import Sampler

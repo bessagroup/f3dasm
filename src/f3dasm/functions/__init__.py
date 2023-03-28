@@ -12,6 +12,7 @@ import numpy as np
 from . import pybenchfunction
 from .adapters.augmentor import *
 from .function import Function, MultiFidelityFunction, AugmentedFunction
+from .function import Function
 from .pybenchfunction import *
 
 #                                                          Authorship & Credits

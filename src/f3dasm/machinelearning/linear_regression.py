@@ -1,11 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import tensorflow as tf
-
 # Local
-from .adapters.tensorflow_implementations import TensorflowModel
+from .._imports import try_import
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import tensorflow
+    import tensorflow as tf
+
+    from .adapters.tensorflow_implementations import TensorflowModel
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -15,6 +19,9 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+if not _imports.is_successful():
+    TensorflowModel = object  # NOQA
 
 
 class LinearRegression(TensorflowModel):
@@ -26,6 +33,7 @@ class LinearRegression(TensorflowModel):
         dimensionality
             number of neurons in the first layer
         """
+        _imports.check()
         self.dimensionality = dimensionality
         super().__init__()
         self.model.add(tf.keras.layers.Dense(1, input_shape=(dimensionality,)))

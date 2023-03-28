@@ -6,7 +6,6 @@ from typing import List
 
 # Third-party
 import numpy as np
-import tensorflow as tf
 
 # Locals
 from .learningdata import LearningData
@@ -43,14 +42,14 @@ class LinearRegressionData(LearningData):
         self._create()
 
     def _create(self):
-        w: tf.Tensor = tf.constant(self.w, dtype=float)
-        noise = tf.random.normal((self.n, 1)) * self.noise_multiplier
+        w = np.array(self.w, dtype=float)
+        noise = np.random.normal(size=(self.n, 1)) * self.noise_multiplier
 
-        self.X: tf.Tensor = tf.random.normal((self.n, w.shape[0]))  # (num, dim)
-        self.y: tf.Tensor = tf.matmul(self.X, tf.reshape(w, (-1, 1))) + self.b + noise  # (1, dim)
+        self.X = np.random.normal(size=(self.n, w.shape[0]))
+        self.y = np.matmul(self.X, np.reshape(w, (-1, 1))) + self.b + noise
 
     def get_input_data(self) -> np.ndarray:  # size = (n, dim)
-        return self.X.numpy()
+        return self.X
 
     def get_labels(self) -> np.ndarray:  # size = (n, 1)
-        return self.y.numpy()
+        return self.y

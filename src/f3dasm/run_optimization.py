@@ -20,15 +20,14 @@ from .functions import Function, MultiFidelityFunction
 
 import pandas as pd
 from pathos.helpers import mp
-from sklearn import preprocessing
+
+from f3dasm.optimization import Optimizer, create_optimizer_from_json
+from f3dasm.sampling import Sampler, create_sampler_from_json
 
 # Locals
-from .base.utils import calculate_mean_std
 from .design import ExperimentData, create_experimentdata_from_json
 from .functions import create_function_from_json
 from .functions.function import Function
-from .optimization import Optimizer, create_optimizer_from_json
-from .sampling import Sampler, create_sampler_from_json
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -43,7 +42,7 @@ __status__ = 'Stable'
 class OptimizationResult:
     def __init__(self, data: List[ExperimentData], optimizer: Optimizer, function: Function,
                  sampler: Sampler, number_of_samples: int, seeds: List[int]):
-        """Optimizaiton results object
+        """Optimization results object
 
         Parameters
         ----------
@@ -284,50 +283,9 @@ def run_multiple_realizations(
     )
 
 
-def margin_of_victory(results: List[OptimizationResult]) -> pd.DataFrame:
-    """Calculate the margin of victory of optimizationresults
-
-    Parameters
-    ----------
-    results
-        OptimizationResults object
-
-    Returns
-    -------
-        DataFrame containing the algorithms and the margin of victory
-    """
-
-    # Create df with all results
-    df = pd.concat([calculate_mean_std(results[i])[0] for i, _ in enumerate(results)], axis=1)
-
-    # Change columnnames
-    optimizer_names = [results[i].optimizer.get_name() for i, _ in enumerate(results)]
-    df.columns = optimizer_names
-
-    # Normalize
-    min_max_scaler = preprocessing.MinMaxScaler()
-
-    # Reshape to 1D array
-    df_numpy = df.values  # returns a numpy array
-    df_numpy_reshaped = df_numpy.reshape(-1, 1)
-
-    x_scaled = min_max_scaler.fit_transform(df_numpy_reshaped)
-
-    # Transform back
-    x_scaled = x_scaled.reshape(df_numpy.shape)
-    df = pd.DataFrame(x_scaled)
-    df.columns = optimizer_names
-
-    # Calculate margin of victory
-    mov = []
-    for name in optimizer_names:
-        df_dropped = df.drop(name, axis=1)
-        mov.append(df_dropped.min(axis=1) - df[name])
-
-    # Create df with all MoV
-    df_margin_of_victory = pd.concat(mov, axis=1)
-
-    # Change columnnames
-    df_margin_of_victory.columns = optimizer_names
-
-    return df_margin_of_victory
+def calculate_mean_std(results):  # OptimizationResult
+    mean_y = pd.concat([d.get_output_data().cummin()
+                       for d in results.data], axis=1).mean(axis=1)
+    std_y = pd.concat([d.get_output_data().cummin()
+                      for d in results.data], axis=1).std(axis=1)
+    return mean_y, std_y

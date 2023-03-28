@@ -1,8 +1,8 @@
 Implemented optimizers
 ======================
 
-Creat an optimizer
-------------------
+Create an optimizer
+-------------------
 
 We will use the CMAES optimizer to find the minimum. We can find an implementation in the :mod:`f3dasm.optimization` module:
 
@@ -23,6 +23,8 @@ After that, we can extract the data:
     cmaes_data = optimizer.extract_data()
 
 
+
+.. _implemented optimizers:
 
 Implemented optimizers
 ----------------------

@@ -10,6 +10,7 @@ adapted from :func:`sklearn.show_versions`
 import importlib
 import platform
 import sys
+from pathlib import Path
 from typing import List
 
 #                                                          Authorship & Credits
@@ -20,6 +21,37 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+# version
+here = Path(__file__).absolute().parent
+with open(here.joinpath("VERSION"), "r") as f:
+    __version__ = f.read()
+
+# List of the dependencies per extension:
+CORE_DEPS = [
+    'numpy',
+    'scipy',
+    'pandas',
+    'matplotlib',
+    'pathos',
+    'hydra',
+    'autograd',
+]
+
+OPTIMIZATION_DEPS = [
+    'GPyOpt',
+    'GPy',
+    'tensorflow',
+    'pygmo',
+]
+
+MACHINELEARNING_DEPS = [
+    'tensorflow',
+]
+
+SAMPLING_DEPS = [
+    'SALib',
+]
 
 
 def _get_sys_info() -> dict:
@@ -81,33 +113,16 @@ def _get_deps_info(deps: List[str]) -> dict:
 
 def show_versions():
     """Print useful debugging information"
-
-    .. versionadded:: 0.20
     """
-
-    deps = [
-        'numpy',
-        'scipy',
-        'pandas',
-        'matplotlib',
-        'SALib',
-        'hypothesis',
-        'GPyOpt',
-        'GPy',
-        'autograd',
-        'numdifftools',
-        'tensorflow',
-        'pathos',
-        'pytest',
-        'hypothesis',
-        'pygmo',
-    ]
 
     sys_info = _get_sys_info()
     f3dasm_info = _get_deps_info(['f3dasm'])
-    deps_info = _get_deps_info(deps)
+    core_deps_info = _get_deps_info(CORE_DEPS)
+    optimization_deps_info = _get_deps_info(OPTIMIZATION_DEPS)
+    machinelearning_deps_info = _get_deps_info(MACHINELEARNING_DEPS)
+    sampling_deps_info = _get_deps_info(SAMPLING_DEPS)
 
-    print("\nF3DASM:")
+    print("\nf3dasm:")
     for k, stat in f3dasm_info.items():
         print(f"{k:>13}: {stat}")
 
@@ -115,6 +130,18 @@ def show_versions():
     for k, stat in sys_info.items():
         print(f"{k:>10}: {stat}")
 
-    print("\nPython dependencies:")
-    for k, stat in deps_info.items():
+    print("\nCore package dependencies:")
+    for k, stat in core_deps_info.items():
+        print(f"{k:>13}: {stat}")
+
+    print("\nMachine learning extension:")
+    for k, stat in machinelearning_deps_info.items():
+        print(f"{k:>13}: {stat}")
+
+    print("\nOptimization extension:")
+    for k, stat in optimization_deps_info.items():
+        print(f"{k:>13}: {stat}")
+
+    print("\nSampling extension:")
+    for k, stat in sampling_deps_info.items():
         print(f"{k:>13}: {stat}")

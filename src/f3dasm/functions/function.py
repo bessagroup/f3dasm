@@ -8,13 +8,14 @@ from ..functions.adapters.augmentor import FunctionAugmentor
 from ..design.experimentdata import ExperimentData
 from typing import Tuple
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 
 # Locals
-from ..base.utils import _from_data_to_numpy_array_benchmarkfunction
+from ..design.experimentdata import ExperimentData
+from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -108,7 +109,7 @@ class Function:
         return ((bounds[:, 0] <= x) & (x <= bounds[:, 1])).all()
 
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
-        """Compute the gradient at a particular point in space. Gradient is computed by numdifftools
+        """Compute the gradient at a particular point in space. Gradient is computed by central differences
 
         Parameters
         ----------
@@ -316,6 +317,62 @@ class Function:
                    marker="*", edgecolors="red")
         return fig, ax
 
+    def plot_data(
+        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+        numsamples=None, arrow=False
+    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+        """Create a 2D contout plot with the datapoints as scatter
+
+        Parameters
+        ----------
+        data
+            Data object containing samples
+        px, optional
+            number of pixels on each axis
+        domain, optional
+            domain that needs to be plotted
+
+        Returns
+        -------
+            matplotlib figure and axes
+        """
+        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
+        x1 = data.get_input_data().iloc[:, 0]
+        x2 = data.get_input_data().iloc[:, 1]
+        ax.scatter(
+            x=x1,
+            y=x2,
+            s=10,
+            c=np.linspace(0, 1, len(x1)),
+            cmap="Blues",
+            edgecolors="black",
+        )
+        if arrow:
+            for p_index in range(len(x1)-1):
+                dx = (x1[p_index+1] - x1[p_index])
+                dy = (x2[p_index+1] - x2[p_index])
+                length = 1/np.sqrt(dx**2 + dy**2)
+                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
+                         length_includes_head=True)
+
+        # Mark selected point
+        if numsamples is not None:
+            x_selected = data.get_input_data().iloc[numsamples]
+            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
+                       marker="*", edgecolors="cyan")
+
+        # Mark last point
+        x_last = data.get_input_data().iloc[-1]
+        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
+                   marker="*", edgecolors="magenta")
+
+        # Best point
+        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
+        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
+        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
+                   marker="*", edgecolors="red")
+        return fig, ax
+
 class AugmentedFunction(Function):
 
     def __init__(
@@ -342,7 +399,13 @@ class AugmentedFunction(Function):
         res_lf = np.zeros_like(res_hf)
         res = self.fid * res_hf + (1 - self.fid) * res_lf
 
-        return res
+def _from_data_to_numpy_array_benchmarkfunction(
+    data: ExperimentData,
+) -> np.ndarray:
+    """Check if doe is in right format"""
+    if not data.design.is_single_objective_continuous():
+        raise TypeError(
+            "All inputs and outputs need to be continuous parameters and output single objective")
 
 @dataclass
 class MultiFidelityFunction:

@@ -1,7 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
+# Third-party core
 import autograd.numpy as np
 from scipy.optimize import minimize
 
