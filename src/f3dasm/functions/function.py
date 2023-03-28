@@ -398,6 +398,7 @@ class AugmentedFunction(Function):
         res_hf = self.base_fun(x_space)
         res_lf = np.zeros_like(res_hf)
         res = self.fid * res_hf + (1 - self.fid) * res_lf
+        return res
 
 def _from_data_to_numpy_array_benchmarkfunction(
     data: ExperimentData,
@@ -406,6 +407,8 @@ def _from_data_to_numpy_array_benchmarkfunction(
     if not data.design.is_single_objective_continuous():
         raise TypeError(
             "All inputs and outputs need to be continuous parameters and output single objective")
+    
+    return data.get_input_data().to_numpy()
 
 @dataclass
 class MultiFidelityFunction:

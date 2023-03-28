@@ -19,6 +19,13 @@ if TYPE_CHECKING:
     from .all_optimizers import OPTIMIZERS
     from .bayesianoptimization import (BayesianOptimization,
                                        BayesianOptimization_Parameters)
+    from .bayesianoptimization_torch import (
+        BayesianOptimizationTorch,
+        BayesianOptimizationTorch_Parameters,
+        Acquisition_Parameters,
+        MFBayesianOptimizationTorch,
+        MFBayesianOptimizationTorch_Parameters,
+    )
     from .cg import CG, CG_Parameters
     from .cmaes import CMAES, CMAES_Parameters
     from .differentialevolution import (DifferentialEvolution,
@@ -56,6 +63,9 @@ _import_structure: dict = {
     "adam": ["Adam", "Adam_Parameters"],
     "adamax": ["Adamax", "Adamax_Parameters"],
     "bayesianoptimization": ["BayesianOptimization", "BayesianOptimization_Parameters"],
+    "bayesianoptimization_torch": ["Acquisition_Parameters", "Acquisition_Parameters", 
+                                   "BayesianOptimizationTorch", "MFBayesianOptimizationTorch_Parameters",
+                                   "MFBayesianOptimizationTorch"],
     "cg": ["CG", "CG_Parameters"],
     "cmaes": ["CMAES", "CMAES_Parameters"],
     "differentialevolution": ["DifferentialEvolution", "DifferentialEvolution_Parameters"],

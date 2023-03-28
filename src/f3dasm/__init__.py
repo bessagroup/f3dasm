@@ -27,7 +27,8 @@ from .machinelearning.model import Model
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult,
                                create_optimizationresult_from_json,
-                               run_multiple_realizations, run_optimization)
+                               run_multiple_realizations, run_optimization, 
+                               run_multi_fidelity_optimization)
 from .sampling.sampler import Sampler
 from .utils import find_class, write_json
 

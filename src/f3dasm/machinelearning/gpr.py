@@ -1,28 +1,24 @@
-# from typing import List
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
-
-import gpytorch.kernels
-from gpytorch.kernels import ScaleKernel, RBFKernel
-from gpytorch import settings
-from gpytorch.models import ExactGP
-from gpytorch.distributions import MultivariateNormal
-from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy
-
 import warnings
-from gpytorch.utils.warnings import GPInputWarning
-from gpytorch.utils.memoize import cached, clear_cache_hook
-
 from typing import Any, List
-
 import functools
-
-import linear_operator
-from linear_operator import to_dense
-
-import torch
-
 import math
+
+# Local
+from .._imports import try_import
 from .adapters.torch_implementations import TorchGPRegressor
+
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import torch
+    import gpytorch
+    from gpytorch.models import ExactGP as GPyTorch_ExactGP
+    from gpytorch.models.exact_prediction_strategies import DefaultPredictionStrategy as GPyTorch_PredictionStrategy
+    import linear_operator
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,12 +29,16 @@ __status__ = 'Alpha'
 #
 # =============================================================================
 
+if not _imports.is_successful():
+    GPyTorch_ExactGP = object # NOQA
+
 # We will use the simplest form of GP model, exact inference
-class ExactGPModel(gpytorch.models.ExactGP):
+class ExactGPModel(GPyTorch_ExactGP):
 
     num_outputs = 1
 
     def __init__(self, train_x, train_y, likelihood, mean_module, covar_module):
+        _imports.check()
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = mean_module
         self.covar_module = covar_module
@@ -54,7 +54,7 @@ class Sogpr_Parameters:
 
     likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
     mean: gpytorch.means.Mean = gpytorch.means.ZeroMean()
-    kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
+    kernel: gpytorch.kernels.Kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
     noise_fix: bool = False
     opt_algo: torch.optim.Optimizer = torch.optim.Adam
     opt_algo_kwargs: dict = field(default_factory=dict)
@@ -80,33 +80,10 @@ class Sogpr(TorchGPRegressor):
         )
 
 
-# @dataclass
-# class Mtask_Parameters:
-#     kernel: gpytorch.kernels.Kernel = ScaleKernel(RBFKernel())
-
-
-# class Mtask(TorchGPRegressor):
-#     def __init__(
-#         self,
-#         regressor=MultiTaskGP,
-#         parameter=Mtask_Parameters(),
-#         mf_train_data=None,
-#         mf_design=None,
-#     ):
-#         super().__init__(
-#             train_data=mf_train_data,
-#             covar_module=parameter.kernel,
-#             design=mf_design,
-#             task_feature=-1,
-#         )
-
-#         self.regressor = regressor
-#         self.kernel = parameter.kernel
-
-
-class MultifidelityGPModel(gpytorch.models.ExactGP):
+class MultifidelityGPModel(GPyTorch_ExactGP):
 
     def __init__(self, train_x, train_y, likelihood):
+        _imports.check()
         super(MultifidelityGPModel, self).__init__(train_x, train_y, likelihood)
 
     def __call__(self, *args, **kwargs):
@@ -121,35 +98,35 @@ class MultifidelityGPModel(gpytorch.models.ExactGP):
                     "train_inputs, train_targets cannot be None in training mode. "
                     "Call .eval() for prior predictions, or call .set_train_data() to add training data."
                 )
-            if settings.debug.on():
+            if gpytorch.settings.debug.on():
                 if not all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
                     raise RuntimeError("You must train on the training inputs!")
             res = super().__call__(*inputs, **kwargs)
             return res
 
         # Prior mode
-        elif settings.prior_mode.on() or self.train_inputs is None or self.train_targets is None:
+        elif gpytorch.settings.prior_mode.on() or self.train_inputs is None or self.train_targets is None:
             full_inputs = args
-            full_output = super(ExactGP, self).__call__(*full_inputs, **kwargs)
-            if settings.debug().on():
-                if not isinstance(full_output, MultivariateNormal):
+            full_output = super(gpytorch.models.ExactGP, self).__call__(*full_inputs, **kwargs)
+            if gpytorch.settings.debug().on():
+                if not isinstance(full_output, gpytorch.distributions.MultivariateNormal):
                     raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
             return full_output
 
         # Posterior mode
         else:
-            if settings.debug.on():
+            if gpytorch.settings.debug.on():
                 if all(torch.equal(train_input, input) for train_input, input in zip(train_inputs, inputs)):
                     warnings.warn(
                         "The input matches the stored training data. Did you forget to call model.train()?",
-                        GPInputWarning,
+                        gpytorch.GPInputWarning,
                     )
 
             # Compute full output
-            full_output = super(ExactGP, self).__call__(train_inputs, inputs, **kwargs)
+            full_output = super(gpytorch.models.ExactGP, self).__call__(train_inputs, inputs, **kwargs)
 
-            if settings.debug().on():
-                if not isinstance(full_output, MultivariateNormal):
+            if gpytorch.settings.debug().on():
+                if not isinstance(full_output, gpytorch.distributions.MultivariateNormal):
                     raise RuntimeError("ExactGP.forward must return a MultivariateNormal")
             full_mean, full_covar = full_output.loc, full_output.lazy_covariance_matrix
 
@@ -160,7 +137,7 @@ class MultifidelityGPModel(gpytorch.models.ExactGP):
             test_shape = torch.Size([joint_shape[0] - self.prediction_strategy.train_shape[0], *tasks_shape])
 
             # Make the prediction
-            with settings.cg_tolerance(settings.eval_cg_tolerance.value()):
+            with gpytorch.settings.cg_tolerance(gpytorch.settings.eval_cg_tolerance.value()):
                 predictive_mean, predictive_covar = self.prediction_strategy.exact_prediction(full_mean.float(), full_covar.float())
 
             # Reshape predictive mean to match the appropriate event shape
@@ -168,19 +145,19 @@ class MultifidelityGPModel(gpytorch.models.ExactGP):
             return full_output.__class__(predictive_mean, predictive_covar)
 
 
-class MultiFidelityPredictionStrategy(DefaultPredictionStrategy):
+class MultiFidelityPredictionStrategy(GPyTorch_PredictionStrategy):
     def __init__(self, train_inputs, train_prior_dist, train_labels, likelihood, root=None, inv_root=None):
         super().__init__(torch.cat(train_inputs), train_prior_dist, torch.cat(train_labels), likelihood, root, inv_root)
     
     @property
-    @cached(name="covar_cache")
+    @gpytorch.utils.memoize.cached(name="covar_cache")
     def covar_cache(self):
         train_train_covar = self.lik_train_train_covar
-        train_train_covar_inv_root = to_dense(train_train_covar.root_inv_decomposition().root)
+        train_train_covar_inv_root = linear_operator.to_dense(train_train_covar.root_inv_decomposition().root)
         return self._exact_predictive_covar_inv_quad_form_cache(train_train_covar_inv_root, self._last_test_train_covar).float()
 
     @property
-    @cached(name="mean_cache")
+    @gpytorch.utils.memoize.cached(name="mean_cache")
     def mean_cache(self):
         mvn = self.likelihood(self.train_prior_dist, self.train_inputs)
         train_mean, train_train_covar = mvn.loc, mvn.lazy_covariance_matrix
@@ -188,12 +165,12 @@ class MultiFidelityPredictionStrategy(DefaultPredictionStrategy):
         train_labels_offset = (self.train_labels - train_mean).unsqueeze(-1)
         mean_cache = train_train_covar.evaluate_kernel().solve(train_labels_offset).squeeze(-1)
 
-        if settings.detach_test_caches.on():
+        if gpytorch.settings.detach_test_caches.on():
             mean_cache = mean_cache.detach()
 
         if mean_cache.grad_fn is not None:
-            wrapper = functools.partial(clear_cache_hook, self)
-            functools.update_wrapper(wrapper, clear_cache_hook)
+            wrapper = functools.partial(gpytorch.utils.memoize.clear_cache_hook, self)
+            functools.update_wrapper(wrapper, gpytorch.utils.memoize.clear_cache_hook)
             mean_cache.grad_fn.register_hook(wrapper)
 
         return mean_cache.float()
@@ -204,7 +181,7 @@ class Cokgj_Parameters:
 
     likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
     mean: gpytorch.means.Mean or List[gpytorch.means.Mean] = gpytorch.means.ZeroMean()
-    kernel: gpytorch.kernels.Kernel or List[gpytorch.kernels.Kernel] = ScaleKernel(RBFKernel())
+    kernel: gpytorch.kernels.Kernel or List[gpytorch.kernels.Kernel] = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
     noise_fix: bool = False
     opt_algo: torch.optim.Optimizer = torch.optim.Adam
     opt_algo_kwargs: dict = field(default_factory=dict)
@@ -212,7 +189,6 @@ class Cokgj_Parameters:
     training_iter: int = 50
     prediction_strategy: MultiFidelityPredictionStrategy = MultiFidelityPredictionStrategy
 
-    # kernel: gpytorch.kernels.Kernel = cokgj_kernel.CoKrigingKernel()
 
 class CokgjModel(MultifidelityGPModel):
     
@@ -383,7 +359,7 @@ class Multitask_Parameters:
 
     likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
     mean: gpytorch.means.Mean or List[gpytorch.means.Mean] = gpytorch.means.ZeroMean()
-    kernel: gpytorch.kernels.Kernel or List[gpytorch.kernels.Kernel] = ScaleKernel(RBFKernel())
+    kernel: gpytorch.kernels.Kernel or List[gpytorch.kernels.Kernel] = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
     noise_fix: bool = False
     opt_algo: torch.optim.Optimizer = torch.optim.Adam
     opt_algo_kwargs: dict = field(default_factory=dict)
@@ -425,21 +401,3 @@ class MultitaskGPR(TorchGPRegressor):
             train_x_list.append(train_x)
             train_y_list.append(train_y)
         return train_x_list, train_y_list
-
-# @dataclass
-# class Cokgd_Parameters:
-#     pass
-
-# class Cokgd(Regressor):
-    
-#     def train(self) -> Surrogate:
-        
-#         base_k = GPy.kern.RBF
-#         kernels_RL = [base_k(dim - 1) + GPy.kern.White(dim - 1), base_k(dim - 1)]
-#         model = GPy.models.multiGPRegression(
-#             self.train_data['input'],
-#             self.train_data['output'],
-#             kernel=kernels_RL,
-#         )
-        
-#         return model

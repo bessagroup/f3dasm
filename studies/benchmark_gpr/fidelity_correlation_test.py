@@ -1,4 +1,4 @@
-from fidelity_augmentors import Warp, Scale, Noise_interpolator
+from fidelity_augmentors import Warp, Scale, NoiseInterpolator
 import f3dasm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ warp_augmentor: f3dasm.functions.Augmentor = Warp(warp=lambda x: x ** a, reverse
 scale_augmentor: f3dasm.functions.Augmentor = Scale(scale=scale, reverse_scale=reverse_scale)
 
 aug_coeff = 0.5
-noise_interpolator: f3dasm.functions.Augmentor = Noise_interpolator(noise_var=1., aug_coeff=aug_coeff)
+noise_interpolator: f3dasm.functions.Augmentor = NoiseInterpolator(noise_var=1., aug_coeff=aug_coeff)
 
 design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=dimensionality)
 sampler: f3dasm.Sampler = f3dasm.sampling.SobolSequence(design=design, seed=seed)

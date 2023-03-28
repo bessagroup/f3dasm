@@ -5,7 +5,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Tuple, List
 
-# Third-party
+# Third-party core
 import scipy
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from botorch.models import AffineFidelityCostModel
 from botorch.optim import optimize_acqf, optimize_acqf_mixed
 import matplotlib.pyplot as plt
 
-# Locals
+# Local
 # from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
 from .optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
 from ..design.experimentdata import ExperimentData

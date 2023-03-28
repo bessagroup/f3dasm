@@ -14,6 +14,14 @@ if TYPE_CHECKING:
     from .linear_regression import LinearRegression
     from .model import Model
     from .passthrough_model import PassthroughModel
+    from .gpr import (
+        Sogpr, 
+        Sogpr_Parameters,
+        Cokgj,
+        Cokgj_Parameters,
+        MultitaskGPR,
+        Multitask_Parameters,
+        )
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -32,6 +40,8 @@ _import_structure: dict = {
     "evaluator": ["Evaluator"],
     "all_models": ["MODELS"],
     "loss_functions": ["MeanSquaredError"],
+    "gpr": ["Sogpr", "Sogpr_parameters", "Cokgj", "Cokgj_Parameters",
+        "MultitaskGPR", "Multitask_Parameters"]
 }
 
 if not TYPE_CHECKING:

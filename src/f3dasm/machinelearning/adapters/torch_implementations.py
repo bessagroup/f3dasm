@@ -1,21 +1,25 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass
 from typing import Any, List
 
-import torch
-import gpytorch
-# from botorch import fit_gpytorch_model
-# from botorch.models.transforms import Normalize, Standardize
-# from gpytorch import ExactMarginalLogLikelihood
+# Third-party core
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-# from .. import Data, ContinuousParameter
+# Local
+from ..._imports import try_import
 from ...design import ExperimentData
 from ...base.regression import Regressor, Surrogate
 
-import matplotlib.pyplot as plt
-
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import torch
+    import gpytorch
+    from sklearn.preprocessing import StandardScaler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -256,6 +260,7 @@ class TorchGPRegressor(Regressor):
             train_data: ExperimentData or List[ExperimentData] = None,
             design=None,
     ):
+        _imports.check()
         super().__init__(
             train_data=train_data,
             design=design,
