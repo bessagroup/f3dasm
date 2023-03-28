@@ -9,35 +9,23 @@ from typing import Any, Tuple, List
 import scipy
 import numpy as np
 import pandas as pd
-import torch
-from botorch.acquisition import (InverseCostWeightedUtility,
-                                 UpperConfidenceBound)
-from botorch.models import AffineFidelityCostModel
-from botorch.optim import optimize_acqf, optimize_acqf_mixed
-import matplotlib.pyplot as plt
 
 # Local
-# from .. import Optimizer, Function, OptimizerParameters, Data, MultiFidelityFunction
+from .._imports import try_import
 from .optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
 from ..design.experimentdata import ExperimentData
+from ..sampling import SobolSequence
 from ..functions import Function, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
-# from ..regression.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters
 from ..machinelearning.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters, Cokgj_Parameters
-import f3dasm
-from sklearn.preprocessing import StandardScaler
+
+# Third-party extension
+with try_import(['optimization', 'machinelearning']) as _imports:
+    import torch
+    import matplotlib.pyplot as plt
+    from sklearn.preprocessing import StandardScaler
 
 import gpytorch
-
-@dataclass
-class Acquisition_Parameters():
-    """Hyperparameters for Acquisition function"""
-    
-    best_f: Any = None
-    beta: float = 0.4
-    maximize: bool = False
-
-# from .adapters.optimization import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -50,6 +38,15 @@ __status__ = 'Alpha'
 
 
 @dataclass
+class Acquisition_Parameters():
+    """Hyperparameters for Acquisition function"""
+    
+    best_f: Any = None
+    beta: float = 0.4
+    maximize: bool = False
+
+
+@dataclass
 class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for BayesianOptimizationTorch optimizer"""
 
@@ -59,65 +56,6 @@ class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     acquisition_hyperparameters: Acquisition_Parameters = Acquisition_Parameters()
     n_init: int = 10
     visualize_gp: bool = False
-
-
-# def cost_model(lf, cost_ratio):
-#     a = (1 - 1 / cost_ratio) / (1 - lf)
-#     cost_model = AffineFidelityCostModel(
-#         fidelity_weights={-1: a},
-#         fixed_cost=1 - a
-#     )
-#     return cost_model
-
-
-# def cost_aware_utility(self):
-#     return InverseCostWeightedUtility(cost_model=self.cost_model())
-
-
-# def optimize_acq_and_get_observation(acq_f, function: Function) -> Tuple[Any, Any]:
-#     candidates, _ = optimize_acqf(
-#         acq_function=acq_f,
-#         # bounds=torch.tensor(function.input_domain.T, dtype=torch.float64),
-#         bounds=torch.tile(torch.tensor([[0.0], [1.0]]), (1, function.dimensionality)),
-#         q=1,
-#         num_restarts=10,
-#         raw_samples=15,
-#     )
-#     new_x = candidates.numpy()
-#     new_obj = function(new_x)
-#     return new_x, new_obj
-
-
-# def optimize_mfacq_and_get_observation(acq_f, cost_model, lf, multifidelity_function: MultiFidelityFunction) -> Tuple[Any, Any, Any]:
-
-#     dim = multifidelity_function.fidelity_functions[0].dimensionality
-#     fixed_features_list = [{dim: float(lf)},
-#                            {dim: 1.0}]
-
-#     # design_bounds = torch.tensor(base_fun.input_domain.T, dtype=torch.float64)
-#     design_bounds = torch.tile(torch.tensor([[0.0], [1.0]]), (1, dim))
-#     fidelity_bounds = torch.tensor([[0.0], [1.0]], dtype=torch.float64)
-#     augmented_bounds = torch.hstack((design_bounds, fidelity_bounds))
-
-#     candidates, _ = optimize_acqf_mixed(
-#         acq_function=acq_f,
-#         bounds=augmented_bounds,
-#         fixed_features_list=fixed_features_list,
-#         q=1,
-#         num_restarts=10,
-#         raw_samples=15,
-#         options={"batch_limit": 1, "maxiter": 200},
-#         sequential=True,
-#     )
-
-#     cost = cost_model(lf, cost_ratio=2)(candidates).sum()
-#     new_x = candidates.numpy()
-#     function = multifidelity_function.get_fidelity_function_by_parameter(fidelity_parameter=new_x[0, -1])
-#     new_obj = function(new_x)
-
-#     print(new_x, new_obj)
-
-#     return new_x, new_obj, cost
 
 
 def optimize_acquisition(acq_f, function):
@@ -133,6 +71,7 @@ def optimize_acquisition(acq_f, function):
     new_obj = function(new_x)
     return new_x, new_obj, acq_val
 
+
 def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_function, test_x_hf):
     acq_val_tot = -torch.inf
     for fid, cost in enumerate(multifidelity_function.costs):
@@ -147,6 +86,8 @@ def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_functi
             fid_tot = fid
     return new_x_tot, new_obj_tot, cost_tot, fid_tot
 
+
+@dataclass
 class BayesianOptimizationTorch(Optimizer):
     """Bayesian optimization implementation based on the gpytorch library"""
 
@@ -168,7 +109,7 @@ class BayesianOptimizationTorch(Optimizer):
         # # Test points are regularly spaced along [0,1]
         # # Make predictions by feeding model through likelihood
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            test_sampler = f3dasm.sampling.SobolSequence(design=self.data.design, seed=0)
+            test_sampler = SobolSequence(design=self.data.design, seed=0)
             
             if function.dimensionality == 1:
                 test_x = torch.linspace(0, 1, 500)
@@ -229,6 +170,7 @@ class BayesianOptimizationTorch(Optimizer):
 
         return new_x, self.scaler.transform(new_obj)
 
+
 @dataclass
 class MFBayesianOptimizationTorch_Parameters(OptimizerParameters):
     """Hyperparameters for MFBayesianOptimizationTorch optimizer"""
@@ -274,7 +216,7 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
             # # Test points are regularly spaced along [0,1]
             # # Make predictions by feeding model through likelihood
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                test_sampler = f3dasm.sampling.SobolSequence(design=self.data[0].design, seed=0)
+                test_sampler = SobolSequence(design=self.data[0].design, seed=0)
                 
                 if dim == 1:
                     test_x = torch.linspace(0, 1, 50)
@@ -309,7 +251,7 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
 
     def update_step(self, multifidelity_function: MultiFidelityFunction,) -> None:
 
-        regressor = f3dasm.machinelearning.gpr.Cokgj(
+        regressor = Cokgj(
             train_data=self.data, 
             design=self.data[0].design,
             parameter=self.parameter.regressor_hyperparameters,
@@ -317,8 +259,8 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
 
         surrogate = regressor.train()
 
-        low_sampler = f3dasm.sampling.SobolSequence(design=self.data[0].design)
-        high_sampler = f3dasm.sampling.SobolSequence(design=self.data[1].design)
+        low_sampler = SobolSequence(design=self.data[0].design)
+        high_sampler = SobolSequence(design=self.data[1].design)
         
         test_x_lf = low_sampler.get_samples(numsamples=500)
         test_x_hf = high_sampler.get_samples(numsamples=500)
@@ -330,14 +272,6 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
             torch.empty(0, multifidelity_function.fidelity_functions[0].dimensionality)]).mean
 
         cr = multifidelity_function.costs[1] / multifidelity_function.costs[0]
-
-        # self.parameter.acquisition = VFUpperConfidenceBound(
-        #     model=model,
-        #     beta=4,
-        #     maximize=False,
-        #     mean=[mean_low, mean_high],
-        #     cr=cr,
-        # )
 
         acquisition = self.parameter.acquisition(
             model=surrogate.model,
@@ -355,12 +289,8 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
             test_x_hf=test_x_hf,
         )
 
-        # self.cost = cost
-        # print("This iteration cost:", float(self.cost))
-
-        # self.data[fid].add_numpy_arrays(input=new_x, output=new_obj)
-
         return new_x, new_obj, cost, fid
+
 
 def mf_data_compiler(
         mfdata: List[ExperimentData],
