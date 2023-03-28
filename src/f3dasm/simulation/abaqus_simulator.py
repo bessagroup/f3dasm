@@ -6,8 +6,8 @@ import pickle
 import subprocess
 import time
 
-from simulation import Simulator
-from .abaqus_utils import create_dir, print_banner, write_json, AssertInputs
+from .abaqus_utils import AssertInputs, create_dir, print_banner, write_json
+from .simulator import Simulator
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -71,8 +71,24 @@ class AbaqusSimulator(Simulator, AssertInputs):
         sleep_time: float = 20.0,
         refresh_time: float = 5.0,
     ) -> str:
+        """execute the simulation
 
-        # hidden name information
+        Parameters
+        ----------
+        max_time : float, optional
+            maximum simulation time , by default None
+        sleep_time : float, optional
+            system sleep time , by default 20.0
+        refresh_time : float, optional
+            refresh time to know whether the simulation is finished or not, by default 5.0
+
+        Returns
+        -------
+        flag: str
+            a flag to indicate the simulation is finished or be killed
+        """
+
+        # name information
         abaqus_py_script = "abaScript.py"
         # folder operations
         new_path = create_dir(
@@ -135,6 +151,18 @@ class AbaqusSimulator(Simulator, AssertInputs):
             self.remove_files(directory=os.getcwd(), file_types=[".odb"])
 
     def read_back_results(self, file_name: str = "results.p") -> dict:
+        """read back results for abaqus to python
+
+        Parameters
+        ----------
+        file_name : str, optional
+            file name of the simulation results , by default "results.p"
+
+        Returns
+        -------
+        dict
+            simulation results
+        """
 
         with open(file_name, "rb") as fd:
             results = pickle.load(fd, fix_imports=True, encoding="latin1")
@@ -150,6 +178,29 @@ class AbaqusSimulator(Simulator, AssertInputs):
         sleep_time: float = 20.0,
         refresh_time: float = 5.0,
     ) -> str:
+        """run abaqus simulation
+
+        Parameters
+        ----------
+        command : str
+            system command
+        max_time : float, optional
+            maximum simulation time , by default None
+        sleep_time : float, optional
+            sleep time , by default 20.0
+        refresh_time : float, optional
+            refresh time , by default 5.0
+
+        Returns
+        -------
+        str
+            flag to indicate the simulation is finshed or killed
+
+        Raises
+        ------
+        NotImplementedError
+            platform error
+        """
 
         if self.platform == "ubuntu":
 
@@ -205,6 +256,20 @@ class AbaqusSimulator(Simulator, AssertInputs):
         file_name: str,
         status: str = "simulation",
     ) -> None:
+        """make scipt to run abaqus script
+
+        Parameters
+        ----------
+        file_name : str
+            file name
+        status : str, optional
+            status of simulation, by default "simulation"
+
+        Raises
+        ------
+        KeyError
+            status keyword error
+        """
 
         if status == "simulation":
             with open(file_name, "w") as file:

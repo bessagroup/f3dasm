@@ -1,6 +1,6 @@
 import pytest
 
-from f3dasm._legacy.run_abaqus import main
+from f3dasm.test.run_abaqus import main
 
 
 @pytest.mark.requires_dependency("abaqus")

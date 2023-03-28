@@ -1,0 +1,24 @@
+Collecting hydra-core
+  Downloading hydra_core-1.3.2-py3-none-any.whl (154 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 154.5/154.5 kB 3.8 MB/s eta 0:00:00
+Collecting omegaconf<2.4,>=2.2
+  Downloading omegaconf-2.3.0-py3-none-any.whl (79 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 79.5/79.5 kB 14.4 MB/s eta 0:00:00
+Requirement already satisfied: packaging in /home/jiaxiangyi/.local/lib/python3.10/site-packages (from hydra-core) (21.3)
+Collecting antlr4-python3-runtime==4.9.*
+  Downloading antlr4-python3-runtime-4.9.3.tar.gz (117 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 117.0/117.0 kB 17.7 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting PyYAML>=5.1.0
+  Downloading PyYAML-6.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl (682 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 682.2/682.2 kB 26.1 MB/s eta 0:00:00
+Requirement already satisfied: pyparsing!=3.0.5,>=2.0.2 in /home/jiaxiangyi/anaconda3/envs/MLenv3/lib/python3.10/site-packages (from packaging->hydra-core) (3.0.9)
+Building wheels for collected packages: antlr4-python3-runtime
+  Building wheel for antlr4-python3-runtime (setup.py): started
+  Building wheel for antlr4-python3-runtime (setup.py): finished with status 'done'
+  Created wheel for antlr4-python3-runtime: filename=antlr4_python3_runtime-4.9.3-py3-none-any.whl size=144554 sha256=0945eb048ad32ad2e1078b871964816fe50b413d326bce39dea536fc37312189
+  Stored in directory: /home/jiaxiangyi/.cache/pip/wheels/12/93/dd/1f6a127edc45659556564c5730f6d4e300888f4bca2d4c5a88
+Successfully built antlr4-python3-runtime
+Installing collected packages: antlr4-python3-runtime, PyYAML, omegaconf, hydra-core
+Successfully installed PyYAML-6.0 antlr4-python3-runtime-4.9.3 hydra-core-1.3.2 omegaconf-2.3.0

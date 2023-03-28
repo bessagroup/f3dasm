@@ -6,9 +6,9 @@ import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Alpha'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
@@ -37,6 +37,4 @@ class Simulator:
     def run(self) -> None:
         self.pre_process()
         self.execute()
-        self.post_process() 
-
-    
+        self.post_process()

@@ -74,6 +74,8 @@ def print_banner(message: str, sign="#", length=50) -> None:
 
 
 class AssertInputs:
+    """class to assert the inputs of abaqus simulation is assigned properly or not"""
+
     @classmethod
     def is_inputs_proper_defined(
         cls, folder_info: dict, sim_info: dict
