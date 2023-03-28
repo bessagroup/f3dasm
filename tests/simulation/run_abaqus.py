@@ -1,16 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-import os
-import sys
-
 # Third-party
-import numpy as np
-
-# Locals
-folder_path = "/home/jiaxiangyi/Documents/F3DASM/src"
-sys.path.insert(0, folder_path)
 
 import f3dasm
 from f3dasm.design import ExperimentData
@@ -52,13 +43,6 @@ def main() -> ExperimentData:
     # initialize the simulation
     problem = FlowerRVE()
     problem.update_sim_info(print_info=True)
-
-    # run simulation by import doe
-    # results = {}
-    # for ii in range(N):
-    #     results[ii] = problem.run_simulation(
-    #         sample=samples[ii], third_folder_index=ii
-    #     )
 
     results = problem.run_f3dasm(data=data)
     print(results.data)
