@@ -223,7 +223,7 @@ class AbaqusSimulator(Simulator, AssertInputs):
                         self.kill_abaqus_process()
                         flag = "finished"
                         break
-                except:
+                except FileNotFoundError:
                     print(
                         "abaqus license is not enough,"
                         "waiting for license authorization"
