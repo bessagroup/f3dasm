@@ -3,7 +3,7 @@
 
 # Standard
 import json
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 # Third-party core
 import matplotlib.pyplot as plt
@@ -48,6 +48,26 @@ class ExperimentData:
         """Print the data to the console"""
         print(self.data)
         return
+
+    def store(self, name: str):
+        self.data.to_csv(f"{name}_data.csv")
+
+        design_json = self.design.to_json()
+
+        with open(f"{name}_design.json", 'w') as outfile:
+            outfile.write(design_json)
+
+    def get_inputdata_by_index(self, index: int) -> dict:
+        try:
+            return self.data['input'].loc[index].to_dict()
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
+
+    def set_outputdata_by_index(self, index: int, value: Any):
+        try:
+            self.data['output'].loc[index] = value
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
 
     def to_json(self) -> str:
         args = {'design': self.design.to_json(),
