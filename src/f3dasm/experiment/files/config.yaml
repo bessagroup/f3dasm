@@ -1,3 +1,6 @@
+defaults:
+  - override hydra/job_logging: logging.yaml
+
 files:
   recommender: "../../notebooks/datafiles"
   raw: "../../notebooks/optimizerresults"

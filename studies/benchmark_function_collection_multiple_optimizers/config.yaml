@@ -1,5 +1,5 @@
 defaults:
-  - override hydra/job_logging: custom
+  - override hydra/job_logging: logging.yaml
 
 design:
   lower_bound: -1.0

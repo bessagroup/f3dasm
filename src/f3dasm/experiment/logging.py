@@ -1,12 +1,33 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import fcntl
-# from hydra.plugins.hydra_job_logging.handlers import Handler
 from logging import FileHandler, StreamHandler
-import time
+from time import sleep
 import errno
+from typing import TextIO
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
-class CustomFileHandler(FileHandler):
+class DistributedFileHandler(FileHandler):
     def __init__(self, filename):
+        """Distributed FileHandler class for handling logging to
+        one single file when multiple nodes access the same resource
+
+        Parameters
+        ----------
+        filename
+            name of the logging file
+        """
         super().__init__(filename)
 
     def emit(self, record):
@@ -21,10 +42,10 @@ class CustomFileHandler(FileHandler):
                 if self.stream is None:
                     self.stream = self._open()
 
-                lock_file(self.stream)
+                _lock_file(self.stream)
                 StreamHandler.emit(self, record)
 
-                unlock_file(self.stream)
+                _unlock_file(self.stream)
                 print("Succesfully logged!")
 
                 break
@@ -32,7 +53,7 @@ class CustomFileHandler(FileHandler):
                 # the file is locked by another process
                 if e.errno == errno.EAGAIN:
                     print("The log file is currently locked by another process. Retrying in 1 second...")
-                    time.sleep(1)
+                    sleep(1)
                 else:
                     print(f"An unexpected IOError occurred: {e}")
                     break
@@ -42,9 +63,23 @@ class CustomFileHandler(FileHandler):
                 break
 
 
-def lock_file(file):
+def _lock_file(file: TextIO):
+    """Lock the file with the fcntl lock
+
+    Parameters
+    ----------
+    file
+        file object that returns from open()
+    """
     fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
-def unlock_file(file):
+def _unlock_file(file: TextIO):
+    """Unlock the file with the fcntl lock
+
+    Parameters
+    ----------
+    file
+        file object that returns from open()
+    """
     fcntl.flock(file, fcntl.LOCK_UN)

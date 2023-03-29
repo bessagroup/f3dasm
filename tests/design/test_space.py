@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from f3dasm.design import (_create_parameter_from_dict,
-                           create_parameter_from_json)
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter, Parameter)
+from f3dasm.design.utils import (_create_parameter_from_dict,
+                                 create_parameter_from_json)
 
 pytestmark = pytest.mark.smoke
 
