@@ -1,5 +1,7 @@
-# Source:
+# Source for the markers:
 # https://doc.pytest.org/en/latest/example/markers.html#custom-marker-and-command-line-option-to-control-test-runs
+
+import logging
 
 import pytest
 
@@ -21,3 +23,8 @@ def pytest_runtest_setup(item):
 
     if item.config.getoption("-S") in dependency_names or item.config.getoption("-S") == "all":
         pytest.skip(f"test skipped: requires dependency {dependency_names!r}")
+
+
+@pytest.fixture(scope='session', autouse=True)
+def setup_logging():
+    logging.getLogger('tensorflow').setLevel(logging.WARNING)

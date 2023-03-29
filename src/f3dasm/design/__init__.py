@@ -1,12 +1,6 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-import json
-
-# Third-party core
-import pandas as pd
-
 # Local
 from .all_parameters import PARAMETERS
 from .constraint import Constraint
@@ -26,6 +20,3 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-# PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
