@@ -48,7 +48,7 @@ def test_gpr_gpytorch():
         dimensionality=dim,
     )
 
-    sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
+    sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=seed)
 
     train_data: f3dasm.Data = sampler.get_samples(numsamples=numsamples)
     # opt_retries = 50
@@ -101,7 +101,7 @@ def test_gpr_gpytorch():
     # # Test points are regularly spaced along [0,1]
     # # Make predictions by feeding model through likelihood
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
+        test_sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=0)
         
         if dim == 1:
             test_x = torch.linspace(0, 1, n_test)
@@ -173,7 +173,7 @@ def test_bo_gpytorch():
         dimensionality=dim,
     )
 
-    sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace)
+    sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace)
 
     optimizer = f3dasm.optimization.BayesianOptimizationTorch(
         data=ExperimentData(design=parameter_DesignSpace),
@@ -269,7 +269,7 @@ def test_cokgj_forrester_gpytorch():
             dimensionality=dim,
         )
 
-        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
+        sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=seed)
 
         if train_data_supplied:
             train_data = ExperimentData(design=parameter_DesignSpace)
@@ -337,7 +337,7 @@ def test_cokgj_forrester_gpytorch():
     # # Test points are regularly spaced along [0,1]
     # # Make predictions by feeding model through likelihood
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
+        test_sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=0)
         
         if dim == 1:
             test_x = torch.linspace(0, 1, n_test)[:, None]
@@ -406,7 +406,7 @@ def test_cokgj_gpytorch():
             dimensionality=dim,
         )
 
-        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
+        sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=seed)
 
         if train_data_supplied:
             train_data = ExperimentData(design=parameter_DesignSpace)
@@ -474,7 +474,7 @@ def test_cokgj_gpytorch():
     # # Test points are regularly spaced along [0,1]
     # # Make predictions by feeding model through likelihood
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
+        test_sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=0)
         
         if dim == 1:
             test_x = torch.linspace(0, 1, n_test)[:, None]
@@ -557,7 +557,7 @@ def test_mtask_forrester_gpytorch():
             dimensionality=dim,
         )
 
-        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
+        sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=seed)
 
         if train_data_supplied:
             train_data = ExperimentData(design=parameter_DesignSpace)
@@ -625,7 +625,7 @@ def test_mtask_forrester_gpytorch():
     # # Test points are regularly spaced along [0,1]
     # # Make predictions by feeding model through likelihood
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
+        test_sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=0)
         
         if dim == 1:
             test_x = torch.linspace(0, 1, n_test)[:, None]
@@ -728,7 +728,7 @@ def test_mfbo_cokgj_gpytorch():
         # fidelity_parameter = f3dasm.ConstantParameter(name="fid", constant_value=fidelity_parameter)
         # parameter_DesignSpace.add_input_space(fidelity_parameter)
 
-        sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
+        sampler = f3dasm.sampling.SobolSequence_torch(design=parameter_DesignSpace, seed=seed)
 
         fidelity_functions.append(fun)
         multifidelity_samplers.append(sampler)

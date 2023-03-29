@@ -17,20 +17,20 @@ from .sampler import Sampler
 
 # Third-party extension
 with try_import('sampling') as _imports:
-    from SALib.sample import sobol_sequence
+    from torch.quasirandom import SobolEngine
 
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
+__author__ = 'Leo Guo (L.L.Guo@tudelft.nl)'
+__credits__ = ['Leo Guo', 'Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
 
 
-class SobolSequence(Sampler):
+class SobolSequence_torch(Sampler):
     """Sampling via Sobol Sequencing with SALib"""
 
     def __init__(self, design: DesignSpace, seed: Union[Any, int] = None):
@@ -52,7 +52,8 @@ class SobolSequence(Sampler):
         continuous = self.design.get_continuous_input_parameters()
         dimensions = len(continuous)
 
-        samples = sobol_sequence.sample(numsamples, dimensions)
+        sobolengine = SobolEngine(dimension=dimensions, scramble=True, seed=self.seed)
+        samples = sobolengine.draw(numsamples).numpy()
 
         # stretch samples
         samples = self._stretch_samples(samples)

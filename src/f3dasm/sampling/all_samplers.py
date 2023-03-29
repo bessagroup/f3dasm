@@ -5,7 +5,7 @@
 from typing import List
 
 # Locals
-from . import latinhypercube, randomuniform, sobolsequence
+from . import latinhypercube, randomuniform, sobolsequence, sobolsequence_torch
 from .sampler import Sampler
 
 #                                                          Authorship & Credits
@@ -29,3 +29,6 @@ if latinhypercube._imports.is_successful():
 
 if sobolsequence._imports.is_successful():
     SAMPLERS.append(sobolsequence.SobolSequence)
+
+if sobolsequence_torch._imports.is_successful():
+    SAMPLERS.append(sobolsequence_torch.SobolSequence_torch)

@@ -14,7 +14,7 @@ import pandas as pd
 from .._imports import try_import
 from .optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
 from ..design.experimentdata import ExperimentData
-from ..sampling import SobolSequence
+from ..sampling import SobolSequence_torch
 from ..functions import Function, MultiFidelityFunction
 from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
 from ..machinelearning.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters, Cokgj_Parameters
@@ -109,7 +109,7 @@ class BayesianOptimizationTorch(Optimizer):
         # # Test points are regularly spaced along [0,1]
         # # Make predictions by feeding model through likelihood
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            test_sampler = SobolSequence(design=self.data.design, seed=0)
+            test_sampler = SobolSequence_torch(design=self.data.design, seed=0)
             
             if function.dimensionality == 1:
                 test_x = torch.linspace(0, 1, 500)
@@ -216,7 +216,7 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
             # # Test points are regularly spaced along [0,1]
             # # Make predictions by feeding model through likelihood
             with torch.no_grad(), gpytorch.settings.fast_pred_var():
-                test_sampler = SobolSequence(design=self.data[0].design, seed=0)
+                test_sampler = SobolSequence_torch(design=self.data[0].design, seed=0)
                 
                 if dim == 1:
                     test_x = torch.linspace(0, 1, 50)
@@ -259,8 +259,8 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
 
         surrogate = regressor.train()
 
-        low_sampler = SobolSequence(design=self.data[0].design)
-        high_sampler = SobolSequence(design=self.data[1].design)
+        low_sampler = SobolSequence_torch(design=self.data[0].design)
+        high_sampler = SobolSequence_torch(design=self.data[1].design)
         
         test_x_lf = low_sampler.get_samples(numsamples=500)
         test_x_hf = high_sampler.get_samples(numsamples=500)

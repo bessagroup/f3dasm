@@ -9,6 +9,7 @@ from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.sampler import Sampler
 from f3dasm.sampling.sobolsequence import SobolSequence
+from f3dasm.sampling.sobolsequence_torch import SobolSequence_torch
 
 pytestmark = pytest.mark.smoke
 
@@ -85,6 +86,44 @@ def test_correct_sampling_sobol(design3: DesignSpace):
             [8.3250, 76, 102.5750, "test3", 2.2750],
             [4.3750, 65, 287.7250, "test3", 5.6250],
             [5.3625, 25, 148.8625, "test3", 4.7875],
+        ]
+    )
+
+    columnnames = [
+        ["input"] * design3.get_number_of_input_parameters(),
+        ["x1", "x2", "x3", "x4", "x5"],
+    ]
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = df_ground_truth.astype(
+        {
+            ("input", "x1"): "float",
+            ("input", "x2"): "int",
+            ("input", "x3"): "float",
+            ("input", "x4"): "category",
+            ("input", "x5"): "float",
+        }
+    )
+
+    samples = sobol_sequencing.get_samples(numsamples=numsamples)
+    samples = samples.data.round(6)
+    assert df_ground_truth.equals(samples)
+
+
+def test_correct_sampling_sobol_torch(design3: DesignSpace):
+    seed = 42
+
+    # Construct sampler
+    sobol_sequencing = SobolSequence_torch(design=design3, seed=seed)
+
+    numsamples = 5
+
+    ground_truth_samples = np.array(
+        [
+            [10.280355, 56, 48.646873, "test3", 6.113958],
+            [4.159176, 19, 282.899078, "test2", 3.599241],
+            [6.199440, 76, 141.947678, "test3", 4.019957],
+            [8.240423, 65, 376.175934, "test3", 1.505790],
+            [6.719608, 25, 180.828003, "test3", 2.489041],
         ]
     )
 

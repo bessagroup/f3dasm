@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .randomuniform import RandomUniform
     from .sampler import Sampler
     from .sobolsequence import SobolSequence
+    from .sobolsequence_torch import SobolSequence_torch
     from .utils import create_sampler_from_json, find_sampler
 
 #                                                          Authorship & Credits
@@ -33,6 +34,7 @@ _import_structure: dict = {
     "latinhypercube": ["LatinHypercube"],
     "randomuniform": ["RandomUniform"],
     "sobolsequence": ["SobolSequence"],
+    "sobolsequence_torch": ["SobolSequence_torch"],
     "all_samplers": ["SAMPLERS"],
 }
 
