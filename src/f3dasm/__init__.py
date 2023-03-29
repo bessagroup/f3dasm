@@ -9,9 +9,8 @@ This is the initalizer of the F3DASM package
 # =============================================================================
 
 # Submodules
-from f3dasm import _logging
-from f3dasm import (data, experiment, functions, machinelearning,
-                    optimization, sampling, simulation)
+from f3dasm import (_logging, data, design, experiment, functions,
+                    machinelearning, optimization, sampling, simulation)
 
 # Other utility functions
 from ._show_versions import __version__, show_versions
