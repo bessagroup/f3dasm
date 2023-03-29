@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from f3dasm.design import create_experimentdata_from_json
 from f3dasm.design.experimentdata import ExperimentData
+from f3dasm.design.utils import create_experimentdata_from_json
 
 pytestmark = pytest.mark.smoke
 
