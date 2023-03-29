@@ -108,6 +108,7 @@ outputs/
 # Data
 data/
 notebooks/archive/
+notebooks/tutorials/Data/
 *.obj
 
 # But exclude the data modeul of f3dasm!
