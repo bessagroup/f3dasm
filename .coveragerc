@@ -2,7 +2,7 @@
 [run]
 branch = True
 omit =
-    src/f3dasm/simulation/abaqus/ExampleFlower/*
+    src/f3dasm/simulation/abaqus_script/*
     src/f3dasm/experiment/files/*
 
 [report]
