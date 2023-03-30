@@ -1,8 +1,14 @@
+"""
+This module contains a base class for an analytical function that can be inherited
+to create specific analytical functions.
+The Function class is the base class that defines the interface for all analytical
+functions. It can be called with an input vector to evaluate the function at that point.
+"""
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Tuple
+from typing import Tuple, Union
 
 # Third-party core
 import autograd.numpy as np
@@ -49,7 +55,8 @@ class Function:
             return
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray):
+    def __call__(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
+
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
             x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
