@@ -8,7 +8,7 @@ This module defines the logging settings for the f3dasm package.
 import logging
 
 # Local
-from ._show_versions import show_versions
+from ._show_versions import __version__
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -23,5 +23,5 @@ __status__ = 'Stable'
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
-logging.info("Imported f3dasm")
-logging.info(show_versions())
+# Log welcome message and the version of f3dasm
+logging.info(f"Imported f3dasm (version: {__version__})")
