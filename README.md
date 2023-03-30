@@ -4,7 +4,7 @@
 
 ***
 
-[![Python](https://img.shields.io/badge/python-3.7-blue)](https://www.python.org)
+[![Python](https://img.shields.io/pypi/pyversions/f3dasm)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/f3dasm.svg)](https://pypi.org/project/f3dasm/)
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/optuna/optuna)
 
@@ -19,7 +19,7 @@ This code intends to facilitate the design and analysis of materials & structure
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
 
 * Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
-* Current developer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
+* Current developer and maintainer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
 
 ## Referencing
 
