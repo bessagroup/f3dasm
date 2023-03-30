@@ -7,7 +7,8 @@ hydra:
       +dimensionality: range(1, 2)
       +regressor_name: "choice(
         'Sogpr', 
-        'Cokgj'
+        'Cokgj',
+        'MultitaskGPR'
         )"
       +aug_type: 'noise'
       +hf_fraction_replaced: 0.2

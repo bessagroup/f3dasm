@@ -67,7 +67,7 @@ samp_nos = [11, 4]
 funs = []
 mf_design_space = []
 mf_sampler = []
-mf_train_data = []
+train_data = []
 
 for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
@@ -89,24 +89,24 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
     sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
 
     if train_data_supplied:
-        train_data = ExperimentData(design=parameter_DesignSpace)
+        train_data_fid = ExperimentData(design=parameter_DesignSpace)
 
         if fid_no == 0:
             input_array = np.linspace(0, 1, 11)[:, None]
         else:
             input_array = np.array([0., 0.4, 0.6, 1.])[:, None]
 
-        train_data.add_numpy_arrays(
+        train_data_fid.add_numpy_arrays(
             input_rows=input_array, 
             output_rows=np.full_like(input_array, np.nan)
             )
     else:
-        train_data = sampler.get_samples(numsamples=samp_no)
+        train_data_fid = sampler.get_samples(numsamples=samp_no)
 
-    output = fun(train_data) 
+    output = fun(train_data_fid) 
 
-    train_x = torch.tensor(train_data.get_input_data().values)
-    train_y = torch.tensor(train_data.get_output_data().values.flatten())
+    train_x = torch.tensor(train_data_fid.get_input_data().values)
+    train_y = torch.tensor(train_data_fid.get_output_data().values.flatten())
 
     # Scaling the output
     if fid_no == 0:
@@ -117,16 +117,16 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
     # if fid_no == 0:
     #     train_y_scaled += noisy_data_bool * np.random.randn(*train_y_scaled.shape) * math.sqrt(0.04)
 
-    train_data.add_output(output=train_y_scaled)
+    train_data_fid.add_output(output=train_y_scaled)
 
     funs.append(fun)
     mf_design_space.append(parameter_DesignSpace)
     mf_sampler.append(sampler)
-    mf_train_data.append(train_data)
+    train_data.append(train_data_fid)
 
 ###
 
-param = f3dasm.machinelearning.gpr.Multitask_Parameters(
+param = f3dasm.machinelearning.gpr.MultitaskGPR_Parameters(
     likelihood=likelihood,
     kernel=covar_module,
     mean=mean_module,
@@ -138,8 +138,8 @@ param = f3dasm.machinelearning.gpr.Multitask_Parameters(
     )
 
 regressor = f3dasm.machinelearning.gpr.MultitaskGPR(
-    mf_train_data=mf_train_data, 
-    design=train_data.design,
+    train_data=train_data, 
+    design=train_data[-1].design,
     parameter=param,
 )
 

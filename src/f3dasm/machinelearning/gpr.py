@@ -354,7 +354,7 @@ class MultitaskGPModel(MultifidelityGPModel):
     
 
 @dataclass
-class Multitask_Parameters:
+class MultitaskGPR_Parameters:
     """(Pre-initialized) hyperparameters for single-fidelity Gaussian process regression in pytorch"""
 
     likelihood: gpytorch.likelihoods.Likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -374,13 +374,13 @@ class MultitaskGPR(TorchGPRegressor):
         self,
         # regressor=SingleTaskMultiFidelityGP,
         regressor=MultitaskGPModel,
-        parameter=Multitask_Parameters(),
-        mf_train_data=None,
+        parameter=MultitaskGPR_Parameters(),
+        train_data=None,
         design=None,
         # noise_fix: bool = False
     ):
         super().__init__(
-            train_data=mf_train_data,
+            train_data=train_data,
             # linear_truncated=parameter.linear_truncated,
             # data_fidelity=parameter.data_fidelity,
             regressor=regressor,

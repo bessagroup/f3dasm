@@ -44,15 +44,17 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
     param_class = f3dasm.find_class(f3dasm.machinelearning.gpr, config.regressor_name + '_Parameters')
 
-    if config.regressor_name == 'Sogpr':
+    if config.regressor_name in ['Sogpr', 'MultitaskGPR']:
         kernel = kernel[0]
         mean = mean[0]
+
+    noise_fix = not config.aug_type == 'noise' or config.regressor_name == 'Sogpr'
 
     param = param_class(
         kernel=kernel,
         mean=mean,
         likelihood=gpytorch.likelihoods.GaussianLikelihood(),
-        noise_fix=True,#not config.aug_type == 'noise',
+        noise_fix=noise_fix,
         opt_algo=torch.optim.Adam,
         opt_algo_kwargs=dict(lr=0.1),
         verbose_training=False,
@@ -98,12 +100,12 @@ def convert_config_to_input(config: Config) -> List[dict]:
 
         # test_x = torch.linspace(0, 1, n_test)
 
-        if config.regressor_name == 'Cokgj':
+        if config.regressor_name in ['Cokgj', 'MultitaskGPR']:
             test_x = [torch.empty(0, config.design.dimensionality), test_x.clone()]
         
         observed_pred = surrogate.predict(test_x)
 
-        if config.regressor_name == 'Cokgj':
+        if config.regressor_name in ['Cokgj', 'MultitaskGPR']:
             test_x_plot = test_x[-1]
             train_x = torch.tensor(train_data[-1].get_input_data().values)
             train_y = torch.tensor(scaler.inverse_transform(train_data[-1].get_output_data().values))
