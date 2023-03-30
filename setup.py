@@ -7,10 +7,7 @@ from setuptools import find_packages, setup
 here = Path(__file__).absolute().parent
 
 # version
-version_data = {}
-with open(here.joinpath("src", "f3dasm", "VERSION"), "r") as f:
-    version = f.read()
-
+version = here.joinpath("src", "f3dasm", "VERSION").read_text().strip()
 
 # Get the long description from the README file
 with open("README.md", encoding="utf-8") as f:
@@ -56,6 +53,7 @@ setup(
     },
     author="Martin van der Schelling",
     author_email="M.P.vanderSchelling@tudelft.nl",
+    license="BSD",
     classifiers=[
 
         "License :: OSI Approved :: BSD License",
@@ -74,8 +72,7 @@ setup(
         "Operating System :: MacOS",
     ],
     extras_require=extras_require,
-    keywords="data-driven materials framework"
-    "machine learning",
+    keywords="data-driven materials framework, machine learning",
     install_requires=install_requires,
     package_dir={'': "src"},
     python_requires=">=3.7, <3.11",

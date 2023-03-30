@@ -3,5 +3,5 @@ include LICENSE
 include tests/*
 include requirements.txt
 include src/f3dasm/VERSION
-include requirements/*
 include docs/requirements.txt
+recursive-include requirements *

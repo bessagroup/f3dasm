@@ -23,11 +23,27 @@ __status__ = 'Stable'
 
 
 class JobFileExistsError(Exception):
-    pass
+    """
+    Exception raised when a job file already exists.
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
 
 
 class NoOpenJobsError(Exception):
-    pass
+    """
+    Exception raised when there are no open jobs.
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
 
 
 def access_file(sleeptime_sec: int = 1) -> Callable:

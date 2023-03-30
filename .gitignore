@@ -1,4 +1,8 @@
-#Draw.io
+# Backup files
+*~
+*.bak
+
+# Draw.io
 ~$*.bkp
 ~$*.drawio.dtmp
 

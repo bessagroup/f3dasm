@@ -1,5 +1,5 @@
 """
-Logging settings
+This module defines the logging settings for the f3dasm package.
 """
 #                                                                       Modules
 # =============================================================================
