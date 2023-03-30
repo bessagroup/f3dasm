@@ -5,6 +5,8 @@ import pytest
 
 from f3dasm.experiment import FileHandler
 
+pytestmark = pytest.mark.smoke
+
 
 @pytest.fixture(scope="module")
 def tmpdir():
@@ -13,7 +15,7 @@ def tmpdir():
 
 
 def test_retrieve_all_files(tmpdir):
-    os.makedirs(os.path.join(tmpdir, "subdir"))
+    os.makedirs(os.path.join(tmpdir, "subdir"), exist_ok=True)
     open(os.path.join(tmpdir, "file1.txt"), "w").close()
     open(os.path.join(tmpdir, "file2.csv"), "w").close()
     open(os.path.join(tmpdir, "file3.txt"), "w").close()
@@ -30,7 +32,7 @@ def test_retrieve_all_files(tmpdir):
 
 
 def test_retrieve_files_to_process(tmpdir):
-    os.makedirs(os.path.join(tmpdir, "subdir"))
+    os.makedirs(os.path.join(tmpdir, "subdir"), exist_ok=True)
     open(os.path.join(tmpdir, "file1.txt"), "w").close()
     open(os.path.join(tmpdir, "file2.csv"), "w").close()
     open(os.path.join(tmpdir, "file3.txt"), "w").close()
@@ -47,7 +49,7 @@ def test_retrieve_files_to_process(tmpdir):
 
 
 def test_tick_processed(tmpdir):
-    os.makedirs(os.path.join(tmpdir, "subdir"))
+    os.makedirs(os.path.join(tmpdir, "subdir"), exist_ok=True)
     open(os.path.join(tmpdir, "file1.txt"), "w").close()
 
     fh = FileHandler(tmpdir, "txt")
@@ -63,7 +65,7 @@ def test_tick_processed(tmpdir):
 
 
 def test_execute(tmpdir):
-    os.makedirs(os.path.join(tmpdir, "subdir"))
+    os.makedirs(os.path.join(tmpdir, "subdir"), exist_ok=True)
     open(os.path.join(tmpdir, "file1.txt"), "w").close()
 
     fh = FileHandler(tmpdir, "txt")

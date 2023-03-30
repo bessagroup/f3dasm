@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from f3dasm.design import create_design_from_json
+from f3dasm.design.utils import create_design_from_json
 from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)

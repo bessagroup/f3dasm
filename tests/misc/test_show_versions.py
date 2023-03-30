@@ -31,7 +31,7 @@ def test_get_deps_info_with_no_version():
 
         # Call the function and check that it returns the expected dictionary
         deps_info = _get_deps_info(['some_module'])
-        assert deps_info == {'some_module': 'No __version__ attribute!'}
+        assert deps_info == {'some_module': 'unknown'}
 
 
 def test_get_deps_info_with_import_error():

@@ -1,4 +1,8 @@
-#Draw.io
+# Backup files
+*~
+*.bak
+
+# Draw.io
 ~$*.bkp
 ~$*.drawio.dtmp
 
@@ -109,6 +113,7 @@ multirun/
 # Data
 data/
 notebooks/archive/
+notebooks/tutorials/Data/
 *.obj
 
 # But exclude the data modeul of f3dasm!

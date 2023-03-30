@@ -1,11 +1,14 @@
 """
-Logging settings
+This module defines the logging settings for the f3dasm package.
 """
 #                                                                       Modules
 # =============================================================================
 
 # Standard
 import logging
+
+# Local
+from ._show_versions import show_versions
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,3 +24,4 @@ logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 logging.info("Imported f3dasm")
+logging.info(show_versions())

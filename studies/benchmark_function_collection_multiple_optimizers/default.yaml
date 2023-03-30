@@ -8,23 +8,24 @@ function:
   noise: 0.0
 
 optimizers:
-  optimizers_names: [
-    Adam,
-    SGD,
-    CG,
-    CMAES,
-    SimulatedAnnealing,
-    LBFGSB,
-    NelderMead,
-    PSO,
-    RandomSearch,
-    SGA,
-    XNES,
-    RMSprop,
-    Nadam,
-    Adamax,
-    Ftrl,
-  ]
+  optimizers_names:
+    [
+      Adam,
+      SGD,
+      CG,
+      CMAES,
+      SimulatedAnnealing,
+      LBFGSB,
+      NelderMead,
+      PSO,
+      RandomSearch,
+      SGA,
+      XNES,
+      RMSprop,
+      Nadam,
+      Adamax,
+      Ftrl,
+    ]
 
 sampler:
   sampler_name: RandomUniform

@@ -6,10 +6,6 @@ import glob
 import os
 from typing import List, Union
 
-# Third-party
-
-# Locals
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'

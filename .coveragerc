@@ -1,8 +1,11 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
+source = src
 omit =
-    src/f3dasm/simulation/abaqus/ExampleFlower/*
+    src/f3dasm/simulation/abaqus_script/*
+    src/f3dasm/experiment/files/*
+    tests/*
 
 [report]
 # Regexes for lines to exclude from consideration

@@ -24,8 +24,8 @@ __status__ = 'Stable'
 
 # version
 here = Path(__file__).absolute().parent
-with open(here.joinpath("VERSION"), "r") as f:
-    __version__ = f.read()
+__version__ = here.joinpath("VERSION").read_text().strip()
+
 
 # List of the dependencies per extension:
 CORE_DEPS = [
@@ -90,10 +90,20 @@ def _get_deps_info(deps: List[str]) -> dict:
     """
 
     def get_version(module) -> str:
-        try:
-            return module.__version__
-        except AttributeError:
-            return 'No __version__ attribute!'
+        version = None
+        if hasattr(module, '__version__'):
+            version = module.__version__
+        elif hasattr(module, 'version'):
+            version = module.version
+        elif hasattr(module, '__file__'):
+            with open(module.__file__, 'r') as f:
+                for line in f:
+                    if line.startswith('__version__'):
+                        version = line.split('=')[1].strip()[1:-1]
+                        break
+        if version is None:
+            version = 'unknown'
+        return version
 
     deps_info = {}
 
