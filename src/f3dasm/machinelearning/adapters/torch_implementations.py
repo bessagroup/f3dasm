@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 # Local
 from ..._imports import try_import
 from ...design import ExperimentData
-from ...base.regression import Regressor, Surrogate
+from ..regression import Regressor, Surrogate
 
 # Third-party extension
 with try_import('machinelearning') as _imports:
