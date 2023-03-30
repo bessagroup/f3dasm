@@ -5,6 +5,7 @@
 import errno
 import fcntl
 import json
+import logging
 from os import path
 from time import sleep
 from typing import Callable, Union
@@ -67,7 +68,11 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                         fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
                         # Load the jobs data to the object
-                        self.create_jobs_from_dictionary(json.load(file))
+                        try:
+                            self.create_jobs_from_dictionary(json.load(file))
+                        except json.JSONDecodeError as e:
+                            logging.exception(f"Failed to load JSON data from file {self.filename}.json")
+                            raise e
 
                         # Do the operation
                         value = operation(self, *args, **kwargs)
@@ -83,15 +88,15 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                 except IOError as e:
                     # the file is locked by another process
                     if e.errno == errno.EAGAIN:
-                        print("The jobs file is currently locked by another process. Retrying in 1 second...")
+                        logging.info("The jobs file is currently locked by another process. Retrying in 1 second...")
                         sleep(sleeptime_sec)
                     else:
-                        print(f"An unexpected IOError occurred: {e}")
+                        logging.info(f"An unexpected IOError occurred: {e}")
                         break
 
                 except Exception as e:
                     # handle any other exceptions
-                    print(f"An unexpected error occurred: {e}")
+                    logging.info(f"An unexpected error occurred: {e}")
                     raise e
                     return
 
@@ -100,7 +105,7 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
     return decorator_func
 
 
-class Jobs:
+class JobQueue:
     def __init__(self, filename: str):
         """
         A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
