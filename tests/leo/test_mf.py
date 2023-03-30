@@ -609,7 +609,7 @@ def test_mtask_forrester_gpytorch():
         )
 
     regressor = f3dasm.machinelearning.gpr.MultitaskGPR(
-        mf_train_data=mf_train_data, 
+        train_data=mf_train_data, 
         design=train_data.design,
         parameter=param,
     )
