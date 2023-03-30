@@ -24,7 +24,7 @@ def test_retrieve_all_files(tmpdir):
     open(os.path.join(tmpdir, "subdir", "file6.csv"), "w").close()
 
     fh = FileHandler(tmpdir, "txt")
-    result = fh.retrieve_all_files()
+    result = fh.retrieve_tracked_files()
 
     assert len(result) == 2
     assert os.path.join(tmpdir, "file1.txt") in result
