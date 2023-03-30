@@ -1,14 +1,18 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from typing import Union, Optional
 
-import torch
-from botorch.acquisition.objective import PosteriorTransform
-from botorch.acquisition.analytic import AnalyticAcquisitionFunction
-from botorch.models.model import Model
-from botorch.utils import t_batch_mode_transform
-from torch import Tensor
-from torch.distributions import Normal
+# Local
+from .._imports import try_import
 
-import gpytorch
+# Third-party extension
+with try_import('machinelearning') as _imports:
+    import torch
+    import botorch
+    from botorch.acquisition.analytic import AnalyticAcquisitionFunction as BOTorch_AnalyticAcquisitionFunction
+    import gpytorch
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,11 +23,15 @@ __status__ = 'Alpha'
 #
 # =============================================================================
 
+if not _imports.is_successful():
+    BOTorch_AnalyticAcquisitionFunction = object # NOQA
+
+
 class Acquisition: #TODO: implement class
     pass
 
 
-class UpperConfidenceBound(AnalyticAcquisitionFunction):
+class UpperConfidenceBound(BOTorch_AnalyticAcquisitionFunction):
     r"""Single-outcome Upper Confidence Bound (UCB).
 
     Analytic upper confidence bound that comprises of the posterior mean plus an
@@ -42,9 +50,9 @@ class UpperConfidenceBound(AnalyticAcquisitionFunction):
 
     def __init__(
         self,
-        model: Model,
-        beta: Union[float, Tensor],
-        posterior_transform: Optional[PosteriorTransform] = None,
+        model: botorch.models.model.Model,
+        beta: Union[float, torch.Tensor],
+        posterior_transform: Optional[botorch.acquisition.objective.PosteriorTransform] = None,
         maximize: bool = True,
         **kwargs,
     ) -> None:
@@ -66,8 +74,8 @@ class UpperConfidenceBound(AnalyticAcquisitionFunction):
             beta = torch.tensor(beta)
         self.register_buffer("beta", beta)
 
-    @t_batch_mode_transform(expected_q=1)
-    def forward(self, X: Tensor) -> Tensor:
+    @botorch.utils.t_batch_mode_transform(expected_q=1)
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         r"""Evaluate the Upper Confidence Bound on the candidate set X.
 
         Args:
@@ -85,27 +93,10 @@ class UpperConfidenceBound(AnalyticAcquisitionFunction):
         # # Test points are regularly spaced along [0,1]
         # # Make predictions by feeding model through likelihood
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            # test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
-            
-            # if dim == 1:
-            #     test_x = torch.linspace(0, 1, n_test)
-            # else:
-            #     test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
-            
-            # observed_pred = surrogate.model.likelihood(surrogate.model(test_x))
             observed_pred = self.model.likelihood(self.model(torch.tensor(X[None, :])))
         
         mean = observed_pred.mean
         variance = observed_pred.variance
-
-        # self.beta = self.beta.to(X)
-        # posterior = self.model.posterior(
-        #     X=X, posterior_transform=self.posterior_transform
-        # )
-        # mean = posterior.mean
-        # view_shape = mean.shape[:-2] if mean.shape[-2] == 1 else mean.shape[:-1]
-        # mean = mean.view(view_shape)
-        # variance = posterior.variance.view(view_shape)
 
         delta = (self.beta.expand_as(mean) * variance).sqrt()
 
@@ -117,7 +108,7 @@ class UpperConfidenceBound(AnalyticAcquisitionFunction):
         return res
 
 
-class ExpectedImprovement(AnalyticAcquisitionFunction):
+class ExpectedImprovement(BOTorch_AnalyticAcquisitionFunction):
     r"""Single-outcome Expected Improvement (analytic).
 
     Computes classic Expected Improvement over the current best observed value,
@@ -137,9 +128,9 @@ class ExpectedImprovement(AnalyticAcquisitionFunction):
 
     def __init__(
         self,
-        model: Model,
-        best_f: Union[float, Tensor],
-        posterior_transform: Optional[PosteriorTransform] = None,
+        model: botorch.models.model.Model,
+        best_f: Union[float, torch.Tensor],
+        posterior_transform: Optional[botorch.acquisition.objective.PosteriorTransform] = None,
         maximize: bool = True,
         **kwargs,
     ) -> None:
@@ -160,8 +151,8 @@ class ExpectedImprovement(AnalyticAcquisitionFunction):
             best_f = torch.tensor(best_f)
         self.register_buffer("best_f", best_f)
 
-    @t_batch_mode_transform(expected_q=1, assert_output_shape=False)
-    def forward(self, X: Tensor) -> Tensor:
+    @botorch.utils.t_batch_mode_transform(expected_q=1, assert_output_shape=False)
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
         r"""Evaluate Expected Improvement on the candidate set X.
 
         Args:
@@ -174,31 +165,14 @@ class ExpectedImprovement(AnalyticAcquisitionFunction):
             A `(b1 x ... bk)`-dim tensor of Expected Improvement values at the
             given design points `X`.
         """
-        # self.best_f = self.best_f.to(X)
-        # posterior = self.model.posterior(
-        #     X=X, posterior_transform=self.posterior_transform
-        # )
-        # mean = posterior.mean
-        # # deal with batch evaluation and broadcasting
-        # view_shape = mean.shape[:-2] if mean.shape[-2] == 1 else mean.shape[:-1]
-        # mean = mean.view(view_shape)
-        # sigma = posterior.variance.clamp_min(1e-9).sqrt().view(view_shape)
 
-                # Get into evaluation (predictive posterior) mode
+        # Get into evaluation (predictive posterior) mode
         self.model.eval()
         self.model.likelihood.eval()
 
         # # Test points are regularly spaced along [0,1]
         # # Make predictions by feeding model through likelihood
         with torch.no_grad(), gpytorch.settings.fast_pred_var():
-            # test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
-            
-            # if dim == 1:
-            #     test_x = torch.linspace(0, 1, n_test)
-            # else:
-            #     test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
-            
-            # observed_pred = surrogate.model.likelihood(surrogate.model(test_x))
             observed_pred = self.model.likelihood(self.model(torch.tensor(X[None, :])))
 
         mean = observed_pred.mean
@@ -207,14 +181,14 @@ class ExpectedImprovement(AnalyticAcquisitionFunction):
         u = (mean - self.best_f.expand_as(mean)) / sigma
         if not self.maximize:
             u = -u
-        normal = Normal(torch.zeros_like(u), torch.ones_like(u))
+        normal = torch.distributions.Normal(torch.zeros_like(u), torch.ones_like(u))
         ucdf = normal.cdf(u)
         updf = torch.exp(normal.log_prob(u))
         ei = sigma * (updf + u * ucdf)
         return ei
 
 
-class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
+class VFUpperConfidenceBound(BOTorch_AnalyticAcquisitionFunction):
     r"""Single-outcome Upper Confidence Bound (UCB).
 
     Analytic upper confidence bound that comprises the posterior mean plus an
@@ -233,9 +207,9 @@ class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
 
     def __init__(
             self,
-            model: Model,
-            beta: Union[float, Tensor],
-            posterior_transform: Optional[PosteriorTransform] = None,
+            model: botorch.models.model.Model,
+            beta: Union[float, torch.Tensor],
+            posterior_transform: Optional[botorch.acquisition.objective.PosteriorTransform] = None,
             maximize: bool = True,
             cr: float = 10,
             mean=None,
@@ -263,8 +237,8 @@ class VFUpperConfidenceBound(AnalyticAcquisitionFunction):
         self.mean = mean
         self.var = var
 
-    @t_batch_mode_transform(expected_q=1)
-    def forward(self, X: Tensor, fid: int) -> Tensor:
+    @botorch.utils.t_batch_mode_transform(expected_q=1)
+    def forward(self, X: torch.Tensor, fid: int) -> torch.Tensor:
         r"""Evaluate the Upper Confidence Bound on the candidate set X.
 
         Args:

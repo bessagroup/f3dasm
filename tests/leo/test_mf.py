@@ -181,7 +181,7 @@ def test_bo_gpytorch():
 
     optimizer.parameter.n_init = number_of_samples
     optimizer.parameter.regressor_hyperparameters = reg_parameters
-    optimizer.parameter.acquisition = f3dasm.base.acquisition.ExpectedImprovement
+    optimizer.parameter.acquisition = f3dasm.machinelearning.acquisition_functions.ExpectedImprovement
     optimizer.parameter.acquisition_hyperparameters = f3dasm.optimization.bayesianoptimization_torch.Acquisition_Parameters(
         best_f=-np.inf,
         maximize=False,

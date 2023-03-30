@@ -16,7 +16,7 @@ from .optimizer import Optimizer, OptimizerParameters, MultiFidelityOptimizer
 from ..design.experimentdata import ExperimentData
 from ..sampling import SobolSequence_torch
 from ..functions import Function, MultiFidelityFunction
-from ..base.acquisition import VFUpperConfidenceBound, UpperConfidenceBound
+from ..machinelearning.acquisition_functions import VFUpperConfidenceBound, UpperConfidenceBound
 from ..machinelearning.gpr import Cokgj, Sogpr, MultitaskGPR, Sogpr_Parameters, Cokgj_Parameters
 
 # Third-party extension

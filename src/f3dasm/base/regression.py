@@ -1,8 +1,12 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional
 
+# Locals
 from ..design import ExperimentData, DesignSpace
-# from ..data import Data
 
 #                                                          Authorship & Credits
 # =============================================================================
