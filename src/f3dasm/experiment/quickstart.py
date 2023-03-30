@@ -8,7 +8,7 @@ def quickstart():
     Copy files and directories from a subdirectory of the current module to the current working directory.
     """
     source_dir = 'files'
-    file_list = ['config.py', 'config.yaml', 'default.yaml', 'main.py', 'pbsjob.sh', 'hydra']
+    file_list = ['config.py', 'config.yaml', 'default.yaml', 'main.py', 'pbsjob.sh', 'README.md', 'hydra']
 
     module_path = os.path.dirname(os.path.abspath(__file__))
     source_path = os.path.join(module_path, source_dir)
