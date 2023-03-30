@@ -133,8 +133,8 @@ def show_versions():
     sampling_deps_info = _get_deps_info(SAMPLING_DEPS)
 
     print("\nf3dasm:")
-    for k, stat in f3dasm_info.items():
-        print(f"{k:>13}: {stat}")
+    # for k, stat in f3dasm_info.items():
+    print(f"{__version__:>13}")
 
     print("\nSystem:")
     for k, stat in sys_info.items():
