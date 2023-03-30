@@ -597,7 +597,7 @@ def test_mtask_forrester_gpytorch():
 
     ###
 
-    param = f3dasm.machinelearning.gpr.Multitask_Parameters(
+    param = f3dasm.machinelearning.gpr.MultitaskGPR_Parameters(
         likelihood=likelihood,
         kernel=covar_module,
         mean=mean_module,
