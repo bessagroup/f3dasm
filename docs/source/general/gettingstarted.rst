@@ -20,7 +20,7 @@ There are different ways to install f3dasm:
 Installing the latest release
 =============================
 
-f3dasm is compatible with Python version 3.8
+f3dasm is compatible with Python version 3.8, 3.9 and 3.10
 
 
 ----
