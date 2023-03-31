@@ -3,12 +3,18 @@
 
 # Standard
 import errno
-import fcntl
 import json
 import logging
+import os
 from os import path
 from time import sleep
 from typing import Callable, Union
+
+# import msvcrt if windows, otherwise (Unix system) import fcntl
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 # Local
 from ..design import ExperimentData
@@ -48,7 +54,7 @@ class NoOpenJobsError(Exception):
 
 
 def access_file(sleeptime_sec: int = 1) -> Callable:
-    """Wrapper for accessing a single resource with a fcntl lock
+    """Wrapper for accessing a single resource with a file lock
 
     Parameters
     ----------
@@ -57,7 +63,7 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
 
     Returns
     -------
-        decorator
+    decorator
     """
     def decorator_func(operation: Callable) -> Callable:
         def wrapper_func(self, *args, **kwargs) -> None:
@@ -65,7 +71,10 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                 try:
                     # Try to open the jobs file
                     with open(f"{self.filename}.json", 'r+') as file:
-                        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        if os.name == 'nt':
+                            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
+                        else:
+                            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
                         # Load the jobs data to the object
                         try:
@@ -87,13 +96,23 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                     break
                 except IOError as e:
                     # the file is locked by another process
-                    if e.errno == errno.EAGAIN:
-                        logging.info("The jobs file is currently locked by another process. Retrying in 1 second...")
-                        sleep(sleeptime_sec)
-                    else:
-                        logging.info(f"An unexpected IOError occurred: {e}")
-                        break
+                    if os.name == 'nt':
+                        if e.errno == 13:
+                            logging.info("The jobs file is currently locked by another process. "
+                                         "Retrying in 1 second...")
 
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
+                    else:
+                        if e.errno == errno.EAGAIN:
+                            logging.info("The jobs file is currently locked by another process. "
+                                         "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
                 except Exception as e:
                     # handle any other exceptions
                     logging.info(f"An unexpected error occurred: {e}")
@@ -101,7 +120,9 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                     return
 
             return value
+
         return wrapper_func
+
     return decorator_func
 
 

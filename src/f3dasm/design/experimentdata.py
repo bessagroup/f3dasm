@@ -1,10 +1,16 @@
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-import fcntl
 import json
+# Standard
+import os
 from typing import Any, List, Tuple
+
+# import msvcrt if windows, otherwise (Unix system) import fcntl
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 # Third-party core
 import matplotlib.pyplot as plt
@@ -59,11 +65,19 @@ class ExperimentData:
             filename of the files to store, without suffix
         """
 
-        # Open the data.csv file with a lock
-        with open(f"{filename}_data.csv", 'w') as f:
-            fcntl.flock(f, fcntl.LOCK_EX)
-            self.data.to_csv(f"{filename}_data.csv")
-            fcntl.flock(f, fcntl.LOCK_UN)
+        if os.name == 'nt':  # Windows
+            # Open the data.csv file with a lock
+            with open(f"{filename}_data.csv", 'w') as f:
+                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+                self.data.to_csv(f"{filename}_data.csv")
+                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+
+        else:  # Unix
+            # Open the data.csv file with a lock
+            with open(f"{filename}_data.csv", 'w') as f:
+                fcntl.flock(f, fcntl.LOCK_EX)
+                self.data.to_csv(f"{filename}_data.csv")
+                fcntl.flock(f, fcntl.LOCK_UN)
 
         # convert design to json
         design_json = self.design.to_json()
