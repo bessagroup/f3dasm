@@ -3,13 +3,16 @@
 
 # Standard
 from dataclasses import dataclass
-
-# Third-party
-import tensorflow as tf
+from typing import List
 
 # Locals
-from .optimizer import OptimizerParameters
+from .._imports import try_import
 from .adapters.tensorflow_implementations import TensorflowOptimizer
+from .optimizer import OptimizerParameters
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import tensorflow as tf
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -45,3 +48,6 @@ class RMSprop(TensorflowOptimizer):
             epsilon=self.parameter.epsilon,
             centered=self.parameter.centered,
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Single-Solution']

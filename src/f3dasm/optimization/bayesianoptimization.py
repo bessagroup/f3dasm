@@ -3,15 +3,18 @@
 
 # Standard
 from dataclasses import dataclass
-from typing import Any
-
-# Third-party
-import GPy
-import GPyOpt
+from typing import Any, List
 
 # Locals
+from .._imports import try_import
 from ._protocol import Function
 from .optimizer import Optimizer, OptimizerParameters
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import GPy
+    import GPyOpt
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -99,3 +102,6 @@ class BayesianOptimization(Optimizer):
         x_new = self.algorithm.suggest_next_locations()
 
         self.data.add_numpy_arrays(input=x_new, output=function(x_new))
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Robust', 'Global', 'Noisy', 'Derivative-Free', 'Single-Solution']

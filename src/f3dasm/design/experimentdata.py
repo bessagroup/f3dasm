@@ -2,14 +2,14 @@
 # =============================================================================
 
 # Standard
-from typing import List, Tuple
+import fcntl
+import json
+from typing import Any, List, Tuple
 
-# Third-party
-import autograd.numpy as np
+# Third-party core
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import seaborn as sb
-from sklearn.model_selection import train_test_split
 
 # Local
 from .design import DesignSpace
@@ -49,6 +49,46 @@ class ExperimentData:
         """Print the data to the console"""
         print(self.data)
         return
+
+    def store(self, filename: str):
+        """Store the ExperimentData to disk, with checking for a lock
+
+        Parameters
+        ----------
+        filename
+            filename of the files to store, without suffix
+        """
+
+        # Open the data.csv file with a lock
+        with open(f"{filename}_data.csv", 'w') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            self.data.to_csv(f"{filename}_data.csv")
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+        # convert design to json
+        design_json = self.design.to_json()
+
+        # write json to disk
+        with open(f"{filename}_design.json", 'w') as outfile:
+            outfile.write(design_json)
+
+    def get_inputdata_by_index(self, index: int) -> dict:
+        try:
+            return self.data['input'].loc[index].to_dict()
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
+
+    def set_outputdata_by_index(self, index: int, value: Any):
+        try:
+            self.data['output'].loc[index] = value
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
+
+    def to_json(self) -> str:
+        args = {'design': self.design.to_json(),
+                'data': self.data.to_json()}
+
+        return json.dumps(args)
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Convert the data to a tuple numpy arrays
@@ -197,43 +237,3 @@ class ExperimentData:
         ax.set_ylabel(input_par2)
 
         return fig, ax
-
-    def plot_pairs(self):
-        """
-        Plot a matrix of 2D plots that visualize the spread of the samples for each dimension.
-        Requires seaborn to be installed.
-        """
-
-        sb.pairplot(data=self.get_input_data())
-
-    # THESE FUNCTION ARE FOR INPUT DATA OF ML MODELS
-
-    def split_to_batches(self, data: pd.DataFrame, number_of_batches: int) -> List[pd.DataFrame]:
-        """Split a dataframe to several batches
-
-        Parameters
-        ----------
-        data
-            pandas Dataframe to split
-        number_of_batches
-            number of batches you will create
-
-        Returns
-        -------
-            list of dataframes
-        """
-        return np.array_split(data, number_of_batches)
-
-    def split_to_train_test(self, test_size: float) -> List[pd.DataFrame]:
-        """Split the content of the data object into a train and test set
-
-        Parameters
-        ----------
-        test_size
-            fraction of the entire dataframe that is reserved for testing
-
-        Returns
-        -------
-            list of dataframes, first training then testing
-        """
-        return train_test_split(self.data, test_size=test_size)

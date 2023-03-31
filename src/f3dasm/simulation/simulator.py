@@ -2,13 +2,13 @@
 # =============================================================================
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Alpha'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
@@ -25,7 +25,7 @@ class Simulator:
         pass
         # raise NotImplementedError("No pre-process function implemented!")
 
-    def execute(self, x: np.ndarray) -> None:
+    def execute(self) -> None:
         """Function that calls the FEM simulator the pre-processing"""
         raise NotImplementedError("No execute function implemented!")
 
@@ -34,7 +34,7 @@ class Simulator:
         pass
         # raise NotImplementedError("No post-process function implemented!")
 
-    def run(self, x: np.ndarray) -> None:
+    def run(self) -> None:
         self.pre_process()
-        self.execute(x)
+        self.execute()
         self.post_process()

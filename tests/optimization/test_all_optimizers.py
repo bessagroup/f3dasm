@@ -1,15 +1,24 @@
 import copy
+from typing import List
 
 import numpy as np
 import pytest
 
-from f3dasm.base.function import Function
-from f3dasm.base.utils import make_nd_continuous_design
+from f3dasm.design import make_nd_continuous_design
 from f3dasm.design.experimentdata import ExperimentData
 from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Ackley, Levy, Sphere
-from f3dasm.optimization import OPTIMIZERS
+from f3dasm.functions.function import Function
+from f3dasm.optimization import OPTIMIZERS, Adam
 from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.sampling.randomuniform import RandomUniform
+
+
+@pytest.mark.smoke
+@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+def test_get_info(data: ExperimentData, optimizer: Optimizer):
+    opt: Optimizer = optimizer(data=data)
+    characteristics = opt.get_info()
+    assert isinstance(characteristics, List)
 
 
 @pytest.mark.parametrize("seed", [42])

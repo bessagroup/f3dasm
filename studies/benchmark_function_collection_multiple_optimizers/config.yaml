@@ -1,0 +1,24 @@
+defaults:
+  - override hydra/job_logging: logging.yaml
+
+design:
+  lower_bound: -1.0
+  upper_bound: 1.0
+  dimensionality_lower_bound: 2
+  dimensionality_upper_bound: 5
+
+function:
+  noise: 0.2
+
+optimizers:
+  optimizers_names: [Adam, PSO, CMAES, RandomSearch]
+
+sampler:
+  sampler_name: RandomUniform
+  number_of_samples: 30
+
+execution:
+  number_of_functions: 20
+  iterations: 100
+  realizations: 3
+  parallelization: True

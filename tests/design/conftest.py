@@ -20,3 +20,39 @@ def doe():
 
     doe = DesignSpace(input_space=designspace, output_space=output_space)
     return doe
+
+
+@pytest.fixture(scope="package")
+def design_space():
+
+    input_space = [
+        ContinuousParameter("x1", -5.12, 5.12),
+        DiscreteParameter("x2", -3, 3),
+        CategoricalParameter("x3", ["red", "green", "blue"])
+    ]
+
+    output_space = [
+        ContinuousParameter("y", -10.0, 10.0)
+    ]
+
+    return DesignSpace(input_space=input_space, output_space=output_space)
+
+
+@pytest.fixture(scope="package")
+def continuous_parameter():
+    lower_bound = 3.3
+    upper_bound = 3.8
+    return ContinuousParameter(name="test", lower_bound=lower_bound, upper_bound=upper_bound)
+
+
+@pytest.fixture(scope="package")
+def discrete_parameter():
+    lower_bound = 3
+    upper_bound = 6
+    return DiscreteParameter(name="test", lower_bound=lower_bound, upper_bound=upper_bound)
+
+
+@pytest.fixture(scope="package")
+def categorical_parameter():
+    categories = ["test1", "test2", "test3"]
+    return CategoricalParameter(name="test", categories=categories)

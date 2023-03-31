@@ -3,13 +3,17 @@
 
 # Standard
 from dataclasses import dataclass
-
-# Third-party
-import pygmo as pg
+from typing import List
 
 # Locals
-from .optimizer import OptimizerParameters
+from .._imports import try_import
 from .adapters.pygmo_implementations import PygmoAlgorithm
+from .optimizer import OptimizerParameters
+
+# Third-party extension
+with try_import('optimization') as _imports:
+    import pygmo as pg
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -42,3 +46,6 @@ class CMAES(PygmoAlgorithm):
                 force_bounds=self.parameter.force_bounds,
             )
         )
+
+    def get_info(self) -> List[str]:
+        return ['Stable', 'Global', 'Population-Based']

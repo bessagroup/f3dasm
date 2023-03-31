@@ -1,39 +1,41 @@
 """
-F3DASM
-======
+F3DASM - A package for data-driven design and analysis of structures and materials
 
-This is the initalizer of the F3DASM package
+This package provides tools for designing and optimizing materials, including
+functions for data analysis, design of experiments, machine learning, optimization,
+sampling, and simulation.
+
+Usage:
+  import f3dasm
+
+Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 """
-
-__version__ = '0.2.95'
 
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-import logging
+from f3dasm import (_logging, data, design, experiment, functions,
+                    machinelearning, optimization, sampling, simulation)
 
-# Locals
-from . import functions, machinelearning, optimization, sampling, simulation
-from ._show_versions import show_versions
-from .base.function import *
-from .base.utils import *
-from .design.design import *
-from .design.experimentdata import *
-from .design.parameter import *
-from .optimization.optimizer import *
-from .run_optimization import *
-from .sampling.sampler import *
+from ._show_versions import __version__, show_versions
+# Design classes
+from .design.design import DesignSpace, make_nd_continuous_design
+from .design.experimentdata import ExperimentData
+from .design.parameter import (CategoricalParameter, ConstantParameter,
+                               ConstraintInterface, ContinuousParameter,
+                               DiscreteParameter)
+# Base classes
+from .functions.function import Function
+from .machinelearning.model import Model
+from .optimization.optimizer import Optimizer
+from .run_optimization import (OptimizationResult,
+                               create_optimizationresult_from_json,
+                               run_multiple_realizations, run_optimization)
+from .sampling.sampler import Sampler
+from .utils import find_class, write_json
 
-#                                                          Authorship & Credits
+#                                                        Authorship and Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
-# =============================================================================
-#
-# =============================================================================
-
-
-# Logging things
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)

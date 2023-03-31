@@ -1,0 +1,13 @@
+import pytest
+
+from tests.simulation.run_abaqus import main
+
+
+@pytest.mark.requires_dependency("abaqus")
+# @pytest.mark.smoke
+def test_abaqus():
+    main()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    pytest.main()

@@ -5,6 +5,7 @@ Module to optimize benchmark optimization functions
 # =============================================================================
 
 # Standard
+import json
 import logging
 import time
 from typing import Any, List
@@ -13,14 +14,14 @@ from typing import Any, List
 import numpy as np
 import pandas as pd
 from pathos.helpers import mp
-from sklearn import preprocessing
 
-from .base.function import Function
-from .base.utils import calculate_mean_std
+from f3dasm.optimization import Optimizer, create_optimizer_from_json
+from f3dasm.sampling import Sampler, create_sampler_from_json
+
 # Locals
-from .design.experimentdata import ExperimentData
-from .optimization.optimizer import Optimizer
-from .sampling.sampler import Sampler
+from .design import ExperimentData, create_experimentdata_from_json
+from .functions import create_function_from_json
+from .functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,9 +34,9 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[ExperimentData], optimizer: str, hyperparameters: dict,
-                 function: Function, sampler: str, number_of_samples: int, seeds: List[int]):
-        """Optimizaiton results object
+    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, function: Function,
+                 sampler: Sampler, number_of_samples: int, seeds: List[int]):
+        """Optimization results object
 
         Parameters
         ----------
@@ -43,10 +44,8 @@ class OptimizationResult:
             Data objects for each realization
         optimizer
             classname of the optimizer used
-        hyperparameters
-            hyperparameters of the optimizer
         function
-            function that was optimized
+            functionname that was optimized
         sampler
             classname of the initial sampling strategy
         number_of_samples
@@ -56,20 +55,48 @@ class OptimizationResult:
         """
         self.data = data
         self.optimizer = optimizer
-        self.hyperparameters = hyperparameters
         self.function = function
         self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
         self._log()
 
+    def to_json(self):
+        args = {'data': [d.to_json() for d in self.data],
+                'optimizer': self.optimizer.to_json(),
+                'function': self.function.to_json(),
+                'sampler': self.sampler.to_json(),
+                'number_of_samples': self.number_of_samples,
+                'seeds': self.seeds
+                }
+
+        return json.dumps(args)
+
     def _log(self):
         # Log
         logging.info(
-            f"Optimized {self.function.get_name()} function (seed={self.function.seed}, \
-            dim={self.function.dimensionality}, noise={self.function.noise}) with {self.optimizer} \
-            optimizer for {len(self.data)} realizations!"
+            (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
+             f"dim={self.function.dimensionality}, "
+             f"with {self.optimizer.get_name()} optimizer for "
+             f"{len(self.data)} realizations!")
         )
+
+
+def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
+    optimizationresult_dict = json.loads(json_string)
+    return _create_optimizationresult_from_dict(optimizationresult_dict)
+
+
+def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
+    args = {
+        'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
+        'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
+        'function': create_function_from_json(optimizationresult_dict['function']),
+        'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
+        'number_of_samples': optimizationresult_dict['number_of_samples'],
+        'seeds': optimizationresult_dict['seeds'],
+    }
+    return OptimizationResult(**args)
 
 
 def run_optimization(
@@ -202,8 +229,7 @@ def run_multiple_realizations(
 
     return OptimizationResult(
         data=results,
-        optimizer=optimizer.get_name(),
-        hyperparameters=optimizer.parameter,
+        optimizer=optimizer,
         function=function,
         sampler=sampler,
         number_of_samples=number_of_samples,
@@ -211,39 +237,9 @@ def run_multiple_realizations(
     )
 
 
-def margin_of_victory(results: List[OptimizationResult]) -> pd.DataFrame:
-
-    # Create df with all results
-    df = pd.concat([calculate_mean_std(results[i])[0] for i, _ in enumerate(results)], axis=1)
-
-    # Change columnnames
-    optimizer_names = [results[i].optimizer for i, _ in enumerate(results)]
-    df.columns = optimizer_names
-
-    # Normalize
-    min_max_scaler = preprocessing.MinMaxScaler()
-
-    # Reshape to 1D array
-    df_numpy = df.values  # returns a numpy array
-    df_numpy_reshaped = df_numpy.reshape(-1, 1)
-
-    x_scaled = min_max_scaler.fit_transform(df_numpy_reshaped)
-
-    # Transform back
-    x_scaled = x_scaled.reshape(df_numpy.shape)
-    df = pd.DataFrame(x_scaled)
-    df.columns = optimizer_names
-
-    # Calculate margin of victory
-    mov = []
-    for name in optimizer_names:
-        df_dropped = df.drop(name, axis=1)
-        mov.append(df_dropped.min(axis=1) - df[name])
-
-    # Create df with all MoV
-    df_margin_of_victory = pd.concat(mov, axis=1)
-
-    # Change columnnames
-    df_margin_of_victory.columns = optimizer_names
-
-    return df_margin_of_victory
+def calculate_mean_std(results):  # OptimizationResult
+    mean_y = pd.concat([d.get_output_data().cummin()
+                       for d in results.data], axis=1).mean(axis=1)
+    std_y = pd.concat([d.get_output_data().cummin()
+                      for d in results.data], axis=1).std(axis=1)
+    return mean_y, std_y

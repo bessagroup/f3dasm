@@ -1,10 +1,28 @@
+#                                                                       Modules
+# =============================================================================
+
+# Standard
 import inspect
+import json
 from typing import List
 
-from ..base.function import Function
+# Third-party
+import numpy as np
+
 from . import pybenchfunction
 from .adapters.augmentor import *
+from .function import Function
 from .pybenchfunction import *
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
+
 
 _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)
 
@@ -37,3 +55,48 @@ def get_functions(
 FUNCTIONS = get_functions()
 FUNCTIONS_2D = get_functions(d=2)
 FUNCTIONS_7D = get_functions(d=7)
+
+def find_function(query: str) -> Function:
+    """Find a function from the f3dasm.functions submodule
+    Parameters
+    ----------
+    query
+        string representation of the requested function
+    Returns
+    -------
+        class of the requested function
+    """
+    try:
+        return list(filter(lambda function: function.__name__ == query, FUNCTIONS))[0]
+    except IndexError:
+        return ValueError(f'Function {query} not found!')
+
+
+def create_function_from_json(json_string: str):
+    """Create a Function object from a json string
+    Parameters
+    ----------
+    json_string
+        json string representation of the information to construct the Function
+    Returns
+    -------
+        Requested Function object
+    """
+    function_dict, name = json.loads(json_string)
+    return create_function_from_dict(function_dict, name)
+
+
+def create_function_from_dict(function_dict: dict, name: str) -> Function:
+    """Create an Function object from a dictionary
+    Parameters
+    ----------
+    function_dict
+        dictionary representation of the information to construct the Function
+    name
+        name of the class
+    Returns
+    -------
+        Requested Function object
+    """
+    function_dict['scale_bounds'] = np.array(function_dict['scale_bounds'])
+    return find_function(name)(**function_dict)
