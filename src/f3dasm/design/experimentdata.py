@@ -2,6 +2,7 @@
 # =============================================================================
 
 # Standard
+import fcntl
 import json
 from typing import Any, List, Tuple
 
@@ -49,12 +50,26 @@ class ExperimentData:
         print(self.data)
         return
 
-    def store(self, name: str):
-        self.data.to_csv(f"{name}_data.csv")
+    def store(self, filename: str):
+        """Store the ExperimentData to disk, with checking for a lock
 
+        Parameters
+        ----------
+        filename
+            filename of the files to store, without suffix
+        """
+
+        # Open the data.csv file with a lock
+        with open(f"{filename}_data.csv", 'w') as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            self.data.to_csv(f"{filename}_data.csv")
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+        # convert design to json
         design_json = self.design.to_json()
 
-        with open(f"{name}_design.json", 'w') as outfile:
+        # write json to disk
+        with open(f"{filename}_design.json", 'w') as outfile:
             outfile.write(design_json)
 
     def get_inputdata_by_index(self, index: int) -> dict:
