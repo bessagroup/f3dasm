@@ -102,7 +102,9 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                         if e.errno == 13:
                             logging.info("The jobs file is currently locked by another process. "
                                          "Retrying in 1 second...")
-
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The jobs file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
                             logging.info(f"An unexpected IOError occurred: {e}")
@@ -111,6 +113,9 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                         if e.errno == errno.EAGAIN:
                             logging.info("The jobs file is currently locked by another process. "
                                          "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The jobs file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
                             logging.info(f"An unexpected IOError occurred: {e}")
