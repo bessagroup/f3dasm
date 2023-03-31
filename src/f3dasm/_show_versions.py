@@ -23,9 +23,9 @@ __status__ = 'Stable'
 # =============================================================================
 
 # version
-here = Path(__file__).absolute().parent
-__version__ = here.joinpath("VERSION").read_text().strip()
-
+# here = Path(__file__).absolute().parent
+# __version__ = here.joinpath("VERSION").read_text().strip()
+__version__ = '0.9.2'
 
 # List of the dependencies per extension:
 CORE_DEPS = [
