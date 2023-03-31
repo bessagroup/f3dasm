@@ -3,6 +3,7 @@
 
 # Standard
 import errno
+import functools
 import json
 import logging
 import os
@@ -66,6 +67,7 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
     decorator
     """
     def decorator_func(operation: Callable) -> Callable:
+        @functools.wraps(operation)
         def wrapper_func(self, *args, **kwargs) -> None:
             while True:
                 try:
