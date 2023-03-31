@@ -12,4 +12,5 @@ Useful links
 * Link to the `wiki for development <https://github.com/bessagroup/F3DASM/wiki>`_
 * Link to my `MSc thesis: 'A data-driven heuristic decision strategy for data-scarce optimization' <https://repository.tudelft.nl/islandora/object/uuid%3Ad58271d6-21bb-470c-a5ee-4584b3b8ee29?collection=education>`_ 
 * Link to the `PyPI package <https://pypi.org/project/f3dasm/>`_
+* Link to `Illustrative examples <https://github.com/mpvanderschelling/F3DASM_practical>`_
 * Capstone project students: Download the assignment (PDF) `here <https://github.com/mpvanderschelling/TUD_Martin_Fundamentals_of_AI_project_2022/raw/main/TUD_Martin_Fundamentals_of_AI_project_2022.pdf>`_
