@@ -8,7 +8,7 @@ here = Path(__file__).absolute().parent
 
 # version
 # version = here.joinpath("src", "f3dasm", "VERSION").read_text().strip()
-version = '0.9.2'
+version = '0.9.3'
 
 # Get the long description from the README file
 with open("README.md", encoding="utf-8") as f:

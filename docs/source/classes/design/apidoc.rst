@@ -23,6 +23,7 @@ Experiment data
 .. automodule:: f3dasm.design.experimentdata
    :members:
    :noindex:
+   :undoc-members:
    :show-inheritance:
 
 Sampling
