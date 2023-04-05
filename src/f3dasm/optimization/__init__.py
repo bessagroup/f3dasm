@@ -63,7 +63,7 @@ _import_structure: dict = {
     "adam": ["Adam", "Adam_Parameters"],
     "adamax": ["Adamax", "Adamax_Parameters"],
     "bayesianoptimization": ["BayesianOptimization", "BayesianOptimization_Parameters"],
-    "bayesianoptimization_torch": ["Acquisition_Parameters", "Acquisition_Parameters", 
+    "bayesianoptimization_torch": ["Acquisition_Parameters", "BayesianOptimizationTorch_Parameters",
                                    "BayesianOptimizationTorch", "MFBayesianOptimizationTorch_Parameters",
                                    "MFBayesianOptimizationTorch"],
     "cg": ["CG", "CG_Parameters"],

@@ -20,8 +20,13 @@ if TYPE_CHECKING:
         Cokgj,
         Cokgj_Parameters,
         MultitaskGPR,
-        Multitask_Parameters,
+        MultitaskGPR_Parameters,
         )
+    from .acquisition_functions import (
+        UpperConfidenceBound,
+        ExpectedImprovement,
+        VFUpperConfidenceBound,
+    )
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -41,7 +46,9 @@ _import_structure: dict = {
     "all_models": ["MODELS"],
     "loss_functions": ["MeanSquaredError"],
     "gpr": ["Sogpr", "Sogpr_parameters", "Cokgj", "Cokgj_Parameters",
-        "MultitaskGPR", "Multitask_Parameters"]
+        "MultitaskGPR", "MultitaskGPR_Parameters"],
+    "acquisition_functions": ["UpperConfidenceBound", 
+                              "ExpectedImprovement", "VFUpperConfidenceBound"],
 }
 
 if not TYPE_CHECKING:
