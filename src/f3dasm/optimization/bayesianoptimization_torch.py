@@ -58,10 +58,12 @@ class BayesianOptimizationTorch_Parameters(OptimizerParameters):
     visualize_gp: bool = False
 
 
-def optimize_acquisition(acq_f, function):
+def optimize_acquisition(acq_f, function, dimensionality=None,):
+    if dimensionality is None:
+        dimensionality = function.dimensionality
     res = scipy.optimize.minimize(
         fun=lambda x: -acq_f(torch.tensor(x[None, :])),
-        x0=np.random.rand(function.dimensionality),
+        x0=np.random.rand(dimensionality),
         method='L-BFGS-B', 
         bounds=scipy.optimize.Bounds(lb=function.scale_bounds[:, 0], ub=function.scale_bounds[:, 1]),
         options={'disp': False, 'eps': 1e-4},
@@ -72,12 +74,12 @@ def optimize_acquisition(acq_f, function):
     return new_x, new_obj, acq_val
 
 
-def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_function, test_x_hf):
+def optimize_multifidelity_acquisition(multifidelity_acq_f, multifidelity_function, dimensionality):
     acq_val_tot = -torch.inf
     for fid, cost in enumerate(multifidelity_function.costs):
         acq_f = lambda x: multifidelity_acq_f(torch.tensor(x[:, None]), fid=fid)
 
-        new_x, new_obj, acq_val = optimize_acquisition(acq_f, multifidelity_function.fidelity_functions[fid])
+        new_x, new_obj, acq_val = optimize_acquisition(acq_f, multifidelity_function.fidelity_functions[fid], dimensionality)
         if acq_val > acq_val_tot:
             new_x_tot = new_x
             new_obj_tot = new_obj
@@ -233,9 +235,9 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
                 observed_pred = surrogate.predict(test_x_pad)
                 exact_y = multifidelity_function.fidelity_functions[i](test_x.numpy()[:, None])
 
-            # surrogate.plot_gpr(test_x=test_x, scaler=self.scaler, exact_y=exact_y, observed_pred=observed_pred, 
-            # train_x=torch.tensor(self.data.get_input_data().values), 
-            # train_y=torch.tensor(self.scaler.inverse_transform(self.data.get_output_data().values)))
+            surrogate.plot_gpr(test_x=test_x, scaler=self.scaler, exact_y=exact_y, observed_pred=observed_pred, 
+            train_x=torch.tensor(self.data.get_input_data().values), 
+            train_y=torch.tensor(self.scaler.inverse_transform(self.data.get_output_data().values)))
 
             if acq is not None:
                 acq_plot = torch.tensor([acq(x[:, None], fid=i) for x in test_x[:, None]])
@@ -265,11 +267,13 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
         test_x_lf = low_sampler.get_samples(numsamples=500)
         test_x_hf = high_sampler.get_samples(numsamples=500)
 
+        self.dimensionality = np.shape(test_x_hf.get_input_data())[-1]
+
         # mean_high = surrogate.predict([torch.tensor([])[:, None], torch.tensor(test_x_hf.get_input_data().values)]).mean
-        mean_high = surrogate.predict([torch.empty(0, multifidelity_function.fidelity_functions[0].dimensionality), 
+        mean_high = surrogate.predict([torch.empty(0, self.dimensionality), 
             torch.tensor(test_x_hf.get_input_data().values)]).mean
         mean_low = surrogate.predict([torch.tensor(test_x_lf.get_input_data().values), 
-            torch.empty(0, multifidelity_function.fidelity_functions[0].dimensionality)]).mean
+            torch.empty(0, self.dimensionality)]).mean
 
         cr = multifidelity_function.costs[1] / multifidelity_function.costs[0]
 
@@ -286,7 +290,7 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
         new_x, new_obj, cost, fid = optimize_multifidelity_acquisition(
             multifidelity_acq_f=acquisition,
             multifidelity_function=multifidelity_function,
-            test_x_hf=test_x_hf,
+            dimensionality=self.dimensionality,
         )
 
         return new_x, new_obj, cost, fid
