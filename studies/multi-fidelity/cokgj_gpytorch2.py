@@ -15,7 +15,7 @@ from f3dasm.design import ExperimentData
 
 ###
 
-dim = 3
+dim = 1
 seed = None
 noisy_data_bool = 1
 # numsamples = 10
@@ -29,9 +29,9 @@ training_iter = 150
 # plot_mll = 1
 # plot_gpr = 1
 # train_surrogate = True
-n_test = 1500
+n_test = 50
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
-train_data_supplied = 0
+train_data_supplied = 1
 
 mean_module_list = torch.nn.ModuleList([
     gpytorch.means.ZeroMean(),
@@ -89,34 +89,36 @@ class Forrester_lf(f3dasm.functions.Function):
     def evaluate(self, x):
         return 0.5 * (6 * x - 2) ** 2 * np.sin(12 * x - 4) + 10 * (x - 0.5) - 5
 
-base_fun = f3dasm.functions.AlpineN2(
-    dimensionality=dim,
-    scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
-    offset=False,
-    )
+# base_fun = f3dasm.functions.AlpineN2(
+#     dimensionality=dim,
+#     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+#     offset=False,
+#     )
 
-# base_fun = Forrester(dimensionality=1)
+base_fun = Forrester()
 
 fids = [0.5, 1.0]
 costs = [0.5, 1.0]
 samp_nos = [200, 25]
 
 funs = []
+train_x_list = []
+train_y_scaled_list = []
 mf_design_space = []
 mf_sampler = []
 mf_train_data = []
 
 for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
 
-    fun = AugmentedFunction(
-            base_fun=base_fun,
-            fid=fid,
-            )
+    # fun = AugmentedFunction(
+    #         base_fun=base_fun,
+    #         fid=fid,
+    #         )
 
-    # if fid_no == 0:
-    #     fun = Forrester_lf()
-    # else:
-    #     fun = Forrester()
+    if fid_no == 0:
+        fun = Forrester_lf()
+    else:
+        fun = Forrester()
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -148,11 +150,15 @@ for fid_no, (fid, cost, samp_no) in enumerate(zip(fids, costs, samp_nos)):
     train_x = torch.tensor(train_data.get_input_data().values)
     train_y = torch.tensor(train_data.get_output_data().values.flatten())
 
+    train_x_list.append(train_x)
+
     # Scaling the output
     if fid_no == 0:
         scaler = StandardScaler()
         scaler.fit(train_y.numpy()[:, None])
     train_y_scaled = torch.tensor(scaler.transform(train_y.numpy()[:, None]).flatten())
+
+    train_y_scaled_list.append(train_y_scaled)
 
     # if fid_no == 0:
     #     train_y_scaled += noisy_data_bool * np.random.randn(*train_y_scaled.shape) * math.sqrt(0.04)
@@ -201,31 +207,78 @@ surrogate.model.likelihood.eval()
 
 # # Test points are regularly spaced along [0,1]
 # # Make predictions by feeding model through likelihood
+
+test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
+
+if dim == 1:
+    test_x = torch.linspace(0, 1, n_test)[:, None]
+else:
+    test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
+
+
+test_x_hf = [torch.empty(0, dim), test_x]
+test_x_lf = [test_x, torch.empty(0, dim)]
+
 with torch.no_grad(), gpytorch.settings.fast_pred_var():
-    test_sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=0)
-    
-    if dim == 1:
-        test_x = torch.linspace(0, 1, n_test)[:, None]
-    else:
-        test_x = torch.tensor(test_sampler.get_samples(numsamples=n_test).get_input_data().values)
-   
     # observed_pred = surrogate.predict([test_x, test_x])
     # observed_pred = surrogate.predict([torch.tensor([])[:, None], test_x])
-    observed_pred = surrogate.predict([torch.empty(0, dim), test_x])
+    observed_pred_hf = surrogate.predict(test_x_hf)
+    observed_pred_lf = surrogate.predict(test_x_lf)
     # observed_pred = surrogate.predict([test_x, torch.tensor([])[:, None]])
-    exact_y = fun(test_x.numpy())#[:, None])
+
+exact_y_hf = funs[1](test_x.numpy())#[:, None])
+exact_y_lf = funs[0](test_x.numpy())
 
 ###
 
+# Show VFUCB acquisition if needed. First define the acquisition function:
+acquisition_class = f3dasm.machinelearning.acquisition_functions.VFUpperConfidenceBound
+acquisition_hyperparameters = dict(beta=0.4, maximize=False)
+mean_low = observed_pred_lf.mean
+mean_high = observed_pred_hf.mean
+
+acquisition = acquisition_class(
+    model=surrogate.model,
+    mean=[mean_low, mean_high],
+    cr=200,
+    **acquisition_hyperparameters
+)
+
 if dim == 1:
+    f, axs = plt.subplots(2, 1, num='gp and acq', figsize=(4, 6), sharex='all')
+
     surrogate.plot_gpr(
         test_x=test_x.flatten(), 
         scaler=scaler, 
-        exact_y=exact_y, 
-        observed_pred=observed_pred,
-        train_x=train_x,
-        train_y=torch.tensor(scaler.inverse_transform(train_y_scaled.numpy()[:, None]))
+        exact_y=exact_y_hf, 
+        observed_pred=observed_pred_hf,
+        train_x=train_x_list[1],
+        train_y=torch.tensor(scaler.inverse_transform(train_y_scaled_list[1].numpy()[:, None])),
+        color='b',
+        acquisition=acquisition,
+        fid=1,
+        axs=axs,
         )
+    
+    surrogate.plot_gpr(
+        test_x=test_x.flatten(), 
+        scaler=scaler, 
+        exact_y=exact_y_lf, 
+        observed_pred=observed_pred_lf,
+        train_x=train_x_list[0],
+        train_y=torch.tensor(scaler.inverse_transform(train_y_scaled_list[0].numpy()[:, None])),
+        color='orange',
+        acquisition=acquisition,
+        fid=0,
+        axs=axs,
+        )
+    
+    axs[0].set_ylabel('y')
+    axs[1].set_xlabel('x')
+    axs[1].set_ylabel('acquisition')
+
+    plt.tight_layout()
+
 
 # surrogate.plot_mll(
 #     train_x=train_x,
@@ -234,8 +287,8 @@ if dim == 1:
 
 metrics_df = surrogate.gp_metrics(
     scaler=scaler,
-    observed_pred=observed_pred,
-    exact_y=exact_y.flatten(),
+    observed_pred=observed_pred_hf,
+    exact_y=exact_y_hf.flatten(),
 )
 
 print()
