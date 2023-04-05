@@ -754,7 +754,7 @@ def test_mfbo_cokgj_gpytorch():
     #     best_f=-np.inf,
     #     maximize=False,
     # )
-    optimizer.parameter.visualize_gp = True
+    optimizer.parameter.visualize_gp = False
     # optimizer.parameter.acquisition_hyperparameters = {
     #     'best_f': np.inf,
     #     'maximize': False,
@@ -762,11 +762,11 @@ def test_mfbo_cokgj_gpytorch():
 
     res = f3dasm.run_multi_fidelity_optimization(
         optimizer=optimizer,
-        multifidelity_function=multifidelity_function,
-        multifidelity_samplers=multifidelity_samplers,
+        function=multifidelity_function,
+        sampler=multifidelity_samplers,
         iterations=iterations,
         seed=seed,
-        numbers_of_samples=numbers_of_samples,
+        number_of_samples=numbers_of_samples,
         budget=budget,
     )
 
