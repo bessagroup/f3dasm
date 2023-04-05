@@ -117,8 +117,8 @@ optimizer.parameter.visualize_gp = True
 
 res = f3dasm.run_multi_fidelity_optimization(
     optimizer=optimizer,
-    multifidelity_function=multifidelity_function,
-    multifidelity_samplers=multifidelity_samplers,
+    function=multifidelity_function,
+    sampler=multifidelity_samplers,
     iterations=iterations,
     seed=seed,
     numbers_of_samples=numbers_of_samples,
