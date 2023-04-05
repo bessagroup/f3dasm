@@ -161,11 +161,11 @@ def run_optimization(
 
 def run_multi_fidelity_optimization(
     optimizer: Optimizer,
-    multifidelity_function: MultiFidelityFunction,
-    multifidelity_samplers: List[Sampler],
+    function: MultiFidelityFunction,
+    sampler: List[Sampler],
     iterations: int,
     seed: int,
-    numbers_of_samples: List[int],
+    number_of_samples: List[int],
     budget: int,
 ) -> ExperimentData:
     """Run optimization on some benchmark function"""
@@ -177,9 +177,9 @@ def run_multi_fidelity_optimization(
 
     multifidelity_samples = []
 
-    for i, fidelity_function_i in enumerate(multifidelity_function.fidelity_functions):
+    for i, fidelity_function_i in enumerate(function.fidelity_functions):
 
-        samples = multifidelity_samplers[i].get_samples(numsamples=numbers_of_samples[i])
+        samples = sampler[i].get_samples(numsamples=number_of_samples[i])
 
         samples.add_output(output=fidelity_function_i(samples))
 
@@ -188,7 +188,7 @@ def run_multi_fidelity_optimization(
     optimizer.set_data(multifidelity_samples)
 
     # Iterate
-    optimizer.iterate(iterations=iterations, multifidelity_function=multifidelity_function, budget=budget)
+    optimizer.iterate(iterations=iterations, multifidelity_function=function, budget=budget)
     res = optimizer.extract_data()
 
     # Reset the parameters
