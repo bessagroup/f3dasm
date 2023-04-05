@@ -88,9 +88,16 @@ class TorchGPSurrogate(Surrogate):
         train_x=None,
         train_y=None,
         savefig=False,
+        color='b',
+        acquisition=None,
+        fid=None,
+        axs=None,
         ):
 
-        # input_array = self._data_processor(test_input_data=test_input_data)
+        if type(axs) == np.ndarray:
+            ax = axs[0]
+        else:
+            f, ax = plt.subplots(1, 1)
 
         # Get into evaluation (predictive posterior) mode
         self.model.eval()
@@ -98,28 +105,39 @@ class TorchGPSurrogate(Surrogate):
 
         with torch.no_grad():
             # Initialize plot
-            f, ax = plt.subplots(1, 1)#, figsize=(4, 3))
+            # f, ax = plt.subplots(1, 1, num='gp')#, figsize=(4, 3))
+            # plt.figure(num='gp')
 
             # Get upper and lower confidence bounds
             lower, upper = [torch.tensor(scaler.inverse_transform(confbound.numpy()[:, None]).flatten()) for confbound in observed_pred.confidence_region()]
             # lower, upper = observed_pred.confidence_region()
 
             # Plot ground truth as black dashed line
-            ax.plot(test_x, exact_y, 'k--')
+            ax.plot(test_x, exact_y, '--', color=color, linewidth=.5, label='Ground truth')
             # Plot predictive means as blue line
-            ax.plot(test_x, scaler.inverse_transform(observed_pred.mean.numpy()[:, None]).flatten(), 'b')
+            ax.plot(test_x, scaler.inverse_transform(observed_pred.mean.numpy()[:, None]).flatten(), color=color, label='Pred. mean',)
             # Shade between the lower and upper confidence bounds
-            ax.fill_between(test_x, lower.numpy(), upper.numpy(), alpha=0.5)
+            ax.fill_between(test_x, lower.numpy(), upper.numpy(), alpha=0.25, color=color, label='Pred. confidence')
             # ax.set_ylim([-3, 3])
             if not (train_x is None or train_y is None):
                 # Plot training data as black stars
-                ax.plot(train_x.numpy(), train_y.numpy(), 'k*')
-                ax.legend(['Ground truth', 'Mean', 'Confidence', 'Observed Data'])
+                ax.plot(train_x.numpy(), train_y.numpy(), '*', color=color, label='Observed data')
+                ax.legend()
             else:
-                ax.legend(['Ground truth', 'Mean', 'Confidence'])
-            plt.tight_layout()
+                ax.legend(['Ground truth', 'Pred. mean', 'Pred. confidence'])
+
             if savefig:
                 plt.savefig('regression result.png')
+        
+        if acquisition is not None:
+            fid_name = ['Low fidelity', 'High fidelity']
+
+            acq_plot = torch.tensor([acquisition(x[:, None], fid=fid) for x in test_x[:, None]])
+            plt.plot(test_x[np.argmax(acq_plot)], acq_plot[np.argmax(acq_plot)], '*', color=color)
+
+            axs[1].plot(test_x, acq_plot, color=color, label=fid_name[fid])
+            axs[1].legend()
+
 
     def plot_mll(self, train_x, train_y_scaled):
 
