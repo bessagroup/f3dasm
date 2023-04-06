@@ -34,43 +34,77 @@ class Parameter:
 
     @classmethod
     def get_name(self) -> str:
+        """Return the name of the parameter class"""
         return self.__name__
 
-    def to_json(self) -> str:  # Tuple[dict, str]:
+    def to_json(self) -> str:
+        """Return a JSON string representation of the parameter"""
         args = self.__dict__
         name = self.get_name()
         return json.dumps((args, name))
-        # return self.__dict__, self.get_name()
 
 
 @dataclass
 class ConstantParameter(Parameter):
-    """Create a search space parameter that is constant
+    """Create a search space parameter that is constant.
 
     Parameters
     ----------
-    name
-        name of the parameter
-    value
-        value of the parameters
+    name : str
+        The name of the parameter.
+    value : Any
+        The constant value of the parameter.
+
+    Attributes
+    ----------
+    _type : str
+        The type of the parameter, which is always 'category'.
+
+    Raises
+    ------
+    TypeError
+        If the value is not hashable.
+
     """
 
     value: Any
     _type: str = field(init=False, default="category")
 
+    def __post_init__(self):
+        self._check_hashable()
+
+    def _check_hashable(self):
+        """Check if the value is hashable."""
+        try:
+            hash(self.value)
+        except TypeError:
+            raise TypeError("The value must be hashable.")
+
 
 @dataclass
 class ContinuousParameter(Parameter):
-    """Create a search space parameter that is continuous
+    """
+    A search space parameter that is continuous.
 
-    Parameters
+    Attributes
     ----------
-    name
-        name of the parameter
-    lower_bound
-        lower bound of continuous search space
-    upper_bound
-        upper bound of continuous search space (exclusive)
+    name : str
+        The name of the parameter.
+    lower_bound : float, optional
+        The lower bound of the continuous search space. Defaults to negative infinity.
+    upper_bound : float, optional
+        The upper bound of the continuous search space (exclusive). Defaults to infinity.
+
+    Raises
+    ------
+    TypeError
+        If the boundaries are not floats.
+    ValueError
+        If the upper bound is less than the lower bound, or if the lower bound is equal to the upper bound.
+
+    Notes
+    -----
+    This class inherits from the `Parameter` class and adds the ability to specify a continuous search space.
     """
 
     lower_bound: float = field(default=-np.inf)
@@ -169,7 +203,7 @@ class CategoricalParameter(Parameter):
 
 
 @dataclass
-class ConstraintInterface:
+class Constraint:
     """Interface for constraints"""
 
     pass

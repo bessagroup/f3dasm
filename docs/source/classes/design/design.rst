@@ -23,7 +23,7 @@ Helper function for single-objective, n-dimensional continuous design spaces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
  
-We can make a n-dimensional continous, single-objective design space with the helper function :func:`~f3dasm.base.utils.make_nd_continuous_design`. We have to specify the boundaries for each of the dimensions with a numpy array:
+We can make a n-dimensional continous, single-objective design space with the helper function :func:`~f3dasm.design.design.make_nd_continuous_design`. We have to specify the boundaries for each of the dimensions with a numpy array:
 
 .. code-block:: python
 

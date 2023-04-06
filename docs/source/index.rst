@@ -29,6 +29,16 @@ F3DASM
 
 .. toctree::
    :maxdepth: 2
+   :caption: Experiment
+   :hidden:
+   :glob:
+
+   classes/experiment/jobs
+   classes/experiment/filehandler
+   classes/experiment/apidoc
+
+.. toctree::
+   :maxdepth: 2
    :caption: Simulation
    :hidden:
    :glob:
@@ -65,6 +75,7 @@ F3DASM
    classes/miscellaneous/functions
    classes/miscellaneous/augmentor
    classes/miscellaneous/utilities
+   examples/code_release_week
 
 .. include:: readme.rst
 

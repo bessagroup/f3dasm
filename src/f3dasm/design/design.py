@@ -25,19 +25,35 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class F3DASMDesignSpaceDuplicateNameError(Exception):
+    """
+    Exception raised when a duplicate name is found in the DesignSpace
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
 @dataclass
 class DesignSpace:
-    """Main class for the design of experiments space
-
+    """Main class for defining design of experiments space.
 
     Parameters
     ----------
-    input_space
-        list of input parameters
-    output_space
-        list of output parameters
-    constraints
-        list of constraints
+    input_space : List[Parameter], optional
+        List of input parameters, by default an empty list
+    output_space : List[Parameter], optional
+        List of output parameters, by default an empty list
+    constraints : List[Constraint], optional
+        List of constraints, by default an empty list
+
+    Raises
+    ------
+    ValueError
+        If duplicate names are found in input or output names.
     """
 
     input_space: List[Parameter] = field(default_factory=list)
@@ -45,16 +61,25 @@ class DesignSpace:
     constraints: List[Constraint] = field(default_factory=list)
 
     def __post_init__(self):
+        """Check if input and output names have duplicates."""
         self._check_names()
 
     def _check_names(self):
+        """Check if input and output names have duplicates."""
         if len(self.get_input_names()) != len(set(self.get_input_names())):
-            raise ValueError("Duplicate names found in input names!")
+            raise F3DASMDesignSpaceDuplicateNameError("Duplicate names found in input names!")
 
         if len(self.get_output_names()) != len(set(self.get_output_names())):
-            raise ValueError("Duplicate names found in output names!")
+            raise F3DASMDesignSpaceDuplicateNameError("Duplicate names found in output names!")
 
     def to_json(self) -> str:
+        """Return JSON representation of the design space.
+
+        Returns
+        -------
+        str
+            JSON representation of the design space.
+        """
         # Missing constraints
         args = {'input_space': [parameter.to_json() for parameter in self.input_space],
                 'output_space': [parameter.to_json() for parameter in self.output_space]
@@ -62,11 +87,12 @@ class DesignSpace:
         return json.dumps(args)
 
     def get_empty_dataframe(self) -> pd.DataFrame:
-        """Create an empty DataFrame with the information of the input and output space
+        """Create an empty DataFrame with input and output space columns.
 
         Returns
         -------
-            DataFrame containing "input" and "output" columns
+        pd.DataFrame
+            DataFrame containing "input" and "output" columns.
         """
         # input columns
         df_input = pd.DataFrame(columns=self.get_input_names()).astype(
@@ -81,41 +107,43 @@ class DesignSpace:
         return pd.concat([df_input, df_output])
 
     def add_input_space(self, space: Parameter):
-        """Add a new parameter to the searchspace
+        """Add a new input parameter to the design space.
 
         Parameters
         ----------
-        space
-            search space parameter to be added
+        space : Parameter
+            Input parameter to be added.
         """
         self.input_space.append(space)
         return
 
     def add_output_space(self, space: Parameter):
-        """Add a new parameter to the searchspace
+        """Add a new output parameter to the design space.
 
         Parameters
         ----------
-        space
-            search space parameter to be added
+        space : Parameter
+            Output parameter to be added.
         """
         self.output_space.append(space)
 
     def get_input_space(self) -> List[Parameter]:
-        """Get the input space
+        """Return input parameters.
 
         Returns
         -------
-            List of input parameters
+        List[Parameter]
+            List of input parameters.
         """
         return self.input_space
 
     def get_output_space(self) -> List[Parameter]:
-        """Get the output space
+        """Return output parameters.
 
         Returns
         -------
-            List of output parameters
+        List[Parameter]
+            List of output parameters.
         """
         return self.output_space
 
@@ -138,11 +166,15 @@ class DesignSpace:
         return [("input", s.name) for s in self.input_space]
 
     def is_single_objective_continuous(self) -> bool:
-        """Check if the output is single objective and continuous
+        """Checks whether the output of the model is a single continuous objective value.
+
+        A model is considered to have a single continuous objective if all of
+        its input and output parameters are continuous, and it returns only one output value.
 
         Returns
         -------
-            boolean value if the above described condition is true
+        bool
+            True if the model's output is a single continuous objective value, False otherwise.
         """
         return (
             self._all_input_continuous()
@@ -280,18 +312,31 @@ class DesignSpace:
 
 
 def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> DesignSpace:
-    """Helper function to make an continuous design space with a single-objective continuous output
+    """Create a continuous design space with a single-objective continuous output.
 
     Parameters
     ----------
-    bounds
-        lower and upper bounds of every dimension
-    dimensionality
-        number of dimensions
+    bounds : numpy.ndarray
+        A 2D numpy array of shape (dimensionality, 2) specifying the lower and upper bounds of every dimension.
+    dimensionality : int
+        The number of dimensions.
 
     Returns
     -------
-        continuous, single-objective designspace
+    DesignSpace
+        A continuous design space with a single-objective continuous output.
+
+    Notes
+    -----
+    This function creates a DesignSpace object consisting of continuous input parameters and a single continuous
+    output parameter. The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
+    The input parameters are named "x0", "x1" .. "The output parameter is named "y".
+
+    Example
+    -------
+    >>> bounds = np.array([[-5.0, 5.0], [-2.0, 2.0]])
+    >>> dimensionality = 2
+    >>> design_space = make_nd_continuous_design(bounds, dimensionality)
     """
     input_space, output_space = [], []
     for dim in range(dimensionality):

@@ -22,7 +22,7 @@ from ._show_versions import __version__, show_versions
 from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
-                               ConstraintInterface, ContinuousParameter,
+                               Constraint, ContinuousParameter,
                                DiscreteParameter)
 # Base classes
 from .functions.function import Function
