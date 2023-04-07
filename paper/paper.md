@@ -78,7 +78,7 @@ The extensions can be installed on the fly and contain the following features:
 
 # Coding framework
 
-The effectiveness of the pre-released version of the `f3dasm` framework ([@Bessa2017]) has been demonstrated in various computational mechanics and materials studies, such as the design of a super-compressible meta-material [@Bessa2019] and a spiderweb nano-mechanical resonator inspired by nature and guided by machine learning [@Shin2022]. 
+The effectiveness of the pre-released version of the `f3dasm` framework [@Bessa2017] has been demonstrated in various computational mechanics and materials studies, such as the design of a super-compressible meta-material [@Bessa2019] and a spiderweb nano-mechanical resonator inspired by nature and guided by machine learning [@Shin2022]. 
 
 Since its creation, the code has not received any major updates and lacked active development. This presented an opportunity for growth as the original authors aim to achieve a unified framework. In order to reincarnate the framework and enhance its usability, a complete comprehensive redesign have been conducted. Key objectives that have be addressed include:
 
@@ -134,6 +134,6 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Acknowledgements
 
-We would like to express our gratitude to the authors of the original paper [@Bessa2017]for providing us with the pre-release version of the `f3dasm` framework, which ideas are the foundation in the development of this work. We would also like to extend our thanks to Jiaxiang Yi for his invaluable contributions to integration with abaqus.
+We would like to express our gratitude to the authors of the original paper [@Bessa2017] for providing us with the pre-release version of the `f3dasm` framework, which ideas are the foundation in the development of this work. We would also like to extend our thanks to Jiaxiang Yi for his invaluable contributions to integration with abaqus.
 
 # References
