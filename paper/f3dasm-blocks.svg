@@ -598,6 +598,15 @@
          id="path858"
          d="M 1.0729e-5,0 H 720.00001 V 540 H 1.0729e-5 Z" />
     </clipPath>
+    <clipPath
+       id="clipPath210-3"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         style="clip-rule:evenodd"
+         inkscape:connector-curvature="0"
+         id="path208-6"
+         d="M 1.0729e-5,0 H 720.00001 V 540 H 1.0729e-5 Z" />
+    </clipPath>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -606,9 +615,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="343.91726"
-     inkscape:cy="252.6084"
+     inkscape:zoom="0.7"
+     inkscape:cx="202.63003"
+     inkscape:cy="335.5145"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -629,7 +638,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -698,10 +707,9 @@
            style="font-variant:normal;font-weight:normal;font-size:12px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
            id="text144">
           <tspan
-             x="0 7.5120001 13.524 18.756001 21.743999 27.756001 33.779999 36.035999 42.060001 45.792"
-             y="0"
+             x="42.060001 45.792"
              sodipodi:role="line"
-             id="tspan142">Design of</tspan>
+             id="tspan142" />
         </text>
       </g>
     </g>
@@ -710,18 +718,7 @@
        transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
       <g
          id="g148"
-         clip-path="url(#clipPath152)">
-        <text
-           transform="matrix(1,0,0,-1,61.475,287.73)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text156">
-          <tspan
-             x="0 5.9884501 11.243375 17.243851 23.2323 26.996124 29.978325 38.973026 44.961475 50.973976 54.725777"
-             y="0"
-             sodipodi:role="line"
-             id="tspan154">experiments</tspan>
-        </text>
-      </g>
+         clip-path="url(#clipPath152)" />
     </g>
     <g
        id="g158"
@@ -907,7 +904,7 @@
     </g>
     <g
        id="g266"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g268"
          clip-path="url(#clipPath272)">
@@ -925,37 +922,21 @@
     </g>
     <g
        id="g278"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,134.03124)">
       <g
          id="g280"
          clip-path="url(#clipPath284)">
         <text
-           transform="matrix(1,0,0,-1,462.85,173.25)"
+           transform="scale(1,-1)"
            style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text288">
+           id="text288"
+           x="478.15454"
+           y="-173.25">
           <tspan
-             x="0 7.5036001 13.49205 19.504551 23.25635 29.244801 32.227001 35.209202 41.209675 47.198124"
-             y="0"
+             x="478.15454"
              sodipodi:role="line"
-             id="tspan286">Neural net</tspan>
-        </text>
-      </g>
-    </g>
-    <g
-       id="g290"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
-      <g
-         id="g292"
-         clip-path="url(#clipPath296)">
-        <text
-           transform="matrix(1,0,0,-1,454.58,158.97)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text300">
-          <tspan
-             x="0 8.2611752 14.2857 17.303974 20.334274 22.582951 26.346775 32.3713 38.395824 43.662773 47.438625 50.456902 56.481426 62.505951"
-             y="0"
-             sodipodi:role="line"
-             id="tspan298">Obj. functions</tspan>
+             id="tspan286"
+             y="-173.25">MLP</tspan>
         </text>
       </g>
     </g>
@@ -1219,7 +1200,7 @@
     </g>
     <g
        id="g460"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g462"
          clip-path="url(#clipPath466)">
@@ -1237,7 +1218,7 @@
     </g>
     <g
        id="g472"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g474"
          clip-path="url(#clipPath478)">
@@ -1254,7 +1235,7 @@
     </g>
     <g
        id="g484"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g486"
          clip-path="url(#clipPath490)">
@@ -1272,7 +1253,7 @@
     </g>
     <g
        id="g496"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g498"
          clip-path="url(#clipPath502)">
@@ -1290,7 +1271,7 @@
     </g>
     <g
        id="g508"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g510"
          clip-path="url(#clipPath514)">
@@ -1307,7 +1288,7 @@
     </g>
     <g
        id="g520"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,132.9729)">
       <g
          id="g522"
          clip-path="url(#clipPath526)">
@@ -1320,24 +1301,6 @@
              y="0"
              sodipodi:role="line"
              id="tspan528">free</tspan>
-        </text>
-      </g>
-    </g>
-    <g
-       id="g532"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
-      <g
-         id="g534"
-         clip-path="url(#clipPath538)">
-        <text
-           transform="matrix(1,0,0,-1,616.98,158.97)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text542">
-          <tspan
-             x="0 5.2428999 11.267425"
-             y="0"
-             sodipodi:role="line"
-             id="tspan540">L2O</tspan>
         </text>
       </g>
     </g>
@@ -1448,19 +1411,21 @@
     </g>
     <g
        id="g606"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,130.85622)">
+       transform="matrix(0.31310606,0,0,-0.31310606,-12.895441,130.66723)">
       <g
          id="g608"
          clip-path="url(#clipPath612)">
         <text
-           transform="matrix(1,0,0,-1,341.07,166.03)"
+           transform="scale(1,-1)"
            style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text616">
+           id="text616"
+           x="316.92636"
+           y="-165.72821">
           <tspan
-             x="0 5.2549248 11.243375 17.255875 20.238075 25.480974"
-             y="0"
+             x="316.92636"
              sodipodi:role="line"
-             id="tspan614">Fenics</tspan>
+             id="tspan614"
+             y="-165.72821">Benchmark functions</tspan>
         </text>
       </g>
     </g>
@@ -1492,38 +1457,6 @@
              y="0"
              sodipodi:role="line"
              id="tspan636">2. Data generation</tspan>
-        </text>
-      </g>
-    </g>
-    <path
-       d="m 126.59444,62.179798 h 34.75478 v -9.393179 h -34.75478 z"
-       style="fill:#d9d9d9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.31310606"
-       id="path640"
-       inkscape:connector-curvature="0" />
-    <g
-       id="g642"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <path
-         d="m 433.13,239.62 h 111 v 30 h -111 z"
-         style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:4, 3;stroke-dashoffset:0;stroke-opacity:1"
-         id="path644"
-         inkscape:connector-curvature="0" />
-    </g>
-    <g
-       id="g646"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <g
-         id="g648"
-         clip-path="url(#clipPath652)">
-        <text
-           transform="matrix(1,0,0,-1,457.25,250.58)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text656">
-          <tspan
-             x="0 5.2428999 11.243375 16.486275 21.729176 23.97785 27.717625 33.718102 39.718575 44.961475 48.713276 51.695477 57.69595"
-             y="0"
-             sodipodi:role="line"
-             id="tspan654">Loss function</tspan>
         </text>
       </g>
     </g>
@@ -1593,7 +1526,7 @@
     </g>
     <g
        id="g698"
-       transform="matrix(0.31310606,0,0,-0.31310606,-3.675794,122.51717)">
+       transform="matrix(0.31310606,0,0,-0.31310606,1.9714722,122.51717)">
       <g
          id="g700"
          clip-path="url(#clipPath704)">
@@ -1602,10 +1535,10 @@
            style="font-variant:normal;font-weight:normal;font-size:12px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
            id="text708">
           <tspan
-             x="0 5.256 8.2440004 14.244 22.5 28.476 32.243999 35.987999 42.731998 49.487999"
-             y="0"
+             x="0"
              sodipodi:role="line"
-             id="tspan706">Flower RVE</tspan>
+             id="tspan706"
+             y="0">RVE</tspan>
         </text>
       </g>
     </g>
@@ -1717,42 +1650,10 @@
             <tspan
                id="tspan770"
                sodipodi:role="line"
-               y="0"
-               x="0 4.4965 8.9832249 14.222625 18.719126 22.46295 25.4541 32.951527 37.448025 42.687424">experiment</tspan>
+               x="0"
+               y="0">study</tspan>
           </text>
         </g>
-      </g>
-    </g>
-    <path
-       d="M 85.499274,62.414625 H 120.01921 V 52.786619 H 85.499274 Z"
-       style="fill:#d9d9d9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.31310606"
-       id="path774"
-       inkscape:connector-curvature="0" />
-    <g
-       id="g776"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <path
-         d="m 301.88,238.87 h 110.25 v 30.75 H 301.88 Z"
-         style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:4, 3;stroke-dashoffset:0;stroke-opacity:1"
-         id="path778"
-         inkscape:connector-curvature="0" />
-    </g>
-    <g
-       id="g780"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <g
-         id="g782"
-         clip-path="url(#clipPath786)">
-        <text
-           transform="matrix(1,0,0,-1,329,250.33)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text790">
-          <tspan
-             x="0 7.515625 13.528125 17.279924 23.292425 25.5411 28.5233 34.547825 40.560326 46.58485 52.597351"
-             y="0"
-             sodipodi:role="line"
-             id="tspan788">Data loader</tspan>
-        </text>
       </g>
     </g>
     <g
@@ -1781,73 +1682,6 @@
            inkscape:connector-curvature="0" />
       </g>
     </g>
-    <path
-       d="m 169.80308,62.179798 h 34.75477 v -9.393179 h -34.75477 z"
-       style="fill:#d9d9d9;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.31310606"
-       id="path812"
-       inkscape:connector-curvature="0" />
-    <g
-       id="g814"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <path
-         d="m 571.13,239.62 h 111 v 30 h -111 z"
-         style="fill:none;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:4, 3;stroke-dashoffset:0;stroke-opacity:1"
-         id="path816"
-         inkscape:connector-curvature="0" />
-    </g>
-    <g
-       id="g818"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <g
-         id="g820"
-         clip-path="url(#clipPath824)">
-        <text
-           transform="matrix(1,0,0,-1,589.73,250.58)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text828">
-          <tspan
-             x="0 9.7763252 15.788825 19.564674"
-             y="0"
-             sodipodi:role="line"
-             id="tspan826">Meta</tspan>
-        </text>
-      </g>
-    </g>
-    <g
-       id="g830"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <g
-         id="g832"
-         clip-path="url(#clipPath836)">
-        <text
-           transform="matrix(1,0,0,-1,615.28,250.58)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text840">
-          <tspan
-             x="0"
-             y="0"
-             id="tspan838">-</tspan>
-        </text>
-      </g>
-    </g>
-    <g
-       id="g842"
-       transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,137.20626)">
-      <g
-         id="g844"
-         clip-path="url(#clipPath848)">
-        <text
-           transform="matrix(1,0,0,-1,619.03,250.58)"
-           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-           id="text852">
-          <tspan
-             x="0 6.0004749 12.00095 15.75275 18.734949 27.72965 30.711849 35.209202 41.197651"
-             y="0"
-             sodipodi:role="line"
-             id="tspan850">optimizer</tspan>
-        </text>
-      </g>
-    </g>
     <g
        id="g854"
        transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,140.91045)">
@@ -1863,6 +1697,26 @@
              y="0"
              sodipodi:role="line"
              id="tspan862">4. Optimization</tspan>
+        </text>
+      </g>
+    </g>
+    <g
+       id="g204-7"
+       transform="matrix(0.31310606,0,0,-0.31310606,-7.7349502,124.11202)">
+      <g
+         id="g206-5"
+         clip-path="url(#clipPath210-3)">
+        <text
+           transform="scale(1,-1)"
+           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           id="text214-3"
+           x="57.671131"
+           y="-253.8764">
+          <tspan
+             x="57.671131"
+             sodipodi:role="line"
+             id="tspan212-5"
+             y="-253.8764">DesignSpace</tspan>
         </text>
       </g>
     </g>
