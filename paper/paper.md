@@ -1,5 +1,5 @@
 ---
-title: 'F3DASM: a Framework for data-driven design and analysis of structures and materials'
+title: 'F3DASM: a framework for data-driven design and analysis of structures and materials'
 tags:
   - Python
   - data-driven
@@ -46,7 +46,7 @@ The process of structural and materials design involves a continuous search for 
 
 Unfortunately, this extensive design space poses a significant challenge to accelerate the design process. The immense number of possibilities makes it impractical to conduct experimental investigations for each conceptual design. As a result, data-driven computational analyses have been a method of interest to explore these design spaces.
 
-The use of state-of-the-art data-driven methods for innovative structural and materials design has demonstrated their potential in various studies `[@Aage2017; @Schelling2021]`. Although these specific applications may differ, the data-driven modelling and optimization process remains the same. However, a comprehensive framework for data-driven design has not yet been established in the literature. Therefore, we introduce the framework for data-driven design and analysis of structures and materials (`f3dasm`): an attempt to develop a systematic approach of inverting the material design process. 
+The use of state-of-the-art data-driven methods for innovative structural and materials design has demonstrated their potential in various studies [@Aage2017; @Schelling2021]. Although these specific applications may differ, the data-driven modelling and optimization process remains the same. However, a comprehensive framework for data-driven design has not yet been established in the literature. Therefore, we introduce the framework for data-driven design and analysis of structures and materials (`f3dasm`): an attempt to develop a systematic approach of inverting the material design process. 
 
 
 # Statement of need
@@ -60,11 +60,25 @@ The `f3dasm` framework is aimed at researchers who seek to incorporate structure
 - Machine learning, in which a surrogate model is trained to fit experimental findings.
 - Optimization, where we try to iteratively improve the model to obtain a superior design.
 
+The package includes extensive implementation for each of the provided fields. Nevertheless, `f3dasm` is designed as a *modular* framework, consisting of both core and extended features.
+
+The core functionality of the framework comprises the following features:
+
+- provide a way to parametrize experiments with the design-of-experiments classes.
+- enabling experiment exploration by means of sampling and design optimization.
+- provide the user guidance in parallelizing their program and ordering their data.
+- Allowing users to deploy experiments on high-performance computer systems (TORQUE Resource Manager).
+
+The extensions can be installed on the fly and contain the following features:
+
+- provide various implementations to accommodate common data-driven workflows.
+- adapter classes that link popular machine learning libraries to be used as implementations in `f3dasm`.
+
 
 
 # Coding framework
 
-The effectiveness of the pre-released version of the `f3dasm` framework (`[@Bessa2017]`) has been demonstrated in various computational mechanics and materials studies, such as the design of a super-compressible meta-material `[@Bessa2019]` and a spiderweb nano-mechanical resonator inspired by nature and guided by machine learning `[@Shin2022]`. 
+The effectiveness of the pre-released version of the `f3dasm` framework ([@Bessa2017]) has been demonstrated in various computational mechanics and materials studies, such as the design of a super-compressible meta-material [@Bessa2019] and a spiderweb nano-mechanical resonator inspired by nature and guided by machine learning [@Shin2022]. 
 
 Since its creation, the code has not received any major updates and lacked active development. This presented an opportunity for growth as the original authors aim to achieve a unified framework. In order to reincarnate the framework and enhance its usability, a complete comprehensive redesign have been conducted. Key objectives that have be addressed include:
 
@@ -107,7 +121,7 @@ The `f3dasm` framework will maintain three types of branches:
 - **pull-request branches**: short-lived development branches for each development cycle (e.g. `pr/v1.1.0`), intended for active development. At the end of each development cycle, an attempt is made to merge the pull-request branch with the main branch.
 - **feature branches**: working branches intended for implementing individual features or resolving issues/bugs.
 
-Figure \autoref{fig:gitbranching} illustrates the branching tree of the version control strategy.
+\autoref{fig:gitbranching} illustrates the branching tree of the version control strategy.
 
 ![Illustration of the version control branching strategy. Different pull-request checks are done at certain merging procedures, ensuring that the main branch will remain stable.\label{fig:gitbranching}](f3dasm-gitbranching.png)
 
@@ -115,11 +129,11 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Availability
 
-`f3dasm` is available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/F3DASM/) documentation page. 
+`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/F3DASM/) documentation page. 
 
 
 # Acknowledgements
 
-We would like to express our gratitude to Miguel Bessa for providing us with the pre-release version of the f3dasm framework, which was instrumental in the development of our work. We would also like to extend our thanks to Jiaxiang Yi for his invaluable contributions to the abaqus simulator, which greatly aided our research efforts.
+We would like to express our gratitude to the authors of the original paper [@Bessa2017]for providing us with the pre-release version of the `f3dasm` framework, which ideas are the foundation in the development of this work. We would also like to extend our thanks to Jiaxiang Yi for his invaluable contributions to integration with abaqus.
 
 # References
