@@ -8,7 +8,7 @@ Implemented models
 ------------------
 
 Tensorflow implementation
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These tensorflow machine learning models are ported from the `tensorflow <https://www.tensorflow.org/>`_ Python library: 
 

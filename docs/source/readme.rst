@@ -1,6 +1,6 @@
 .. image:: img/f3dasm-logo.png
 
-Welcome to the documentation page of the 'Framework for Data-Driven Design and Analysis of Structures and Materials' (F3DASM).
+Welcome to the documentation page of the 'Framework for Data-Driven Design and Analysis of Structures and Materials' (:code:`f3dasm`).
 
 Here you will find all information on installing, using and contributing to the Python package, as well as the assignment of the Fundamentals of AI Project.
 
@@ -14,3 +14,4 @@ Useful links
 * Link to the `PyPI package <https://pypi.org/project/f3dasm/>`_
 * Link to `Illustrative examples <https://github.com/mpvanderschelling/F3DASM_practical>`_
 * Capstone project students: Download the assignment (PDF) `here <https://github.com/mpvanderschelling/TUD_Martin_Fundamentals_of_AI_project_2022/raw/main/TUD_Martin_Fundamentals_of_AI_project_2022.pdf>`_
+* Link to the :doc:`complete module index <apisource/modules>`

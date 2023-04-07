@@ -76,6 +76,7 @@ F3DASM
    classes/miscellaneous/augmentor
    classes/miscellaneous/utilities
    examples/code_release_week
+   examples/benchmarkoptimization
 
 .. include:: readme.rst
 
