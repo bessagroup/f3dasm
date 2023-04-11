@@ -80,11 +80,10 @@ class TorchGPSurrogate(Surrogate):
 
     def plot_gpr(
         self,
-        # test_input_data: Data,
         test_x,
-        scaler: StandardScaler,
-        exact_y,
         observed_pred: gpytorch.distributions.multivariate_normal.MultivariateNormal,
+        scaler: StandardScaler = None,
+        exact_y=None,
         train_x=None,
         train_y=None,
         savefig=False,
@@ -96,8 +95,10 @@ class TorchGPSurrogate(Surrogate):
 
         if type(axs) == np.ndarray:
             ax = axs[0]
-        else:
+        elif axs is None:
             f, ax = plt.subplots(1, 1)
+        else:
+            ax = axs
 
         # Get into evaluation (predictive posterior) mode
         self.model.eval()
@@ -108,14 +109,24 @@ class TorchGPSurrogate(Surrogate):
             # f, ax = plt.subplots(1, 1, num='gp')#, figsize=(4, 3))
             # plt.figure(num='gp')
 
-            # Get upper and lower confidence bounds
-            lower, upper = [torch.tensor(scaler.inverse_transform(confbound.numpy()[:, None]).flatten()) for confbound in observed_pred.confidence_region()]
+            if scaler is not None:
+                # Get upper and lower confidence bounds
+                lower, upper = [torch.tensor(scaler.inverse_transform(confbound.numpy()[:, None]).flatten()) for confbound in observed_pred.confidence_region()]
+            else:
+                lower, upper = [confbound for confbound in observed_pred.confidence_region()]
             # lower, upper = observed_pred.confidence_region()
 
-            # Plot ground truth as black dashed line
-            ax.plot(test_x, exact_y, '--', color=color, linewidth=.5, label='Ground truth')
-            # Plot predictive means as blue line
-            ax.plot(test_x, scaler.inverse_transform(observed_pred.mean.numpy()[:, None]).flatten(), color=color, label='Pred. mean',)
+            if exact_y is not None:
+                # Plot ground truth as black dashed line
+                ax.plot(test_x, exact_y, '--', color=color, linewidth=.5, label='Ground truth')
+            
+            if scaler is not None:
+                # Plot predictive means as blue line
+                ax.plot(test_x, scaler.inverse_transform(observed_pred.mean.numpy()[:, None]).flatten(), color=color, label='Pred. mean',)
+            else:
+                # Plot predictive means as blue line
+                ax.plot(test_x, observed_pred.mean, color=color, label='Pred. mean',)
+
             # Shade between the lower and upper confidence bounds
             ax.fill_between(test_x, lower.numpy(), upper.numpy(), alpha=0.25, color=color, label='Pred. confidence')
             # ax.set_ylim([-3, 3])
