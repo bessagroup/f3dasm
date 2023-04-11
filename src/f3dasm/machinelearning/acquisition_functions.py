@@ -257,9 +257,9 @@ class VFUpperConfidenceBound(BOTorch_AnalyticAcquisitionFunction):
             observed_pred_high = self.model([torch.empty(0, X.shape[-1]), X[0]])
             observed_pred_low = self.model([X[0], torch.empty(0, X.shape[-1])])
 
-        mean_high = observed_pred_high.mean
-        variance_low = observed_pred_low.variance
-        variance_high = observed_pred_high.variance
+            mean_high = observed_pred_high.mean
+            variance_low = observed_pred_low.variance
+            variance_high = observed_pred_high.variance
 
         if fid == 0:
             sigma = torch.sqrt(variance_low)
