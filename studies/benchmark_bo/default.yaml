@@ -3,33 +3,38 @@ hydra:
   sweeper:
     params:
       +trial_number: range(1)
-      +design.dimensionality: range(1, 4)
+      +function_name: "Sphere"
+      +dimensionality: range(1, 2)
+      +data_fidelity_structure: "choice(
+        'single',
+        'multi'
+      )"
+      +aug_type: 'noise'
+      +hf_fraction_replaced: 0.2
   sweep:
-    dir: outputs/default/${optimizer.optimizer_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: dim_${design.dimensionality}/trial_${trial_number}
+    dir: outputs/default/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${data_fidelity_structure}/dim_${dimensionality}/trial_${trial_number}
   job:
     chdir: True
   # hydra_logging: disabled
   # job_logging: disabled
 
-design:
-  lower_bound: 0.0
-  upper_bound: 1.0
-
-functions:
-  function_names: [
-    AlpineN1,
-    AlpineN2,
-  ]
-  noise: None
-
-optimizer:
-  optimizer_name: BayesianOptimizationTorch
-
 sampler:
   sampler_name: SobolSequence
-  number_of_samples: ${eval:'2 ** ${design.dimensionality}'}
+  number_of_samples: ${eval:'5 ** ${dimensionality}'}
+  number_of_hf_samples: ${eval:'${hf_fraction_replaced} * 5 ** ${dimensionality}'}
+  number_of_lf_samples: ${eval:'${hf_fraction_replaced} * 10 * 5 ** ${dimensionality}'}
+
+regressor:
+  kernel_name: RBFKernel
+  mean_name: ZeroMean
 
 execution:
-  iterations: ${eval:'5 * 2 ** ${design.dimensionality}'}
-  seed: 123
+  iterations: 1000
+  seed: -1
+
+aug_coeffs: [0.8, 1.]
+
+costs: [0.25, 1.]
+
+budget: ${eval:'5 * 2 ** ${dimensionality}'}
