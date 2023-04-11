@@ -4,12 +4,13 @@ import autograd.numpy as np
 import hydra
 from hydra.core.config_store import ConfigStore
 import pickle
+
+from matplotlib import pyplot as plt
 import f3dasm
 from config import Config
 import gpytorch
 import torch
 from sklearn.preprocessing import StandardScaler
-from fidelity_augmentors import Warp, Scale, NoiseInterpolator
 from generate_train_data import *
 
 from omegaconf import OmegaConf
@@ -18,11 +19,12 @@ OmegaConf.register_new_resolver("eval", eval)
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    seed = np.random.randint(low=0, high=1e5)
-    # seed = 123
+    if config.seed == -1:
+        seed = np.random.randint(low=0, high=1e5)
+    else:
+        seed = config.seed
 
-    with open('seed.txt', "w") as f:
-        f.write(str(seed))
+    log.info("RANDOM SEED = %d" % seed)
 
     bounds = np.tile([0.0, 1.0], (config.design.dimensionality, 1))
     design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensionality=config.design.dimensionality)
@@ -98,35 +100,53 @@ def convert_config_to_input(config: Config) -> List[dict]:
             sort_indices = test_x.argsort(axis=0)
             test_x = test_x[sort_indices].squeeze(axis=-1)
 
-        # test_x = torch.linspace(0, 1, n_test)
-
         if config.regressor_name in ['Cokgj', 'MultitaskGPR']:
-            test_x = [torch.empty(0, config.design.dimensionality), test_x.clone()]
-        
-        observed_pred = surrogate.predict(test_x)
+            test_x_hf = [torch.empty(0, config.design.dimensionality), test_x.clone()]
+            test_x_lf = [test_x.clone(), torch.empty(0, config.design.dimensionality)]
 
-        if config.regressor_name in ['Cokgj', 'MultitaskGPR']:
-            test_x_plot = test_x[-1]
+            observed_pred = surrogate.predict(test_x_hf)
+            observed_pred_lf = surrogate.predict(test_x_lf)
+
             train_x = torch.tensor(train_data[-1].get_input_data().values)
             train_y = torch.tensor(scaler.inverse_transform(train_data[-1].get_output_data().values))
 
+            train_x_lf = torch.tensor(train_data[0].get_input_data().values)
+            train_y_lf = torch.tensor(scaler.inverse_transform(train_data[0].get_output_data().values))
+
         else:
-            test_x_plot = test_x
+            observed_pred = surrogate.predict(test_x)
             train_x = torch.tensor(train_data.get_input_data().values)
             train_y = torch.tensor(scaler.inverse_transform(train_data.get_output_data().values))
         
-        exact_y = fun(test_x_plot)
+        exact_y = fun(test_x.clone())
 
-        if config.design.dimensionality == 1:
+        if config.design.dimensionality == 1 and config.visualize_gp:
+            _, axs = plt.subplots(1, 1, num='gp' + config.regressor_name)
+
             surrogate.plot_gpr(
-                test_x=test_x_plot.flatten(),
+                test_x=test_x.clone().flatten(),
                 scaler=scaler,
                 exact_y=exact_y,
                 observed_pred=observed_pred,
+                color='b',
                 train_x=train_x,
                 train_y=train_y,
-                savefig=False,
+                savefig=True,
+                axs=axs,
             )
+
+            # if config.regressor_name in ['Cokgj', 'MultitaskGPR']:
+            #     surrogate.plot_gpr(
+            #         test_x=test_x.clone().flatten(),
+            #         scaler=scaler,
+            #         exact_y=None,
+            #         observed_pred=observed_pred_lf,
+            #         color='orange',
+            #         train_x=train_x_lf,
+            #         train_y=train_y_lf,
+            #         savefig=True,
+            #         axs=axs,
+            #     )
 
     options = {
         "function": fun,
@@ -150,6 +170,8 @@ def main(cfg: Config):
     )
 
     metrics_df.to_csv(options['function'].name + '.csv')
+    plt.title(metrics_df['2']['R^2_p'])
+    plt.tight_layout()
 
 cs = ConfigStore.instance()
 cs.store(name="f3dasm_config", node=Config)
@@ -158,3 +180,5 @@ log = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     main()
+
+plt.show()

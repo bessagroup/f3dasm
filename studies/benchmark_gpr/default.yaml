@@ -23,16 +23,18 @@ hydra:
 design:
   dimensionality: ${eval:'${dimensionality}'}
 
-# regressor_name: None
-
 regressor:
   kernel_name: RBFKernel
   mean_name: ZeroMean
 
 sampler:
-  sampler_name: SobolSequence
+  sampler_name: SobolSequence_torch
   number_of_samples: ${eval:'5 ** ${dimensionality}'}
-  number_of_hf_samples: ${eval:'${hf_fraction_replaced} * 5 ** ${dimensionality}'}
+  number_of_hf_samples: ${eval:'(1 - ${hf_fraction_replaced}) * 5 ** ${dimensionality}'}
   number_of_lf_samples: ${eval:'${hf_fraction_replaced} * 10 * 5 ** ${dimensionality}'}
 
-aug_coeffs: [0.5, 1.]
+aug_coeffs: [0.8, 1.]
+
+seed: ${trial_number}
+
+visualize_gp: True

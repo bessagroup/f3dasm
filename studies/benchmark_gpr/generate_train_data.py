@@ -2,7 +2,7 @@ import f3dasm
 import torch
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from fidelity_augmentors import NoiseInterpolator
+from f3dasm.functions.fidelity_augmentors import NoiseInterpolator
 
 def train_data_single_fidelity(config, sampler, fun):
     ## Generate training samples with the sampler

@@ -81,3 +81,7 @@ sampler:
   number_of_samples: ${eval:'5 ** ${dimensionality}'}
   number_of_hf_samples: ${eval:'ceil(${hf_fraction_replaced} * 5 ** ${dimensionality})'}
   number_of_lf_samples: ${eval:'${hf_fraction_replaced} * 10 * 5 ** ${dimensionality}'}
+
+seed: ${trial_number}
+
+visualize_gp: False
