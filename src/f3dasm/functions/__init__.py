@@ -14,6 +14,7 @@ from .adapters.augmentor import *
 from .function import Function, MultiFidelityFunction, AugmentedFunction
 from .function import Function
 from .pybenchfunction import *
+from .fidelity_augmentors import Warp, Scale, NoiseInterpolator
 
 #                                                          Authorship & Credits
 # =============================================================================
