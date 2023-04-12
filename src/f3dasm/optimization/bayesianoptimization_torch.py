@@ -64,9 +64,9 @@ def optimize_acquisition(acq_f, function, dimensionality=None,):
     res = scipy.optimize.minimize(
         fun=lambda x: -acq_f(torch.tensor(x[None, :])),
         x0=np.random.rand(dimensionality),
-        method='L-BFGS-B', 
+        method='Nelder-Mead',
         bounds=scipy.optimize.Bounds(lb=function.scale_bounds[:, 0], ub=function.scale_bounds[:, 1]),
-        options={'disp': False, 'eps': 1e-4},
+        options={'disp': True, 'maxfev': 5}#, 'eps': 1e-4, 'maxiter': 999, 'maxfun': 1},
      )
     new_x = res.x[None, :]
     acq_val = -res.fun
@@ -234,10 +234,14 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
                 
                 observed_pred = surrogate.predict(test_x_pad)
                 exact_y = multifidelity_function.fidelity_functions[i](test_x.numpy()[:, None])
+            
+            plt.figure(num='gp')
+            plt.plot(test_x, observed_pred.mean)
+            plt.plot(self.data[i].get_input_data().values, self.data[i].get_output_data().values, '*')
 
-            surrogate.plot_gpr(test_x=test_x, scaler=self.scaler, exact_y=exact_y, observed_pred=observed_pred, 
-            train_x=torch.tensor(self.data.get_input_data().values), 
-            train_y=torch.tensor(self.scaler.inverse_transform(self.data.get_output_data().values)))
+            # surrogate.plot_gpr(test_x=test_x, scaler=self.scaler, exact_y=exact_y, observed_pred=observed_pred, 
+            # train_x=torch.tensor(self.data.get_input_data().values), 
+            # train_y=torch.tensor(self.scaler.inverse_transform(self.data.get_output_data().values)))
 
             if acq is not None:
                 acq_plot = torch.tensor([acq(x[:, None], fid=i) for x in test_x[:, None]])
@@ -251,41 +255,84 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
         plt.tight_layout()
         plt.legend()
 
+    def set_scaler(self):
+        scaler = StandardScaler()
+        scaler.fit(self.data[0].get_output_data().values)
+        self.scaler = scaler
+
     def update_step(self, multifidelity_function: MultiFidelityFunction,) -> None:
+
+        self.set_scaler()
+        for i in range(2):
+            scaled_output = self.scaler.transform(self.data[i].get_output_data())
+            self.data[i].add_output(scaled_output)
+
+        design = self.data[0].design
+        self.dimensionality = len(design.input_space)
 
         regressor = Cokgj(
             train_data=self.data, 
-            design=self.data[0].design,
+            design=design,
             parameter=self.parameter.regressor_hyperparameters,
         )
 
         surrogate = regressor.train()
 
-        low_sampler = SobolSequence_torch(design=self.data[0].design)
-        high_sampler = SobolSequence_torch(design=self.data[1].design)
+        sampler = SobolSequence_torch(design=design)
         
-        test_x_lf = low_sampler.get_samples(numsamples=500)
-        test_x_hf = high_sampler.get_samples(numsamples=500)
+        if self.dimensionality == 1:
+            test_x = torch.linspace(0, 1, 50)
+        else:
+            test_x = sampler.get_samples(numsamples=500).get_input_data().values
 
-        self.dimensionality = np.shape(test_x_hf.get_input_data())[-1]
-
-        # mean_high = surrogate.predict([torch.tensor([])[:, None], torch.tensor(test_x_hf.get_input_data().values)]).mean
-        mean_high = surrogate.predict([torch.empty(0, self.dimensionality), 
-            torch.tensor(test_x_hf.get_input_data().values)]).mean
-        mean_low = surrogate.predict([torch.tensor(test_x_lf.get_input_data().values), 
-            torch.empty(0, self.dimensionality)]).mean
-
-        cr = multifidelity_function.costs[1] / multifidelity_function.costs[0]
+        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+            observed_pred_hf = surrogate.predict([torch.empty(0, self.dimensionality), 
+                torch.tensor(test_x)])
+            observed_pred_lf = surrogate.predict([torch.tensor(test_x), 
+                torch.empty(0, self.dimensionality)])
 
         acquisition = self.parameter.acquisition(
             model=surrogate.model,
-            mean=[mean_low, mean_high],
-            cr=cr,
+            mean=[observed_pred_lf.mean, observed_pred_hf.mean],
+            cr=multifidelity_function.costs[1] / multifidelity_function.costs[0],
             **self.parameter.acquisition_hyperparameters.__dict__,
         )
 
         if self.parameter.visualize_gp:
-            self.plot_gpr(surrogate, multifidelity_function, acq=acquisition)
+            f, axs = plt.subplots(2, 1, num='gp and acq', figsize=(6, 8), sharex='all')
+            # self.plot_gpr(surrogate, multifidelity_function, acq=acquisition)
+
+            surrogate.plot_gpr(
+                test_x=test_x,
+                exact_y=None, 
+                observed_pred=observed_pred_hf,
+                train_x=torch.tensor(self.data[1].get_input_data().values),
+                train_y=torch.tensor(self.scaler.inverse_transform(self.data[1].get_output_data().values)),
+                color='b',
+                acquisition=acquisition,
+                fid=1,
+                axs=axs,
+                scaler=self.scaler
+                )
+            
+            surrogate.plot_gpr(
+                test_x=test_x,
+                exact_y=None, 
+                observed_pred=observed_pred_lf,
+                train_x=torch.tensor(self.data[0].get_input_data().values),
+                train_y=torch.tensor(self.scaler.inverse_transform(self.data[0].get_output_data().values)),
+                color='orange',
+                acquisition=acquisition,
+                fid=0,
+                axs=axs,
+                scaler=self.scaler
+                )
+                
+            axs[0].set_ylabel('y')
+            axs[1].set_xlabel('x')
+            axs[1].set_ylabel('acquisition')
+
+            plt.tight_layout()
 
         new_x, new_obj, cost, fid = optimize_multifidelity_acquisition(
             multifidelity_acq_f=acquisition,
@@ -293,7 +340,7 @@ class MFBayesianOptimizationTorch(MultiFidelityOptimizer):
             dimensionality=self.dimensionality,
         )
 
-        return new_x, new_obj, cost, fid
+        return new_x, self.scaler.transform(new_obj), cost, fid
 
 
 def mf_data_compiler(
