@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import List
 
@@ -12,10 +11,7 @@ import f3dasm
 
 def convert_config_to_input(config: Config) -> List[dict]:
 
-    # Set the seed
     seed = np.random.randint(low=0, high=1e5)
-
-    # Sample a dimension
     dimensionality = np.random.randint(
         low=config.design.dimensionality_lower_bound, high=config.design.dimensionality_upper_bound + 1
     )
@@ -37,7 +33,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
     function = function_class(
         dimensionality=dimensionality, noise=function_noise, scale_bounds=design.get_bounds(), seed=seed
     )
-    data = f3dasm.ExperimentData(design=design)
+    data = f3dasm.Data(design=design)
 
     optimizers = [optimizer(data=data, seed=seed) for optimizer in optimizers_class]
     sampler = sampler_class(design=data.design, seed=seed)
@@ -63,21 +59,18 @@ def main(cfg: Config):
     for _ in range(cfg.execution.number_of_functions):
         options_list = convert_config_to_input(config=cfg)
 
-        results: List[f3dasm.OptimizationResult] = []
+        results = []
 
         for options in options_list:
             results.append(f3dasm.run_multiple_realizations(**options))
 
-        # Store the results in JSON files
-        json_results: str = json.dumps([res.to_json() for res in results])
-
         filename: str = f"{options_list[0]['function'].get_name()}_seed{options_list[0]['seed']}\
             _dim{options_list[0]['function'].dimensionality}"
-        f3dasm.write_json(name=filename, json_string=json_results)
+        f3dasm.write_pickle(filename, results)
 
-        # df = f3dasm.margin_of_victory(results)
+        df = f3dasm.margin_of_victory(results)
 
-        # f3dasm.write_pickle('mov_'+filename, df)
+        f3dasm.write_pickle('mov_'+filename, df)
 
 
 cs = ConfigStore.instance()

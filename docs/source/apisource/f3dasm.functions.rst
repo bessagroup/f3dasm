@@ -20,14 +20,6 @@ f3dasm.functions.function module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.functions.logisticregression module
-------------------------------------------
-
-.. automodule:: f3dasm.functions.logisticregression
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 f3dasm.functions.pybenchfunction module
 ---------------------------------------
 

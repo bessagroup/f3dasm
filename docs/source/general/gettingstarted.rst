@@ -20,8 +20,12 @@ There are different ways to install f3dasm:
 Installing the latest release
 =============================
 
-f3dasm is compatible with Python version 3.8
+``f3dasm`` is purely Python code and compatible with: 
 
+1. Python 3.8 to 3.10. 
+2. the three major operations system (Linux, MacOS, Ubuntu). 
+3. the default environment of Google Colab (Python 3.8, Linux) 
+4. the `pip <https://pypi.org/>`_ package manager system.
 
 ----
 
@@ -84,8 +88,8 @@ In order to check your installation you can use
 .. code-block:: console
 
   $ python -c "import f3dasm; f3dasm.show_versions()"
-  >>> F3DASM:
-  >>>    f3dasm: 0.2.92
+  >>> f3dasm:
+  >>>    1.0.0
   >>>    ...
 
 This will show the installed version of f3dasm and the versions of the dependencies.
@@ -96,13 +100,20 @@ This will show the installed version of f3dasm and the versions of the dependenc
 Installing from source
 ======================
 
+- The Python PyPI package (:code:`pip install f3dasm`) contains the code that is
+  used when installing the package as a **user**. It contains only the :code:`main` branch version.
+- Installing the package from source is mainly for **developers** and besides the source code it includes:
 
-Building from source is required to work on a contribution (bug fix, new
-feature, code or documentation improvement). We recommend using a `Linux distribution system <https://releases.ubuntu.com/focal/>`_.
+   -  Studies
+   -  Test suite
+   -  Documentation source
+   -  Tutorial notebooks
+
+Building from source is required to work on a contribution (bug fix, new feature, code or documentation improvement). We recommend using a `Linux distribution system <https://releases.ubuntu.com/focal/>`_.
 
 .. _git_repo:
 
-#. Use `Git <https://git-scm.com/>`_ to check out the latest source from the
+1. Use `Git <https://git-scm.com/>`_ to check out the latest source from the
    `f3dasm repository <https://github.com/bessagroup/f3dasm>`_ on
    Github.:
 
@@ -112,7 +123,7 @@ feature, code or documentation improvement). We recommend using a `Linux distrib
      cd F3DASM
 
 
-#. Install a recent version of Python (3.8 is recommended at the time of writing)
+2. Install a recent version of Python (3.8, 3.9 or 3.10)
    for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_.
    If you installed Python with conda, we recommend to create a dedicated
    conda environment with all the build dependencies of f3dasm:
@@ -122,7 +133,7 @@ feature, code or documentation improvement). We recommend using a `Linux distrib
      conda create -n f3dasm_env python=3.8
      conda activate f3dasm_env
 
-#. If you run the development version, it is annoying to reinstall the package each time you update the sources.
+3. If you run the development version, it is annoying to reinstall the package each time you update the sources.
    Therefore it is recommended that you install the package from a local source, allowing you to edit the code in-place. 
    This builds the extension in place and creates a link to the development directory (see `the pip docs <https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs>`_).
 
@@ -130,7 +141,7 @@ feature, code or documentation improvement). We recommend using a `Linux distrib
 
      pip install --verbose --no-build-isolation --editable .
 
-#. In order to check your installation you can use
+4. In order to check your installation you can use
 
   .. code-block:: console
 
@@ -140,10 +151,15 @@ feature, code or documentation improvement). We recommend using a `Linux distrib
      >>>    ...
 
 
-  You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm. 
+.. note::
 
-#. Install the developement requirements:
+    You can check if the package is linked to your local clone of f3dasm by running :code:`pip show list` and look for f3dasm. 
+
+
+
+5. Install the developement requirements:
 
    .. code-block:: console
 
      pip install -r requirements_dev.txt
+

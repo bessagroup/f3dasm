@@ -1,8 +1,8 @@
 #!/bin/bash
 # Torque directives (#PBS) must always be at the start of a job script!
-#PBS -N BenchmarkingTest
-#PBS -q guest
-#PBS -l nodes=1:ppn=12,walltime=12:00:00
+#PBS -N F3DASM_script
+#PBS -q mse
+#PBS -l nodes=1:ppn=12:typer,walltime=00:30:00
 # Set the name of the job
 #
 # Set the rerunable flag, 'n' is not rerunable, default is 'y'

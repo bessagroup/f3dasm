@@ -43,11 +43,11 @@ class Scale(Augmentor):
         self.scale_factor = scale_factor
     
     def scale(self, input_row: np.ndarray, output_row: np.ndarray) -> np.ndarray:
-        output_row_scaled = output_row * self.scale_factor(input_row=input_row, output_row=output_row)
+        output_row_scaled = output_row * self.scale_factor(input_row=input_row)
         return output_row_scaled
     
     def reverse_scale(self, input_row: np.ndarray, output_row: np.ndarray) -> np.ndarray:
-        output_row_reverse_scaled = output_row / self.scale_factor(input_row=input_row, output_row=output_row)
+        output_row_reverse_scaled = output_row / self.scale_factor(input_row=input_row)
         return output_row_reverse_scaled
 
     def augment(self, input_row: np.ndarray, output_row: np.ndarray) -> np.ndarray:

@@ -1,12 +1,17 @@
 #                                                                       Modules
 # =============================================================================
 
+import errno
 # Standard
-import fcntl
+import os
 from logging import FileHandler, StreamHandler
 from time import sleep
-import errno
 from typing import TextIO
+
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -63,23 +68,29 @@ class DistributedFileHandler(FileHandler):
                 break
 
 
-def _lock_file(file: TextIO):
-    """Lock the file with the fcntl lock
+def _lock_file(file):
+    """Lock the file with the lock
 
     Parameters
     ----------
     file
         file object that returns from open()
     """
-    fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    if os.name == 'nt':  # for Windows
+        msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
+    else:  # for Unix
+        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
-def _unlock_file(file: TextIO):
-    """Unlock the file with the fcntl lock
+def _unlock_file(file):
+    """Unlock the file with the lock
 
     Parameters
     ----------
     file
         file object that returns from open()
     """
-    fcntl.flock(file, fcntl.LOCK_UN)
+    if os.name == 'nt':  # for Windows
+        msvcrt.locking(file.fileno(), msvcrt.LK_UNLCK, 1)
+    else:  # for Unix
+        fcntl.flock(file, fcntl.LOCK_UN)

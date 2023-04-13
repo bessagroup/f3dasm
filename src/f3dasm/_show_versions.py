@@ -23,9 +23,9 @@ __status__ = 'Stable'
 # =============================================================================
 
 # version
-here = Path(__file__).absolute().parent
-__version__ = here.joinpath("VERSION").read_text().strip()
-
+# here = Path(__file__).absolute().parent
+# __version__ = here.joinpath("VERSION").read_text().strip()
+__version__ = '0.9.3'
 
 # List of the dependencies per extension:
 CORE_DEPS = [
@@ -133,8 +133,8 @@ def show_versions():
     sampling_deps_info = _get_deps_info(SAMPLING_DEPS)
 
     print("\nf3dasm:")
-    for k, stat in f3dasm_info.items():
-        print(f"{k:>13}: {stat}")
+    # for k, stat in f3dasm_info.items():
+    print(f"{__version__:>13}")
 
     print("\nSystem:")
     for k, stat in sys_info.items():

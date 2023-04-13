@@ -2,6 +2,6 @@ numpy
 scipy
 pandas
 matplotlib
-hydra-core>=1.2.0
+hydra-core
 pathos>=0.3.0
 autograd

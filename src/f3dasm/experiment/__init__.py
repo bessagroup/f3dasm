@@ -3,7 +3,7 @@
 
 # Local
 from .filehandler import FileHandler
-from .jobs import Jobs, NoOpenJobsError
+from .jobs import JobQueue, NoOpenJobsError
 from .quickstart import quickstart
 
 #                                                          Authorship & Credits

@@ -1,3 +1,9 @@
+"""
+This module contains a base class for an analytical function that can be inherited
+to create specific analytical functions.
+The Function class is the base class that defines the interface for all analytical
+functions. It can be called with an input vector to evaluate the function at that point.
+"""
 #                                                                       Modules
 # =============================================================================
 
@@ -6,7 +12,7 @@ from dataclasses import dataclass
 from typing import List, Any
 from ..functions.adapters.augmentor import FunctionAugmentor
 from ..design.experimentdata import ExperimentData
-from typing import Tuple
+from typing import Tuple, Union
 
 # Third-party core
 import autograd.numpy as np
@@ -53,7 +59,8 @@ class Function:
             return
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray):
+    def __call__(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
+
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
             x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
@@ -317,88 +324,6 @@ class Function:
                    marker="*", edgecolors="red")
         return fig, ax
 
-    def plot_data(
-        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
-        numsamples=None, arrow=False
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contout plot with the datapoints as scatter
-
-        Parameters
-        ----------
-        data
-            Data object containing samples
-        px, optional
-            number of pixels on each axis
-        domain, optional
-            domain that needs to be plotted
-
-        Returns
-        -------
-            matplotlib figure and axes
-        """
-        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        x1 = data.get_input_data().iloc[:, 0]
-        x2 = data.get_input_data().iloc[:, 1]
-        ax.scatter(
-            x=x1,
-            y=x2,
-            s=10,
-            c=np.linspace(0, 1, len(x1)),
-            cmap="Blues",
-            edgecolors="black",
-        )
-        if arrow:
-            for p_index in range(len(x1)-1):
-                dx = (x1[p_index+1] - x1[p_index])
-                dy = (x2[p_index+1] - x2[p_index])
-                length = 1/np.sqrt(dx**2 + dy**2)
-                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
-                         length_includes_head=True)
-
-        # Mark selected point
-        if numsamples is not None:
-            x_selected = data.get_input_data().iloc[numsamples]
-            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
-                       marker="*", edgecolors="cyan")
-
-        # Mark last point
-        x_last = data.get_input_data().iloc[-1]
-        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
-                   marker="*", edgecolors="magenta")
-
-        # Best point
-        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
-        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
-                   marker="*", edgecolors="red")
-        return fig, ax
-
-class AugmentedFunction(Function):
-
-    def __init__(
-        self, 
-        dimensionality: int = None, 
-        seed: Any or int = None,
-        base_fun: Function = None,
-        fid: float = None,
-        aug_mode: Any = None,
-        scale_bounds: Any = None,
-        ):
-        super().__init__(seed)
-
-        self.base_fun = base_fun
-        self.fid = fid
-        self.aug_mode = aug_mode
-        self.scale_bounds = scale_bounds
-        self.dimensionality = dimensionality
-
-    def evaluate(self, x) -> np.ndarray:
-        x_space = x#[:, :-1]
-
-        res_hf = self.base_fun(x_space)
-        res_lf = np.zeros_like(res_hf)
-        res = self.fid * res_hf + (1 - self.fid) * res_lf
-        return res
 
 def _from_data_to_numpy_array_benchmarkfunction(
     data: ExperimentData,
@@ -409,6 +334,7 @@ def _from_data_to_numpy_array_benchmarkfunction(
             "All inputs and outputs need to be continuous parameters and output single objective")
     
     return data.get_input_data().to_numpy()
+
 
 @dataclass
 class MultiFidelityFunction:

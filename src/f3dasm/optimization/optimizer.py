@@ -1,7 +1,6 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
 import json
 from copy import copy
@@ -224,7 +223,7 @@ class Optimizer:
         y
             output data
         """
-        self.data.add_numpy_arrays(input_rows=x, output_rows=y)
+        self.data.add_numpy_arrays(input=x, output=y)
 
     def extract_data(self) -> ExperimentData:
         """Returns a copy of the data
@@ -314,7 +313,7 @@ class MultiFidelityOptimizer(Optimizer):
         y
             output data
         """
-        self.data[fid].add_numpy_arrays(input_rows=x, output_rows=y)
+        self.data[fid].add_numpy_arrays(input=x, output=y)
 
 def _number_of_updates(iterations: int, population: int):
     """Calculate number of update steps to acquire the correct number of iterations

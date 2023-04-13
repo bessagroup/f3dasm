@@ -54,8 +54,8 @@ html-open:
 	xdg-open ./$(BUILDDIR)/html/index.html
 
 apidoc:
-	-rm -rf ./$(SOURCEDIR)/./$(SOURCEDIR)$(APIDOCDIR)/*
-	sphinx-apidoc -o ./$(SOURCEDIR)/./$(SOURCEDIR)/$(APIDOCDIR)/ ../src/$(PACKAGENAME)
+	-rm -rf ./$(SOURCEDIR)/$(APIDOCDIR)/*
+	sphinx-apidoc -o ./$(SOURCEDIR)/$(APIDOCDIR)/ ../src/$(PACKAGENAME)
 	@echo
 	@echo "Created API documentation using sphinx-apidoc. The source files are in $(APIDOCDIR)."
 

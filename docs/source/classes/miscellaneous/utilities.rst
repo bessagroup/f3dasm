@@ -1,7 +1,7 @@
 Utility functions
 =================
 
-.. automodule:: f3dasm.base.utils
+.. automodule:: f3dasm.utils
    :members:
    :noindex:
    :show-inheritance:

@@ -76,7 +76,6 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/build/
 
 # PyBuilder
 target/
@@ -122,12 +121,3 @@ notebooks/tutorials/Data/
 
 # Exclude obj files in tests folder
 !tests/*/*.obj
-
-# Exclude .json files folder
-*.json
-
-# Notebooks
-notebooks/*.ipynb
-
-# .. but include tutorial notebooks!
-!notebooks/tutorials/

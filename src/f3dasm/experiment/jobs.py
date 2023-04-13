@@ -3,11 +3,19 @@
 
 # Standard
 import errno
-import fcntl
+import functools
 import json
+import logging
+import os
 from os import path
 from time import sleep
 from typing import Callable, Union
+
+# import msvcrt if windows, otherwise (Unix system) import fcntl
+if os.name == 'nt':
+    import msvcrt
+else:
+    import fcntl
 
 # Local
 from ..design import ExperimentData
@@ -47,7 +55,7 @@ class NoOpenJobsError(Exception):
 
 
 def access_file(sleeptime_sec: int = 1) -> Callable:
-    """Wrapper for accessing a single resource with a fcntl lock
+    """Wrapper for accessing a single resource with a file lock
 
     Parameters
     ----------
@@ -56,18 +64,26 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
 
     Returns
     -------
-        decorator
+    decorator
     """
     def decorator_func(operation: Callable) -> Callable:
+        @functools.wraps(operation)
         def wrapper_func(self, *args, **kwargs) -> None:
             while True:
                 try:
                     # Try to open the jobs file
                     with open(f"{self.filename}.json", 'r+') as file:
-                        fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        if os.name == 'nt':
+                            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
+                        else:
+                            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
                         # Load the jobs data to the object
-                        self.create_jobs_from_dictionary(json.load(file))
+                        try:
+                            self.create_jobs_from_dictionary(json.load(file))
+                        except json.JSONDecodeError as e:
+                            logging.exception(f"Failed to load JSON data from file {self.filename}.json")
+                            raise e
 
                         # Do the operation
                         value = operation(self, *args, **kwargs)
@@ -82,25 +98,42 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                     break
                 except IOError as e:
                     # the file is locked by another process
-                    if e.errno == errno.EAGAIN:
-                        print("The jobs file is currently locked by another process. Retrying in 1 second...")
-                        sleep(sleeptime_sec)
+                    if os.name == 'nt':
+                        if e.errno == 13:
+                            logging.info("The jobs file is currently locked by another process. "
+                                         "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The jobs file does not exist. Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
                     else:
-                        print(f"An unexpected IOError occurred: {e}")
-                        break
-
+                        if e.errno == errno.EAGAIN:
+                            logging.info("The jobs file is currently locked by another process. "
+                                         "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The jobs file does not exist. Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
                 except Exception as e:
                     # handle any other exceptions
-                    print(f"An unexpected error occurred: {e}")
+                    logging.info(f"An unexpected error occurred: {e}")
                     raise e
                     return
 
             return value
+
         return wrapper_func
+
     return decorator_func
 
 
-class Jobs:
+class JobQueue:
     def __init__(self, filename: str):
         """
         A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',

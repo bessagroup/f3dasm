@@ -1,6 +1,6 @@
-<center>
-	<img src="./docs/img/f3dasm-logo.svg" alt="F3DASM logo" />
-</center>
+f3dasm
+------
+*Framework for data-driven design \& analysis of structures and materials*
 
 ***
 
@@ -9,12 +9,12 @@
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/bessagroup/f3dasm)
 
 [**Docs**](https://bessagroup.github.io/F3DASM/)
-| [**Installation**](https://bessagroup.github.io/F3DASM/gettingstarted.html)
-| [**GitHub**](https://github.com/bessagroup/F3DASM/tree/versionmartin)
+| [**Installation**](https://bessagroup.github.io/F3DASM/general/gettingstarted.html)
+| [**GitHub**](https://github.com/bessagroup/F3DASM)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 | [**Practical sessions**](https://github.com/mpvanderschelling/F3DASM_practical)
 
-Welcome to `f3dasm`, a Python package for data-driven design and analysis of structures and materialsetamaterials.
+Welcome to `f3dasm`, a Python package for data-driven design and analysis of structures and materials.
 
 * Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
 * Current developer and maintainer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)

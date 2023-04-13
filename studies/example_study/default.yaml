@@ -1,0 +1,15 @@
+defaults:
+  - override hydra/job_logging: logging.yaml
+
+design:
+  number_of_samples: 300
+
+experiment:
+  seed: 42
+
+hpc:
+  jobid: -1
+
+file:
+  experimentdata_filename: "data"
+  jobqueue_filename: "jobs"

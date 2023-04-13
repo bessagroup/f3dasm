@@ -1,6 +1,12 @@
 Overview
 ========
 
+.. _design-of-experiments: https://bessagroup.github.io/F3DASM/classes/design/experimentdata.html
+.. _sampling: https://bessagroup.github.io/F3DASM/classes/sampling/sampling.html
+.. _optimizing: https://bessagroup.github.io/F3DASM/classes/optimization/optimizers.html
+.. _parallelizing: <URL for parallelizing>
+.. _TORQUE system: https://hpc-wiki.info/hpc/Torque
+
 Introduction
 ^^^^^^^^^^^^
 
@@ -19,6 +25,84 @@ The framework, originally proposed by Bessa et al. :cite:p:`Bessa2017` integrate
 The effectiveness of the first published version of :code:`f3dasm` framework has been demonstrated in various computational mechanics and materials studies, 
 such as the design of a super-compressible meta-material :cite:p:`Bessa2019` and a spiderweb nano-mechanical resonator inspired 
 by nature and guided by machine learning :cite:p:`Shin2022`. 
+
+Modularity and use cases
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The package contains a lot of implementation for each of the blocks.
+However, the installation ``f3dasm`` is modular: you decide what you
+want to use or not.
+
+We can distinguish 3 ways of using ``f3dasm``:
+
+Using ``f3dasm`` to handle your design of experiments
+-----------------------------------------------------
+
+The **core** package: contains the minimal installation to use
+``f3dasm`` without extended features. 
+
+.. note::
+
+    You can install the core package with ``pip install f3dasm`` or `read the installation instructions <https://bessagroup.github.io/F3DASM/general/gettingstarted.html>`__!
+
+The core package contains the following features:
+
+1. provide a way to parametrize your experiment with the `design-of-experiments`_ classes.
+2. provide the option to investigate their experiment by `sampling`_ and `optimizing`_ their design.
+3. provide the user guidance in `parallelizing`_ their program and ordering their data.
+4. give the user ways of deploying their experiment at a high-performance computer system (`TORQUE system`_).
+
+The core package requires the following dependencies:
+
+- `numpy <https://numpy.org/doc/stable/index.html>`_ and `scipy <https://docs.scipy.org/doc/scipy/reference/>`_: for numerical operations
+- `pandas <https://pandas.pydata.org/docs/>`_: for the representation of the design of experiments
+- `matplotlib <https://matplotlib.org/stable/contents.html>`_: for plotting
+- `hydra-core <https://hydra.cc/docs/intro/>`_: for deploying your experiment
+- `pathos <https://pathos.readthedocs.io/en/latest/>`_: for multiprocessing
+- `autograd <https://github.com/HIPS/autograd>`_: for computing gradients
+
+
+Using ``f3dasm`` to benchmark or compare models
+-----------------------------------------------
+
+Use existing implementations to benchmark parts of the data-driven machine learning process!
+
+For this purpose, you can solely use the core package, but it is advised
+to enrich ``f3dasm`` with its **extensions**
+
+The extensions contain the following features:
+
+1. provide various **implementations** to accommodate common machine learning workflows.
+2. provide **adapter** classes that link common machine learning libraries to ``f3dasm`` base classes.
+
+.. note: 
+
+.. note::
+
+    For each of the blocks, extensions can be installed to extend the choice of implementations. Installed with ``pip install f3dasm[<name of extension>]``
+
+The following extensions are available:
+
+- **machinelearning**: containing various `tensorflow <https://www.tensorflow.org/api_docs/>`_ related models
+- **sampling**: containing sampling strategies from `SALib <https://salib.readthedocs.io/en/latest/>`_
+-  **optimization**: containing various optimizers from `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_, `pygmo <https://esa.github.io/pygmo2/index.html>`_ and `tensorflow <https://www.tensorflow.org/api_docs/>`_
+
+The main takeaway is that if your design-of-experiments is modified to
+use the ``f3dasm.ExperimentData`` class, you are able to seamlessly
+incorporate the extension into your application!
+
+Develop on ``f3dasm``
+----------------------
+
+If you want your implementation to be part of the ``f3dasm`` package,
+you can develop an adapter and/or implementation for ``f3dasm``
+
+.. note::
+
+    The **developement** package: contains the full installation plus
+    requirements for developing on ``f3dasm``. Installed with
+    ``pip install f3dasm[dev]``. Information on how to contribute to ``f3dasm`` can be found `on the wiki page of the GitHub repository <https://github.com/bessagroup/F3DASM/wiki>`__!
+
 
 Abstraction
 ^^^^^^^^^^^

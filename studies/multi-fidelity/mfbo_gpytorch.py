@@ -4,11 +4,11 @@ from matplotlib import pyplot as plt
 import f3dasm
 from f3dasm.design import ExperimentData
 
-import botorch
 import gpytorch
 import torch
 
-from f3dasm.functions import AugmentedFunction, MultiFidelityFunction
+from f3dasm.functions import MultiFidelityFunction
+from f3dasm.functions.fidelity_augmentors import NoiseInterpolator, NoisyBaseFun
 
 ### reg parameters
 
@@ -18,11 +18,6 @@ noisy_data_bool = 1
 numsamples = 100
 fun_class = f3dasm.functions.AlpineN2
 training_iter = 50
-kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.MaternKernel()) \
-     #+ gpytorch.kernels.ScaleKernel(gpytorch.kernels.CosineKernel())
-# plot_mll = 1
-# plot_gpr = 1
-# train_surrogate = True
 n_test = 500
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 opt_algo = torch.optim.Adam
@@ -31,6 +26,7 @@ opt_algo_kwargs = dict(lr=0.1)
 base_fun = fun_class(
     dimensionality=dim,
     scale_bounds=np.tile([0.0, 1.0], (dim, 1)),
+    offset=False,
     )
 
 mean_module_list = torch.nn.ModuleList([
@@ -58,7 +54,7 @@ reg_parameters = f3dasm.machinelearning.gpr.Cokgj_Parameters(
 
 iterations = 1
 numbers_of_samples = [20, 5]
-fidelity_parameters = [0.5, 1.]
+aug_coeffs = [0.5, 1.]
 costs = [0.5, 1.]
 budget = 10
 
@@ -67,14 +63,27 @@ budget = 10
 fidelity_functions = []
 multifidelity_samplers = []
 
-for i, fidelity_parameter in enumerate(fidelity_parameters):
+for i, aug_coeff in enumerate(aug_coeffs):
 
-    fun = AugmentedFunction(
-            base_fun=base_fun,
-            fid=fidelity_parameter,
-            dimensionality=base_fun.dimensionality,
-            scale_bounds=base_fun.scale_bounds,
-            )
+    noise_augmentor = NoiseInterpolator(noise_var=1., aug_coeff=aug_coeff)
+
+    if i == 0:
+        fidelity_function = NoisyBaseFun(
+            seed=seed,
+            base_fun=base_fun, 
+            dimensionality=dim,
+            noise_augmentor=noise_augmentor, 
+            )                
+        
+        # fidelity_function = BiasedBaseFun(
+        #     seed=seed,
+        #     base_fun=fun, 
+        #     dimensionality=config.dimensionality,
+        #     scale_augmentor=scale_augmentor, 
+        #     )
+
+    else:
+        fidelity_function = base_fun
     
     parameter_DesignSpace = f3dasm.make_nd_continuous_design(
         bounds=np.tile([0.0, 1.0], (dim, 1)),
@@ -85,12 +94,12 @@ for i, fidelity_parameter in enumerate(fidelity_parameters):
 
     sampler = f3dasm.sampling.SobolSequence(design=parameter_DesignSpace, seed=seed)
 
-    fidelity_functions.append(fun)
+    fidelity_functions.append(fidelity_function)
     multifidelity_samplers.append(sampler)
 
 multifidelity_function = MultiFidelityFunction(
     fidelity_functions=fidelity_functions,
-    fidelity_parameters=fidelity_parameters,
+    fidelity_parameters=aug_coeffs,
     costs=costs,
 )
 
@@ -121,7 +130,7 @@ res = f3dasm.run_multi_fidelity_optimization(
     sampler=multifidelity_samplers,
     iterations=iterations,
     seed=seed,
-    numbers_of_samples=numbers_of_samples,
+    number_of_samples=numbers_of_samples,
     budget=budget
 )
 

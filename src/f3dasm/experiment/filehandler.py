@@ -59,7 +59,7 @@ class FileHandler:
             for exception in exceptions
         ]
 
-    def retrieve_all_files(self) -> List[str]:
+    def retrieve_tracked_files(self) -> List[str]:
         """Retrieve all files in the directory that pass the extension criteria
 
         Returns
@@ -76,7 +76,7 @@ class FileHandler:
         -------
             list of filenames that need to be processed
         """
-        all_files = self.retrieve_all_files()
+        all_files = self.retrieve_tracked_files()
         return list(filter(lambda file: file not in self.processed_files, all_files))
 
     def tick_processed(self, processed_file: str, errorcode: int):
@@ -102,7 +102,7 @@ class FileHandler:
 
         # Execute the action for every file in the list
         # Tick the processed files as processed
-        for filename in to_process:
+        for filename in (f for f in to_process):
             errorcode = self.execute(filename)
             self.tick_processed(filename, errorcode)
 

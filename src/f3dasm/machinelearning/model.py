@@ -25,7 +25,6 @@ class Model(Protocol):
         X
             Learningdata of the model
         """
-        # The model should handle the case when X is None!
         ...
 
     def get_model_weights(self):

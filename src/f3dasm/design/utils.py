@@ -23,78 +23,114 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class F3DASMClassNotFoundError(Exception):
+    """
+    Exception raised when a class is not found.
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
 def find_parameter(query: str) -> Parameter:
-    """Find a Parameter from the f3dasm.design submodule
+    """
+    Find a Parameter class by its name.
 
     Parameters
     ----------
-    query
-        string representation of the requested parameter
+    query : str
+        The name of the requested Parameter class.
 
     Returns
     -------
-        class of the requested parameter
+    Parameter
+        The class object of the requested Parameter.
+
+    Raises
+    ------
+    F3DASMClassNotFoundError
+        If the requested parameter is not found.
     """
     try:
         return list(filter(lambda parameter: parameter.__name__ == query, PARAMETERS))[0]
     except IndexError:
-        return ValueError(f'Parameter {query} not found!')
+        return F3DASMClassNotFoundError(f'Parameter {query} not found!')
 
 
 def create_parameter_from_json(json_string: str):
-    """Create a Parameter object from a json string
+    """
+    Create a Parameter object from a JSON string.
 
     Parameters
     ----------
-    json_string
-        json string representation of the information to construct the Parameter
+    json_string : str
+        JSON string representation of the information to construct the Parameter.
 
     Returns
     -------
-        Requested Parameter object
+    Parameter
+        The requested Parameter object.
     """
     parameter_dict, name = json.loads(json_string)
     return _create_parameter_from_dict(parameter_dict, name)
 
 
 def _create_parameter_from_dict(parameter_dict: dict, name: str) -> Parameter:
-    """Create a Model object from a dictionary
+    """
+    Create a Parameter object from a dictionary.
 
     Parameters
     ----------
-    parameter_dict
-        dictionary representation of the information to construct the Model
-    name
-        name of the class
+    parameter_dict : dict
+        Dictionary representation of the information to construct the Parameter.
+    name : str
+        Name of the class.
 
     Returns
     -------
-        Requested Model object
+    Parameter
+        The requested Parameter object.
     """
     return find_parameter(name)(**parameter_dict)
 
 
 # Create designspace from json file
 def create_design_from_json(json_string: str) -> DesignSpace:
-    """Createa DesignSpace object from a JSON-string
+    """
+    Create a DesignSpace object from a JSON string.
 
     Parameters
     ----------
-    json_string
-        JSON string encoding the DesignSpace object
+    json_string : str
+        JSON string encoding the DesignSpace object.
 
     Returns
     -------
-        DesignSpace object
+    DesignSpace
+        The created DesignSpace object.
     """
     # Load JSON string
     design_dict = json.loads(json_string)
     return _create_design_from_dict(design_dict)
 
-# Create designspace from dictionary
-
 
 def _create_design_from_dict(design_dict: dict) -> DesignSpace:
+    """
+    Create a DesignSpace object from a dictionary.
+
+    Parameters
+    ----------
+    design_dict : dict
+        Dictionary representation of the information to construct the DesignSpace.
+
+    Returns
+    -------
+    DesignSpace
+        The created DesignSpace object.
+    """
     for key, space in design_dict.items():
         parameters = []
         for parameter in space:
@@ -106,16 +142,18 @@ def _create_design_from_dict(design_dict: dict) -> DesignSpace:
 
 
 def create_experimentdata_from_json(json_string: str) -> ExperimentData:
-    """Create a ExperimentData object from a JSON-string
+    """
+    Create an ExperimentData object from a JSON string.
 
     Parameters
     ----------
-    json_string
-        JSON string encoding the ExperimentData object
+    json_string : str
+        JSON string encoding the ExperimentData object.
 
     Returns
     -------
-        ExperimentData object
+    ExperimentData
+        The created ExperimentData object.
     """
     # Read JSON
     experimentdata_dict = json.loads(json_string)
@@ -123,6 +161,19 @@ def create_experimentdata_from_json(json_string: str) -> ExperimentData:
 
 
 def _create_experimentdata_from_dict(experimentdata_dict: dict) -> ExperimentData:
+    """
+    Create an ExperimentData object from a dictionary.
+
+    Parameters
+    ----------
+    experimentdata_dict : dict
+        Dictionary representation of the information to construct the ExperimentData.
+
+    Returns
+    -------
+    ExperimentData
+        The created ExperimentData object.
+    """
     # Read design from json_data_loaded
     new_design = create_design_from_json(experimentdata_dict['design'])
 
@@ -146,16 +197,17 @@ def _create_experimentdata_from_dict(experimentdata_dict: dict) -> ExperimentDat
 
 
 def load_experimentdata(filename: str) -> ExperimentData:
-    """Create an ExperimentData object from .csv and .json files
+    """Load an ExperimentData object from .csv and .json files.
 
     Parameters
     ----------
-    filename
-        name of the file, excluding suffix
+    filename : str
+        Name of the file, excluding suffix.
 
     Returns
     -------
-        ExperimentData object
+    ExperimentData
+        ExperimentData object containing the loaded data.
     """
     # Load the design from a json string
     with open(f"{filename}_design.json") as f:

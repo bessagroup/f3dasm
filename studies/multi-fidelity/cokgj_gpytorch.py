@@ -37,36 +37,25 @@ base_fun = f3dasm.functions.AlpineN2(
 )
 
 def scale_factor(input_row: np.ndarray) -> np.ndarray:
-    try:
-        res = input_row.get_input_data().values + .5
-    except:
-        res = input_row + .5
+    res = 2 * input_row - .5
     return res
 
-def scale(input_row: np.ndarray, output_row: np.ndarray) -> np.ndarray:
-    output_row *= scale_factor(input_row=input_row)
-    return output_row
-
-def reverse_scale(input_row: np.ndarray, output_row: np.ndarray) -> np.ndarray:
-    output_row /= scale_factor(input_row=input_row)
-    return output_row
-
 noise_augmentor = NoiseInterpolator(noise_var=1., aug_coeff=0.75)
-scale_augmentor = Scale(scale=scale, reverse_scale=reverse_scale)
+scale_augmentor = Scale(scale_factor=scale_factor)
 
-aug_fun = NoisyBaseFun(
-    seed=seed,
-    dimensionality=dim,
-    base_fun=base_fun,
-    noise_augmentor=noise_augmentor,
-)
-
-# aug_fun = BiasedBaseFun(
+# aug_fun = NoisyBaseFun(
 #     seed=seed,
 #     dimensionality=dim,
 #     base_fun=base_fun,
-#     scale_augmentor=scale_augmentor,
+#     noise_augmentor=noise_augmentor,
 # )
+
+aug_fun = BiasedBaseFun(
+    seed=seed,
+    dimensionality=dim,
+    base_fun=base_fun,
+    scale_augmentor=scale_augmentor,
+)
 
 ###
 
@@ -109,7 +98,7 @@ for fid_no, (fid, samp_no) in enumerate(zip(fids, samp_nos)):
     else:
         train_data = sampler.get_samples(numsamples=samp_no)
 
-    train_data.add_output(fun(train_data))
+    train_data.add_output(fun(train_data.get_input_data().values))
 
     train_x = torch.tensor(train_data.get_input_data().values)
     train_y = torch.tensor(train_data.get_output_data().values.flatten())
@@ -121,9 +110,6 @@ for fid_no, (fid, samp_no) in enumerate(zip(fids, samp_nos)):
         scaler = StandardScaler()
         scaler.fit(train_y.numpy()[:, None])
     train_y_scaled = torch.tensor(scaler.transform(train_y.numpy()[:, None]).flatten())
-
-    # if fid_no == 0:
-    #     train_y_scaled += noisy_data_bool * np.random.randn(*train_y_scaled.shape) * math.sqrt(0.04)
 
     train_y_scaled_list.append(train_y_scaled)
 
@@ -216,10 +202,14 @@ if dim == 1:
         axs=axs,
         )
     
+    # surrogate.plot_mll(
+    #     train_x=train_x,
+    #     train_y_scaled=train_y_scaled,
+    # )
+    
     surrogate.plot_gpr(
         test_x=test_x.flatten(), 
-        scaler=scaler, 
-        # exact_y=exact_y_lf, 
+        scaler=scaler,
         observed_pred=observed_pred_lf,
         train_x=train_x_list[0],
         train_y=torch.tensor(scaler.inverse_transform(train_y_scaled_list[0].numpy()[:, None])),
@@ -234,12 +224,6 @@ if dim == 1:
     axs[1].set_ylabel('acquisition')
 
     plt.tight_layout()
-
-
-# surrogate.plot_mll(
-#     train_x=train_x,
-#     train_y_scaled=train_y_scaled,
-# )
 
 metrics_df = surrogate.gp_metrics(
     scaler=scaler,

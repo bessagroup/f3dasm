@@ -28,6 +28,14 @@ f3dasm.optimization.adamax module
    :undoc-members:
    :show-inheritance:
 
+f3dasm.optimization.all\_optimizers module
+------------------------------------------
+
+.. automodule:: f3dasm.optimization.all_optimizers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.optimization.bayesianoptimization module
 -----------------------------------------------
 
@@ -168,6 +176,14 @@ f3dasm.optimization.simulatedannealing module
 ---------------------------------------------
 
 .. automodule:: f3dasm.optimization.simulatedannealing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.optimization.utils module
+--------------------------------
+
+.. automodule:: f3dasm.optimization.utils
    :members:
    :undoc-members:
    :show-inheritance:

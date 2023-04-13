@@ -42,7 +42,7 @@ class _PygmoProblem:
         _description_
     """
     design: DesignSpace
-    func: Function  # TODO: Change this to Evaluator or so
+    func: Function
     seed: Any or int = None
 
     def __post_init__(self):
@@ -121,6 +121,10 @@ class PygmoAlgorithm(Optimizer):
     defaults
         Default hyperparameter arguments
     """
+    @staticmethod
+    def _check_imports():
+        _imports.check()
+
     @staticmethod
     def _check_imports():
         _imports.check()

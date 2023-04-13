@@ -1,9 +1,6 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import autograd.numpy as np
-
 # Standard
 from typing import Any, Union
 

@@ -3,10 +3,11 @@ import json
 import pandas as pd
 import pytest
 
-from f3dasm.design.utils import create_design_from_json
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.design import (DesignSpace,
+                                  F3DASMDesignSpaceDuplicateNameError)
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
+from f3dasm.design.utils import create_design_from_json
 
 pytestmark = pytest.mark.smoke
 
@@ -142,7 +143,7 @@ def test_same_name_of_parameters_error():
     y1 = ContinuousParameter(name="y1")
     designspace = [x1, x2]
     output_space = [y1]
-    with pytest.raises(ValueError):
+    with pytest.raises(F3DASMDesignSpaceDuplicateNameError):
         doe = DesignSpace(input_space=designspace, output_space=output_space)
 
 

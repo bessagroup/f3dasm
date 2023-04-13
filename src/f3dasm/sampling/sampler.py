@@ -9,7 +9,6 @@ from typing import Any, List, Union
 import numpy as np
 import pandas as pd
 
-from ..design.design import DesignSpace
 # Locals
 from ..design.design import DesignSpace
 from ..design.experimentdata import ExperimentData
