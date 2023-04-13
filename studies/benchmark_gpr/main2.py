@@ -226,7 +226,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
 #     plt.title(metrics_df['2']['R^2_p'])
 #     plt.tight_layout()
 
-@hydra.main(config_path=".", config_name="config")
+@hydra.main(config_path=".", config_name="config2")
 def main(config: Config):
     """Main script to call
 

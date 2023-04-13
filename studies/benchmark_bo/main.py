@@ -18,10 +18,7 @@ from omegaconf import OmegaConf
 OmegaConf.register_new_resolver("eval", eval)
 
 def scale_factor(input_row: np.ndarray) -> np.ndarray:
-    try:
-        res = input_row.get_input_data().values + .5
-    except:
-        res = input_row + .5
+    res = input_row + .5
     return res
 
 def convert_config_to_input(config: Config) -> List[dict]:
@@ -159,7 +156,7 @@ def convert_config_to_input(config: Config) -> List[dict]:
     return options, config.data_fidelity_structure
 
 
-@hydra.main(config_path=".", config_name="default2")
+@hydra.main(config_path=".", config_name="default")
 def main(cfg: Config):
     options, data_fidelity_structure = convert_config_to_input(config=cfg)
 
