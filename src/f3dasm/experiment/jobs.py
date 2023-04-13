@@ -197,7 +197,7 @@ class JobQueue:
             True if all jobs are finished, False if there are still open or in process jobs
         """
         _jobs = self.get_jobs()
-        return any(status != 'finished' for status in _jobs.values())
+        return all(status == 'finished' for status in _jobs.values())
 
     @access_file()
     def mark_finished(self, index: int):
