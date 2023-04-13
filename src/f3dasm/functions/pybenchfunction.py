@@ -2427,7 +2427,8 @@ class Shubert(PyBenchFunction):
     def get_global_minimum(self, d):
         # Global minimum from https://documentation.sas.com/doc/en/orcdc/14.2/orlsoug/orlsoug_ga_gettingstarted09.htm"
         # X = np.array([-7.708309818, -0.800371886])
-        return (None, None)
+        # Has 18 global minima around -186.7309
+        return (None, np.array([[-186.7309]]))
 
     def evaluate(self, X):
         d = X.shape[0]
