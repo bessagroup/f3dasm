@@ -202,7 +202,7 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
 
         if d != 2:  # WARNING ! Is only is available for d=2
-            return (None, None)
+            return (None, np.array([[-4.5901016]]))  # This is the global minimum for d=2
 
         X = np.array([-1.51, -0.755])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
