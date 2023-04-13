@@ -1563,7 +1563,7 @@ class Michalewicz(PyBenchFunction):
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
-            return (None, None)
+            return (None, np.array([[-1.8013]]))  # Substituted minimum for d=2
         X = np.array([2.20, 1.57])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
