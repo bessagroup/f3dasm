@@ -189,6 +189,16 @@ class JobQueue:
         """
         return self.jobs
 
+    def is_all_finished(self) -> bool:
+        """Check if all the jobs in the queue are finished
+
+        Returns
+        -------
+            True if all jobs are finished, False if there are still open or in process jobs
+        """
+        _jobs = self.get_jobs()
+        return any(status != 'finished' for status in _jobs.values())
+
     @access_file()
     def mark_finished(self, index: int):
         """Mark a job as 'finished'.
