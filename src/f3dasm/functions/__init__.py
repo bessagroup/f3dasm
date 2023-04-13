@@ -2,15 +2,10 @@
 # =============================================================================
 
 # Standard
-#                                                                       Modules
-# =============================================================================
-
-# Standard
 import inspect
 import json
 from typing import List
 
-# Third-party
 # Third-party
 import numpy as np
 
@@ -18,17 +13,6 @@ from . import pybenchfunction
 from .adapters.augmentor import *
 from .function import Function, MultiFidelityFunction
 from .pybenchfunction import *
-from .fidelity_augmentors import Warp, Scale, NoiseInterpolator
-
-#                                                          Authorship & Credits
-# =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
-# =============================================================================
-#
-# =============================================================================
-
 
 #                                                          Authorship & Credits
 # =============================================================================

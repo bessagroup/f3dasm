@@ -5,7 +5,10 @@ Protocol classes from types outside the optimization submodule
 # =============================================================================
 
 # Standard
-from typing import Protocol
+try:
+    from typing import Protocol
+except ImportError:  # Python 3.7
+    from typing_extensions import Protocol
 
 # Third-party core
 import numpy as np

@@ -9,10 +9,9 @@ functions. It can be called with an input vector to evaluate the function at tha
 
 # Standard
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Tuple, Union
 from ..functions.adapters.augmentor import FunctionAugmentor
 from ..design.experimentdata import ExperimentData
-from typing import Tuple, Union
 
 # Third-party core
 import autograd.numpy as np
@@ -332,15 +331,8 @@ def _from_data_to_numpy_array_benchmarkfunction(
     if not data.design.is_single_objective_continuous():
         raise TypeError(
             "All inputs and outputs need to be continuous parameters and output single objective")
-    
+
     return data.get_input_data().to_numpy()
-
-
-@dataclass
-class MultiFidelityFunction:
-    fidelity_functions: List[Function] = None
-    fidelity_parameters: List[float] = None
-    costs: List[float] = None
 
     def get_fidelity_function_by_parameter(self, fidelity_parameter: float):
         for i, fidelity_parameter_i in enumerate(self.fidelity_parameters):

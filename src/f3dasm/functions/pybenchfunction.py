@@ -204,7 +204,7 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
 
         if d != 2:  # WARNING ! Is only is available for d=2
-            return (None, None)
+            return (None, np.array([[-4.5901016]]))  # This is the global minimum for d=2
 
         X = np.array([-1.51, -0.755])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
@@ -1631,7 +1631,7 @@ class Michalewicz(PyBenchFunction):
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
-            return (None, None)
+            return (None, np.array([[-1.8013]]))  # Substituted minimum for d=2
         X = np.array([2.20, 1.57])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
@@ -2495,7 +2495,8 @@ class Shubert(PyBenchFunction):
     def get_global_minimum(self, d):
         # Global minimum from https://documentation.sas.com/doc/en/orcdc/14.2/orlsoug/orlsoug_ga_gettingstarted09.htm"
         # X = np.array([-7.708309818, -0.800371886])
-        return (None, None)
+        # Has 18 global minima around -186.7309
+        return (None, np.array([[-186.7309]]))
 
     def evaluate(self, X):
         d = X.shape[0]

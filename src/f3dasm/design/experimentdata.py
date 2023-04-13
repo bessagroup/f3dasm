@@ -124,6 +124,22 @@ class ExperimentData:
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
 
+    def set_inputdata_by_index(self, index: int, value: Any):
+        """
+        Sets the input data at the given index to the given value.
+
+        Parameters
+        ----------
+        index : int
+            The index of the input data to set.
+        value : Any
+            The value to set the input data to.
+        """
+        try:
+            self.data['input'].loc[index] = value
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
+
     def to_json(self) -> str:
         """
         Convert the ExperimentData object to a JSON string.

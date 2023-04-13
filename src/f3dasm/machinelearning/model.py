@@ -2,7 +2,11 @@
 # =============================================================================
 
 # Standard
-from typing import Protocol
+# Standard
+try:
+    from typing import Protocol
+except ImportError:  # Python 3.7
+    from typing_extensions import Protocol
 
 #                                                          Authorship & Credits
 # =============================================================================

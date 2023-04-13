@@ -130,6 +130,10 @@ class PygmoAlgorithm(Optimizer):
         _imports.check()
 
     @staticmethod
+    def _check_imports():
+        _imports.check()
+
+    @staticmethod
     def set_seed(seed: int):
         """Set the seed for pygmo
 

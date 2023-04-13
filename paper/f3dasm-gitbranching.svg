@@ -16,9 +16,9 @@
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
    sodipodi:docname="f3dasm-gitbranching.svg"
-   inkscape:export-filename="/home/martin/Documents/GitHub/F3DASM.wiki/img/gitbranching.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96">
+   inkscape:export-filename="/home/martin/Documents/GitHub/F3DASM/paper/f3dasm-gitbranching.png"
+   inkscape:export-xdpi="300"
+   inkscape:export-ydpi="300">
   <defs
      id="defs2">
     <marker
@@ -359,9 +359,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="373.94622"
-     inkscape:cy="258.4085"
+     inkscape:zoom="0.24748737"
+     inkscape:cx="849.61171"
+     inkscape:cy="417.74429"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -392,15 +392,6 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-2.6726942,-17.436073)">
-    <rect
-       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2.16289902;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       id="rect26140"
-       width="204.19392"
-       height="102.36423"
-       x="2.6726942"
-       y="17.436073"
-       inkscape:export-xdpi="96"
-       inkscape:export-ydpi="96" />
     <circle
        style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.28103733;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path815"
