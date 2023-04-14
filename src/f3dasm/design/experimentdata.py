@@ -1,10 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-import json
 # Standard
+import errno
+import functools
+import json
+import logging
 import os
-from typing import Any, List, Tuple
+from io import TextIOWrapper
+from time import sleep
+from typing import Any, Callable, List, Tuple, Type, Union
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -30,6 +35,82 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+def access_file(sleeptime_sec: int = 1) -> Callable:
+    """Wrapper for accessing a single resource with a file lock
+
+    Parameters
+    ----------
+    sleeptime_sec, optional
+        number of seconds to wait before trying to access resource again, by default 1
+
+    Returns
+    -------
+    decorator
+    """
+    def decorator_func(operation: Callable) -> Callable:
+        @functools.wraps(operation)
+        def wrapper_func(self, filename: str, *args, **kwargs) -> None:
+            while True:
+                try:
+                    # Try to open the experimentdata file
+                    with open(f"{filename}_data.csv", 'rb+') as file:
+                        if os.name == 'nt':
+                            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
+                        else:
+                            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+                        # Load the experimentdata from the object
+                        modified_experimentdata = ExperimentData.from_csv(filename=filename, text_io=file)
+                        self.data = modified_experimentdata.data
+
+                        # Do the operation
+                        value = operation(self, filename, *args, **kwargs)
+
+                        # Delete existing contents of file
+                        file.seek(0, 0)
+                        file.truncate()
+
+                        # Write the data to disk
+                        self.data.to_csv(file)
+
+                    break
+                except IOError as e:
+                    # the file is locked by another process
+                    if os.name == 'nt':
+                        if e.errno == 13:
+                            logging.info("The data file is currently locked by another process. "
+                                         "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The data file does not exist. Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
+                    else:
+                        if e.errno == errno.EAGAIN:
+                            logging.info("The data file is currently locked by another process. "
+                                         "Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        elif e.errno == 2:  # File not found error
+                            logging.info("The data file does not exist. Retrying in 1 second...")
+                            sleep(sleeptime_sec)
+                        else:
+                            logging.info(f"An unexpected IOError occurred: {e}")
+                            break
+                except Exception as e:
+                    # handle any other exceptions
+                    logging.info(f"An unexpected error occurred: {e}")
+                    raise e
+                    return
+
+            return value
+
+        return wrapper_func
+
+    return decorator_func
+
+
 class ExperimentData:
     """
     A class that contains data for experiments.
@@ -51,6 +132,92 @@ class ExperimentData:
         """Initializes an empty DataFrame with the appropriate input and output columns."""
         self.data = self.design.get_empty_dataframe()
 
+    @classmethod
+    def from_csv(cls: Type['ExperimentData'], filename: str,
+                 text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
+        """Create an ExperimentData object from .csv and .json files.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file, excluding suffix.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+        # Load the design from a json string
+        with open(f"{filename}_design.json") as f:
+            design = DesignSpace.from_json(f.read())
+
+        # Load the data from a csv
+        if text_io is None:
+            file = f"{filename}_data.csv"
+        else:
+            file = text_io
+        data = pd.read_csv(file, header=[0, 1], index_col=0)
+
+        # Create the experimentdata object
+        experimentdata = cls(design=design)
+        experimentdata.data = data
+        return experimentdata
+
+    @classmethod
+    def from_json(cls: Type['ExperimentData'], json_string: str) -> 'ExperimentData':
+        """
+        Create an ExperimentData object from a JSON string.
+
+        Parameters
+        ----------
+        json_string : str
+            JSON string encoding the ExperimentData object.
+
+        Returns
+        -------
+        ExperimentData
+            The created ExperimentData object.
+        """
+        # Read JSON
+        experimentdata_dict = json.loads(json_string)
+        return cls.from_dict(experimentdata_dict)
+
+    @classmethod
+    def from_dict(cls: Type['ExperimentData'], experimentdata_dict: dict) -> 'ExperimentData':
+        """
+        Create an ExperimentData object from a dictionary.
+
+        Parameters
+        ----------
+        experimentdata_dict : dict
+            Dictionary representation of the information to construct the ExperimentData.
+
+        Returns
+        -------
+        ExperimentData
+            The created ExperimentData object.
+        """
+        # Read design from json_data_loaded
+        new_design = DesignSpace.from_json(experimentdata_dict['design'])
+
+        # Read data from json string
+        new_data = pd.read_json(experimentdata_dict['data'])
+
+        # Create tuples of indices
+        columntuples = tuple(tuple(entry[1:-1].replace("'", "").split(', ')) for entry in new_data.columns.values)
+
+        # Create MultiIndex object
+        columnlabels = pd.MultiIndex.from_tuples(columntuples)
+
+        # Overwrite columnlabels
+        new_data.columns = columnlabels
+
+        # Create
+        new_experimentdata = cls(design=new_design)
+        new_experimentdata.add(data=new_data)
+
+        return new_experimentdata
+
     def reset_data(self):
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
         self.__post_init__()
@@ -60,7 +227,10 @@ class ExperimentData:
         print(self.data)
         return
 
-    def store(self, filename: str):
+    def _store_textiowrapper(self, textio: TextIOWrapper):
+        self.data.to_csv(textio)
+
+    def store(self, filename: str, text_io: Union[TextIOWrapper, None] = None):
         """Store the ExperimentData to disk, with checking for a lock
 
         Parameters
@@ -121,9 +291,14 @@ class ExperimentData:
             The value to set the output data to.
         """
         try:
-            self.data['output'].loc[index] = value
+            self.data.at[index, 'output'] = value
+            # self.data['output'].loc[index] = value
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
+
+    @access_file()
+    def write_outputdata_by_index(self, filename: str, index: int, value: Any):
+        self.set_outputdata_by_index(index=index, value=value)
 
     def set_inputdata_by_index(self, index: int, value: Any):
         """
@@ -140,6 +315,10 @@ class ExperimentData:
             self.data['input'].loc[index] = value
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
+
+    @access_file()
+    def write_inputdata_by_index(self, filename: str, index: int, value: Any):
+        self.set_inputdata_by_index(index=index, value=value)
 
     def to_json(self) -> str:
         """

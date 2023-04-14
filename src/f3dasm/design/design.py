@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import List, TypeVar
+from typing import List, Type, TypeVar
 
 # Third-party core
 import numpy as np
@@ -63,6 +63,49 @@ class DesignSpace:
     def __post_init__(self):
         """Check if input and output names have duplicates."""
         self._check_names()
+
+    @classmethod
+    def from_json(cls: Type['DesignSpace'], json_string: str) -> 'DesignSpace':
+        """
+        Create a DesignSpace object from a JSON string.
+
+        Parameters
+        ----------
+        json_string : str
+            JSON string encoding the DesignSpace object.
+
+        Returns
+        -------
+        DesignSpace
+            The created DesignSpace object.
+        """
+        # Load JSON string
+        design_dict = json.loads(json_string)
+        return cls.from_dict(design_dict)
+
+    @classmethod
+    def from_dict(cls: Type['DesignSpace'], design_dict: dict) -> 'DesignSpace':
+        """
+        Create a DesignSpace object from a dictionary.
+
+        Parameters
+        ----------
+        design_dict : dict
+            Dictionary representation of the information to construct the DesignSpace.
+
+        Returns
+        -------
+        DesignSpace
+            The created DesignSpace object.
+        """
+        for key, space in design_dict.items():
+            parameters = []
+            for parameter in space:
+                parameters.append(Parameter.from_json(parameter))
+
+            design_dict[key] = parameters
+
+        return cls(**design_dict)
 
     def _check_names(self):
         """Check if input and output names have duplicates."""

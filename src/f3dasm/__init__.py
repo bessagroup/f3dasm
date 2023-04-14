@@ -19,18 +19,17 @@ from f3dasm import (_logging, data, design, experiment, functions,
 
 from ._show_versions import __version__, show_versions
 # Design classes
+from .design.constraint import Constraint
 from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
-                               Constraint, ContinuousParameter,
-                               DiscreteParameter)
+                               ContinuousParameter, DiscreteParameter)
 # Base classes
 from .functions.function import Function
 from .machinelearning.model import Model
 from .optimization.optimizer import Optimizer
-from .run_optimization import (OptimizationResult,
-                               create_optimizationresult_from_json,
-                               run_multiple_realizations, run_optimization)
+from .run_optimization import (OptimizationResult, run_multiple_realizations,
+                               run_optimization)
 from .sampling.sampler import Sampler
 from .utils import find_class, write_json
 

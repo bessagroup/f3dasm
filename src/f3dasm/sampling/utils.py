@@ -6,7 +6,7 @@ import json
 from typing import List
 
 # Locals
-from ..design import create_design_from_json
+from ..design import DesignSpace
 from .all_samplers import SAMPLERS
 from .sampler import Sampler
 
@@ -55,5 +55,5 @@ def create_sampler_from_json(json_string: str) -> Sampler:
 
 
 def _create_sampler_from_dict(sampler_dict: dict, name: str) -> Sampler:
-    sampler_dict['design'] = create_design_from_json(sampler_dict['design'])
+    sampler_dict['design'] = DesignSpace.from_json(sampler_dict['design'])
     return find_sampler(name)(**sampler_dict)

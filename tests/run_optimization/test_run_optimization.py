@@ -1,19 +1,17 @@
 import pytest
 
-from f3dasm.functions.function import Function
 from f3dasm.design import DesignSpace
 from f3dasm.functions import FUNCTIONS_7D
+from f3dasm.functions.function import Function
 from f3dasm.optimization import OPTIMIZERS, Optimizer
 from f3dasm.run_optimization import (OptimizationResult,
-                                     create_optimizationresult_from_json,
                                      run_multiple_realizations)
 from f3dasm.sampling import LatinHypercube
 
-
-@pytest.mark.smoke
-def test_reproducibility(optimizationresults: OptimizationResult):
-    results_json = optimizationresults.to_json()
-    optimizationresults: OptimizationResult = create_optimizationresult_from_json(results_json)
+# @pytest.mark.smoke
+# def test_reproducibility(optimizationresults: OptimizationResult):
+#     results_json = optimizationresults.to_json()
+#     optimizationresults: OptimizationResult = create_optimizationresult_from_json(results_json)
 
 
 # @pytest.mark.smoke

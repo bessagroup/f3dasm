@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Type
 
 # Third-party core
 import numpy as np
@@ -33,6 +33,46 @@ class Parameter:
     _type: str = field(init=False, default="object")
 
     @classmethod
+    def from_json(cls: Type['Parameter'], json_string: str) -> 'Parameter':
+        """
+        Create a Parameter object from a JSON string.
+
+        Parameters
+        ----------
+        json_string : str
+            JSON string representation of the information to construct the Parameter.
+
+        Returns
+        -------
+        Parameter
+            The requested Parameter object.
+        """
+        parameter_dict, name = json.loads(json_string)
+        return cls.from_dict(parameter_dict, name)
+
+    @classmethod
+    def from_dict(cls: Type['Parameter'], parameter_dict: dict, name: str) -> 'Parameter':
+        """
+        Create a Parameter object from a dictionary.
+
+        Parameters
+        ----------
+        parameter_dict : dict
+            Dictionary representation of the information to construct the Parameter.
+        name : str
+            Name of the class.
+
+        Returns
+        -------
+        Parameter
+            The requested Parameter object.
+        """
+        if name == 'Parameter':
+            return cls(**parameter_dict)
+        else:
+            return _find_parameter(name)(**parameter_dict)
+
+    @classmethod
     def get_name(self) -> str:
         """Return the name of the parameter class"""
         return self.__name__
@@ -58,7 +98,7 @@ class ConstantParameter(Parameter):
     Attributes
     ----------
     _type : str
-        The type of the parameter, which is always 'category'.
+        The type of the parameter, which is always 'object'.
 
     Raises
     ------
@@ -68,7 +108,7 @@ class ConstantParameter(Parameter):
     """
 
     value: Any
-    _type: str = field(init=False, default="category")
+    _type: str = field(init=False, default="object")
 
     def __post_init__(self):
         self._check_hashable()
@@ -202,8 +242,41 @@ class CategoricalParameter(Parameter):
                 raise TypeError(f"Expect string, got {type(category)}")
 
 
-@dataclass
-class Constraint:
-    """Interface for constraints"""
+PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
 
-    pass
+
+class F3DASMParameterNotFoundError(Exception):
+    """
+    Exception raised when a parameter is not found.
+
+    Attributes:
+        message (str): The error message.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+def _find_parameter(query: str) -> Parameter:
+    """
+    Find a Parameter class by its name.
+
+    Parameters
+    ----------
+    query : str
+        The name of the requested Parameter class.
+
+    Returns
+    -------
+    Parameter
+        The class object of the requested Parameter.
+
+    Raises
+    ------
+    F3DASMParameterNotFoundError
+        If the requested parameter is not found.
+    """
+    try:
+        return list(filter(lambda parameter: parameter.__name__ == query, PARAMETERS))[0]
+    except IndexError:
+        return F3DASMParameterNotFoundError(f'Parameter {query} not found!')

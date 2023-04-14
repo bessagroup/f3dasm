@@ -7,7 +7,6 @@ from f3dasm.design.design import (DesignSpace,
                                   F3DASMDesignSpaceDuplicateNameError)
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
-from f3dasm.design.utils import create_design_from_json
 
 pytestmark = pytest.mark.smoke
 
@@ -149,7 +148,7 @@ def test_same_name_of_parameters_error():
 
 def test_check_reproducibility(doe: DesignSpace):
     design_json = doe.to_json()
-    doe_new = create_design_from_json(design_json)
+    doe_new = DesignSpace.from_json(design_json)
     assert doe == doe_new
 
 

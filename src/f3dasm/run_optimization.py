@@ -15,11 +15,11 @@ import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer, create_optimizer_from_json
+from f3dasm.optimization import Optimizer
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
 # Locals
-from .design import ExperimentData, create_experimentdata_from_json
+from .design import ExperimentData
 from .functions import create_function_from_json
 from .functions.function import Function
 
@@ -82,21 +82,21 @@ class OptimizationResult:
         )
 
 
-def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
-    optimizationresult_dict = json.loads(json_string)
-    return _create_optimizationresult_from_dict(optimizationresult_dict)
+# def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
+#     optimizationresult_dict = json.loads(json_string)
+#     return _create_optimizationresult_from_dict(optimizationresult_dict)
 
 
-def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
-    args = {
-        'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
-        'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
-        'function': create_function_from_json(optimizationresult_dict['function']),
-        'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
-        'number_of_samples': optimizationresult_dict['number_of_samples'],
-        'seeds': optimizationresult_dict['seeds'],
-    }
-    return OptimizationResult(**args)
+# def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
+#     args = {
+#         'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
+#         'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
+#         'function': create_function_from_json(optimizationresult_dict['function']),
+#         'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
+#         'number_of_samples': optimizationresult_dict['number_of_samples'],
+#         'seeds': optimizationresult_dict['seeds'],
+#     }
+#     return OptimizationResult(**args)
 
 
 def run_optimization(

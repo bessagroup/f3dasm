@@ -5,10 +5,9 @@
 import json
 
 # Local
+from ..design.experimentdata import ExperimentData
 from ..optimization.all_optimizers import OPTIMIZERS
 from ..optimization.optimizer import Optimizer
-from ..design import create_experimentdata_from_json
-
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -68,5 +67,5 @@ def create_optimizer_from_dict(optimizer_dict: dict, name: str) -> Optimizer:
     -------
         Requested Optimizer object
     """
-    optimizer_dict['data'] = create_experimentdata_from_json(optimizer_dict['data'])
+    optimizer_dict['data'] = ExperimentData.from_json(optimizer_dict['data'])
     return find_optimizer(name)(**optimizer_dict)
