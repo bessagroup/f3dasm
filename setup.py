@@ -8,7 +8,7 @@ here = Path(__file__).absolute().parent
 
 # version
 # version = here.joinpath("src", "f3dasm", "VERSION").read_text().strip()
-version = '0.9.3'
+version = '1.0.0'
 
 # Get the long description from the README file
 with open("README.md", encoding="utf-8") as f:
@@ -47,10 +47,10 @@ setup(
     description="f3dasm - Framework for Data-driven development and Analysis of Structures and Materials",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://github.com/bessagroup/F3DASM",
+    url="https://github.com/bessagroup/f3dasm",
     project_urls={
-        "Documentation": "https://bessagroup.github.io/F3DASM/",
-        "Wiki": "https://github.com/bessagroup/F3DASM/wiki",
+        "Documentation": "https://bessagroup.github.io/f3dasm/",
+        "Wiki": "https://github.com/bessagroup/f3dasm/wiki",
     },
     author="Martin van der Schelling",
     author_email="M.P.vanderSchelling@tudelft.nl",
