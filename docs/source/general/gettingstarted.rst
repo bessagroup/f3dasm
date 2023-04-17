@@ -119,8 +119,8 @@ Building from source is required to work on a contribution (bug fix, new feature
 
    .. code-block:: console
 
-     git clone https://github.com/bessagroup/F3DASM.git  # add --depth 1 if your connection is slow
-     cd F3DASM
+     git clone https://github.com/bessagroup/f3dasm.git  # add --depth 1 if your connection is slow
+     cd f3dasm
 
 
 2. Install a recent version of Python (3.8, 3.9 or 3.10)

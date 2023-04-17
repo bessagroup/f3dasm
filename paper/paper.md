@@ -108,7 +108,7 @@ Code documentation is essential for facilitating the comprehension of a software
 system by developers, maintainers, and users. It serves to provide information about the functionality,
 structure, dependencies, and requirements of the code. To improve the usability of the f3dasm frame­work,
 thorough documentation has been included with the Sphinx package. Documentation for this package can be accessed
-on [the homepage](https://bessagroup.github.io/F3DASM/) and will be maintained with the
+on [the homepage](https://bessagroup.github.io/f3dasm/) and will be maintained with the
 latest release of the package.
 
 ##  Open-source collaborative development
@@ -129,7 +129,7 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Availability
 
-`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/F3DASM/) documentation page. 
+`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/f3dasm/) documentation page. 
 
 
 # Acknowledgements

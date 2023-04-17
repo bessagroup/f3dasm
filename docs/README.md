@@ -27,4 +27,4 @@ make html-open
 
 ## Contributing to the Documentation
 
-If you notice any issues with the documentation or would like to contribute to it, please feel free to open a pull request on the [f3dasm GitHub repository](https://github.com/bessagroup/F3DASM) or contact the maintainers directly.
+If you notice any issues with the documentation or would like to contribute to it, please feel free to open a pull request on the [f3dasm GitHub repository](https://github.com/bessagroup/f3dasm) or contact the maintainers directly.

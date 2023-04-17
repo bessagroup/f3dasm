@@ -9,7 +9,7 @@ import logging
 import os
 from os import path
 from time import sleep
-from typing import Callable, Union
+from typing import Callable, Union, Type
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -151,6 +151,13 @@ class JobQueue:
 
     def _set_value(self, index: int, value: str):
         self.jobs[index] = value
+
+
+    @classmethod
+    def from_experimentdata(cls: Type['JobQueue'], filename: str, experimentdata: ExperimentData) -> 'JobQueue':
+        jobqueue = cls(filename)
+        jobqueue.jobs = {index: 'open' for index in range(experimentdata.get_number_of_datapoints())}
+        return jobqueue
 
     def create_jobs_from_experimentdata(self, experimentdata: ExperimentData):
         """Create jobs based on an ExperimentData object.

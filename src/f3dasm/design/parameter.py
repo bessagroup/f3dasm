@@ -234,6 +234,8 @@ class CategoricalParameter(Parameter):
     def _check_types(self):
         """Check if the entries of the lists are all strings"""
 
+        self.categories = list(self.categories)  # Convert to list because hydra parses omegaconf.ListConfig
+
         if not isinstance(self.categories, list):
             raise TypeError(f"Expect list, got {type(self.categories)}")
 

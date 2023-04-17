@@ -8,9 +8,9 @@ f3dasm
 [![pypi](https://img.shields.io/pypi/v/f3dasm.svg)](https://pypi.org/project/f3dasm/)
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/bessagroup/f3dasm)
 
-[**Docs**](https://bessagroup.github.io/F3DASM/)
-| [**Installation**](https://bessagroup.github.io/F3DASM/general/gettingstarted.html)
-| [**GitHub**](https://github.com/bessagroup/F3DASM)
+[**Docs**](https://bessagroup.github.io/f3dasm/)
+| [**Installation**](https://bessagroup.github.io/f3dasm/general/gettingstarted.html)
+| [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 | [**Practical sessions**](https://github.com/mpvanderschelling/F3DASM_practical)
 

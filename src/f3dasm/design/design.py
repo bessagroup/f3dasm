@@ -84,6 +84,19 @@ class DesignSpace:
         return cls.from_dict(design_dict)
 
     @classmethod
+    def from_yaml(cls: Type['DesignSpace'], yaml: dict) -> 'DesignSpace':
+        args = {}
+        for key, space in yaml.items():
+            parameters = []
+            for param in space:
+                param = dict(param)
+                name = param.pop('class')
+                parameters.append(Parameter.from_dict(parameter_dict=param, name=name))
+
+            args[key] = parameters
+        return cls(**args)
+
+    @classmethod
     def from_dict(cls: Type['DesignSpace'], design_dict: dict) -> 'DesignSpace':
         """
         Create a DesignSpace object from a dictionary.

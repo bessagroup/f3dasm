@@ -1,9 +1,9 @@
 Overview
 ========
 
-.. _design-of-experiments: https://bessagroup.github.io/F3DASM/classes/design/experimentdata.html
-.. _sampling: https://bessagroup.github.io/F3DASM/classes/sampling/sampling.html
-.. _optimizing: https://bessagroup.github.io/F3DASM/classes/optimization/optimizers.html
+.. _design-of-experiments: https://bessagroup.github.io/f3dasm/classes/design/experimentdata.html
+.. _sampling: https://bessagroup.github.io/f3dasm/classes/sampling/sampling.html
+.. _optimizing: https://bessagroup.github.io/f3dasm/classes/optimization/optimizers.html
 .. _parallelizing: <URL for parallelizing>
 .. _TORQUE system: https://hpc-wiki.info/hpc/Torque
 
@@ -43,7 +43,7 @@ The **core** package: contains the minimal installation to use
 
 .. note::
 
-    You can install the core package with ``pip install f3dasm`` or `read the installation instructions <https://bessagroup.github.io/F3DASM/general/gettingstarted.html>`__!
+    You can install the core package with ``pip install f3dasm`` or `read the installation instructions <https://bessagroup.github.io/f3dasm/general/gettingstarted.html>`__!
 
 The core package contains the following features:
 
@@ -101,7 +101,7 @@ you can develop an adapter and/or implementation for ``f3dasm``
 
     The **developement** package: contains the full installation plus
     requirements for developing on ``f3dasm``. Installed with
-    ``pip install f3dasm[dev]``. Information on how to contribute to ``f3dasm`` can be found `on the wiki page of the GitHub repository <https://github.com/bessagroup/F3DASM/wiki>`__!
+    ``pip install f3dasm[dev]``. Information on how to contribute to ``f3dasm`` can be found `on the wiki page of the GitHub repository <https://github.com/bessagroup/f3dasm/wiki>`__!
 
 
 Abstraction
