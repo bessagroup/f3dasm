@@ -9,7 +9,7 @@ import logging
 import os
 from os import path
 from time import sleep
-from typing import Callable, Union, Type
+from typing import Callable, Type, Union
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -152,7 +152,6 @@ class JobQueue:
     def _set_value(self, index: int, value: str):
         self.jobs[index] = value
 
-
     @classmethod
     def from_experimentdata(cls: Type['JobQueue'], filename: str, experimentdata: ExperimentData) -> 'JobQueue':
         jobqueue = cls(filename)
@@ -201,10 +200,10 @@ class JobQueue:
 
         Returns
         -------
-            True if all jobs are finished, False if there are still open or in process jobs
+            True if all jobs are finished or have an error, False if there are still open or in process jobs
         """
         _jobs = self.get_jobs()
-        return all(status == 'finished' for status in _jobs.values())
+        return all(status in ['finished', 'error'] for status in _jobs.values())
 
     @access_file()
     def mark_finished(self, index: int):
