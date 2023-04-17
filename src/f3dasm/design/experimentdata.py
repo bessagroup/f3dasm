@@ -7,6 +7,7 @@ import functools
 import json
 import logging
 import os
+from copy import copy
 from io import TextIOWrapper
 from time import sleep
 from typing import Any, Callable, List, Tuple, Type, Union
@@ -132,6 +133,24 @@ class ExperimentData:
         """Initializes an empty DataFrame with the appropriate input and output columns."""
         self.data = self.design.get_empty_dataframe()
 
+    def __len__(self):
+        """The len() method returns the number of datapoints"""
+        return self.get_number_of_datapoints()
+
+    def __iter__(self):
+        self.current_index = 0
+        return self
+
+    def __next__(self):
+        if self.current_index >= len(self):
+            raise StopIteration
+        else:
+            index = self.data.index[self.current_index]
+            current_value = [self.get_inputdata_by_index(
+                index), self.get_outputdata_by_index(index)]
+            self.current_index += 1
+            return current_value
+
     @classmethod
     def from_csv(cls: Type['ExperimentData'], filename: str,
                  text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
@@ -218,6 +237,11 @@ class ExperimentData:
 
         return new_experimentdata
 
+    def select(self, indices: List[int]) -> 'ExperimentData':
+        new_experimentdata = copy(self)
+        new_experimentdata.data = self.data.iloc[indices].copy()
+        return new_experimentdata
+
     def reset_data(self):
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
         self.__post_init__()
@@ -276,6 +300,25 @@ class ExperimentData:
         """
         try:
             return self.data['input'].loc[index].to_dict()
+        except KeyError as e:
+            raise KeyError('Index does not exist in dataframe!')
+
+    def get_outputdata_by_index(self, index: int) -> dict:
+        """
+        Gets the output data at the given index.
+
+        Parameters
+        ----------
+        index : int
+            The index of the output data to retrieve.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the output data at the given index.
+        """
+        try:
+            return self.data['output'].loc[index].to_dict()
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
 
