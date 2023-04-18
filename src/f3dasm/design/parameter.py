@@ -236,9 +236,6 @@ class CategoricalParameter(Parameter):
 
         self.categories = list(self.categories)  # Convert to list because hydra parses omegaconf.ListConfig
 
-        if not isinstance(self.categories, list):
-            raise TypeError(f"Expect list, got {type(self.categories)}")
-
         for category in self.categories:
             if not isinstance(category, str):
                 raise TypeError(f"Expect string, got {type(category)}")

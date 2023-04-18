@@ -119,12 +119,6 @@ def test_invalid_types_in_categories_categorical_space():
         categorical = CategoricalParameter(name="test", categories=categories)
 
 
-def test_invalid_types_categories_categorical_space():
-    categories = ("test1", "test2", "test3")
-    with pytest.raises(TypeError):
-        categorical = CategoricalParameter(name="test", categories=categories)
-
-
 def test_duplicates_categories_categorical_space():
     categories = ["test1", "test2", "test1"]
     with pytest.raises(ValueError):
