@@ -10,9 +10,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="202.50291mm"
+   width="215.35118mm"
    height="103.45236mm"
-   viewBox="0 0 202.50291 103.45236"
+   viewBox="0 0 215.35118 103.45236"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
@@ -610,6 +610,33 @@
          id="path208-6"
          d="M 1.0729e-5,0 H 720.00001 V 540 H 1.0729e-5 Z" />
     </clipPath>
+    <clipPath
+       id="clipPath406-3"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         style="clip-rule:evenodd"
+         inkscape:connector-curvature="0"
+         id="path404-6"
+         d="M 3.0518e-5,540 H 720 V 1.8311e-4 L 6.1035e-5,1.2207e-4" />
+    </clipPath>
+    <clipPath
+       id="clipPath406-5"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         style="clip-rule:evenodd"
+         inkscape:connector-curvature="0"
+         id="path404-62"
+         d="M 3.0518e-5,540 H 720 V 1.8311e-4 L 6.1035e-5,1.2207e-4" />
+    </clipPath>
+    <clipPath
+       id="clipPath416-9"
+       clipPathUnits="userSpaceOnUse">
+      <path
+         style="clip-rule:evenodd"
+         inkscape:connector-curvature="0"
+         id="path414-3"
+         d="M 1.0729e-5,0 H 720.00001 V 540 H 1.0729e-5 Z" />
+    </clipPath>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -619,8 +646,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.7"
-     inkscape:cx="196.91574"
-     inkscape:cy="335.5145"
+     inkscape:cx="822.95627"
+     inkscape:cy="312.98974"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -649,7 +676,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-2.2114949,-4.4202986)">
+     transform="translate(10.63677,-4.4202986)">
     <g
        id="g54"
        transform="matrix(0.31310606,0,0,-0.31310606,-9.0211846,139.32294)">
@@ -1594,8 +1621,8 @@
             <tspan
                id="tspan732"
                sodipodi:role="line"
-               y="0"
-               x="0 5.2393999 8.2305498 13.46995 17.956675">block</tspan>
+               x="0"
+               y="0">module</tspan>
           </text>
         </g>
       </g>
@@ -1613,7 +1640,7 @@
                id="tspan744"
                sodipodi:role="line"
                y="0"
-               x="0 5.2357502 10.4715 14.96625">base</tspan>
+               x="0">interface</tspan>
           </text>
         </g>
       </g>
@@ -1723,5 +1750,96 @@
         </text>
       </g>
     </g>
+    <g
+       id="g400-9"
+       transform="matrix(0,-0.31310606,-0.31310606,0,125.06184,64.990947)">
+      <g
+         id="g402-1"
+         clip-path="url(#clipPath406-5)">
+        <path
+           d="m 99.651713,400.87 c 0,4.15 0.559997,7.51 1.249997,7.51 l 25.42524,-0.01 c 0.69,0 1.25,3.36 1.25,7.5 0,-4.14 0.55,-7.5 1.25,-7.5 h 24.13983 c 0.69,0 1.25,-3.35 1.25,-7.5"
+           style="fill:none;stroke:#000000;stroke-width:0.75;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+           id="path408-2"
+           inkscape:connector-curvature="0"
+           sodipodi:nodetypes="ccccssc" />
+      </g>
+    </g>
+    <path
+       d="m -0.56067321,61.118111 c -1.29939019,0 -2.35142659,-0.175339 -2.35142659,-0.391382 l 0.00313,-10.260503 c 0,-0.216043 -1.0520364,-0.391382 -2.3482955,-0.391382 1.2962591,0 2.3482955,-0.172209 2.3482955,-0.391383 V 39.416655 c 0,-0.216043 1.0489053,-0.391382 2.34829549,-0.391382"
+       style="fill:none;stroke:#000000;stroke-width:0.23482955;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+       id="path408-2-7"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccssc" />
+    <path
+       d="m -0.66836135,83.43905 c -1.29939105,0 -2.35142695,-0.175339 -2.35142695,-0.391382 l 0.00313,-7.120086 c 0,-0.216042 -1.0520364,-0.391382 -2.3482955,-0.391382 1.2962591,0 2.3482955,-0.172208 2.3482955,-0.391383 v -7.059571 c 0,-0.216043 1.0489049,-0.391382 2.34829595,-0.391382"
+       style="fill:none;stroke:#000000;stroke-width:0.23482955;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+       id="path408-2-7-0"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccssc" />
+    <g
+       id="g410-6"
+       transform="matrix(0,-0.31310606,-0.31310606,0,124.59517,72.268322)">
+      <g
+         id="g412-0"
+         clip-path="url(#clipPath416-9)">
+        <text
+           transform="scale(1,-1)"
+           style="font-variant:normal;font-weight:normal;font-size:12.02499962px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           id="text420-6"
+           x="132.01367"
+           y="-420.3605">
+          <tspan
+             x="132.01367"
+             y="-420.3605"
+             sodipodi:role="line"
+             id="tspan418-2">module</tspan>
+        </text>
+      </g>
+    </g>
+    <text
+       transform="rotate(-90)"
+       style="font-variant:normal;font-weight:normal;font-size:3.76510024px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.31310606"
+       id="text420-6-6"
+       x="-57.101612"
+       y="-7.6216216">
+      <tspan
+         style="stroke-width:0.31310606"
+         x="-57.101612"
+         y="-7.6216216"
+         sodipodi:role="line"
+         id="tspan418-2-1">interface</tspan>
+    </text>
+    <text
+       transform="rotate(-90)"
+       style="font-variant:normal;font-weight:normal;font-size:3.76510024px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.31310606"
+       id="text420-6-8"
+       x="-87.780975"
+       y="-7.6216216">
+      <tspan
+         style="stroke-width:0.31310606"
+         x="-87.780975"
+         y="-7.6216216"
+         sodipodi:role="line"
+         id="tspan418-2-7">implementation</tspan>
+    </text>
+    <path
+       d="m 52.859824,103.81835 c -1.299391,0 -2.351427,-0.17534 -2.351427,-0.39138 l 0.0031,-6.819408 c 0,-0.216043 -1.052036,-0.391382 -2.348295,-0.391382 1.296259,0 2.348295,-0.172209 2.348295,-0.391384 v -7.226613 c 0,-0.216043 1.048905,-0.391382 2.348296,-0.391382"
+       style="fill:none;stroke:#000000;stroke-width:0.23482955;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
+       id="path408-2-7-0-9"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccssc" />
+    <text
+       transform="rotate(-90)"
+       style="font-variant:normal;font-weight:normal;font-size:3.76510024px;font-family:Calibri;-inkscape-font-specification:Calibri;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.31310606"
+       id="text420-6-8-2"
+       x="-99.892097"
+       y="45.743557">
+      <tspan
+         style="stroke-width:0.31310606"
+         x="-99.892097"
+         y="45.743557"
+         sodipodi:role="line"
+         id="tspan418-2-7-0">study</tspan>
+    </text>
   </g>
 </svg>
