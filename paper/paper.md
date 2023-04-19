@@ -132,7 +132,7 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Availability
 
-`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/f3dasm/) documentation page. 
+`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/f3dasm/general/gettingstarted.html) documentation page. 
 
 
 # Acknowledgements

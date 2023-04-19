@@ -124,7 +124,9 @@
        transform="matrix(0.35277777,0,0,-0.35277777,14.984888,289.45956)"
        inkscape:label="Bessa et al. - 2017 - A framework for data-driven analysis of materials under uncertainty Countering the curse of dimensionality"
        id="g823"
-       clip-path="url(#clipPath4998)">
+       clip-path="url(#clipPath4998)"
+       inkscape:export-xdpi="300"
+       inkscape:export-ydpi="300">
       <text
          id="text827"
          style="font-variant:normal;font-size:7.97009993px;font-family:'Nimbus Roman';-inkscape-font-specification:NimbusRomNo9L-ReguItal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
