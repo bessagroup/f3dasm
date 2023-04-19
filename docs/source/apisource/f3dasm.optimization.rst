@@ -60,14 +60,6 @@ f3dasm.optimization.cmaes module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.optimization.cmaesadam module
-------------------------------------
-
-.. automodule:: f3dasm.optimization.cmaesadam
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 f3dasm.optimization.cobyla module
 ---------------------------------
 
