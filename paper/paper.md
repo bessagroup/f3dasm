@@ -42,7 +42,7 @@ bibliography: paper.bib
 # Summary
 <!-- A summary describing the high-level functionality and purpose of the software for a diverse, non-specialist audience. -->
 
-The process of structural and materials design involves a continuous search for the most efficient design based on specific criteria. The varying boundary conditions applied to the material or structure can result in vastly different optimal compositions. In particular, the design of material systems is faced with a high-dimensional engineering space due to the overwhelming number of potential combinations that can create distinct materials. Unfortunately, this extensive design space poses a significant challenge to accelerate the optimization process. The immense number of possibilities makes it impractical to conduct experimental investigations for each concept. As a result, data-driven computational analyses have been a method of interest to explore these design spaces.
+The process of structural and materials design involves a continuous search for the most efficient design based on specific criteria. The varying boundary conditions applied to the material or structure can result in vastly different optimal compositions. In particular, the design of material systems is faced with a high-dimensional engineering space due to the overwhelming number of potential combinations that can create distinct materials. Unfortunately, this extensive design space poses a significant challenge to accelerate the optimization process. The immense number of possibilities makes it impractical to conduct experimental investigations of each concept. As a result, data-driven computational analyses have been a method of interest to explore these design spaces.
 
 Although these specific applications may differ, the data-driven modelling and optimization process remains the same, as illustrated in \autoref{fig:f3dasm-overview}. Therefore, we introduce the framework for data-driven design and analysis of structures and materials (`f3dasm`): an attempt to develop a systematic approach of inverting the material design process. 
 
@@ -112,7 +112,7 @@ An overview of the different levels of abstraction is given in \autoref{fig:f3da
 
 To improve the usability of the `f3dasm` frame­work, thorough documentation has been included with the Sphinx package. Documentation for this package can be accessed on [the homepage](https://bessagroup.github.io/f3dasm/) and will be maintained with the latest release of the package.
 
-The `f3dasm` framework relies on the collaborative efforts of scientists and developers to expand its capabilities. Therefore, it is essential to have a well-defined software development process in place. This will been achieved by maintaining strict branching policies, and incorporating comprehensive testing suites and automatic continuous integration with GitHub Workflows.
+The `f3dasm` framework relies on the collaborative efforts of scientists and developers to expand its capabilities. Therefore, it is essential to have a well-defined software development process in place. This will be achieved by maintaining strict branching policies, and incorporating comprehensive testing suites and automatic continuous integration with GitHub Workflows.
 
 <!-- ##  Open-source collaborative development
 
