@@ -8,14 +8,14 @@ Module to optimize benchmark optimization functions
 import json
 import logging
 import time
-from typing import Any, List
+from typing import Any, List, Type
 
 # Third-party
 import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer
+from f3dasm.optimization import Optimizer, find_optimizer
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
 # Locals
@@ -61,6 +61,23 @@ class OptimizationResult:
         self.seeds = seeds
         self._log()
 
+    @classmethod
+    def from_json(cls: Type['OptimizationResult'], json_string: str) -> 'OptimizationResult':
+        optimizationresult_dict = json.loads(json_string)
+        return cls.from_dict(optimizationresult_dict)
+
+    @classmethod
+    def from_dict(cls: Type['OptimizationResult'], optimizationresult_dict: dict) -> 'OptimizationResult':
+        args = {
+            'data': [ExperimentData.from_json(json_data) for json_data in optimizationresult_dict['data']],
+            # 'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
+            'function': create_function_from_json(optimizationresult_dict['function']),
+            'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
+            'number_of_samples': optimizationresult_dict['number_of_samples'],
+            'seeds': optimizationresult_dict['seeds'],
+        }
+        return cls(**args)
+
     def to_json(self):
         args = {'data': [d.to_json() for d in self.data],
                 'optimizer': self.optimizer.to_json(),
@@ -80,23 +97,6 @@ class OptimizationResult:
              f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations!")
         )
-
-
-# def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
-#     optimizationresult_dict = json.loads(json_string)
-#     return _create_optimizationresult_from_dict(optimizationresult_dict)
-
-
-# def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
-#     args = {
-#         'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
-#         'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
-#         'function': create_function_from_json(optimizationresult_dict['function']),
-#         'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
-#         'number_of_samples': optimizationresult_dict['number_of_samples'],
-#         'seeds': optimizationresult_dict['seeds'],
-#     }
-#     return OptimizationResult(**args)
 
 
 def run_optimization(
