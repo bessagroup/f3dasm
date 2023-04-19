@@ -343,7 +343,7 @@ class ExperimentData:
     def write_outputdata_by_index(self, filename: str, index: int, value: Any):
         self.set_outputdata_by_index(index=index, value=value)
 
-    def set_inputdata_by_index(self, index: int, value: Any):
+    def set_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
         """
         Sets the input data at the given index to the given value.
 
@@ -355,13 +355,13 @@ class ExperimentData:
             The value to set the input data to.
         """
         try:
-            self.data['input'].loc[index] = value
+            self.data.at[index, column] = value
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
 
     @access_file()
-    def write_inputdata_by_index(self, filename: str, index: int, value: Any):
-        self.set_inputdata_by_index(index=index, value=value)
+    def write_inputdata_by_index(self, filename: str, index: int, value: Any, column: str = 'input'):
+        self.set_inputdata_by_index(index=index, value=value, column=column)
 
     def to_json(self) -> str:
         """
