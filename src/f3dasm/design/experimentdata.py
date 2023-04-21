@@ -239,7 +239,7 @@ class ExperimentData:
 
     def select(self, indices: List[int]) -> 'ExperimentData':
         new_experimentdata = copy(self)
-        new_experimentdata.data = self.data.iloc[indices].copy()
+        new_experimentdata.data = self.data.loc[indices].copy()  # iloc
         return new_experimentdata
 
     def reset_data(self):
