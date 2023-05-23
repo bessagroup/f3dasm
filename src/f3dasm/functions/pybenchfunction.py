@@ -164,7 +164,8 @@ class AckleyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0.682584587365898, -0.36075325513719])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        Y = np.array([[-195.629028238419]])
+        return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
         x, y = X
@@ -243,7 +244,8 @@ class Adjiman(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        Y = np.array([[-2.02180678]])
+        return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -321,7 +323,7 @@ class Beale(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) * 2
+        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) ** 2
         return res
 
 
@@ -675,42 +677,43 @@ class BukinN6(PyBenchFunction):
         res = 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
         return res
 
-        # class Colville(PyBenchFunction):
-        #     """.. image:: ../img/functions/Colville.png"""
 
-        #     name = "Colville"
-        #     continuous = True
-        #     convex = False
-        #     separable = False
-        #     differentiable = True
-        #     multimodal = True
-        #     randomized_term = False
-        #     parametric = False
+class Colville(PyBenchFunction):
+    """.. image:: ../img/functions/Colville.png"""
 
-        #     @classmethod
-        #     def is_dim_compatible(cls, d):
-        #         assert (d is None) or (
-        #             isinstance(d, int) and (not d < 0)
-        #         ), "The dimension d must be None or a positive integer"
-        #         return d == 4
+    name = "Colville"
+    continuous = True
+    convex = False
+    separable = False
+    differentiable = True
+    multimodal = True
+    randomized_term = False
+    parametric = False
 
-        #     def _set_parameters(self):
-        #         d = self.dimensionality
-        #         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return d == 4
 
-        #     def get_param(self):
-        #         return {}
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
-        #     def get_global_minimum(self, d):
-        #         X = np.array([1, 1, 1, 1])
-        #         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+    def get_param(self):
+        return {}
 
-        #     def evaluate(self, X):
-        # x1, x2, x3, x4 = X
-        # res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
-        # res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
-        #                                             ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
-        # return res
+    def get_global_minimum(self, d):
+        X = np.array([1, 1, 1, 1])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+
+    def evaluate(self, X):
+        x1, x2, x3, x4 = X
+        res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
+        res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
+                                                     ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
+        return res
 
 
 class CrossInTray(PyBenchFunction):
@@ -836,7 +839,7 @@ class DeckkersAarts(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 1e5 * x**2 + y**2 - (x**2 + y**2) + 1e-5 * (x**2 + y**2) ** 4
+        res = 1e5 * x**2 + y**2 - (x**2 + y**2) ** 2 + 1e-5 * (x**2 + y**2) ** 4
         return res
 
 
@@ -867,7 +870,7 @@ class DixonPrice(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        X = np.array([2 ** ((-(2 ** (i)) - 2) / 2**i)
+        X = np.array([2 ** -(((2 ** (i)) - 2) / 2**i)
                      for i in range(1, d + 1)])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
@@ -1025,40 +1028,40 @@ class EggHolder(PyBenchFunction):
         return res
 
 
-# class Exponential(PyBenchFunction):
-#     """.. image:: ../img/functions/Exponential.png"""
+class Exponential(PyBenchFunction):
+    """.. image:: ../img/functions/Exponential.png"""
 
-#     name = "Exponential"
-#     continuous = True
-#     convex = True
-#     separable = True
-#     differentiable = True
-#     multimodal = False
-#     randomized_term = False
-#     parametric = False
+    name = "Exponential"
+    continuous = True
+    convex = True
+    separable = True
+    differentiable = True
+    multimodal = False
+    randomized_term = False
+    parametric = False
 
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return (d is None) or (d > 0)
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return (d is None) or (d > 0)
 
-#     def _set_parameters(self):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[-1, 1] for _ in range(d)])
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[-1, 1] for _ in range(d)])
 
-#     def get_param(self):
-#         return {}
+    def get_param(self):
+        return {}
 
-#     def get_global_minimum(self, d):
-#         X = np.array([0 for _ in range(d)])
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+    def get_global_minimum(self, d):
+        X = np.array([0 for _ in range(d)])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-#     def evaluate(self, X):
-#         d = X.shape[0]
-#         res = -np.exp(-0.5 * np.sum(X**2))
-#         return res
+    def evaluate(self, X):
+        d = X.shape[0]
+        res = -np.exp(-0.5 * np.sum(X**2))
+        return res
 
 
 class GoldsteinPrice(PyBenchFunction):
@@ -1330,7 +1333,9 @@ class Langermann(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        # Global minimum is not known but the following is definitely smaller than the global minimum
+        Y = np.array([[-4.5]])
+        return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1563,8 +1568,10 @@ class Michalewicz(PyBenchFunction):
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
-            return (None, np.array([[-1.8013]]))  # Substituted minimum for d=2
+            Y = np.array([[4.49903414e-04*(d**2) - 2.15704771e-01*d - 4.85292809e+00]])  # Calculated with polyfit
+            return (None, Y)  # Substituted minimum for d=2
         X = np.array([2.20, 1.57])
+        Y = np.array([[-1.8013]])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
@@ -1610,86 +1617,86 @@ class Periodic(PyBenchFunction):
         return res
 
 
-class PermZeroDBeta(PyBenchFunction):
-    """.. image:: ../img/functions/PermZeroDBeta.png"""
+# class PermZeroDBeta(PyBenchFunction):
+#     """.. image:: ../img/functions/PermZeroDBeta.png"""
 
-    name = "Perm 0, d, beta"
-    continuous = True
-    convex = True
-    separable = False
-    differentiable = True
-    multimodal = False
-    randomized_term = False
-    parametric = True
+#     name = "Perm 0, d, beta"
+#     continuous = True
+#     convex = True
+#     separable = False
+#     differentiable = True
+#     multimodal = False
+#     randomized_term = False
+#     parametric = True
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return (d is None) or (d > 0)
 
-    def _set_parameters(self, beta=10):
-        d = self.dimensionality
-        self.input_domain = np.array([[-d, d] for _ in range(d)])
-        self.beta = beta
+#     def _set_parameters(self, beta=10):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[-d, d] for _ in range(d)])
+#         self.beta = beta
 
-    def get_param(self):
-        return {"beta": self.beta}
+#     def get_param(self):
+#         return {"beta": self.beta}
 
-    def get_global_minimum(self, d):
-        X = np.array([1 / (i + 1) for i in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = np.array([1 / (i + 1) for i in range(d)])
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        d = X.shape[0]
-        res = np.sum(
-            [
-                (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1)))
-                 for j in range(d)])) ** 2
-                for i in range(d)
-            ]
-        )
-        return res
+#     def evaluate(self, X):
+#         d = X.shape[0]
+#         res = np.sum(
+#             [
+#                 (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1)))
+#                  for j in range(d)])) ** 2
+#                 for i in range(d)
+#             ]
+#         )
+#         return res
 
 
-class PermDBeta(PyBenchFunction):
-    """.. image:: ../img/functions/PermDBeta.png"""
+# class PermDBeta(PyBenchFunction):
+#     """.. image:: ../img/functions/PermDBeta.png"""
 
-    name = "Perm d, beta"
-    continuous = True
-    convex = False
-    separable = False
-    differentiable = True
-    multimodal = True
-    randomized_term = False
-    parametric = True
+#     name = "Perm d, beta"
+#     continuous = True
+#     convex = False
+#     separable = False
+#     differentiable = True
+#     multimodal = True
+#     randomized_term = False
+#     parametric = True
 
-    @classmethod
-    def is_dim_compatible(cls, d):
-        assert (d is None) or (
-            isinstance(d, int) and (not d < 0)
-        ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+#     @classmethod
+#     def is_dim_compatible(cls, d):
+#         assert (d is None) or (
+#             isinstance(d, int) and (not d < 0)
+#         ), "The dimension d must be None or a positive integer"
+#         return (d is None) or (d > 0)
 
-    def _set_parameters(self, beta=0.5):
-        d = self.dimensionality
-        self.input_domain = np.array([[-d, d] for _ in range(d)])
-        self.beta = beta
+#     def _set_parameters(self, beta=0.5):
+#         d = self.dimensionality
+#         self.input_domain = np.array([[-d, d] for _ in range(d)])
+#         self.beta = beta
 
-    def get_param(self):
-        return {"beta": self.beta}
+#     def get_param(self):
+#         return {"beta": self.beta}
 
-    def get_global_minimum(self, d):
-        X = np.array([1 / (i + 1) for i in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+#     def get_global_minimum(self, d):
+#         X = np.array([1 / (i + 1) for i in range(d)])
+#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-    def evaluate(self, X):
-        d = X.shape[0]
-        j = np.arange(1, d + 1)
-        res = np.sum([np.sum((j**i + self.beta) * (
-            (X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
-        return res
+#     def evaluate(self, X):
+#         d = X.shape[0]
+#         j = np.arange(1, d + 1)
+#         res = np.sum([np.sum((j**i + self.beta) * (
+#             (X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
+#         return res
 
 
 class Powell(PyBenchFunction):
@@ -1801,7 +1808,8 @@ class Quartic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        Y = np.array([[0.0]])  # Global minimum value without the randomized term
+        return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2264,42 +2272,42 @@ class Schwefel2_21(PyBenchFunction):
         return res
 
 
-# class Schwefel2_22(PyBenchFunction):
-#     """.. image:: ../img/functions/Schwefel2_22.png"""
+class Schwefel2_22(PyBenchFunction):
+    """.. image:: ../img/functions/Schwefel2_22.png"""
 
-#     name = "Schwefel 2.22"
-#     continuous = True
-#     convex = True
-#     separable = True
-#     differentiable = False
-#     multimodal = False
-#     randomized_term = False
-#     parametric = False
+    name = "Schwefel 2.22"
+    continuous = True
+    convex = True
+    separable = True
+    differentiable = False
+    multimodal = False
+    randomized_term = False
+    parametric = False
 
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return (d is None) or (d > 0)
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return (d is None) or (d > 0)
 
-#     def _set_parameters(
-#         self,
-#     ):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[-100, 100] for _ in range(d)])
+    def _set_parameters(
+        self,
+    ):
+        d = self.dimensionality
+        self.input_domain = np.array([[-100, 100] for _ in range(d)])
 
-#     def get_param(self):
-#         return {}
+    def get_param(self):
+        return {}
 
-#     def get_global_minimum(self, d):
-#         X = np.array([0 for _ in range(d)])
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+    def get_global_minimum(self, d):
+        X = np.array([0 for _ in range(d)])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-#     def evaluate(self, X):
-#         d = X.shape[0]
-#         res = np.sum(np.abs(X)) + np.prod(np.abs(X))
-#         return res
+    def evaluate(self, X):
+        d = X.shape[0]
+        res = np.sum(np.abs(X)) + np.prod(np.abs(X))
+        return res
 
 
 class Schwefel2_23(PyBenchFunction):
@@ -2340,60 +2348,60 @@ class Schwefel2_23(PyBenchFunction):
         return res
 
 
-# class Shekel(PyBenchFunction):
-#     """.. image:: ../img/functions/Shekel.png"""
+class Shekel(PyBenchFunction):
+    """.. image:: ../img/functions/Shekel.png"""
 
-#     name = "Shekel"
-#     continuous = True
-#     convex = False
-#     separable = False
-#     differentiable = True
-#     multimodal = True
-#     randomized_term = False
-#     parametric = True
+    name = "Shekel"
+    continuous = True
+    convex = False
+    separable = False
+    differentiable = True
+    multimodal = True
+    randomized_term = False
+    parametric = True
 
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return d == 4
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return d == 4
 
-#     def _set_parameters(self, m=None, C=None, beta=None):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
-#         self.m = m if m is not None else 10
-#         self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
-#         self.C = (
-#             C
-#             if C is not None
-#             else np.array(
-#                 [
-#                     [4, 4, 4, 4],
-#                     [1, 1, 1, 1],
-#                     [8, 8, 8, 8],
-#                     [6, 6, 6, 6],
-#                     [3, 7, 3, 7],
-#                     [2, 9, 2, 9],
-#                     [5, 3, 5, 3],
-#                     [8, 1, 8, 1],
-#                     [6, 2, 6, 2],
-#                     [7, 3.6, 7, 3.6],
-#                 ]
-#             )
-#         )
+    def _set_parameters(self, m=None, C=None, beta=None):
+        d = self.dimensionality
+        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        self.m = m if m is not None else 10
+        self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
+        self.C = (
+            C
+            if C is not None
+            else np.array(
+                [
+                    [4, 4, 4, 4],
+                    [1, 1, 1, 1],
+                    [8, 8, 8, 8],
+                    [6, 6, 6, 6],
+                    [3, 7, 3, 7],
+                    [2, 9, 2, 9],
+                    [5, 3, 5, 3],
+                    [8, 1, 8, 1],
+                    [6, 2, 6, 2],
+                    [7, 3.6, 7, 3.6],
+                ]
+            )
+        )
 
-#     def get_param(self):
-#         return {"m": self.m, "C": self.C, "beta": self.beta}
+    def get_param(self):
+        return {"m": self.m, "C": self.C, "beta": self.beta}
 
-#     def get_global_minimum(self, d):
-#         X = self.C[0]
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+    def get_global_minimum(self, d):
+        X = self.C[0]
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-#     def evaluate(self, X):
-#         x1, x2, x3, x4 = X
-#         res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
-#         return res
+    def evaluate(self, X):
+        x1, x2, x3, x4 = X
+        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
+        return res
 
 
 class Shubert(PyBenchFunction):
@@ -2703,40 +2711,40 @@ class Trid(PyBenchFunction):
         return res
 
 
-# class Wolfe(PyBenchFunction):
-#     """.. image:: ../img/functions/Wolfe.png"""
+class Wolfe(PyBenchFunction):
+    """.. image:: ../img/functions/Wolfe.png"""
 
-#     name = "Wolfe"
-#     continuous = True
-#     convex = False
-#     separable = False
-#     differentiable = True
-#     multimodal = True
-#     randomized_term = False
-#     parametric = False
+    name = "Wolfe"
+    continuous = True
+    convex = False
+    separable = False
+    differentiable = True
+    multimodal = True
+    randomized_term = False
+    parametric = False
 
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return d == 3
+    @classmethod
+    def is_dim_compatible(cls, d):
+        assert (d is None) or (
+            isinstance(d, int) and (not d < 0)
+        ), "The dimension d must be None or a positive integer"
+        return d == 3
 
-#     def _set_parameters(self):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
+    def _set_parameters(self):
+        d = self.dimensionality
+        self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
 
-#     def get_param(self):
-#         return {}
+    def get_param(self):
+        return {}
 
-#     def get_global_minimum(self, d):
-#         X = np.array([0, 0, 0])
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+    def get_global_minimum(self, d):
+        X = np.array([0, 0, 0])
+        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
-#     def evaluate(self, X):
-#         x, y, z = X
-#         res = 4 / 3 * (x**2 + y**2 - x * y) ** 0.75 + z
-#         return res
+    def evaluate(self, X):
+        x, y, z = X
+        res = (4 / 3) * (x**2 + y**2 - x * y) ** 0.75 + z
+        return res
 
 
 class XinSheYang(PyBenchFunction):
