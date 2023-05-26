@@ -1023,8 +1023,8 @@ class EggHolder(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = -(y + 47) * np.sin(np.sqrt(np.abs(y + x / 2 + 47))) - \
-            x * np.sin(np.sqrt(np.abs(x - y - 47)))
+        res = -(y + 47) * np.sin(np.sqrt(np.abs(y + 0.5 * x + 47))) - \
+            x * np.sin(np.sqrt(np.abs(x - (y + 47))))
         return res
 
 
