@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING
 from .._imports import _IntegrationModule
 
 if TYPE_CHECKING:
+    from .evaluator import Evaluator
     from .linear_regression import LinearRegression
+    from .mnist_classifier import MNISTClassifier
     from .model import Model
     from .passthrough_model import PassthroughModel
 
@@ -29,6 +31,7 @@ _import_structure: dict = {
     "model": ["Model"],
     "linear_regression": ["LinearRegression"],
     "passthrough_model": ["PassthroughModel"],
+    "mnist_classifier": ["MNISTClassifier"],
     "evaluator": ["Evaluator"],
     "all_models": ["MODELS"],
     "loss_functions": ["MeanSquaredError"],
