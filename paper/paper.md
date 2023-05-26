@@ -1,5 +1,5 @@
 ---
-title: 'F3DASM: A framework for data-driven design and analysis of structures and materials'
+title: 'F3DASM: open Framework for Data-Driven Design & Analysis of Structures & Materials'
 tags:
   - Python
   - data-driven
@@ -44,12 +44,14 @@ bibliography: paper.bib
 
 The process of structural and materials design involves a continuous search for the most efficient design based on specific criteria. The different boundary conditions applied to the material or structure can result in vastly different optimal compositions. In particular, the design of materials is faced with a high-dimensional solution space due to the overwhelming number of potential combinations that can create distinct materials. Unfortunately, this extensive design space poses a significant challenge to accelerate the optimization process. The immense number of possibilities makes it impractical to conduct experimental investigations of each concept. As a result, data-driven computational analyses have been a method of interest for efficiently traversing these design spaces.
 
-Although specific applications may differ, the data-driven modelling and optimization process remains the same, as illustrated in \autoref{fig:f3dasm-overview}. We introduce a software library based on the framework for data-driven design and analysis of structures and materials (`f3dasm`) [@Bessa2017]: a systematic approach for inverting the material design process.
+Most applied fields such as Mechanical Engineering have remained conservative when it comes to openly sharing databases and software [can you find a couple of references backing this up?]. This is in sharp contrast to the Computer Science community, especially within the sub-field of machine learning. Understandably, the entry barrier is higher for researchers and practitioners from applied fields that are not specialized in software development. In this work we developed a general and user-friendly data-driven package for researchers and practitioners working on design and analysis of materials and structures. The package is called `f3dasm` (framework for data-driven design & analysis of structures and materials) and it aims at democratizing the data-driven process and making it easier to replicate research articles in this field, as well as sharing new work with the community. This work generalizes the original closed-source framework proposed by the senior author and his co-workers [@Bessa2017], making it more flexible and adaptable to different applications, allowing to integrate different choices of software packages needed in the different steps of the data-driven process: (1) design of experiments; (2) data generation; (3) machine learning; and (4) optimization.
+
+<!-- Although specific applications may differ, the data-driven modelling and optimization process remains the same, as illustrated in \autoref{fig:f3dasm-overview}. We introduce a software library based on the framework for data-driven design and analysis of structures and materials (`f3dasm`) [@Bessa2017]: a systematic approach for inverting the material design process.
 
 
-Therefore, we introduce the framework for data-driven design and analysis of structures and materials (`f3dasm`): an attempt to develop a systematic approach of inverting the material design process. 
-
-![Schematic of global framework for data-driven material systems design/modeling [@Bessa2017].\label{fig:f3dasm-overview}](f3dasm_bessa_overview.png)
+Therefore, we introduce the framework for data-driven design and analysis of structures and materials (`f3dasm`): an attempt to develop a systematic approach of inverting the material design process.  -->
+<!-- 
+![Schematic of global framework for data-driven material systems design/modeling [@Bessa2017].\label{fig:f3dasm-overview}](f3dasm_bessa_overview.png) -->
 
 
 # Statement of need
@@ -141,6 +143,6 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Acknowledgements
 
-We would like to express our gratitude to the authors of the original paper [@Bessa2017] for providing us with the pre-release version of the `f3dasm` framework, which ideas are the foundation in the development of this work. We would also like to extend our thanks to Jiaxiang Yi for his contributions to writing an interface with Abaqus simulation software.
+We would express our gratitude to Jiaxiang Yi for his contributions to writing an interface with Abaqus simulation software.
 
 # References
