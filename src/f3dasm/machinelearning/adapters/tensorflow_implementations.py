@@ -2,7 +2,7 @@
 # =============================================================================
 
 # Standard
-from typing import List
+from typing import List, Tuple
 from unittest import mock
 
 # Third-party core
@@ -50,28 +50,42 @@ class TensorflowModel(tf_Model, Model):
 
     def set_model_weights(self, weights: np.ndarray):
         reshaped_weights = get_reshaped_array_from_list_of_arrays(
-            flat_array=weights.ravel(), list_of_arrays=self.model.get_weights())
+            flat_array=weights.ravel(), shapes=[w.shape for w in self.model.get_weights()])
         self.model.set_weights(reshaped_weights)
 
 
-
-def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
-                                           list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
-    total_array = []
+def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray, shapes: List[Tuple[int, int]]):
+    # Initialize list of unflattened arrays
+    unflattened_arrays = []
     index = 0
-    for mimic_array in list_of_arrays:
-        number_of_values = np.product(mimic_array.shape)
-        current_array = np.array(flat_array[index:index+number_of_values])
 
-        if number_of_values > 1:
-            current_array = current_array.reshape(-1, 1)  # Make 2D array
+    # Iterate over shapes and reconstruct arrays
+    for shape in shapes:
+        size = np.prod(shape)
+        arr = flat_array[index:index+size].reshape(shape)
+        unflattened_arrays.append(arr)
+        index += size
 
-        total_array.append(current_array)
-        index += number_of_values
+    return unflattened_arrays
 
-    return total_array
+
+# def get_reshaped_array_from_list_of_arrays(flat_array: np.ndarray,
+#                                            list_of_arrays: List[np.ndarray]) -> List[np.ndarray]:
+#     total_array = []
+#     index = 0
+#     for mimic_array in list_of_arrays:
+#         number_of_values = np.product(mimic_array.shape)
+#         current_array = np.array(flat_array[index:index+number_of_values])
+
+#         if number_of_values > 1:
+#             current_array = current_array.reshape(-1, 1)  # Make 2D array
+
+#         total_array.append(current_array)
+#         index += number_of_values
+
+#     return total_array
 
 
 # technically not a np array input!
 def get_flat_array_from_list_of_arrays(list_of_arrays: List[np.ndarray]) -> np.ndarray:
-    return np.concatenate([np.atleast_2d(array) for array in list_of_arrays])
+    return np.concatenate([array.flatten() for array in list_of_arrays])
