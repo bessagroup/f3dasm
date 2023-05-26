@@ -228,10 +228,13 @@ class Function:
 
         xv, yv, Y = self._create_mesh(px=px, domain=domain)
 
+        # Shift Y values to avoid log(0)
+        Y_shifted = Y - np.min(Y) + 1e-6  # Add a small constant to avoid log(0)
+
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
             ax = plt.axes()
-            ax.pcolormesh(xv, yv, Y, cmap="viridis",
+            ax.pcolormesh(xv, yv, Y_shifted, cmap="viridis",
                           norm=mcol.LogNorm())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
@@ -241,7 +244,7 @@ class Function:
             ax.plot_surface(
                 xv,
                 yv,
-                Y,
+                Y_shifted,
                 rstride=1,
                 cstride=1,
                 edgecolor="none",
