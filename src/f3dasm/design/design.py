@@ -155,10 +155,20 @@ class DesignSpace:
             self._cast_types_dataframe(self.input_space, label="input")
         )
 
+        # Set the categories tot the categorical input parameters
+        for categorical_input in self.get_categorical_input_parameters():
+            df_input[('input', categorical_input.name)] = pd.Categorical(
+                df_input[('input', categorical_input.name)], categories=categorical_input.categories)
+
         # output columns
         df_output = pd.DataFrame(columns=self.get_output_names()).astype(
             self._cast_types_dataframe(self.output_space, label="output")
         )
+
+        # Set the categories tot the categorical output parameters
+        for categorical_output in self.get_categorical_output_parameters():
+            df_output[('output', categorical_output.name)] = pd.Categorical(
+                df_input[('output', categorical_output.name)], categories=categorical_output.categories)
 
         return pd.concat([df_input, df_output])
 
@@ -300,6 +310,15 @@ class DesignSpace:
             space of categorical input parameters
         """
         return self._get_parameters(CategoricalParameter, self.input_space)
+
+    def get_categorical_output_parameters(self) -> List[CategoricalParameter]:
+        """Obtain all the categorical output parameters
+
+        Returns
+        -------
+            space of categorical output parameters
+        """
+        return self._get_parameters(CategoricalParameter, self.output_space)
 
     def get_categorical_input_names(self) -> List[str]:
         """Receive the names of the categorical input parameters
