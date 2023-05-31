@@ -159,6 +159,28 @@ class JobQueue:
         jobqueue.jobs = {index: 'open' for index in range(experimentdata.get_number_of_datapoints())}
         return jobqueue
 
+    @classmethod
+    def from_json(cls: Type['JobQueue'], json_filename: str, path: str = '.') -> 'JobQueue':
+        jobqueue = cls(json_filename)
+        with open(f"{path}/{json_filename}.json", 'r+') as file:
+            jobqueue.create_jobs_from_dictionary(json.load(file))
+        return jobqueue
+
+    def create_jobs_from_dictionary(self, dictionary: dict):
+        """Create jobs based on a dictionary.
+
+        Parameters
+        ----------
+        dictionary : dict
+            The dictionary that will be used to create the jobs.
+
+        """
+        new_dict = {}
+        for k, v in dictionary.items():
+            new_dict[int(k)] = v
+
+        self.jobs = new_dict
+
     @access_file()
     def get_jobs(self) -> dict:
         """Get the jobs as a dictionary.
