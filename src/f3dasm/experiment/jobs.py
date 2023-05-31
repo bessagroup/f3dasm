@@ -9,7 +9,7 @@ import logging
 import os
 from os import path
 from time import sleep
-from typing import Callable, Type, Union
+from typing import Callable, Dict, Type, Union
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -145,6 +145,7 @@ class JobQueue:
             The name of the file that the jobs will be saved in.
         """
         self.filename = filename
+        self.jobs: Dict[int, str] = {}
 
     def __repr__(self):
         return self.jobs.__repr__()
@@ -157,31 +158,6 @@ class JobQueue:
         jobqueue = cls(filename)
         jobqueue.jobs = {index: 'open' for index in range(experimentdata.get_number_of_datapoints())}
         return jobqueue
-
-    def create_jobs_from_experimentdata(self, experimentdata: ExperimentData):
-        """Create jobs based on an ExperimentData object.
-
-        Parameters
-        ----------
-        experimentdata : ExperimentData
-            The ExperimentData object that will be used to create the jobs.
-        """
-        self.jobs = {index: 'open' for index in range(experimentdata.get_number_of_datapoints())}
-
-    def create_jobs_from_dictionary(self, dictionary: dict):
-        """Create jobs based on a dictionary.
-
-        Parameters
-        ----------
-        dictionary : dict
-            The dictionary that will be used to create the jobs.
-
-        """
-        new_dict = {}
-        for k, v in dictionary.items():
-            new_dict[int(k)] = v
-
-        self.jobs = new_dict
 
     @access_file()
     def get_jobs(self) -> dict:
@@ -226,6 +202,13 @@ class JobQueue:
             The index of the job to be marked as 'error'.
         """
         self._set_value(index, 'error')
+
+    @access_file()
+    def mark_all_in_progress_open(self):
+        """Mark all jobs as 'in progress' or 'open'."""
+        for key, value in self.jobs.items():
+            if value == 'in progress':
+                self.jobs[key] = 'open'
 
     @access_file()
     def add_job(self):
