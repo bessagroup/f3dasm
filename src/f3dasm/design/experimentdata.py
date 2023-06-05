@@ -5,12 +5,13 @@
 import errno
 import functools
 import json
-import logging
 import os
 from copy import copy
 from io import TextIOWrapper
 from time import sleep
 from typing import Any, Callable, List, Tuple, Type, Union
+
+from .._logging import logger
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -79,29 +80,29 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                     # the file is locked by another process
                     if os.name == 'nt':
                         if e.errno == 13:
-                            logging.info("The data file is currently locked by another process. "
-                                         "Retrying in 1 second...")
+                            logger.info("The data file is currently locked by another process. "
+                                        "Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         elif e.errno == 2:  # File not found error
-                            logging.info("The data file does not exist. Retrying in 1 second...")
+                            logger.info("The data file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
-                            logging.info(f"An unexpected IOError occurred: {e}")
+                            logger.info(f"An unexpected IOError occurred: {e}")
                             break
                     else:
                         if e.errno == errno.EAGAIN:
-                            logging.info("The data file is currently locked by another process. "
-                                         "Retrying in 1 second...")
+                            logger.info("The data file is currently locked by another process. "
+                                        "Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         elif e.errno == 2:  # File not found error
-                            logging.info("The data file does not exist. Retrying in 1 second...")
+                            logger.info("The data file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
-                            logging.info(f"An unexpected IOError occurred: {e}")
+                            logger.info(f"An unexpected IOError occurred: {e}")
                             break
                 except Exception as e:
                     # handle any other exceptions
-                    logging.info(f"An unexpected error occurred: {e}")
+                    logger.info(f"An unexpected error occurred: {e}")
                     raise e
                     return
 

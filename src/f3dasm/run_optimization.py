@@ -6,7 +6,6 @@ Module to optimize benchmark optimization functions
 
 # Standard
 import json
-import logging
 import time
 from typing import Any, List, Type
 
@@ -18,6 +17,7 @@ from pathos.helpers import mp
 from f3dasm.optimization import Optimizer, find_optimizer
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
+from ._logging import logger
 # Locals
 from .design import ExperimentData
 from .functions import create_function_from_json
@@ -91,7 +91,7 @@ class OptimizationResult:
 
     def _log(self):
         # Log
-        logging.info(
+        logger.info(
             (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
              f"dim={self.function.dimensionality}, "
              f"with {self.optimizer.get_name()} optimizer for "
