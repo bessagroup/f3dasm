@@ -17,7 +17,7 @@ from pathos.helpers import mp
 from f3dasm.optimization import Optimizer, find_optimizer
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
-from ._logging import logger
+from ._logging import logger, time_and_log
 # Locals
 from .design import ExperimentData
 from .functions import create_function_from_json
@@ -154,6 +154,7 @@ def run_optimization(
     return res
 
 
+@time_and_log
 def run_multiple_realizations(
     optimizer: Optimizer,
     function: Function,
@@ -192,8 +193,6 @@ def run_multiple_realizations(
     -------
         Object with the optimization data results
     """
-    start_t = time.perf_counter()
-
     if seed is None:
         seed = np.random.randint(low=0, high=1e5)
 
@@ -220,12 +219,6 @@ def run_multiple_realizations(
                 "seed": seed + index,
             }
             results.append(run_optimization(**args))
-
-    end_t = time.perf_counter()
-
-    total_duration = end_t - start_t
-    if verbal:
-        print(f"Optimization took {total_duration:.2f}s total")
 
     return OptimizationResult(
         data=results,
