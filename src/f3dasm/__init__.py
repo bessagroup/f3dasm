@@ -17,6 +17,7 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 from f3dasm import (_logging, data, design, experiment, functions,
                     machinelearning, optimization, sampling, simulation)
 
+from ._deprecated import deprecated_func
 from ._show_versions import __version__, show_versions
 # Design classes
 from .design.constraint import Constraint
