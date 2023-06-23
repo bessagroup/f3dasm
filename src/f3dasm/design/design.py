@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import List, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar
 
 # Third-party core
 import numpy as np
@@ -273,7 +273,7 @@ class DesignSpace:
         -------
             space of continuous parameters
         """
-        return self._get_parameters(ContinuousParameter, self.input_space)
+        return self.filter_parameters(ContinuousParameter).get_input_space()
 
     def get_continuous_input_names(self) -> List[str]:
         """Receive the continuous parameter names of the input space
@@ -282,7 +282,8 @@ class DesignSpace:
         -------
             list of names of the continuous input parameters
         """
-        return self._get_names(ContinuousParameter, self.input_space)
+
+        return _name_only(self.filter_parameters(ContinuousParameter).get_input_names())
 
     def get_discrete_input_parameters(self) -> List[DiscreteParameter]:
         """Obtain all the discrete parameters
@@ -291,7 +292,7 @@ class DesignSpace:
         -------
             space of discrete parameters
         """
-        return self._get_parameters(DiscreteParameter, self.input_space)
+        return self.filter_parameters(DiscreteParameter).get_input_space()
 
     def get_discrete_input_names(self) -> List[str]:
         """Receive the names of all the discrete parameters
@@ -300,7 +301,7 @@ class DesignSpace:
         -------
             list of names
         """
-        return self._get_names(DiscreteParameter, self.input_space)
+        return _name_only(self.filter_parameters(DiscreteParameter).get_input_names())
 
     def get_categorical_input_parameters(self) -> List[CategoricalParameter]:
         """Obtain all the categorical input parameters
@@ -309,7 +310,7 @@ class DesignSpace:
         -------
             space of categorical input parameters
         """
-        return self._get_parameters(CategoricalParameter, self.input_space)
+        return self.filter_parameters(CategoricalParameter).get_input_space()
 
     def get_categorical_output_parameters(self) -> List[CategoricalParameter]:
         """Obtain all the categorical output parameters
@@ -318,7 +319,7 @@ class DesignSpace:
         -------
             space of categorical output parameters
         """
-        return self._get_parameters(CategoricalParameter, self.output_space)
+        return self.filter_parameters(CategoricalParameter).get_output_space()
 
     def get_categorical_input_names(self) -> List[str]:
         """Receive the names of the categorical input parameters
@@ -327,7 +328,7 @@ class DesignSpace:
         -------
             list of names of categorical input parameters
         """
-        return self._get_names(CategoricalParameter, self.input_space)
+        return _name_only(self.filter_parameters(CategoricalParameter).get_input_names())
 
     def get_constant_input_parameters(self) -> List[ConstantParameter]:
         """Obtain all the constant input parameters
@@ -336,7 +337,7 @@ class DesignSpace:
         -------
             space of constant input parameters
         """
-        return self._get_parameters(ConstantParameter, self.input_space)
+        return self.filter_parameters(ConstantParameter).get_input_space()
 
     def get_constant_input_names(self) -> List[str]:
         """Receive the names of the constant input parameters
@@ -345,7 +346,7 @@ class DesignSpace:
         -------
             list of names of constant input parameters
         """
-        return self._get_names(ConstantParameter, self.input_space)
+        return _name_only(self.filter_parameters(ConstantParameter).get_input_names())
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -359,10 +360,25 @@ class DesignSpace:
                 for parameter in self.get_continuous_input_parameters()]
         )
 
-    def _get_names(self, type: TypeVar, space: List[Parameter]) -> List[str]:
-        return [parameter.name for parameter in space if isinstance(parameter, type)]
+    def filter_parameters(self, type: Type[Parameter]) -> 'DesignSpace':
+        """Filter the parameters of the design space by type
 
-    def _get_parameters(self, type: TypeVar, space: List[Parameter]) -> List[Parameter]:
+        Parameters
+        ----------
+        type : Type[Parameter]
+            Type of the parameters to be filtered
+
+        Returns
+        -------
+        DesignSpace
+            Design space with the filtered parameters
+        """
+        return DesignSpace(
+            input_space=self._get_parameters(type, self.input_space),
+            output_space=self._get_parameters(type, self.output_space),
+        )
+
+    def _get_parameters(self, type: Type[Parameter], space: List[Parameter]) -> List[Parameter]:
         return list(
             filter(
                 lambda parameter: isinstance(parameter, type),
@@ -374,16 +390,16 @@ class DesignSpace:
         """Make a dictionary that provides the datatype of each parameter"""
         return {(label, parameter.name): parameter._type for parameter in space}
 
-    def _check_space_on_type(self, type: TypeVar, space: List[Parameter]) -> bool:
-        return all(isinstance(parameter, type) for parameter in space)
-
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return self._check_space_on_type(ContinuousParameter, self.input_space)
+        return self.get_number_of_input_parameters() \
+            == self.filter_parameters(ContinuousParameter).get_number_of_input_parameters()
 
     def _all_output_continuous(self) -> bool:
         """Check if all output parameters are continuous"""
-        return self._check_space_on_type(ContinuousParameter, self.output_space)
+
+        return self.get_number_of_output_parameters() \
+            == self.filter_parameters(ContinuousParameter).get_number_of_output_parameters()
 
 
 def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> DesignSpace:
@@ -421,3 +437,7 @@ def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> Design
     output_space.append(ContinuousParameter(name="y"))
 
     return DesignSpace(input_space=input_space, output_space=output_space)
+
+
+def _name_only(names: List[Tuple[str, str]]) -> List[str]:
+    return [name for _, name in names]
