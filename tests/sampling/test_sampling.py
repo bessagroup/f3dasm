@@ -22,8 +22,8 @@ def test_sampling_interface_not_implemented_error():
         pass
 
     # Define the parameters
-    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
-    space = [x1]
+    x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
+    space = {'x1': x1}
 
     design = DesignSpace(space)
     new_sampler = NewSamplingStrategy(design=design, seed=seed)

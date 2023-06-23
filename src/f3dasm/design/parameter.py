@@ -25,11 +25,7 @@ class Parameter:
 
     Parameters
     ----------
-    name
-        name of the parameter
     """
-
-    name: str
     _type: str = field(init=False, default="object")
 
     @classmethod
@@ -90,8 +86,6 @@ class ConstantParameter(Parameter):
 
     Parameters
     ----------
-    name : str
-        The name of the parameter.
     value : Any
         The constant value of the parameter.
 
@@ -128,8 +122,6 @@ class ContinuousParameter(Parameter):
 
     Attributes
     ----------
-    name : str
-        The name of the parameter.
     lower_bound : float, optional
         The lower bound of the continuous search space. Defaults to negative infinity.
     upper_bound : float, optional
@@ -176,8 +168,6 @@ class DiscreteParameter(Parameter):
 
     Parameters
     ----------
-    name
-        name of the parameter
     lower_bound
         lower bound of discrete search space
     upper_bound
@@ -213,8 +203,6 @@ class CategoricalParameter(Parameter):
 
     Parameters
     ----------
-    name
-        name of the parameter
     categories
         list of strings that represent available categories
     """

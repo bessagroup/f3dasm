@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 import numpy as np
 import pytest
@@ -19,8 +19,8 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
     number_of_output_parameters = draw(integers(min_value, max_value))
     _name = text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10)
 
-    def get_space(number_of_parameters: int) -> List[Parameter]:
-        space = []
+    def get_space(number_of_parameters: int) -> Dict[str, Parameter]:
+        space = {}
         names = []
         for _ in range(number_of_parameters):
             names.append(_name.filter(lambda x: x not in names))
@@ -37,7 +37,7 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
                     draw(floats(min_value=0.1)),
                 )
 
-                space.append(ContinuousParameter(name=name, lower_bound=lower_bound, upper_bound=upper_bound))
+                space[name] = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
             elif parameter == "DiscreteSpace":
                 lower_bound, upper_bound = (
@@ -45,10 +45,10 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
                     draw(integers(min_value=1)),
                 )
 
-                space.append(DiscreteParameter(name=name, lower_bound=lower_bound, upper_bound=upper_bound))
+                space[name] = DiscreteParameter(lower_bound=lower_bound, upper_bound=upper_bound)
             elif parameter == "CategoricalSpace":
                 categories = ["test1", "test2"]
-                space.append(CategoricalParameter(name=name, categories=categories))
+                space[name] = CategoricalParameter(categories=categories)
 
         return space
 
@@ -63,8 +63,8 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 @settings(max_examples=10)
 def test_check_length_input_when_adding_parameter(design: DesignSpace):
     length_input_space = len(design.input_space)
-    parameter = DiscreteParameter(name="test")
-    design.add_input_space(space=parameter)
+    parameter = DiscreteParameter()
+    design.add_input_space(name="test", space=parameter)
     assert length_input_space + 1 == (len(design.input_space))
 
 

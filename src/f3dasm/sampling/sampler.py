@@ -138,8 +138,8 @@ class Sampler:
     def _sample_constant(self, numsamples: int):
         constant = self.design.get_constant_input_parameters()
         samples = np.empty(shape=(numsamples, len(constant)))
-        for dim, _ in enumerate(constant):
-            samples[:, dim] = constant[dim].value
+        for dim, param in enumerate(constant.values()):
+            samples[:, dim] = param.value
 
         return samples
 
@@ -147,10 +147,10 @@ class Sampler:
         """Sample the descrete parameters, default randomly uniform"""
         discrete = self.design.get_discrete_input_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
-        for dim, _ in enumerate(discrete):
+        for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
-                range(discrete[dim].lower_bound,
-                      discrete[dim].upper_bound + 1),
+                range(param.lower_bound,
+                      param.upper_bound + 1),
                 size=numsamples,
             )
 
@@ -160,20 +160,20 @@ class Sampler:
         """Sample the categorical parameters, default randomly uniform"""
         categorical = self.design.get_categorical_input_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
-        for dim, _ in enumerate(categorical):
+        for dim, param in enumerate(categorical.values()):
             samples[:, dim] = np.random.choice(
-                categorical[dim].categories, size=numsamples)
+                param.categories, size=numsamples)
 
         return samples
 
     def _stretch_samples(self, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
         continuous = self.design.get_continuous_input_parameters()
-        for dim, _ in enumerate(continuous):
+        for dim, param in enumerate(continuous.values()):
             samples[:, dim] = (
                 samples[:, dim] * (
-                    continuous[dim].upper_bound - continuous[dim].lower_bound
-                ) + continuous[dim].lower_bound
+                    param.upper_bound - param.lower_bound
+                ) + param.lower_bound
             )
 
         return samples

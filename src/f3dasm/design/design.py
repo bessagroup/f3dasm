@@ -4,11 +4,12 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import List, Tuple, Type, TypeVar
+from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 # Third-party core
 import numpy as np
 import pandas as pd
+from hydra.utils import instantiate
 
 # Local
 from .constraint import Constraint
@@ -43,10 +44,10 @@ class DesignSpace:
 
     Parameters
     ----------
-    input_space : List[Parameter], optional
-        List of input parameters, by default an empty list
-    output_space : List[Parameter], optional
-        List of output parameters, by default an empty list
+    input_space : Dict[str, Parameter], optional
+        Dict of input parameters, by default an empty dict
+    output_space : Dict[str, Parameter], optional
+        Dict of output parameters, by default an empty dict
     constraints : List[Constraint], optional
         List of constraints, by default an empty list
 
@@ -56,8 +57,8 @@ class DesignSpace:
         If duplicate names are found in input or output names.
     """
 
-    input_space: List[Parameter] = field(default_factory=list)
-    output_space: List[Parameter] = field(default_factory=list)
+    input_space: Dict[str, Parameter] = field(default_factory=dict)
+    output_space: Dict[str, Parameter] = field(default_factory=dict)
     constraints: List[Constraint] = field(default_factory=list)
 
     def __post_init__(self):
@@ -84,19 +85,13 @@ class DesignSpace:
         return cls.from_dict(design_dict)
 
     @classmethod
-    def from_yaml(cls: Type['DesignSpace'], yaml: dict) -> 'DesignSpace':
+    def from_yaml(cls: Type['DesignSpace'], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> 'DesignSpace':
         args = {}
-        for key, space in yaml.items():
-            parameters = []
-            for param in space:
-                param = dict(param)
-                name = param.pop('class')
-                parameters.append(Parameter.from_dict(parameter_dict=param, name=name))
-
-            args[key] = parameters
+        for space, params in yaml.items():
+            args[space] = {name: instantiate(param) for name, param in params.items()}
         return cls(**args)
 
-    @classmethod
+    @ classmethod
     def from_dict(cls: Type['DesignSpace'], design_dict: dict) -> 'DesignSpace':
         """
         Create a DesignSpace object from a dictionary.
@@ -112,9 +107,9 @@ class DesignSpace:
             The created DesignSpace object.
         """
         for key, space in design_dict.items():
-            parameters = []
-            for parameter in space:
-                parameters.append(Parameter.from_json(parameter))
+            parameters = {}
+            for name, parameter in space.items():
+                parameters[name] = Parameter.from_json(parameter)
 
             design_dict[key] = parameters
 
@@ -137,8 +132,8 @@ class DesignSpace:
             JSON representation of the design space.
         """
         # Missing constraints
-        args = {'input_space': [parameter.to_json() for parameter in self.input_space],
-                'output_space': [parameter.to_json() for parameter in self.output_space]
+        args = {'input_space': {name: parameter.to_json() for name, parameter in self.input_space.items()},
+                'output_space': {name: parameter.to_json() for name, parameter in self.output_space.items()},
                 }
         return json.dumps(args)
 
@@ -156,9 +151,9 @@ class DesignSpace:
         )
 
         # Set the categories tot the categorical input parameters
-        for categorical_input in self.get_categorical_input_parameters():
-            df_input[('input', categorical_input.name)] = pd.Categorical(
-                df_input[('input', categorical_input.name)], categories=categorical_input.categories)
+        for name, categorical_input in self.get_categorical_input_parameters().items():
+            df_input[('input', name)] = pd.Categorical(
+                df_input[('input', name)], categories=categorical_input.categories)
 
         # output columns
         df_output = pd.DataFrame(columns=self.get_output_names()).astype(
@@ -166,13 +161,13 @@ class DesignSpace:
         )
 
         # Set the categories tot the categorical output parameters
-        for categorical_output in self.get_categorical_output_parameters():
-            df_output[('output', categorical_output.name)] = pd.Categorical(
-                df_input[('output', categorical_output.name)], categories=categorical_output.categories)
+        for name, categorical_output in self.get_categorical_output_parameters().items():
+            df_output[('output', name)] = pd.Categorical(
+                df_input[('output', name)], categories=categorical_output.categories)
 
         return pd.concat([df_input, df_output])
 
-    def add_input_space(self, space: Parameter):
+    def add_input_space(self, name: str, space: Parameter):
         """Add a new input parameter to the design space.
 
         Parameters
@@ -180,10 +175,10 @@ class DesignSpace:
         space : Parameter
             Input parameter to be added.
         """
-        self.input_space.append(space)
+        self.input_space[name] = space
         return
 
-    def add_output_space(self, space: Parameter):
+    def add_output_space(self, name: str, space: Parameter):
         """Add a new output parameter to the design space.
 
         Parameters
@@ -191,9 +186,9 @@ class DesignSpace:
         space : Parameter
             Output parameter to be added.
         """
-        self.output_space.append(space)
+        self.output_space[name] = space
 
-    def get_input_space(self) -> List[Parameter]:
+    def get_input_space(self) -> Dict[str, Parameter]:
         """Return input parameters.
 
         Returns
@@ -203,7 +198,7 @@ class DesignSpace:
         """
         return self.input_space
 
-    def get_output_space(self) -> List[Parameter]:
+    def get_output_space(self) -> Dict[str, Parameter]:
         """Return output parameters.
 
         Returns
@@ -220,7 +215,7 @@ class DesignSpace:
         -------
             List of the names of the output parameters
         """
-        return [("output", s.name) for s in self.output_space]
+        return [("output", name) for name, parameter in self.output_space.items()]
 
     def get_input_names(self) -> List[str]:
         """Get the names of the input parameters
@@ -229,7 +224,7 @@ class DesignSpace:
         -------
             List of the names of the input parameters
         """
-        return [("input", s.name) for s in self.input_space]
+        return [("input", name) for name, parameter in self.input_space.items()]
 
     def is_single_objective_continuous(self) -> bool:
         """Checks whether the output of the model is a single continuous objective value.
@@ -266,7 +261,7 @@ class DesignSpace:
         """
         return len(self.output_space)
 
-    def get_continuous_input_parameters(self) -> List[ContinuousParameter]:
+    def get_continuous_input_parameters(self) -> Dict[str, ContinuousParameter]:
         """Obtain all the continuous parameters
 
         Returns
@@ -285,7 +280,7 @@ class DesignSpace:
 
         return _name_only(self.filter_parameters(ContinuousParameter).get_input_names())
 
-    def get_discrete_input_parameters(self) -> List[DiscreteParameter]:
+    def get_discrete_input_parameters(self) -> Dict[str, DiscreteParameter]:
         """Obtain all the discrete parameters
 
         Returns
@@ -303,7 +298,7 @@ class DesignSpace:
         """
         return _name_only(self.filter_parameters(DiscreteParameter).get_input_names())
 
-    def get_categorical_input_parameters(self) -> List[CategoricalParameter]:
+    def get_categorical_input_parameters(self) -> Dict[str, CategoricalParameter]:
         """Obtain all the categorical input parameters
 
         Returns
@@ -312,7 +307,7 @@ class DesignSpace:
         """
         return self.filter_parameters(CategoricalParameter).get_input_space()
 
-    def get_categorical_output_parameters(self) -> List[CategoricalParameter]:
+    def get_categorical_output_parameters(self) -> Dict[str, CategoricalParameter]:
         """Obtain all the categorical output parameters
 
         Returns
@@ -330,7 +325,7 @@ class DesignSpace:
         """
         return _name_only(self.filter_parameters(CategoricalParameter).get_input_names())
 
-    def get_constant_input_parameters(self) -> List[ConstantParameter]:
+    def get_constant_input_parameters(self) -> Dict[str, ConstantParameter]:
         """Obtain all the constant input parameters
 
         Returns
@@ -357,7 +352,7 @@ class DesignSpace:
         """
         return np.array(
             [[parameter.lower_bound, parameter.upper_bound]
-                for parameter in self.get_continuous_input_parameters()]
+                for _, parameter in self.get_continuous_input_parameters().items()]
         )
 
     def filter_parameters(self, type: Type[Parameter]) -> 'DesignSpace':
@@ -378,17 +373,13 @@ class DesignSpace:
             output_space=self._get_parameters(type, self.output_space),
         )
 
-    def _get_parameters(self, type: Type[Parameter], space: List[Parameter]) -> List[Parameter]:
-        return list(
-            filter(
-                lambda parameter: isinstance(parameter, type),
-                space,
-            )
-        )
+    def _get_parameters(self, type: Type[Parameter], space: Dict[str, Parameter]) -> Dict[str, Parameter]:
 
-    def _cast_types_dataframe(self, space: List[Parameter], label: str) -> dict:
+        return {name: parameter for name, parameter in space.items() if isinstance(parameter, type)}
+
+    def _cast_types_dataframe(self, space: Dict[str, Parameter], label: str) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
-        return {(label, parameter.name): parameter._type for parameter in space}
+        return {(label, name): parameter._type for name, parameter in space.items()}
 
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
@@ -429,12 +420,11 @@ def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> Design
     >>> dimensionality = 2
     >>> design_space = make_nd_continuous_design(bounds, dimensionality)
     """
-    input_space, output_space = [], []
+    input_space, output_space = {}, {}
     for dim in range(dimensionality):
-        input_space.append(ContinuousParameter(
-            name=f"x{dim}", lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1]))
+        input_space[f"x{dim}"] = ContinuousParameter(lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
-    output_space.append(ContinuousParameter(name="y"))
+    output_space["y"] = ContinuousParameter()
 
     return DesignSpace(input_space=input_space, output_space=output_space)
 
