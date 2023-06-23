@@ -1,8 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
-# Third-party
-import numpy as np
+from .._logging import logger, time_and_log
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -30,6 +29,7 @@ class Simulator:
         """Function that handles the post-processing"""
         ...
 
+    @time_and_log
     def run(self) -> None:
         self.pre_process()
         self.execute()
