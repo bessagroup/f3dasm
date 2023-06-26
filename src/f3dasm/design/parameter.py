@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, List, Type
+from typing import Any, ClassVar, List, Type
 
 # Third-party core
 import numpy as np
@@ -26,7 +26,7 @@ class Parameter:
     Parameters
     ----------
     """
-    _type: str = field(init=False, default="object")
+    _type: ClassVar[str] = field(init=False, default="object")
 
     @classmethod
     def from_json(cls: Type['Parameter'], json_string: str) -> 'Parameter':
@@ -102,7 +102,7 @@ class ConstantParameter(Parameter):
     """
 
     value: Any
-    _type: str = field(init=False, default="object")
+    _type: ClassVar[str] = field(init=False, default="object")
 
     def __post_init__(self):
         self._check_hashable()
@@ -141,7 +141,7 @@ class ContinuousParameter(Parameter):
 
     lower_bound: float = field(default=-np.inf)
     upper_bound: float = field(default=np.inf)
-    _type: str = field(init=False, default="float")
+    _type: ClassVar[str] = field(init=False, default="float")
 
     def __post_init__(self):
         self._check_types()
@@ -176,7 +176,7 @@ class DiscreteParameter(Parameter):
 
     lower_bound: int = field(default=0)
     upper_bound: int = field(default=1)
-    _type: str = field(init=False, default="int")
+    _type: ClassVar[str] = field(init=False, default="int")
 
     def __post_init__(self):
         self._check_types()

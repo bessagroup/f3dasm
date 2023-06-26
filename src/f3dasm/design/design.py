@@ -26,18 +26,6 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class F3DASMDesignSpaceDuplicateNameError(Exception):
-    """
-    Exception raised when a duplicate name is found in the DesignSpace
-
-    Attributes:
-        message (str): The error message.
-    """
-
-    def __init__(self, message):
-        super().__init__(message)
-
-
 @dataclass
 class DesignSpace:
     """Main class for defining design of experiments space.
@@ -61,10 +49,6 @@ class DesignSpace:
     output_space: Dict[str, Parameter] = field(default_factory=dict)
     constraints: List[Constraint] = field(default_factory=list)
 
-    def __post_init__(self):
-        """Check if input and output names have duplicates."""
-        self._check_names()
-
     @classmethod
     def from_json(cls: Type['DesignSpace'], json_string: str) -> 'DesignSpace':
         """
@@ -86,6 +70,25 @@ class DesignSpace:
 
     @classmethod
     def from_yaml(cls: Type['DesignSpace'], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> 'DesignSpace':
+        """Initializ a DesignSpace from a Hydra YAML configuration file
+
+
+        Notes
+        -----
+        The YAML file should have the following structure:
+        Two nested dictionaries where the dictionary denote the input_space 
+        and output_space respectively.
+
+
+        Parameters
+        ----------
+        yaml
+            yaml dictionary
+
+        Returns
+        -------
+            DesignSpace class
+        """
         args = {}
         for space, params in yaml.items():
             args[space] = {name: instantiate(param) for name, param in params.items()}
@@ -115,14 +118,6 @@ class DesignSpace:
 
         return cls(**design_dict)
 
-    def _check_names(self):
-        """Check if input and output names have duplicates."""
-        if len(self.get_input_names()) != len(set(self.get_input_names())):
-            raise F3DASMDesignSpaceDuplicateNameError("Duplicate names found in input names!")
-
-        if len(self.get_output_names()) != len(set(self.get_output_names())):
-            raise F3DASMDesignSpaceDuplicateNameError("Duplicate names found in output names!")
-
     def to_json(self) -> str:
         """Return JSON representation of the design space.
 
@@ -137,7 +132,7 @@ class DesignSpace:
                 }
         return json.dumps(args)
 
-    def get_empty_dataframe(self) -> pd.DataFrame:
+    def create_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with input and output space columns.
 
         Returns
@@ -146,7 +141,9 @@ class DesignSpace:
             DataFrame containing "input" and "output" columns.
         """
         # input columns
-        df_input = pd.DataFrame(columns=self.get_input_names()).astype(
+        input_columns = [("input", name) for name, parameter in self.input_space.items()]
+
+        df_input = pd.DataFrame(columns=input_columns).astype(
             self._cast_types_dataframe(self.input_space, label="input")
         )
 
@@ -156,7 +153,9 @@ class DesignSpace:
                 df_input[('input', name)], categories=categorical_input.categories)
 
         # output columns
-        df_output = pd.DataFrame(columns=self.get_output_names()).astype(
+        output_columns = [("output", name) for name, parameter in self.output_space.items()]
+
+        df_output = pd.DataFrame(columns=output_columns).astype(
             self._cast_types_dataframe(self.output_space, label="output")
         )
 
@@ -193,7 +192,7 @@ class DesignSpace:
 
         Returns
         -------
-        List[Parameter]
+        Dict[str, Parameter]
             List of input parameters.
         """
         return self.input_space
@@ -203,7 +202,7 @@ class DesignSpace:
 
         Returns
         -------
-        List[Parameter]
+        Dict[str, Parameter]
             List of output parameters.
         """
         return self.output_space
@@ -215,7 +214,8 @@ class DesignSpace:
         -------
             List of the names of the output parameters
         """
-        return [("output", name) for name, parameter in self.output_space.items()]
+        # return [("output", name) for name, parameter in self.output_space.items()]
+        return list(self.output_space.keys())
 
     def get_input_names(self) -> List[str]:
         """Get the names of the input parameters
@@ -224,7 +224,8 @@ class DesignSpace:
         -------
             List of the names of the input parameters
         """
-        return [("input", name) for name, parameter in self.input_space.items()]
+        # return [("input", name) for name, parameter in self.input_space.items()]
+        return list(self.input_space.keys())
 
     def is_single_objective_continuous(self) -> bool:
         """Checks whether the output of the model is a single continuous objective value.
@@ -278,7 +279,7 @@ class DesignSpace:
             list of names of the continuous input parameters
         """
 
-        return _name_only(self.filter_parameters(ContinuousParameter).get_input_names())
+        return self.filter_parameters(ContinuousParameter).get_input_names()
 
     def get_discrete_input_parameters(self) -> Dict[str, DiscreteParameter]:
         """Obtain all the discrete parameters
@@ -296,7 +297,7 @@ class DesignSpace:
         -------
             list of names
         """
-        return _name_only(self.filter_parameters(DiscreteParameter).get_input_names())
+        return self.filter_parameters(DiscreteParameter).get_input_names()
 
     def get_categorical_input_parameters(self) -> Dict[str, CategoricalParameter]:
         """Obtain all the categorical input parameters
@@ -323,7 +324,7 @@ class DesignSpace:
         -------
             list of names of categorical input parameters
         """
-        return _name_only(self.filter_parameters(CategoricalParameter).get_input_names())
+        return self.filter_parameters(CategoricalParameter).get_input_names()
 
     def get_constant_input_parameters(self) -> Dict[str, ConstantParameter]:
         """Obtain all the constant input parameters
@@ -341,7 +342,7 @@ class DesignSpace:
         -------
             list of names of constant input parameters
         """
-        return _name_only(self.filter_parameters(ConstantParameter).get_input_names())
+        return self.filter_parameters(ConstantParameter).get_input_names()
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -369,13 +370,11 @@ class DesignSpace:
             Design space with the filtered parameters
         """
         return DesignSpace(
-            input_space=self._get_parameters(type, self.input_space),
-            output_space=self._get_parameters(type, self.output_space),
+            input_space={name: parameter for name, parameter in self.input_space.items()
+                         if isinstance(parameter, type)},
+            output_space={name: parameter for name, parameter in self.output_space.items()
+                          if isinstance(parameter, type)},
         )
-
-    def _get_parameters(self, type: Type[Parameter], space: Dict[str, Parameter]) -> Dict[str, Parameter]:
-
-        return {name: parameter for name, parameter in space.items() if isinstance(parameter, type)}
 
     def _cast_types_dataframe(self, space: Dict[str, Parameter], label: str) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
@@ -427,7 +426,3 @@ def make_nd_continuous_design(bounds: np.ndarray, dimensionality: int) -> Design
     output_space["y"] = ContinuousParameter()
 
     return DesignSpace(input_space=input_space, output_space=output_space)
-
-
-def _name_only(names: List[Tuple[str, str]]) -> List[str]:
-    return [name for _, name in names]

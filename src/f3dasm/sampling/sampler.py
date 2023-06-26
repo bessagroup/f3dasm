@@ -124,7 +124,7 @@ class Sampler:
         data = ExperimentData(design=self.design)
 
         # First get an empty reference frame from the DoE
-        empty_frame = self.design.get_empty_dataframe()
+        empty_frame = self.design.create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)

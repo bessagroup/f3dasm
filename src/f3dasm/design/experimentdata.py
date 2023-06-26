@@ -132,7 +132,7 @@ class ExperimentData:
 
     def __post_init__(self):
         """Initializes an empty DataFrame with the appropriate input and output columns."""
-        self.data = self.design.get_empty_dataframe()
+        self.data = self.design.create_empty_dataframe()
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -245,7 +245,7 @@ class ExperimentData:
 
     def reset_data(self):
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
-        self.__post_init__()
+        self.data = self.design.create_empty_dataframe()
 
     def show(self):
         """Print the data to the console"""
@@ -488,7 +488,8 @@ class ExperimentData:
             DataFrame containing the n best output samples.
         """
 
-        return self.data.nsmallest(n=nosamples, columns=self.design.get_output_names())
+        return self.data.nsmallest(n=nosamples, columns=[("output", name)
+                                                         for name, parameter in self.design.output_space.items()])
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
         """

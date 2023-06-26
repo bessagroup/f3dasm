@@ -3,8 +3,7 @@ import json
 import pandas as pd
 import pytest
 
-from f3dasm.design.design import (DesignSpace,
-                                  F3DASMDesignSpaceDuplicateNameError)
+from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
 
@@ -180,12 +179,12 @@ def test_get_output_space_2(design_space: DesignSpace):
 
 def test_get_output_names(design_space: DesignSpace):
     # Ensure that get_output_names returns the correct output parameter names
-    assert design_space.get_output_names() == [("output", "y")]
+    assert design_space.get_output_names() == ["y"]
 
 
 def test_get_input_names(design_space: DesignSpace):
     # Ensure that get_input_names returns the correct input parameter names
-    assert design_space.get_input_names() == [("input", "x1"), ("input", "x2"), ("input", "x3")]
+    assert design_space.get_input_names() == ['x1', 'x2', 'x3']
 
 
 def test_is_single_objective_continuous(design_space: DesignSpace):
