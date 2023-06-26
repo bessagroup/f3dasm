@@ -76,7 +76,7 @@ class DesignSpace:
         Notes
         -----
         The YAML file should have the following structure:
-        Two nested dictionaries where the dictionary denote the input_space 
+        Two nested dictionaries where the dictionary denote the input_space
         and output_space respectively.
 
 

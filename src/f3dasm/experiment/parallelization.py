@@ -3,13 +3,10 @@
 
 
 # Standard
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterator, List, Protocol, Tuple
 
 # Third-party core
 from pathos.helpers import mp
-
-# Local
-from ..design import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,6 +16,11 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+
+class ExperimentData(Protocol):
+    def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
+        ...
 
 
 def run_operation_on_experiments(data: ExperimentData, operation: Callable,

@@ -9,7 +9,7 @@ import os
 from copy import copy
 from io import TextIOWrapper
 from time import sleep
-from typing import Any, Callable, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
 
 from .._logging import logger
 
@@ -138,7 +138,7 @@ class ExperimentData:
         """The len() method returns the number of datapoints"""
         return self.get_number_of_datapoints()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
         return self
 
