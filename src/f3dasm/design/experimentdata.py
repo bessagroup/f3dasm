@@ -9,7 +9,8 @@ import os
 from copy import copy
 from io import TextIOWrapper
 from time import sleep
-from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
+from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
+                    Union)
 
 from .._logging import logger
 
@@ -35,6 +36,11 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+
+class Sampler(Protocol):
+    def get_samples(numsamples: int) -> 'ExperimentData':
+        ...
 
 
 def access_file(sleeptime_sec: int = 1) -> Callable:
@@ -235,6 +241,27 @@ class ExperimentData:
         # Create
         new_experimentdata = cls(design=new_design)
         new_experimentdata.add(data=new_data)
+
+        return new_experimentdata
+
+    @classmethod
+    def _get_samples(cls, design: DesignSpace, sampler: Sampler, number_of_samples: int) -> 'ExperimentData':
+        """Get a list of samples from the sampler
+
+        Parameters
+        ----------
+        sampler
+            The sampler to use
+        number_of_samples
+            The number of samples to get
+
+        Returns
+        -------
+        ExperimentData
+            A list of samples
+        """
+        new_experimentdata = cls(design=design)
+        new_experimentdata.add(data=sampler.get_samples(number_of_samples))
 
         return new_experimentdata
 

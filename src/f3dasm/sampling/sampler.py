@@ -8,6 +8,8 @@ from typing import Any, List, Union
 # Third-party core
 import numpy as np
 import pandas as pd
+from hydra.utils import instantiate
+from omegaconf import DictConfig, OmegaConf
 
 # Locals
 from ..design.design import DesignSpace
@@ -45,6 +47,13 @@ class Sampler:
 
     def __eq__(self, __o: object) -> bool:
         return all((self.design == __o.design, self.seed == __o.seed))
+
+    @classmethod
+    def from_yaml(cls, config: DictConfig) -> 'Sampler':
+        """Create a sampler from a yaml configuration"""
+        args = {**config.experimentdata.sampler, 'design': {'_target_': DesignSpace, **config.design}}
+        print(args)
+        return instantiate(args)
 
     def to_json(self):
         args = {'design': self.design.to_json(),

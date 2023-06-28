@@ -47,7 +47,7 @@ class DesignSpace:
 
     input_space: Dict[str, Parameter] = field(default_factory=dict)
     output_space: Dict[str, Parameter] = field(default_factory=dict)
-    constraints: List[Constraint] = field(default_factory=list)
+    # constraints: List[Constraint] = field(default_factory=list)
 
     @classmethod
     def from_json(cls: Type['DesignSpace'], json_string: str) -> 'DesignSpace':
@@ -91,8 +91,17 @@ class DesignSpace:
         """
         args = {}
         for space, params in yaml.items():
-            args[space] = {name: instantiate(param) for name, param in params.items()}
+            args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
         return cls(**args)
+
+        # # args = {}
+        # # for space, params in yaml.items():
+        # #     args[space] = {name: param}
+        # #     args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
+        # # print(yaml)
+        # args = {'_target_': 'f3dasm.DesignSpace', **yaml}
+        # print(args)
+        # return instantiate(args)
 
     @ classmethod
     def from_dict(cls: Type['DesignSpace'], design_dict: dict) -> 'DesignSpace':
