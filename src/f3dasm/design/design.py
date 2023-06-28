@@ -3,6 +3,7 @@
 
 # Standard
 import json
+import pickle
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Tuple, Type, TypeVar
 
@@ -36,8 +37,6 @@ class DesignSpace:
         Dict of input parameters, by default an empty dict
     output_space : Dict[str, Parameter], optional
         Dict of output parameters, by default an empty dict
-    constraints : List[Constraint], optional
-        List of constraints, by default an empty list
 
     Raises
     ------
@@ -47,7 +46,6 @@ class DesignSpace:
 
     input_space: Dict[str, Parameter] = field(default_factory=dict)
     output_space: Dict[str, Parameter] = field(default_factory=dict)
-    # constraints: List[Constraint] = field(default_factory=list)
 
     @classmethod
     def from_json(cls: Type['DesignSpace'], json_string: str) -> 'DesignSpace':
@@ -67,6 +65,30 @@ class DesignSpace:
         # Load JSON string
         design_dict = json.loads(json_string)
         return cls.from_dict(design_dict)
+
+    @classmethod
+    def from_file(cls, filename: str) -> 'DesignSpace':
+        """Create a DesignSpace object from a pickle file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file.
+
+        Returns
+        -------
+        DesignSpace
+            DesignSpace object containing the loaded data.
+        """
+
+        # if filename does not end with .pkl, add it
+        if not filename.endswith('.pkl'):
+            filename = filename + '.pkl'
+
+        with open(filename, "rb") as file:
+            obj = pickle.load(file)
+
+        return obj
 
     @classmethod
     def from_yaml(cls: Type['DesignSpace'], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> 'DesignSpace':
@@ -126,6 +148,23 @@ class DesignSpace:
             design_dict[key] = parameters
 
         return cls(**design_dict)
+
+    def store(self, filename: str) -> None:
+        """Stores the DesignSpace in a pickle file.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file.
+        """
+
+        # if filename does not end with .pkl, add it
+        if not filename.endswith('.pkl'):
+            filename = filename + '.pkl'
+
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
 
     def to_json(self) -> str:
         """Return JSON representation of the design space.

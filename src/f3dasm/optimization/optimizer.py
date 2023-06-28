@@ -3,7 +3,7 @@
 
 # Standard
 import json
-from copy import copy
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional, Tuple
 
@@ -239,7 +239,7 @@ class Optimizer:
         -------
             copy of the data
         """
-        return copy(self.data)
+        return deepcopy(self.data)
 
     def get_name(self) -> str:
         """Retrieve the name of the optimizers

@@ -2,7 +2,6 @@
 # =============================================================================
 
 # Local
-from .constraint import Constraint
 from .design import DesignSpace, make_nd_continuous_design
 from .experimentdata import ExperimentData
 from .parameter import (CategoricalParameter, ConstantParameter,
