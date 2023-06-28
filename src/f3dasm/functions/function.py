@@ -203,7 +203,9 @@ class Function:
         px: int = 300,
         domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
         show: bool = True,
+        ax: plt.Axes = None,
     ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+        # TODO: orientation string is case sensitive!
         """Generate a surface plot, either 2D or 3D, of the function
 
         Parameters
@@ -233,13 +235,15 @@ class Function:
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":
-            ax = plt.axes()
+            if ax is None:
+                ax = plt.axes()
             ax.pcolormesh(xv, yv, Y_shifted, cmap="viridis",
                           norm=mcol.LogNorm())  # mcol.LogNorm()
             # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
 
         if orientation == "3D":
-            ax = plt.axes(projection="3d", elev=50, azim=-50)
+            if ax is None:
+                ax = plt.axes(projection="3d", elev=50, azim=-50)
 
             ax.plot_surface(
                 xv,
