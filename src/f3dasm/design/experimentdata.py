@@ -6,8 +6,9 @@ import errno
 import functools
 import json
 import os
-from copy import copy
+from copy import deepcopy
 from io import TextIOWrapper
+from pathlib import Path
 from time import sleep
 from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
                     Union)
@@ -26,6 +27,8 @@ import numpy as np
 import pandas as pd
 
 # Local
+from ._data import Data
+from ._jobqueue import JobQueue
 from .design import DesignSpace
 
 #                                                          Authorship & Credits
@@ -57,29 +60,37 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
     """
     def decorator_func(operation: Callable) -> Callable:
         @functools.wraps(operation)
-        def wrapper_func(self, filename: str, *args, **kwargs) -> None:
+        def wrapper_func(self, *args, **kwargs) -> None:
             while True:
                 try:
                     # Try to open the experimentdata file
-                    with open(f"{filename}_data.csv", 'rb+') as file:
+                    logger.debug(f"Trying to open the data file: {self.filename}_data.csv")
+                    with open(f"{self.filename}_data.csv", 'rb+') as file:
+                        logger.debug("Opened file successfully")
                         if os.name == 'nt':
                             msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
                         else:
                             fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            logger.debug("Locked file successfully")
 
                         # Load the experimentdata from the object
-                        modified_experimentdata = ExperimentData.from_csv(filename=filename, text_io=file)
-                        self.data = modified_experimentdata.data
+                        self.data = Data.from_file(filename=self.filename, text_io=file)
+                        logger.debug("Loaded data successfully")
+
+                        # Load the jobs from disk
+                        self.jobs = JobQueue.from_file(filename=f"{self.filename}_jobs")
+                        logger.debug("Loaded jobs successfully")
 
                         # Do the operation
-                        value = operation(self, filename, *args, **kwargs)
+                        value = operation(self, *args, **kwargs)
 
                         # Delete existing contents of file
                         file.seek(0, 0)
                         file.truncate()
 
                         # Write the data to disk
-                        self.data.to_csv(file)
+                        self.data.store(filename=f"{self.filename}_data", text_io=file)
+                        self.jobs.store(filename=f"{self.filename}_jobs")
 
                     break
                 except IOError as e:
@@ -138,7 +149,9 @@ class ExperimentData:
 
     def __post_init__(self):
         """Initializes an empty DataFrame with the appropriate input and output columns."""
-        self.data = self.design.create_empty_dataframe()
+        self.data = Data.from_design(self.design)
+        self.jobs = JobQueue.from_data(self.data)
+        self.filename = 'doe'
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -149,18 +162,14 @@ class ExperimentData:
         return self
 
     def __next__(self):
-        if self.current_index >= len(self):
-            raise StopIteration
-        else:
-            index = self.data.index[self.current_index]
-            current_value = [self.get_inputdata_by_index(
-                index), self.get_outputdata_by_index(index)]
-            self.current_index += 1
-            return current_value
+        self.data.__next__()
+
+    def _repr_html_(self) -> str:
+        return self.data._repr_html_()
 
     @classmethod
-    def from_csv(cls: Type['ExperimentData'], filename: str,
-                 text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
+    def from_file(cls: Type['ExperimentData'], filename: str = 'doe',
+                  text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
         """Create an ExperimentData object from .csv and .json files.
 
         Parameters
@@ -173,116 +182,35 @@ class ExperimentData:
         ExperimentData
             ExperimentData object containing the loaded data.
         """
-        # Load the design from a json string
-        with open(f"{filename}_design.json") as f:
-            design = DesignSpace.from_json(f.read())
-
-        # Load the data from a csv
-        if text_io is None:
-            file = f"{filename}_data.csv"
-        else:
-            file = text_io
-        data = pd.read_csv(file, header=[0, 1], index_col=0)
-
         # Create the experimentdata object
+        design = DesignSpace.from_file(f"{filename}_design")
         experimentdata = cls(design=design)
-        experimentdata.data = data
+        experimentdata.data = Data.from_file(f"{filename}_data", text_io)
+        experimentdata.jobs = JobQueue.from_file(f"{filename}_jobs")
+        experimentdata.filename = filename
         return experimentdata
 
-    @classmethod
-    def from_json(cls: Type['ExperimentData'], json_string: str) -> 'ExperimentData':
-        """
-        Create an ExperimentData object from a JSON string.
-
-        Parameters
-        ----------
-        json_string : str
-            JSON string encoding the ExperimentData object.
-
-        Returns
-        -------
-        ExperimentData
-            The created ExperimentData object.
-        """
-        # Read JSON
-        experimentdata_dict = json.loads(json_string)
-        return cls.from_dict(experimentdata_dict)
-
-    @classmethod
-    def from_dict(cls: Type['ExperimentData'], experimentdata_dict: dict) -> 'ExperimentData':
-        """
-        Create an ExperimentData object from a dictionary.
-
-        Parameters
-        ----------
-        experimentdata_dict : dict
-            Dictionary representation of the information to construct the ExperimentData.
-
-        Returns
-        -------
-        ExperimentData
-            The created ExperimentData object.
-        """
-        # Read design from json_data_loaded
-        new_design = DesignSpace.from_json(experimentdata_dict['design'])
-
-        # Read data from json string
-        new_data = pd.read_json(experimentdata_dict['data'])
-
-        # Create tuples of indices
-        columntuples = tuple(tuple(entry[1:-1].replace("'", "").split(', ')) for entry in new_data.columns.values)
-
-        # Create MultiIndex object
-        columnlabels = pd.MultiIndex.from_tuples(columntuples)
-
-        # Overwrite columnlabels
-        new_data.columns = columnlabels
-
-        # Create
-        new_experimentdata = cls(design=new_design)
-        new_experimentdata.add(data=new_data)
-
-        return new_experimentdata
-
-    @classmethod
-    def _get_samples(cls, design: DesignSpace, sampler: Sampler, number_of_samples: int) -> 'ExperimentData':
-        """Get a list of samples from the sampler
-
-        Parameters
-        ----------
-        sampler
-            The sampler to use
-        number_of_samples
-            The number of samples to get
-
-        Returns
-        -------
-        ExperimentData
-            A list of samples
-        """
-        new_experimentdata = cls(design=design)
-        new_experimentdata.add(data=sampler.get_samples(number_of_samples))
-
-        return new_experimentdata
+    # create an alias of from_csv
+    from_csv = from_file
 
     def select(self, indices: List[int]) -> 'ExperimentData':
-        new_experimentdata = copy(self)
-        new_experimentdata.data = self.data.loc[indices].copy()  # iloc
+        new_experimentdata = deepcopy(self)
+        new_experimentdata.data.select(indices)
+        new_experimentdata.jobs.select(indices)
+
         return new_experimentdata
 
     def reset_data(self):
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
-        self.data = self.design.create_empty_dataframe()
+        self.data.reset(self.design)
+        self.jobs.reset()
 
     def show(self):
         """Print the data to the console"""
-        print(self.data)
+        print(self.data.data)
         return
 
-    def _store_textiowrapper(self, textio: TextIOWrapper):
-        self.data.to_csv(textio)
-
-    def store(self, filename: str, text_io: Union[TextIOWrapper, None] = None):
+    def store(self, filename: str = None, text_io: Union[TextIOWrapper, None] = None):
         """Store the ExperimentData to disk, with checking for a lock
 
         Parameters
@@ -290,27 +218,19 @@ class ExperimentData:
         filename
             filename of the files to store, without suffix
         """
+        if filename is None:
+            filename = self.filename
 
-        if os.name == 'nt':  # Windows
-            # Open the data.csv file with a lock
-            with open(f"{filename}_data.csv", 'w') as f:
-                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-                self.data.to_csv(f"{filename}_data.csv")
-                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        self.data.store(f"{filename}_data")
+        self.jobs.store(f"{filename}_jobs")
+        self.design.store(f"{filename}_design")
 
-        else:  # Unix
-            # Open the data.csv file with a lock
-            with open(f"{filename}_data.csv", 'w') as f:
-                fcntl.flock(f, fcntl.LOCK_EX)
-                self.data.to_csv(f"{filename}_data.csv")
-                fcntl.flock(f, fcntl.LOCK_UN)
+        # # convert design to json
+        # design_json = self.design.to_json()
 
-        # convert design to json
-        design_json = self.design.to_json()
-
-        # write json to disk
-        with open(f"{filename}_design.json", 'w') as outfile:
-            outfile.write(design_json)
+        # # write json to disk
+        # with open(f"{filename}_design.json", 'w') as outfile:
+        #     outfile.write(design_json)
 
     def get_inputdata_by_index(self, index: int) -> dict:
         """
@@ -327,7 +247,7 @@ class ExperimentData:
             A dictionary containing the input data at the given index.
         """
         try:
-            return self.data['input'].loc[index].to_dict()
+            return self.data.get_inputdata_dict(index)
         except KeyError as e:
             raise KeyError('Index does not exist in dataframe!')
 
@@ -346,8 +266,8 @@ class ExperimentData:
             A dictionary containing the output data at the given index.
         """
         try:
-            return self.data['output'].loc[index].to_dict()
-        except KeyError as e:
+            return self.data.get_outputdata_dict(index)
+        except KeyError:
             raise KeyError('Index does not exist in dataframe!')
 
     def set_outputdata_by_index(self, index: int, value: Any):
@@ -361,14 +281,11 @@ class ExperimentData:
         value : Any
             The value to set the output data to.
         """
-        try:
-            self.data.at[index, 'output'] = value
-            # self.data['output'].loc[index] = value
-        except KeyError as e:
-            raise KeyError('Index does not exist in dataframe!')
+        self.data.set_outputdata(index, value)
+        self.jobs.mark_as_finished(index)
 
     @access_file()
-    def write_outputdata_by_index(self, filename: str, index: int, value: Any):
+    def write_outputdata_by_index(self, index: int, value: Any):
         self.set_outputdata_by_index(index=index, value=value)
 
     def set_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
@@ -382,28 +299,26 @@ class ExperimentData:
         value : Any
             The value to set the input data to.
         """
-        try:
-            self.data.at[index, column] = value
-        except KeyError as e:
-            raise KeyError('Index does not exist in dataframe!')
+        self.data.set_inputdata(index, value, column)
 
     @access_file()
-    def write_inputdata_by_index(self, filename: str, index: int, value: Any, column: str = 'input'):
+    def write_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
         self.set_inputdata_by_index(index=index, value=value, column=column)
 
-    def to_json(self) -> str:
-        """
-        Convert the ExperimentData object to a JSON string.
+    @access_file()
+    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+        job_index = self.jobs.get_open_job()
+        self.jobs.mark_as_in_progress(job_index)
 
-        Returns
-        -------
-        str
-            JSON representation of the ExperimentData object.
-        """
-        args = {'design': self.design.to_json(),
-                'data': self.data.to_json()}
+        input_data = self.get_inputdata_by_index(job_index)
+        output_data = self.get_outputdata_by_index(job_index)
 
-        return json.dumps(args)
+        return job_index, input_data, output_data
+
+    @access_file()
+    def write_error(self, index: int):
+        self.jobs.mark_as_error(index)
+        self.set_outputdata_by_index(index, value='ERROR')
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -414,7 +329,7 @@ class ExperimentData:
         tuple
             A tuple containing two numpy arrays, the first one for input columns, and the second for output columns.
         """
-        return self.get_input_data().to_numpy(), self.get_output_data().to_numpy()
+        return self.data.to_numpy()
 
     def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """
@@ -427,14 +342,16 @@ class ExperimentData:
         ignore_index : bool, optional
             Whether to ignore the indices of the appended dataframe.
         """
-        self.data = pd.concat([self.data, data], ignore_index=ignore_index)
+        self.data.add(data)
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self.data = self.data.astype(
+        self.data.data = self.data.data.astype(
             self.design._cast_types_dataframe(self.design.input_space, "input"))
-        self.data = self.data.astype(self.design._cast_types_dataframe(
+        self.data.data = self.data.data.astype(self.design._cast_types_dataframe(
             self.design.output_space, "output"))
+
+        self.jobs.add(number_of_jobs=len(data))
 
     def add_output(self, output: np.ndarray, label: str = "y"):
         """
@@ -447,7 +364,7 @@ class ExperimentData:
         label : str, optional
             Label of the output column to add to.
         """
-        self.data[("output", label)] = output
+        self.data.add_output(output, label)
 
     def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
         """
@@ -460,9 +377,8 @@ class ExperimentData:
         output : np.ndarray
             2D numpy array to add to the output data.
         """
-        df = pd.DataFrame(np.hstack((input, output)),
-                          columns=self.data.columns)
-        self.add(df, ignore_index=True)
+        self.data.add_numpy_arrays(input, output)
+        self.jobs.add(number_of_jobs=len(input))
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -476,7 +392,12 @@ class ExperimentData:
         if number_of_rows == 0:
             return  # Don't do anything if 0 rows need to be removed
 
-        self.data = self.data.iloc[:-number_of_rows]
+        # get the last indices from data.data
+        indices = self.data.data.index[-number_of_rows:]
+
+        # remove the indices rows_to_remove from data.data
+        self.data.remove(indices)
+        self.jobs.remove(indices)
 
     def get_input_data(self) -> pd.DataFrame:
         """
@@ -487,7 +408,7 @@ class ExperimentData:
         pd.DataFrame
             DataFrame containing only the input data.
         """
-        return self.data["input"]
+        return self.data.get_inputdata()
 
     def get_output_data(self) -> pd.DataFrame:
         """
@@ -498,7 +419,7 @@ class ExperimentData:
         pd.DataFrame
             DataFrame containing only the output data.
         """
-        return self.data["output"]
+        return self.data.get_outputdata()
 
     def get_n_best_output_samples(self, nosamples: int) -> pd.DataFrame:
         """
@@ -514,9 +435,7 @@ class ExperimentData:
         pd.DataFrame
             DataFrame containing the n best output samples.
         """
-
-        return self.data.nsmallest(n=nosamples, columns=[("output", name)
-                                                         for name, parameter in self.design.output_space.items()])
+        return self.data.n_best_samples(nosamples, self.design.get_output_names())
 
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
         """
@@ -560,12 +479,6 @@ class ExperimentData:
         tuple
             A tuple containing the matplotlib figure and axes
         """
-        fig, ax = plt.figure(), plt.axes()
-
-        ax.scatter(self.data[("input", input_par1)],
-                   self.data[("input", input_par2)], s=3)
-
-        ax.set_xlabel(input_par1)
-        ax.set_ylabel(input_par2)
+        fig, ax = self.data.plot()
 
         return fig, ax

@@ -53,7 +53,7 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     opt2.iterate(iterations=i, function=func)
     data1 = opt1.extract_data()
     data2 = opt2.extract_data()
-    assert all(data1.data == data2.data)
+    assert all(data1.data.data == data2.data.data)
 
 
 @pytest.mark.parametrize("function", FUNCTIONS_2D)

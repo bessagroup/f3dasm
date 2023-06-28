@@ -20,7 +20,6 @@ from f3dasm import (_logging, data, design, experiment, functions,
 from ._deprecated import deprecated_func
 from ._show_versions import __version__, show_versions
 # Design classes
-from .design.constraint import Constraint
 from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,

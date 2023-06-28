@@ -8,7 +8,7 @@ pytestmark = pytest.mark.smoke
 
 
 def test_get_output_data(data: ExperimentData):
-    truth = data.data[[("output", "y1"), ("output", "y2")]]["output"]
+    truth = data.data.data[[("output", "y1"), ("output", "y2")]]["output"]
 
     assert all(data.get_output_data() == truth)
 
