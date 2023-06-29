@@ -8,6 +8,8 @@ from typing import Any, List, Union
 # Third-party core
 import numpy as np
 import pandas as pd
+from hydra.utils import instantiate
+from omegaconf import DictConfig, OmegaConf
 
 # Locals
 from ..design.design import DesignSpace
@@ -34,9 +36,10 @@ class Sampler:
         seed for sampling
     """
 
-    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None):
+    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None, number_of_samples: int = None):
         self.design = design
         self.seed = seed
+        self.number_of_samples = number_of_samples
         self.__post_init__()
 
     def __post_init__(self):
@@ -45,6 +48,15 @@ class Sampler:
 
     def __eq__(self, __o: object) -> bool:
         return all((self.design == __o.design, self.seed == __o.seed))
+
+    @classmethod
+    def from_yaml(cls, config: DictConfig) -> 'Sampler':
+        """Create a sampler from a yaml configuration"""
+
+        args = {**config.sampler, 'design': None}
+        sampler: Sampler = instantiate(args)
+        sampler.design = DesignSpace.from_yaml(config.design)
+        return sampler
 
     def to_json(self):
         args = {'design': self.design.to_json(),
@@ -77,7 +89,7 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: int) -> ExperimentData:
+    def get_samples(self, numsamples: Union[int, None] = None) -> ExperimentData:
         """Receive samples of the search space
 
         Parameters
@@ -89,6 +101,10 @@ class Sampler:
         -------
             Data objects with the samples
         """
+        # If numsamples is None, take the object attribute number_of_samples
+        if numsamples is None:
+            numsamples = self.number_of_samples
+
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples)
 
@@ -124,7 +140,7 @@ class Sampler:
         data = ExperimentData(design=self.design)
 
         # First get an empty reference frame from the DoE
-        empty_frame = self.design.get_empty_dataframe()
+        empty_frame = self.design.create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)
@@ -138,8 +154,8 @@ class Sampler:
     def _sample_constant(self, numsamples: int):
         constant = self.design.get_constant_input_parameters()
         samples = np.empty(shape=(numsamples, len(constant)))
-        for dim, _ in enumerate(constant):
-            samples[:, dim] = constant[dim].value
+        for dim, param in enumerate(constant.values()):
+            samples[:, dim] = param.value
 
         return samples
 
@@ -147,10 +163,10 @@ class Sampler:
         """Sample the descrete parameters, default randomly uniform"""
         discrete = self.design.get_discrete_input_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
-        for dim, _ in enumerate(discrete):
+        for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
-                range(discrete[dim].lower_bound,
-                      discrete[dim].upper_bound + 1),
+                range(param.lower_bound,
+                      param.upper_bound + 1),
                 size=numsamples,
             )
 
@@ -160,20 +176,20 @@ class Sampler:
         """Sample the categorical parameters, default randomly uniform"""
         categorical = self.design.get_categorical_input_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
-        for dim, _ in enumerate(categorical):
+        for dim, param in enumerate(categorical.values()):
             samples[:, dim] = np.random.choice(
-                categorical[dim].categories, size=numsamples)
+                param.categories, size=numsamples)
 
         return samples
 
     def _stretch_samples(self, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
         continuous = self.design.get_continuous_input_parameters()
-        for dim, _ in enumerate(continuous):
+        for dim, param in enumerate(continuous.values()):
             samples[:, dim] = (
                 samples[:, dim] * (
-                    continuous[dim].upper_bound - continuous[dim].lower_bound
-                ) + continuous[dim].lower_bound
+                    param.upper_bound - param.lower_bound
+                ) + param.lower_bound
             )
 
         return samples

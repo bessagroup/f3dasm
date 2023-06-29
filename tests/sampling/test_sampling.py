@@ -22,8 +22,8 @@ def test_sampling_interface_not_implemented_error():
         pass
 
     # Define the parameters
-    x1 = ContinuousParameter(name="x1", lower_bound=2.4, upper_bound=10.3)
-    space = [x1]
+    x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
+    space = {'x1': x1}
 
     design = DesignSpace(space)
     new_sampler = NewSamplingStrategy(design=design, seed=seed)
@@ -64,7 +64,7 @@ def test_correct_sampling_ran(design3: DesignSpace):
     )
 
     samples = random_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.data.round(6)
+    samples = samples.data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
@@ -103,7 +103,7 @@ def test_correct_sampling_sobol(design3: DesignSpace):
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.data.round(6)
+    samples = samples.data.data.round(6)
     assert df_ground_truth.equals(samples)
 
 
@@ -141,7 +141,7 @@ def test_correct_sampling_lhs(design3: DesignSpace):
     )
 
     samples = lhs_sampler.get_samples(numsamples=numsamples)
-    samples = samples.data.round(6)
+    samples = samples.data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 

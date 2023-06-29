@@ -19,11 +19,11 @@ from f3dasm import (_logging, data, design, experiment, functions,
 
 from ._show_versions import __version__, show_versions
 # Design classes
-from .design.constraint import Constraint
 from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
+from .experiment.parallelization import run_operation_on_experiments
 # Base classes
 from .functions.function import Function
 from .machinelearning.model import Model

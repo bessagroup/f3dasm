@@ -10,7 +10,8 @@ import autograd.numpy as np
 
 # Locals
 from ..._imports import try_import
-from .._protocol import DesignSpace, Function
+from ...design import DesignSpace
+from ...functions import Function
 from ..optimizer import Optimizer
 
 # Third-party extension
@@ -86,8 +87,8 @@ class _PygmoProblem:
             box constraints
         """
         return (
-            [parameter.lower_bound for parameter in self.design.get_continuous_input_parameters()],
-            [parameter.upper_bound for parameter in self.design.get_continuous_input_parameters()],
+            [parameter.lower_bound for parameter in self.design.get_continuous_input_parameters().values()],
+            [parameter.upper_bound for parameter in self.design.get_continuous_input_parameters().values()],
         )
 
     def gradient(self, x: np.ndarray):

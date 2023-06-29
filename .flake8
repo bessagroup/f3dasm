@@ -12,6 +12,7 @@ extend-exclude =
 	.tox,
     __pycache__,
     dist,
+	build,
     data,
 	*.egg,
 	docs,

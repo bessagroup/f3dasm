@@ -3,7 +3,7 @@
 
 # Local
 from .filehandler import FileHandler
-from .jobs import JobQueue, NoOpenJobsError
+from .parallelization import run_operation_on_experiments
 from .quickstart import quickstart
 
 #                                                          Authorship & Credits

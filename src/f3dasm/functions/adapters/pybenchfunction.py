@@ -100,8 +100,8 @@ class PyBenchFunction(Function):
             ]
         )
 
-        o = Offset(offset=unscaled_offset)
-        self.augmentor.insert_input_augmentor(position=0, augmentor=o)
+        self.o = Offset(offset=unscaled_offset)
+        self.augmentor.insert_input_augmentor(position=0, augmentor=self.o)
 
     def _get_global_minimum_for_offset_calculation(self):
         """Get the global minimum used for offset calculations

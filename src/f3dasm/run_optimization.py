@@ -6,18 +6,18 @@ Module to optimize benchmark optimization functions
 
 # Standard
 import json
-import logging
 import time
-from typing import Any, List
+from typing import Any, List, Type
 
 # Third-party
 import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer
+from f3dasm.optimization import Optimizer, find_optimizer
 from f3dasm.sampling import Sampler, create_sampler_from_json
 
+from ._logging import logger, time_and_log
 # Locals
 from .design import ExperimentData
 from .functions import create_function_from_json
@@ -61,6 +61,23 @@ class OptimizationResult:
         self.seeds = seeds
         self._log()
 
+    @classmethod
+    def from_json(cls: Type['OptimizationResult'], json_string: str) -> 'OptimizationResult':
+        optimizationresult_dict = json.loads(json_string)
+        return cls.from_dict(optimizationresult_dict)
+
+    @classmethod
+    def from_dict(cls: Type['OptimizationResult'], optimizationresult_dict: dict) -> 'OptimizationResult':
+        args = {
+            'data': [ExperimentData.from_json(json_data) for json_data in optimizationresult_dict['data']],
+            # 'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
+            'function': create_function_from_json(optimizationresult_dict['function']),
+            'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
+            'number_of_samples': optimizationresult_dict['number_of_samples'],
+            'seeds': optimizationresult_dict['seeds'],
+        }
+        return cls(**args)
+
     def to_json(self):
         args = {'data': [d.to_json() for d in self.data],
                 'optimizer': self.optimizer.to_json(),
@@ -74,29 +91,12 @@ class OptimizationResult:
 
     def _log(self):
         # Log
-        logging.info(
+        logger.info(
             (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
              f"dim={self.function.dimensionality}, "
              f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations!")
         )
-
-
-# def create_optimizationresult_from_json(json_string: str) -> OptimizationResult:
-#     optimizationresult_dict = json.loads(json_string)
-#     return _create_optimizationresult_from_dict(optimizationresult_dict)
-
-
-# def _create_optimizationresult_from_dict(optimizationresult_dict: dict) -> OptimizationResult:
-#     args = {
-#         'data': [create_experimentdata_from_json(json_data) for json_data in optimizationresult_dict['data']],
-#         'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
-#         'function': create_function_from_json(optimizationresult_dict['function']),
-#         'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
-#         'number_of_samples': optimizationresult_dict['number_of_samples'],
-#         'seeds': optimizationresult_dict['seeds'],
-#     }
-#     return OptimizationResult(**args)
 
 
 def run_optimization(
@@ -154,6 +154,7 @@ def run_optimization(
     return res
 
 
+@time_and_log
 def run_multiple_realizations(
     optimizer: Optimizer,
     function: Function,
@@ -192,8 +193,6 @@ def run_multiple_realizations(
     -------
         Object with the optimization data results
     """
-    start_t = time.perf_counter()
-
     if seed is None:
         seed = np.random.randint(low=0, high=1e5)
 
@@ -220,12 +219,6 @@ def run_multiple_realizations(
                 "seed": seed + index,
             }
             results.append(run_optimization(**args))
-
-    end_t = time.perf_counter()
-
-    total_duration = end_t - start_t
-    if verbal:
-        print(f"Optimization took {total_duration:.2f}s total")
 
     return OptimizationResult(
         data=results,

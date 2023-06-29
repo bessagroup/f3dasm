@@ -3,7 +3,7 @@
 
 # Standard
 import json
-from copy import copy
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, List, Mapping, Optional, Tuple
 
@@ -54,6 +54,8 @@ class Optimizer:
         seed to set the optimizer
     defaults : OptimizerParameters
         Default hyperparameter arguments
+    name : str
+        Name of the optimizer object. Default to classname. Optional.
 
     Raises
     ------
@@ -68,9 +70,14 @@ class Optimizer:
     seed: int = np.random.randint(low=0, high=1e5)
     algorithm: Any = field(init=False)
     parameter: OptimizerParameters = field(init=False)
+    name: str = None
 
     def __post_init__(self):
         self._check_imports()
+
+        if self.name is None:
+            self.name = self.__class__.__name__
+
         if self.seed:
             self.set_seed(self.seed)
 
@@ -232,7 +239,7 @@ class Optimizer:
         -------
             copy of the data
         """
-        return copy(self.data)
+        return deepcopy(self.data)
 
     def get_name(self) -> str:
         """Retrieve the name of the optimizers
@@ -241,7 +248,7 @@ class Optimizer:
         -------
             name of the optimizer
         """
-        return self.__class__.__name__
+        return self.name
 
     def get_info(self) -> List[str]:
         """Give a list of characteristic features of this optimizer
