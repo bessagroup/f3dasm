@@ -2,14 +2,11 @@
 # =============================================================================
 
 # Standard
-from typing import List
+from typing import List, Protocol
 
-from .._imports import try_import
-from . import (adam, adamax, bayesianoptimization, cg, cmaes,
-               differentialevolution, ftrl, lbfgsb, nadam, neldermead,
-               optimizer, pso, randomsearch, rmsprop, sade, sea, sga, sgd,
-               simulatedannealing, xnes)
 # Locals
+from .._imports import try_import
+from . import cg, lbfgsb, neldermead, optimizer, randomsearch
 from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -31,56 +28,9 @@ OPTIMIZERS.append(lbfgsb.LBFGSB)
 OPTIMIZERS.append(neldermead.NelderMead)
 
 
-# WIP: Import from f3dasm_optimize package
+# Import from f3dasm_optimize package
 with try_import('f3dasm_optimize') as _imports:
     import f3dasm_optimize
 
 if _imports.is_successful():
     OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
-
-# # Extension samplers
-# if adam._imports.is_successful():
-#     OPTIMIZERS.append(adam.Adam)
-
-# if adamax._imports.is_successful():
-#     OPTIMIZERS.append(adamax.Adamax)
-
-# # COMMENT THIS BECAUSE BAYESIAN OPTIMIZATION IS TOO SLOW TO TEST PROPERLY NOW
-# # if bayesianoptimization._imports.is_successful():
-# #     OPTIMIZERS.append(bayesianoptimization.BayesianOptimization)
-
-# if cmaes._imports.is_successful():
-#     OPTIMIZERS.append(cmaes.CMAES)
-
-# if differentialevolution._imports.is_successful():
-#     OPTIMIZERS.append(differentialevolution.DifferentialEvolution)
-
-# if ftrl._imports.is_successful():
-#     OPTIMIZERS.append(ftrl.Ftrl)
-
-# if nadam._imports.is_successful():
-#     OPTIMIZERS.append(nadam.Nadam)
-
-# if pso._imports.is_successful():
-#     OPTIMIZERS.append(pso.PSO)
-
-# if rmsprop._imports.is_successful():
-#     OPTIMIZERS.append(rmsprop.RMSprop)
-
-# if sade._imports.is_successful():
-#     OPTIMIZERS.append(sade.SADE)
-
-# if sea._imports.is_successful():
-#     OPTIMIZERS.append(sea.SEA)
-
-# if sga._imports.is_successful():
-#     OPTIMIZERS.append(sga.SGA)
-
-# if sgd._imports.is_successful():
-#     OPTIMIZERS.append(sgd.SGD)
-
-# if simulatedannealing._imports.is_successful():
-#     OPTIMIZERS.append(simulatedannealing.SimulatedAnnealing)
-
-if xnes._imports.is_successful():
-    OPTIMIZERS.append(xnes.XNES)
