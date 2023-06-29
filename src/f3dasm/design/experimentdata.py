@@ -13,6 +13,9 @@ from time import sleep
 from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
                     Union)
 
+from hydra.utils import get_original_cwd
+from omegaconf import DictConfig
+
 from .._logging import logger
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
@@ -27,8 +30,8 @@ import numpy as np
 import pandas as pd
 
 # Local
-from ._data import Data
-from ._jobqueue import JobQueue
+from ._data import _Data
+from ._jobqueue import _JobQueue
 from .design import DesignSpace
 
 #                                                          Authorship & Credits
@@ -74,11 +77,11 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                             logger.debug("Locked file successfully")
 
                         # Load the experimentdata from the object
-                        self.data = Data.from_file(filename=self.filename, text_io=file)
+                        self.data = _Data.from_file(filename=self.filename, text_io=file)
                         logger.debug("Loaded data successfully")
 
                         # Load the jobs from disk
-                        self.jobs = JobQueue.from_file(filename=f"{self.filename}_jobs")
+                        self.jobs = _JobQueue.from_file(filename=f"{self.filename}_jobs")
                         logger.debug("Loaded jobs successfully")
 
                         # Do the operation
@@ -149,8 +152,8 @@ class ExperimentData:
 
     def __post_init__(self):
         """Initializes an empty DataFrame with the appropriate input and output columns."""
-        self.data = Data.from_design(self.design)
-        self.jobs = JobQueue.from_data(self.data)
+        self.data = _Data.from_design(self.design)
+        self.jobs = _JobQueue.from_data(self.data)
         self.filename = 'doe'
 
     def __len__(self):
@@ -182,16 +185,55 @@ class ExperimentData:
         ExperimentData
             ExperimentData object containing the loaded data.
         """
-        # Create the experimentdata object
-        design = DesignSpace.from_file(f"{filename}_design")
-        experimentdata = cls(design=design)
-        experimentdata.data = Data.from_file(f"{filename}_data", text_io)
-        experimentdata.jobs = JobQueue.from_file(f"{filename}_jobs")
-        experimentdata.filename = filename
-        return experimentdata
+        try:
+            # Create the experimentdata object
+            design = DesignSpace.from_file(f"{filename}_design")
+            experimentdata = cls(design=design)
+            experimentdata.data = _Data.from_file(f"{filename}_data", text_io)
+            experimentdata.jobs = _JobQueue.from_file(f"{filename}_jobs")
+            experimentdata.filename = filename
+            return experimentdata
+
+        # Cannot find the file, this could be due to hydra changing directories!
+        except FileNotFoundError:
+            try:
+                return cls.from_file(filename=Path(get_original_cwd()) / filename)
+            except ValueError:  # get_original_cwd() hydra initialization error
+                raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
 
     # create an alias of from_csv
     from_csv = from_file
+
+    @classmethod
+    def from_sampling(cls, sampler: Sampler) -> 'ExperimentData':
+        """Create an ExperimentData object from a sampler.
+
+        Parameters
+        ----------
+        sampler : Sampler
+            Sampler object containing the sampling strategy.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the sampled data.
+        """
+
+        return sampler.get_samples()
+
+    @classmethod
+    def from_yaml(cls, config: DictConfig) -> 'ExperimentData':
+
+        # Option 1: From existing ExperimentData files
+        if config.experimentdata.existing_data_path:
+            data = cls.from_file(filename=config.experimentdata.data)
+
+        # Option 2: Sample from the designspace
+        else:
+            sampler = Sampler.from_yaml(config)
+            data = sampler.get_samples(config.experimentdata.number_of_samples)
+
+        return data
 
     def select(self, indices: List[int]) -> 'ExperimentData':
         new_experimentdata = deepcopy(self)
@@ -224,13 +266,6 @@ class ExperimentData:
         self.data.store(f"{filename}_data")
         self.jobs.store(f"{filename}_jobs")
         self.design.store(f"{filename}_design")
-
-        # # convert design to json
-        # design_json = self.design.to_json()
-
-        # # write json to disk
-        # with open(f"{filename}_design.json", 'w') as outfile:
-        #     outfile.write(design_json)
 
     def get_inputdata_by_index(self, index: int) -> dict:
         """
@@ -305,8 +340,7 @@ class ExperimentData:
     def write_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
         self.set_inputdata_by_index(index=index, value=value, column=column)
 
-    @access_file()
-    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def access_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
 
@@ -316,9 +350,16 @@ class ExperimentData:
         return job_index, input_data, output_data
 
     @access_file()
-    def write_error(self, index: int):
+    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+        return self.access_open_job_data()
+
+    def set_error(self, index: int):
         self.jobs.mark_as_error(index)
         self.set_outputdata_by_index(index, value='ERROR')
+
+    @access_file()
+    def write_error(self, index: int):
+        self.set_error(index)
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """

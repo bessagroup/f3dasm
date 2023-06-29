@@ -145,28 +145,6 @@ def test_cast_types_dataframe_output(doe: DesignSpace):
     assert doe._cast_types_dataframe(space=doe.input_space, label="input") == ground_truth
 
 
-# def test_same_name_of_parameters_error():
-#     x1 = ContinuousParameter(name="x0", lower_bound=2.4, upper_bound=10.3)
-#     x2 = ContinuousParameter(name="x0", lower_bound=10.0, upper_bound=380.3)
-
-#     y1 = ContinuousParameter(name="y1")
-#     designspace = [x1, x2]
-#     output_space = [y1]
-#     with pytest.raises(F3DASMDesignSpaceDuplicateNameError):
-#         doe = DesignSpace(input_space=designspace, output_space=output_space)
-
-
-def test_check_reproducibility(doe: DesignSpace):
-    design_json = doe.to_json()
-    doe_new = DesignSpace.from_json(design_json)
-    assert doe == doe_new
-
-
-def test_to_json(design_space: DesignSpace):
-    # Ensure that to_json method returns valid JSON
-    json.loads(design_space.to_json())
-
-
 def test_get_input_space_2(design_space: DesignSpace):
     # Ensure that get_input_space returns the input space
     assert design_space.get_input_space() == design_space.input_space

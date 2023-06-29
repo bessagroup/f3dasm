@@ -29,55 +29,9 @@ class Parameter:
     _type: ClassVar[str] = field(init=False, default="object")
 
     @classmethod
-    def from_json(cls: Type['Parameter'], json_string: str) -> 'Parameter':
-        """
-        Create a Parameter object from a JSON string.
-
-        Parameters
-        ----------
-        json_string : str
-            JSON string representation of the information to construct the Parameter.
-
-        Returns
-        -------
-        Parameter
-            The requested Parameter object.
-        """
-        parameter_dict, name = json.loads(json_string)
-        return cls.from_dict(parameter_dict, name)
-
-    @classmethod
-    def from_dict(cls: Type['Parameter'], parameter_dict: dict, name: str) -> 'Parameter':
-        """
-        Create a Parameter object from a dictionary.
-
-        Parameters
-        ----------
-        parameter_dict : dict
-            Dictionary representation of the information to construct the Parameter.
-        name : str
-            Name of the class.
-
-        Returns
-        -------
-        Parameter
-            The requested Parameter object.
-        """
-        if name == 'Parameter':
-            return cls(**parameter_dict)
-        else:
-            return _find_parameter(name)(**parameter_dict)
-
-    @classmethod
     def get_name(self) -> str:
         """Return the name of the parameter class"""
         return self.__name__
-
-    def to_json(self) -> str:
-        """Return a JSON string representation of the parameter"""
-        args = self.__dict__
-        name = self.get_name()
-        return json.dumps((args, name))
 
 
 @dataclass
@@ -230,40 +184,3 @@ class CategoricalParameter(Parameter):
 
 
 PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
-
-
-class F3DASMParameterNotFoundError(Exception):
-    """
-    Exception raised when a parameter is not found.
-
-    Attributes:
-        message (str): The error message.
-    """
-
-    def __init__(self, message):
-        super().__init__(message)
-
-
-def _find_parameter(query: str) -> Parameter:
-    """
-    Find a Parameter class by its name.
-
-    Parameters
-    ----------
-    query : str
-        The name of the requested Parameter class.
-
-    Returns
-    -------
-    Parameter
-        The class object of the requested Parameter.
-
-    Raises
-    ------
-    F3DASMParameterNotFoundError
-        If the requested parameter is not found.
-    """
-    try:
-        return list(filter(lambda parameter: parameter.__name__ == query, PARAMETERS))[0]
-    except IndexError:
-        return F3DASMParameterNotFoundError(f'Parameter {query} not found!')

@@ -1,17 +1,16 @@
 
 import os
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, Tuple, List
+from typing import Any, Dict, Iterator, List, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-
 
 from .design import DesignSpace
 
 
-class Data:
+class _Data:
     def __init__(self, data: pd.DataFrame):
         self.data: pd.DataFrame = data
 
@@ -37,7 +36,7 @@ class Data:
         return self.data._repr_html_()
 
     @classmethod
-    def from_design(cls, design: DesignSpace) -> 'Data':
+    def from_design(cls, design: DesignSpace) -> '_Data':
         # input columns
         input_columns = [("input", name) for name, parameter in design.input_space.items()]
 
@@ -66,7 +65,7 @@ class Data:
         return cls(empty_dataframe)
 
     @classmethod
-    def from_file(cls, filename: str, text_io: TextIOWrapper = None) -> 'Data':
+    def from_file(cls, filename: str, text_io: TextIOWrapper = None) -> '_Data':
         """Loads the data from a file.
 
         Parameters

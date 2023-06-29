@@ -13,7 +13,6 @@ import pandas as pd
 from hydra.utils import instantiate
 
 # Local
-from .constraint import Constraint
 from .parameter import (CategoricalParameter, ConstantParameter,
                         ContinuousParameter, DiscreteParameter, Parameter)
 
@@ -116,15 +115,6 @@ class DesignSpace:
             args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
         return cls(**args)
 
-        # # args = {}
-        # # for space, params in yaml.items():
-        # #     args[space] = {name: param}
-        # #     args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
-        # # print(yaml)
-        # args = {'_target_': 'f3dasm.DesignSpace', **yaml}
-        # print(args)
-        # return instantiate(args)
-
     @ classmethod
     def from_dict(cls: Type['DesignSpace'], design_dict: dict) -> 'DesignSpace':
         """
@@ -164,7 +154,6 @@ class DesignSpace:
 
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
-
 
     def to_json(self) -> str:
         """Return JSON representation of the design space.

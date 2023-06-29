@@ -36,9 +36,10 @@ class Sampler:
         seed for sampling
     """
 
-    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None):
+    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None, number_of_samples: int = None):
         self.design = design
         self.seed = seed
+        self.number_of_samples = number_of_samples
         self.__post_init__()
 
     def __post_init__(self):
@@ -51,9 +52,11 @@ class Sampler:
     @classmethod
     def from_yaml(cls, config: DictConfig) -> 'Sampler':
         """Create a sampler from a yaml configuration"""
-        args = {**config.experimentdata.sampler, 'design': {'_target_': DesignSpace, **config.design}}
-        print(args)
-        return instantiate(args)
+
+        args = {**config.sampler, 'design': None}
+        sampler: Sampler = instantiate(args)
+        sampler.design = DesignSpace.from_yaml(config.design)
+        return sampler
 
     def to_json(self):
         args = {'design': self.design.to_json(),
@@ -86,7 +89,7 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: int) -> ExperimentData:
+    def get_samples(self, numsamples: Union[int, None] = None) -> ExperimentData:
         """Receive samples of the search space
 
         Parameters
@@ -98,6 +101,10 @@ class Sampler:
         -------
             Data objects with the samples
         """
+        # If numsamples is None, take the object attribute number_of_samples
+        if numsamples is None:
+            numsamples = self.number_of_samples
+
         # First sample the continuous parameters
         samples_continuous = self.sample_continuous(numsamples=numsamples)
 

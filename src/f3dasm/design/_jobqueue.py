@@ -3,7 +3,7 @@ from typing import List, Union
 
 import pandas as pd
 
-from ._data import Data
+from ._data import _Data
 
 
 class NoOpenJobsError(Exception):
@@ -18,7 +18,7 @@ class NoOpenJobsError(Exception):
         super().__init__(message)
 
 
-class JobQueue:
+class _JobQueue:
     def __init__(self, jobs: pd.Series = None):
         """
         A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
@@ -35,7 +35,7 @@ class JobQueue:
         return self.jobs.__repr__()
 
     @classmethod
-    def from_data(cls, data: Data):
+    def from_data(cls, data: _Data):
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -51,7 +51,7 @@ class JobQueue:
         return cls(pd.Series(['open'] * data.number_of_datapoints(), dtype='string'))
 
     @classmethod
-    def from_file(cls, filename: str) -> 'JobQueue':
+    def from_file(cls, filename: str) -> '_JobQueue':
         """Create a JobQueue object from a pickle file.
 
         Parameters
