@@ -23,7 +23,8 @@ from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
-from .experiment.parallelization import run_operation_on_experiments
+from .experiment.parallelization import (run_on_experimentdata,
+                                         run_operation_on_experiments)
 # Base classes
 from .functions.function import Function
 from .machinelearning.model import Model

@@ -5,6 +5,9 @@ Protocol classes from types outside the optimization submodule
 # =============================================================================
 
 # Standard
+
+from typing import Any, Callable, Dict
+
 try:
     from typing import Protocol
 except ImportError:  # Python 3.7
@@ -32,6 +35,11 @@ class DesignSpace(Protocol):
 
 class Function(Protocol):
     """Protocol class for the function"""
+
+    @property
+    # Add attribute to store the original unwrapped function
+    def original_function(self) -> Callable[[Dict[str, Any]], float]:
+        ...
 
     def __call__(self) -> np.ndarray:
         """Evaluate the lossfunction"""

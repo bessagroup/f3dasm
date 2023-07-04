@@ -106,22 +106,24 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    def add(self, number_of_jobs: int):
+    def add(self, number_of_jobs: int, status: str = 'open'):
         """Adds a number of jobs to the job queue.
 
         Parameters
         ----------
         number_of_jobs : int
             Number of jobs to add.
+        status : str, optional
+            Status of the jobs, by default 'open'.
         """
         try:
             last_index = self.jobs.index[-1]
         except IndexError:  # Empty Series
-            self.jobs = pd.Series(['open'] * number_of_jobs, dtype='string')
+            self.jobs = pd.Series([status] * number_of_jobs, dtype='string')
             return
 
         new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
-        jobs_to_add = pd.Series('open', index=new_indices, dtype='string')
+        jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
     def reset(self) -> None:

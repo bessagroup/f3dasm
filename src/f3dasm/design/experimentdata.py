@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 # Local
-from ._data import _Data
+from ._data import Trial, _Data
 from ._jobqueue import _JobQueue
 from .design import DesignSpace
 
@@ -305,6 +305,46 @@ class ExperimentData:
         except KeyError:
             raise KeyError('Index does not exist in dataframe!')
 
+    def get_trial(self, index: int) -> Trial:
+        """
+        Gets the trial at the given index.
+
+        Parameters
+        ----------
+        index : int
+            The index of the trial to retrieve.
+
+        Returns
+        -------
+        Trial
+            The trial at the given index.
+        """
+        return self.data.get_trial(index)
+
+    def set_trial(self, trial: Trial) -> None:
+        """
+        Sets the trial at the given index.
+
+        Parameters
+        ----------
+        trial : Trial
+            The trial to set.
+        """
+        self.data.set_trial(trial)
+        self.jobs.mark_as_finished(trial._jobnumber)
+
+    @access_file()
+    def write_trial(self, trial: Trial) -> None:
+        """
+        Sets the trial at the given index.
+
+        Parameters
+        ----------
+        trial : Trial
+            The trial to set.
+        """
+        self.set_trial(trial)
+
     def set_outputdata_by_index(self, index: int, value: Any):
         """
         Sets the output data at the given index to the given value.
@@ -340,17 +380,20 @@ class ExperimentData:
     def write_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
         self.set_inputdata_by_index(index=index, value=value, column=column)
 
-    def access_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def access_open_job_data(self) -> Trial:
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
 
-        input_data = self.get_inputdata_by_index(job_index)
-        output_data = self.get_outputdata_by_index(job_index)
+        trial = self.get_trial(job_index)
 
-        return job_index, input_data, output_data
+        # input_data = self.get_inputdata_by_index(job_index)
+        # output_data = self.get_outputdata_by_index(job_index)
+
+        return trial
+        # return job_index, input_data, output_data
 
     @access_file()
-    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def get_open_job_data(self) -> Trial:
         return self.access_open_job_data()
 
     def set_error(self, index: int):
@@ -407,7 +450,7 @@ class ExperimentData:
         """
         self.data.add_output(output, label)
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None] = None):
         """
         Append a numpy array to the ExperimentData object.
 
@@ -418,8 +461,13 @@ class ExperimentData:
         output : np.ndarray
             2D numpy array to add to the output data.
         """
+        if output is not None:
+            status = 'finished'
+        else:
+            status = 'open'
+
         self.data.add_numpy_arrays(input, output)
-        self.jobs.add(number_of_jobs=len(input))
+        self.jobs.add(number_of_jobs=len(input), status=status)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """

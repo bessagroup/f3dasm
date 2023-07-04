@@ -1,13 +1,47 @@
 
 import os
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from .design import DesignSpace
+
+
+class Trial:
+    def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any], jobnumber: int):
+        self._dict_input = dict_input
+        self._dict_output = dict_output
+        self._jobnumber = jobnumber
+
+    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Converts the trial to a tuple of numpy arrays.
+
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            A tuple of numpy arrays containing the input and output data.
+        """
+        return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
+
+    def get(self, key: str) -> Any:
+        # Check if key is in _dict_output but not in _dict_input
+        if key in self._dict_output and key not in self._dict_input:
+            # Raise keyerror
+            raise KeyError(f"Variable '{key}' not found in input space. You can only access "
+                           "variables that are in the input space.")
+
+        return self._dict_input[key]
+
+    def set(self, key: str, value: Any) -> None:
+        # Check if key is in the _dict_input
+        if key not in self._dict_output and key in self._dict_input:
+            raise KeyError(f"Variable '{key}' not found in output space. You can only set "
+                           "variables that are in the output space.")
+
+        self._dict_output[key] = value
 
 
 class _Data:
@@ -115,20 +149,6 @@ class _Data:
 
         self.data.to_csv(filename)
 
-        # if os.name == 'nt':  # Windows
-        #     # Open the data.csv file with a lock
-        #     with open(filename, 'w') as f:
-        #         msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-        #         self.data.to_csv(filename)
-        #         msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-
-        # else:  # Unix
-        #     # Open the data.csv file with a lock
-        #     with open(filename, 'w') as f:
-        #         fcntl.flock(f, fcntl.LOCK_EX)
-        #         self.data.to_csv(filename)
-        #         fcntl.flock(f, fcntl.LOCK_UN)
-
     def select(self, indices: List[int]):
         self.data = self.data.loc[indices]
 
@@ -152,7 +172,11 @@ class _Data:
     def add_output(self, output: np.ndarray, label: str = "y"):
         self.data[("output", label)] = output
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None]):
+
+        if output is None:
+            output = np.nan * np.ones((input.shape[0], len(self.data['output'].columns)))
+
         df = pd.DataFrame(np.hstack((input, output)),
                           columns=self.data.columns)
         self.add(df)
@@ -168,6 +192,13 @@ class _Data:
 
     def get_outputdata_dict(self, index: int) -> Dict[str, Any]:
         return self.data['output'].loc[index].to_dict()
+
+    def get_trial(self, index: int) -> Trial:
+        return Trial(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
+
+    def set_trial(self, trial: Trial) -> None:
+        for column, value in trial._dict_output.items():
+            self.data.loc[trial._jobnumber, ('output', column)] = value
 
     def set_inputdata(self, index: int, value: Any, column: str = 'input'):
         # check if the index exists

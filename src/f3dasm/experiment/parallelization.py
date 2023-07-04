@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, Iterator, List, Protocol, Tuple
 from pathos.helpers import mp
 
 # Local
+from .._logging import logger
 from ..design._jobqueue import NoOpenJobsError
 
 #                                                          Authorship & Credits
@@ -22,30 +23,48 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-# class NoOpenJobsError(Exception):
-#     ...
+class Trial(Protocol):
+    @property
+    def _jobnumber(self) -> int:
+        ...
+
+    @property
+    def _dict_input(self) -> Dict[str, Any]:
+        ...
+
+    @property
+    def _dict_output(self) -> Dict[str, Any]:
+        ...
 
 
 class ExperimentData(Protocol):
+
+    @property
+    def filename(self) -> str:
+        ...
+
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         ...
 
-    def access_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
-        ...
-
-    def set_outputdata_by_index(self, index: int, value: Any) -> None:
+    def access_open_job_data(self) -> Trial:
         ...
 
     def write_error(self, job_id: int) -> None:
         ...
 
+    def set_error(self, trial: Trial) -> None:
+        ...
+
     def store(self) -> None:
         ...
 
-    def write_outputdata_by_index(self, index: int, value: Any) -> None:
+    def get_open_job_data(self) -> Trial:
         ...
 
-    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def set_trial(self, trial: Trial) -> None:
+        ...
+
+    def write_trial(self, trial: Trial) -> None:
         ...
 
     @classmethod
@@ -113,18 +132,19 @@ def _sequential_decorator(data: ExperimentData):
         def wrapper_func(*args, **kwargs) -> ExperimentData:
             while True:
                 try:
-                    job_id, value_input, _ = data.access_open_job_data()
+                    trial = data.access_open_job_data()
                 except NoOpenJobsError:
                     break
 
                 try:
-                    result = operation(value_input, **kwargs)  # no *args!
+                    _trial = operation(trial, **kwargs)  # no *args!
                 except Exception:
-                    data.write_error(job_id)
+                    data.set_error(trial._jobnumber)
 
-                data.set_outputdata_by_index(job_id, result)
+                data.set_trial(_trial)
 
             return data
+        wrapper_func.original_function = operation  # Add attribute to store the original unwrapped function
         return wrapper_func
     return decorator_func
 
@@ -135,13 +155,12 @@ def _multiprocessing_decorator(data: ExperimentData):
         def wrapper_func(*args, **kwargs) -> ExperimentData:
 
             # Get all the jobs
-            options, job_ids = [], []
+            options = []
             while True:
                 try:
-                    job_id, value_input, _ = data.access_open_job_data()
+                    trial = data.access_open_job_data()
                     options.append(
-                        ({'value_input': value_input, **kwargs},))
-                    job_ids.append(job_id)
+                        ({'trial': trial, **kwargs},))
                 except NoOpenJobsError:
                     break
 
@@ -150,13 +169,13 @@ def _multiprocessing_decorator(data: ExperimentData):
 
                 with mp.Pool() as pool:
                     # maybe implement pool.starmap_async ?
-                    results = pool.starmap(f, options)
+                    _trials: List[Trial] = pool.starmap(f, options)
 
-                for index, result in enumerate(results):
-                    data.set_outputdata_by_index(
-                        job_ids[index], result)
+                for _trial in _trials:
+                    data.set_trial(_trial)
 
             return data
+        wrapper_func.original_function = operation  # Add attribute to store the original unwrapped function
         return wrapper_func
     return decorator_func
 
@@ -168,24 +187,25 @@ def cluster_decorator(data: ExperimentData):
 
             # Retrieve the updated experimentdata object from disc
             try:
-                _data = ExperimentData.from_file(data.filename)
+                _data = data.from_file(data.filename)
             except FileNotFoundError:  # If not found, store current
                 data.store()
-                _data = ExperimentData.from_file(data.filename)
+                _data = data.from_file(data.filename)
 
             while True:
                 try:
-                    job_id, value_input, _ = _data.get_open_job_data()
+                    trial = _data.get_open_job_data()
                 except NoOpenJobsError:
                     break
 
                 try:
-                    result = operation(value_input, **kwargs)
+                    _trial = operation(trial, **kwargs)
                 except Exception:
-                    _data.write_error(job_id)
+                    _data.write_error(_trial._jobnumber)
 
-                _data.write_outputdata_by_index(job_id, result)
+                _data.write_trial(trial)
 
             return _data
+        wrapper_func.original_function = operation  # Add attribute to store the original unwrapped function
         return wrapper_func
     return decorator_func
