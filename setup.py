@@ -1,4 +1,3 @@
-from itertools import chain
 from pathlib import Path
 from typing import List
 
@@ -6,8 +5,7 @@ from setuptools import find_packages, setup
 
 here = Path(__file__).absolute().parent
 
-# version
-# version = here.joinpath("src", "f3dasm", "VERSION").read_text().strip()
+# Version
 version = '1.2.0'
 
 # Get the long description from the README file
@@ -23,24 +21,8 @@ def read_requirements(file: Path) -> List[str]:
     return requirements
 
 
-REQUIREMENTS_SAMPLING = read_requirements(Path('requirements', 'sampling.txt'))
-REQUIREMENTS_MACHINELEARNING = read_requirements(Path('requirements', 'machinelearning.txt'))
-REQUIREMENTS_OPTIMIZATION = read_requirements(Path('requirements', 'optimization.txt'))
-
 install_requires = read_requirements(Path('requirements.txt'))
-extras_require = {"sampling": REQUIREMENTS_SAMPLING,
-                  "machinelearning": REQUIREMENTS_MACHINELEARNING,
-                  "optimization": REQUIREMENTS_OPTIMIZATION,
-                  }
 
-# for the brave of heart
-extras_require["all"] = list(set(sum([*extras_require.values()], [])))
-
-# for the developers
-extras_require["dev"] = list(chain(extras_require["all"],
-                                   read_requirements(Path('docs', 'requirements.txt')),
-                                   read_requirements(Path('tests', 'requirements.txt')),
-                                   ["flake8"]))
 setup(
     name="f3dasm",
     version=version,
@@ -71,7 +53,6 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ],
-    extras_require=extras_require,
     keywords="data-driven materials framework, machine learning",
     install_requires=install_requires,
     package_dir={'': "src"},

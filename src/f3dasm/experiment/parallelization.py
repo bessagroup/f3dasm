@@ -25,7 +25,7 @@ __status__ = 'Stable'
 
 class Trial(Protocol):
     @property
-    def _jobnumber(self) -> int:
+    def job_number(self) -> int:
         ...
 
     @property
@@ -139,7 +139,7 @@ def _sequential_decorator(data: ExperimentData):
                 try:
                     _trial = operation(trial, **kwargs)  # no *args!
                 except Exception:
-                    data.set_error(trial._jobnumber)
+                    data.set_error(trial.job_number)
 
                 data.set_trial(_trial)
 

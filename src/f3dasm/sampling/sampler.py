@@ -9,7 +9,7 @@ from typing import Any, List, Union
 import numpy as np
 import pandas as pd
 from hydra.utils import instantiate
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 
 # Locals
 from ..design.design import DesignSpace

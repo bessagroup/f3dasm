@@ -21,9 +21,6 @@ from functools import partial, wraps
 from time import perf_counter
 from typing import Any, Callable
 
-# Local
-from ._show_versions import __version__
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -111,50 +108,6 @@ def _unlock_file(file):
         fcntl.flock(file, fcntl.LOCK_UN)
 
 
-def create_logger(name: str, level: int = logging.INFO, filename: str = None) -> logging.Logger:
-    """Create a logger
-
-    Parameters
-    ----------
-    name : str
-        Name of the logger
-    level : int, optional
-        Logging level, by default logging.INFO
-    filename : str, optional
-        Filename of the log file, by default None
-
-    Returns
-    -------
-    logging.Logger
-        The created logger
-    """
-
-    # Create a logger
-    logger = logging.getLogger(name)
-
-    # Set the logging level
-    logger.setLevel(level)
-
-    # Create a file handler
-    if filename is None:
-        filename = f"{name}.log"
-
-    # Check if file ends with .log
-    if not filename.endswith(".log"):
-        filename += ".log"
-
-    handler = DistributedFileHandler(filename)
-
-    # Create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-
-    # Add the handlers to the logger
-    logger.addHandler(handler)
-
-    return logger
-
-
 def _time_and_log(
     func: Callable, logger=logging.Logger
 ) -> Callable:
@@ -171,6 +124,3 @@ def _time_and_log(
 # Create a logger
 logger = logging.getLogger("f3dasm")
 time_and_log = partial(_time_and_log, logger=logger)
-
-# Log welcome message and the version of f3dasm
-logger.info(f"Imported f3dasm (version: {__version__})")

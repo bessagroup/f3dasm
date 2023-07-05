@@ -1,8 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
-from .._logging import logger, time_and_log
-
+from .._logging import time_and_log
+from ..design._data import Trial
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
@@ -15,6 +15,9 @@ __status__ = "Alpha"
 
 class Simulator:
     """Base class for a FEM simulator"""
+    def __init__(self, trial: Trial, **kwargs):
+        self.trial = trial
+        self.kwargs = kwargs
 
     def pre_process(self) -> None:
         """Function that handles the pre-processing"""

@@ -26,6 +26,21 @@ class Trial:
         """
         return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
 
+    @property
+    def input_data(self) -> Dict[str, Any]:
+        """Retrieve the input data of the trial as a dictionary."""
+        return self._dict_input
+
+    @property
+    def output_data(self) -> Dict[str, Any]:
+        """Retrive the output data of the trial as a dictionary."""
+        return self._dict_output
+
+    @property
+    def job_number(self) -> int:
+        """Retrieve the job number of the trial."""
+        return self._jobnumber
+
     def get(self, key: str) -> Any:
         # Check if key is in _dict_output but not in _dict_input
         if key in self._dict_output and key not in self._dict_input:
