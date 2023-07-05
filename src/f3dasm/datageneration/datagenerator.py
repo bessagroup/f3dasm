@@ -1,8 +1,9 @@
 #                                                                       Modules
 # =============================================================================
 
-from .._logging import time_and_log
 from ..design._data import Trial
+from ..logger import time_and_log
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
@@ -13,8 +14,9 @@ __status__ = "Alpha"
 # =============================================================================
 
 
-class Simulator:
-    """Base class for a FEM simulator"""
+class DataGenerator:
+    """Base class for a data generator"""
+
     def __init__(self, trial: Trial, **kwargs):
         self.trial = trial
         self.kwargs = kwargs

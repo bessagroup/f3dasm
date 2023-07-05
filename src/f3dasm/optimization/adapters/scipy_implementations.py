@@ -6,7 +6,7 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from .._protocol import Function
+from ...datageneration.functions import Function
 from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -19,7 +19,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class SciPyOptimizer(Optimizer):
+class _SciPyOptimizer(Optimizer):
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.x_new.append(xk.tolist())
 
@@ -97,7 +97,7 @@ class SciPyOptimizer(Optimizer):
         self.add_iteration_to_data(x=self.x_new, y=_y)
 
 
-class SciPyMinimizeOptimizer(SciPyOptimizer):
+class _SciPyMinimizeOptimizer(_SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function):
         """Run the algorithm for a number of iterations
 

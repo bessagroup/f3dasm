@@ -3,7 +3,7 @@ import pytest
 
 from f3dasm import make_nd_continuous_design
 from f3dasm.design.design import DesignSpace
-from f3dasm.functions import Ackley, Function
+from f3dasm.datageneration.functions import Ackley, Function
 from f3dasm.optimization import Optimizer, RandomSearch
 from f3dasm.run_optimization import (OptimizationResult,
                                      run_multiple_realizations)

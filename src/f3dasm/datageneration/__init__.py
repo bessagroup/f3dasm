@@ -1,27 +1,23 @@
-"""
-Some API information about the opitmizers
-"""
+
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-import sys
-from itertools import chain
-from os import path
 from typing import List
 
 # Local
 from .._imports import try_import
-from .cg import CG, CG_Parameters
-from .lbfgsb import LBFGSB, LBFGSB_Parameters
-from .neldermead import NelderMead, NelderMead_Parameters
-from .optimizer import Optimizer
-from .randomsearch import RandomSearch, RandomSearch_Parameters
+from . import abaqus
+from .datagenerator import DataGenerator
+from .functions import pybenchfunction
+from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,
+                                           Scale)
+from .functions.function import Function
+from .functions.pybenchfunction import *
 
 # Try importing f3dasm_optimize package
-with try_import('f3dasm_optimize') as _imports:
-    import f3dasm_optimize
-
+with try_import('f3dasm_simulate') as _imports:
+    import f3dasm_simulate
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,23 +29,19 @@ __status__ = 'Stable'
 # =============================================================================
 
 # List of available optimizers
-OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
-
+DATAGENERATORS: List[DataGenerator] = []
 
 __all__ = [
-    'CG',
-    'CG_Parameters',
-    'LBFGSB',
-    'LBFGSB_Parameters',
-    'NelderMead',
-    'NelderMead_Parameters',
-    'Optimizer',
-    'RandomSearch',
-    'RandomSearch_Parameters',
-    'OPTIMIZERS'
+    'DataGenerator',
+    'Function',
+    'FunctionAugmentor',
+    'Noise',
+    'Offset',
+    'Scale',
+    *pybenchfunction.__all__
 ]
 
 # Add the optimizers from f3dasm_optimize if applicable
 if _imports.is_successful():
-    OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
-    __all__.extend(f3dasm_optimize.__all__)
+    DATAGENERATORS.extend(f3dasm_simulate.DATAGENERATORS)
+    __all__.extend(f3dasm_simulate.__all__)

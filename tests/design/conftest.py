@@ -1,5 +1,7 @@
+import pandas as pd
 import pytest
 
+from f3dasm.design._jobqueue import _JobQueue
 from f3dasm.design.design import DesignSpace
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
@@ -56,3 +58,11 @@ def discrete_parameter():
 def categorical_parameter():
     categories = ["test1", "test2", "test3"]
     return CategoricalParameter(categories=categories)
+
+
+@pytest.fixture(scope="package")
+def trial_data():
+    dict_input = {'input1': 1, 'input2': 2}
+    dict_output = {'output1': 3, 'output2': 4}
+    job_number = 123
+    return dict_input, dict_output, job_number

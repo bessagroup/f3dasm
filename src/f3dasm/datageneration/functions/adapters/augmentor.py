@@ -2,7 +2,7 @@
 # =============================================================================
 
 # Standard
-from abc import ABC
+from abc import ABC, abstractmethod
 from copy import copy
 from typing import List
 
@@ -19,11 +19,11 @@ __status__ = 'Alpha'
 # =============================================================================
 
 
-class Augmentor(ABC):
+class _Augmentor(ABC):
     """
     Base class for operations that augment an loss-funciton
     """
-
+    @abstractmethod
     def augment(self, input: np.ndarray) -> np.ndarray:
         """Stub function to augment the input of a function
 
@@ -38,6 +38,7 @@ class Augmentor(ABC):
         """
         ...
 
+    @abstractmethod
     def reverse_augment(self, output: np.ndarray) -> np.ndarray:
         """Stub function to reverse the augmented input
 
@@ -53,7 +54,7 @@ class Augmentor(ABC):
         ...
 
 
-class Noise(Augmentor):
+class Noise(_Augmentor):
     def __init__(self, noise: float):
         """Augmentor class to add noise to a function output
 
@@ -83,7 +84,7 @@ class Noise(Augmentor):
         return self.augment
 
 
-class Offset(Augmentor):
+class Offset(_Augmentor):
     def __init__(self, offset: np.ndarray):
         """Augmentor class to offset the input vector of a function
 
@@ -101,7 +102,7 @@ class Offset(Augmentor):
         return output + self.offset
 
 
-class Scale(Augmentor):
+class Scale(_Augmentor):
     def __init__(self, scale_bounds: np.ndarray, input_domain: np.ndarray):
         """Augmentor class to scale the input vector of a function to some bounds
 
@@ -130,7 +131,7 @@ class FunctionAugmentor:
         output_augmentors (List[Augmentor]): list of output augmentors
     """
 
-    def __init__(self, input_augmentors: List[Augmentor] = None, output_augmentors: List[Augmentor] = None):
+    def __init__(self, input_augmentors: List[_Augmentor] = None, output_augmentors: List[_Augmentor] = None):
         """Combination of augmentors that can change the input and output of an objective function
 
         Parameters
@@ -143,7 +144,7 @@ class FunctionAugmentor:
         self.input_augmentors = [] if input_augmentors is None else input_augmentors
         self.output_augmentors = [] if output_augmentors is None else output_augmentors
 
-    def add_input_augmentor(self, augmentor: Augmentor) -> None:
+    def add_input_augmentor(self, augmentor: _Augmentor) -> None:
         """Add an input augmentor
 
         Parameters
@@ -153,7 +154,7 @@ class FunctionAugmentor:
         """
         self.input_augmentors.append(augmentor)
 
-    def insert_input_augmentor(self, augmentor: Augmentor, position: int) -> None:
+    def insert_input_augmentor(self, augmentor: _Augmentor, position: int) -> None:
         """Insert an input augmentor at any place in the input_augmentors list
 
         Parameters
@@ -165,7 +166,7 @@ class FunctionAugmentor:
         """
         self.input_augmentors.insert(position, augmentor)
 
-    def add_output_augmentor(self, augmentor: Augmentor) -> None:
+    def add_output_augmentor(self, augmentor: _Augmentor) -> None:
         """Add an output augmentor
 
         Parameters

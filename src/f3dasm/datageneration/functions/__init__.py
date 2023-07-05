@@ -10,7 +10,7 @@ from typing import List
 import numpy as np
 
 from . import pybenchfunction
-from .adapters.augmentor import *
+from .adapters.augmentor import FunctionAugmentor, Noise, Offset, Scale
 from .function import Function
 from .pybenchfunction import *
 

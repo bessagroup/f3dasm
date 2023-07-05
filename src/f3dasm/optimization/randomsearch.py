@@ -9,7 +9,7 @@ from typing import List, Tuple
 import autograd.numpy as np
 
 # Locals
-from ._protocol import Function
+from ..datageneration.functions import Function
 from .optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits

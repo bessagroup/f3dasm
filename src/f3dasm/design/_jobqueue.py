@@ -1,9 +1,23 @@
+#                                                                       Modules
+# =============================================================================
 
+# Standard
 from typing import List, Union
 
+# Third-party
 import pandas as pd
 
+# Local
 from ._data import _Data
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class NoOpenJobsError(Exception):
@@ -29,6 +43,9 @@ class _JobQueue:
         filename : str
             The name of the file that the jobs will be saved in.
         """
+        if jobs is None:
+            jobs = pd.Series(dtype='string')
+
         self.jobs: pd.Series = jobs
 
     def _repr_html_(self) -> str:
@@ -128,7 +145,7 @@ class _JobQueue:
 
     def reset(self) -> None:
         """Resets the job queue."""
-        self.jobs = pd.Series()
+        self.jobs = pd.Series(dtype='string')
 
     def get_open_job(self) -> Union[int, None]:
         """Returns the index of an open job.
@@ -139,7 +156,7 @@ class _JobQueue:
             Index of an open job.
         """
         try:  # try to find an open job
-            return self.jobs[self.jobs == 'open'].index[0]
+            return int(self.jobs[self.jobs == 'open'].index[0])
         except IndexError:
             raise NoOpenJobsError("No open jobs found.")
 

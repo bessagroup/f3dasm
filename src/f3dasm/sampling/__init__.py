@@ -39,3 +39,13 @@ def find_sampler(query: str) -> Sampler:
         return list(filter(lambda parameter: parameter.__name__ == query, SAMPLERS))[0]
     except IndexError:
         return ValueError(f'Sampler {query} not found!')
+
+
+__all__ = [
+    'LatinHypercube',
+    'RandomUniform',
+    'Sampler',
+    'SobolSequence',
+    'SAMPLERS',
+    'find_sampler'
+]

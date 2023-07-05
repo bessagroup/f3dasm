@@ -10,8 +10,9 @@ from typing import Any, Callable, Dict, Iterator, List, Protocol, Tuple
 from pathos.helpers import mp
 
 # Local
-from .._logging import logger
-from ..design._jobqueue import NoOpenJobsError
+from .design import ExperimentData, Trial
+from .design._jobqueue import NoOpenJobsError
+from .logger import logger
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,55 +22,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class Trial(Protocol):
-    @property
-    def job_number(self) -> int:
-        ...
-
-    @property
-    def _dict_input(self) -> Dict[str, Any]:
-        ...
-
-    @property
-    def _dict_output(self) -> Dict[str, Any]:
-        ...
-
-
-class ExperimentData(Protocol):
-
-    @property
-    def filename(self) -> str:
-        ...
-
-    def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
-        ...
-
-    def access_open_job_data(self) -> Trial:
-        ...
-
-    def write_error(self, job_id: int) -> None:
-        ...
-
-    def set_error(self, trial: Trial) -> None:
-        ...
-
-    def store(self) -> None:
-        ...
-
-    def get_open_job_data(self) -> Trial:
-        ...
-
-    def set_trial(self, trial: Trial) -> None:
-        ...
-
-    def write_trial(self, trial: Trial) -> None:
-        ...
-
-    @classmethod
-    def from_file(cls, filename: str) -> 'ExperimentData':
-        ...
 
 
 def run_operation_on_experiments(data: ExperimentData, operation: Callable,

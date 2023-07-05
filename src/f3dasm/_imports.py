@@ -116,33 +116,3 @@ def try_import(extension_name: Union[str, None] = None) -> _DeferredImportExcept
 
     """
     return _DeferredImportExceptionContextManager(extension_name=extension_name)
-
-
-class _IntegrationModule(ModuleType):
-    """Module class that implements `optuna.integration` package.
-
-    This class applies lazy import under `optuna.integration`, where submodules are imported
-    when they are actually accessed. Otherwise, `import optuna` becomes much slower because it
-    imports all submodules and their dependencies (e.g., chainer, keras, lightgbm) all at once.
-    """
-
-    def __getattr__(self, name: str) -> Any:
-        self._modules = set(self._import_structure.keys())
-        self._class_to_module = {}
-        for key, values in self._import_structure.items():
-            for value in values:
-                self._class_to_module[value] = key
-
-        if name in self._modules:
-            value = self._get_module(name)
-        elif name in self._class_to_module.keys():
-            module = self._get_module(self._class_to_module[name])
-            value = getattr(module, name)
-        else:
-            raise AttributeError(f"module {self.__name__} has no attribute {name}")
-
-        setattr(self, name, value)
-        return value
-
-    def _get_module(self, module_name: str) -> ModuleType:
-        return importlib.import_module("." + module_name, self.__name__)

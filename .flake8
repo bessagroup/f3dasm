@@ -16,10 +16,8 @@ extend-exclude =
     data,
 	*.egg,
 	docs,
-	notebooks,
 	tests
 	.git
-	src/f3dasm/simulation/abaqus_script/
 	studies
 
 # <<< UPDATE ACCORDING WITH YOUR PYTHON PROJECT
@@ -49,7 +47,7 @@ max-complexity = 15
 # E226: Missing whitespace around arithmetic operator
 #       Remark: Flake8 does not distinguish +, - from *, /, ** cases yet.
 # MvdS: I added F841: local variable is assigned to but never used
-# Mvds: I added F401 and F403 related to stsar imports
+# Mvds: I added F401 and F403 related to star imports
 extend-ignore = E226, E3, F841, F401, F403
 
 # List of (additional) error codes to check:

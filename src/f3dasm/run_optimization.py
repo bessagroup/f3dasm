@@ -14,14 +14,14 @@ import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer, find_optimizer
+from f3dasm.optimization import Optimizer
 from f3dasm.sampling import Sampler
 
-from ._logging import logger, time_and_log
 # Locals
 from .design import ExperimentData
-from .functions import create_function_from_json
-from .functions.function import Function
+from .datageneration.functions import create_function_from_json
+from .datageneration.functions.function import Function
+from .logger import logger, time_and_log
 
 #                                                          Authorship & Credits
 # =============================================================================

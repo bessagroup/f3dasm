@@ -14,21 +14,16 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 #                                                                       Modules
 # =============================================================================
 
-from f3dasm import (design, experiment, functions, machinelearning,
-                    optimization, sampling, simulation)
-
-from ._logging import DistributedFileHandler, logger
-# Design classes
+from . import datageneration, design, machinelearning, optimization, sampling
+from .datageneration.functions.function import Function
 from .design.design import DesignSpace, make_nd_continuous_design
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
-from .experiment.parallelization import (run_on_experimentdata,
-                                         run_operation_on_experiments)
-# Base classes
-from .functions.function import Function
-from .machinelearning.model import Model
+from .logger import DistributedFileHandler, logger
 from .optimization.optimizer import Optimizer
+from .parallelization import (run_on_experimentdata,
+                              run_operation_on_experiments)
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
                                run_optimization)
 from .sampling.sampler import Sampler
@@ -45,3 +40,28 @@ __version__ = '1.2.0'
 
 # Log welcome message and the version of f3dasm
 logger.info(f"Imported f3dasm (version: {__version__})")
+
+__all__ = [
+    'datageneration',
+    'design',
+    'machinelearning',
+    'optimization',
+    'sampling',
+    'Function',
+    'DesignSpace',
+    'make_nd_continuous_design',
+    'ExperimentData',
+    'CategoricalParameter',
+    'ConstantParameter',
+    'ContinuousParameter',
+    'DiscreteParameter',
+    'DistributedFileHandler',
+    'logger',
+    'Optimizer',
+    'run_on_experimentdata',
+    'run_operation_on_experiments',
+    'OptimizationResult',
+    'run_multiple_realizations',
+    'run_optimization',
+    'Sampler'
+]

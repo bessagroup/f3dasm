@@ -10,9 +10,9 @@ from typing import Any, List, Mapping, Optional, Tuple
 # Third-party core
 import numpy as np
 
+from ..datageneration.functions.function import Function
 # Locals
 from ..design.experimentdata import ExperimentData
-from ..functions.function import Function
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -4,9 +4,9 @@
 # Local
 from .design import DesignSpace, make_nd_continuous_design
 from .experimentdata import ExperimentData
-from .parameter import (CategoricalParameter, ConstantParameter,
-                        ContinuousParameter, DiscreteParameter, Parameter, PARAMETERS)
-
+from .parameter import (PARAMETERS, CategoricalParameter, ConstantParameter,
+                        ContinuousParameter, DiscreteParameter, Parameter)
+from .trial import Trial
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -16,3 +16,16 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+__all__ = [
+    'DesignSpace',
+    'make_nd_continuous_design',
+    'ExperimentData',
+    'PARAMETERS',
+    'CategoricalParameter',
+    'ConstantParameter',
+    'ContinuousParameter',
+    'DiscreteParameter',
+    'Parameter',
+    'Trial'
+]

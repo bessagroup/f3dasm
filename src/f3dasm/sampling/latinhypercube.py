@@ -9,7 +9,6 @@ import numpy as np
 from SALib.sample import latin
 
 # Locals
-from .._imports import try_import
 from ..design import DesignSpace
 from .sampler import Sampler
 

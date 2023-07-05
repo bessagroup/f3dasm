@@ -16,7 +16,7 @@ from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
-from .._logging import logger
+from ..logger import logger
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -30,8 +30,9 @@ import numpy as np
 import pandas as pd
 
 # Local
-from ._data import Trial, _Data
+from ._data import _Data
 from ._jobqueue import _JobQueue
+from .trial import Trial
 from .design import DesignSpace
 
 #                                                          Authorship & Credits
