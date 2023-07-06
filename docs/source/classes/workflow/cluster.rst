@@ -1,15 +1,25 @@
 High-performance computing cluster
 ----------------------------------
 
-Your `f3dasm`` workflow can be seemlessly translated to a High-performance computing cluster.
+Your `f3dasm` workflow can be seemlessly translated to a High-performance computing cluster.
+The advantage is that you can parallelize the total number of jobs among the nodes of the cluster.
+Inside the execution of a design, you can parallelize across the cores of a node.
+
+.. note::
+    Both `mode=cluster` and `mode=parallel` on the `data.run()` function cannot be used.
+    In the case of extended paralellization on cores, you have to implement this yourself.
 
 You can use the global variable `f3dasm.HPC_JOBID`` to get the job id for an arrayjob
 and use it to create a unique output directory for each job.
 
+.. note::
+    This feature is currently only supported for the TORQUE scheduler.
+
 Example of entire workflow on the HPC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This example has been tested with the hpc06 cluster of Delft University of Technology:
+This example has been tested with the hpc06 cluster of Delft University of Technology.
+In this example, we will create a design space, fill it using a sampler, and execute a data generation function on the designs.
 
 Directory Structure:
 ====================
@@ -132,7 +142,7 @@ In the main function, it creates a design space, fills the design space using a 
     # Therefore, load it from disk and run my_function on it.
     elif f3dasm.HPC_JOBID > 0:
         # Retrieve the file from disk
-        data.from_file()
+        data = f3dasm.ExperimentData.from_file()
         data.run(my_function, mode='cluster')
 
 

@@ -24,6 +24,7 @@ f3dasm
    classes/design/parameters
    classes/design/domain
    classes/design/experimentdata
+   classes/design/design
    classes/sampling/sampling
    classes/design/apidoc
 
