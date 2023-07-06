@@ -4,18 +4,10 @@ f3dasm.design package
 Submodules
 ----------
 
-f3dasm.design.constraint module
--------------------------------
-
-.. automodule:: f3dasm.design.constraint
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-f3dasm.design.design module
+f3dasm.design.domain module
 ---------------------------
 
-.. automodule:: f3dasm.design.design
+.. automodule:: f3dasm.design.domain
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,6 +24,14 @@ f3dasm.design.parameter module
 ------------------------------
 
 .. automodule:: f3dasm.design.parameter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+f3dasm.design.trial module
+--------------------------
+
+.. automodule:: f3dasm.design.trial
    :members:
    :undoc-members:
    :show-inheritance:

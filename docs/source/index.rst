@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 f3dasm
-==================================
+======
 
 .. toctree::
    :maxdepth: 3
@@ -29,22 +29,14 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Experiment
+   :caption: Data Generation
    :hidden:
    :glob:
 
-   classes/experiment/jobs
-   classes/experiment/filehandler
-   classes/experiment/apidoc
+   classes/datageneration/datagenerator
+   classes/datageneration/functions
+   classes/datageneration/apidoc
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Simulation
-   :hidden:
-   :glob:
-
-   classes/simulation/simulation
-   classes/simulation/apidoc
 
 .. toctree::
    :maxdepth: 2
@@ -52,9 +44,6 @@ f3dasm
    :hidden:
    :glob:
 
-
-   classes/machinelearning/models
-   classes/machinelearning/learningdata
    classes/machinelearning/apidoc
 
 .. toctree::
@@ -68,15 +57,13 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Miscellaneous
+   :caption: Workflow execution
    :hidden:
    :glob:
 
-   classes/miscellaneous/functions
-   classes/miscellaneous/augmentor
-   classes/miscellaneous/utilities
-   examples/code_release_week
-   examples/benchmarkoptimization
+   classes/workflow/parallelization
+   classes/workflow/hydra
+   classes/workflow/apidoc
 
 .. include:: readme.rst
 

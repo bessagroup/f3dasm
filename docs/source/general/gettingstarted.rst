@@ -145,10 +145,9 @@ Building from source is required to work on a contribution (bug fix, new feature
 
   .. code-block:: console
 
-     $ python -c "import f3dasm; f3dasm.show_versions()"
-     >>> F3DASM:
-     >>>    f3dasm: 0.2.92
-     >>>    ...
+     $ python -c "import f3dasm"
+     >>> 2023-07-05 14:56:40,015 - Imported f3dasm (version: 1.x.x)
+
 
 
 .. note::

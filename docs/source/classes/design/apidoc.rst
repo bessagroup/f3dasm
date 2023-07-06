@@ -12,7 +12,7 @@ Parameters
 Design
 ^^^^^^
 
-.. automodule:: f3dasm.design.design
+.. automodule:: f3dasm.design.domain
    :members:
    :noindex:
    :show-inheritance:
@@ -25,6 +25,16 @@ Experiment data
    :noindex:
    :undoc-members:
    :show-inheritance:
+
+Design
+^^^^^^
+
+.. automodule:: f3dasm.design.trial
+   :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
+
 
 Sampling
 ^^^^^^^^
