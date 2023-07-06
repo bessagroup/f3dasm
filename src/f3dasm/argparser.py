@@ -1,13 +1,21 @@
 import argparse
 
+
+class DoublePlusPrefixAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+
+
+parser = argparse.ArgumentParser()
+
 # Argparse jobid if applicable
 
 
 # Create an ArgumentParser object
 parser = argparse.ArgumentParser()
 
-# Add the --hpc-jobid flag with a default value
-parser.add_argument("++jobid", type=int, default=None, help="The PBS job ID for HPC")
+# Option with ++ prefix
+parser.add_argument('++jobid', type=int, action=DoublePlusPrefixAction, help='The PBS job ID for HPC', default=None)
 
 # Parse the command-line arguments
 args = parser.parse_args()
