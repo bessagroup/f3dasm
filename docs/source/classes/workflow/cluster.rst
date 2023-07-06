@@ -1,14 +1,15 @@
 High-performance computing cluster
 ----------------------------------
 
-Your f3dasm workflow can be seemlessly translated to a High-performance computing cluster.
-
+Your `f3dasm`` workflow can be seemlessly translated to a High-performance computing cluster.
 
 You can use the global variable `f3dasm.HPC_JOBID`` to get the job id for an arrayjob
 and use it to create a unique output directory for each job.
 
 Example of entire workflow on the HPC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This example has been tested with the hpc06 cluster of Delft University of Technology:
 
 Directory Structure:
 ====================
@@ -145,7 +146,6 @@ Run the program
 You can run the workflow by submitting the TORQUE file to the HPC queue:
 
 .. code-block:: bash
-   :caption: Submitting the TORQUE file to the HPC queue
 
     qsub pbsjob.sh -t 0-3
 
