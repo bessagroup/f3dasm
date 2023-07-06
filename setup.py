@@ -46,6 +46,7 @@ setup(
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -56,6 +57,6 @@ setup(
     keywords="data-driven materials framework, machine learning",
     install_requires=install_requires,
     package_dir={'': "src"},
-    python_requires=">=3.8, <3.11",
+    python_requires=">=3.7, <3.11",
     packages=find_packages("src", exclude=["docs", "tests"]),
 )

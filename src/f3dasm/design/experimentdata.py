@@ -6,12 +6,18 @@ import errno
 import functools
 import json
 import os
+import sys
 from copy import deepcopy
 from io import TextIOWrapper
 from pathlib import Path
 from time import sleep
-from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
-                    Union)
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
+
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
