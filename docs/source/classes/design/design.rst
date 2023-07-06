@@ -5,6 +5,7 @@ Each set of input and output parameters in the ExperimentData class is called a 
 The `Design` can be used in your own scripts and function to specify the design variables.
 
 .. code-block:: python
+    
    from f3dasm import Design
 
     def my_function(design: Design):
