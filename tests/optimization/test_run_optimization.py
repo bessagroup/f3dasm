@@ -1,3 +1,4 @@
+import os
 from random import Random
 
 import numpy as np
@@ -37,12 +38,19 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
     opt = optimizer(data=data)
     sampler = RandomUniform(design=design)
 
+    # Check if os is windows
+    if os.name == 'nt':
+        PARALLELIZATION = False
+    else:
+        PARALLELIZATION = True
+
     res = run_multiple_realizations(
         optimizer=opt,
         function=func,
         sampler=sampler,
         iterations=iterations,
         realizations=realizations,
+        parallelization=PARALLELIZATION,
     )
 
 
