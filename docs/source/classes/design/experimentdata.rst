@@ -1,2 +1,2 @@
-Experiment data
+Experiment Data
 ===============

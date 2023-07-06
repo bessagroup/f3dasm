@@ -9,7 +9,7 @@ Parameters
    :noindex:
    :show-inheritance:
 
-Design
+Domain
 ^^^^^^
 
 .. automodule:: f3dasm.design.domain
@@ -17,7 +17,7 @@ Design
    :noindex:
    :show-inheritance:
 
-Experiment data
+ExperimentData
 ^^^^^^^^^^^^^^^
 
 .. automodule:: f3dasm.design.experimentdata
@@ -29,7 +29,7 @@ Experiment data
 Design
 ^^^^^^
 
-.. automodule:: f3dasm.design.trial
+.. automodule:: f3dasm.design.design
    :members:
    :noindex:
    :undoc-members:

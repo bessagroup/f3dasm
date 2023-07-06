@@ -24,14 +24,6 @@ f3dasm.logger module
    :undoc-members:
    :show-inheritance:
 
-f3dasm.parallelization module
------------------------------
-
-.. automodule:: f3dasm.parallelization
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 f3dasm.run\_optimization module
 -------------------------------
 

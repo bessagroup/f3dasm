@@ -17,19 +17,19 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Design & Sampling
+   :caption: 1. Design of Experiments
    :hidden:
    :glob:
 
    classes/design/parameters
-   classes/design/design
+   classes/design/domain
    classes/design/experimentdata
    classes/sampling/sampling
    classes/design/apidoc
 
 .. toctree::
    :maxdepth: 2
-   :caption: Data Generation
+   :caption: 2. Data Generation
    :hidden:
    :glob:
 
@@ -40,7 +40,7 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Machine Learning
+   :caption: 3. Machine Learning
    :hidden:
    :glob:
 
@@ -48,7 +48,7 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Optimization
+   :caption: 4. Optimization
    :hidden:
    :glob:
 
@@ -61,9 +61,9 @@ f3dasm
    :hidden:
    :glob:
 
-   classes/workflow/parallelization
+   classes/workflow/workflow
+   classes/workflow/cluster
    classes/workflow/hydra
-   classes/workflow/apidoc
 
 .. include:: readme.rst
 
