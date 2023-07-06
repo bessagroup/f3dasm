@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from f3dasm.design._jobqueue import _JobQueue
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
 
@@ -20,7 +20,7 @@ def doe():
     designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
     output_space = {'y1': y1, 'y2': y2}
 
-    doe = DesignSpace(input_space=designspace, output_space=output_space)
+    doe = Domain(input_space=designspace, output_space=output_space)
     return doe
 
 
@@ -37,7 +37,7 @@ def design_space():
         'y': ContinuousParameter(-10.0, 10.0)
     }
 
-    return DesignSpace(input_space=input_space, output_space=output_space)
+    return Domain(input_space=input_space, output_space=output_space)
 
 
 @pytest.fixture(scope="package")
@@ -61,7 +61,7 @@ def categorical_parameter():
 
 
 @pytest.fixture(scope="package")
-def trial_data():
+def design_data():
     dict_input = {'input1': 1, 'input2': 2}
     dict_output = {'output1': 3, 'output2': 4}
     job_number = 123

@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 
 # Local
-from .design import DesignSpace
-from .trial import Trial
+from .domain import Domain
+from .design import Design
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -51,7 +51,7 @@ class _Data:
         return self.data._repr_html_()
 
     @classmethod
-    def from_design(cls, design: DesignSpace) -> '_Data':
+    def from_design(cls, design: Domain) -> '_Data':
         # input columns
         input_columns = [("input", name) for name, parameter in design.input_space.items()]
 
@@ -101,7 +101,7 @@ class _Data:
 
         return cls(pd.read_csv(file, header=[0, 1], index_col=0))
 
-    def reset(self, design: DesignSpace):
+    def reset(self, design: Domain):
         """Resets the data to the initial state.
 
         Parameters
@@ -174,12 +174,12 @@ class _Data:
     def get_outputdata_dict(self, index: int) -> Dict[str, Any]:
         return self.data['output'].loc[index].to_dict()
 
-    def get_trial(self, index: int) -> Trial:
-        return Trial(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
+    def get_design(self, index: int) -> Design:
+        return Design(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
 
-    def set_trial(self, trial: Trial) -> None:
-        for column, value in trial._dict_output.items():
-            self.data.loc[trial._jobnumber, ('output', column)] = value
+    def set_design(self, design: Design) -> None:
+        for column, value in design._dict_output.items():
+            self.data.loc[design._jobnumber, ('output', column)] = value
 
     def set_inputdata(self, index: int, value: Any, column: str = 'input'):
         # check if the index exists

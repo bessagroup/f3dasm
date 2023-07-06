@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design._data import Trial, _Data
-from f3dasm.design.design import DesignSpace
+from f3dasm.design._data import Design, _Data
+from f3dasm.design.domain import Domain
 
 pytestmark = pytest.mark.smoke
+
 
 @pytest.fixture
 def sample_data():
@@ -40,7 +41,7 @@ def test_data_from_design(design_space):
 
 def test_data_reset(sample_data):
     # Assuming you have a DesignSpace object named "design"
-    design = DesignSpace()
+    design = Domain()
     sample_data.reset(design)
     assert isinstance(sample_data.data, pd.DataFrame)
     assert len(sample_data) == 0
@@ -91,16 +92,16 @@ def test_data_get_outputdata_dict(sample_data):
     assert output_dict == {'output1': 7, 'output2': 10}
 
 
-def test_data_get_trial(sample_data):
+def test_data_get_design(sample_data):
     index = 0
-    trial = sample_data.get_trial(index)
-    assert isinstance(trial, Trial)
-    assert trial.job_number == index
+    design = sample_data.get_design(index)
+    assert isinstance(design, Design)
+    assert design.job_number == index
 
 
-def test_data_set_trial(sample_data):
-    trial = Trial({'input1': 1, 'input2': 4}, {'output1': 7, 'output2': 10}, 0)
-    sample_data.set_trial(trial)
+def test_data_set_design(sample_data):
+    design = Design({'input1': 1, 'input2': 4}, {'output1': 7, 'output2': 10}, 0)
+    sample_data.set_design(design)
     assert sample_data.data.loc[0, ('output', 'output1')] == 7
     assert sample_data.data.loc[0, ('output', 'output2')] == 10
 

@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from f3dasm import make_nd_continuous_design
-from f3dasm.design.design import DesignSpace
+from f3dasm import make_nd_continuous_domain
 from f3dasm.datageneration.functions import Ackley, Function
+from f3dasm.design.domain import Domain
 from f3dasm.optimization import Optimizer, RandomSearch
 from f3dasm.run_optimization import (OptimizationResult,
                                      run_multiple_realizations)
@@ -14,22 +14,22 @@ DIMENSIONALITY = 5
 
 
 @pytest.fixture(scope="package")
-def design() -> DesignSpace:
-    return make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (DIMENSIONALITY, 1)), dimensionality=DIMENSIONALITY)
+def design() -> Domain:
+    return make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (DIMENSIONALITY, 1)), dimensionality=DIMENSIONALITY)
 
 
 @pytest.fixture(scope="package")
-def design_7d() -> DesignSpace:
-    return make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (7, 1)), dimensionality=7)
+def design_7d() -> Domain:
+    return make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (7, 1)), dimensionality=7)
 
 
 @pytest.fixture(scope="package")
-def sampler(design: DesignSpace) -> Sampler:
+def sampler(design: Domain) -> Sampler:
     return LatinHypercube(design=design, seed=SEED)
 
 
 @pytest.fixture(scope="package")
-def function(design: DesignSpace) -> Function:
+def function(design: Domain) -> Function:
     return Ackley(dimensionality=DIMENSIONALITY, scale_bounds=design.get_bounds(), seed=SEED)
 
 

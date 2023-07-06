@@ -9,7 +9,7 @@ import numpy as np
 from SALib.sample import sobol_sequence
 
 # Locals
-from ..design import DesignSpace
+from ..design import Domain
 from .sampler import Sampler
 
 #                                                          Authorship & Credits

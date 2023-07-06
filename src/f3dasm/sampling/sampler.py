@@ -12,7 +12,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 # Locals
-from ..design.design import DesignSpace
+from ..design.domain import Domain
 from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
@@ -36,7 +36,7 @@ class Sampler:
         seed for sampling
     """
 
-    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None, number_of_samples: int = None):
+    def __init__(self, design: Domain, seed: Union[Any, int] = None, number_of_samples: int = None):
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples
@@ -55,7 +55,7 @@ class Sampler:
 
         args = {**config.sampler, 'design': None}
         sampler: Sampler = instantiate(args)
-        sampler.design = DesignSpace.from_yaml(config.design)
+        sampler.design = Domain.from_yaml(config.design)
         return sampler
 
     def to_json(self):
@@ -140,7 +140,7 @@ class Sampler:
         data = ExperimentData(design=self.design)
 
         # First get an empty reference frame from the DoE
-        empty_frame = self.design.create_empty_dataframe()
+        empty_frame = self.design._create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)

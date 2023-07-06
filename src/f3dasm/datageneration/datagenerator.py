@@ -1,7 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
-from ..design._data import Trial
+from ..design._data import Design
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -17,8 +17,8 @@ __status__ = "Alpha"
 class DataGenerator:
     """Base class for a data generator"""
 
-    def __init__(self, trial: Trial, **kwargs):
-        self.trial = trial
+    def __init__(self, design: Design, **kwargs):
+        self.design = design
         self.kwargs = kwargs
 
     def pre_process(self) -> None:

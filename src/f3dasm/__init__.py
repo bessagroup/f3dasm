@@ -15,15 +15,15 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 # =============================================================================
 
 from . import datageneration, design, machinelearning, optimization, sampling
+from .argparser import HPC_JOBID
 from .datageneration.functions.function import Function
-from .design.design import DesignSpace, make_nd_continuous_design
+from .design.design import Design
+from .design.domain import Domain, make_nd_continuous_domain
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
 from .logger import DistributedFileHandler, logger
 from .optimization.optimizer import Optimizer
-from .parallelization import (run_on_experimentdata,
-                              run_operation_on_experiments)
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
                                run_optimization)
 from .sampling.sampler import Sampler
@@ -48,8 +48,8 @@ __all__ = [
     'optimization',
     'sampling',
     'Function',
-    'DesignSpace',
-    'make_nd_continuous_design',
+    'Domain',
+    'make_nd_continuous_domain',
     'ExperimentData',
     'CategoricalParameter',
     'ConstantParameter',

@@ -6,7 +6,7 @@ from hypothesis import given, settings
 from hypothesis.strategies import (SearchStrategy, composite, floats, integers,
                                    text)
 
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter, Parameter)
 
@@ -52,7 +52,7 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 
         return space
 
-    design_space = DesignSpace(
+    design_space = Domain(
         input_space=get_space(number_of_input_parameters),
         output_space=get_space(number_of_output_parameters),
     )
@@ -61,7 +61,7 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 
 @given(design_space())
 @settings(max_examples=10)
-def test_check_length_input_when_adding_parameter(design: DesignSpace):
+def test_check_length_input_when_adding_parameter(design: Domain):
     length_input_space = len(design.input_space)
     parameter = DiscreteParameter()
     design.add_input_space(name="test", space=parameter)
