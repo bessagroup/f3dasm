@@ -1,6 +1,6 @@
 import pytest
 
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
 
@@ -18,7 +18,7 @@ def design():
     }
 
     # Create the design space
-    design = DesignSpace(parameters)
+    design = Domain(parameters)
     return design
 
 
@@ -35,7 +35,7 @@ def design2():
     }
 
     # Create the design space
-    design = DesignSpace(parameters)
+    design = Domain(parameters)
     return design
 
 
@@ -51,7 +51,7 @@ def design3():
     }
 
     # Create the design space
-    design = DesignSpace(parameters)
+    design = Domain(parameters)
     return design
 
 
@@ -67,7 +67,7 @@ def design4():
     }
 
     # Create the design space
-    design = DesignSpace(parameters)
+    design = Domain(parameters)
     return design
 
 
@@ -84,5 +84,5 @@ def design5():
     }
 
     # Create the design space
-    design = DesignSpace(parameters)
+    design = Domain(parameters)
     return design

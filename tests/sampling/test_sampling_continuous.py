@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
 from f3dasm.sampling.sobolsequence import SobolSequence
@@ -14,7 +14,7 @@ pytestmark = pytest.mark.smoke
 # Random Uniform Sampling
 
 
-def test_correct_randomuniform_sampling(design3: DesignSpace):
+def test_correct_randomuniform_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler
@@ -36,7 +36,7 @@ def test_correct_randomuniform_sampling(design3: DesignSpace):
     assert samples == pytest.approx(ground_truth_samples)
 
 
-def test_correct_latinhypercube_sampling(design3: DesignSpace):
+def test_correct_latinhypercube_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler

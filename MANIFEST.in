@@ -1,7 +1,4 @@
 include README.md
+include VERSION
 include LICENSE
-include tests/*
 include requirements.txt
-include src/f3dasm/VERSION
-include docs/requirements.txt
-recursive-include requirements *

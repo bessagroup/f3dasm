@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import List
 
 # Locals
+from .adapters.scipy_implementations import _SciPyMinimizeOptimizer
 from .optimizer import OptimizerParameters
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -28,7 +28,7 @@ class NelderMead_Parameters(OptimizerParameters):
     adaptive: bool = False
 
 
-class NelderMead(SciPyMinimizeOptimizer):
+class NelderMead(_SciPyMinimizeOptimizer):
     """Nelder-Mead"""
 
     method: str = "Nelder-Mead"

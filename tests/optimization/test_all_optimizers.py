@@ -4,11 +4,12 @@ from typing import List
 import numpy as np
 import pytest
 
-from f3dasm.design import make_nd_continuous_design
+from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D, Ackley,
+                                             Levy, Sphere)
+from f3dasm.datageneration.functions.function import Function
+from f3dasm.design import make_nd_continuous_domain
 from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.functions import FUNCTIONS, FUNCTIONS_2D, Ackley, Levy, Sphere
-from f3dasm.functions.function import Function
-from f3dasm.optimization import OPTIMIZERS, Adam
+from f3dasm.optimization import OPTIMIZERS
 from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.sampling.randomuniform import RandomUniform
 
@@ -35,7 +36,7 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
             if not function.is_dim_compatible(dim):
                 dim = 2
 
-    design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    design = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
     ran_sampler = RandomUniform(design=design, seed=seed)
@@ -54,12 +55,6 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     data1 = opt1.extract_data()
     data2 = opt2.extract_data()
     assert all(data1.data.data == data2.data.data)
-
-
-@pytest.mark.parametrize("function", FUNCTIONS_2D)
-def test_plotting(function: Function):
-    f = function(dimensionality=2)
-    f.plot(px=10, show=False)
 
 
 @pytest.mark.smoke
@@ -87,7 +82,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
             if not function.is_dim_compatible(dim):
                 dim = 2
 
-    design = make_nd_continuous_design(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    design = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
     ran_sampler = RandomUniform(design=design, seed=seed)

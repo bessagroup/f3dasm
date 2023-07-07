@@ -14,14 +14,14 @@ import numpy as np
 import pandas as pd
 from pathos.helpers import mp
 
-from f3dasm.optimization import Optimizer, find_optimizer
-from f3dasm.sampling import Sampler, create_sampler_from_json
+from f3dasm.optimization import Optimizer
+from f3dasm.sampling import Sampler
 
-from ._logging import logger, time_and_log
 # Locals
 from .design import ExperimentData
-from .functions import create_function_from_json
-from .functions.function import Function
+from .datageneration.functions import create_function_from_json
+from .datageneration.functions.function import Function
+from .logger import logger, time_and_log
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -60,23 +60,6 @@ class OptimizationResult:
         self.number_of_samples = number_of_samples
         self.seeds = seeds
         self._log()
-
-    @classmethod
-    def from_json(cls: Type['OptimizationResult'], json_string: str) -> 'OptimizationResult':
-        optimizationresult_dict = json.loads(json_string)
-        return cls.from_dict(optimizationresult_dict)
-
-    @classmethod
-    def from_dict(cls: Type['OptimizationResult'], optimizationresult_dict: dict) -> 'OptimizationResult':
-        args = {
-            'data': [ExperimentData.from_json(json_data) for json_data in optimizationresult_dict['data']],
-            # 'optimizer': create_optimizer_from_json(optimizationresult_dict['optimizer']),
-            'function': create_function_from_json(optimizationresult_dict['function']),
-            'sampler': create_sampler_from_json(optimizationresult_dict['sampler']),
-            'number_of_samples': optimizationresult_dict['number_of_samples'],
-            'seeds': optimizationresult_dict['seeds'],
-        }
-        return cls(**args)
 
     def to_json(self):
         args = {'data': [d.to_json() for d in self.data],

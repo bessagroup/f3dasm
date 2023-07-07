@@ -38,7 +38,7 @@ We can distinguish 3 ways of using ``f3dasm``:
 Using ``f3dasm`` to handle your design of experiments
 -----------------------------------------------------
 
-The **core** package: contains the minimal installation to use
+The ``f3dasm`` package: contains the minimal installation to use
 ``f3dasm`` without extended features. 
 
 .. note::
@@ -55,54 +55,34 @@ The core package contains the following features:
 The core package requires the following dependencies:
 
 - `numpy <https://numpy.org/doc/stable/index.html>`_ and `scipy <https://docs.scipy.org/doc/scipy/reference/>`_: for numerical operations
-- `pandas <https://pandas.pydata.org/docs/>`_: for the representation of the design of experiments
+- `pandas <https://pandas.pydata.org/docs/>`_ and `SALib <https://salib.readthedocs.io/en/latest/>`_: for the representation of the design of experiments
 - `matplotlib <https://matplotlib.org/stable/contents.html>`_: for plotting
 - `hydra-core <https://hydra.cc/docs/intro/>`_: for deploying your experiment
 - `pathos <https://pathos.readthedocs.io/en/latest/>`_: for multiprocessing
 - `autograd <https://github.com/HIPS/autograd>`_: for computing gradients
 
 
-Using ``f3dasm`` to benchmark or compare models
------------------------------------------------
+Using ``f3dasm`` extended capabilities
+--------------------------------------
 
 Use existing implementations to benchmark parts of the data-driven machine learning process!
 
 For this purpose, you can solely use the core package, but it is advised
-to enrich ``f3dasm`` with its **extensions**
+to enrich ``f3dasm`` with its **extension libraries**
 
 The extensions contain the following features:
 
 1. provide various **implementations** to accommodate common machine learning workflows.
 2. provide **adapter** classes that link common machine learning libraries to ``f3dasm`` base classes.
 
-.. note: 
+The following extensions libraries are available:
 
-.. note::
-
-    For each of the blocks, extensions can be installed to extend the choice of implementations. Installed with ``pip install f3dasm[<name of extension>]``
-
-The following extensions are available:
-
-- **machinelearning**: containing various `tensorflow <https://www.tensorflow.org/api_docs/>`_ related models
-- **sampling**: containing sampling strategies from `SALib <https://salib.readthedocs.io/en/latest/>`_
--  **optimization**: containing various optimizers from `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_, `pygmo <https://esa.github.io/pygmo2/index.html>`_ and `tensorflow <https://www.tensorflow.org/api_docs/>`_
+- `f3dasm_simulate <https://github.com/bessagroup/f3dasm_simulate>`_: containing various simulators ported to be used with `f3dasm`.
+-  `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_: containing various optimizers from `GPyOpt <https://gpyopt.readthedocs.io/en/latest/>`_, `pygmo <https://esa.github.io/pygmo2/index.html>`_ and `tensorflow <https://www.tensorflow.org/api_docs/>`_
 
 The main takeaway is that if your design-of-experiments is modified to
 use the ``f3dasm.ExperimentData`` class, you are able to seamlessly
 incorporate the extension into your application!
-
-Develop on ``f3dasm``
-----------------------
-
-If you want your implementation to be part of the ``f3dasm`` package,
-you can develop an adapter and/or implementation for ``f3dasm``
-
-.. note::
-
-    The **developement** package: contains the full installation plus
-    requirements for developing on ``f3dasm``. Installed with
-    ``pip install f3dasm[dev]``. Information on how to contribute to ``f3dasm`` can be found `on the wiki page of the GitHub repository <https://github.com/bessagroup/f3dasm/wiki>`__!
-
 
 Abstraction
 ^^^^^^^^^^^
@@ -121,16 +101,15 @@ making it easier to understand, modify, and share with others. Within the :code:
 Overview of implementations and base classes
 --------------------------------------------
 
-================= =============================== ========================================================================== =======================================================
-Block             Submodule                       Base                                                                       Implementations
-================= =============================== ========================================================================== =======================================================
-Design            :mod:`~f3dasm.design`           :class:`~f3dasm.design.design.DesignSpace`                                 
-                  :mod:`~f3dasm.sampling`         :class:`~f3dasm.sampling.sampler.Sampler`                                  :ref:`List of samplers <implemented samplers>`
-Simulation        :mod:`~f3dasm.simulation`       :class:`~f3dasm.simulation.simulator.Simulator`                            :ref:`List of simulators <implemented simulators>`
-Machine learning  :mod:`~f3dasm.machinelearning`  :class:`~f3dasm.machinelearning.model.Model`                               :ref:`List of models <implemented models>`
-                  :mod:`~f3dasm.data`             :class:`~f3dasm.data.learningdata.LearningData`                            :ref:`List of learning data <implemented learningdata>`
-Optimization      :mod:`~f3dasm.optimization`     :class:`~f3dasm.optimization.optimizer.Optimizer`                          :ref:`List of optimizers <implemented optimizers>`
-================= =============================== ========================================================================== =======================================================
+===================== =============================== ========================================================================== =======================================================
+Block                 Submodule                       Base                                                                       Implementations
+===================== =============================== ========================================================================== =======================================================
+Design of Experiments :mod:`~f3dasm.design`           :class:`~f3dasm.design.design.Domain`                                 
+                      :mod:`~f3dasm.sampling`         :class:`~f3dasm.sampling.sampler.Sampler`                                  :ref:`List of samplers <implemented samplers>`
+Data generation       :mod:`~f3dasm.datageneration`   :class:`~f3dasm.datageneration.DataGenerator`                              :ref:`List of datagenerators <implemented datagenerators>`
+Machine learning      :mod:`~f3dasm.machinelearning`  :class:`~f3dasm.machinelearning.model.Model`                               :ref:`List of models <implemented models>`
+Optimization          :mod:`~f3dasm.optimization`     :class:`~f3dasm.optimization.optimizer.Optimizer`                          :ref:`List of optimizers <implemented optimizers>`
+===================== =============================== ========================================================================== =======================================================
 
 Overview of other classes
 -------------------------
@@ -138,8 +117,6 @@ Overview of other classes
 =============================================================== ===================================================================================
 Class                                                           Short description
 =============================================================== ===================================================================================
-:class:`~f3dasm.design.constraint.Constraint`                   Class that represent a constraint for the design-of-experiments
-:class:`~f3dasm.base.evaluator.Evaluator`                       Class that combines a machine learning model, loss-function and learning data
 :class:`~f3dasm.design.experimentdata.ExperimentData`           Datastructure denoting samples from a design-of-experiments                                     
 :class:`~f3dasm.functions.function.Function`                    Class that represents an analytical function used for benchmarking
 :class:`~f3dasm.functions.adapters.augmentor.Augmentor`         Class that can be used to manipulate data for data-augmentation

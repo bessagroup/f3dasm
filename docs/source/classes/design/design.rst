@@ -1,31 +1,21 @@
-Design space
-============
+Design
+------
 
-The design space can be created with the :class:`~f3dasm.design.design.DesignSpace` class.
-
-Usage
------
-
-Creating the design space
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The design space is then constructed by calling the :class:`~f3dasm.design.design.DesignSpace` class and providing:
-
-* a list of input parameters (:attr:`~f3dasm.design.design.DesignSpace.input_space`)
-* a list of output parameters (:attr:`~f3dasm.design.design.DesignSpace.output_space`):
+Each set of input and output parameters in the ExperimentData class is called a `Design`
+The `Design` can be used in your own scripts and function to specify the design variables.
 
 .. code-block:: python
+    
+   from f3dasm import Design
 
-  design = f3dasm.DesignSpace(input_space=[x1, x2, x3, x4, x5, x6], output_space=[y])
-  
-  
-Helper function for single-objective, n-dimensional continuous design spaces
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    def my_function(design: Design):
+        parameter1 = design.get('parameter1')
+        parameter2 = design.get('parameter2')
 
- 
-We can make a n-dimensional continous, single-objective design space with the helper function :func:`~f3dasm.design.design.make_nd_continuous_design`. We have to specify the boundaries for each of the dimensions with a numpy array:
+        ...  # Your own program
 
-.. code-block:: python
+        design.set('output1', output)
+        return design
 
-  bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
+
+A function like `my_function` can be used in the `ExperimentData.run()` function to iterate over every design in the ExperimentData.

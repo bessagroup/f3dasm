@@ -6,17 +6,19 @@ import errno
 import functools
 import json
 import os
+import sys
+import traceback
 from copy import deepcopy
 from io import TextIOWrapper
 from pathlib import Path
 from time import sleep
-from typing import (Any, Callable, Dict, Iterator, List, Protocol, Tuple, Type,
-                    Union)
 
-from hydra.utils import get_original_cwd
-from omegaconf import DictConfig
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
-from .._logging import logger
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -24,15 +26,21 @@ if os.name == 'nt':
 else:
     import fcntl
 
-# Third-party core
+# Third-party
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from hydra.utils import get_original_cwd
+from omegaconf import DictConfig
+from pathos.helpers import mp
 
 # Local
+from ..logger import logger
+from ._access_file import access_file
 from ._data import _Data
-from ._jobqueue import _JobQueue
-from .design import DesignSpace
+from ._jobqueue import NoOpenJobsError, _JobQueue
+from .design import Design
+from .domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -49,96 +57,12 @@ class Sampler(Protocol):
         ...
 
 
-def access_file(sleeptime_sec: int = 1) -> Callable:
-    """Wrapper for accessing a single resource with a file lock
-
-    Parameters
-    ----------
-    sleeptime_sec, optional
-        number of seconds to wait before trying to access resource again, by default 1
-
-    Returns
-    -------
-    decorator
-    """
-    def decorator_func(operation: Callable) -> Callable:
-        @functools.wraps(operation)
-        def wrapper_func(self, *args, **kwargs) -> None:
-            while True:
-                try:
-                    # Try to open the experimentdata file
-                    logger.debug(f"Trying to open the data file: {self.filename}_data.csv")
-                    with open(f"{self.filename}_data.csv", 'rb+') as file:
-                        logger.debug("Opened file successfully")
-                        if os.name == 'nt':
-                            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
-                        else:
-                            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                            logger.debug("Locked file successfully")
-
-                        # Load the experimentdata from the object
-                        self.data = _Data.from_file(filename=self.filename, text_io=file)
-                        logger.debug("Loaded data successfully")
-
-                        # Load the jobs from disk
-                        self.jobs = _JobQueue.from_file(filename=f"{self.filename}_jobs")
-                        logger.debug("Loaded jobs successfully")
-
-                        # Do the operation
-                        value = operation(self, *args, **kwargs)
-
-                        # Delete existing contents of file
-                        file.seek(0, 0)
-                        file.truncate()
-
-                        # Write the data to disk
-                        self.data.store(filename=f"{self.filename}_data", text_io=file)
-                        self.jobs.store(filename=f"{self.filename}_jobs")
-
-                    break
-                except IOError as e:
-                    # the file is locked by another process
-                    if os.name == 'nt':
-                        if e.errno == 13:
-                            logger.info("The data file is currently locked by another process. "
-                                        "Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        elif e.errno == 2:  # File not found error
-                            logger.info("The data file does not exist. Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        else:
-                            logger.info(f"An unexpected IOError occurred: {e}")
-                            break
-                    else:
-                        if e.errno == errno.EAGAIN:
-                            logger.info("The data file is currently locked by another process. "
-                                        "Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        elif e.errno == 2:  # File not found error
-                            logger.info("The data file does not exist. Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        else:
-                            logger.info(f"An unexpected IOError occurred: {e}")
-                            break
-                except Exception as e:
-                    # handle any other exceptions
-                    logger.info(f"An unexpected error occurred: {e}")
-                    raise e
-                    return
-
-            return value
-
-        return wrapper_func
-
-    return decorator_func
-
-
 class ExperimentData:
     """
     A class that contains data for experiments.
     """
 
-    def __init__(self, design: DesignSpace):
+    def __init__(self, design: Domain):
         """
         Initializes an instance of ExperimentData.
 
@@ -170,6 +94,9 @@ class ExperimentData:
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
 
+    #                                                      Alternative Constructors
+    # =============================================================================
+
     @classmethod
     def from_file(cls: Type['ExperimentData'], filename: str = 'doe',
                   text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
@@ -179,6 +106,8 @@ class ExperimentData:
         ----------
         filename : str
             Name of the file, excluding suffix.
+        text_io : TextIOWrapper or None, optional
+            Text I/O wrapper object for reading the file, by default None.
 
         Returns
         -------
@@ -186,23 +115,27 @@ class ExperimentData:
             ExperimentData object containing the loaded data.
         """
         try:
-            # Create the experimentdata object
-            design = DesignSpace.from_file(f"{filename}_design")
+            return cls._from_file_attempt(filename, text_io)
+        except FileNotFoundError:
+            try:
+                filename_with_path = Path(get_original_cwd()) / filename
+            except ValueError:  # get_original_cwd() hydra initialization error
+                raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
+
+            return cls._from_file_attempt(filename_with_path, text_io)
+
+    @classmethod
+    def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
+                           text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
+        try:
+            design = Domain.from_file(f"{filename}_design")
             experimentdata = cls(design=design)
             experimentdata.data = _Data.from_file(f"{filename}_data", text_io)
             experimentdata.jobs = _JobQueue.from_file(f"{filename}_jobs")
             experimentdata.filename = filename
             return experimentdata
-
-        # Cannot find the file, this could be due to hydra changing directories!
         except FileNotFoundError:
-            try:
-                return cls.from_file(filename=Path(get_original_cwd()) / filename)
-            except ValueError:  # get_original_cwd() hydra initialization error
-                raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
-
-    # create an alias of from_csv
-    from_csv = from_file
+            raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
 
     @classmethod
     def from_sampling(cls, sampler: Sampler) -> 'ExperimentData':
@@ -242,15 +175,8 @@ class ExperimentData:
 
         return new_experimentdata
 
-    def reset_data(self):
-        """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
-        self.data.reset(self.design)
-        self.jobs.reset()
-
-    def show(self):
-        """Print the data to the console"""
-        print(self.data.data)
-        return
+    #                                                               Storage Methods
+    # =============================================================================
 
     def store(self, filename: str = None, text_io: Union[TextIOWrapper, None] = None):
         """Store the ExperimentData to disk, with checking for a lock
@@ -266,6 +192,40 @@ class ExperimentData:
         self.data.store(f"{filename}_data")
         self.jobs.store(f"{filename}_jobs")
         self.design.store(f"{filename}_design")
+
+    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Convert the ExperimentData object to a tuple of numpy arrays.
+
+        Returns
+        -------
+        tuple
+            A tuple containing two numpy arrays, the first one for input columns, and the second for output columns.
+        """
+        return self.data.to_numpy()
+
+    def run(self, operation: Callable, mode: str = 'sequential', kwargs: dict = None):
+
+        if kwargs is None:
+            kwargs = {}
+
+        # Check if operation is a function
+        if not callable(operation):
+            raise TypeError("operation must be a function.")
+
+        if mode.lower() == "sequential":
+            return self._run_sequential(operation, kwargs)
+        elif mode.lower() == "parallel":
+            return self._run_multiprocessing(operation, kwargs)
+        elif mode.lower() == "cluster":
+            return self._run_cluster(operation, kwargs)
+        else:
+            raise ValueError("Invalid parallelization mode specified.")
+
+    def reset_data(self):
+        """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
+        self.data.reset(self.design)
+        self.jobs.reset()
 
     def get_inputdata_by_index(self, index: int) -> dict:
         """
@@ -305,6 +265,46 @@ class ExperimentData:
         except KeyError:
             raise KeyError('Index does not exist in dataframe!')
 
+    def get_design(self, index: int) -> Design:
+        """
+        Gets the design at the given index.
+
+        Parameters
+        ----------
+        index : int
+            The index of the design to retrieve.
+
+        Returns
+        -------
+        Design
+            The design at the given index.
+        """
+        return self.data.get_design(index)
+
+    def set_design(self, design: Design) -> None:
+        """
+        Sets the design at the given index.
+
+        Parameters
+        ----------
+        design : Design
+            The design to set.
+        """
+        self.data.set_design(design)
+        self.jobs.mark_as_finished(design._jobnumber)
+
+    @access_file()
+    def write_design(self, design: Design) -> None:
+        """
+        Sets the design at the given index.
+
+        Parameters
+        ----------
+        design : Design
+            The design to set.
+        """
+        self.set_design(design)
+
     def set_outputdata_by_index(self, index: int, value: Any):
         """
         Sets the output data at the given index to the given value.
@@ -340,17 +340,14 @@ class ExperimentData:
     def write_inputdata_by_index(self, index: int, value: Any, column: str = 'input'):
         self.set_inputdata_by_index(index=index, value=value, column=column)
 
-    def access_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def access_open_job_data(self) -> Design:
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
-
-        input_data = self.get_inputdata_by_index(job_index)
-        output_data = self.get_outputdata_by_index(job_index)
-
-        return job_index, input_data, output_data
+        design = self.get_design(job_index)
+        return design
 
     @access_file()
-    def get_open_job_data(self) -> Tuple[int, Dict[str, Any], Dict[str, Any]]:
+    def get_open_job_data(self) -> Design:
         return self.access_open_job_data()
 
     def set_error(self, index: int):
@@ -361,16 +358,9 @@ class ExperimentData:
     def write_error(self, index: int):
         self.set_error(index)
 
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Convert the ExperimentData object to a tuple of numpy arrays.
-
-        Returns
-        -------
-        tuple
-            A tuple containing two numpy arrays, the first one for input columns, and the second for output columns.
-        """
-        return self.data.to_numpy()
+    @access_file()
+    def is_all_finished(self) -> bool:
+        return self.jobs.is_all_finished()
 
     def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """
@@ -407,7 +397,7 @@ class ExperimentData:
         """
         self.data.add_output(output, label)
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None] = None):
         """
         Append a numpy array to the ExperimentData object.
 
@@ -418,8 +408,13 @@ class ExperimentData:
         output : np.ndarray
             2D numpy array to add to the output data.
         """
+        if output is not None:
+            status = 'finished'
+        else:
+            status = 'open'
+
         self.data.add_numpy_arrays(input, output)
-        self.jobs.add(number_of_jobs=len(input))
+        self.jobs.add(number_of_jobs=len(input), status=status)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -523,3 +518,71 @@ class ExperimentData:
         fig, ax = self.data.plot()
 
         return fig, ax
+
+    #                                                               Private methods
+    # =============================================================================
+
+    def _run_sequential(self, operation: Callable, kwargs: dict):
+        while True:
+            try:
+                design = self.access_open_job_data()
+                logger.debug(f"Accessed design {design._jobnumber}")
+            except NoOpenJobsError:
+                logger.debug("No Open Jobs left")
+                break
+
+            try:
+                logger.info(
+                    f"Running design {design._jobnumber} with kwargs {kwargs}")
+                _design = operation(design, **kwargs)  # no *args!
+                self.set_design(_design)
+            except Exception as e:
+                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
+                self.set_error(design._jobnumber)
+
+    def _run_multiprocessing(self, operation: Callable, kwargs: dict):
+        # Get all the jobs
+        options = []
+        while True:
+            try:
+                design = self.access_open_job_data()
+                options.append(
+                    ({'design': design, **kwargs},))
+            except NoOpenJobsError:
+                break
+
+            def f(options: Dict[str, Any]) -> Any:
+                return operation(**options)
+
+            with mp.Pool() as pool:
+                # maybe implement pool.starmap_async ?
+                _designs: List[Design] = pool.starmap(f, options)
+
+            for _design in _designs:
+                self.set_design(_design)
+
+    def _run_cluster(self, operation: Callable, kwargs: dict):
+        # Retrieve the updated experimentdata object from disc
+        try:
+            self = self.from_file(self.filename)
+        except FileNotFoundError:  # If not found, store current
+            self.store()
+            # _data = self.from_file(self.filename)
+
+        while True:
+            try:
+                design = self.get_open_job_data()
+            except NoOpenJobsError:
+                break
+
+            try:
+                _design = operation(design, **kwargs)
+                self.write_design(_design)
+            except Exception as e:
+                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
+                self.write_error(design._jobnumber)
+                continue

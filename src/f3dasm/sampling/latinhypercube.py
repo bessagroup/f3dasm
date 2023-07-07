@@ -4,18 +4,13 @@
 # Standard
 from typing import Any, Union
 
-# Third-party core
+# Third-party
 import numpy as np
+from SALib.sample import latin
 
 # Locals
-from .._imports import try_import
-from ..design import DesignSpace
+from ..design import Domain
 from .sampler import Sampler
-
-# Third-party extension
-with try_import('sampling') as _imports:
-    from SALib.sample import latin
-
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,10 +24,6 @@ __status__ = 'Stable'
 
 class LatinHypercube(Sampler):
     """Sampling via Latin Hypercube Sampling"""
-
-    def __init__(self, design: DesignSpace, seed: Union[Any, int] = None):
-        _imports.check()
-        super().__init__(design, seed)
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Sample from continuous space

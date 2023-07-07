@@ -1,6 +1,6 @@
 import pytest
 
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
                                      DiscreteParameter)
 from f3dasm.sampling.randomuniform import RandomUniform
@@ -22,7 +22,7 @@ def data():
         "y": ContinuousParameter()}
 
     # Create the design space
-    design = DesignSpace(input_space=input_parameters, output_space=output_parameters)
+    design = Domain(input_space=input_parameters, output_space=output_parameters)
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
 

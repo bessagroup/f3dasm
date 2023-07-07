@@ -6,7 +6,7 @@ Creating a sampler
 
 A new sampler can be created by initializing the sampler with:
 
-* A :class:`~f3dasm.design.design.DesignSpace`
+* A :class:`~f3dasm.design.design.Domain`
 * A random :attr:`~f3dasm.sampling.sampler.Sampler.seed` (optional)
 
 

@@ -8,38 +8,20 @@ Some API information about the opitmizers
 import sys
 from itertools import chain
 from os import path
-from typing import TYPE_CHECKING
+from typing import List
 
 # Local
-from .._imports import _IntegrationModule
+from .._imports import try_import
+from .cg import CG, CG_Parameters
+from .lbfgsb import LBFGSB, LBFGSB_Parameters
+from .neldermead import NelderMead, NelderMead_Parameters
+from .optimizer import Optimizer
+from .randomsearch import RandomSearch, RandomSearch_Parameters
 
-if TYPE_CHECKING:
-    from .adam import Adam, Adam_Parameters
-    from .adamax import Adamax, Adamax_Parameters
-    from .all_optimizers import OPTIMIZERS
-    from .bayesianoptimization import (BayesianOptimization,
-                                       BayesianOptimization_Parameters)
-    from .cg import CG, CG_Parameters
-    from .cmaes import CMAES, CMAES_Parameters
-    from .differentialevolution import (DifferentialEvolution,
-                                        DifferentialEvolution_Parameters)
-    from .ftrl import Ftrl, Ftrl_Parameters
-    from .lbfgsb import LBFGSB, LBFGSB_Parameters
-    from .nadam import Nadam, Nadam_Parameters
-    from .neldermead import NelderMead, NelderMead_Parameters
-    from .optimizer import Optimizer
-    from .pso import PSO, PSO_Parameters
-    from .randomsearch import RandomSearch, RandomSearch_Parameters
-    from .rmsprop import RMSprop, RMSprop_Parameters
-    from .sade import SADE, SADE_Parameters
-    from .sea import SEA, SEA_Parameters
-    from .sga import SGA, SGA_Parameters
-    from .sgd import SGD, SGD_Parameters
-    from .simulatedannealing import (SimulatedAnnealing,
-                                     SimulatedAnnealing_Parameters)
-    from .utils import (create_optimizer_from_dict, create_optimizer_from_json,
-                        find_optimizer)
-    from .xnes import XNES, XNES_Parameters
+# Try importing f3dasm_optimize package
+with try_import('f3dasm_optimize') as _imports:
+    import f3dasm_optimize
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -50,36 +32,43 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-_import_structure: dict = {
-    "utils": ["create_optimizer_from_json", "create_optimizer_from_dict", "find_optimizer"],
-    "optimizer": ["Optimizer"],
-    "adam": ["Adam", "Adam_Parameters"],
-    "adamax": ["Adamax", "Adamax_Parameters"],
-    "bayesianoptimization": ["BayesianOptimization", "BayesianOptimization_Parameters"],
-    "cg": ["CG", "CG_Parameters"],
-    "cmaes": ["CMAES", "CMAES_Parameters"],
-    "differentialevolution": ["DifferentialEvolution", "DifferentialEvolution_Parameters"],
-    "ftrl": ["Ftrl", "Ftrl_Parameters"],
-    "lbfgsb": ["LBFGSB", "LBFGSB_Parameters"],
-    "nadam": ["Nadam", "Nadam_Parameters"],
-    "neldermead": ["NelderMead", "NelderMead_Parameters"],
-    "pso": ["PSO", "PSO_Parameters"],
-    "randomsearch": ["RandomSearch", "RandomSearch_Parameters"],
-    "rmsprop": ["RMSprop", "RMSprop_Parameters"],
-    "sade": ["SADE", "SADE_Parameters"],
-    "sea": ["SEA", "SEA_Parameters"],
-    "sga": ["SGA", "SGA_Parameters"],
-    "sgd": ["SGD", "SGD_Parameters"],
-    "simulatedannealing": ["SimulatedAnnealing", "SimulatedAnnealing_Parameters"],
-    "xnes": ["XNES", "XNES_Parameters"],
-    "all_optimizers": ["OPTIMIZERS"],
-}
+# List of available optimizers
+OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
 
-if not TYPE_CHECKING:
-    class _LocalIntegrationModule(_IntegrationModule):
-        __file__ = globals()["__file__"]
-        __path__ = [path.dirname(__file__)]
-        __all__ = list(chain.from_iterable(_import_structure.values()))
-        _import_structure = _import_structure
 
-    sys.modules[__name__] = _LocalIntegrationModule(__name__)
+__all__ = [
+    'CG',
+    'CG_Parameters',
+    'LBFGSB',
+    'LBFGSB_Parameters',
+    'NelderMead',
+    'NelderMead_Parameters',
+    'Optimizer',
+    'RandomSearch',
+    'RandomSearch_Parameters',
+    'OPTIMIZERS',
+    'find_optimizer',
+]
+
+# Add the optimizers from f3dasm_optimize if applicable
+if _imports.is_successful():
+    OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
+    __all__.extend(f3dasm_optimize.__all__)
+
+
+def find_optimizer(query: str) -> Optimizer:
+    """Find a optimizer from the f3dasm.optimizer submodule
+
+    Parameters
+    ----------
+    query
+        string representation of the requested optimizer
+
+    Returns
+    -------
+        class of the requested optimizer
+    """
+    try:
+        return list(filter(lambda optimizer: optimizer.__name__ == query, OPTIMIZERS))[0]
+    except IndexError:
+        return ValueError(f'Optimizer {query} not found!')

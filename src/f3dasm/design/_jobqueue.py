@@ -1,9 +1,23 @@
+#                                                                       Modules
+# =============================================================================
 
+# Standard
 from typing import List, Union
 
+# Third-party
 import pandas as pd
 
+# Local
 from ._data import _Data
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class NoOpenJobsError(Exception):
@@ -29,6 +43,9 @@ class _JobQueue:
         filename : str
             The name of the file that the jobs will be saved in.
         """
+        if jobs is None:
+            jobs = pd.Series(dtype='string')
+
         self.jobs: pd.Series = jobs
 
     def _repr_html_(self) -> str:
@@ -106,27 +123,29 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    def add(self, number_of_jobs: int):
+    def add(self, number_of_jobs: int, status: str = 'open'):
         """Adds a number of jobs to the job queue.
 
         Parameters
         ----------
         number_of_jobs : int
             Number of jobs to add.
+        status : str, optional
+            Status of the jobs, by default 'open'.
         """
         try:
             last_index = self.jobs.index[-1]
         except IndexError:  # Empty Series
-            self.jobs = pd.Series(['open'] * number_of_jobs, dtype='string')
+            self.jobs = pd.Series([status] * number_of_jobs, dtype='string')
             return
 
         new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
-        jobs_to_add = pd.Series('open', index=new_indices, dtype='string')
+        jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
     def reset(self) -> None:
         """Resets the job queue."""
-        self.jobs = pd.Series()
+        self.jobs = pd.Series(dtype='string')
 
     def get_open_job(self) -> Union[int, None]:
         """Returns the index of an open job.
@@ -137,7 +156,7 @@ class _JobQueue:
             Index of an open job.
         """
         try:  # try to find an open job
-            return self.jobs[self.jobs == 'open'].index[0]
+            return int(self.jobs[self.jobs == 'open'].index[0])
         except IndexError:
             raise NoOpenJobsError("No open jobs found.")
 
@@ -174,6 +193,10 @@ class _JobQueue:
     def mark_all_in_progress_open(self) -> None:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace('in progress', 'open')
+
+    def mark_all_open(self) -> None:
+        """Marks all jobs as 'open'."""
+        self.jobs = self.jobs.replace(['in progress', 'finished', 'error'], 'open')
 
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.

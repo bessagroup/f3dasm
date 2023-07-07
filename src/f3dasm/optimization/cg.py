@@ -5,9 +5,9 @@
 from dataclasses import dataclass
 from typing import List
 
+from .adapters.scipy_implementations import _SciPyMinimizeOptimizer
 # Locals
 from .optimizer import OptimizerParameters
-from .adapters.scipy_implementations import SciPyMinimizeOptimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,7 +26,7 @@ class CG_Parameters(OptimizerParameters):
     gtol: float = 0.0
 
 
-class CG(SciPyMinimizeOptimizer):
+class CG(_SciPyMinimizeOptimizer):
     """CG"""
 
     method: str = "CG"

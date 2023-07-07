@@ -14,27 +14,54 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 #                                                                       Modules
 # =============================================================================
 
-from f3dasm import (_logging, data, design, experiment, functions,
-                    machinelearning, optimization, sampling, simulation)
-
-from ._show_versions import __version__, show_versions
-# Design classes
-from .design.design import DesignSpace, make_nd_continuous_design
+from . import datageneration, design, machinelearning, optimization, sampling
+from .argparser import HPC_JOBID
+from .datageneration.functions.function import Function
+from .design.design import Design
+from .design.domain import Domain, make_nd_continuous_domain
 from .design.experimentdata import ExperimentData
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
-from .experiment.parallelization import run_operation_on_experiments
-# Base classes
-from .functions.function import Function
-from .machinelearning.model import Model
+from .logger import DistributedFileHandler, logger
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
                                run_optimization)
 from .sampling.sampler import Sampler
-from .utils import find_class, write_json
 
 #                                                        Authorship and Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
+#
+# =============================================================================
+
+__version__ = '1.2.0'
+
+# Log welcome message and the version of f3dasm
+logger.info(f"Imported f3dasm (version: {__version__})")
+
+__all__ = [
+    'datageneration',
+    'design',
+    'machinelearning',
+    'optimization',
+    'sampling',
+    'Function',
+    'Domain',
+    'make_nd_continuous_domain',
+    'ExperimentData',
+    'CategoricalParameter',
+    'ConstantParameter',
+    'ContinuousParameter',
+    'DiscreteParameter',
+    'DistributedFileHandler',
+    'logger',
+    'Optimizer',
+    'run_on_experimentdata',
+    'run_operation_on_experiments',
+    'OptimizationResult',
+    'run_multiple_realizations',
+    'run_optimization',
+    'Sampler'
+]

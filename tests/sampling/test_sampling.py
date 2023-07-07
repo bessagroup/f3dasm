@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design.design import DesignSpace
+from f3dasm.design.domain import Domain
 from f3dasm.design.parameter import ContinuousParameter
 from f3dasm.sampling.latinhypercube import LatinHypercube
 from f3dasm.sampling.randomuniform import RandomUniform
@@ -25,13 +25,13 @@ def test_sampling_interface_not_implemented_error():
     x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
     space = {'x1': x1}
 
-    design = DesignSpace(space)
+    design = Domain(space)
     new_sampler = NewSamplingStrategy(design=design, seed=seed)
     with pytest.raises(NotImplementedError):
         _ = new_sampler.sample_continuous(numsamples=5)
 
 
-def test_correct_sampling_ran(design3: DesignSpace):
+def test_correct_sampling_ran(design3: Domain):
     seed = 42
     # Construct sampler
     random_sequencing = RandomUniform(design=design3, seed=seed)
@@ -69,7 +69,7 @@ def test_correct_sampling_ran(design3: DesignSpace):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_sobol(design3: DesignSpace):
+def test_correct_sampling_sobol(design3: Domain):
     seed = 42
 
     # Construct sampler
@@ -107,7 +107,7 @@ def test_correct_sampling_sobol(design3: DesignSpace):
     assert df_ground_truth.equals(samples)
 
 
-def test_correct_sampling_lhs(design3: DesignSpace):
+def test_correct_sampling_lhs(design3: Domain):
     seed = 42
 
     # Construct sampler

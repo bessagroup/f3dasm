@@ -1,13 +1,15 @@
+import os
 from random import Random
 
 import numpy as np
 import pytest
 
-from f3dasm.design import make_nd_continuous_design
+from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
+                                             FUNCTIONS_7D, Ackley, Griewank,
+                                             Levy, Rastrigin, Schwefel, Sphere)
+from f3dasm.datageneration.functions.function import Function
+from f3dasm.design import make_nd_continuous_domain
 from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.functions import (FUNCTIONS, FUNCTIONS_2D, FUNCTIONS_7D, Ackley,
-                              Griewank, Levy, Rastrigin, Schwefel, Sphere)
-from f3dasm.functions.function import Function
 from f3dasm.optimization import OPTIMIZERS
 from f3dasm.optimization.optimizer import Optimizer
 from f3dasm.run_optimization import run_multiple_realizations
@@ -30,11 +32,17 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
     realizations = 3
     domain = np.tile([0.0, 1.0], (dimensionality, 1))
 
-    design = make_nd_continuous_design(dimensionality=dimensionality, bounds=domain)
+    design = make_nd_continuous_domain(dimensionality=dimensionality, bounds=domain)
     func = function(dimensionality=dimensionality, scale_bounds=domain)
     data = ExperimentData(design=design)
     opt = optimizer(data=data)
     sampler = RandomUniform(design=design)
+
+    # Check if os is windows
+    if os.name == 'nt':
+        PARALLELIZATION = False
+    else:
+        PARALLELIZATION = True
 
     res = run_multiple_realizations(
         optimizer=opt,
@@ -42,6 +50,7 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
         sampler=sampler,
         iterations=iterations,
         realizations=realizations,
+        parallelization=PARALLELIZATION,
     )
 
 

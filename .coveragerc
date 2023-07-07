@@ -6,6 +6,8 @@ omit =
     src/f3dasm/simulation/abaqus_script/*
     src/f3dasm/experiment/files/*
     tests/*
+    **/__init__.py
+    src/f3dasm/machinelearning/*
 
 [report]
 # Regexes for lines to exclude from consideration

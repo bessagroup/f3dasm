@@ -1,13 +1,28 @@
+#                                                                       Modules
+# =============================================================================
 
+# Standard
 import os
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
+# Third-party
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .design import DesignSpace
+# Local
+from .domain import Domain
+from .design import Design
+
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
+__credits__ = ['Martin van der Schelling']
+__status__ = 'Stable'
+# =============================================================================
+#
+# =============================================================================
 
 
 class _Data:
@@ -36,7 +51,7 @@ class _Data:
         return self.data._repr_html_()
 
     @classmethod
-    def from_design(cls, design: DesignSpace) -> '_Data':
+    def from_design(cls, design: Domain) -> '_Data':
         # input columns
         input_columns = [("input", name) for name, parameter in design.input_space.items()]
 
@@ -86,7 +101,7 @@ class _Data:
 
         return cls(pd.read_csv(file, header=[0, 1], index_col=0))
 
-    def reset(self, design: DesignSpace):
+    def reset(self, design: Domain):
         """Resets the data to the initial state.
 
         Parameters
@@ -115,20 +130,6 @@ class _Data:
 
         self.data.to_csv(filename)
 
-        # if os.name == 'nt':  # Windows
-        #     # Open the data.csv file with a lock
-        #     with open(filename, 'w') as f:
-        #         msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
-        #         self.data.to_csv(filename)
-        #         msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-
-        # else:  # Unix
-        #     # Open the data.csv file with a lock
-        #     with open(filename, 'w') as f:
-        #         fcntl.flock(f, fcntl.LOCK_EX)
-        #         self.data.to_csv(filename)
-        #         fcntl.flock(f, fcntl.LOCK_UN)
-
     def select(self, indices: List[int]):
         self.data = self.data.loc[indices]
 
@@ -152,7 +153,11 @@ class _Data:
     def add_output(self, output: np.ndarray, label: str = "y"):
         self.data[("output", label)] = output
 
-    def add_numpy_arrays(self, input: np.ndarray, output: np.ndarray):
+    def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None]):
+
+        if output is None:
+            output = np.nan * np.ones((input.shape[0], len(self.data['output'].columns)))
+
         df = pd.DataFrame(np.hstack((input, output)),
                           columns=self.data.columns)
         self.add(df)
@@ -168,6 +173,13 @@ class _Data:
 
     def get_outputdata_dict(self, index: int) -> Dict[str, Any]:
         return self.data['output'].loc[index].to_dict()
+
+    def get_design(self, index: int) -> Design:
+        return Design(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
+
+    def set_design(self, design: Design) -> None:
+        for column, value in design._dict_output.items():
+            self.data.loc[design._jobnumber, ('output', column)] = value
 
     def set_inputdata(self, index: int, value: Any, column: str = 'input'):
         # check if the index exists

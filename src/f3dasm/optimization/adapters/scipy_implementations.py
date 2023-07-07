@@ -6,7 +6,7 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from .._protocol import Function
+from ...datageneration.functions import Function
 from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -19,7 +19,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class SciPyOptimizer(Optimizer):
+class _SciPyOptimizer(Optimizer):
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.x_new.append(xk.tolist())
 
@@ -74,10 +74,30 @@ class SciPyOptimizer(Optimizer):
                 self.x_new[-1], (iterations - len(self.x_new), 1))
             self.x_new = np.r_[self.x_new, repeated_last_element]
 
-        self.add_iteration_to_data(x=self.x_new, y=function(self.x_new))
+        # check if fun has the original_function attribute
+        if hasattr(function, 'original_function'):
+            # Convert the input of the original function to an ndarray using a lambda function
+            def fun(x):
+                # convert the np.ndarray input to a dict with key x0, x1, x2, etc.
+                input_names = self.data.design.get_continuous_input_names()
+                x = {input_names[i]: x_i for i, x_i in enumerate(x)}
+                return function.original_function(x)
+
+        else:
+            def fun(x):
+                return function(x).item()
+
+        _y = []
+        for _x in self.x_new:
+            _y.append(fun(_x))
+
+        _y = np.array(_y).reshape(-1, 1)
+
+        # self.add_iteration_to_data(x=self.x_new, y=function(self.x_new))
+        self.add_iteration_to_data(x=self.x_new, y=_y)
 
 
-class SciPyMinimizeOptimizer(SciPyOptimizer):
+class _SciPyMinimizeOptimizer(_SciPyOptimizer):
     def run_algorithm(self, iterations: int, function: Function):
         """Run the algorithm for a number of iterations
 
@@ -88,8 +108,21 @@ class SciPyMinimizeOptimizer(SciPyOptimizer):
         function
             function to be evaluated
         """
+
+        # check if fun has the original_function attribute
+        if hasattr(function, 'original_function'):
+            # Convert the input of the original function to an ndarray using a lambda function
+            def fun(x):
+                # convert the np.ndarray input to a dict with key x0, x1, x2, etc.
+                input_names = self.data.design.get_continuous_input_names()
+                x = {input_names[i]: x_i for i, x_i in enumerate(x)}
+                return function.original_function(x)
+
+        else:
+            def fun(x):
+                return function(x).item()
         minimize(
-            fun=lambda x: function(x).item(),
+            fun=fun,
             method=self.method,
             # TODO: #89 Fix this with the newest gradient method!
             jac=lambda x: np.float64(function.dfdx_legacy(x).ravel()),

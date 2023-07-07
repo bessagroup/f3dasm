@@ -22,7 +22,7 @@ Installing the latest release
 
 ``f3dasm`` is purely Python code and compatible with: 
 
-1. Python 3.8 to 3.10. 
+1. Python 3.7 to 3.10. 
 2. the three major operations system (Linux, MacOS, Ubuntu). 
 3. the default environment of Google Colab (Python 3.8, Linux) 
 4. the `pip <https://pypi.org/>`_ package manager system.
@@ -67,6 +67,7 @@ Installing the latest release
        </div>
 
 |
+
 Then run:
 
 .. raw:: html
@@ -89,7 +90,7 @@ In order to check your installation you can use
 
   $ python -c "import f3dasm; f3dasm.show_versions()"
   >>> f3dasm:
-  >>>    1.0.0
+  >>>    1.2.0
   >>>    ...
 
 This will show the installed version of f3dasm and the versions of the dependencies.
@@ -123,7 +124,7 @@ Building from source is required to work on a contribution (bug fix, new feature
      cd f3dasm
 
 
-2. Install a recent version of Python (3.8, 3.9 or 3.10)
+2. Install a recent version of Python (3.7, 3.8, 3.9 or 3.10)
    for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_.
    If you installed Python with conda, we recommend to create a dedicated
    conda environment with all the build dependencies of f3dasm:
@@ -145,10 +146,9 @@ Building from source is required to work on a contribution (bug fix, new feature
 
   .. code-block:: console
 
-     $ python -c "import f3dasm; f3dasm.show_versions()"
-     >>> F3DASM:
-     >>>    f3dasm: 0.2.92
-     >>>    ...
+     $ python -c "import f3dasm"
+     >>> 2023-07-05 14:56:40,015 - Imported f3dasm (version: 1.x.x)
+
 
 
 .. note::
