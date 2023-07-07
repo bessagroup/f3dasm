@@ -526,20 +526,21 @@ class ExperimentData:
         while True:
             try:
                 design = self.access_open_job_data()
+                logger.debug(f"Accessed design {design._jobnumber}")
             except NoOpenJobsError:
+                logger.debug("No Open Jobs left")
                 break
 
             try:
                 logger.info(
                     f"Running design {design._jobnumber} with kwargs {kwargs}")
                 _design = operation(design, **kwargs)  # no *args!
+                self.set_design(_design)
             except Exception as e:
                 error_msg = f"Error in design {design._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.set_error(design._jobnumber)
-
-            self.set_design(_design)
 
     def _run_multiprocessing(self, operation: Callable, kwargs: dict):
         # Get all the jobs
@@ -578,11 +579,10 @@ class ExperimentData:
 
             try:
                 _design = operation(design, **kwargs)
+                self.write_design(_design)
             except Exception as e:
                 error_msg = f"Error in design {design._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.write_error(design._jobnumber)
                 continue
-
-            self.write_design(_design)
