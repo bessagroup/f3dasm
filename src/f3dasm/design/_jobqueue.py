@@ -194,6 +194,10 @@ class _JobQueue:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace('in progress', 'open')
 
+    def mark_all_open(self) -> None:
+        """Marks all jobs as 'open'."""
+        self.jobs = self.jobs.replace(['in progress', 'finished', 'error'], 'open')
+
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.
 
