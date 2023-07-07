@@ -46,10 +46,29 @@ __all__ = [
     'Optimizer',
     'RandomSearch',
     'RandomSearch_Parameters',
-    'OPTIMIZERS'
+    'OPTIMIZERS',
+    'find_optimizer',
 ]
 
 # Add the optimizers from f3dasm_optimize if applicable
 if _imports.is_successful():
     OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
     __all__.extend(f3dasm_optimize.__all__)
+
+
+def find_optimizer(query: str) -> Optimizer:
+    """Find a optimizer from the f3dasm.optimizer submodule
+
+    Parameters
+    ----------
+    query
+        string representation of the requested optimizer
+
+    Returns
+    -------
+        class of the requested optimizer
+    """
+    try:
+        return list(filter(lambda optimizer: optimizer.__name__ == query, OPTIMIZERS))[0]
+    except IndexError:
+        return ValueError(f'Optimizer {query} not found!')
