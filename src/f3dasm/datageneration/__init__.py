@@ -43,5 +43,4 @@ __all__ = [
 
 # Add the optimizers from f3dasm_optimize if applicable
 if _imports.is_successful():
-    DATAGENERATORS.extend(f3dasm_simulate.DATAGENERATORS)
-    __all__.extend(f3dasm_simulate.__all__)
+    pass
