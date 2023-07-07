@@ -12,7 +12,7 @@ f3dasm
 | [**Installation**](https://bessagroup.github.io/f3dasm/general/gettingstarted.html)
 | [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
-| [**Practical sessions**](https://github.com/mpvanderschelling/F3DASM_practical)
+| [**Practical sessions**](https://github.com/mpvanderschelling/f3dasm_teach)
 
 Welcome to `f3dasm`, a Python package for data-driven design and analysis of structures and materials.
 
