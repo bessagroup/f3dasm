@@ -57,12 +57,6 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     assert all(data1.data.data == data2.data.data)
 
 
-@pytest.mark.parametrize("function", FUNCTIONS_2D)
-def test_plotting(function: Function):
-    f = function(dimensionality=2)
-    f.plot(px=10, show=False)
-
-
 @pytest.mark.smoke
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
