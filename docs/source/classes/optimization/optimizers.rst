@@ -41,6 +41,18 @@ NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`    
 RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                    self implemented with `numpy <https://numpy.org/doc/>`_
 ======================== ========================================================================= ===============================================================================================
 
+Extend the optimization capabilities
+------------------------------------
+
+The :mod:`f3dasm.optimization` module is designed to be easily extended by third-party libraries.
+More optimization algorithms are available in the `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_ package, which can be installed via pip:
+
+.. code-block:: bash
+
+    pip install f3dasm_optimize
+
+More information about this extension can be found in the `f3dasm_optimize Documentation <https://bessagroup.github.io/f3dasm_optimize/>`_
+
 Implement your own optimizer
 ----------------------------
 
