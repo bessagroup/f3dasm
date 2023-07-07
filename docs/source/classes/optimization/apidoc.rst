@@ -19,7 +19,7 @@ Conjugate Gradient
    :show-inheritance:
 
 L-BFGS-B
-^^^^^^
+^^^^^^^^
 
 .. automodule:: f3dasm.optimization.lbfgsb
    :members:

@@ -67,6 +67,7 @@ Installing the latest release
        </div>
 
 |
+
 Then run:
 
 .. raw:: html
