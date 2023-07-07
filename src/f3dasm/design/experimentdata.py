@@ -7,6 +7,7 @@ import functools
 import json
 import os
 import sys
+import traceback
 from copy import deepcopy
 from io import TextIOWrapper
 from pathlib import Path
@@ -357,6 +358,10 @@ class ExperimentData:
     def write_error(self, index: int):
         self.set_error(index)
 
+    @access_file()
+    def is_all_finished(self) -> bool:
+        return self.jobs.is_all_finished()
+
     def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """
         Append data to the ExperimentData object.
@@ -529,8 +534,10 @@ class ExperimentData:
                     f"Running design {design._jobnumber} with kwargs {kwargs}")
                 _design = operation(design, **kwargs)  # no *args!
             except Exception as e:
-                logger.error(f"Error in design {design._jobnumber}: {e}")
-                self.set_error(design.job_number)
+                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
+                self.set_error(design._jobnumber)
 
             self.set_design(_design)
 
@@ -572,7 +579,9 @@ class ExperimentData:
             try:
                 _design = operation(design, **kwargs)
             except Exception as e:
-                logger.error(f"Error in design {design._jobnumber}: {e}")
+                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
                 self.write_error(design._jobnumber)
                 continue
 
