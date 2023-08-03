@@ -69,14 +69,14 @@ class DistributedFileHandler(FileHandler):
             except IOError as e:
                 # the file is locked by another process
                 if e.errno == errno.EAGAIN:
-                    print("The log file is currently locked by another process. Retrying in 1 second...")
+                    logger.debug("The log file is currently locked by another process. Retrying in 1 second...")
                     sleep(1)
                 else:
-                    print(f"An unexpected IOError occurred: {e}")
+                    logger.info(f"An unexpected IOError occurred: {e}")
                     break
             except Exception as e:
                 # handle any other exceptions
-                print(f"An unexpected error occurred: {e}")
+                logger.info(f"An unexpected error occurred: {e}")
                 break
 
 

@@ -1,10 +1,10 @@
-from ..logger import logger
-from typing import Callable
+import errno
 import functools
 import os
 from time import sleep
-import errno
+from typing import Callable
 
+from ..logger import logger
 from ._data import _Data
 from ._jobqueue import _JobQueue
 
@@ -13,6 +13,7 @@ if os.name == 'nt':
     import msvcrt
 else:
     import fcntl
+
 
 def access_file(sleeptime_sec: int = 1) -> Callable:
     """Wrapper for accessing a single resource with a file lock
@@ -68,22 +69,22 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                     # the file is locked by another process
                     if os.name == 'nt':
                         if e.errno == 13:
-                            logger.info("The data file is currently locked by another process. "
-                                        "Retrying in 1 second...")
+                            logger.debug("The data file is currently locked by another process. "
+                                         "Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         elif e.errno == 2:  # File not found error
-                            logger.info("The data file does not exist. Retrying in 1 second...")
+                            logger.debug("The data file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
                             logger.info(f"An unexpected IOError occurred: {e}")
                             break
                     else:
                         if e.errno == errno.EAGAIN:
-                            logger.info("The data file is currently locked by another process. "
-                                        "Retrying in 1 second...")
+                            logger.debug("The data file is currently locked by another process. "
+                                         "Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         elif e.errno == 2:  # File not found error
-                            logger.info("The data file does not exist. Retrying in 1 second...")
+                            logger.debug("The data file does not exist. Retrying in 1 second...")
                             sleep(sleeptime_sec)
                         else:
                             logger.info(f"An unexpected IOError occurred: {e}")
