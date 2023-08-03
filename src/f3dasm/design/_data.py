@@ -12,8 +12,9 @@ import numpy as np
 import pandas as pd
 
 # Local
-from .domain import Domain
 from .design import Design
+from .domain import Domain
+from .parameter import Parameter
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -153,6 +154,12 @@ class _Data:
     def add_output(self, output: np.ndarray, label: str = "y"):
         self.data[("output", label)] = output
 
+    def add_new_output_column(self, name: str, space: Parameter):
+        self.data[("output", name)] = np.nan
+
+    def add_new_input_column(self, name: str, space: Parameter):
+        self.data[("input", name)] = np.nan
+
     def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None]):
 
         if output is None:
@@ -175,6 +182,17 @@ class _Data:
         return self.data['output'].loc[index].to_dict()
 
     def get_design(self, index: int) -> Design:
+        """Get the design at the given index.
+
+        Parameters
+        ----------
+        index
+            The index of the design.
+
+        Returns
+        -------
+            the Design object at the given index.
+        """
         return Design(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
 
     def set_design(self, design: Design) -> None:

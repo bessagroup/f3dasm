@@ -41,6 +41,7 @@ from ._data import _Data
 from ._jobqueue import NoOpenJobsError, _JobQueue
 from .design import Design
 from .domain import Domain
+from .parameter import Parameter
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -85,11 +86,10 @@ class ExperimentData:
         return self.get_number_of_datapoints()
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
-        self.current_index = 0
-        return self
+        return self.data.__iter__()
 
     def __next__(self):
-        self.data.__next__()
+        return self.data.__next__()
 
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
@@ -226,6 +226,32 @@ class ExperimentData:
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
         self.data.reset(self.design)
         self.jobs.reset()
+
+    def add_new_output_column(self, name: str, parameter: Parameter) -> None:
+        """Add a new output column to the ExperimentData object.
+
+        Parameters
+        ----------
+        name
+            name of the new output column
+        parameter
+            Parameter object of the new output column
+        """
+        self.data.add_new_output_column(name, parameter)
+        self.design.add_output_space(name, parameter)
+
+    def add_new_input_column(self, name: str, parameter: Parameter) -> None:
+        """Add a new input column to the ExperimentData object.
+
+        Parameters
+        ----------
+        name
+            name of the new input column
+        parameter
+            Parameter object of the new input column
+        """
+        self.data.add_new_input_column(name, parameter)
+        self.design.add_input_space(name, parameter)
 
     def get_inputdata_by_index(self, index: int) -> dict:
         """
@@ -532,8 +558,14 @@ class ExperimentData:
                 break
 
             try:
-                logger.info(
-                    f"Running design {design._jobnumber} with kwargs {kwargs}")
+
+                # If kwargs is empty dict
+                if not kwargs:
+                    logger.info(f"Running design {design._jobnumber}")
+                else:
+                    logger.info(
+                        f"Running design {design._jobnumber} with kwargs {kwargs}")
+
                 _design = operation(design, **kwargs)  # no *args!
                 self.set_design(_design)
             except Exception as e:
@@ -554,6 +586,7 @@ class ExperimentData:
                 break
 
             def f(options: Dict[str, Any]) -> Any:
+                logger.info(f"Running design {options['design']._jobnumber}")
                 return operation(**options)
 
             with mp.Pool() as pool:
