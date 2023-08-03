@@ -269,6 +269,9 @@ class Function(DataGenerator):
         ax.set_xlabel("$X_{0}$", fontsize=16)
         ax.set_ylabel("$X_{1}$", fontsize=16)
 
+        ax.set_xlim(domain[0, 0], domain[0, 1])
+        ax.set_ylim(domain[1, 0], domain[1, 1])
+
         # ax.legend(fontsize="small", loc="lower right")
         if not show:
             plt.close(fig)
@@ -329,6 +332,36 @@ class Function(DataGenerator):
         x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
+        return fig, ax
+
+    def plot_data2(
+        self, x1: np.ndarray, x2: np.ndarray, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
+    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+        """Create a 2D contout plot with the datapoints as scatter
+
+        Parameters
+        ----------
+        data
+            Data object containing samples
+        px, optional
+            number of pixels on each axis
+        domain, optional
+            domain that needs to be plotted
+
+        Returns
+        -------
+            matplotlib figure and axes
+        """
+        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
+        ax.scatter(
+            x=x1,
+            y=x2,
+            s=10,
+            c=np.log(np.linspace(1, 10, len(x1)) * 2),
+            cmap="Blues",
+            edgecolors="black",
+        )
+
         return fig, ax
 
 
