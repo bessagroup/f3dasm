@@ -17,10 +17,10 @@ from pathos.helpers import mp
 from f3dasm.optimization import Optimizer
 from f3dasm.sampling import Sampler
 
-# Locals
-from .design import ExperimentData
 from .datageneration.functions import create_function_from_json
 from .datageneration.functions.function import Function
+# Locals
+from .design import ExperimentData
 from .logger import logger, time_and_log
 
 #                                                          Authorship & Credits
@@ -77,8 +77,9 @@ class OptimizationResult:
         logger.info(
             (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
              f"dim={self.function.dimensionality}, "
+             f"noise={self.function.noise}) "
              f"with {self.optimizer.get_name()} optimizer for "
-             f"{len(self.data)} realizations!")
+             f"{len(self.data)} realizations.")
         )
 
 
