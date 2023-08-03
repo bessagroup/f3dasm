@@ -115,7 +115,7 @@ def _time_and_log(
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         start_time = perf_counter()
         value = func(*args, **kwargs)
-        logger.info(f"Called {func.__name__} and time taken: {perf_counter() - start_time:.2f}s")
+        logger.debug(f"Called {func.__name__} and time taken: {perf_counter() - start_time:.2f}s")
         return value
 
     return wrapper
