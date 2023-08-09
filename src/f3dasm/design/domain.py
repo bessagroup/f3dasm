@@ -5,6 +5,7 @@
 import json
 import pickle
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 # Third-party core
@@ -61,12 +62,12 @@ class Domain:
         return cls.from_dict(design_dict)
 
     @classmethod
-    def from_file(cls, filename: str) -> 'Domain':
+    def from_file(cls, filename: Path) -> 'Domain':
         """Create a Domain object from a pickle file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             Name of the file.
 
         Returns
@@ -75,11 +76,11 @@ class Domain:
             Domain object containing the loaded data.
         """
 
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
+        # Check if filename exists
+        if not filename.with_suffix('.pkl').exists():
+            raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
-        with open(filename, "rb") as file:
+        with open(filename.with_suffix('.pkl'), "rb") as file:
             obj = pickle.load(file)
 
         return obj

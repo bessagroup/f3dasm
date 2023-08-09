@@ -57,6 +57,10 @@ class Sampler(Protocol):
     def get_samples(numsamples: int) -> 'ExperimentData':
         ...
 
+    @classmethod
+    def from_yaml(cls, config: DictConfig) -> 'Sampler':
+        ...
+
 
 class ExperimentData:
     """
@@ -73,10 +77,6 @@ class ExperimentData:
             A DesignSpace object defining the input and output spaces of the experiment.
         """
         self.design = design
-        self.__post_init__()
-
-    def __post_init__(self):
-        """Initializes an empty DataFrame with the appropriate input and output columns."""
         self.data = _Data.from_design(self.design)
         self.jobs = _JobQueue.from_data(self.data)
         self.filename = 'doe'
@@ -128,10 +128,10 @@ class ExperimentData:
     def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
                            text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
         try:
-            design = Domain.from_file(f"{filename}_design")
+            design = Domain.from_file(Path(f"{filename}_design"))
             experimentdata = cls(design=design)
-            experimentdata.data = _Data.from_file(f"{filename}_data", text_io)
-            experimentdata.jobs = _JobQueue.from_file(f"{filename}_jobs")
+            experimentdata.data = _Data.from_file(Path(f"{filename}_data"), text_io)
+            experimentdata.jobs = _JobQueue.from_file(Path(f"{filename}_jobs"))
             experimentdata.filename = filename
             return experimentdata
         except FileNotFoundError:
@@ -168,15 +168,15 @@ class ExperimentData:
 
         return data
 
+    #                                                               Storage Methods
+    # =============================================================================
+
     def select(self, indices: List[int]) -> 'ExperimentData':
         new_experimentdata = deepcopy(self)
         new_experimentdata.data.select(indices)
         new_experimentdata.jobs.select(indices)
 
         return new_experimentdata
-
-    #                                                               Storage Methods
-    # =============================================================================
 
     def store(self, filename: str = None, text_io: Union[TextIOWrapper, None] = None):
         """Store the ExperimentData to disk, with checking for a lock

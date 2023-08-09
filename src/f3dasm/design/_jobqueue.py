@@ -1,6 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
+from pathlib import Path
 # Standard
 from typing import List, Union
 
@@ -51,6 +52,9 @@ class _JobQueue:
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 
+    #                                                      Alternative Constructors
+    # =============================================================================
+
     @classmethod
     def from_data(cls, data: _Data):
         """Create a JobQueue object from a Data object.
@@ -68,7 +72,7 @@ class _JobQueue:
         return cls(pd.Series(['open'] * data.number_of_datapoints(), dtype='string'))
 
     @classmethod
-    def from_file(cls, filename: str) -> '_JobQueue':
+    def from_file(cls, filename: Path) -> '_JobQueue':
         """Create a JobQueue object from a pickle file.
 
         Parameters
@@ -81,12 +85,14 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the loaded data.
         """
+        # Check if the file exists
+        if not filename.with_suffix('.pkl').exists():
+            raise FileNotFoundError(f"Jobfile {filename} does not exist.")
 
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
+        return cls(pd.read_pickle(filename.with_suffix('.pkl')))
 
-        return cls(pd.read_pickle(filename))
+    #                                                                Public methods
+    # =============================================================================
 
     def store(self, filename: str) -> None:
         """Stores the jobs in a pickle file.

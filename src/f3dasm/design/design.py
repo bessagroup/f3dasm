@@ -23,6 +23,12 @@ class Design:
         self._dict_output = dict_output
         self._jobnumber = jobnumber
 
+    def __getitem__(self, item: str):
+        return self._dict_input[item]
+
+    def __setitem__(self, key: str, value: Any):
+        self._dict_output[key] = value
+
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """Converts the design to a tuple of numpy arrays.
 
@@ -32,6 +38,13 @@ class Design:
             A tuple of numpy arrays containing the input and output data.
         """
         return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
+
+    def to_dataframe_dict(self) -> Dict[Tuple[str, str], Any]:
+        # combine the two dicts
+        dataframe_dict = {}
+        dataframe_dict.update({('input', key): value for key, value in self._dict_input.items()})
+        dataframe_dict.update({('output', key): value for key, value in self._dict_output.items()})
+        return dataframe_dict
 
     @property
     def input_data(self) -> Dict[str, Any]:

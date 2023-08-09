@@ -1,6 +1,7 @@
 import errno
 import functools
 import os
+from pathlib import Path
 from time import sleep
 from typing import Callable
 
@@ -43,11 +44,11 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                             logger.debug("Locked file successfully")
 
                         # Load the experimentdata from the object
-                        self.data = _Data.from_file(filename=self.filename, text_io=file)
+                        self.data = _Data.from_file(filename=Path(f"{self.filename}_data"), text_io=file)
                         logger.debug("Loaded data successfully")
 
                         # Load the jobs from disk
-                        self.jobs = _JobQueue.from_file(filename=f"{self.filename}_jobs")
+                        self.jobs = _JobQueue.from_file(filename=Path(f"{self.filename}_jobs"))
                         logger.debug("Loaded jobs successfully")
 
                         logger.debug(

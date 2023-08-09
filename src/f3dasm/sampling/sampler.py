@@ -40,14 +40,17 @@ class Sampler:
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples
-        self.__post_init__()
+        # self.__post_init__()
 
-    def __post_init__(self):
-        if self.seed:
-            np.random.seed(self.seed)
+        if seed:
+            np.random.seed(seed)
 
-    def __eq__(self, __o: object) -> bool:
-        return all((self.design == __o.design, self.seed == __o.seed))
+    # def __post_init__(self):
+    #     if self.seed:
+    #         np.random.seed(self.seed)
+
+    # def __eq__(self, __o: object) -> bool:
+    #     return all((self.design == __o.design, self.seed == __o.seed))
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> 'Sampler':
@@ -58,11 +61,11 @@ class Sampler:
         sampler.design = Domain.from_yaml(config.design)
         return sampler
 
-    def to_json(self):
-        args = {'design': self.design.to_json(),
-                'seed': self.seed}
-        name = self.__class__.__name__
-        return json.dumps((args, name))
+    # def to_json(self):
+    #     args = {'design': self.design.to_json(),
+    #             'seed': self.seed}
+    #     name = self.__class__.__name__
+    #     return json.dumps((args, name))
 
     def set_seed(self, seed: int):
         """Set the seed of the sampler

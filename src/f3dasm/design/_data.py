@@ -4,6 +4,7 @@
 # Standard
 import os
 from io import TextIOWrapper
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple, Union
 
 # Third-party
@@ -81,12 +82,12 @@ class _Data:
         return cls(empty_dataframe)
 
     @classmethod
-    def from_file(cls, filename: str, text_io: TextIOWrapper = None) -> '_Data':
+    def from_file(cls, filename: Path, text_io: TextIOWrapper = None) -> '_Data':
         """Loads the data from a file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The filename to load the data from.
 
         text_io: TextIOWrapper, optional
@@ -94,9 +95,8 @@ class _Data:
         """
         # Load the data from a csv
         if text_io is None:
-            if not filename.endswith('.csv'):
-                filename = filename + '.csv'
-            file = filename
+            file = filename.with_suffix('.csv')
+
         else:
             file = text_io
 

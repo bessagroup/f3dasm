@@ -61,17 +61,6 @@ class OptimizationResult:
         self.seeds = seeds
         self._log()
 
-    def to_json(self):
-        args = {'data': [d.to_json() for d in self.data],
-                'optimizer': self.optimizer.to_json(),
-                'function': self.function.to_json(),
-                'sampler': self.sampler.to_json(),
-                'number_of_samples': self.number_of_samples,
-                'seeds': self.seeds
-                }
-
-        return json.dumps(args)
-
     def _log(self):
         # Log
         logger.info(
