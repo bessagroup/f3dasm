@@ -15,7 +15,7 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 # =============================================================================
 
 from . import datageneration, design, machinelearning, optimization, sampling
-from .argparser import HPC_JOBID
+from ._argparser import HPC_JOBID
 from .datageneration.functions.function import Function
 from .design.design import Design
 from .design.domain import Domain, make_nd_continuous_domain

@@ -60,7 +60,7 @@ class Function(DataGenerator):
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
+            x = input_x.get_input_data().to_numpy()
 
         else:
             x = input_x
@@ -334,39 +334,3 @@ class Function(DataGenerator):
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
-
-    def plot_data2(
-        self, x1: np.ndarray, x2: np.ndarray, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contout plot with the datapoints as scatter
-
-        Parameters
-        ----------
-        data
-            Data object containing samples
-        px, optional
-            number of pixels on each axis
-        domain, optional
-            domain that needs to be plotted
-
-        Returns
-        -------
-            matplotlib figure and axes
-        """
-        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        ax.scatter(
-            x=x1,
-            y=x2,
-            s=10,
-            c=np.log(np.linspace(1, 10, len(x1)) * 2),
-            cmap="Blues",
-            edgecolors="black",
-        )
-
-        return fig, ax
-
-
-def _from_data_to_numpy_array_benchmarkfunction(
-        data: ExperimentData) -> np.ndarray:
-
-    return data.get_input_data().to_numpy()

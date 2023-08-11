@@ -1,9 +1,15 @@
 #                                                                       Modules
 # =============================================================================
 
-from pathlib import Path
 # Standard
-from typing import Any, Dict, Protocol, Tuple, Type, Union
+import sys
+from pathlib import Path
+from typing import Any, Dict, Tuple, Type, Union
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 # Third-party
 import numpy as np

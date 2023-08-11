@@ -54,22 +54,6 @@ class PyBenchFunction(Function):
         self._configure_noise()
         self._configure_offset()
 
-    def to_json(self) -> str:
-        """Returns the information to recreate this object
-
-        Returns
-        -------
-            Tuple with dictionary to store and recreate the same object and name of the object
-        """
-        args: dict = {'noise': self.noise,
-                      'dimensionality': self.dimensionality,
-                      'offset': self.offset,
-                      'seed': self.seed,
-                      'scale_bounds': self.scale_bounds.tolist()}
-
-        name: str = self.get_name()
-        return json.dumps((args, name))
-
     def _configure_scale_bounds(self):
         """Create a Scale augmentor"""
         if self.scale_bounds is None:

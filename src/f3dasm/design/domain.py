@@ -120,7 +120,7 @@ class Domain:
         )
 
     def add_input_space(self, name: str, space: Parameter):
-        """Add a new input parameter to the design space.
+        """Add a new input parameter to the domain.
 
         Parameters
         ----------
@@ -408,7 +408,7 @@ class Domain:
         )
 
     def filter_parameters(self, type: Type[Parameter]) -> 'Domain':
-        """Filter the parameters of the design space by type
+        """Filter the parameters of the domain by type
 
         Parameters
         ----------
@@ -473,7 +473,7 @@ def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain
     -------
     >>> bounds = np.array([[-5.0, 5.0], [-2.0, 2.0]])
     >>> dimensionality = 2
-    >>> design_space = make_nd_continuous_domain(bounds, dimensionality)
+    >>> domain = make_nd_continuous_domain(bounds, dimensionality)
     """
     input_space = {}
     for dim in range(dimensionality):
