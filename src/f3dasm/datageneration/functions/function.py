@@ -76,7 +76,8 @@ class Function(DataGenerator):
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            input_x.add_output(np.array(y).reshape(-1, 1))
+            input_x.fill_output(np.array(y).reshape(-1, 1))
+            return input_x
 
         return np.array(y).reshape(-1, 1)
 
@@ -366,11 +367,6 @@ class Function(DataGenerator):
 
 
 def _from_data_to_numpy_array_benchmarkfunction(
-    data: ExperimentData,
-) -> np.ndarray:
-    """Check if doe is in right format"""
-    if not data.design.is_single_objective_continuous():
-        raise TypeError(
-            "All inputs and outputs need to be continuous parameters and output single objective")
+        data: ExperimentData) -> np.ndarray:
 
     return data.get_input_data().to_numpy()

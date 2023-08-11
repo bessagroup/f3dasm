@@ -48,23 +48,20 @@ def test_correct_sampling_ran(design3: Domain):
         ]
     )
 
-    columnnames = [
-        ["input"] * design3.get_number_of_input_parameters(),
-        ["x1", "x2", "x3", "x4", "x5"],
-    ]
+    columnnames = ["x1", "x2", "x3", "x4", "x5"]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
         {
-            ("input", "x1"): "float",
-            ("input", "x2"): "int",
-            ("input", "x3"): "float",
-            ("input", "x4"): "category",
-            ("input", "x5"): "float",
+            "x1": "float",
+            "x2": "int",
+            "x3": "float",
+            "x4": "category",
+            "x5": "float",
         }
     )
 
     samples = random_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.data.data.round(6)
+    samples = samples.input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
@@ -87,23 +84,20 @@ def test_correct_sampling_sobol(design3: Domain):
         ]
     )
 
-    columnnames = [
-        ["input"] * design3.get_number_of_input_parameters(),
-        ["x1", "x2", "x3", "x4", "x5"],
-    ]
+    columnnames = ["x1", "x2", "x3", "x4", "x5"]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
         {
-            ("input", "x1"): "float",
-            ("input", "x2"): "int",
-            ("input", "x3"): "float",
-            ("input", "x4"): "category",
-            ("input", "x5"): "float",
+            "x1": "float",
+            "x2": "int",
+            "x3": "float",
+            "x4": "category",
+            "x5": "float",
         }
     )
 
     samples = sobol_sequencing.get_samples(numsamples=numsamples)
-    samples = samples.data.data.round(6)
+    samples = samples.input_data.data.round(6)
     assert df_ground_truth.equals(samples)
 
 
@@ -125,23 +119,20 @@ def test_correct_sampling_lhs(design3: Domain):
         ]
     )
 
-    columnnames = [
-        ["input"] * design3.get_number_of_input_parameters(),
-        ["x1", "x2", "x3", "x4", "x5"],
-    ]
+    columnnames = ["x1", "x2", "x3", "x4", "x5"]
     df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
     df_ground_truth = df_ground_truth.astype(
         {
-            ("input", "x1"): "float",
-            ("input", "x2"): "int",
-            ("input", "x3"): "float",
-            ("input", "x4"): "category",
-            ("input", "x5"): "float",
+            "x1": "float",
+            "x2": "int",
+            "x3": "float",
+            "x4": "category",
+            "x5": "float",
         }
     )
 
     samples = lhs_sampler.get_samples(numsamples=numsamples)
-    samples = samples.data.data.round(6)
+    samples = samples.input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 

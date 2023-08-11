@@ -43,9 +43,13 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                             fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
                             logger.debug("Locked file successfully")
 
-                        # Load the experimentdata from the object
-                        self.data = _Data.from_file(filename=Path(f"{self.filename}_data"), text_io=file)
-                        logger.debug("Loaded data successfully")
+                        # Load the input_data from the object
+                        self.input_data = _Data.from_file(filename=Path(f"{self.filename}_data"), text_io=file)
+                        logger.debug("Loaded input data successfully")
+
+                        # Load the output_data from the object
+                        self.output_data = _Data.from_file(filename=Path(f"{self.filename}_output"))
+                        logger.debug("Loaded output data successfully")
 
                         # Load the jobs from disk
                         self.jobs = _JobQueue.from_file(filename=Path(f"{self.filename}_jobs"))
@@ -62,7 +66,8 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                         file.truncate()
 
                         # Write the data to disk
-                        self.data.store(filename=f"{self.filename}_data", text_io=file)
+                        self.input_data.store(filename=f"{self.filename}_data", text_io=file)
+                        self.output_data.store(filename=f"{self.filename}_output")
                         self.jobs.store(filename=f"{self.filename}_jobs")
 
                     break

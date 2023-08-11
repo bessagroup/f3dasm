@@ -45,7 +45,7 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
-    data.add_output(output=func(data), label="y")
+    data.fill_output(output=func(data), label="y")
 
     opt1 = optimizer(data=copy.copy(data), seed=seed)
     opt2 = optimizer(data=copy.copy(data), seed=seed)
@@ -54,7 +54,8 @@ def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: 
     opt2.iterate(iterations=i, function=func)
     data1 = opt1.extract_data()
     data2 = opt2.extract_data()
-    assert all(data1.data.data == data2.data.data)
+    assert all(data1.input_data.data == data2.input_data.data)
+    assert all(data1.output_data.data == data2.output_data.data)
 
 
 @pytest.mark.smoke
@@ -91,7 +92,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
     func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
-    data.add_output(output=func(data), label="y")
+    data.fill_output(output=func(data), label="y")
 
     opt1: Optimizer = optimizer(data=data, seed=seed)
 
