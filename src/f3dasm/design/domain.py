@@ -465,7 +465,7 @@ def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain
 
     Notes
     -----
-    This function creates a Domain object consisting of continuous input parameters. 
+    This function creates a Domain object consisting of continuous input parameters.
     The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
     The input parameters are named "x0", "x1" ..
 
