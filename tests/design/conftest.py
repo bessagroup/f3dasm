@@ -14,10 +14,11 @@ def doe():
     x3 = ContinuousParameter(lower_bound=10.0, upper_bound=380.3)
     x4 = CategoricalParameter(categories=["test1", "test2", "test3"])
     x5 = DiscreteParameter(lower_bound=2, upper_bound=3)
+    x6 = DiscreteParameter(values=[3.14, 42])
 
     y1 = ContinuousParameter()
     y2 = ContinuousParameter()
-    designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
+    designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5, 'x6': x6}
     output_space = {'y1': y1, 'y2': y2}
 
     doe = Domain(input_space=designspace, output_space=output_space)

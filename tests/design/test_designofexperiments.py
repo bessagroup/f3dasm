@@ -28,7 +28,8 @@ def test_get_continuous_parameters(doe: Domain):
 
 def test_get_discrete_parameters(doe: Domain):
     design = {'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-              'x5': DiscreteParameter(lower_bound=2, upper_bound=3)}
+              'x5': DiscreteParameter(lower_bound=2, upper_bound=3),
+              'x6': DiscreteParameter(values=[3.14, 42])}
     assert doe.get_discrete_input_parameters() == design
 
 
@@ -42,7 +43,7 @@ def test_get_continuous_names(doe: Domain):
 
 
 def test_get_discrete_names(doe: Domain):
-    assert doe.get_discrete_input_names() == ["x2", "x5"]
+    assert doe.get_discrete_input_names() == ["x2", "x5", "x6"]
 
 
 def test_get_categorical_names(doe: Domain):
@@ -59,13 +60,15 @@ def test_add_input_space():
     design = Domain(input_space=designspace)
     design.add_input_space('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
     design.add_input_space('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    design.add_input_space('x6', DiscreteParameter(values=[3.14, 42]))
 
     assert design.input_space == {
         'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
         'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
         'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
         'x4': CategoricalParameter(categories=["test1", "test2", "test3"]),
-        'x5': DiscreteParameter(lower_bound=2, upper_bound=3)
+        'x5': DiscreteParameter(lower_bound=2, upper_bound=3),
+        'x6': DiscreteParameter(values=[3.14, 42])
     }
 
 
@@ -79,6 +82,7 @@ def test_add_output_space():
     design = Domain(output_space=designspace)
     design.add_output_space('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
     design.add_output_space('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    design.add_output_space('x6', DiscreteParameter(values=[3.14, 42]))
 
     assert design.output_space == {
         'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
@@ -86,11 +90,12 @@ def test_add_output_space():
         'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
         'x4': CategoricalParameter(categories=["test1", "test2", "test3"]),
         'x5': DiscreteParameter(lower_bound=2, upper_bound=3),
+        'x6': DiscreteParameter(values=[3.14, 42])
     }
 
 
 def test_getNumberOfInputParameters(doe: Domain):
-    assert doe.get_number_of_input_parameters() == 5
+    assert doe.get_number_of_input_parameters() == 6
 
 
 def test_getNumberOfOutputParameters(doe: Domain):
@@ -140,6 +145,7 @@ def test_cast_types_dataframe_output(doe: Domain):
         ("input", "x3"): "float",
         ("input", "x4"): "category",
         ("input", "x5"): "int",
+        ("input", "x6"): "float",
     }
 
     assert doe._cast_types_dataframe(space=doe.input_space, label="input") == ground_truth

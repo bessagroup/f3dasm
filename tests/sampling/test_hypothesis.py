@@ -63,7 +63,7 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 @settings(max_examples=10)
 def test_check_length_input_when_adding_parameter(design: Domain):
     length_input_space = len(design.input_space)
-    parameter = DiscreteParameter()
+    parameter = DiscreteParameter(lower_bound=0, upper_bound=1)
     design.add_input_space(name="test", space=parameter)
     assert length_input_space + 1 == (len(design.input_space))
 

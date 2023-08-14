@@ -167,11 +167,12 @@ class Sampler:
         discrete = self.design.get_discrete_input_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, param in enumerate(discrete.values()):
-            samples[:, dim] = np.random.choice(
-                range(param.lower_bound,
-                      param.upper_bound + 1),
-                size=numsamples,
-            )
+            # Construct the list of values if provided as bounds
+            if param.lower_bound and param.upper_bound:
+                values = range(param.lower_bound, param.upper_bound + 1)
+            else:
+                values = param.values
+            samples[:, dim] = np.random.choice(values, size=numsamples)
 
         return samples
 
