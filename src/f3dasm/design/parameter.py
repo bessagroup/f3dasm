@@ -181,7 +181,7 @@ class CategoricalParameter(Parameter):
         for category in self.categories:
             if not any(
                 (
-                    isinstance(category, str), 
+                    isinstance(category, str),
                     isinstance(category, int),
                     isinstance(category, float)
                 )
