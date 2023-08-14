@@ -161,7 +161,7 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    categories: List[str|int|float]
+    categories: List[str | int | float]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):
@@ -183,7 +183,7 @@ class CategoricalParameter(Parameter):
                 (
                     isinstance(category, str), 
                     isinstance(category, int),
-                    isinstance(category, float),
+                    isinstance(category, float)
                 )
             ):
                 raise TypeError(f"Expect string, int or float, got {type(category)}")
