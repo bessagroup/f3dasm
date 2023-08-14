@@ -145,7 +145,7 @@ class DiscreteParameter(Parameter):
         """Check that bounds or values are provided."""
         if (self.lower_bound is None or self.upper_bound is None) and self.values is None:
             raise ValueError("Expect at least integer bounds or a list of values.")
-        
+
         if (self.lower_bound is not None or self.upper_bound is not None) and self.values is not None:
             raise ValueError("Expect integer bounds or a list of values, not both.")
 
