@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Type
+from typing import Any, ClassVar, List, Type, Union
 
 # Third-party core
 import numpy as np
@@ -161,7 +161,8 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    categories: List[str]
+    # Use Union instead of | for Python < 3.10
+    categories: List[Union[str, int, float]]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):
@@ -179,8 +180,14 @@ class CategoricalParameter(Parameter):
         self.categories = list(self.categories)  # Convert to list because hydra parses omegaconf.ListConfig
 
         for category in self.categories:
-            if not isinstance(category, str):
-                raise TypeError(f"Expect string, got {type(category)}")
+            if not any(
+                (
+                    isinstance(category, str),
+                    isinstance(category, int),
+                    isinstance(category, float)
+                )
+            ):
+                raise TypeError(f"Expect string, int or float, got {type(category)}")
 
 
 PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]

@@ -1,6 +1,7 @@
 import json
 
 import pandas as pd
+import numpy as np
 import pytest
 
 from f3dasm.design.domain import Domain
@@ -47,6 +48,18 @@ def test_get_discrete_names(doe: Domain):
 
 def test_get_categorical_names(doe: Domain):
     assert doe.get_categorical_input_names() == ["x4"]
+
+
+def test_add_arbitrary_list_as_categorical_parameter():
+    arbitrary_list_1 = [3.1416, "pi", 42]
+    arbitrary_list_2 = np.linspace(start=142, stop=214, num=10)
+    designspace = {'x1': CategoricalParameter(categories=arbitrary_list_1),
+                   'x2': CategoricalParameter(categories=arbitrary_list_2)
+    }
+
+    design = Domain(input_space=designspace)
+
+    assert design.input_space == designspace
 
 
 def test_add_input_space():

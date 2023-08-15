@@ -114,7 +114,7 @@ def test_correct_categorical_space():
 
 
 def test_invalid_types_in_categories_categorical_space():
-    categories = ["test1", "test2", 3, "test4"]
+    categories = ["test1", "test2", [3, 4], "test4"]
     with pytest.raises(TypeError):
         categorical = CategoricalParameter(categories=categories)
 
