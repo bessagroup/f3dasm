@@ -4,7 +4,7 @@
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Type
+from typing import Any, ClassVar, List, Type, Union
 
 # Third-party core
 import numpy as np
@@ -161,7 +161,8 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    categories: List[str | int | float]
+    # Use Union instead of | for Python < 3.10
+    categories: List[Union[str, int, float]]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):
