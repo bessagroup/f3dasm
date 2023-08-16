@@ -34,7 +34,7 @@ class Store(Protocol):
         ...
 
 
-def numpy_store(object, path: Path) -> str:
+def numpy_store(object: np.ndarray, path: Path) -> str:
     np.save(file=path.with_suffix('.npy'), arr=object)
     return '.npy'
 
