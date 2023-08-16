@@ -127,25 +127,6 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path, text_io)
 
     @classmethod
-    def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
-                           text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
-        try:
-            domain = Domain.from_file(Path(f"{filename}_domain"))
-            experimentdata = cls(domain=domain)
-            experimentdata.input_data = _Data.from_file(Path(f"{filename}_data"), text_io)
-
-            try:
-                experimentdata.output_data = _Data.from_file(Path(f"{filename}_output"))
-            except FileNotFoundError:
-                experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
-
-            experimentdata.jobs = _JobQueue.from_file(Path(f"{filename}_jobs"))
-            experimentdata.filename = filename
-            return experimentdata
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
-
-    @classmethod
     def from_sampling(cls, sampler: Sampler) -> 'ExperimentData':
         """Create an ExperimentData object from a sampler.
 
@@ -163,6 +144,10 @@ class ExperimentData:
         return sampler.get_samples()
 
     @classmethod
+    def from_csv(cls, filename: Path, domain: Union[None, Domain] = None) -> 'ExperimentData':
+        ...
+
+    @classmethod
     def from_yaml(cls, config: DictConfig) -> 'ExperimentData':
 
         # Option 1: From existing ExperimentData files
@@ -174,8 +159,29 @@ class ExperimentData:
             sampler = Sampler.from_yaml(config)
             data = sampler.get_samples(config.experimentdata.number_of_samples)
 
+        # Option 3: Import the csv file
+        ...
+
         return data
 
+    @classmethod
+    def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
+                           text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
+        try:
+            domain = Domain.from_file(Path(f"{filename}_domain"))
+            experimentdata = cls(domain=domain)
+            experimentdata.input_data = _Data.from_file(Path(f"{filename}_data"), text_io)
+
+            try:
+                experimentdata.output_data = _Data.from_file(Path(f"{filename}_output"))
+            except FileNotFoundError:
+                experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
+
+            experimentdata.jobs = _JobQueue.from_file(Path(f"{filename}_jobs"))
+            experimentdata.filename = filename
+            return experimentdata
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
     #                                                               Storage Methods
     # =============================================================================
 
