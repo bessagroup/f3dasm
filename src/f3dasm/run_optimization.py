@@ -12,6 +12,7 @@ from typing import Any, List, Type
 # Third-party
 import numpy as np
 import pandas as pd
+import xarray as xr
 from pathos.helpers import mp
 
 from f3dasm.optimization import Optimizer
@@ -71,6 +72,24 @@ class OptimizationResult:
              f"{len(self.data)} realizations.")
         )
 
+    def to_xarray(self) -> xr.Dataset:
+        xarr = xr.concat([realization.to_xarray() for realization in self.data],
+                         dim=xr.DataArray(np.arange(len(self.data)), dims='realization'))
+
+        xarr.attrs['number_of_samples']: int = self.number_of_samples
+        xarr.attrs['realization_seeds']: List[int] = list(self.seeds)
+
+        # Benchmark functions
+        xarr.attrs['function_seed']: int = self.function.seed
+        xarr.attrs['function_name']: str = self.function.get_name()
+        xarr.attrs['function_noise']: str = self.function.noise
+        xarr.attrs['function_dimensionality']: int = self.function.dimensionality
+
+        # Global minimum function
+        _, g = self.function.get_global_minimum(d=self.function.dimensionality)
+        xarr.attrs['function_global_minimum']: float = float(np.array(g if not isinstance(g, list) else g[0])[0, 0])
+        return xarr
+
 
 def run_optimization(
     optimizer: Optimizer,
@@ -110,7 +129,7 @@ def run_optimization(
     # Sample
     samples = sampler.get_samples(numsamples=number_of_samples)
 
-    samples.add_output(output=function(samples), label="y")
+    samples.fill_output(output=function(samples.get_input_data().to_numpy()), label="y")
 
     optimizer.set_data(samples)
 

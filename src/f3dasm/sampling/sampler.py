@@ -40,17 +40,8 @@ class Sampler:
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples
-        # self.__post_init__()
-
         if seed:
             np.random.seed(seed)
-
-    # def __post_init__(self):
-    #     if self.seed:
-    #         np.random.seed(self.seed)
-
-    # def __eq__(self, __o: object) -> bool:
-    #     return all((self.design == __o.design, self.seed == __o.seed))
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> 'Sampler':
@@ -60,12 +51,6 @@ class Sampler:
         sampler: Sampler = instantiate(args)
         sampler.design = Domain.from_yaml(config.design)
         return sampler
-
-    # def to_json(self):
-    #     args = {'design': self.design.to_json(),
-    #             'seed': self.seed}
-    #     name = self.__class__.__name__
-    #     return json.dumps((args, name))
 
     def set_seed(self, seed: int):
         """Set the seed of the sampler
@@ -127,7 +112,7 @@ class Sampler:
         # TODO #60 : Fix this ordering issue
         # Get the column names in this particular order
         columnnames = [
-            ("input", name)
+            name
             for name in self.design.get_continuous_input_names(
             ) + self.design.get_discrete_input_names(
             ) + self.design.get_categorical_input_names(
@@ -140,7 +125,7 @@ class Sampler:
 
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
         """Cast the samples to a Data object"""
-        data = ExperimentData(design=self.design)
+        data = ExperimentData(domain=self.design)
 
         # First get an empty reference frame from the DoE
         empty_frame = self.design._create_empty_dataframe()

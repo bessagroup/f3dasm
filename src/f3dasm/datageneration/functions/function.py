@@ -14,6 +14,7 @@ from typing import Tuple, Union
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
+from autograd import grad
 
 # Locals
 from ...design.experimentdata import ExperimentData
@@ -41,6 +42,7 @@ class Function(DataGenerator):
         """
         self.augmentor = FunctionAugmentor()
         self.seed = seed
+        self.grad = grad(self.__call__)
 
         self.set_seed(seed)
 
@@ -60,7 +62,7 @@ class Function(DataGenerator):
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
+            x = input_x.get_input_data().to_numpy()
 
         else:
             x = input_x
@@ -76,7 +78,8 @@ class Function(DataGenerator):
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            input_x.add_output(np.array(y).reshape(-1, 1))
+            input_x.fill_output(np.array(y).reshape(-1, 1))
+            return input_x
 
         return np.array(y).reshape(-1, 1)
 
@@ -143,6 +146,14 @@ class Function(DataGenerator):
 
         grad = np.array(grad)
         return grad.ravel()
+
+    def dfdx(self, x: np.ndarray) -> np.ndarray:
+        # check if the object has a 'custom_grad' method
+        if hasattr(self, 'error_autograd'):
+            if self.error_autograd:
+                return self.dfdx_legacy(x)
+
+        return self.grad(x)
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
         """Analytical expression to calculate the objective value
@@ -333,44 +344,3 @@ class Function(DataGenerator):
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
-
-    def plot_data2(
-        self, x1: np.ndarray, x2: np.ndarray, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]])
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contout plot with the datapoints as scatter
-
-        Parameters
-        ----------
-        data
-            Data object containing samples
-        px, optional
-            number of pixels on each axis
-        domain, optional
-            domain that needs to be plotted
-
-        Returns
-        -------
-            matplotlib figure and axes
-        """
-        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        ax.scatter(
-            x=x1,
-            y=x2,
-            s=10,
-            c=np.log(np.linspace(1, 10, len(x1)) * 2),
-            cmap="Blues",
-            edgecolors="black",
-        )
-
-        return fig, ax
-
-
-def _from_data_to_numpy_array_benchmarkfunction(
-    data: ExperimentData,
-) -> np.ndarray:
-    """Check if doe is in right format"""
-    if not data.design.is_single_objective_continuous():
-        raise TypeError(
-            "All inputs and outputs need to be continuous parameters and output single objective")
-
-    return data.get_input_data().to_numpy()

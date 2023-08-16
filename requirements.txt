@@ -1,6 +1,7 @@
 numpy
 scipy
 pandas
+xarray
 matplotlib
 hydra-core
 pathos>=0.3.0

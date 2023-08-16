@@ -113,6 +113,7 @@ class AckleyN2(PyBenchFunction):
     multimodal = False
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -135,6 +136,9 @@ class AckleyN2(PyBenchFunction):
         x, y = X
         res = -200 * np.exp(-0.2 * np.sqrt(x**2 + y**2))
         return res
+
+    def custom_grad(self, X):
+        x, y = X
 
 
 class AckleyN3(PyBenchFunction):
@@ -653,6 +657,7 @@ class BukinN6(PyBenchFunction):
     multimodal = True
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -1150,6 +1155,7 @@ class HappyCat(PyBenchFunction):
     multimodal = True
     randomized_term = False
     parametric = True
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -1276,6 +1282,7 @@ class Keane(PyBenchFunction):
     multimodal = True
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -1813,7 +1820,7 @@ class Quartic(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.arange(1, d + 1) * X**4) + np.random.random()
+        res = np.sum(np.arange(1, d + 1) * X**4)  # + np.random.random()
         return res
 
 
@@ -1864,6 +1871,7 @@ class Ridge(PyBenchFunction):
     multimodal = False
     randomized_term = False
     parametric = True
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -2283,6 +2291,7 @@ class Schwefel2_22(PyBenchFunction):
     multimodal = False
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -2780,8 +2789,8 @@ class XinSheYang(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
-        rand = np.random.random(d)
-        res = np.sum(rand * np.abs(X) ** i)
+        # rand = np.random.random(d)
+        res = np.sum(np.abs(X) ** i)
         return res
 
 
@@ -2796,6 +2805,7 @@ class XinSheYangN2(PyBenchFunction):
     multimodal = True
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):
@@ -2873,6 +2883,7 @@ class XinSheYangN4(PyBenchFunction):
     multimodal = False
     randomized_term = False
     parametric = False
+    error_autograd = True
 
     @classmethod
     def is_dim_compatible(cls, d):

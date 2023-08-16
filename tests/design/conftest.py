@@ -15,17 +15,14 @@ def doe():
     x4 = CategoricalParameter(categories=["test1", "test2", "test3"])
     x5 = DiscreteParameter(lower_bound=2, upper_bound=3)
 
-    y1 = ContinuousParameter()
-    y2 = ContinuousParameter()
     designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
-    output_space = {'y1': y1, 'y2': y2}
 
-    doe = Domain(input_space=designspace, output_space=output_space)
+    doe = Domain(input_space=designspace)
     return doe
 
 
 @pytest.fixture(scope="package")
-def design_space():
+def domain():
 
     input_space = {
         'x1': ContinuousParameter(-5.12, 5.12),
@@ -33,11 +30,7 @@ def design_space():
         'x3': CategoricalParameter(["red", "green", "blue"])
     }
 
-    output_space = {
-        'y': ContinuousParameter(-10.0, 10.0)
-    }
-
-    return Domain(input_space=input_space, output_space=output_space)
+    return Domain(input_space=input_space)
 
 
 @pytest.fixture(scope="package")

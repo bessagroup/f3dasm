@@ -16,7 +16,6 @@ pytestmark = pytest.mark.smoke
 @composite
 def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1, max_value: int = 20):
     number_of_input_parameters = draw(integers(min_value, max_value))
-    number_of_output_parameters = draw(integers(min_value, max_value))
     _name = text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10)
 
     def get_space(number_of_parameters: int) -> Dict[str, Parameter]:
@@ -54,7 +53,6 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 
     design_space = Domain(
         input_space=get_space(number_of_input_parameters),
-        output_space=get_space(number_of_output_parameters),
     )
     return design_space
 

@@ -39,8 +39,8 @@ class RandomSearch(Optimizer):
         x_new = np.atleast_2d(
             [
                 np.random.uniform(
-                    low=self.data.design.get_bounds()[d, 0], high=self.data.design.get_bounds()[d, 1])
-                for d in range(self.data.design.get_number_of_input_parameters())
+                    low=self.data.domain.get_bounds()[d, 0], high=self.data.domain.get_bounds()[d, 1])
+                for d in range(self.data.domain.get_number_of_input_parameters())
             ]
         )
 

@@ -1,7 +1,7 @@
 #                                                                       Modules
 # =============================================================================
 
-from ..design._data import Design
+from ..design.design import Design
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits

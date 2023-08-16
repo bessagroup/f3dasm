@@ -100,21 +100,6 @@ class Optimizer:
     def _check_imports():
         ...
 
-    def to_json(self) -> str:  # Tuple[dict, str]:
-        """Returns the information to recreate this object
-
-        Returns
-        -------
-            Tuple with dictionary to store and recreate the same object and name of the object
-        """
-        args: dict = {'data': self.data.to_json(),
-                      'hyperparameters': self.hyperparameters,
-                      'seed': self.seed,
-                      }
-
-        name: str = self.get_name()
-        return json.dumps((args, name))
-
     def init_parameters(self):
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
         pass
@@ -182,8 +167,8 @@ class Optimizer:
             Input vector clipped to the bounds of the search space
         """
         if self.parameter.force_bounds:
-            x = x.clip(min=self.data.design.get_bounds()[
-                       :, 0], max=self.data.design.get_bounds()[:, 1])
+            x = x.clip(min=self.data.domain.get_bounds()[
+                       :, 0], max=self.data.domain.get_bounds()[:, 1])
 
         return x
 
@@ -218,7 +203,6 @@ class Optimizer:
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(
             iterations, population=self.parameter.population))
-        # print(f"Optimizing for {iterations} iterations with {self.get_name()}")
 
     def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
         """Add the iteration to the dataframe
