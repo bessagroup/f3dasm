@@ -14,6 +14,7 @@ from typing import Tuple, Union
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
+from autograd import grad
 
 # Locals
 from ...design.experimentdata import ExperimentData
@@ -41,6 +42,7 @@ class Function(DataGenerator):
         """
         self.augmentor = FunctionAugmentor()
         self.seed = seed
+        self.grad = grad(self.__call__)
 
         self.set_seed(seed)
 
@@ -144,6 +146,14 @@ class Function(DataGenerator):
 
         grad = np.array(grad)
         return grad.ravel()
+
+    def dfdx(self, x: np.ndarray) -> np.ndarray:
+        # check if the object has a 'custom_grad' method
+        if hasattr(self, 'error_autograd'):
+            if self.error_autograd:
+                return self.dfdx_legacy(x)
+
+        return self.grad(x)
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
         """Analytical expression to calculate the objective value
