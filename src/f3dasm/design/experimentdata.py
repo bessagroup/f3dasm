@@ -151,9 +151,27 @@ class ExperimentData:
     @classmethod
     def from_csv(cls, filename_input: Path, filename_output: Union[None, Path] = None,
                  domain: Union[None, Domain] = None) -> 'ExperimentData':
+        """Create an ExperimentData object from input and output .csv files.
+
+        Parameters
+        ----------
+        filename_input : Path
+            filename of the input .csv file.
+        filename_output : Path, optional
+            filename of the output .csv file, by default None
+        domain : Domain, optional
+            Domain object, by default None
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+        # Read the input datat csv file as a pandas dataframe
         df_input = pd.read_csv(filename_input.with_suffix('.csv'), index_col=0)
 
         if domain is None:
+            # Infer the domain from the input data
             domain = Domain.from_dataframe(df_input)
 
         experimentdata = cls(domain)
@@ -171,7 +189,18 @@ class ExperimentData:
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> 'ExperimentData':
+        """Create an ExperimentData object from a hydra yaml configuration.
 
+        Parameters
+        ----------
+        config : DictConfig
+            A DictConfig object containing the configuration.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
         # Option 1: From exisiting ExperimentData files
         if 'from_file' in config.experimentdata:
             return cls.from_file(filename=config.experimentdata.from_file.filepath)
