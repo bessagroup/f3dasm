@@ -44,12 +44,12 @@ class Sampler:
             np.random.seed(seed)
 
     @classmethod
-    def from_yaml(cls, config: DictConfig) -> 'Sampler':
+    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> 'Sampler':
         """Create a sampler from a yaml configuration"""
 
-        args = {**config.sampler, 'design': None}
+        args = {**sampler_config, 'design': None}
         sampler: Sampler = instantiate(args)
-        sampler.design = Domain.from_yaml(config.design)
+        sampler.design = Domain.from_yaml(domain_config)
         return sampler
 
     def set_seed(self, seed: int):

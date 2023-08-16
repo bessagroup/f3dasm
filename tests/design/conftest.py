@@ -59,3 +59,13 @@ def design_data():
     dict_output = {'output1': 3, 'output2': 4}
     job_number = 123
     return dict_input, dict_output, job_number
+
+
+@pytest.fixture(scope="package")
+def sample_dataframe():
+    data = {
+        'feature1': [1.0, 2.0, 3.0],
+        'feature2': [4, 5, 6],
+        'feature3': ['A', 'B', 'C']
+    }
+    return pd.DataFrame(data)

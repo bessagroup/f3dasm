@@ -88,6 +88,20 @@ class Domain:
             args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
         return cls(**args)
 
+    @classmethod
+    def from_dataframe(cls, df: pd.DataFrame) -> 'Domain':
+        input_space = {}
+        for name, type in df.dtypes.items():
+            if type == 'float64':
+                input_space[name] = ContinuousParameter(lower_bound=float(
+                    df[name].min()), upper_bound=float(df[name].max()))
+            elif type == 'int64':
+                input_space[name] = DiscreteParameter(lower_bound=int(df[name].min()), upper_bound=int(df[name].max()))
+            else:
+                input_space[name] = CategoricalParameter(df[name].unique().tolist())
+
+        return cls(input_space=input_space)
+
     def store(self, filename: str) -> None:
         """Stores the Domain in a pickle file.
 

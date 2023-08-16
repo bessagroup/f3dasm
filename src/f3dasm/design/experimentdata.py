@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from hydra.utils import get_original_cwd
+from hydra.utils import get_original_cwd, instantiate
 from omegaconf import DictConfig
 from pathos.helpers import mp
 
@@ -59,8 +59,13 @@ class Sampler(Protocol):
         ...
 
     @classmethod
-    def from_yaml(cls, config: DictConfig) -> 'Sampler':
-        ...
+    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> 'Sampler':
+        """Create a sampler from a yaml configuration"""
+
+        args = {**sampler_config, 'design': None}
+        sampler: Sampler = instantiate(args)
+        sampler.design = Domain.from_yaml(domain_config)
+        return sampler
 
 
 class ExperimentData:
@@ -144,25 +149,51 @@ class ExperimentData:
         return sampler.get_samples()
 
     @classmethod
-    def from_csv(cls, filename: Path, domain: Union[None, Domain] = None) -> 'ExperimentData':
-        ...
+    def from_csv(cls, filename_input: Path, filename_output: Union[None, Path] = None,
+                 domain: Union[None, Domain] = None) -> 'ExperimentData':
+        df_input = pd.read_csv(filename_input.with_suffix('.csv'), index_col=0)
+
+        if domain is None:
+            domain = Domain.from_dataframe(df_input)
+
+        experimentdata = cls(domain)
+        experimentdata.input_data = _Data(df_input)
+
+        if filename_output is not None:
+            df_output = pd.read_csv(filename_output.with_suffix('.csv'), index_col=0)
+            experimentdata.output_data = _Data(df_output)
+        elif filename_output is None:
+            experimentdata.output_data = _Data()
+
+        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
+        experimentdata.filename = filename_input.stem
+        return experimentdata
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> 'ExperimentData':
 
-        # Option 1: From existing ExperimentData files
-        if config.experimentdata.existing_data_path:
-            data = cls.from_file(filename=config.experimentdata.data)
+        # Option 1: From exisiting ExperimentData files
+        if 'from_file' in config.experimentdata:
+            return cls.from_file(filename=config.experimentdata.from_file.filepath)
 
         # Option 2: Sample from the domain
-        else:
-            sampler = Sampler.from_yaml(config)
-            data = sampler.get_samples(config.experimentdata.number_of_samples)
+        elif 'from_sampling' in config.experimentdata:
+            sampler = Sampler.from_yaml(config.domain, config.experimentdata.from_sampling)
+            return sampler.get_samples()
+            # return cls.from_sampling(sampler)
 
         # Option 3: Import the csv file
-        ...
+        elif 'from_csv' in config.experimentdata:
+            if 'domain' in config:
+                domain = Domain.from_yaml(config.domain)
+            else:
+                domain = None
 
-        return data
+            return cls.from_csv(filename_input=config.experimentdata.from_csv.input_filepath,
+                                filename_output=config.experimentdata.from_csv.output_filepath, domain=domain)
+
+        else:
+            raise ValueError("No valid experimentdata option found in the config file!")
 
     @classmethod
     def _from_file_attempt(cls: Type['ExperimentData'], filename: str,

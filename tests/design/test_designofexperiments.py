@@ -1,7 +1,7 @@
 import json
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from f3dasm.design.domain import Domain
@@ -55,7 +55,7 @@ def test_add_arbitrary_list_as_categorical_parameter():
     arbitrary_list_2 = np.linspace(start=142, stop=214, num=10)
     designspace = {'x1': CategoricalParameter(categories=arbitrary_list_1),
                    'x2': CategoricalParameter(categories=arbitrary_list_2)
-    }
+                   }
 
     design = Domain(input_space=designspace)
 
@@ -150,6 +150,14 @@ def test_get_input_names(domain: Domain):
 def test_get_number_of_input_parameters(domain: Domain):
     # Ensure that get_number_of_input_parameters returns the correct number of input parameters
     assert domain.get_number_of_input_parameters() == 3
+
+
+def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
+    domain = Domain.from_dataframe(sample_dataframe)
+    ground_truth = Domain(input_space={'feature1': ContinuousParameter(lower_bound=1.0, upper_bound=3.0),
+                                       'feature2': DiscreteParameter(lower_bound=4, upper_bound=6),
+                                       'feature3': CategoricalParameter(['A', 'B', 'C'])})
+    assert (domain.input_space == ground_truth.input_space)
 
 
 if __name__ == "__main__":  # pragma: no cover
