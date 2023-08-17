@@ -40,7 +40,7 @@ class RandomSearch(Optimizer):
             [
                 np.random.uniform(
                     low=self.data.domain.get_bounds()[d, 0], high=self.data.domain.get_bounds()[d, 1])
-                for d in range(self.data.domain.get_number_of_input_parameters())
+                for d in range(len(self.data.domain))
             ]
         )
 

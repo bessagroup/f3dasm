@@ -65,7 +65,7 @@ def test_data_add_numpy_arrays(sample_data: _Data):
 
 
 def test_data_get_data(sample_data: _Data):
-    input_data = sample_data.get_data()
+    input_data = sample_data.data
     assert isinstance(input_data, pd.DataFrame)
     assert input_data.equals(sample_data.data)
 
@@ -95,7 +95,3 @@ def test_data_n_best_samples(sample_data: _Data):
     result = sample_data.n_best_samples(nosamples, output_names)
     assert isinstance(result, pd.DataFrame)
     assert len(result) == nosamples
-
-
-def test_data_number_of_datapoints(sample_data: _Data):
-    assert sample_data.number_of_datapoints() == len(sample_data)

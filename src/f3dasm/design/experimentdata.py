@@ -68,6 +68,11 @@ class Sampler(Protocol):
         return sampler
 
 
+class DesignCallable(Protocol):
+    def __call__(design: Design, **kwargs) -> Design:
+        ...
+
+
 class ExperimentData:
     """
     A class that contains data for experiments.
@@ -90,7 +95,7 @@ class ExperimentData:
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
-        return self.get_number_of_datapoints()
+        return len(self.input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         return self.input_data.__iter__()
@@ -181,7 +186,7 @@ class ExperimentData:
             df_output = pd.read_csv(filename_output.with_suffix('.csv'), index_col=0)
             experimentdata.output_data = _Data(df_output)
         elif filename_output is None:
-            experimentdata.output_data = _Data()
+            experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
 
         experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
         experimentdata.filename = filename_input.stem
@@ -242,7 +247,14 @@ class ExperimentData:
             return experimentdata
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
-    #                                                               Storage Methods
+
+    def reset_data(self):
+        """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
+        self.input_data.reset(self.domain)
+        self.output_data.reset()
+        self.jobs.reset()
+
+    #                                                                        Export
     # =============================================================================
 
     def select(self, indices: List[int]) -> 'ExperimentData':
@@ -264,10 +276,10 @@ class ExperimentData:
         if filename is None:
             filename = self.filename
 
-        self.input_data.store(f"{filename}_data")
-        self.output_data.store(f"{filename}_output")
-        self.jobs.store(f"{filename}_jobs")
-        self.domain.store(f"{filename}_domain")
+        self.input_data.store(Path(f"{filename}_data"))
+        self.output_data.store(Path(f"{filename}_output"))
+        self.jobs.store(Path(f"{filename}_jobs"))
+        self.domain.store(Path(f"{filename}_domain"))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -292,29 +304,63 @@ class ExperimentData:
         return xr.Dataset({'input': self.input_data.to_xarray('input_dim'),
                            'output': self.output_data.to_xarray('output_dim')})
 
-    def run(self, operation: Callable, mode: str = 'sequential', kwargs: dict = None):
+    def get_n_best_output_samples(self, nosamples: int) -> pd.DataFrame:
+        """
+        Get the n best output samples from the ExperimentData object.
 
-        if kwargs is None:
-            kwargs = {}
+        Parameters
+        ----------
+        nosamples : int
+            Number of samples to retrieve.
 
-        # Check if operation is a function
-        if not callable(operation):
-            raise TypeError("operation must be a function.")
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing the n best output samples.
+        """
+        df = self.output_data.n_best_samples(nosamples, self.output_data.names)
+        return self.input_data.data.loc[df.index]
 
-        if mode.lower() == "sequential":
-            return self._run_sequential(operation, kwargs)
-        elif mode.lower() == "parallel":
-            return self._run_multiprocessing(operation, kwargs)
-        elif mode.lower() == "cluster":
-            return self._run_cluster(operation, kwargs)
-        else:
-            raise ValueError("Invalid parallelization mode specified.")
+    def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
+        """
+        Get the input parameters of the n best output samples from the ExperimentData object.
 
-    def reset_data(self):
-        """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
-        self.input_data.reset(self.domain)
-        self.output_data.reset()
-        self.jobs.reset()
+        Parameters
+        ----------
+        nosamples : int
+            Number of samples to retrieve.
+
+        Returns
+        -------
+        np.ndarray
+            Numpy array containing the input parameters of the n best output samples.
+        """
+        return self.get_n_best_output_samples(nosamples).to_numpy()
+
+    def get_input_data(self) -> pd.DataFrame:
+        """
+        Get the input data from the ExperimentData object.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing only the input data.
+        """
+        return self.input_data.data
+
+    def get_output_data(self) -> pd.DataFrame:
+        """
+        Get the output data from the ExperimentData object.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing only the output data.
+        """
+        return self.output_data.data
+
+    #                                                         Append or remove data
+    # =============================================================================
 
     def add_new_input_column(self, name: str, parameter: Parameter) -> None:
         """Add a new input column to the ExperimentData object.
@@ -339,24 +385,87 @@ class ExperimentData:
         """
         self.output_data.add_column(name)
 
-    def get_inputdata_by_index(self, index: int) -> dict:
+    def add(self, data: pd.DataFrame, ignore_index: bool = False):
         """
-        Gets the input data at the given index.
+        Append data to the ExperimentData object.
 
         Parameters
         ----------
-        index : int
-            The index of the input data to retrieve.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the input data at the given index.
+        data : pd.DataFrame
+            Data to append.
+        ignore_index : bool, optional
+            Whether to ignore the indices of the appended dataframe.
         """
-        try:
-            return self.input_data.get_data_dict(index)
-        except KeyError as e:
-            raise KeyError('Index does not exist in dataframe!')
+        self.input_data.add(data)
+        self.output_data.add_empty_rows(len(data))
+
+        # Apparently you need to cast the types again
+        # TODO: Breaks if values are NaN or infinite
+        self.input_data.data = self.input_data.data.astype(
+            self.domain._cast_types_dataframe())
+
+        self.jobs.add(number_of_jobs=len(data))
+
+    def add_numpy_arrays(self, input: np.ndarray, output: Union[None, np.ndarray] = None):
+        """
+        Append a numpy array to the ExperimentData object.
+
+        Parameters
+        ----------
+        input : np.ndarray
+            2D numpy array to add to the input data.
+        output : np.ndarray
+            2D numpy array to add to the output data.
+        """
+        self.input_data.add_numpy_arrays(input)
+
+        if output is None:
+            status = 'open'
+            self.output_data.add_empty_rows(len(input))
+        else:
+            status = 'finished'
+            self.output_data.add_numpy_arrays(output)
+
+        self.jobs.add(number_of_jobs=len(input), status=status)
+
+    def fill_output(self, output: np.ndarray, label: str = "y"):
+        """
+        Fill NaN values in the output data with the given array
+
+        Parameters
+        ----------
+        output : np.ndarray
+            Output data to fill
+        label : str, optional
+            Label of the output column to add to.
+        """
+        if label not in self.output_data.names:
+            self.output_data.add_column(label)
+
+        self.output_data.fill_numpy_arrays(output)
+
+    def remove_rows_bottom(self, number_of_rows: int):
+        """
+        Remove a number of rows from the end of the ExperimentData object.
+
+        Parameters
+        ----------
+        number_of_rows : int
+            Number of rows to remove from the bottom.
+        """
+        if number_of_rows == 0:
+            return  # Don't do anything if 0 rows need to be removed
+
+        # get the last indices from data.data
+        indices = self.input_data.data.index[-number_of_rows:]
+
+        # remove the indices rows_to_remove from data.data
+        self.input_data.remove(indices)
+        self.output_data.remove(indices)
+        self.jobs.remove(indices)
+
+    #                                                                        Design
+    # =============================================================================
 
     def get_design(self, index: int) -> Design:
         """
@@ -401,41 +510,6 @@ class ExperimentData:
         """
         self.set_design(design)
 
-    def set_outputdata_by_index(self, index: int, value: Any, column: Union[None, str] = None):
-        """
-        Sets the output data at the given index to the given value.
-
-        Parameters
-        ----------
-        index : int
-            The index of the output data to set.
-        value : Any
-            The value to set the output data to.
-        """
-        self.output_data.set_data(index, value, column)
-        self.jobs.mark_as_finished(index)
-
-    @access_file()
-    def write_outputdata_by_index(self, index: int, value: Any, column: Union[None, str] = None):
-        self.set_outputdata_by_index(index=index, value=value, column=column)
-
-    def set_inputdata_by_index(self, index: int, value: Any, column: Union[None, str] = None):
-        """
-        Sets the input data at the given index to the given value.
-
-        Parameters
-        ----------
-        index : int
-            The index of the input data to set.
-        value : Any
-            The value to set the input data to.
-        """
-        self.input_data.set_data(index, value, column)
-
-    @access_file()
-    def write_inputdata_by_index(self, index: int, value: Any, column: Union[None, str] = None):
-        self.set_inputdata_by_index(index=index, value=value, column=column)
-
     def access_open_job_data(self) -> Design:
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
@@ -446,9 +520,12 @@ class ExperimentData:
     def get_open_job_data(self) -> Design:
         return self.access_open_job_data()
 
+    #                                                                          Jobs
+    # =============================================================================
+
     def set_error(self, index: int):
         self.jobs.mark_as_error(index)
-        self.set_outputdata_by_index(index, value='ERROR')
+        self.output_data.set_data(index, value='ERROR')
 
     @access_file()
     def write_error(self, index: int):
@@ -458,174 +535,48 @@ class ExperimentData:
     def is_all_finished(self) -> bool:
         return self.jobs.is_all_finished()
 
-    def add(self, data: pd.DataFrame, ignore_index: bool = False):
-        """
-        Append data to the ExperimentData object.
+    def mark_all_open(self) -> None:
+        self.jobs.mark_all_open()
 
-        Parameters
-        ----------
-        data : pd.DataFrame
-            Data to append.
-        ignore_index : bool, optional
-            Whether to ignore the indices of the appended dataframe.
-        """
-        self.input_data.add(data)
-        self.output_data.add_empty_rows(len(data))
-
-        # Apparently you need to cast the types again
-        # TODO: Breaks if values are NaN or infinite
-        self.input_data.data = self.input_data.data.astype(
-            self.domain._cast_types_dataframe())
-
-        self.jobs.add(number_of_jobs=len(data))
-
-    def fill_output(self, output: np.ndarray, label: str = "y"):
-        """
-        Fill NaN values in the output data with the given array
-
-        Parameters
-        ----------
-        output : np.ndarray
-            Output data to fill
-        label : str, optional
-            Label of the output column to add to.
-        """
-        if label not in self.output_data.names:
-            self.output_data.add_column(label)
-
-        self.output_data.fill_numpy_arrays(output)
-
-    def add_numpy_arrays(self, input: np.ndarray, output: Union[None, np.ndarray] = None):
-        """
-        Append a numpy array to the ExperimentData object.
-
-        Parameters
-        ----------
-        input : np.ndarray
-            2D numpy array to add to the input data.
-        output : np.ndarray
-            2D numpy array to add to the output data.
-        """
-        self.input_data.add_numpy_arrays(input)
-
-        if output is None:
-            status = 'open'
-            self.output_data.add_empty_rows(len(input))
-        else:
-            status = 'finished'
-            self.output_data.add_numpy_arrays(output)
-
-        self.jobs.add(number_of_jobs=len(input), status=status)
-
-    def remove_rows_bottom(self, number_of_rows: int):
-        """
-        Remove a number of rows from the end of the ExperimentData object.
-
-        Parameters
-        ----------
-        number_of_rows : int
-            Number of rows to remove from the bottom.
-        """
-        if number_of_rows == 0:
-            return  # Don't do anything if 0 rows need to be removed
-
-        # get the last indices from data.data
-        indices = self.input_data.data.index[-number_of_rows:]
-
-        # remove the indices rows_to_remove from data.data
-        self.input_data.remove(indices)
-        self.output_data.remove(indices)
-        self.jobs.remove(indices)
-
-    def get_input_data(self) -> pd.DataFrame:
-        """
-        Get the input data from the ExperimentData object.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame containing only the input data.
-        """
-        return self.input_data.get_data()
-
-    def get_output_data(self) -> pd.DataFrame:
-        """
-        Get the output data from the ExperimentData object.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame containing only the output data.
-        """
-        return self.output_data.get_data()
-
-    def get_n_best_output_samples(self, nosamples: int) -> pd.DataFrame:
-        """
-        Get the n best output samples from the ExperimentData object.
-
-        Parameters
-        ----------
-        nosamples : int
-            Number of samples to retrieve.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame containing the n best output samples.
-        """
-        df = self.output_data.n_best_samples(nosamples, self.output_data.names)
-        return self.input_data.get_data().loc[df.index]
-
-    def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
-        """
-        Get the input parameters of the n best output samples from the ExperimentData object.
-
-        Parameters
-        ----------
-        nosamples : int
-            Number of samples to retrieve.
-
-        Returns
-        -------
-        np.ndarray
-            Numpy array containing the input parameters of the n best output samples.
-        """
-        return self.get_n_best_output_samples(nosamples).to_numpy()
-
-    def get_number_of_datapoints(self) -> int:
-        """
-        Get the total number of datapoints in the ExperimentData object.
-
-        Returns
-        -------
-        int
-            Total number of datapoints.
-        """
-        return len(self.input_data)
-
-    def plot(self, input_par1: str = "x0", input_par2: str = "x1") -> Tuple[plt.Figure, plt.Axes]:
-        """Plot the data of two parameters in a figure
-
-        Parameters
-        ----------
-        input_par1: str, optional
-            name of first parameter (x-axis)
-        input_par2: str, optional
-            name of second parameter (x-axis)
-
-        Returns
-        -------
-        tuple
-            A tuple containing the matplotlib figure and axes
-        """
-        fig, ax = self.input_data.plot()
-
-        return fig, ax
-
-    #                                                               Private methods
+    #                                                            Run datageneration
     # =============================================================================
 
-    def _run_sequential(self, operation: Callable, kwargs: dict):
+    def run(self, operation: DesignCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
+        """Run any function over the entirery of the experiments
+
+        Parameters
+        ----------
+        operation : DesignCallable
+            function execution for every entry in the ExperimentData object
+        mode, optional
+            operational mode, by default 'sequential'
+        kwargs, optional
+            Any keyword arguments that need to be supplied to the function, by default None
+
+        Raises
+        ------
+        TypeError
+            Raised when the operation is not a callable function
+        ValueError
+            Raised when invalid parallelization mode is specified
+        """
+        if kwargs is None:
+            kwargs = {}
+
+        # Check if operation is a function
+        if not callable(operation):
+            raise TypeError("operation must be a function.")
+
+        if mode.lower() == "sequential":
+            return self._run_sequential(operation, kwargs)
+        elif mode.lower() == "parallel":
+            return self._run_multiprocessing(operation, kwargs)
+        elif mode.lower() == "cluster":
+            return self._run_cluster(operation, kwargs)
+        else:
+            raise ValueError("Invalid parallelization mode specified.")
+
+    def _run_sequential(self, operation: DesignCallable, kwargs: dict):
         while True:
             try:
                 design = self.access_open_job_data()
@@ -651,7 +602,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.set_error(design._jobnumber)
 
-    def _run_multiprocessing(self, operation: Callable, kwargs: dict):
+    def _run_multiprocessing(self, operation: DesignCallable, kwargs: dict):
         # Get all the jobs
         options = []
         while True:
@@ -673,13 +624,12 @@ class ExperimentData:
         for _design in _designs:
             self.set_design(_design)
 
-    def _run_cluster(self, operation: Callable, kwargs: dict):
+    def _run_cluster(self, operation: DesignCallable, kwargs: dict):
         # Retrieve the updated experimentdata object from disc
         try:
             self = self.from_file(self.filename)
         except FileNotFoundError:  # If not found, store current
             self.store()
-            # _data = self.from_file(self.filename)
 
         while True:
             try:

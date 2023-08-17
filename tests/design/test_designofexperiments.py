@@ -103,11 +103,7 @@ def test_add_space():
 
 
 def test_getNumberOfInputParameters(doe: Domain):
-    assert doe.get_number_of_input_parameters() == 5
-
-
-def test_get_input_space(doe: Domain):
-    assert doe.input_space == doe.get_input_space()
+    assert len(doe) == 5
 
 
 def test_all_input_continuous_False(doe: Domain):
@@ -137,19 +133,14 @@ def test_cast_types_dataframe_input(doe: Domain):
     assert doe._cast_types_dataframe() == ground_truth
 
 
-def test_get_input_space_2(domain: Domain):
-    # Ensure that get_input_space returns the input space
-    assert domain.get_input_space() == domain.input_space
-
-
 def test_get_input_names(domain: Domain):
     # Ensure that get_input_names returns the correct input parameter names
-    assert domain.get_input_names() == ['x1', 'x2', 'x3']
+    assert domain.names == ['x1', 'x2', 'x3']
 
 
 def test_get_number_of_input_parameters(domain: Domain):
     # Ensure that get_number_of_input_parameters returns the correct number of input parameters
-    assert domain.get_number_of_input_parameters() == 3
+    assert len(domain) == 3
 
 
 def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):

@@ -36,7 +36,7 @@ class _Data:
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
-        return self.number_of_datapoints()
+        return len(self.data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
@@ -54,18 +54,54 @@ class _Data:
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
 
+#                                                                    Properties
+# =============================================================================
+
+    @property
+    def indices(self) -> pd.Index:
+        return self.data.index
+
+    @property
+    def names(self) -> List[str]:
+        return self.data.columns.to_list()
+
+#                                                      Alternative constructors
+# =============================================================================
+
     @classmethod
     def from_indices(cls, indices: pd.Index) -> '_Data':
+        """Create a Data object from a list of indices.
+
+        Parameters
+        ----------
+        indices : pd.Index
+            The indices of the data.
+
+        Returns
+        -------
+            Empty data object with indices
+        """
         return cls(pd.DataFrame(index=indices))
 
     @classmethod
-    def from_domain(cls, design: Domain) -> '_Data':
-        df = pd.DataFrame(columns=list(design.input_space.keys())).astype(
-            design._cast_types_dataframe()
+    def from_domain(cls, domain: Domain) -> '_Data':
+        """Create a Data object from a domain.
+
+        Parameters
+        ----------
+        design
+            _description_
+
+        Returns
+        -------
+            _description_
+        """
+        df = pd.DataFrame(columns=list(domain.input_space.keys())).astype(
+            domain._cast_types_dataframe()
         )
 
         # Set the categories tot the categorical parameters
-        for name, categorical_input in design.get_categorical_input_parameters().items():
+        for name, categorical_input in domain.get_categorical_input_parameters().items():
             df[name] = pd.Categorical(
                 df[name], categories=categorical_input.categories)
 
@@ -92,18 +128,6 @@ class _Data:
 
         return cls(pd.read_csv(file, header=0, index_col=0))
 
-    def to_xarray(self, label: str) -> xr.DataArray:
-        return xr.DataArray(self.data, dims=['iterations', label], coords={
-            'iterations': range(self.number_of_datapoints()), label: self.names})
-
-    @property
-    def indices(self) -> pd.Index:
-        return self.data.index
-
-    @property
-    def names(self) -> List[str]:
-        return self.data.columns.to_list()
-
     def reset(self, domain: Union[None, Domain] = None):
         """Resets the data to the initial state.
 
@@ -122,12 +146,25 @@ class _Data:
 
         self.data = self.from_domain(domain).data
 
-    def store(self, filename: str, text_io: TextIOWrapper = None) -> None:
+#                                                                        Export
+# =============================================================================
+
+    def to_numpy(self) -> np.ndarray:
+        return self.data.to_numpy()
+
+    def to_xarray(self, label: str) -> xr.DataArray:
+        return xr.DataArray(self.data, dims=['iterations', label], coords={
+            'iterations': range(len(self)), label: self.names})
+
+    def combine_data_to_multiindex(self, other: '_Data') -> pd.DataFrame:
+        return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])
+
+    def store(self, filename: Path, text_io: TextIOWrapper = None) -> None:
         """Stores the data to a file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The filename to store the data to.
         """
 
@@ -135,17 +172,16 @@ class _Data:
             self.data.to_csv(text_io)
             return
 
-        if not filename.endswith('.csv'):
-            filename = filename + '.csv'
+        # if not filename.endswith('.csv'):
+        #     filename = filename + '.csv'
         # Store the data
+        self.data.to_csv(filename.with_suffix('.csv'))
 
-        self.data.to_csv(filename)
+    def n_best_samples(self, nosamples: int, column_name: Union[List[str], str]) -> pd.DataFrame:
+        return self.data.nsmallest(n=nosamples, columns=column_name)
 
-    def select(self, indices: List[int]):
-        self.data = self.data.loc[indices]
-
-    def remove(self, indices: List[int]):
-        self.data = self.data.drop(indices)
+#                                                        Append and remove data
+# =============================================================================
 
     def add(self, data: pd.DataFrame):
         try:
@@ -184,13 +220,19 @@ class _Data:
         idx, _ = np.where(np.isnan(self.data))
         self.data.loc[np.unique(idx)] = array
 
-    def get_data(self) -> pd.DataFrame:
-        return self.data
+    def remove(self, indices: List[int]):
+        self.data = self.data.drop(indices)
+
+#                                                           Getters and setters
+# =============================================================================
+
+    def select(self, indices: List[int]):
+        self.data = self.data.loc[indices]
 
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         return self.data.loc[index].to_dict()
 
-    def set_data(self, index: int, value: Any, column: Union[None, str]):
+    def set_data(self, index: int, value: Any, column: Union[None, str] = None):
         # check if the index exists
         if index not in self.data.index:
             raise IndexError(f"Index {index} does not exist in the data.")
@@ -199,15 +241,3 @@ class _Data:
             self.data.loc[index] = value
         else:
             self.data.at[index, column] = value
-
-    def to_numpy(self) -> np.ndarray:
-        return self.data.to_numpy()
-
-    def n_best_samples(self, nosamples: int, column_name: Union[List[str], str]) -> pd.DataFrame:
-        return self.data.nsmallest(n=nosamples, columns=column_name)
-
-    def number_of_datapoints(self) -> int:
-        return len(self.data)
-
-    def combine_data_to_multiindex(self, other: '_Data') -> pd.DataFrame:
-        return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])

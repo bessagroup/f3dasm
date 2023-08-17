@@ -28,11 +28,6 @@ class Parameter:
     """
     _type: ClassVar[str] = field(init=False, default="object")
 
-    @classmethod
-    def get_name(self) -> str:
-        """Return the name of the parameter class"""
-        return self.__name__
-
 
 @dataclass
 class ConstantParameter(Parameter):

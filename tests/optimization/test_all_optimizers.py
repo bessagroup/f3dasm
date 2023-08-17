@@ -100,7 +100,7 @@ def test_optimizer_iterations(iterations: int, function: Function, optimizer: Op
 
     data = opt1.extract_data()
 
-    assert data.get_number_of_datapoints() == (iterations + numsamples)
+    assert len(data) == (iterations + numsamples)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -66,9 +66,9 @@ def access_file(sleeptime_sec: int = 1) -> Callable:
                         file.truncate()
 
                         # Write the data to disk
-                        self.input_data.store(filename=f"{self.filename}_data", text_io=file)
-                        self.output_data.store(filename=f"{self.filename}_output")
-                        self.jobs.store(filename=f"{self.filename}_jobs")
+                        self.input_data.store(filename=Path(f"{self.filename}_data"), text_io=file)
+                        self.output_data.store(filename=Path(f"{self.filename}_output"))
+                        self.jobs.store(filename=Path(f"{self.filename}_jobs"))
 
                     break
                 except IOError as e:

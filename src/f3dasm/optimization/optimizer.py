@@ -147,9 +147,9 @@ class Optimizer:
 
     def _check_number_of_datapoints(self):
         """Check if available data => population size"""
-        if self.data.get_number_of_datapoints() < self.parameter.population:
+        if len(self.data) < self.parameter.population:
             raise ValueError(
-                f'There are {self.data.get_number_of_datapoints()} datapoints available, \
+                f'There are {len(self.data)} datapoints available, \
                      need {self.parameter.population} for update step!'
             )
         return

@@ -69,7 +69,7 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the loaded data.
         """
-        return cls(pd.Series(['open'] * data.number_of_datapoints(), dtype='string'))
+        return cls(pd.Series(['open'] * len(data), dtype='string'))
 
     @classmethod
     def from_file(cls, filename: Path) -> '_JobQueue':
@@ -91,33 +91,30 @@ class _JobQueue:
 
         return cls(pd.read_pickle(filename.with_suffix('.pkl')))
 
-    #                                                                Public methods
+    def reset(self) -> None:
+        """Resets the job queue."""
+        self.jobs = pd.Series(dtype='string')
+
+    #                                                                        Export
     # =============================================================================
 
-    def store(self, filename: str) -> None:
+    def store(self, filename: Path) -> None:
         """Stores the jobs in a pickle file.
 
         Parameters
         ----------
-        filename : str
-            Name of the file.
+        filename : Path
+            Path of the file.
         """
 
         # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
+        # if not filename.endswith('.pkl'):
+        #     filename = filename + '.pkl'
 
-        self.jobs.to_pickle(filename)
+        self.jobs.to_pickle(filename.with_suffix('.pkl'))
 
-    def select(self, indices: List[int]):
-        """Selects a subset of the jobs.
-
-        Parameters
-        ----------
-        indices : List[int]
-            List of indices to select.
-        """
-        self.jobs = self.jobs.loc[indices]
+    #                                                        Append and remove jobs
+    # =============================================================================
 
     def remove(self, indices: List[int]):
         """Removes a subset of the jobs.
@@ -149,22 +146,18 @@ class _JobQueue:
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
-    def reset(self) -> None:
-        """Resets the job queue."""
-        self.jobs = pd.Series(dtype='string')
+    def select(self, indices: List[int]):
+        """Selects a subset of the jobs.
 
-    def get_open_job(self) -> Union[int, None]:
-        """Returns the index of an open job.
-
-        Returns
-        -------
-        int
-            Index of an open job.
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices to select.
         """
-        try:  # try to find an open job
-            return int(self.jobs[self.jobs == 'open'].index[0])
-        except IndexError:
-            raise NoOpenJobsError("No open jobs found.")
+        self.jobs = self.jobs.loc[indices]
+
+    #                                                                          Mark
+    # =============================================================================
 
     def mark_as_in_progress(self, index: int) -> None:
         """Marks a job as in progress.
@@ -204,6 +197,9 @@ class _JobQueue:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace(['in progress', 'finished', 'error'], 'open')
 
+    #                                                                  Miscellanous
+    # =============================================================================
+
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.
 
@@ -213,3 +209,16 @@ class _JobQueue:
             True if all jobs are finished, False otherwise.
         """
         return all(self.jobs.isin(['finished', 'error']))
+
+    def get_open_job(self) -> Union[int, None]:
+        """Returns the index of an open job.
+
+        Returns
+        -------
+        int
+            Index of an open job.
+        """
+        try:  # try to find an open job
+            return int(self.jobs[self.jobs == 'open'].index[0])
+        except IndexError:
+            raise NoOpenJobsError("No open jobs found.")

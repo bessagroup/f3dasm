@@ -24,25 +24,17 @@ def test_design_to_numpy(design_data):
     assert np.array_equal(output_array, np.array(list(dict_output.values())))
 
 
-def test_design_get(design_data):
-    dict_input, dict_output, job_number = design_data
-    design = Design(dict_input, dict_output, job_number)
-    assert design.get('input1') == dict_input['input1']
-    with pytest.raises(KeyError):
-        design.get('invalid_key')
-
-
 def test_design_get_output_space(design_data):
     dict_input, dict_output, job_number = design_data
     design = Design(dict_input, dict_output, job_number)
     with pytest.raises(KeyError):
-        design.get('output3')
+        design['output3']
 
 
 def test_design_set(design_data):
     dict_input, dict_output, job_number = design_data
     design = Design(dict_input, dict_output, job_number)
-    design.set('output3', 5)
+    design['output3'] = 5
 
     # Check if the output data is updated
     design.output_data['output3'] == 5

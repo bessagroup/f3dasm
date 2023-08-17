@@ -91,23 +91,6 @@ class Design:
     def __repr__(self) -> str:
         return f"Design({self.job_number} : {self.input_data} - {self.output_data})"
 
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Converts the design to a tuple of numpy arrays.
-
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            A tuple of numpy arrays containing the input and output data.
-        """
-        return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
-
-    # def to_dataframe_dict(self) -> Dict[Tuple[str, str], Any]:
-    #     # combine the two dicts
-    #     dataframe_dict = {}
-    #     dataframe_dict.update({('input', key): value for key, value in self._dict_input.items()})
-    #     dataframe_dict.update({('output', key): value for key, value in self._dict_output.items()})
-    #     return dataframe_dict
-
     @property
     def input_data(self) -> Dict[str, Any]:
         """Retrieve the input data of the design as a dictionary."""
@@ -123,22 +106,18 @@ class Design:
         """Retrieve the job number of the design."""
         return self._jobnumber
 
-    def get(self, key: str) -> Any:
-        # Check if key is in _dict_output but not in _dict_input
-        if key in self._dict_output and key not in self._dict_input:
-            # Raise keyerror
-            raise KeyError(f"Variable '{key}' not found in input space. You can only access "
-                           "variables that are in the input space.")
+#                                                                        Export
+# =============================================================================
 
-        return self._dict_input[key]
+    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+        """Converts the design to a tuple of numpy arrays.
 
-    def set(self, key: str, value: Any) -> None:
-        # Check if key is in the _dict_input
-        if key not in self._dict_output and key in self._dict_input:
-            raise KeyError(f"Variable '{key}' not found in output space. You can only set "
-                           "variables that are in the output space.")
-
-        self._dict_output[key] = value
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray]
+            A tuple of numpy arrays containing the input and output data.
+        """
+        return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
 
     def store(self, object: Any, name: str, store_method: Store = None) -> None:
         """Store an object to disk.
