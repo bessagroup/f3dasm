@@ -110,14 +110,14 @@ class ExperimentData:
     # =============================================================================
 
     @classmethod
-    def from_file(cls: Type['ExperimentData'], filename: str = 'doe',
+    def from_file(cls: Type['ExperimentData'], filename: str = 'experimentdata',
                   text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
         """Create an ExperimentData object from .csv and .json files.
 
         Parameters
         ----------
-        filename : str
-            Name of the file, excluding suffix.
+        filename : str, optional
+            Name of the file, excluding suffix, by default 'experimentdata'.
         text_io : TextIOWrapper or None, optional
             Text I/O wrapper object for reading the file, by default None.
 
@@ -232,6 +232,26 @@ class ExperimentData:
     @classmethod
     def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
                            text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
+        """Attempt to create an ExperimentData object from .csv and .json files.
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file, excluding suffix.
+        text_io : TextIOWrapper or None
+            Text I/O wrapper object for reading the file.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the file cannot be found.
+        """
+
         try:
             domain = Domain.from_file(Path(f"{filename}_domain"))
             experimentdata = cls(domain=domain)
@@ -258,6 +278,18 @@ class ExperimentData:
     # =============================================================================
 
     def select(self, indices: List[int]) -> 'ExperimentData':
+        """Select a subset of the data.
+
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices to select.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the selected data.
+        """
         new_experimentdata = deepcopy(self)
         new_experimentdata.input_data.select(indices)
         new_experimentdata.output_data.select(indices)
@@ -270,7 +302,7 @@ class ExperimentData:
 
         Parameters
         ----------
-        filename
+        filename : str, optional
             filename of the files to store, without suffix
         """
         if filename is None:
@@ -373,7 +405,7 @@ class ExperimentData:
             Parameter object of the new input column
         """
         self.input_data.add_column(name)
-        self.domain.add_input_space(name, parameter)
+        self.domain.add_parameter(name, parameter)
 
     def add_new_output_column(self, name: str) -> None:
         """Add a new output column to the ExperimentData object.
@@ -385,7 +417,7 @@ class ExperimentData:
         """
         self.output_data.add_column(name)
 
-    def add(self, data: pd.DataFrame, ignore_index: bool = False):
+    def add(self, data: pd.DataFrame):
         """
         Append data to the ExperimentData object.
 
@@ -393,8 +425,6 @@ class ExperimentData:
         ----------
         data : pd.DataFrame
             Data to append.
-        ignore_index : bool, optional
-            Whether to ignore the indices of the appended dataframe.
         """
         self.input_data.add(data)
         self.output_data.add_empty_rows(len(data))
@@ -414,8 +444,8 @@ class ExperimentData:
         ----------
         input : np.ndarray
             2D numpy array to add to the input data.
-        output : np.ndarray
-            2D numpy array to add to the output data.
+        output : np.ndarray, optional
+            2D numpy array to add to the output data. By default None.
         """
         self.input_data.add_numpy_arrays(input)
 
@@ -437,7 +467,7 @@ class ExperimentData:
         output : np.ndarray
             Output data to fill
         label : str, optional
-            Label of the output column to add to.
+            Label of the output column to add to, by default "y".
         """
         if label not in self.output_data.names:
             self.output_data.add_column(label)
@@ -577,6 +607,20 @@ class ExperimentData:
             raise ValueError("Invalid parallelization mode specified.")
 
     def _run_sequential(self, operation: DesignCallable, kwargs: dict):
+        """Run the operation sequentially
+
+        Parameters
+        ----------
+        operation : DesignCallable
+            function execution for every entry in the ExperimentData object
+        kwargs : dict
+            Any keyword arguments that need to be supplied to the function
+
+        Raises
+        ------
+        NoOpenJobsError
+            Raised when there are no open jobs left
+        """
         while True:
             try:
                 design = self.access_open_job_data()
@@ -603,6 +647,20 @@ class ExperimentData:
                 self.set_error(design._jobnumber)
 
     def _run_multiprocessing(self, operation: DesignCallable, kwargs: dict):
+        """Run the operation on multiple cores
+
+        Parameters
+        ----------
+        operation : DesignCallable
+            function execution for every entry in the ExperimentData object
+        kwargs : dict
+            Any keyword arguments that need to be supplied to the function
+
+        Raises
+        ------
+        NoOpenJobsError
+            Raised when there are no open jobs left
+        """
         # Get all the jobs
         options = []
         while True:
@@ -625,6 +683,20 @@ class ExperimentData:
             self.set_design(_design)
 
     def _run_cluster(self, operation: DesignCallable, kwargs: dict):
+        """Run the operation on the cluster
+
+        Parameters
+        ----------
+        operation : DesignCallable
+            function execution for every entry in the ExperimentData object
+        kwargs : dict
+            Any keyword arguments that need to be supplied to the function
+
+        Raises
+        ------
+        NoOpenJobsError
+            Raised when there are no open jobs left
+        """
         # Retrieve the updated experimentdata object from disc
         try:
             self = self.from_file(self.filename)

@@ -4,6 +4,14 @@ f3dasm.sampling package
 Submodules
 ----------
 
+f3dasm.sampling.combination module
+----------------------------------
+
+.. automodule:: f3dasm.sampling.combination
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 f3dasm.sampling.latinhypercube module
 -------------------------------------
 

@@ -52,7 +52,7 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "pagmo": ("https://esa.github.io/pagmo2/", None),
-    "pandas": ("http://pandas.pydata.org/pandas-docs/dev", None),
+    "pandas": ('https://pandas.pydata.org/docs/', None),
 }
 
 napoleon_use_param = True

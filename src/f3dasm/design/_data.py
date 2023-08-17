@@ -101,7 +101,7 @@ class _Data:
         )
 
         # Set the categories tot the categorical parameters
-        for name, categorical_input in domain.get_categorical_input_parameters().items():
+        for name, categorical_input in domain.get_categorical_parameters().items():
             df[name] = pd.Categorical(
                 df[name], categories=categorical_input.categories)
 

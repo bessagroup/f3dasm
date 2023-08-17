@@ -36,7 +36,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 # Log welcome message and the version of f3dasm
 logger.info(f"Imported f3dasm (version: {__version__})")

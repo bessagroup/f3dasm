@@ -32,7 +32,7 @@ class RandomUniform(Sampler):
         -------
             samples
         """
-        continuous = self.design.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_parameters()
         dimensions = len(continuous)
 
         samples = np.random.uniform(size=(numsamples, dimensions))

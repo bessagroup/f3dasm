@@ -24,30 +24,30 @@ def test_correct_doe(doe):
 def test_get_continuous_parameters(doe: Domain):
     design = {'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
               'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3)}
-    assert doe.get_continuous_input_parameters() == design
+    assert doe.get_continuous_parameters() == design
 
 
 def test_get_discrete_parameters(doe: Domain):
     design = {'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
               'x5': DiscreteParameter(lower_bound=2, upper_bound=3)}
-    assert doe.get_discrete_input_parameters() == design
+    assert doe.get_discrete_parameters() == design
 
 
 def test_get_categorical_parameters(doe: Domain):
-    assert doe.get_categorical_input_parameters() == {'x4': CategoricalParameter(
+    assert doe.get_categorical_parameters() == {'x4': CategoricalParameter(
         categories=["test1", "test2", "test3"])}
 
 
 def test_get_continuous_names(doe: Domain):
-    assert doe.get_continuous_input_names() == ["x1", "x3"]
+    assert doe.get_continuous_names() == ["x1", "x3"]
 
 
 def test_get_discrete_names(doe: Domain):
-    assert doe.get_discrete_input_names() == ["x2", "x5"]
+    assert doe.get_discrete_names() == ["x2", "x5"]
 
 
 def test_get_categorical_names(doe: Domain):
-    assert doe.get_categorical_input_names() == ["x4"]
+    assert doe.get_categorical_names() == ["x4"]
 
 
 def test_add_arbitrary_list_as_categorical_parameter():
@@ -70,8 +70,8 @@ def test_add_input_space():
     }
 
     design = Domain(input_space=designspace)
-    design.add_input_space('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
-    design.add_input_space('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    design.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
+    design.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
 
     assert design.input_space == {
         'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
@@ -90,8 +90,8 @@ def test_add_space():
     }
 
     domain = Domain(input_space=designspace)
-    domain.add_input_space('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
-    domain.add_input_space('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    domain.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
+    domain.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
 
     assert domain.input_space == {
         'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),

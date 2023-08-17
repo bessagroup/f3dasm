@@ -91,9 +91,6 @@ class Domain:
         yaml
             yaml dictionary
 
-        Returns
-        -------
-            Domain class
         """
         args = {}
         for space, params in yaml.items():
@@ -155,7 +152,7 @@ class Domain:
 #                                                  Append and remove parameters
 # =============================================================================
 
-    def add_input_space(self, name: str, space: Parameter):
+    def add(self, name: str, space: Parameter):
         """Add a new input parameter to the domain.
 
         Parameters
@@ -177,7 +174,7 @@ class Domain:
 #                                                                       Getters
 # =============================================================================
 
-    def get_continuous_input_parameters(self) -> Dict[str, ContinuousParameter]:
+    def get_continuous_parameters(self) -> Dict[str, ContinuousParameter]:
         """Get all continuous input parameters.
 
         Returns
@@ -198,9 +195,9 @@ class Domain:
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
          'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)}
         """
-        return self.filter_parameters(ContinuousParameter).input_space
+        return self.filter(ContinuousParameter).input_space
 
-    def get_continuous_input_names(self) -> List[str]:
+    def get_continuous_names(self) -> List[str]:
         """Get the names of continuous input parameters in the input space.
 
         Returns
@@ -220,9 +217,9 @@ class Domain:
         >>> continuous_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(ContinuousParameter).names
+        return self.filter(ContinuousParameter).names
 
-    def get_discrete_input_parameters(self) -> Dict[str, DiscreteParameter]:
+    def get_discrete_parameters(self) -> Dict[str, DiscreteParameter]:
         """Retrieve all discrete input parameters.
 
         Returns
@@ -243,9 +240,9 @@ class Domain:
         {'param1': DiscreteParameter(lower_bound=1, upperBound=4)),
          'param3': DiscreteParameter(lower_bound=4, upperBound=6)}
         """
-        return self.filter_parameters(DiscreteParameter).input_space
+        return self.filter(DiscreteParameter).input_space
 
-    def get_discrete_input_names(self) -> List[str]:
+    def get_discrete_names(self) -> List[str]:
         """Retrieve the names of all discrete input parameters.
 
         Returns
@@ -265,9 +262,9 @@ class Domain:
         >>> discrete_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(DiscreteParameter).names
+        return self.filter(DiscreteParameter).names
 
-    def get_categorical_input_parameters(self) -> Dict[str, CategoricalParameter]:
+    def get_categorical_parameters(self) -> Dict[str, CategoricalParameter]:
         """Retrieve all categorical input parameters.
 
         Returns
@@ -288,9 +285,9 @@ class Domain:
         {'param1': CategoricalParameter(categories=['A', 'B', 'C']),
          'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
         """
-        return self.filter_parameters(CategoricalParameter).input_space
+        return self.filter(CategoricalParameter).input_space
 
-    def get_categorical_input_names(self) -> List[str]:
+    def get_categorical_names(self) -> List[str]:
         """Retrieve the names of categorical input parameters.
 
         Returns
@@ -310,9 +307,9 @@ class Domain:
         >>> categorical_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(CategoricalParameter).names
+        return self.filter(CategoricalParameter).names
 
-    def get_constant_input_parameters(self) -> Dict[str, ConstantParameter]:
+    def get_constant_parameters(self) -> Dict[str, ConstantParameter]:
         """Retrieve all constant input parameters.
 
         Returns
@@ -332,9 +329,9 @@ class Domain:
         >>> constant_input_params
         {'param1': ConstantParameter(value=0), 'param3': ConstantParameter(value=1)}
         """
-        return self.filter_parameters(ConstantParameter).input_space
+        return self.filter(ConstantParameter).input_space
 
-    def get_constant_input_names(self) -> List[str]:
+    def get_constant_names(self) -> List[str]:
         """Receive the names of the constant input parameters
 
         Returns
@@ -353,7 +350,7 @@ class Domain:
         >>> constant_input_names
         ['param1', 'param2']
         """
-        return self.filter_parameters(ConstantParameter).names
+        return self.filter(ConstantParameter).names
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -378,10 +375,10 @@ class Domain:
         """
         return np.array(
             [[parameter.lower_bound, parameter.upper_bound]
-                for _, parameter in self.get_continuous_input_parameters().items()]
+                for _, parameter in self.get_continuous_parameters().items()]
         )
 
-    def filter_parameters(self, type: Type[Parameter]) -> 'Domain':
+    def filter(self, type: Type[Parameter]) -> 'Domain':
         """Filter the parameters of the domain by type
 
         Parameters
@@ -417,7 +414,7 @@ class Domain:
 
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return len(self) == len(self.filter_parameters(ContinuousParameter))
+        return len(self) == len(self.filter(ContinuousParameter))
 
 
 def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain:
