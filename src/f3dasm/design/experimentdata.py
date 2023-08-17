@@ -9,6 +9,7 @@ import os
 import sys
 import traceback
 from copy import deepcopy
+from functools import wraps
 from io import TextIOWrapper
 from pathlib import Path
 from time import sleep
@@ -20,29 +21,31 @@ else:
 
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
 
-# import msvcrt if windows, otherwise (Unix system) import fcntl
-if os.name == 'nt':
-    import msvcrt
-else:
-    import fcntl
-
 # Third-party
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+from filelock import FileLock
 from hydra.utils import get_original_cwd, instantiate
 from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
 from ..logger import logger
-from ._access_file import access_file
+# from ._access_file import access_file
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, _JobQueue
 from .design import Design
 from .domain import Domain
 from .parameter import Parameter
+
+# import msvcrt if windows, otherwise (Unix system) import fcntl
+# if os.name == 'nt':
+#     import msvcrt
+# else:
+#     import fcntl
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -78,7 +81,7 @@ class ExperimentData:
     A class that contains data for experiments.
     """
 
-    def __init__(self, domain: Domain):
+    def __init__(self, domain: Domain, filename: str = 'experimentdata'):
         """
         Initializes an instance of ExperimentData.
 
@@ -86,12 +89,14 @@ class ExperimentData:
         ----------
         domain : Domain
             A Domain object defining the input and output spaces of the experiment.
+        filename : str, optional
+            Name of the file, excluding suffix, by default 'experimentdata'.
         """
         self.domain = domain
+        self.filename = filename
         self.input_data = _Data.from_domain(self.domain)
         self.output_data = _Data()
         self.jobs = _JobQueue.from_data(self.input_data)
-        self.filename = 'doe'
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -105,6 +110,24 @@ class ExperimentData:
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
+
+    def access_file(operation: Callable) -> Callable:
+        """Wrapper for accessing a single resource with a file lock
+
+        Returns
+        -------
+        decorator
+        """
+        @wraps(operation)
+        def wrapper_func(self, *args, **kwargs) -> None:
+            lock = FileLock(Path(self.filename).with_suffix('.lock'))
+            with lock:
+                self = ExperimentData.from_file(filename=Path(self.filename))
+                value = operation(self, *args, **kwargs)
+                self.store(filename=Path(self.filename))
+            return value
+
+        return wrapper_func
 
     #                                                      Alternative Constructors
     # =============================================================================
@@ -137,7 +160,7 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path, text_io)
 
     @classmethod
-    def from_sampling(cls, sampler: Sampler) -> 'ExperimentData':
+    def from_sampling(cls, sampler: Sampler, filename: str = 'experimentdata') -> 'ExperimentData':
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -150,8 +173,9 @@ class ExperimentData:
         ExperimentData
             ExperimentData object containing the sampled data.
         """
-
-        return sampler.get_samples()
+        experimentdata = sampler.get_samples()
+        experimentdata.filename = filename
+        return experimentdata
 
     @classmethod
     def from_csv(cls, filename_input: Path, filename_output: Union[None, Path] = None,
@@ -179,7 +203,7 @@ class ExperimentData:
             # Infer the domain from the input data
             domain = Domain.from_dataframe(df_input)
 
-        experimentdata = cls(domain)
+        experimentdata = cls(domain=domain, filename=filename_input.stem)
         experimentdata.input_data = _Data(df_input)
 
         if filename_output is not None:
@@ -189,7 +213,6 @@ class ExperimentData:
             experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
 
         experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
-        experimentdata.filename = filename_input.stem
         return experimentdata
 
     @classmethod
@@ -254,7 +277,7 @@ class ExperimentData:
 
         try:
             domain = Domain.from_file(Path(f"{filename}_domain"))
-            experimentdata = cls(domain=domain)
+            experimentdata = cls(domain=domain, filename=filename)
             experimentdata.input_data = _Data.from_file(Path(f"{filename}_data"), text_io)
 
             try:
@@ -263,7 +286,6 @@ class ExperimentData:
                 experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
 
             experimentdata.jobs = _JobQueue.from_file(Path(f"{filename}_jobs"))
-            experimentdata.filename = filename
             return experimentdata
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
@@ -528,7 +550,7 @@ class ExperimentData:
 
         self.jobs.mark_as_finished(design._jobnumber)
 
-    @access_file()
+    @access_file
     def write_design(self, design: Design) -> None:
         """
         Sets the design at the given index.
@@ -546,7 +568,7 @@ class ExperimentData:
         design = self.get_design(job_index)
         return design
 
-    @access_file()
+    @access_file
     def get_open_job_data(self) -> Design:
         return self.access_open_job_data()
 
@@ -557,11 +579,11 @@ class ExperimentData:
         self.jobs.mark_as_error(index)
         self.output_data.set_data(index, value='ERROR')
 
-    @access_file()
+    @access_file
     def write_error(self, index: int):
         self.set_error(index)
 
-    @access_file()
+    @access_file
     def is_all_finished(self) -> bool:
         return self.jobs.is_all_finished()
 
@@ -719,3 +741,6 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.write_error(design._jobnumber)
                 continue
+
+        # Remove the lockfile from disk
+        Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)

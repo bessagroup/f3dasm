@@ -5,9 +5,14 @@ from pathlib import Path
 from time import sleep
 from typing import Callable
 
+from filelock import FileLock
+
 from ..logger import logger
 from ._data import _Data
 from ._jobqueue import _JobQueue
+
+# from .experimentdata import ExperimentData
+
 
 # import msvcrt if windows, otherwise (Unix system) import fcntl
 if os.name == 'nt':
@@ -16,93 +21,28 @@ else:
     import fcntl
 
 
-def access_file(sleeptime_sec: int = 1) -> Callable:
-    """Wrapper for accessing a single resource with a file lock
+# def access_file(sleeptime_sec: int = 1) -> Callable:
+#     """Wrapper for accessing a single resource with a file lock
 
-    Parameters
-    ----------
-    sleeptime_sec, optional
-        number of seconds to wait before trying to access resource again, by default 1
+#     Parameters
+#     ----------
+#     sleeptime_sec, optional
+#         number of seconds to wait before trying to access resource again, by default 1
 
-    Returns
-    -------
-    decorator
-    """
-    def decorator_func(operation: Callable) -> Callable:
-        @functools.wraps(operation)
-        def wrapper_func(self, *args, **kwargs) -> None:
-            while True:
-                try:
-                    # Try to open the experimentdata file
-                    logger.debug(f"Trying to open the data file: {self.filename}_data.csv")
-                    with open(f"{self.filename}_data.csv", 'rb+') as file:
-                        logger.debug("Opened file successfully")
-                        if os.name == 'nt':
-                            msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 1)
-                        else:
-                            fcntl.flock(file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                            logger.debug("Locked file successfully")
+#     Returns
+#     -------
+#     decorator
+#     """
+#     def decorator_func(operation: Callable) -> Callable:
+#         @functools.wraps(operation)
+#         def wrapper_func(self, *args, **kwargs) -> None:
+#             lock = FileLock(f"{self.filename}.lock")
+#             with lock:
+#                 self = ExperimentData.from_file(filename=Path(self.filename))
+#                 value = operation(self, *args, **kwargs)
+#                 self.store(filename=Path(self.filename))
+#             return value
 
-                        # Load the input_data from the object
-                        self.input_data = _Data.from_file(filename=Path(f"{self.filename}_data"), text_io=file)
-                        logger.debug("Loaded input data successfully")
+#         return wrapper_func
 
-                        # Load the output_data from the object
-                        self.output_data = _Data.from_file(filename=Path(f"{self.filename}_output"))
-                        logger.debug("Loaded output data successfully")
-
-                        # Load the jobs from disk
-                        self.jobs = _JobQueue.from_file(filename=Path(f"{self.filename}_jobs"))
-                        logger.debug("Loaded jobs successfully")
-
-                        logger.debug(
-                            f"Executing operation {operation.__name__} with args: {args} and kwargs: {kwargs}")
-                        # Do the operation
-                        value = operation(self, *args, **kwargs)
-
-                        logger.debug("Executed operation succesfully")
-                        # Delete existing contents of file
-                        file.seek(0, 0)
-                        file.truncate()
-
-                        # Write the data to disk
-                        self.input_data.store(filename=Path(f"{self.filename}_data"), text_io=file)
-                        self.output_data.store(filename=Path(f"{self.filename}_output"))
-                        self.jobs.store(filename=Path(f"{self.filename}_jobs"))
-
-                    break
-                except IOError as e:
-                    # the file is locked by another process
-                    if os.name == 'nt':
-                        if e.errno == 13:
-                            logger.debug("The data file is currently locked by another process. "
-                                         "Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        elif e.errno == 2:  # File not found error
-                            logger.debug("The data file does not exist. Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        else:
-                            logger.info(f"An unexpected IOError occurred: {e}")
-                            break
-                    else:
-                        if e.errno == errno.EAGAIN:
-                            logger.debug("The data file is currently locked by another process. "
-                                         "Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        elif e.errno == 2:  # File not found error
-                            logger.debug("The data file does not exist. Retrying in 1 second...")
-                            sleep(sleeptime_sec)
-                        else:
-                            logger.info(f"An unexpected IOError occurred: {e}")
-                            break
-                except Exception as e:
-                    # handle any other exceptions
-                    logger.info(f"An unexpected error occurred: {e}")
-                    raise e
-                    return
-
-            return value
-
-        return wrapper_func
-
-    return decorator_func
+#     return decorator_func
