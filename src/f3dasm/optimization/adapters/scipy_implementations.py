@@ -79,7 +79,7 @@ class _SciPyOptimizer(Optimizer):
             # Convert the input of the original function to an ndarray using a lambda function
             def fun(x):
                 # convert the np.ndarray input to a dict with key x0, x1, x2, etc.
-                input_names = self.data.domain.get_continuous_input_names()
+                input_names = self.data.domain.get_continuous_names()
                 x = {input_names[i]: x_i for i, x_i in enumerate(x)}
                 return function.original_function(x)
 
@@ -114,7 +114,7 @@ class _SciPyMinimizeOptimizer(_SciPyOptimizer):
             # Convert the input of the original function to an ndarray using a lambda function
             def fun(x):
                 # convert the np.ndarray input to a dict with key x0, x1, x2, etc.
-                input_names = self.data.domain.get_continuous_input_names()
+                input_names = self.data.domain.get_continuous_names()
                 x = {input_names[i]: x_i for i, x_i in enumerate(x)}
                 return function.original_function(x)
 
