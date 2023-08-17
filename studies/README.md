@@ -1,36 +1,35 @@
-Experiments
+Studies
 ===========
 
-This folder denotes experiments.
+This folder denotes studies.
 
 ## Folder structure and files
 
 
 ```
-├── experiments
-│   └── my_experiment
+├── studies
+│   └── my_study
 │       ├── custom_module
 │       │   ├── custom_script.py
 │       │   └── __init__.py
 │       ├── main.py
 │       ├── config.py
 │       ├── config.yaml
-│       ├── default.yaml
 │       ├── pbsjob.sh
 │       └── README.md
 └── src/f3dasm
 ```
 
-* Each experiment is put in a separate folder, in this case `my_experiment`
-* The README.md file gives a description, author and optionally citable source.
-* The main script that has to be called should be name `main.py`
-* Additional scripts or modules can be placed inside the `my_experiments` folder.
+* Each study is put in a separate folder, in this case `my_study`
+* The `README.md` file gives a description, author and optionally citable source.
+* The main script that has to be called should be named `main.py`
+* Additional scripts or modules can be placed inside the `my_studys` folder.
 * `pbsjob.sh` is a [`TORQUE`](https://adaptivecomputing.com/cherry-services/torque-resource-manager/) file that will submit the `main.py` file to a high-performance queuing system.
-* The `config.py`, `config.yaml` and `default.yaml` are [`hydra`](https://hydra.cc/docs/intro/) configuration files. More on that in the next section.
+* The `config.py` and `config.yaml` are [`hydra`](https://hydra.cc/docs/intro/) configuration files. More on that in the next section.
 
 ## Hydra
 
-Configurations and data-storage for the experiments is handled by the [`hydra`](https://hydra.cc/docs/intro/) package.
+Configurations and data-storage for the studys is handled by the [`hydra`](https://hydra.cc/docs/intro/) package.
 
 * `config.py` denotes the types of all of the configurable parameters:
 
@@ -62,17 +61,6 @@ subconfig:
 parameter4: 3
 ```
 
-* `default.yaml` contains the default values if we do not specify them in `config.yaml`, like we did with `parameter3` in the example:
-
-```yaml
-subconfig:
-  parameter1: 0.0
-  parameter2: ['fruit1','fruit2', 'fruit3']
-  parameter3: 0
-
-parameter4: 0
-```
-
 * A minimal `main.py` file will look something like this:
 
 
@@ -98,7 +86,7 @@ if __name__ == "__main__":
 
 The configurations are given in the custom `Config` class type imported from `config.py` as input to the `main(cfg: Config)` function. This is done by the `@hydra.main()` decorater.
 
-## Executing an experiment
+## Executing an study
 
 Scripts can be run in two ways:
 
