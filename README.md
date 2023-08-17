@@ -14,12 +14,21 @@ f3dasm
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 | [**Practical sessions**](https://github.com/mpvanderschelling/f3dasm_teach)
 
+## Summary
+
 Welcome to `f3dasm`, a Python package for data-driven design and analysis of structures and materials.
+
+
+## Authorship
 
 * Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
 * Current developer and maintainer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
+
+## Getting started
+
+The best way to get started is to follow the [installation instructions](https://bessagroup.github.io/f3dasm/general/gettingstarted.html).
 
 ## Referencing
 
@@ -32,3 +41,15 @@ If you use or edit our work, please cite at least one of the appropriate referen
 [3] Bessa, M. A., Glowacki, P., & Houlder, M. (2019). Bayesian machine learning in metamaterial design: fragile becomes super-compressible. Advanced Materials, 31(48), 1904845.
 
 [4] Mojtaba, M., Bostanabad, R., Chen, W., Ehmann, K., Cao, J., & Bessa, M. A. (2019). Deep learning predicts path-dependent plasticity. Proceedings of the National Academy of Sciences, 116(52), 26414-26420.
+
+## Community Support
+
+If you find any **issues, bugs or problems** with this template, please use the [GitHub issue tracker](https://github.com/bessagroup/f3dasm/issues) to report them.
+
+## License
+
+Copyright 2023, Martin van der Schelling
+
+All rights reserved.
+
+This project is licensed under the BSD 3-Clause License. See [LICENSE](https://github.com/bessagroup/f3dasm/blob/main/LICENSE) for the full license text.
