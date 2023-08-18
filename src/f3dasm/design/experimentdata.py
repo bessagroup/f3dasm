@@ -33,19 +33,11 @@ from pathos.helpers import mp
 
 # Local
 from ..logger import logger
-# from ._access_file import access_file
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, _JobQueue
 from .design import Design
 from .domain import Domain
 from .parameter import Parameter
-
-# import msvcrt if windows, otherwise (Unix system) import fcntl
-# if os.name == 'nt':
-#     import msvcrt
-# else:
-#     import fcntl
-
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -427,7 +419,7 @@ class ExperimentData:
             Parameter object of the new input column
         """
         self.input_data.add_column(name)
-        self.domain.add_parameter(name, parameter)
+        self.domain.add(name, parameter)
 
     def add_new_output_column(self, name: str) -> None:
         """Add a new output column to the ExperimentData object.
