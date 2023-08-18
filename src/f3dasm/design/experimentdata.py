@@ -319,7 +319,7 @@ class ExperimentData:
 
         return new_experimentdata
 
-    def store(self, filename: str = None, text_io: Union[TextIOWrapper, None] = None):
+    def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock
 
         Parameters
