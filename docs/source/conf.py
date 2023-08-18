@@ -73,6 +73,7 @@ autodoc_typehints = "description"
 always_document_default_args = True
 
 bibtex_bibfiles = ["refs.bib"]
+bibtex_citation_template = r'[{index}]'  # Change the citation template
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
