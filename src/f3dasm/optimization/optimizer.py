@@ -85,6 +85,10 @@ class Optimizer:
         self._set_hyperparameters()
         self.set_algorithm()
 
+    def reset(self):
+        """Reset the optimizer"""
+        self.__post_init__()
+
     @staticmethod
     def set_seed(seed: int):
         """Set the seed of the optimizer. Needs to be inherited
