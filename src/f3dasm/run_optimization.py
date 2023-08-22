@@ -6,6 +6,7 @@ Module to optimize benchmark optimization functions
 
 # Standard
 import json
+import os
 import time
 from typing import Any, List, Type
 
@@ -138,7 +139,7 @@ def run_optimization(
     res = optimizer.extract_data()
 
     # Reset the parameters
-    optimizer.__post_init__()
+    optimizer.reset()
 
     # Reset data
     optimizer.data.reset_data()
