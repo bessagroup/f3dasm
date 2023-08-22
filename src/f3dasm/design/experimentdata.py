@@ -734,5 +734,6 @@ class ExperimentData:
                 self.write_error(design._jobnumber)
                 continue
 
+        self = self.from_file(self.filename)
         # Remove the lockfile from disk
         Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
