@@ -8,6 +8,7 @@ Module to optimize benchmark optimization functions
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any, List, Type
 
 # Third-party
@@ -147,6 +148,36 @@ def run_optimization(
     return res
 
 
+def run_optimization_to_disk(
+    optimizer: Optimizer,
+    function: Function,
+    sampler: Sampler,
+    iterations: int,
+    seed: int,
+    number_of_samples: int = 30,
+    realization_index: int = 0,
+) -> None:
+
+    # Set function seed
+    optimizer.set_seed(seed)
+    sampler.set_seed(seed)
+
+    # Sample
+    samples = sampler.get_samples(numsamples=number_of_samples)
+
+    samples.fill_output(output=function(samples.get_input_data().to_numpy()), label="y")
+
+    optimizer.set_data(samples)
+
+    # Iterate
+    optimizer.iterate(iterations=iterations, function=function)
+
+    optimizer.data.to_xarray().to_netcdf(
+        f'{function.get_name()}_{optimizer.get_name()}_{seed-realization_index}_{realization_index}.temp')
+    optimizer.reset()
+    optimizer.data.reset_data()
+
+
 @time_and_log
 def run_multiple_realizations(
     optimizer: Optimizer,
@@ -221,6 +252,58 @@ def run_multiple_realizations(
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
     )
+
+
+@time_and_log
+def run_multiple_realizations_to_disk(
+    optimizer: Optimizer,
+    function: Function,
+    sampler: Sampler,
+    iterations: int,
+    realizations: int,
+    number_of_samples: int = 30,
+    parallelization: bool = True,
+    verbal: bool = False,
+    seed: int or Any = None,
+) -> OptimizationResult:
+
+    if seed is None:
+        seed = np.random.randint(low=0, high=1e5)
+
+    if parallelization:
+        args = [
+            (optimizer, function, sampler, iterations,
+             seed + index, number_of_samples, index)
+            for index, _ in enumerate(range(realizations))
+        ]
+
+        with mp.Pool() as pool:
+            # maybe implement pool.starmap_async ?
+            results = pool.starmap(run_optimization_to_disk, args)
+
+    else:
+        results = []
+        for index in range(realizations):
+            args = {
+                "optimizer": optimizer,
+                "function": function,
+                "sampler": sampler,
+                "iterations": iterations,
+                "number_of_samples": number_of_samples,
+                "seed": seed + index,
+                "realization_index": index,
+            }
+            results.append(run_optimization_to_disk(**args))
+
+    files = f'{function.get_name()}_{optimizer.get_name()}_{seed}_*.temp'
+    combined_dataset = xr.open_mfdataset(files, combine="nested", parallel=True, concat_dim=xr.DataArray(
+        range(realizations), dims='realization'))
+
+    combined_dataset.to_netcdf(f'{function.get_name()}_{optimizer.get_name()}_combined_{seed}.temp')
+
+    # remove all the files
+    for file in Path().glob(files):
+        file.unlink(missing_ok=True)
 
 
 def calculate_mean_std(results):  # OptimizationResult

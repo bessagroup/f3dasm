@@ -25,7 +25,8 @@ from .design.parameter import (CategoricalParameter, ConstantParameter,
 from .logger import DistributedFileHandler, logger
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
-                               run_optimization)
+                               run_multiple_realizations_to_disk,
+                               run_optimization, run_optimization_to_disk)
 from .sampling.sampler import Sampler
 
 #                                                        Authorship and Credits
@@ -62,6 +63,8 @@ __all__ = [
     'run_operation_on_experiments',
     'OptimizationResult',
     'run_multiple_realizations',
+    'run_multiple_realizations_to_disk',
     'run_optimization',
+    'run_optimization_to_disk'
     'Sampler'
 ]
