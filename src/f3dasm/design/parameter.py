@@ -1,12 +1,14 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Type, Union
+from typing import Any, ClassVar, List, Sequence, Type
 
-# Third-party core
+# Third-party
 import numpy as np
 
 #                                                          Authorship & Credits
@@ -156,8 +158,7 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    # Use Union instead of | for Python < 3.10
-    categories: List[Union[str, int, float]]
+    categories: Sequence[Any]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):

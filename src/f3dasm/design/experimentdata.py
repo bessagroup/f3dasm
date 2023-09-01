@@ -1,9 +1,9 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-import errno
-import functools
 import json
 import os
 import sys
@@ -19,7 +19,7 @@ if sys.version_info < (3, 8):
 else:
     from typing import Protocol
 
-from typing import Any, Callable, Dict, Iterator, List, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -73,7 +73,7 @@ class ExperimentData:
     A class that contains data for experiments.
     """
 
-    def __init__(self, domain: Domain, filename: str = 'experimentdata'):
+    def __init__(self, domain: Domain, filename: Optional[str] = 'experimentdata'):
         """
         Initializes an instance of ExperimentData.
 
@@ -126,7 +126,7 @@ class ExperimentData:
 
     @classmethod
     def from_file(cls: Type['ExperimentData'], filename: str = 'experimentdata',
-                  text_io: Union[TextIOWrapper, None] = None) -> 'ExperimentData':
+                  text_io: Optional[TextIOWrapper] = None) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
 
         Parameters
@@ -147,7 +147,7 @@ class ExperimentData:
             try:
                 filename_with_path = Path(get_original_cwd()) / filename
             except ValueError:  # get_original_cwd() hydra initialization error
-                raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
+                raise FileNotFoundError(f"Cannot find the file {filename} !")
 
             return cls._from_file_attempt(filename_with_path, text_io)
 
@@ -170,9 +170,49 @@ class ExperimentData:
         return experimentdata
 
     @classmethod
-    def from_csv(cls, filename_input: Path, filename_output: Union[None, Path] = None,
-                 domain: Union[None, Domain] = None) -> 'ExperimentData':
-        """Create an ExperimentData object from input and output .csv files.
+    def from_dataframe(cls, dataframe_input: pd.DataFrame, dataframe_output: Optional[pd.DataFrame] = None,
+                       domain: Optional[Domain] = None, filename: Optional[str] = 'experimentdata') -> ExperimentData:
+        """Create an ExperimentData object from a pandas dataframe.
+
+        Parameters
+        ----------
+        dataframe_input : pd.DataFrame
+            Pandas dataframe containing the data with columns corresponding to the
+            input parameter names
+        dataframe_output : pd.DataFrame, optional
+            Pandas dataframe containing the data with columns corresponding to the
+            output parameter names, by default None
+        domain : Domain, optional
+            Domain object defining the input and output spaces of the experiment. If not given,
+            the domain is inferred from the input data. By default None.
+        filename : str, optional
+            Name of the created experimentdata, excluding suffix, by default 'experimentdata'.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+        if domain is None:
+            # Infer the domain from the input data
+            domain = Domain.from_dataframe(dataframe_input)
+
+        experimentdata = cls(domain=domain, filename=filename)
+        experimentdata.input_data = _Data.from_dataframe(dataframe_input)
+
+        if dataframe_output is not None:
+            experimentdata.output_data = _Data.from_dataframe(dataframe_output)
+        elif dataframe_output is None:
+            experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
+
+        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
+
+        return experimentdata
+
+    @classmethod
+    def from_csv(cls, filename_input: Path, filename_output: Optional[Path] = None,
+                 domain: Optional[Domain] = None) -> 'ExperimentData':
+        """Create an ExperimentData object from .csv files.
 
         Parameters
         ----------
@@ -191,24 +231,16 @@ class ExperimentData:
         # Read the input datat csv file as a pandas dataframe
         df_input = pd.read_csv(filename_input.with_suffix('.csv'), index_col=0)
 
-        if domain is None:
-            # Infer the domain from the input data
-            domain = Domain.from_dataframe(df_input)
-
-        experimentdata = cls(domain=domain, filename=filename_input.stem)
-        experimentdata.input_data = _Data(df_input)
-
+        # Read the output data csv file as a pandas dataframe
         if filename_output is not None:
             df_output = pd.read_csv(filename_output.with_suffix('.csv'), index_col=0)
-            experimentdata.output_data = _Data(df_output)
-        elif filename_output is None:
-            experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
+        else:
+            df_output = None
 
-        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
-        return experimentdata
+        return cls.from_dataframe(df_input, df_output, domain, filename_input.stem)
 
     @classmethod
-    def from_yaml(cls, config: DictConfig) -> 'ExperimentData':
+    def from_yaml(cls, config: DictConfig) -> ExperimentData:
         """Create an ExperimentData object from a hydra yaml configuration.
 
         Parameters
@@ -245,8 +277,8 @@ class ExperimentData:
             raise ValueError("No valid experimentdata option found in the config file!")
 
     @classmethod
-    def _from_file_attempt(cls: Type['ExperimentData'], filename: str,
-                           text_io: Union[TextIOWrapper, None]) -> 'ExperimentData':
+    def _from_file_attempt(cls: Type[ExperimentData], filename: str,
+                           text_io: Optional[TextIOWrapper]) -> ExperimentData:
         """Attempt to create an ExperimentData object from .csv and .json files.
 
         Parameters
@@ -450,7 +482,7 @@ class ExperimentData:
 
         self.jobs.add(number_of_jobs=len(data))
 
-    def add_numpy_arrays(self, input: np.ndarray, output: Union[None, np.ndarray] = None):
+    def add_numpy_arrays(self, input: np.ndarray, output: Optional[np.ndarray] = None):
         """
         Append a numpy array to the ExperimentData object.
 

@@ -1,11 +1,13 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import os
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -28,7 +30,7 @@ __status__ = 'Stable'
 
 
 class _Data:
-    def __init__(self, data: pd.DataFrame = None):
+    def __init__(self, data: Optional[pd.DataFrame] = None):
         if data is None:
             data = pd.DataFrame()
 
@@ -108,7 +110,7 @@ class _Data:
         return cls(df)
 
     @classmethod
-    def from_file(cls, filename: Path, text_io: TextIOWrapper = None) -> '_Data':
+    def from_file(cls, filename: Path, text_io: Optional[TextIOWrapper] = None) -> '_Data':
         """Loads the data from a file.
 
         Parameters
@@ -128,12 +130,23 @@ class _Data:
 
         return cls(pd.read_csv(file, header=0, index_col=0))
 
-    def reset(self, domain: Union[None, Domain] = None):
+    @classmethod
+    def from_dataframe(cls, dataframe: pd.DataFrame) -> _Data:
+        """Loads the data from a dataframe.
+
+        Parameters
+        ----------
+        dataframe : pd.DataFrame
+            The dataframe to load the data from.
+        """
+        return cls(dataframe)
+
+    def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
 
         Parameters
         ----------
-        domain : Union[None, Domain], optional
+        domain : Domain, optional
             The domain of the experiment.
 
         Note
@@ -172,12 +185,9 @@ class _Data:
             self.data.to_csv(text_io)
             return
 
-        # if not filename.endswith('.csv'):
-        #     filename = filename + '.csv'
-        # Store the data
         self.data.to_csv(filename.with_suffix('.csv'))
 
-    def n_best_samples(self, nosamples: int, column_name: Union[List[str], str]) -> pd.DataFrame:
+    def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
         return self.data.nsmallest(n=nosamples, columns=column_name)
 
 #                                                        Append and remove data
@@ -232,7 +242,7 @@ class _Data:
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         return self.data.loc[index].to_dict()
 
-    def set_data(self, index: int, value: Any, column: Union[None, str] = None):
+    def set_data(self, index: int, value: Any, column: Optional[str] = None):
         # check if the index exists
         if index not in self.data.index:
             raise IndexError(f"Index {index} does not exist in the data.")

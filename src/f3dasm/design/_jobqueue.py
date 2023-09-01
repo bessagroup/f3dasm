@@ -3,7 +3,7 @@
 
 from pathlib import Path
 # Standard
-from typing import List, Union
+from typing import List, Optional
 
 # Third-party
 import pandas as pd
@@ -210,7 +210,7 @@ class _JobQueue:
         """
         return all(self.jobs.isin(['finished', 'error']))
 
-    def get_open_job(self) -> Union[int, None]:
+    def get_open_job(self) -> Optional[int]:
         """Returns the index of an open job.
 
         Returns

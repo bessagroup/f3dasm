@@ -1,6 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import json
 import pickle
@@ -52,7 +54,7 @@ class Domain:
 # =============================================================================
 
     @classmethod
-    def from_file(cls, filename: Path) -> 'Domain':
+    def from_file(cls, filename: Path) -> Domain:
         """Create a Domain object from a pickle file.
 
         Parameters
@@ -76,7 +78,7 @@ class Domain:
         return obj
 
     @classmethod
-    def from_yaml(cls: Type['Domain'], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> 'Domain':
+    def from_yaml(cls: Type[Domain], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> Domain:
         """Initializ a Domain from a Hydra YAML configuration file
 
 
@@ -98,7 +100,7 @@ class Domain:
         return cls(**args)
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame) -> 'Domain':
+    def from_dataframe(cls, df: pd.DataFrame) -> Domain:
         input_space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':
@@ -122,11 +124,6 @@ class Domain:
         filename : str
             Name of the file.
         """
-
-        # # if filename does not end with .pkl, add it
-        # if not filename.endswith('.pkl'):
-        #     filename = filename + '.pkl'
-
         with open(filename.with_suffix('.pkl'), 'wb') as f:
             pickle.dump(self, f)
 
@@ -378,7 +375,7 @@ class Domain:
                 for _, parameter in self.get_continuous_parameters().items()]
         )
 
-    def filter(self, type: Type[Parameter]) -> 'Domain':
+    def filter(self, type: Type[Parameter]) -> Domain:
         """Filter the parameters of the domain by type
 
         Parameters

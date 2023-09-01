@@ -1,10 +1,12 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import sys
 from pathlib import Path
-from typing import Any, Dict, Tuple, Type, Union
+from typing import Any, Dict, Tuple, Type, Optional
 
 if sys.version_info < (3, 8):
     from typing_extensions import Protocol
@@ -44,7 +46,7 @@ def pandas_store(object: pd.DataFrame, path: Path) -> str:
     return '.csv'
 
 
-def xarray_store(object: Union[xr.DataArray, xr.Dataset], path: Path) -> str:
+def xarray_store(object: xr.DataArray | xr.Dataset, path: Path) -> str:
     object.to_netcdf(path.with_suffix('.nc'))
     return '.nc'
 
@@ -57,7 +59,7 @@ STORE_TYPE_MAPPING: Dict[Type, Store] = {
 }
 
 
-def save_object(object: Any, path: Path, store_method: Union[None, Store]) -> str:
+def save_object(object: Any, path: Path, store_method: Optional[Store]) -> str:
     if store_method is not None:
         store_method(object, path)
         return
