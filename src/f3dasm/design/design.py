@@ -6,7 +6,7 @@ from __future__ import annotations
 # Standard
 import sys
 from pathlib import Path
-from typing import Any, Dict, Tuple, Type, Optional
+from typing import Any, Dict, Optional, Tuple, Type
 
 if sys.version_info < (3, 8):
     from typing_extensions import Protocol
@@ -59,7 +59,7 @@ STORE_TYPE_MAPPING: Dict[Type, Store] = {
 }
 
 
-def save_object(object: Any, path: Path, store_method: Optional[Store]) -> str:
+def save_object(object: Any, path: Path, store_method: Optional[Store] = None) -> str:
     if store_method is not None:
         store_method(object, path)
         return

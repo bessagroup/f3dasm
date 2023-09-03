@@ -1,8 +1,10 @@
 #                                                                       Modules
 # =============================================================================
 
-from pathlib import Path
+from __future__ import annotations
+
 # Standard
+from pathlib import Path
 from typing import List, Optional
 
 # Third-party
@@ -34,7 +36,7 @@ class NoOpenJobsError(Exception):
 
 
 class _JobQueue:
-    def __init__(self, jobs: pd.Series = None):
+    def __init__(self, jobs: Optional[pd.Series] = None):
         """
         A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
         'finished', or 'error'.
@@ -72,7 +74,7 @@ class _JobQueue:
         return cls(pd.Series(['open'] * len(data), dtype='string'))
 
     @classmethod
-    def from_file(cls, filename: Path) -> '_JobQueue':
+    def from_file(cls, filename: Path) -> _JobQueue:
         """Create a JobQueue object from a pickle file.
 
         Parameters
@@ -106,11 +108,6 @@ class _JobQueue:
         filename : Path
             Path of the file.
         """
-
-        # if filename does not end with .pkl, add it
-        # if not filename.endswith('.pkl'):
-        #     filename = filename + '.pkl'
-
         self.jobs.to_pickle(filename.with_suffix('.pkl'))
 
     #                                                        Append and remove jobs
@@ -210,7 +207,7 @@ class _JobQueue:
         """
         return all(self.jobs.isin(['finished', 'error']))
 
-    def get_open_job(self) -> Optional[int]:
+    def get_open_job(self) -> int:
         """Returns the index of an open job.
 
         Returns

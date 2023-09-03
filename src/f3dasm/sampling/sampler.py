@@ -1,9 +1,11 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import json
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 # Third-party core
 import numpy as np
@@ -36,7 +38,7 @@ class Sampler:
         seed for sampling
     """
 
-    def __init__(self, design: Domain, seed: Union[Any, int] = None, number_of_samples: int = None):
+    def __init__(self, design: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples
@@ -44,7 +46,7 @@ class Sampler:
             np.random.seed(seed)
 
     @classmethod
-    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> 'Sampler':
+    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> Sampler:
         """Create a sampler from a yaml configuration"""
 
         args = {**sampler_config, 'design': None}
@@ -77,7 +79,7 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: Union[int, None] = None) -> ExperimentData:
+    def get_samples(self, numsamples: Optional[int] = None) -> ExperimentData:
         """Receive samples of the search space
 
         Parameters
