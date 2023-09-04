@@ -34,7 +34,7 @@ from pathos.helpers import mp
 # Local
 from ..logger import logger
 from ._data import _Data
-from ._jobqueue import NoOpenJobsError, _JobQueue
+from ._jobqueue import FINISHED, OPEN, NoOpenJobsError, _JobQueue
 from .design import Design
 from .domain import Domain
 from .parameter import Parameter
@@ -50,7 +50,7 @@ __status__ = 'Stable'
 
 
 class Sampler(Protocol):
-    def get_samples(numsamples: int) -> 'ExperimentData':
+    def get_samples(numsamples: int) -> ExperimentData:
         ...
 
     @classmethod
@@ -125,7 +125,7 @@ class ExperimentData:
     # =============================================================================
 
     @classmethod
-    def from_file(cls: Type['ExperimentData'], filename: str = 'experimentdata',
+    def from_file(cls: Type[ExperimentData], filename: str = 'experimentdata',
                   text_io: Optional[TextIOWrapper] = None) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
 
@@ -152,7 +152,7 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path, text_io)
 
     @classmethod
-    def from_sampling(cls, sampler: Sampler, filename: str = 'experimentdata') -> 'ExperimentData':
+    def from_sampling(cls, sampler: Sampler, filename: str = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -211,7 +211,7 @@ class ExperimentData:
 
     @classmethod
     def from_csv(cls, filename_input: Path, filename_output: Optional[Path] = None,
-                 domain: Optional[Domain] = None) -> 'ExperimentData':
+                 domain: Optional[Domain] = None) -> ExperimentData:
         """Create an ExperimentData object from .csv files.
 
         Parameters
@@ -323,7 +323,7 @@ class ExperimentData:
     #                                                                        Export
     # =============================================================================
 
-    def select(self, indices: List[int]) -> 'ExperimentData':
+    def select(self, indices: List[int]) -> ExperimentData:
         """Select a subset of the data.
 
         Parameters
@@ -496,10 +496,10 @@ class ExperimentData:
         self.input_data.add_numpy_arrays(input)
 
         if output is None:
-            status = 'open'
+            status = OPEN
             self.output_data.add_empty_rows(len(input))
         else:
-            status = 'finished'
+            status = FINISHED
             self.output_data.add_numpy_arrays(output)
 
         self.jobs.add(number_of_jobs=len(input), status=status)
