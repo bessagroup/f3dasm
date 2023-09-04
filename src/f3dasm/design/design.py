@@ -79,7 +79,20 @@ def save_object(object: Any, path: Path, store_method: Optional[Store] = None) -
 
 
 class Design:
+    """Single realization of a design of experiments."""
+
     def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any], jobnumber: int):
+        """Single realization of a design of experiments.
+
+        Parameters
+        ----------
+        dict_input : Dict[str, Any]
+            Input parameters of one experiment
+        dict_output : Dict[str, Any]
+            Output parameters of one experiment
+        jobnumber : int
+            Index of the experiment
+        """
         self._dict_input = dict_input
         self._dict_output = dict_output
         self._jobnumber = jobnumber
@@ -95,17 +108,35 @@ class Design:
 
     @property
     def input_data(self) -> Dict[str, Any]:
-        """Retrieve the input data of the design as a dictionary."""
+        """Retrieve the input data of the design as a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The input data of the design as a dictionary.
+        """
         return self._dict_input
 
     @property
     def output_data(self) -> Dict[str, Any]:
-        """Retrive the output data of the design as a dictionary."""
+        """Retrive the output data of the design as a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The output data of the design as a dictionary.
+        """
         return self._dict_output
 
     @property
     def job_number(self) -> int:
-        """Retrieve the job number of the design."""
+        """Retrieve the job number of the design.
+
+        Returns
+        -------
+        int
+            The job number of the design.
+        """
         return self._jobnumber
 
 #                                                                        Export
