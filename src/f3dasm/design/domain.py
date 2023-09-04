@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Tuple, Type, TypeVar
 import numpy as np
 import pandas as pd
 from hydra.utils import instantiate
+from omegaconf import DictConfig
 
 # Local
 from .parameter import (CategoricalParameter, ConstantParameter,
@@ -54,7 +55,7 @@ class Domain:
 # =============================================================================
 
     @classmethod
-    def from_file(cls, filename: Path) -> Domain:
+    def from_file(cls: Type[Domain], filename: Path) -> Domain:
         """Create a Domain object from a pickle file.
 
         Parameters
@@ -78,7 +79,7 @@ class Domain:
         return obj
 
     @classmethod
-    def from_yaml(cls: Type[Domain], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> Domain:
+    def from_yaml(cls: Type[Domain], yaml: DictConfig) -> Domain:
         """Initializ a Domain from a Hydra YAML configuration file
 
 
@@ -90,7 +91,7 @@ class Domain:
 
         Parameters
         ----------
-        yaml
+        yaml : DictConfig
             yaml dictionary
 
         """
