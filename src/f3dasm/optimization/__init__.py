@@ -6,7 +6,6 @@ Some API information about the opitmizers
 
 # Standard
 import sys
-from itertools import chain
 from os import path
 from typing import List
 
