@@ -71,7 +71,7 @@ class _Data:
 # =============================================================================
 
     @classmethod
-    def from_indices(cls, indices: pd.Index) -> '_Data':
+    def from_indices(cls, indices: pd.Index) -> _Data:
         """Create a Data object from a list of indices.
 
         Parameters
@@ -86,7 +86,7 @@ class _Data:
         return cls(pd.DataFrame(index=indices))
 
     @classmethod
-    def from_domain(cls, domain: Domain) -> '_Data':
+    def from_domain(cls, domain: Domain) -> _Data:
         """Create a Data object from a domain.
 
         Parameters
@@ -110,7 +110,7 @@ class _Data:
         return cls(df)
 
     @classmethod
-    def from_file(cls, filename: Path, text_io: Optional[TextIOWrapper] = None) -> '_Data':
+    def from_file(cls, filename: Path, text_io: Optional[TextIOWrapper] = None) -> _Data:
         """Loads the data from a file.
 
         Parameters
@@ -169,7 +169,7 @@ class _Data:
         return xr.DataArray(self.data, dims=['iterations', label], coords={
             'iterations': range(len(self)), label: self.names})
 
-    def combine_data_to_multiindex(self, other: '_Data') -> pd.DataFrame:
+    def combine_data_to_multiindex(self, other: _Data) -> pd.DataFrame:
         return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])
 
     def store(self, filename: Path, text_io: TextIOWrapper = None) -> None:
