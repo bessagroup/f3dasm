@@ -1,3 +1,5 @@
+"""Paramaters for constructing the feasible search space."""
+
 #                                                                       Modules
 # =============================================================================
 

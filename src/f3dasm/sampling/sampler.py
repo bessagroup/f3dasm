@@ -1,3 +1,5 @@
+"""Base class for sampling methods"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -5,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 import json
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 
 # Third-party core
 import numpy as np
@@ -28,17 +30,18 @@ __status__ = 'Stable'
 
 
 class Sampler:
-    """Interface for sampling method
-
-    Parameters
-    ----------
-    design
-        design of experiments object
-    seed
-        seed for sampling
-    """
-
     def __init__(self, design: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
+        """Interface for sampling method
+
+        Parameters
+        ----------
+        design : Domain
+            design of experiments object
+        seed : int
+            seed for sampling
+        number_of_samples : Optional[int]
+            number of samples to be generated, defaults to None
+        """
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples

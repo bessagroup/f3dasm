@@ -1,3 +1,7 @@
+"""
+A Design object contains a single realization of the design-of-experiment in ExperimentData.
+"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -31,27 +35,84 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class Store(Protocol):
-    def __call__(object, path: Path) -> str:
+class _Store(Protocol):
+    """Protocol class for storing objects to disk."""
+    def __call__(object: Any, path: Path) -> str:
+        """Protocol method for storing objects to disk.
+
+        Parameters
+        ----------
+        object : Any
+            object to store to disk
+        path : Path
+            Path to store the object to
+
+        Returns
+        -------
+        str
+            suffix of the file in string format
+        """
         ...
 
 
 def numpy_store(object: np.ndarray, path: Path) -> str:
+    """Numpy store method.
+
+    Parameters
+    ----------
+    object : np.ndarray
+        numpy-array to store
+    path : Path
+        Path to store the object to
+
+    Returns
+    -------
+    str
+        '.npy' suffix
+    """
     np.save(file=path.with_suffix('.npy'), arr=object)
     return '.npy'
 
 
 def pandas_store(object: pd.DataFrame, path: Path) -> str:
+    """Pandas DataFrame store method.
+
+    Parameters
+    ----------
+    object : pd.DataFrame
+        pandas DataFrame to store
+    path : Path
+        Path to store the object to
+
+    Returns
+    -------
+    str
+        '.csv' suffix (comma-separated values file)
+    """
     object.to_csv(path.with_suffix('.csv'))
     return '.csv'
 
 
 def xarray_store(object: xr.DataArray | xr.Dataset, path: Path) -> str:
+    """Xarray store method.
+
+    Parameters
+    ----------
+    object : xr.DataArray | xr.Dataset
+        xarray object to store; either a DataArray or a Dataset
+    path : Path
+        Path to store the object to
+
+    Returns
+    -------
+    str
+        '.nc' suffix (NetCDF4 file)
+    """
     object.to_netcdf(path.with_suffix('.nc'))
     return '.nc'
 
 
-STORE_TYPE_MAPPING: Dict[Type, Store] = {
+STORE_TYPE_MAPPING: Dict[Type, _Store] = {
     np.ndarray: numpy_store,
     pd.DataFrame: pandas_store,
     xr.DataArray: xarray_store,
@@ -59,7 +120,28 @@ STORE_TYPE_MAPPING: Dict[Type, Store] = {
 }
 
 
-def save_object(object: Any, path: Path, store_method: Optional[Store] = None) -> str:
+def save_object(object: Any, path: Path, store_method: Optional[_Store] = None) -> str:
+    """Function to save the object to path, with the appropriate storing method.
+
+    Parameters
+    ----------
+    object : Any
+        Object to store
+    path : Path
+        Path to store the object to
+    store_method : Optional[Store], optional
+        Storage method, by default None
+
+    Returns
+    -------
+    str
+        suffix of the storage method
+
+    Raises
+    ------
+    TypeError
+        Raises if the object type is not supported, and you haven't provided a custom store method.
+    """
     if store_method is not None:
         store_method(object, path)
         return
@@ -79,8 +161,6 @@ def save_object(object: Any, path: Path, store_method: Optional[Store] = None) -
 
 
 class Design:
-    """Single realization of a design of experiments."""
-
     def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any], jobnumber: int):
         """Single realization of a design of experiments.
 
@@ -119,7 +199,7 @@ class Design:
 
     @property
     def output_data(self) -> Dict[str, Any]:
-        """Retrive the output data of the design as a dictionary.
+        """Retrieve the output data of the design as a dictionary.
 
         Returns
         -------
@@ -152,7 +232,7 @@ class Design:
         """
         return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
 
-    def store(self, object: Any, name: str, store_method: Store = None) -> None:
+    def store(self, object: Any, name: str, store_method: _Store = None) -> None:
         """Store an object to disk.
 
         Parameters

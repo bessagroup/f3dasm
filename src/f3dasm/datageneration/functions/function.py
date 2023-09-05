@@ -7,8 +7,10 @@ functions. It can be called with an input vector to evaluate the function at tha
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import Tuple, Union
+from typing import Optional, Tuple
 
 # Third-party core
 import autograd.numpy as np
@@ -32,7 +34,7 @@ __status__ = 'Stable'
 
 
 class Function(DataGenerator):
-    def __init__(self, seed=None):
+    def __init__(self, seed: Optional[int] = None):
         """Class for an analytical function
 
         Parameters
@@ -58,7 +60,7 @@ class Function(DataGenerator):
             return
         np.random.seed(seed)
 
-    def __call__(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
+    def __call__(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
@@ -83,7 +85,7 @@ class Function(DataGenerator):
 
         return np.array(y).reshape(-1, 1)
 
-    def run(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
+    def run(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
         return self.__call__(input_x)
 
     def _retrieve_original_input(self, x: np.ndarray):

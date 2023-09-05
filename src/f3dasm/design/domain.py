@@ -1,3 +1,7 @@
+"""
+The Domain is a set of Parameter instances that make up the feasible search space.
+"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -94,6 +98,10 @@ class Domain:
         yaml : DictConfig
             yaml dictionary
 
+        Returns
+        -------
+        Domain
+            Domain object
         """
         args = {}
         for space, params in yaml.items():
@@ -102,6 +110,18 @@ class Domain:
 
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame) -> Domain:
+        """Initializes a Domain from a pandas DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing the input parameters.
+
+        Returns
+        -------
+        Domain
+            Domain object
+        """
         input_space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':

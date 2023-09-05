@@ -17,10 +17,6 @@ __status__ = "Alpha"
 class DataGenerator:
     """Base class for a data generator"""
 
-    def __init__(self, design: Design, **kwargs):
-        self.design = design
-        self.kwargs = kwargs
-
     def pre_process(self) -> None:
         """Function that handles the pre-processing"""
         ...
@@ -39,3 +35,8 @@ class DataGenerator:
         self.pre_process()
         self.execute()
         self.post_process()
+
+    @time_and_log
+    def __call__(self, design: Design, **kwargs):
+        self.design = design
+        self.run()

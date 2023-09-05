@@ -1,8 +1,10 @@
+"""Latin Hypercube Sampling"""
+
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Any, Union
+from typing import Any
 
 # Third-party
 import numpy as np

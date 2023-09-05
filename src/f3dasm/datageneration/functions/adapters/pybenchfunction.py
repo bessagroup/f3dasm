@@ -3,6 +3,7 @@
 
 # Standard
 import json
+from typing import Optional
 
 # Third-party
 import autograd.numpy as np
@@ -22,7 +23,8 @@ __status__ = 'Stable'
 
 
 class PyBenchFunction(Function):
-    def __init__(self, dimensionality: int, scale_bounds=None, noise=None, offset=True, seed=None):
+    def __init__(self, dimensionality: int, scale_bounds: Optional[np.ndarray] = None,
+                 noise: Optional[float] = None, offset: bool = True, seed: Optional[int] = None):
         """Adapter for pybenchfunction, created by Axel Thevenot (2020).
         Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 
@@ -37,7 +39,7 @@ class PyBenchFunction(Function):
         offset, optional
             set this True to randomly off-set the pybenchfunction, by default True
         seed, optional
-            seed for the random number genrator, by default None
+            seed for the random number generator, by default None
         """
         super().__init__(seed=seed)
         self.dimensionality = dimensionality

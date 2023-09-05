@@ -1,3 +1,8 @@
+"""
+The ExperimentData object is the main object used to store implementations of a design-of-experiments,
+keep track of results, perform optimization and extract data for machine learning purposes.
+"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -49,21 +54,22 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class Sampler(Protocol):
+class _Sampler(Protocol):
+    """Protocol class for sampling methods."""
     def get_samples(numsamples: int) -> ExperimentData:
         ...
 
     @classmethod
-    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> 'Sampler':
+    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> '_Sampler':
         """Create a sampler from a yaml configuration"""
 
         args = {**sampler_config, 'design': None}
-        sampler: Sampler = instantiate(args)
+        sampler: _Sampler = instantiate(args)
         sampler.design = Domain.from_yaml(domain_config)
         return sampler
 
 
-class DesignCallable(Protocol):
+class _DesignCallable(Protocol):
     def __call__(design: Design, **kwargs) -> Design:
         ...
 
@@ -152,7 +158,7 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path, text_io)
 
     @classmethod
-    def from_sampling(cls, sampler: Sampler, filename: str = 'experimentdata') -> ExperimentData:
+    def from_sampling(cls, sampler: _Sampler, filename: str = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -259,7 +265,7 @@ class ExperimentData:
 
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
-            sampler = Sampler.from_yaml(config.domain, config.experimentdata.from_sampling)
+            sampler = _Sampler.from_yaml(config.domain, config.experimentdata.from_sampling)
             return sampler.get_samples()
             # return cls.from_sampling(sampler)
 
@@ -587,6 +593,13 @@ class ExperimentData:
         self.set_design(design)
 
     def access_open_job_data(self) -> Design:
+        """Get the data of the first available open job.
+
+        Returns
+        -------
+        Design
+            The Design object of the first available open job.
+        """
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
         design = self.get_design(job_index)
@@ -594,30 +607,60 @@ class ExperimentData:
 
     @access_file
     def get_open_job_data(self) -> Design:
+        """Get the data of the first available open job by
+        accessing the ExperimenData on disk.
+
+        Returns
+        -------
+        Design
+            The Design object of the first available open job.
+        """
         return self.access_open_job_data()
 
     #                                                                          Jobs
     # =============================================================================
 
-    def set_error(self, index: int):
+    def set_error(self, index: int) -> None:
+        """Mark the design at the given index as error.
+
+        Parameters
+        ----------
+        index
+            index of the design to mark as error
+        """
         self.jobs.mark_as_error(index)
         self.output_data.set_data(index, value='ERROR')
 
     @access_file
     def write_error(self, index: int):
+        """Mark the design at the given index as error and write to ExperimentData file.
+
+        Parameters
+        ----------
+        index
+            index of the design to mark as error
+        """
         self.set_error(index)
 
     @access_file
     def is_all_finished(self) -> bool:
+        """Check if all jobs are finished
+
+        Returns
+        -------
+        bool
+            True if all jobs are finished, False otherwise
+        """
         return self.jobs.is_all_finished()
 
     def mark_all_open(self) -> None:
+        """Mark all jobs as open"""
         self.jobs.mark_all_open()
 
     #                                                            Run datageneration
     # =============================================================================
 
-    def run(self, operation: DesignCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
+    def run(self, operation: _DesignCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
         """Run any function over the entirery of the experiments
 
         Parameters
@@ -652,7 +695,7 @@ class ExperimentData:
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, operation: DesignCallable, kwargs: dict):
+    def _run_sequential(self, operation: _DesignCallable, kwargs: dict):
         """Run the operation sequentially
 
         Parameters
@@ -692,7 +735,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.set_error(design._jobnumber)
 
-    def _run_multiprocessing(self, operation: DesignCallable, kwargs: dict):
+    def _run_multiprocessing(self, operation: _DesignCallable, kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
@@ -728,7 +771,7 @@ class ExperimentData:
         for _design in _designs:
             self.set_design(_design)
 
-    def _run_cluster(self, operation: DesignCallable, kwargs: dict):
+    def _run_cluster(self, operation: _DesignCallable, kwargs: dict):
         """Run the operation on the cluster
 
         Parameters
