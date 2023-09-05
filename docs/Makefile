@@ -7,7 +7,6 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 SOURCEDIR	  = source
 BUILDDIR      = build
-APIDOCDIR     = apisource
 PACKAGENAME   = f3dasm
 
 # Internal variables.
@@ -52,12 +51,6 @@ html:
 html-open:
 	make html
 	xdg-open ./$(BUILDDIR)/html/index.html
-
-apidoc:
-	-rm -rf ./$(SOURCEDIR)/$(APIDOCDIR)/*
-	sphinx-apidoc -o ./$(SOURCEDIR)/$(APIDOCDIR)/ ../src/$(PACKAGENAME)
-	@echo
-	@echo "Created API documentation using sphinx-apidoc. The source files are in $(APIDOCDIR)."
 
 dirhtml:
 	$(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(BUILDDIR)/dirhtml
