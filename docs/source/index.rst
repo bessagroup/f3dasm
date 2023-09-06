@@ -61,8 +61,8 @@ f3dasm
    :glob:
 
    rst_doc_files/classes/workflow/workflow
-   rst_doc_files/classes/workflow/cluster
    rst_doc_files/classes/workflow/hydra
+   rst_doc_files/classes/workflow/cluster
 
 .. toctree::
    :name: apitoc

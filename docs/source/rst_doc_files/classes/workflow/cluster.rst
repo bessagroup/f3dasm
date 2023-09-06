@@ -44,7 +44,7 @@ You can use the global variable :code:`f3dasm.HPC_JOBID` to get the :code:`${PBS
 .. note::
     If the :code:`f3dasm.HPC_JOBID` is not set, it will return the value :code:`None`
 
-.. _cluster_mode:
+.. _cluster-mode:
 
 Using the cluster mode on ExperimentData
 ----------------------------------------
@@ -59,10 +59,12 @@ During the operation, no other process can access the data of the :class:`~f3das
 The cluster mode enables you to use multiple nodes to each retrieve an open :class:`~f3dasm.design.design.Design` from the :class:`~f3dasm.design.experimentdata.ExperimentData`, execute the data generation function, and write the data back to the disk.
 Whenever a node is working executing a particular design, the job-value will be set to 'in progress', making sure that other processes are not repeating that experiment.
 
-.. image:: ../../../img/f3dasm-cluster-cluster.png
+.. image:: ../../../img/f3dasm-cluster.png
     :align: center
-    :width: 70%
+    :width: 100%
     :alt: Cluster mode
+
+|
 
 Example
 -------
