@@ -44,6 +44,9 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
     else:
         PARALLELIZATION = True
 
+    if opt.get_name() in ['EvoSaxCMAES', 'EvoSaxSimAnneal', 'EvoSaxPSO', 'EvoSaxDE']:
+        PARALLELIZATION = False
+
     res = run_multiple_realizations(
         optimizer=opt,
         function=func,
