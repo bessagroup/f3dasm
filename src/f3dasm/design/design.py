@@ -178,18 +178,18 @@ class Design:
         self._jobnumber = jobnumber
 
     @classmethod
-    def from_numpy(cls: Type[Design], input_array: np.ndarray, jobnumber: int = 0,
-                   output_value: Optional[float] = None) -> Design:
+    def from_numpy(cls: Type[Design], input_array: np.ndarray,
+                   output_value: Optional[float] = None, jobnumber: int = 0) -> Design:
         """Create a Design object from a numpy array.
 
         Parameters
         ----------
         input_array : np.ndarray
-            input 1D numpy array
+            input 1D numpy array        output_value : Optional[float], optional
+            objective value, by default None
+
         jobnumber : int
             jobnumber of the design
-        output_value : Optional[float], optional
-            objective value, by default None
 
         Returns
         -------
