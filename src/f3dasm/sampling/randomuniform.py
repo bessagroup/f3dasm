@@ -1,4 +1,4 @@
-"""Random uniform sampling"""
+"""Random uniform Sampling"""
 
 #                                                                       Modules
 # =============================================================================

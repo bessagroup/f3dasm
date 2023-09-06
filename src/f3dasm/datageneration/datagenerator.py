@@ -1,3 +1,7 @@
+"""
+Interface class for data generators
+"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -32,6 +36,18 @@ class DataGenerator:
 
     @time_and_log
     def run(self, design: Design, **kwargs) -> Design:
+        """Run the data generator
+
+        Parameters
+        ----------
+        design : Design
+            The design to run the data generator on
+
+        Returns
+        -------
+        Design
+            Processed design
+        """
         self.pre_process(design, **kwargs)
         design = self.execute(design, **kwargs)
         self.post_process(design, **kwargs)

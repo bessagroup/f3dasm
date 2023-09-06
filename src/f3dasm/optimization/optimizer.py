@@ -1,3 +1,7 @@
+"""
+Module containing the interface class Optimizer
+"""
+
 #                                                                       Modules
 # =============================================================================
 

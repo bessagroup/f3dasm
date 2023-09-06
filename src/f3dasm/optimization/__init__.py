@@ -1,5 +1,5 @@
 """
-Some API information about the opitmizers
+Module for optimization
 """
 #                                                                       Modules
 # =============================================================================

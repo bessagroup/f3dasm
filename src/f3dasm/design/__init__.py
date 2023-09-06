@@ -1,12 +1,16 @@
+"""
+Module for the design of experiments.
+"""
+
 #                                                                       Modules
 # =============================================================================
 
+from .design import Design
 # Local
 from .domain import Domain, make_nd_continuous_domain
 from .experimentdata import ExperimentData
 from .parameter import (PARAMETERS, CategoricalParameter, ConstantParameter,
                         ContinuousParameter, DiscreteParameter, Parameter)
-from .design import Design
 
 #                                                          Authorship & Credits
 # =============================================================================

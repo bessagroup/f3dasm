@@ -109,7 +109,7 @@ class ExperimentData:
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
 
-    def access_file(operation: Callable) -> Callable:
+    def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
 
         Returns
@@ -594,7 +594,7 @@ class ExperimentData:
 
         self.jobs.mark_as_finished(design._jobnumber)
 
-    @access_file
+    @_access_file
     def write_design(self, design: Design) -> None:
         """
         Sets the design at the given index.
@@ -619,7 +619,7 @@ class ExperimentData:
         design = self.get_design(job_index)
         return design
 
-    @access_file
+    @_access_file
     def get_open_job_data(self) -> Design:
         """Get the data of the first available open job by
         accessing the ExperimenData on disk.
@@ -645,7 +645,7 @@ class ExperimentData:
         self.jobs.mark_as_error(index)
         self.output_data.set_data(index, value='ERROR')
 
-    @access_file
+    @_access_file
     def write_error(self, index: int):
         """Mark the design at the given index as error and write to ExperimentData file.
 
@@ -656,7 +656,7 @@ class ExperimentData:
         """
         self.set_error(index)
 
-    @access_file
+    @_access_file
     def is_all_finished(self) -> bool:
         """Check if all jobs are finished
 
