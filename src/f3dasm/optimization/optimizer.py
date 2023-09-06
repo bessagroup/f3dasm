@@ -10,8 +10,9 @@ from typing import Any, List, Mapping, Optional, Tuple
 # Third-party core
 import numpy as np
 
-from ..datageneration.functions.function import Function
 # Locals
+from ..datageneration.functions.function import Function
+from ..design.design import Design
 from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
@@ -202,7 +203,11 @@ class Optimizer:
 
         for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
             x, y = self.update_step(function=function)
-            self.add_iteration_to_data(x, y)
+
+            designs_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
+
+            for x_i, y_i in designs_to_add:
+                self.data.add_design(Design.from_numpy(x_i, y_i))
 
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(
