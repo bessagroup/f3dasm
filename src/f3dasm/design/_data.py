@@ -1,19 +1,23 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import os
 from io import TextIOWrapper
-from typing import Any, Dict, Iterator, List, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 # Third-party
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 # Local
 from .domain import Domain
-from .design import Design
+from .parameter import Parameter
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,12 +30,15 @@ __status__ = 'Stable'
 
 
 class _Data:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: Optional[pd.DataFrame] = None):
+        if data is None:
+            data = pd.DataFrame()
+
         self.data: pd.DataFrame = data
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
-        return self.number_of_datapoints()
+        return len(self.data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
@@ -42,50 +49,73 @@ class _Data:
             raise StopIteration
         else:
             index = self.data.index[self.current_index]
-            current_value = [self.get_inputdata_dict(
-                index), self.get_outputdata_dict(index)]
+            current_value = self.get_data_dict(index)
             self.current_index += 1
             return current_value
 
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
 
-    @classmethod
-    def from_design(cls, design: Domain) -> '_Data':
-        # input columns
-        input_columns = [("input", name) for name, parameter in design.input_space.items()]
+#                                                                    Properties
+# =============================================================================
 
-        df_input = pd.DataFrame(columns=input_columns).astype(
-            design._cast_types_dataframe(design.input_space, label="input")
-        )
+    @property
+    def indices(self) -> pd.Index:
+        return self.data.index
 
-        # Set the categories tot the categorical input parameters
-        for name, categorical_input in design.get_categorical_input_parameters().items():
-            df_input[('input', name)] = pd.Categorical(
-                df_input[('input', name)], categories=categorical_input.categories)
+    @property
+    def names(self) -> List[str]:
+        return self.data.columns.to_list()
 
-        # output columns
-        output_columns = [("output", name) for name, parameter in design.output_space.items()]
-
-        df_output = pd.DataFrame(columns=output_columns).astype(
-            design._cast_types_dataframe(design.output_space, label="output")
-        )
-
-        # Set the categories tot the categorical output parameters
-        for name, categorical_output in design.get_categorical_output_parameters().items():
-            df_output[('output', name)] = pd.Categorical(
-                df_input[('output', name)], categories=categorical_output.categories)
-
-        empty_dataframe = pd.concat([df_input, df_output])
-        return cls(empty_dataframe)
+#                                                      Alternative constructors
+# =============================================================================
 
     @classmethod
-    def from_file(cls, filename: str, text_io: TextIOWrapper = None) -> '_Data':
+    def from_indices(cls, indices: pd.Index) -> _Data:
+        """Create a Data object from a list of indices.
+
+        Parameters
+        ----------
+        indices : pd.Index
+            The indices of the data.
+
+        Returns
+        -------
+            Empty data object with indices
+        """
+        return cls(pd.DataFrame(index=indices))
+
+    @classmethod
+    def from_domain(cls, domain: Domain) -> _Data:
+        """Create a Data object from a domain.
+
+        Parameters
+        ----------
+        design
+            _description_
+
+        Returns
+        -------
+            _description_
+        """
+        df = pd.DataFrame(columns=list(domain.input_space.keys())).astype(
+            domain._cast_types_dataframe()
+        )
+
+        # Set the categories tot the categorical parameters
+        for name, categorical_input in domain.get_categorical_parameters().items():
+            df[name] = pd.Categorical(
+                df[name], categories=categorical_input.categories)
+
+        return cls(df)
+
+    @classmethod
+    def from_file(cls, filename: Path, text_io: Optional[TextIOWrapper] = None) -> _Data:
         """Loads the data from a file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The filename to load the data from.
 
         text_io: TextIOWrapper, optional
@@ -93,30 +123,61 @@ class _Data:
         """
         # Load the data from a csv
         if text_io is None:
-            if not filename.endswith('.csv'):
-                filename = filename + '.csv'
-            file = filename
+            file = filename.with_suffix('.csv')
+
         else:
             file = text_io
 
-        return cls(pd.read_csv(file, header=[0, 1], index_col=0))
+        return cls(pd.read_csv(file, header=0, index_col=0))
 
-    def reset(self, design: Domain):
+    @classmethod
+    def from_dataframe(cls, dataframe: pd.DataFrame) -> _Data:
+        """Loads the data from a dataframe.
+
+        Parameters
+        ----------
+        dataframe : pd.DataFrame
+            The dataframe to load the data from.
+        """
+        return cls(dataframe)
+
+    def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
 
         Parameters
         ----------
-        design : DesignSpace
-            The design space of the experiment.
-        """
-        self.data = self.from_design(design).data
+        domain : Domain, optional
+            The domain of the experiment.
 
-    def store(self, filename: str, text_io: TextIOWrapper = None) -> None:
+        Note
+        ----
+        If the domain is None, the data will be reset to an empty dataframe.
+        """
+        if domain is None:
+            self.data = pd.DataFrame()
+            return
+
+        self.data = self.from_domain(domain).data
+
+#                                                                        Export
+# =============================================================================
+
+    def to_numpy(self) -> np.ndarray:
+        return self.data.to_numpy()
+
+    def to_xarray(self, label: str) -> xr.DataArray:
+        return xr.DataArray(self.data, dims=['iterations', label], coords={
+            'iterations': range(len(self)), label: self.names})
+
+    def combine_data_to_multiindex(self, other: _Data) -> pd.DataFrame:
+        return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])
+
+    def store(self, filename: Path, text_io: TextIOWrapper = None) -> None:
         """Stores the data to a file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             The filename to store the data to.
         """
 
@@ -124,17 +185,13 @@ class _Data:
             self.data.to_csv(text_io)
             return
 
-        if not filename.endswith('.csv'):
-            filename = filename + '.csv'
-        # Store the data
+        self.data.to_csv(filename.with_suffix('.csv'))
 
-        self.data.to_csv(filename)
+    def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
+        return self.data.nsmallest(n=nosamples, columns=column_name)
 
-    def select(self, indices: List[int]):
-        self.data = self.data.loc[indices]
-
-    def remove(self, indices: List[int]):
-        self.data = self.data.drop(indices)
+#                                                        Append and remove data
+# =============================================================================
 
     def add(self, data: pd.DataFrame):
         try:
@@ -150,68 +207,47 @@ class _Data:
 
         self.data = pd.concat([self.data, data], ignore_index=False)
 
-    def add_output(self, output: np.ndarray, label: str = "y"):
-        self.data[("output", label)] = output
+    def add_empty_rows(self, number_of_rows: int):
+        if self.data.index.empty:
+            last_index = -1
+        else:
+            last_index = self.data.index[-1]
 
-    def add_numpy_arrays(self, input: np.ndarray, output: Union[np.ndarray, None]):
+        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
+        empty_data = pd.DataFrame(np.nan, index=new_indices, columns=self.data.columns)
+        self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
-        if output is None:
-            output = np.nan * np.ones((input.shape[0], len(self.data['output'].columns)))
+    def add_column(self, name: str):
+        self.data[name] = np.nan
 
-        df = pd.DataFrame(np.hstack((input, output)),
+    def add_numpy_arrays(self, array: np.ndarray):
+        df = pd.DataFrame(array,
                           columns=self.data.columns)
         self.add(df)
 
-    def get_inputdata(self) -> pd.DataFrame:
-        return self.data['input']
+    def fill_numpy_arrays(self, array: np.ndarray):
+        # get the indices of the nan values
+        idx, _ = np.where(np.isnan(self.data))
+        self.data.loc[np.unique(idx)] = array
 
-    def get_outputdata(self) -> pd.DataFrame:
-        return self.data['output']
+    def remove(self, indices: List[int]):
+        self.data = self.data.drop(indices)
 
-    def get_inputdata_dict(self, index: int) -> Dict[str, Any]:
-        return self.data['input'].loc[index].to_dict()
+#                                                           Getters and setters
+# =============================================================================
 
-    def get_outputdata_dict(self, index: int) -> Dict[str, Any]:
-        return self.data['output'].loc[index].to_dict()
+    def select(self, indices: List[int]):
+        self.data = self.data.loc[indices]
 
-    def get_design(self, index: int) -> Design:
-        return Design(self.get_inputdata_dict(index), self.get_outputdata_dict(index), index)
+    def get_data_dict(self, index: int) -> Dict[str, Any]:
+        return self.data.loc[index].to_dict()
 
-    def set_design(self, design: Design) -> None:
-        for column, value in design._dict_output.items():
-            self.data.loc[design._jobnumber, ('output', column)] = value
-
-    def set_inputdata(self, index: int, value: Any, column: str = 'input'):
+    def set_data(self, index: int, value: Any, column: Optional[str] = None):
         # check if the index exists
         if index not in self.data.index:
             raise IndexError(f"Index {index} does not exist in the data.")
 
-        self.data.at[index, column] = value
-
-    def set_outputdata(self, index: int, value: Any):
-        # check if the index exists
-        if index not in self.data.index:
-            raise IndexError(f"Index {index} does not exist in the data.")
-
-        self.data.at[index, 'output'] = value
-
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.data['input'].to_numpy(), self.data['output'].to_numpy()
-
-    def n_best_samples(self, nosamples: int, output_names: List[str]) -> pd.DataFrame:
-        return self.data.nsmallest(n=nosamples, columns=[("output", name)
-                                                         for name in output_names])
-
-    def number_of_datapoints(self) -> int:
-        return len(self.data)
-
-    def plot(self, input_par1: str = "x0", input_par2: str = "x1") -> Tuple[plt.Figure, plt.Axes]:
-        fig, ax = plt.figure(), plt.axes()
-
-        ax.scatter(self.data[("input", input_par1)],
-                   self.data[("input", input_par2)], s=3)
-
-        ax.set_xlabel(input_par1)
-        ax.set_ylabel(input_par2)
-
-        return fig, ax
+        if column is None:
+            self.data.loc[index] = value
+        else:
+            self.data.at[index, column] = value

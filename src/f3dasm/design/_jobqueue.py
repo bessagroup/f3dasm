@@ -1,8 +1,11 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import List, Union
+from pathlib import Path
+from typing import List, Optional, Type
 
 # Third-party
 import pandas as pd
@@ -19,6 +22,11 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+OPEN = 'open'
+IN_PROGRESS = 'in progress'
+FINISHED = 'finished'
+ERROR = 'error'
+
 
 class NoOpenJobsError(Exception):
     """
@@ -33,7 +41,7 @@ class NoOpenJobsError(Exception):
 
 
 class _JobQueue:
-    def __init__(self, jobs: pd.Series = None):
+    def __init__(self, jobs: Optional[pd.Series] = None):
         """
         A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
         'finished', or 'error'.
@@ -51,8 +59,11 @@ class _JobQueue:
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 
+    #                                                      Alternative Constructors
+    # =============================================================================
+
     @classmethod
-    def from_data(cls, data: _Data):
+    def from_data(cls: Type[_JobQueue], data: _Data):
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -65,10 +76,10 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the loaded data.
         """
-        return cls(pd.Series(['open'] * data.number_of_datapoints(), dtype='string'))
+        return cls(pd.Series([OPEN] * len(data), dtype='string'))
 
     @classmethod
-    def from_file(cls, filename: str) -> '_JobQueue':
+    def from_file(cls: Type[_JobQueue], filename: Path) -> _JobQueue:
         """Create a JobQueue object from a pickle file.
 
         Parameters
@@ -81,37 +92,31 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the loaded data.
         """
+        # Check if the file exists
+        if not filename.with_suffix('.pkl').exists():
+            raise FileNotFoundError(f"Jobfile {filename} does not exist.")
 
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
+        return cls(pd.read_pickle(filename.with_suffix('.pkl')))
 
-        return cls(pd.read_pickle(filename))
+    def reset(self) -> None:
+        """Resets the job queue."""
+        self.jobs = pd.Series(dtype='string')
 
-    def store(self, filename: str) -> None:
+    #                                                                        Export
+    # =============================================================================
+
+    def store(self, filename: Path) -> None:
         """Stores the jobs in a pickle file.
 
         Parameters
         ----------
-        filename : str
-            Name of the file.
+        filename : Path
+            Path of the file.
         """
+        self.jobs.to_pickle(filename.with_suffix('.pkl'))
 
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
-
-        self.jobs.to_pickle(filename)
-
-    def select(self, indices: List[int]):
-        """Selects a subset of the jobs.
-
-        Parameters
-        ----------
-        indices : List[int]
-            List of indices to select.
-        """
-        self.jobs = self.jobs.loc[indices]
+    #                                                        Append and remove jobs
+    # =============================================================================
 
     def remove(self, indices: List[int]):
         """Removes a subset of the jobs.
@@ -123,7 +128,7 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    def add(self, number_of_jobs: int, status: str = 'open'):
+    def add(self, number_of_jobs: int, status: str = OPEN):
         """Adds a number of jobs to the job queue.
 
         Parameters
@@ -143,22 +148,18 @@ class _JobQueue:
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
-    def reset(self) -> None:
-        """Resets the job queue."""
-        self.jobs = pd.Series(dtype='string')
+    def select(self, indices: List[int]):
+        """Selects a subset of the jobs.
 
-    def get_open_job(self) -> Union[int, None]:
-        """Returns the index of an open job.
-
-        Returns
-        -------
-        int
-            Index of an open job.
+        Parameters
+        ----------
+        indices : List[int]
+            List of indices to select.
         """
-        try:  # try to find an open job
-            return int(self.jobs[self.jobs == 'open'].index[0])
-        except IndexError:
-            raise NoOpenJobsError("No open jobs found.")
+        self.jobs = self.jobs.loc[indices]
+
+    #                                                                          Mark
+    # =============================================================================
 
     def mark_as_in_progress(self, index: int) -> None:
         """Marks a job as in progress.
@@ -168,7 +169,7 @@ class _JobQueue:
         index : int
             Index of the job to mark as in progress.
         """
-        self.jobs.loc[index] = 'in progress'
+        self.jobs.loc[index] = IN_PROGRESS
 
     def mark_as_finished(self, index: int) -> None:
         """Marks a job as finished.
@@ -178,7 +179,7 @@ class _JobQueue:
         index : int
             Index of the job to mark as finished.
         """
-        self.jobs.loc[index] = 'finished'
+        self.jobs.loc[index] = FINISHED
 
     def mark_as_error(self, index: int) -> None:
         """Marks a job as finished.
@@ -188,15 +189,18 @@ class _JobQueue:
         index : int
             Index of the job to mark as finished.
         """
-        self.jobs.loc[index] = 'error'
+        self.jobs.loc[index] = ERROR
 
     def mark_all_in_progress_open(self) -> None:
         """Marks all jobs as 'open'."""
-        self.jobs = self.jobs.replace('in progress', 'open')
+        self.jobs = self.jobs.replace(IN_PROGRESS, OPEN)
 
     def mark_all_open(self) -> None:
         """Marks all jobs as 'open'."""
-        self.jobs = self.jobs.replace(['in progress', 'finished', 'error'], 'open')
+        self.jobs = self.jobs.replace([IN_PROGRESS, FINISHED, ERROR], OPEN)
+
+    #                                                                  Miscellanous
+    # =============================================================================
 
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.
@@ -206,4 +210,17 @@ class _JobQueue:
         bool
             True if all jobs are finished, False otherwise.
         """
-        return all(self.jobs.isin(['finished', 'error']))
+        return all(self.jobs.isin([FINISHED, ERROR]))
+
+    def get_open_job(self) -> int:
+        """Returns the index of an open job.
+
+        Returns
+        -------
+        int
+            Index of an open job.
+        """
+        try:  # try to find an open job
+            return int(self.jobs[self.jobs == OPEN].index[0])
+        except IndexError:
+            raise NoOpenJobsError("No open jobs found.")

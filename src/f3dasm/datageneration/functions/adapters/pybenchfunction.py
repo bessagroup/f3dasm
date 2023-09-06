@@ -3,6 +3,7 @@
 
 # Standard
 import json
+from typing import Optional
 
 # Third-party
 import autograd.numpy as np
@@ -22,7 +23,8 @@ __status__ = 'Stable'
 
 
 class PyBenchFunction(Function):
-    def __init__(self, dimensionality: int, scale_bounds=None, noise=None, offset=True, seed=None):
+    def __init__(self, dimensionality: int, scale_bounds: Optional[np.ndarray] = None,
+                 noise: Optional[float] = None, offset: bool = True, seed: Optional[int] = None):
         """Adapter for pybenchfunction, created by Axel Thevenot (2020).
         Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
 
@@ -37,7 +39,7 @@ class PyBenchFunction(Function):
         offset, optional
             set this True to randomly off-set the pybenchfunction, by default True
         seed, optional
-            seed for the random number genrator, by default None
+            seed for the random number generator, by default None
         """
         super().__init__(seed=seed)
         self.dimensionality = dimensionality
@@ -53,22 +55,6 @@ class PyBenchFunction(Function):
         self._configure_scale_bounds()
         self._configure_noise()
         self._configure_offset()
-
-    def to_json(self) -> str:
-        """Returns the information to recreate this object
-
-        Returns
-        -------
-            Tuple with dictionary to store and recreate the same object and name of the object
-        """
-        args: dict = {'noise': self.noise,
-                      'dimensionality': self.dimensionality,
-                      'offset': self.offset,
-                      'seed': self.seed,
-                      'scale_bounds': self.scale_bounds.tolist()}
-
-        name: str = self.get_name()
-        return json.dumps((args, name))
 
     def _configure_scale_bounds(self):
         """Create a Scale augmentor"""

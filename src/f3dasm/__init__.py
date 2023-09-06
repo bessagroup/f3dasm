@@ -15,7 +15,7 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 # =============================================================================
 
 from . import datageneration, design, machinelearning, optimization, sampling
-from .argparser import HPC_JOBID
+from ._argparser import HPC_JOBID
 from .datageneration.functions.function import Function
 from .design.design import Design
 from .design.domain import Domain, make_nd_continuous_domain
@@ -25,7 +25,8 @@ from .design.parameter import (CategoricalParameter, ConstantParameter,
 from .logger import DistributedFileHandler, logger
 from .optimization.optimizer import Optimizer
 from .run_optimization import (OptimizationResult, run_multiple_realizations,
-                               run_optimization)
+                               run_multiple_realizations_to_disk,
+                               run_optimization, run_optimization_to_disk)
 from .sampling.sampler import Sampler
 
 #                                                        Authorship and Credits
@@ -36,7 +37,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-__version__ = '1.2.0'
+__version__ = '1.3.0'
 
 # Log welcome message and the version of f3dasm
 logger.info(f"Imported f3dasm (version: {__version__})")
@@ -62,6 +63,8 @@ __all__ = [
     'run_operation_on_experiments',
     'OptimizationResult',
     'run_multiple_realizations',
+    'run_multiple_realizations_to_disk',
     'run_optimization',
+    'run_optimization_to_disk'
     'Sampler'
 ]

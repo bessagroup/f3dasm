@@ -9,7 +9,7 @@ and modified to fit the specific case of f3dasm.
 # Standard
 import importlib
 from types import ModuleType, TracebackType
-from typing import Any, Optional, Tuple, Type, Union
+from typing import Any, Optional, Tuple, Type
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -105,7 +105,7 @@ class _DeferredImportExceptionContextManager:
             raise ImportError(message) from exc_value
 
 
-def try_import(extension_name: Union[str, None] = None) -> _DeferredImportExceptionContextManager:
+def try_import(extension_name: Optional[str] = None) -> _DeferredImportExceptionContextManager:
     """Create a context manager that can wrap imports of optional packages to defer exceptions.
 
     Args:

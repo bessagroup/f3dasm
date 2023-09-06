@@ -1,8 +1,10 @@
+"""Sobol Sequence Sampling"""
+
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Any, Union
+from typing import Any
 
 # Third-party
 import numpy as np
@@ -37,7 +39,7 @@ class SobolSequence(Sampler):
         -------
             samples
         """
-        continuous = self.design.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_parameters()
         dimensions = len(continuous)
 
         samples = sobol_sequence.sample(numsamples, dimensions)

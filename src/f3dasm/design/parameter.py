@@ -1,12 +1,16 @@
+"""Paramaters for constructing the feasible search space."""
+
 #                                                                       Modules
 # =============================================================================
+
+from __future__ import annotations
 
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Type
+from typing import Any, ClassVar, List, Sequence, Type
 
-# Third-party core
+# Third-party
 import numpy as np
 
 #                                                          Authorship & Credits
@@ -27,11 +31,6 @@ class Parameter:
     ----------
     """
     _type: ClassVar[str] = field(init=False, default="object")
-
-    @classmethod
-    def get_name(self) -> str:
-        """Return the name of the parameter class"""
-        return self.__name__
 
 
 @dataclass
@@ -161,7 +160,7 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    categories: List[str]
+    categories: Sequence[Any]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):
@@ -179,8 +178,14 @@ class CategoricalParameter(Parameter):
         self.categories = list(self.categories)  # Convert to list because hydra parses omegaconf.ListConfig
 
         for category in self.categories:
-            if not isinstance(category, str):
-                raise TypeError(f"Expect string, got {type(category)}")
+            if not any(
+                (
+                    isinstance(category, str),
+                    isinstance(category, int),
+                    isinstance(category, float)
+                )
+            ):
+                raise TypeError(f"Expect string, int or float, got {type(category)}")
 
 
 PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]

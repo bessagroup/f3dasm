@@ -12,49 +12,47 @@ f3dasm
    :hidden:
    :glob:
        
-   general/gettingstarted
-   general/overview
+   rst_doc_files/general/gettingstarted
+   rst_doc_files/general/overview
 
 .. toctree::
    :maxdepth: 2
-   :caption: 1. Design of Experiments
+   :caption: Design of Experiments
    :hidden:
    :glob:
 
-   classes/design/parameters
-   classes/design/domain
-   classes/design/experimentdata
-   classes/design/design
-   classes/sampling/sampling
-   classes/design/apidoc
+   rst_doc_files/classes/design/parameters
+   rst_doc_files/classes/design/domain
+   rst_doc_files/classes/design/experimentdata
+   rst_doc_files/classes/design/design
+   rst_doc_files/classes/sampling/sampling
 
 .. toctree::
    :maxdepth: 2
-   :caption: 2. Data Generation
+   :caption: Data Generation
    :hidden:
    :glob:
 
-   classes/datageneration/datagenerator
-   classes/datageneration/functions
-   classes/datageneration/apidoc
+   rst_doc_files/classes/datageneration/datagenerator
+   rst_doc_files/classes/datageneration/functions
+   rst_doc_files/classes/datageneration/f3dasm-simulate
 
 
 .. toctree::
    :maxdepth: 2
-   :caption: 3. Machine Learning
+   :caption: Machine Learning
    :hidden:
    :glob:
 
-   classes/machinelearning/apidoc
 
 .. toctree::
    :maxdepth: 2
-   :caption: 4. Optimization
+   :caption: Optimization
    :hidden:
    :glob:
 
-   classes/optimization/optimizers
-   classes/optimization/apidoc
+   rst_doc_files/classes/optimization/optimizers
+   rst_doc_files/classes/optimization/f3dasm-optimize
 
 .. toctree::
    :maxdepth: 2
@@ -62,16 +60,16 @@ f3dasm
    :hidden:
    :glob:
 
-   classes/workflow/workflow
-   classes/workflow/cluster
-   classes/workflow/hydra
+   rst_doc_files/classes/workflow/workflow
+   rst_doc_files/classes/workflow/hydra
+   rst_doc_files/classes/workflow/cluster
+
+.. toctree::
+   :name: apitoc
+   :caption: API
+   :hidden:
+
+   rst_doc_files/reference/index.rst
+   Code <_autosummary/f3dasm>
 
 .. include:: readme.rst
-
-
-.. Indices and tables
-.. ==================
-
-.. * :ref:`genindex`
-.. * :ref:`modindex`
-.. * :ref:`search`

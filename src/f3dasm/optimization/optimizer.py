@@ -1,3 +1,7 @@
+"""
+Module containing the interface class Optimizer
+"""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -10,8 +14,9 @@ from typing import Any, List, Mapping, Optional, Tuple
 # Third-party core
 import numpy as np
 
-from ..datageneration.functions.function import Function
 # Locals
+from ..datageneration.functions.function import Function
+from ..design.design import Design
 from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
@@ -85,6 +90,10 @@ class Optimizer:
         self._set_hyperparameters()
         self.set_algorithm()
 
+    def reset(self):
+        """Reset the optimizer"""
+        self.__post_init__()
+
     @staticmethod
     def set_seed(seed: int):
         """Set the seed of the optimizer. Needs to be inherited
@@ -99,21 +108,6 @@ class Optimizer:
     @staticmethod
     def _check_imports():
         ...
-
-    def to_json(self) -> str:  # Tuple[dict, str]:
-        """Returns the information to recreate this object
-
-        Returns
-        -------
-            Tuple with dictionary to store and recreate the same object and name of the object
-        """
-        args: dict = {'data': self.data.to_json(),
-                      'hyperparameters': self.hyperparameters,
-                      'seed': self.seed,
-                      }
-
-        name: str = self.get_name()
-        return json.dumps((args, name))
 
     def init_parameters(self):
         """Set the initialization parameters. This could be dynamic or static hyperparameters."""
@@ -162,9 +156,9 @@ class Optimizer:
 
     def _check_number_of_datapoints(self):
         """Check if available data => population size"""
-        if self.data.get_number_of_datapoints() < self.parameter.population:
+        if len(self.data) < self.parameter.population:
             raise ValueError(
-                f'There are {self.data.get_number_of_datapoints()} datapoints available, \
+                f'There are {len(self.data)} datapoints available, \
                      need {self.parameter.population} for update step!'
             )
         return
@@ -182,8 +176,8 @@ class Optimizer:
             Input vector clipped to the bounds of the search space
         """
         if self.parameter.force_bounds:
-            x = x.clip(min=self.data.design.get_bounds()[
-                       :, 0], max=self.data.design.get_bounds()[:, 1])
+            x = x.clip(min=self.data.domain.get_bounds()[
+                       :, 0], max=self.data.domain.get_bounds()[:, 1])
 
         return x
 
@@ -213,12 +207,15 @@ class Optimizer:
 
         for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
             x, y = self.update_step(function=function)
-            self.add_iteration_to_data(x, y)
+
+            designs_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
+
+            for x_i, y_i in designs_to_add:
+                self.data.add_design(Design.from_numpy(x_i, y_i))
 
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(
             iterations, population=self.parameter.population))
-        # print(f"Optimizing for {iterations} iterations with {self.get_name()}")
 
     def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
         """Add the iteration to the dataframe

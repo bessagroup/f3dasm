@@ -34,7 +34,7 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
 
     design = make_nd_continuous_domain(dimensionality=dimensionality, bounds=domain)
     func = function(dimensionality=dimensionality, scale_bounds=domain)
-    data = ExperimentData(design=design)
+    data = ExperimentData(domain=design)
     opt = optimizer(data=data)
     sampler = RandomUniform(design=design)
 
@@ -43,6 +43,9 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
         PARALLELIZATION = False
     else:
         PARALLELIZATION = True
+
+    if opt.get_name() in ['EvoSaxCMAES', 'EvoSaxSimAnneal', 'EvoSaxPSO', 'EvoSaxDE']:
+        PARALLELIZATION = False
 
     res = run_multiple_realizations(
         optimizer=opt,

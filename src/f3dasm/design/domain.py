@@ -1,16 +1,24 @@
+"""
+The Domain is a set of Parameter instances that make up the feasible search space.
+"""
+
 #                                                                       Modules
 # =============================================================================
+
+from __future__ import annotations
 
 # Standard
 import json
 import pickle
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Type, TypeVar
 
 # Third-party core
 import numpy as np
 import pandas as pd
 from hydra.utils import instantiate
+from omegaconf import DictConfig
 
 # Local
 from .parameter import (CategoricalParameter, ConstantParameter,
@@ -34,39 +42,29 @@ class Domain:
     ----------
     input_space : Dict[str, Parameter], optional
         Dict of input parameters, by default an empty dict
-    output_space : Dict[str, Parameter], optional
-        Dict of output parameters, by default an empty dict
     """
 
     input_space: Dict[str, Parameter] = field(default_factory=dict)
-    output_space: Dict[str, Parameter] = field(default_factory=dict)
+
+    def __len__(self) -> int:
+        """The len() method returns the number of parameters"""
+        return len(self.input_space)
+
+    @property
+    def names(self) -> List[str]:
+        """Return a list of the names of the parameters"""
+        return list(self.input_space.keys())
+
+#                                                      Alternative constructors
+# =============================================================================
 
     @classmethod
-    def from_json(cls: Type['Domain'], json_string: str) -> 'Domain':
-        """
-        Create a Domain object from a JSON string.
-
-        Parameters
-        ----------
-        json_string : str
-            JSON string encoding the Domain object.
-
-        Returns
-        -------
-        Domain
-            The created Domain object.
-        """
-        # Load JSON string
-        design_dict = json.loads(json_string)
-        return cls.from_dict(design_dict)
-
-    @classmethod
-    def from_file(cls, filename: str) -> 'Domain':
+    def from_file(cls: Type[Domain], filename: Path) -> Domain:
         """Create a Domain object from a pickle file.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             Name of the file.
 
         Returns
@@ -75,66 +73,71 @@ class Domain:
             Domain object containing the loaded data.
         """
 
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
+        # Check if filename exists
+        if not filename.with_suffix('.pkl').exists():
+            raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
-        with open(filename, "rb") as file:
+        with open(filename.with_suffix('.pkl'), "rb") as file:
             obj = pickle.load(file)
 
         return obj
 
     @classmethod
-    def from_yaml(cls: Type['Domain'], yaml: Dict[str, Dict[str, Dict[str, Any]]]) -> 'Domain':
+    def from_yaml(cls: Type[Domain], yaml: DictConfig) -> Domain:
         """Initializ a Domain from a Hydra YAML configuration file
 
 
         Notes
         -----
         The YAML file should have the following structure:
-        Two nested dictionaries where the dictionary denote the input_space
-        and output_space respectively.
+        A nested dictionary where the dictionary denote the input_space
 
 
         Parameters
         ----------
-        yaml
+        yaml : DictConfig
             yaml dictionary
 
         Returns
         -------
-            Domain class
+        Domain
+            Domain object
         """
         args = {}
         for space, params in yaml.items():
             args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
         return cls(**args)
 
-    @ classmethod
-    def from_dict(cls: Type['Domain'], design_dict: dict) -> 'Domain':
-        """
-        Create a Domain object from a dictionary.
+    @classmethod
+    def from_dataframe(cls, df: pd.DataFrame) -> Domain:
+        """Initializes a Domain from a pandas DataFrame.
 
         Parameters
         ----------
-        design_dict : dict
-            Dictionary representation of the information to construct the Domain.
+        df : pd.DataFrame
+            DataFrame containing the input parameters.
 
         Returns
         -------
         Domain
-            The created Domain object.
+            Domain object
         """
-        for key, space in design_dict.items():
-            parameters = {}
-            for name, parameter in space.items():
-                parameters[name] = Parameter.from_json(parameter)
+        input_space = {}
+        for name, type in df.dtypes.items():
+            if type == 'float64':
+                input_space[name] = ContinuousParameter(lower_bound=float(
+                    df[name].min()), upper_bound=float(df[name].max()))
+            elif type == 'int64':
+                input_space[name] = DiscreteParameter(lower_bound=int(df[name].min()), upper_bound=int(df[name].max()))
+            else:
+                input_space[name] = CategoricalParameter(df[name].unique().tolist())
 
-            design_dict[key] = parameters
+        return cls(input_space=input_space)
 
-        return cls(**design_dict)
+#                                                                        Export
+# =============================================================================
 
-    def store(self, filename: str) -> None:
+    def store(self, filename: Path) -> None:
         """Stores the Domain in a pickle file.
 
         Parameters
@@ -142,64 +145,33 @@ class Domain:
         filename : str
             Name of the file.
         """
-
-        # if filename does not end with .pkl, add it
-        if not filename.endswith('.pkl'):
-            filename = filename + '.pkl'
-
-        with open(filename, 'wb') as f:
+        with open(filename.with_suffix('.pkl'), 'wb') as f:
             pickle.dump(self, f)
 
-    def to_json(self) -> str:
-        """Return JSON representation of the design space.
-
-        Returns
-        -------
-        str
-            JSON representation of the design space.
-        """
-        # Missing constraints
-        args = {'input_space': {name: parameter.to_json() for name, parameter in self.input_space.items()},
-                'output_space': {name: parameter.to_json() for name, parameter in self.output_space.items()},
-                }
-        return json.dumps(args)
+    def _cast_types_dataframe(self) -> dict:
+        """Make a dictionary that provides the datatype of each parameter"""
+        return {name: parameter._type for name, parameter in self.input_space.items()}
 
     def _create_empty_dataframe(self) -> pd.DataFrame:
-        """Create an empty DataFrame with input and output space columns.
+        """Create an empty DataFrame with input columns.
 
         Returns
         -------
         pd.DataFrame
-            DataFrame containing "input" and "output" columns.
+            DataFrame containing "input" columns.
         """
         # input columns
-        input_columns = [("input", name) for name, parameter in self.input_space.items()]
+        input_columns = [name for name in self.input_space.keys()]
 
-        df_input = pd.DataFrame(columns=input_columns).astype(
-            self._cast_types_dataframe(self.input_space, label="input")
+        return pd.DataFrame(columns=input_columns).astype(
+            self._cast_types_dataframe()
         )
 
-        # Set the categories tot the categorical input parameters
-        for name, categorical_input in self.get_categorical_input_parameters().items():
-            df_input[('input', name)] = pd.Categorical(
-                df_input[('input', name)], categories=categorical_input.categories)
+#                                                  Append and remove parameters
+# =============================================================================
 
-        # output columns
-        output_columns = [("output", name) for name, parameter in self.output_space.items()]
-
-        df_output = pd.DataFrame(columns=output_columns).astype(
-            self._cast_types_dataframe(self.output_space, label="output")
-        )
-
-        # Set the categories tot the categorical output parameters
-        for name, categorical_output in self.get_categorical_output_parameters().items():
-            df_output[('output', name)] = pd.Categorical(
-                df_input[('output', name)], categories=categorical_output.categories)
-
-        return pd.concat([df_input, df_output])
-
-    def add_input_space(self, name: str, space: Parameter):
-        """Add a new input parameter to the design space.
+    def add(self, name: str, space: Parameter):
+        """Add a new input parameter to the domain.
 
         Parameters
         ----------
@@ -217,178 +189,10 @@ class Domain:
         """
         self.input_space[name] = space
 
-    def add_output_space(self, name: str, space: Parameter):
-        """Add a new output parameter to the design space.
+#                                                                       Getters
+# =============================================================================
 
-        Parameters
-        ----------
-        name : str
-            Name of the output parameter.
-        space : Parameter
-            Output parameter to be added.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.add_output_space('obj1', ContinuousParameter(lower_bound=0., upper_bound=1.))
-        >>> domain.output_space
-        {'obj1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
-        """
-        self.output_space[name] = space
-
-    def get_input_space(self) -> Dict[str, Parameter]:
-        """Return the input parameters.
-
-        Returns
-        -------
-        Dict[str, Parameter]
-            Dictionary of input parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.input_space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': CategoricalParameter(categories=['A', 'B', 'C'])
-        ... }
-        >>> input_space = domain.get_input_space()
-        >>> input_space
-        {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        'param2': CategoricalParameter(categories=['A', 'B', 'C'])}
-        """
-        return self.input_space
-
-    def get_output_space(self) -> Dict[str, Parameter]:
-        """Return the output parameters.
-
-        Returns
-        -------
-        Dict[str, Parameter]
-            Dictionary of output parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.output_space = {'obj1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
-        >>> output_space = domain.get_output_space()
-        >>> output_space
-        {'obj1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
-        """
-        return self.output_space
-
-    def get_output_names(self) -> List[str]:
-        """Get the names of the output parameters.
-
-        Returns
-        -------
-        List[str]
-            List of the names of the output parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.output_space = {'obj1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...                        'obj2': ContinuousParameter(lower_bound=0., upper_bound=1.)}
-        >>> output_names = domain.get_output_names()
-        >>> output_names
-        ['obj1', 'obj2']
-        """
-        return list(self.output_space.keys())
-
-    def get_input_names(self) -> List[str]:
-        """Get the names of the input parameters.
-
-        Returns
-        -------
-        List[str]
-            List of the names of the input parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.input_space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param3': DiscreteParameter(lower_bound=4, upper_bound=6)
-        ... }
-        >>> input_names = domain.get_input_names()
-        >>> input_names
-        ['param1', 'param2', 'param3']
-        """
-        return list(self.input_space.keys())
-
-    def is_single_objective_continuous(self) -> bool:
-        """Check whether the output of the model is a single continuous objective value.
-
-        A model is considered to have a single continuous objective if all of
-        its input and output parameters are continuous, and it returns only one output value.
-
-        Returns
-        -------
-        bool
-            True if the model's output is a single continuous objective value, False otherwise.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.input_space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': ContinuousParameter(lower_bound=2., upper_bound=5.)
-        ... }
-        >>> domain.output_space = {'obj': ContinuousParameter()}
-        >>> domain.is_single_objective_continuous()
-        True
-        """
-        return (
-            self._all_input_continuous()
-            and self._all_output_continuous()
-            and self.get_number_of_output_parameters() == 1
-        )
-
-    def get_number_of_input_parameters(self) -> int:
-        """Get the number of input parameters.
-
-        Returns
-        -------
-        int
-            Number of input parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.input_space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param3': DiscreteParameter(lower_bound=4, upper_bound=7)
-        ... }
-        >>> domain.get_number_of_input_parameters()
-        3
-        """
-        return len(self.input_space)
-
-    def get_number_of_output_parameters(self) -> int:
-        """Get the number of output parameters.
-
-        Returns
-        -------
-        int
-            The number of output parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.output_space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param3': DiscreteParameter(lower_bound=4, upper_bound=7)
-        ... }
-        >>> num_output_params = domain.get_number_of_output_parameters()
-        >>> num_output_params
-        3
-        """
-        return len(self.output_space)
-
-    def get_continuous_input_parameters(self) -> Dict[str, ContinuousParameter]:
+    def get_continuous_parameters(self) -> Dict[str, ContinuousParameter]:
         """Get all continuous input parameters.
 
         Returns
@@ -409,9 +213,9 @@ class Domain:
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
          'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)}
         """
-        return self.filter_parameters(ContinuousParameter).get_input_space()
+        return self.filter(ContinuousParameter).input_space
 
-    def get_continuous_input_names(self) -> List[str]:
+    def get_continuous_names(self) -> List[str]:
         """Get the names of continuous input parameters in the input space.
 
         Returns
@@ -431,9 +235,9 @@ class Domain:
         >>> continuous_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(ContinuousParameter).get_input_names()
+        return self.filter(ContinuousParameter).names
 
-    def get_discrete_input_parameters(self) -> Dict[str, DiscreteParameter]:
+    def get_discrete_parameters(self) -> Dict[str, DiscreteParameter]:
         """Retrieve all discrete input parameters.
 
         Returns
@@ -454,9 +258,9 @@ class Domain:
         {'param1': DiscreteParameter(lower_bound=1, upperBound=4)),
          'param3': DiscreteParameter(lower_bound=4, upperBound=6)}
         """
-        return self.filter_parameters(DiscreteParameter).get_input_space()
+        return self.filter(DiscreteParameter).input_space
 
-    def get_discrete_input_names(self) -> List[str]:
+    def get_discrete_names(self) -> List[str]:
         """Retrieve the names of all discrete input parameters.
 
         Returns
@@ -476,9 +280,9 @@ class Domain:
         >>> discrete_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(DiscreteParameter).get_input_names()
+        return self.filter(DiscreteParameter).names
 
-    def get_categorical_input_parameters(self) -> Dict[str, CategoricalParameter]:
+    def get_categorical_parameters(self) -> Dict[str, CategoricalParameter]:
         """Retrieve all categorical input parameters.
 
         Returns
@@ -499,32 +303,9 @@ class Domain:
         {'param1': CategoricalParameter(categories=['A', 'B', 'C']),
          'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
         """
-        return self.filter_parameters(CategoricalParameter).get_input_space()
+        return self.filter(CategoricalParameter).input_space
 
-    def get_categorical_output_parameters(self) -> Dict[str, CategoricalParameter]:
-        """Retrieve all categorical output parameters.
-
-        Returns
-        -------
-        Dict[str, CategoricalParameter]
-            Space of categorical output parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.output_space = {
-        ...     'output1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'output2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'output3': CategoricalParameter(categories=['X', 'Y', 'Z'])
-        ... }
-        >>> categorical_output_params = domain.get_categorical_output_parameters()
-        >>> categorical_output_params
-        {'output2': CategoricalParameter(categories=['A', 'B', 'C']),
-        'output3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
-        """
-        return self.filter_parameters(CategoricalParameter).get_output_space()
-
-    def get_categorical_input_names(self) -> List[str]:
+    def get_categorical_names(self) -> List[str]:
         """Retrieve the names of categorical input parameters.
 
         Returns
@@ -544,9 +325,9 @@ class Domain:
         >>> categorical_input_names
         ['param1', 'param3']
         """
-        return self.filter_parameters(CategoricalParameter).get_input_names()
+        return self.filter(CategoricalParameter).names
 
-    def get_constant_input_parameters(self) -> Dict[str, ConstantParameter]:
+    def get_constant_parameters(self) -> Dict[str, ConstantParameter]:
         """Retrieve all constant input parameters.
 
         Returns
@@ -566,9 +347,9 @@ class Domain:
         >>> constant_input_params
         {'param1': ConstantParameter(value=0), 'param3': ConstantParameter(value=1)}
         """
-        return self.filter_parameters(ConstantParameter).get_input_space()
+        return self.filter(ConstantParameter).input_space
 
-    def get_constant_input_names(self) -> List[str]:
+    def get_constant_names(self) -> List[str]:
         """Receive the names of the constant input parameters
 
         Returns
@@ -587,7 +368,7 @@ class Domain:
         >>> constant_input_names
         ['param1', 'param2']
         """
-        return self.filter_parameters(ConstantParameter).get_input_names()
+        return self.filter(ConstantParameter).names
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -612,11 +393,11 @@ class Domain:
         """
         return np.array(
             [[parameter.lower_bound, parameter.upper_bound]
-                for _, parameter in self.get_continuous_input_parameters().items()]
+                for _, parameter in self.get_continuous_parameters().items()]
         )
 
-    def filter_parameters(self, type: Type[Parameter]) -> 'Domain':
-        """Filter the parameters of the design space by type
+    def filter(self, type: Type[Parameter]) -> Domain:
+        """Filter the parameters of the domain by type
 
         Parameters
         ----------
@@ -636,59 +417,26 @@ class Domain:
         ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
         ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
         ... }
-        >>> domain.output_space = {
-        ...     'output1': ContinuousParameter(lower_bound=0, upper_bound=1),
-        ...     'output2': CategoricalParameter(categories=['cat1', 'cat2'])
-        ... }
         >>> filtered_domain = domain.filter_parameters(ContinuousParameter)
         >>> filtered_domain.input_space
         {'param1': ContinuousParameter(lower_bound=0, upper_bound=1)}
-        >>> filtered_domain.output_space
-        {'output1': ContinuousParameter(lower_bound=0, upper_bound=1)}
-
 
         """
         return Domain(
             input_space={name: parameter for name, parameter in self.input_space.items()
-                         if isinstance(parameter, type)},
-            output_space={name: parameter for name, parameter in self.output_space.items()
-                          if isinstance(parameter, type)},
+                         if isinstance(parameter, type)}
         )
 
-    def _cast_types_dataframe(self, space: Dict[str, Parameter], label: str) -> dict:
-        """Make a dictionary that provides the datatype of each parameter"""
-        return {(label, name): parameter._type for name, parameter in space.items()}
+#                                                                 Miscellaneous
+# =============================================================================
 
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return self.get_number_of_input_parameters() \
-            == self.filter_parameters(ContinuousParameter).get_number_of_input_parameters()
-
-    def _all_output_continuous(self) -> bool:
-        """Check if all output parameters are continuous
-
-        Returns
-        -------
-        bool
-            True if all output parameters are continuous, False otherwise
-
-        Example
-        -------
-        >>> from f3dasm import ContinuousParameter, Domain
-        >>> domain = Domain(output_space={'x0': ContinuousParameter(0., 1.), 'x1': ContinuousParameter(0., 1.)})
-        >>> domain._all_output_continuous()
-        True
-        >>> domain = Domain(output_space={'x0': DiscreteParameter(0, 1), 'x1': ContinuousParameter(0., 1.)})
-        >>> domain._all_output_continuous()
-        False
-        """
-
-        return self.get_number_of_output_parameters() \
-            == self.filter_parameters(ContinuousParameter).get_number_of_output_parameters()
+        return len(self) == len(self.filter(ContinuousParameter))
 
 
 def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain:
-    """Create a continuous domain with a single-objective continuous output.
+    """Create a continuous domain.
 
     Parameters
     ----------
@@ -700,24 +448,22 @@ def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain
     Returns
     -------
     Domain
-        A continuous domain with a single-objective continuous output.
+        A continuous domain with a continuous input.
 
     Notes
     -----
-    This function creates a Domain object consisting of continuous input parameters and a single continuous
-    output parameter. The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
-    The input parameters are named "x0", "x1" .. "The output parameter is named "y".
+    This function creates a Domain object consisting of continuous input parameters.
+    The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
+    The input parameters are named "x0", "x1" ..
 
     Example
     -------
     >>> bounds = np.array([[-5.0, 5.0], [-2.0, 2.0]])
     >>> dimensionality = 2
-    >>> design_space = make_nd_continuous_domain(bounds, dimensionality)
+    >>> domain = make_nd_continuous_domain(bounds, dimensionality)
     """
-    input_space, output_space = {}, {}
+    input_space = {}
     for dim in range(dimensionality):
         input_space[f"x{dim}"] = ContinuousParameter(lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
-    output_space["y"] = ContinuousParameter()
-
-    return Domain(input_space=input_space, output_space=output_space)
+    return Domain(input_space=input_space)

@@ -1,7 +1,11 @@
+"""
+Interface class for data generators
+"""
+
 #                                                                       Modules
 # =============================================================================
 
-from ..design._data import Design
+from ..design.design import Design
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -17,25 +21,34 @@ __status__ = "Alpha"
 class DataGenerator:
     """Base class for a data generator"""
 
-    def __init__(self, design: Design, **kwargs):
-        self.design = design
-        self.kwargs = kwargs
-
-    def pre_process(self) -> None:
+    def pre_process(self, design: Design, **kwargs) -> None:
         """Function that handles the pre-processing"""
         ...
         # raise NotImplementedError("No pre-process function implemented!")
 
-    def execute(self) -> None:
+    def execute(self, design: Design, **kwargs) -> None:
         """Function that calls the FEM simulator the pre-processing"""
         raise NotImplementedError("No execute function implemented!")
 
-    def post_process(self) -> None:
+    def post_process(self, design: Design, **kwargs) -> None:
         """Function that handles the post-processing"""
         ...
 
     @time_and_log
-    def run(self) -> None:
-        self.pre_process()
-        self.execute()
-        self.post_process()
+    def run(self, design: Design, **kwargs) -> Design:
+        """Run the data generator
+
+        Parameters
+        ----------
+        design : Design
+            The design to run the data generator on
+
+        Returns
+        -------
+        Design
+            Processed design
+        """
+        self.pre_process(design, **kwargs)
+        design = self.execute(design, **kwargs)
+        self.post_process(design, **kwargs)
+        return design

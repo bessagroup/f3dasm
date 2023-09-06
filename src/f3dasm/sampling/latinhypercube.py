@@ -1,15 +1,17 @@
+"""Latin Hypercube Sampling"""
+
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from typing import Any, Union
+from typing import Any
 
 # Third-party
 import numpy as np
 from SALib.sample import latin
 
 # Locals
-from ..design import Domain
+from ..design.domain import Domain
 from .sampler import Sampler
 
 #                                                          Authorship & Credits
@@ -37,7 +39,7 @@ class LatinHypercube(Sampler):
         -------
             samples
         """
-        continuous = self.design.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_parameters()
         problem = {
             "num_vars": len(continuous),
             "names": list(continuous.keys()),

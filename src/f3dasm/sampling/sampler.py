@@ -1,9 +1,13 @@
+"""Base class for sampling methods"""
+
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 import json
-from typing import Any, List, Union
+from typing import Any, List, Optional
 
 # Third-party core
 import numpy as np
@@ -26,43 +30,32 @@ __status__ = 'Stable'
 
 
 class Sampler:
-    """Interface for sampling method
+    def __init__(self, design: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
+        """Interface for sampling method
 
-    Parameters
-    ----------
-    design
-        design of experiments object
-    seed
-        seed for sampling
-    """
-
-    def __init__(self, design: Domain, seed: Union[Any, int] = None, number_of_samples: int = None):
+        Parameters
+        ----------
+        design : Domain
+            design of experiments object
+        seed : int
+            seed for sampling
+        number_of_samples : Optional[int]
+            number of samples to be generated, defaults to None
+        """
         self.design = design
         self.seed = seed
         self.number_of_samples = number_of_samples
-        self.__post_init__()
-
-    def __post_init__(self):
-        if self.seed:
-            np.random.seed(self.seed)
-
-    def __eq__(self, __o: object) -> bool:
-        return all((self.design == __o.design, self.seed == __o.seed))
+        if seed:
+            np.random.seed(seed)
 
     @classmethod
-    def from_yaml(cls, config: DictConfig) -> 'Sampler':
+    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> Sampler:
         """Create a sampler from a yaml configuration"""
 
-        args = {**config.sampler, 'design': None}
+        args = {**sampler_config, 'design': None}
         sampler: Sampler = instantiate(args)
-        sampler.design = Domain.from_yaml(config.design)
+        sampler.design = Domain.from_yaml(domain_config)
         return sampler
-
-    def to_json(self):
-        args = {'design': self.design.to_json(),
-                'seed': self.seed}
-        name = self.__class__.__name__
-        return json.dumps((args, name))
 
     def set_seed(self, seed: int):
         """Set the seed of the sampler
@@ -89,7 +82,7 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: Union[int, None] = None) -> ExperimentData:
+    def get_samples(self, numsamples: Optional[int] = None) -> ExperimentData:
         """Receive samples of the search space
 
         Parameters
@@ -124,11 +117,11 @@ class Sampler:
         # TODO #60 : Fix this ordering issue
         # Get the column names in this particular order
         columnnames = [
-            ("input", name)
-            for name in self.design.get_continuous_input_names(
-            ) + self.design.get_discrete_input_names(
-            ) + self.design.get_categorical_input_names(
-            ) + self.design.get_constant_input_names()
+            name
+            for name in self.design.get_continuous_names(
+            ) + self.design.get_discrete_names(
+            ) + self.design.get_categorical_names(
+            ) + self.design.get_constant_names()
         ]
 
         data = self._cast_to_data_object(
@@ -137,7 +130,7 @@ class Sampler:
 
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
         """Cast the samples to a Data object"""
-        data = ExperimentData(design=self.design)
+        data = ExperimentData(domain=self.design)
 
         # First get an empty reference frame from the DoE
         empty_frame = self.design._create_empty_dataframe()
@@ -152,7 +145,7 @@ class Sampler:
         return data
 
     def _sample_constant(self, numsamples: int):
-        constant = self.design.get_constant_input_parameters()
+        constant = self.design.get_constant_parameters()
         samples = np.empty(shape=(numsamples, len(constant)))
         for dim, param in enumerate(constant.values()):
             samples[:, dim] = param.value
@@ -161,7 +154,7 @@ class Sampler:
 
     def _sample_discrete(self, numsamples: int):
         """Sample the descrete parameters, default randomly uniform"""
-        discrete = self.design.get_discrete_input_parameters()
+        discrete = self.design.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
@@ -174,7 +167,7 @@ class Sampler:
 
     def _sample_categorical(self, numsamples: int):
         """Sample the categorical parameters, default randomly uniform"""
-        categorical = self.design.get_categorical_input_parameters()
+        categorical = self.design.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, param in enumerate(categorical.values()):
             samples[:, dim] = np.random.choice(
@@ -184,7 +177,7 @@ class Sampler:
 
     def _stretch_samples(self, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
-        continuous = self.design.get_continuous_input_parameters()
+        continuous = self.design.get_continuous_parameters()
         for dim, param in enumerate(continuous.values()):
             samples[:, dim] = (
                 samples[:, dim] * (

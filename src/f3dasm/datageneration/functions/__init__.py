@@ -1,10 +1,14 @@
+"""
+Module for analytical benchmark functions
+"""
+
 #                                                                       Modules
 # =============================================================================
 
 # Standard
 import inspect
 import json
-from typing import List
+from typing import List, Optional, Type
 
 # Third-party
 import numpy as np
@@ -28,8 +32,34 @@ _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)
 
 
 def get_functions(
-    d=None, continuous=None, convex=None, separable=None, differentiable=None, multimodal=None, randomized_term=None
-) -> List[Function]:
+    d: Optional[int] = None, continuous: Optional[bool] = None, convex: Optional[bool] = None,
+    separable: Optional[bool] = None, differentiable: Optional[bool] = None,
+    multimodal: Optional[bool] = None, randomized_term: Optional[bool] = None
+) -> List[Type[Function]]:
+    """Get a list of benchmark functions based on the given parameters
+
+    Parameters
+    ----------
+    d : Optional[int], optional
+        number of dimensions, by default None
+    continuous : Optional[bool], optional
+        filter for continuous functions, by default None
+    convex : Optional[bool], optional
+        filter for convex functions, by default None
+    separable : Optional[bool], optional
+        filter for separable functions, by default None
+    differentiable : Optional[bool], optional
+        filter for differentiable functions, by default None
+    multimodal : Optional[bool], optional
+        filter for multimodal functions, by default None
+    randomized_term : Optional[bool], optional
+        filter for functions that have a randomized term, by default None
+
+    Returns
+    -------
+    List[Function]
+        List of function classes that match the given parameters
+    """
 
     functions = [cls for clsname, cls in _available_functions if clsname not in [
         "Function", "PyBenchFunction"]]

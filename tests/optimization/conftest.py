@@ -18,11 +18,8 @@ def data():
         "x3": ContinuousParameter(lower_bound=0.6, upper_bound=7.3),
     }
 
-    output_parameters = {
-        "y": ContinuousParameter()}
-
     # Create the design space
-    design = Domain(input_space=input_parameters, output_space=output_parameters)
+    design = Domain(input_space=input_parameters)
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
 

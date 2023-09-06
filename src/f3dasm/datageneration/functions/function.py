@@ -7,15 +7,19 @@ functions. It can be called with an input vector to evaluate the function at tha
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import Tuple, Union
+from typing import Optional, Tuple
 
 # Third-party core
 import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
+from autograd import grad
 
 # Locals
+from ...design.design import Design
 from ...design.experimentdata import ExperimentData
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
@@ -31,7 +35,7 @@ __status__ = 'Stable'
 
 
 class Function(DataGenerator):
-    def __init__(self, seed=None):
+    def __init__(self, seed: Optional[int] = None):
         """Class for an analytical function
 
         Parameters
@@ -41,6 +45,7 @@ class Function(DataGenerator):
         """
         self.augmentor = FunctionAugmentor()
         self.seed = seed
+        self.grad = grad(self.__call__)
 
         self.set_seed(seed)
 
@@ -56,11 +61,11 @@ class Function(DataGenerator):
             return
         np.random.seed(seed)
 
-    def __call__(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
+    def __call__(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            x = _from_data_to_numpy_array_benchmarkfunction(data=input_x)
+            x = input_x.get_input_data().to_numpy()
 
         else:
             x = input_x
@@ -76,12 +81,15 @@ class Function(DataGenerator):
 
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            input_x.add_output(np.array(y).reshape(-1, 1))
+            input_x.fill_output(np.array(y).reshape(-1, 1))
+            return input_x
 
         return np.array(y).reshape(-1, 1)
 
-    def run(self, input_x: Union[np.ndarray, ExperimentData]) -> np.ndarray:
-        return self.__call__(input_x)
+    def execute(self, design: Design) -> Design:
+        x, _ = design.to_numpy()
+        design['y'] = float(self(x).ravel())
+        return design
 
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented
@@ -143,6 +151,14 @@ class Function(DataGenerator):
 
         grad = np.array(grad)
         return grad.ravel()
+
+    def dfdx(self, x: np.ndarray) -> np.ndarray:
+        # check if the object has a 'custom_grad' method
+        if hasattr(self, 'error_autograd'):
+            if self.error_autograd:
+                return self.dfdx_legacy(x)
+
+        return self.grad(x)
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
         """Analytical expression to calculate the objective value
@@ -269,6 +285,9 @@ class Function(DataGenerator):
         ax.set_xlabel("$X_{0}$", fontsize=16)
         ax.set_ylabel("$X_{1}$", fontsize=16)
 
+        ax.set_xlim(domain[0, 0], domain[0, 1])
+        ax.set_ylim(domain[1, 0], domain[1, 1])
+
         # ax.legend(fontsize="small", loc="lower right")
         if not show:
             plt.close(fig)
@@ -330,14 +349,3 @@ class Function(DataGenerator):
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax
-
-
-def _from_data_to_numpy_array_benchmarkfunction(
-    data: ExperimentData,
-) -> np.ndarray:
-    """Check if doe is in right format"""
-    if not data.design.is_single_objective_continuous():
-        raise TypeError(
-            "All inputs and outputs need to be continuous parameters and output single objective")
-
-    return data.get_input_data().to_numpy()
