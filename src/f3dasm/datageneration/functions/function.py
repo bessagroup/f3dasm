@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from autograd import grad
 
 # Locals
+from ...design.design import Design
 from ...design.experimentdata import ExperimentData
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
@@ -85,8 +86,10 @@ class Function(DataGenerator):
 
         return np.array(y).reshape(-1, 1)
 
-    def run(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
-        return self.__call__(input_x)
+    def execute(self, design: Design) -> Design:
+        x, _ = design.to_numpy()
+        design['y'] = float(self(x).ravel())
+        return design
 
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented

@@ -7,6 +7,7 @@ from scipy.optimize import minimize
 
 # Locals
 from ...datageneration.functions import Function
+from ...design.design import Design
 from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -21,7 +22,7 @@ __status__ = 'Stable'
 
 class _SciPyOptimizer(Optimizer):
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
-        self.x_new.append(xk.tolist())
+        self.data.add_design(Design.from_numpy(xk))
 
     def update_step(self):
         """Update step function"""
@@ -51,50 +52,29 @@ class _SciPyOptimizer(Optimizer):
         function
             function to be evaluated
         """
-        self.x_new = []
+        n_data_before_iterate = len(self.data)
 
         self.parameter.maxiter = iterations
 
         self.run_algorithm(iterations, function)
 
-        self.x_new = np.array(self.x_new)
-
         # If x_new is empty, repeat best x0 to fill up total iteration
-        if len(self.x_new) == 0:
-            repeated_last_element = np.tile(
-                self.data.get_n_best_input_parameters_numpy(
-                    nosamples=1).ravel(),
-                (iterations - len(self.x_new), 1),
-            )
-            self.x_new = repeated_last_element
+        if len(self.data) == n_data_before_iterate:
+            repeated_last_element = self.data.get_n_best_input_parameters_numpy(
+                nosamples=1).ravel()
+
+            for repetition in range(iterations):
+                self._callback(repeated_last_element)
 
         # Repeat last iteration to fill up total iteration
-        if len(self.x_new) < iterations:
-            repeated_last_element = np.tile(
-                self.x_new[-1], (iterations - len(self.x_new), 1))
-            self.x_new = np.r_[self.x_new, repeated_last_element]
+        if len(self.data) < n_data_before_iterate + iterations:
+            last_design = self.data.get_design(len(self.data)-1)
 
-        # check if fun has the original_function attribute
-        if hasattr(function, 'original_function'):
-            # Convert the input of the original function to an ndarray using a lambda function
-            def fun(x):
-                # convert the np.ndarray input to a dict with key x0, x1, x2, etc.
-                input_names = self.data.domain.get_continuous_names()
-                x = {input_names[i]: x_i for i, x_i in enumerate(x)}
-                return function.original_function(x)
+            for repetition in range(iterations - (len(self.data) - n_data_before_iterate)):
+                self.data.add_design(last_design)
 
-        else:
-            def fun(x):
-                return function(x).item()
-
-        _y = []
-        for _x in self.x_new:
-            _y.append(fun(_x))
-
-        _y = np.array(_y).reshape(-1, 1)
-
-        # self.add_iteration_to_data(x=self.x_new, y=function(self.x_new))
-        self.add_iteration_to_data(x=self.x_new, y=_y)
+        # Evaluate the function on the extra iterations
+        self.data.run(function.run)
 
 
 class _SciPyMinimizeOptimizer(_SciPyOptimizer):

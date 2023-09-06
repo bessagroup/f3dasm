@@ -510,6 +510,20 @@ class ExperimentData:
 
         self.jobs.add(number_of_jobs=len(input), status=status)
 
+    def add_design(self, design: Design) -> None:
+        """
+        Add a design to the ExperimentData object.
+
+        Parameters
+        ----------
+        design : Design
+            Design to add.
+        """
+        # Note: The index needs to be set but will not be used when adding the data!
+        self.input_data.add(pd.DataFrame(design.input_data, index=[0]))
+        self.output_data.add(pd.DataFrame(design.output_data, index=[0]))
+        self.jobs.add(1, status=OPEN)
+
     def fill_output(self, output: np.ndarray, label: str = "y"):
         """
         Fill NaN values in the output data with the given array

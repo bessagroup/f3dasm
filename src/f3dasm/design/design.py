@@ -177,6 +177,33 @@ class Design:
         self._dict_output = dict_output
         self._jobnumber = jobnumber
 
+    @classmethod
+    def from_numpy(cls: Type[Design], input_array: np.ndarray, jobnumber: int = 0,
+                   output_value: Optional[float] = None) -> Design:
+        """Create a Design object from a numpy array.
+
+        Parameters
+        ----------
+        input_array : np.ndarray
+            input 1D numpy array
+        jobnumber : int
+            jobnumber of the design
+        output_value : Optional[float], optional
+            objective value, by default None
+
+        Returns
+        -------
+        Design
+            Design object
+        """
+        dict_input = {f"x{i}": val for i, val in enumerate(input_array)}
+        if output_value is None:
+            dict_output = {}
+        else:
+            dict_output = {"y": output_value}
+
+        return cls(dict_input=dict_input, dict_output=dict_output, jobnumber=jobnumber)
+
     def __getitem__(self, item: str):
         return self._dict_input[item]
 
