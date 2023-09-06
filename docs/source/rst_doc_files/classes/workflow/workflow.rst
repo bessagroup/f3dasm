@@ -63,7 +63,7 @@ Because we are using the :class:`~f3dasm.datageneration.functions.pybenchfunctio
     from f3dasm import Design
 
     def my_function(design: Design, benchmark_function) -> Design:
-        return benchmark_function(design)
+        return benchmark_function.run(design)
 
 .. note::
     As shown in the code snippet above, the :class:`~f3dasm.design.design.Design` object is the only connector between your scripts and the :mod:`f3dasm` interface.

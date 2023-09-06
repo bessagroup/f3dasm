@@ -27,11 +27,11 @@ In this case, we are utilizing a one of the :ref:`benchmark-functions` to mock a
         from f3dasm.datageneration.functions import Ackley
         datagenerator = Ackley()
 
-2. Call the :meth:`~f3dasm.design.experimentdata.ExperimentData.run` function with the :class:`~f3dasm.datageneration.datagenerator.DataGenerator` object as an argument.
+2. Call the :meth:`~f3dasm.design.experimentdata.ExperimentData.run` function with the :class:`~f3dasm.datageneration.datagenerator.DataGenerator` object's :meth:`~f3dasm.datageneration.datagenerator.DataGenerator.run` method as an argument.
 
     .. code-block:: python
 
-        experimentdata.run(datagenerator, method='sequential', kwargs={'some_kwarg': 1})
+        experimentdata.run(datagenerator.run, method='sequential', kwargs={'some_kwarg': 1})
 
 .. note::
 
