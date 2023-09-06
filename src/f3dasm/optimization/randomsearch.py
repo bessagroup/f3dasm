@@ -1,5 +1,5 @@
 """
-Random Search optimizer 
+Random Search optimizer
 """
 
 #                                                                       Modules
