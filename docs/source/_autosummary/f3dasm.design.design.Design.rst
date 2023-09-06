@@ -16,6 +16,7 @@ f3dasm.design.design.Design
    .. autosummary::
       :nosignatures:
    
+      ~Design.from_numpy
       ~Design.store
       ~Design.to_numpy
    

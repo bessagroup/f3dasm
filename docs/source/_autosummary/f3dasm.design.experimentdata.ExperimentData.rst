@@ -1,4 +1,4 @@
-f3dasm.design.experimentdata.ExperimentData
+﻿f3dasm.design.experimentdata.ExperimentData
 ===========================================
 
 .. currentmodule:: f3dasm.design.experimentdata
@@ -16,9 +16,9 @@ f3dasm.design.experimentdata.ExperimentData
    .. autosummary::
       :nosignatures:
    
-      ~ExperimentData.access_file
       ~ExperimentData.access_open_job_data
       ~ExperimentData.add
+      ~ExperimentData.add_design
       ~ExperimentData.add_new_input_column
       ~ExperimentData.add_new_output_column
       ~ExperimentData.add_numpy_arrays
