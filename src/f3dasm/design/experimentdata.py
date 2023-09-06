@@ -775,7 +775,7 @@ class ExperimentData:
                 break
 
         def f(options: Dict[str, Any]) -> Any:
-            logger.info(f"Running design {options['design'].job_number}")
+            logger.debug(f"Running design {options['design'].job_number}")
             return operation(**options)
 
         with mp.Pool() as pool:
