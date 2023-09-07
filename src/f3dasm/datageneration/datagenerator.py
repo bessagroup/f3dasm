@@ -21,16 +21,16 @@ __status__ = "Alpha"
 class DataGenerator:
     """Base class for a data generator"""
 
-    def pre_process() -> None:
+    def pre_process(self, **kwargs) -> None:
         """Function that handles the pre-processing"""
         ...
         # raise NotImplementedError("No pre-process function implemented!")
 
-    def execute() -> None:
+    def execute(self, **kwargs) -> None:
         """Function that calls the FEM simulator the pre-processing"""
         raise NotImplementedError("No execute function implemented!")
 
-    def post_process() -> None:
+    def post_process(self, **kwargs) -> None:
         """Function that handles the post-processing"""
         ...
 

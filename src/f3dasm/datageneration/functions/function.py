@@ -91,6 +91,9 @@ class Function(DataGenerator):
         design['y'] = float(self(x).ravel())
         return design
 
+    def run(self, design: Design) -> Design:
+        return self.execute(design)
+
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented
 
