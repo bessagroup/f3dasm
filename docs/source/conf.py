@@ -24,8 +24,8 @@ for path in src_dir:
 project = 'f3dasm'
 author = 'Martin van der Schelling'
 copyright = '2022, Martin van der Schelling'
-version = '1.3.0'
-release = '1.3.0'
+version = '1.3.1'
+release = '1.3.1'
 
 # -- General configuration ----------------------------------------------------
 

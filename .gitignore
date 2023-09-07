@@ -77,6 +77,10 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Ignore _autosummary generated files
+docs/source/_autosummary/
+!docs/source/_autosummary/.gitkeep
+
 # PyBuilder
 target/
 

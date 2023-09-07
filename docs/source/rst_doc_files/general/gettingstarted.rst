@@ -22,10 +22,9 @@ Installing the latest release
 
 :mod:`f3dasm` is purely Python code and compatible with: 
 
-1. Python 3.7 to 3.10. 
+1. Python 3.7 or higher.
 2. the three major operations system (Linux, MacOS, Ubuntu). 
-3. the default environment of Google Colab (Python 3.8, Linux) 
-4. the `pip <https://pypi.org/>`_ package manager system.
+3. the `pip <https://pypi.org/>`_ package manager system.
 
 ----
 
@@ -106,7 +105,6 @@ Installing from source
    -  Studies
    -  Test suite
    -  Documentation source
-   -  Tutorial notebooks
 
 Building from source is required to work on a contribution (bug fix, new feature, code or documentation improvement). We recommend using a `Linux distribution system <https://releases.ubuntu.com/focal/>`_.
 
@@ -123,7 +121,7 @@ Building from source is required to work on a contribution (bug fix, new feature
 
 
 2. Install a recent version of Python (3.7, 3.8, 3.9 or 3.10)
-   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_.
+   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_. or `Mamba <https://github.com/conda-forge/miniforge#install>`_.
    If you installed Python with conda, we recommend to create a dedicated
    conda environment with all the build dependencies of f3dasm:
 
