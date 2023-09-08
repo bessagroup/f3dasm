@@ -14,7 +14,7 @@ def main():
         bounds=fun.input_domain.astype(float),
         dimensionality=dim,
     )
-    SobolSampler = SobolSequence(design=parameter_DesignSpace)
+    SobolSampler = SobolSequence(domain=parameter_DesignSpace)
 
     samples = SobolSampler.get_samples(numsamples=8)
     samples.add_output(output=fun(samples))
