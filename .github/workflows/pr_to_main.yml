@@ -1,4 +1,4 @@
-name: Pull request to pr/** branches
+name: Pull request to main branch
 
 on:
   pull_request:
