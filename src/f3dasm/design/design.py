@@ -185,7 +185,8 @@ class Design:
         Parameters
         ----------
         input_array : np.ndarray
-            input 1D numpy array        output_value : Optional[float], optional
+            input 1D numpy array
+            output_value : Optional[float], optional
             objective value, by default None
 
         jobnumber : int
