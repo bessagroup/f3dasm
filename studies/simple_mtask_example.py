@@ -2,9 +2,10 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 
-from f3dasm import make_nd_continuous_design, ContinuousParameter
+from f3dasm import ContinuousParameter, make_nd_continuous_design
+from f3dasm._legacy.torch_functions import (AugmentedTestFunction,
+                                            botorch_TestFunction)
 from f3dasm.functions import pybenchfunction
-from f3dasm._legacy.torch_functions import AugmentedTestFunction, botorch_TestFunction
 from f3dasm.regression.gpr import Cokgj, Mtask, Stmf
 from f3dasm.sampling import SobolSequence
 
@@ -16,7 +17,7 @@ def main():
         dimensionality=1,
     )
 
-    SobolSampler = SobolSequence(design=parameter_DesignSpace)
+    SobolSampler = SobolSequence(domain=parameter_DesignSpace)
 
     aug_fun = AugmentedTestFunction(botorch_TestFunction(fun=fun), noise_type="b")
 

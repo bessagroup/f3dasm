@@ -21,7 +21,7 @@ design = f3dasm.make_nd_continuous_domain(bounds=domain, dimensionality=dim)
 ackley_fn = f3dasm.functions.pybenchfunction.Ackley(dimensionality=dim,
                                                     seed=seed, scale_bounds=domain)
 # Choose an optimizer
-sampler = f3dasm.sampling.LatinHypercube(design=design, seed=seed)
+sampler = f3dasm.sampling.LatinHypercube(domain=design, seed=seed)
 N = 1  # Number of samples
 data = sampler.get_samples(numsamples=N)
 
