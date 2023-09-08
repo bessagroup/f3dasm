@@ -18,7 +18,7 @@ def test_correct_randomuniform_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design3, seed=seed)
+    random_uniform = RandomUniform(domain=design3, seed=seed)
 
     numsamples = 5
 
@@ -40,7 +40,7 @@ def test_correct_latinhypercube_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler
-    latin_hypercube = LatinHypercube(design=design3, seed=seed)
+    latin_hypercube = LatinHypercube(domain=design3, seed=seed)
 
     numsamples = 5
 
@@ -61,7 +61,7 @@ def test_correct_sobolsequence_sampling(design3):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequence(design=design3, seed=seed)
+    sobol_sequencing = SobolSequence(domain=design3, seed=seed)
 
     numsamples = 5
 

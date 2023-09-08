@@ -39,7 +39,7 @@ class LatinHypercube(Sampler):
         -------
             samples
         """
-        continuous = self.design.get_continuous_parameters()
+        continuous = self.domain.get_continuous_parameters()
         problem = {
             "num_vars": len(continuous),
             "names": list(continuous.keys()),

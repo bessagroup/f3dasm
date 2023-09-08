@@ -10,7 +10,7 @@ def test_correct_discrete_sampling_1(design4):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design4, seed=seed)
+    random_uniform = RandomUniform(domain=design4, seed=seed)
 
     numsamples = 5
 
@@ -24,7 +24,7 @@ def test_correct_discrete_sampling_2(design5):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design5, seed=seed)
+    random_uniform = RandomUniform(domain=design5, seed=seed)
 
     numsamples = 5
 

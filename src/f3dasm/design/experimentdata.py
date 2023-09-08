@@ -40,7 +40,7 @@ from pathos.helpers import mp
 from ..logger import logger
 from ._data import _Data
 from ._jobqueue import FINISHED, OPEN, NoOpenJobsError, _JobQueue
-from .design import Design
+from .experimentsample import ExperimentSample
 from .domain import Domain
 from .parameter import Parameter
 
@@ -63,14 +63,14 @@ class _Sampler(Protocol):
     def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> '_Sampler':
         """Create a sampler from a yaml configuration"""
 
-        args = {**sampler_config, 'design': None}
+        args = {**sampler_config, 'domain': None}
         sampler: _Sampler = instantiate(args)
-        sampler.design = Domain.from_yaml(domain_config)
+        sampler.domain = Domain.from_yaml(domain_config)
         return sampler
 
 
-class _DesignCallable(Protocol):
-    def __call__(design: Design, **kwargs) -> Design:
+class _ExperimentSampleCallable(Protocol):
+    def __call__(experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
         ...
 
 
@@ -510,18 +510,18 @@ class ExperimentData:
 
         self.jobs.add(number_of_jobs=len(input), status=status)
 
-    def add_design(self, design: Design) -> None:
+    def add_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
         """
-        Add a design to the ExperimentData object.
+        Add a experiment_sample to the ExperimentData object.
 
         Parameters
         ----------
-        design : Design
-            Design to add.
+        experiment_sample : ExperimentSample
+            ExperimentSample to add.
         """
         # Note: The index needs to be set but will not be used when adding the data!
-        self.input_data.add(pd.DataFrame(design.input_data, index=[0]))
-        self.output_data.add(pd.DataFrame(design.output_data, index=[0]))
+        self.input_data.add(pd.DataFrame(experiment_sample.input_data, index=[0]))
+        self.output_data.add(pd.DataFrame(experiment_sample.output_data, index=[0]))
         self.jobs.add(1, status=OPEN)
 
     def fill_output(self, output: np.ndarray, label: str = "y"):
@@ -560,74 +560,74 @@ class ExperimentData:
         self.output_data.remove(indices)
         self.jobs.remove(indices)
 
-    #                                                                        Design
+    #                                                                        ExperimentSample
     # =============================================================================
 
-    def get_design(self, index: int) -> Design:
+    def get_experiment_sample(self, index: int) -> ExperimentSample:
         """
-        Gets the design at the given index.
+        Gets the experiment_sample at the given index.
 
         Parameters
         ----------
         index : int
-            The index of the design to retrieve.
+            The index of the experiment_sample to retrieve.
 
         Returns
         -------
-        Design
-            The design at the given index.
+        ExperimentSample
+            The ExperimentSample at the given index.
         """
-        return Design(dict_input=self.input_data.get_data_dict(index),
-                      dict_output=self.output_data.get_data_dict(index), jobnumber=index)
+        return ExperimentSample(dict_input=self.input_data.get_data_dict(index),
+                                dict_output=self.output_data.get_data_dict(index), jobnumber=index)
 
-    def set_design(self, design: Design) -> None:
+    def set_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
         """
-        Sets the design at the given index.
+        Sets the ExperimentSample at the given index.
 
         Parameters
         ----------
-        design : Design
-            The design to set.
+        experiment_sample : ExperimentSample
+            The ExperimentSample to set.
         """
-        for column, value in design.output_data.items():
-            self.output_data.set_data(index=design.job_number, value=value, column=column)
+        for column, value in experiment_sample.output_data.items():
+            self.output_data.set_data(index=experiment_sample.job_number, value=value, column=column)
 
-        self.jobs.mark_as_finished(design._jobnumber)
+        self.jobs.mark_as_finished(experiment_sample._jobnumber)
 
     @_access_file
-    def write_design(self, design: Design) -> None:
+    def write_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
         """
-        Sets the design at the given index.
+        Sets the ExperimentSample at the given index.
 
         Parameters
         ----------
-        design : Design
-            The design to set.
+        experiment_sample : ExperimentSample
+            The ExperimentSample to set.
         """
-        self.set_design(design)
+        self.set_experiment_sample(experiment_sample)
 
-    def access_open_job_data(self) -> Design:
+    def access_open_job_data(self) -> ExperimentSample:
         """Get the data of the first available open job.
 
         Returns
         -------
-        Design
-            The Design object of the first available open job.
+        ExperimentSample
+            The ExperimentSample object of the first available open job.
         """
         job_index = self.jobs.get_open_job()
         self.jobs.mark_as_in_progress(job_index)
-        design = self.get_design(job_index)
-        return design
+        experiment_sample = self.get_experiment_sample(job_index)
+        return experiment_sample
 
     @_access_file
-    def get_open_job_data(self) -> Design:
+    def get_open_job_data(self) -> ExperimentSample:
         """Get the data of the first available open job by
         accessing the ExperimenData on disk.
 
         Returns
         -------
-        Design
-            The Design object of the first available open job.
+        ExperimentSample
+            The ExperimentSample object of the first available open job.
         """
         return self.access_open_job_data()
 
@@ -635,24 +635,24 @@ class ExperimentData:
     # =============================================================================
 
     def set_error(self, index: int) -> None:
-        """Mark the design at the given index as error.
+        """Mark the experiment_sample at the given index as error.
 
         Parameters
         ----------
         index
-            index of the design to mark as error
+            index of the experiment_sample to mark as error
         """
         self.jobs.mark_as_error(index)
         self.output_data.set_data(index, value='ERROR')
 
     @_access_file
     def write_error(self, index: int):
-        """Mark the design at the given index as error and write to ExperimentData file.
+        """Mark the experiment_sample at the given index as error and write to ExperimentData file.
 
         Parameters
         ----------
         index
-            index of the design to mark as error
+            index of the experiment_sample to mark as error
         """
         self.set_error(index)
 
@@ -674,12 +674,12 @@ class ExperimentData:
     #                                                            Run datageneration
     # =============================================================================
 
-    def run(self, operation: _DesignCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
+    def run(self, operation: _ExperimentSampleCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
         """Run any function over the entirery of the experiments
 
         Parameters
         ----------
-        operation : DesignCallable
+        operation : ExperimentSampleCallable
             function execution for every entry in the ExperimentData object
         mode, optional
             operational mode, by default 'sequential'
@@ -709,12 +709,12 @@ class ExperimentData:
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, operation: _DesignCallable, kwargs: dict):
+    def _run_sequential(self, operation: _ExperimentSampleCallable, kwargs: dict):
         """Run the operation sequentially
 
         Parameters
         ----------
-        operation : DesignCallable
+        operation : ExperimentSampleCallable
             function execution for every entry in the ExperimentData object
         kwargs : dict
             Any keyword arguments that need to be supplied to the function
@@ -726,8 +726,8 @@ class ExperimentData:
         """
         while True:
             try:
-                design = self.access_open_job_data()
-                logger.debug(f"Accessed design {design._jobnumber}")
+                experiment_sample = self.access_open_job_data()
+                logger.debug(f"Accessed experiment_sample {experiment_sample._jobnumber}")
             except NoOpenJobsError:
                 logger.debug("No Open Jobs left")
                 break
@@ -736,25 +736,25 @@ class ExperimentData:
 
                 # If kwargs is empty dict
                 if not kwargs:
-                    logger.info(f"Running design {design._jobnumber}")
+                    logger.info(f"Running experiment_sample {experiment_sample._jobnumber}")
                 else:
                     logger.info(
-                        f"Running design {design._jobnumber} with kwargs {kwargs}")
+                        f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _design = operation(design, **kwargs)  # no *args!
-                self.set_design(_design)
+                _experiment_sample = operation(experiment_sample, **kwargs)  # no *args!
+                self.set_experiment_sample(_experiment_sample)
             except Exception as e:
-                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.set_error(design._jobnumber)
+                self.set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, operation: _DesignCallable, kwargs: dict):
+    def _run_multiprocessing(self, operation: _ExperimentSampleCallable, kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
         ----------
-        operation : DesignCallable
+        operation : ExperimentSampleCallable
             function execution for every entry in the ExperimentData object
         kwargs : dict
             Any keyword arguments that need to be supplied to the function
@@ -768,29 +768,29 @@ class ExperimentData:
         options = []
         while True:
             try:
-                design = self.access_open_job_data()
+                experiment_sample = self.access_open_job_data()
                 options.append(
-                    ({'design': design, **kwargs},))
+                    ({'experiment_sample': experiment_sample, **kwargs},))
             except NoOpenJobsError:
                 break
 
         def f(options: Dict[str, Any]) -> Any:
-            logger.debug(f"Running design {options['design'].job_number}")
+            logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
             return operation(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
-            _designs: List[Design] = pool.starmap(f, options)
+            _experiment_samples: List[ExperimentSample] = pool.starmap(f, options)
 
-        for _design in _designs:
-            self.set_design(_design)
+        for _experiment_sample in _experiment_samples:
+            self.set_experiment_sample(_experiment_sample)
 
-    def _run_cluster(self, operation: _DesignCallable, kwargs: dict):
+    def _run_cluster(self, operation: _ExperimentSampleCallable, kwargs: dict):
         """Run the operation on the cluster
 
         Parameters
         ----------
-        operation : DesignCallable
+        operation : ExperimentSampleCallable
             function execution for every entry in the ExperimentData object
         kwargs : dict
             Any keyword arguments that need to be supplied to the function
@@ -808,19 +808,19 @@ class ExperimentData:
 
         while True:
             try:
-                design = self.get_open_job_data()
+                experiment_sample = self.get_open_job_data()
             except NoOpenJobsError:
                 logger.debug("No Open jobs left!")
                 break
 
             try:
-                _design = operation(design, **kwargs)
-                self.write_design(_design)
+                _experiment_sample = operation(experiment_sample, **kwargs)
+                self.write_experiment_sample(_experiment_sample)
             except Exception as e:
-                error_msg = f"Error in design {design._jobnumber}: {e}"
+                error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.write_error(design._jobnumber)
+                self.write_error(experiment_sample._jobnumber)
                 continue
 
         self = self.from_file(self.filename)

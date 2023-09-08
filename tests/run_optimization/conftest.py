@@ -25,7 +25,7 @@ def design_7d() -> Domain:
 
 @pytest.fixture(scope="package")
 def sampler(design: Domain) -> Sampler:
-    return LatinHypercube(design=design, seed=SEED)
+    return LatinHypercube(domain=design, seed=SEED)
 
 
 @pytest.fixture(scope="package")

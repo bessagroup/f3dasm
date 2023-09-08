@@ -1,5 +1,5 @@
 """
-A Design object contains a single realization of the design-of-experiment in ExperimentData.
+A ExperimentSample object contains a single realization of the design-of-experiment in ExperimentData.
 """
 
 #                                                                       Modules
@@ -156,11 +156,11 @@ def save_object(object: Any, path: Path, store_method: Optional[_Store] = None) 
     suffix = STORE_TYPE_MAPPING[object_type](object, path)
     return suffix
 
-#                                                                        Design
+#                                                              ExperimentSample
 # =============================================================================
 
 
-class Design:
+class ExperimentSample:
     def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any], jobnumber: int):
         """Single realization of a design of experiments.
 
@@ -178,9 +178,9 @@ class Design:
         self._jobnumber = jobnumber
 
     @classmethod
-    def from_numpy(cls: Type[Design], input_array: np.ndarray,
-                   output_value: Optional[float] = None, jobnumber: int = 0) -> Design:
-        """Create a Design object from a numpy array.
+    def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
+                   output_value: Optional[float] = None, jobnumber: int = 0) -> ExperimentSample:
+        """Create a ExperimentSample object from a numpy array.
 
         Parameters
         ----------
@@ -194,8 +194,8 @@ class Design:
 
         Returns
         -------
-        Design
-            Design object
+        ExperimentSample
+            ExperimentSample object
         """
         dict_input = {f"x{i}": val for i, val in enumerate(input_array)}
         if output_value is None:
@@ -212,7 +212,7 @@ class Design:
         self._dict_output[key] = value
 
     def __repr__(self) -> str:
-        return f"Design({self.job_number} : {self.input_data} - {self.output_data})"
+        return f"ExperimentSample({self.job_number} : {self.input_data} - {self.output_data})"
 
     @property
     def input_data(self) -> Dict[str, Any]:

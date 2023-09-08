@@ -27,14 +27,14 @@ class Combination(Sampler):
 
     def _sample_discrete(self, numsamples: int):
         """Sample the discrete parameters"""
-        discrete = self.design.get_discrete_parameters()
+        discrete = self.domain.get_discrete_parameters()
 
         all_values = [set(range(param.lower_bound, param.upper_bound + 1))
                       for _, param in enumerate(discrete.values())]
 
         # Multiply all_values by the number of categorical samples
         n_categorical = 1
-        categorical = self.design.get_categorical_parameters()
+        categorical = self.domain.get_categorical_parameters()
         for _, param in enumerate(categorical.values()):
             n_categorical *= len(param.categories)
 
@@ -52,7 +52,7 @@ class Combination(Sampler):
 
     def _sample_categorical(self, numsamples: int):
         """Sample the categorical parameters"""
-        categorical = self.design.get_categorical_parameters()
+        categorical = self.domain.get_categorical_parameters()
 
         all_values = [set(param.categories)
                       for dim, param in enumerate(categorical.values())]
@@ -61,7 +61,7 @@ class Combination(Sampler):
 
         # Multiply all_values by the number of discrete samples
         n_discrete = 1
-        discrete = self.design.get_discrete_parameters()
+        discrete = self.domain.get_discrete_parameters()
         for _, param in enumerate(discrete.values()):
             n_discrete *= len(list(range(param.lower_bound, param.upper_bound)))
 
@@ -92,15 +92,15 @@ class Combination(Sampler):
 
         # Multiply all_values by the number of categorical samples
         n_categorical = 0
-        categorical = self.design.get_categorical_parameters()
-        discrete = self.design.get_discrete_parameters()
+        categorical = self.domain.get_categorical_parameters()
+        discrete = self.domain.get_discrete_parameters()
         for _, param in enumerate(categorical.values()):
             n_categorical *= len(param.categories)
 
         for _, param in enumerate(discrete.values()):
             n_categorical *= (param.upper_bound - param.lower_bound + 1)
 
-        continuous = self.design.get_continuous_parameters()
+        continuous = self.domain.get_continuous_parameters()
         dimensions = len(continuous)
 
         samples = np.random.uniform(size=(n_categorical, dimensions))

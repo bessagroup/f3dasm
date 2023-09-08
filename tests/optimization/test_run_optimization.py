@@ -32,11 +32,11 @@ def test_run_multiple_realizations(function: Function, optimizer: Optimizer, dim
     realizations = 3
     domain = np.tile([0.0, 1.0], (dimensionality, 1))
 
-    design = make_nd_continuous_domain(dimensionality=dimensionality, bounds=domain)
-    func = function(dimensionality=dimensionality, scale_bounds=domain)
-    data = ExperimentData(domain=design)
+    domain = make_nd_continuous_domain(dimensionality=dimensionality, bounds=domain)
+    func = function(dimensionality=dimensionality, scale_bounds=domain.get_bounds())
+    data = ExperimentData(domain=domain)
     opt = optimizer(data=data)
-    sampler = RandomUniform(design=design)
+    sampler = RandomUniform(domain=domain)
 
     # Check if os is windows
     if os.name == 'nt':

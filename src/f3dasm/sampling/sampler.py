@@ -30,19 +30,19 @@ __status__ = 'Stable'
 
 
 class Sampler:
-    def __init__(self, design: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
+    def __init__(self, domain: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
         """Interface for sampling method
 
         Parameters
         ----------
-        design : Domain
-            design of experiments object
+        domain : Domain
+            domain object
         seed : int
             seed for sampling
         number_of_samples : Optional[int]
             number of samples to be generated, defaults to None
         """
-        self.design = design
+        self.domain = domain
         self.seed = seed
         self.number_of_samples = number_of_samples
         if seed:
@@ -52,9 +52,9 @@ class Sampler:
     def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> Sampler:
         """Create a sampler from a yaml configuration"""
 
-        args = {**sampler_config, 'design': None}
+        args = {**sampler_config, 'domain': None}
         sampler: Sampler = instantiate(args)
-        sampler.design = Domain.from_yaml(domain_config)
+        sampler.domain = Domain.from_yaml(domain_config)
         return sampler
 
     def set_seed(self, seed: int):
@@ -118,10 +118,10 @@ class Sampler:
         # Get the column names in this particular order
         columnnames = [
             name
-            for name in self.design.get_continuous_names(
-            ) + self.design.get_discrete_names(
-            ) + self.design.get_categorical_names(
-            ) + self.design.get_constant_names()
+            for name in self.domain.get_continuous_names(
+            ) + self.domain.get_discrete_names(
+            ) + self.domain.get_categorical_names(
+            ) + self.domain.get_constant_names()
         ]
 
         data = self._cast_to_data_object(
@@ -130,10 +130,10 @@ class Sampler:
 
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
         """Cast the samples to a Data object"""
-        data = ExperimentData(domain=self.design)
+        data = ExperimentData(domain=self.domain)
 
         # First get an empty reference frame from the DoE
-        empty_frame = self.design._create_empty_dataframe()
+        empty_frame = self.domain._create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)
@@ -145,7 +145,7 @@ class Sampler:
         return data
 
     def _sample_constant(self, numsamples: int):
-        constant = self.design.get_constant_parameters()
+        constant = self.domain.get_constant_parameters()
         samples = np.empty(shape=(numsamples, len(constant)))
         for dim, param in enumerate(constant.values()):
             samples[:, dim] = param.value
@@ -154,7 +154,7 @@ class Sampler:
 
     def _sample_discrete(self, numsamples: int):
         """Sample the descrete parameters, default randomly uniform"""
-        discrete = self.design.get_discrete_parameters()
+        discrete = self.domain.get_discrete_parameters()
         samples = np.empty(shape=(numsamples, len(discrete)))
         for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
@@ -167,7 +167,7 @@ class Sampler:
 
     def _sample_categorical(self, numsamples: int):
         """Sample the categorical parameters, default randomly uniform"""
-        categorical = self.design.get_categorical_parameters()
+        categorical = self.domain.get_categorical_parameters()
         samples = np.empty(shape=(numsamples, len(categorical)), dtype=object)
         for dim, param in enumerate(categorical.values()):
             samples[:, dim] = np.random.choice(
@@ -177,7 +177,7 @@ class Sampler:
 
     def _stretch_samples(self, samples: np.ndarray) -> np.ndarray:
         """Stretch samples to their boundaries"""
-        continuous = self.design.get_continuous_parameters()
+        continuous = self.domain.get_continuous_parameters()
         for dim, param in enumerate(continuous.values()):
             samples[:, dim] = (
                 samples[:, dim] * (
