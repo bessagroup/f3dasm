@@ -19,6 +19,7 @@ Create an optimizer
 First, we have to determine the suitable search-space by creating a :class:`~f3dasm.design.domain.Domain` object.
 
 .. code-block:: python
+
     from f3dasm import Domain, ContinuousParameter
 
     domain = Domain(input_space={'x0': ContinuousParameter(lower_bound=0.0, upper_bound=1.0), 
@@ -45,6 +46,7 @@ We will use the :class:`~f3dasm.optimization.lbfgsb.LBFGSB` optimizer to find th
 By calling the :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method and specifying the : and the number of iterations, we will start the optimization process:
 
 .. code-block:: python
+    
     from f3dasm.datageneration.functions import Ackley
 
     f = Ackley()
