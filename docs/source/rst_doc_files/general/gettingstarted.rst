@@ -93,6 +93,11 @@ In order to check your installation you can use
 This will show the installed version of f3dasm.
 
 
+.. note::
+
+  :mod:`f3dasm` requires a few other packages as dependencies, which will be automatically installed when installing :mod:`f3dasm` using the above instructions. 
+  If you prefer to install the dependencies manually, you can find a list of the required packages in the :file:`requirements.txt` file in the `GitHub repository <https://github.com/bessagroup/f3dasm>`_.
+
 .. _install_from_source:
 
 Installing from source

@@ -14,7 +14,7 @@ Creating the Domain
 -------------------
 
 Domain from a dictionary
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 The domain can be constructed by initializing the :class:`~f3dasm.design.domain.Domain` class and 
 providing an attribute (:attr:`~f3dasm.design.domain.Domain.input_space`) containing string names as keys and parameters as values.
@@ -31,7 +31,7 @@ providing an attribute (:attr:`~f3dasm.design.domain.Domain.input_space`) contai
   domain = f3dasm.Domain(input_space={'param_1': param_1, 'param_2': param_2, 'param_3': param_3, 'param_4': param_4})
 
 Domain from a dataframe
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The domain can also be infered from a pandas dataframe containg samples. 
 The dataframe needs to have the column names as the parameter names and the values as the parameter values. The dataframe can contain any number of samples. The domain will be infered from the first sample.
@@ -54,7 +54,7 @@ The dataframe needs to have the column names as the parameter names and the valu
 .. _domain-from-yaml:
 
 Domain from a hydra configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you are using hydra to manage your configuration files, you can create a domain from a configuration file. Your config needs to have the following structure:
 
