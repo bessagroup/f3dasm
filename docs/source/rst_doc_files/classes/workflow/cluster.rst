@@ -56,7 +56,7 @@ During the operation, no other process can access the data of the :class:`~f3das
 .. note::
     You will notice that a :code:`<filename>.lock` file will be created in the directory of the :class:`~f3dasm.design.experimentdata.ExperimentData` object. This file will disable concurent access to the data.
 
-The cluster mode enables you to use multiple nodes to each retrieve an open :class:`~f3dasm.design.design.Design` from the :class:`~f3dasm.design.experimentdata.ExperimentData`, execute the data generation function, and write the data back to the disk.
+The cluster mode enables you to use multiple nodes to each retrieve an open :class:`~f3dasm.design.experimentsample.ExperimentSample` from the :class:`~f3dasm.design.experimentdata.ExperimentData`, execute the data generation function, and write the data back to the disk.
 Whenever a node is working executing a particular design, the job-value will be set to 'in progress', making sure that other processes are not repeating that experiment.
 
 .. image:: ../../../img/f3dasm-cluster.png
@@ -185,7 +185,7 @@ Additionally, the `main.py` file handles which node takes which role.
    :caption: main.py
 
     from f3dasm.sampling import LatinHypercube
-    from f3dasm.design import make_nd_continuous_domain
+    from f3dasm.domain import make_nd_continuous_domain
     from f3dasm.datageneration.functions import Ackley
     from f3dasm.optimization import LBFGSB
     from my_script import my_function
@@ -194,7 +194,7 @@ Additionally, the `main.py` file handles which node takes which role.
     def create_experimentdata():
         """Design of Experiment"""
         # Create a domain object
-        domain = f3dasm.design.make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (20, 1)), dimensionality=20)
+        domain = make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (20, 1)), dimensionality=20)
 
         # Sampling from the domain
         sampler = f3dasm.sampling.LatinHypercube(domain)
@@ -204,7 +204,7 @@ Additionally, the `main.py` file handles which node takes which role.
 
     def worker_node():
         # Extract the experimentdata from disk
-        data = f3dasm.design.ExperimentData.from_file(filename='my_data')
+        data = f3dasm.ExperimentData.from_file(filename='my_data')
 
         """Data Generation"""
         # Initialize the simulator

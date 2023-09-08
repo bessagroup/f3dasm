@@ -113,4 +113,4 @@ We can make easily make a :math:`n`-dimensional continous domain with the helper
 .. code-block:: python
 
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  design = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+  domain = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)

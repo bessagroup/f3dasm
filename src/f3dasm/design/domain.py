@@ -407,7 +407,7 @@ class Domain:
         Returns
         -------
         Domain
-            Design space with the filtered parameters
+            Domain with the filtered parameters
 
         Example
         -------

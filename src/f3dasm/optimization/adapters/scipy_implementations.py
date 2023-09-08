@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 
 # Locals
 from ...datageneration.functions import Function
-from ...design.design import Design
+from ...design.experimentsample import ExperimentSample
 from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -22,7 +22,7 @@ __status__ = 'Stable'
 
 class _SciPyOptimizer(Optimizer):
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
-        self.data.add_design(Design.from_numpy(xk))
+        self.data.add_experiment_sample(ExperimentSample.from_numpy(xk))
 
     def update_step(self):
         """Update step function"""
@@ -68,10 +68,10 @@ class _SciPyOptimizer(Optimizer):
 
         # Repeat last iteration to fill up total iteration
         if len(self.data) < n_data_before_iterate + iterations:
-            last_design = self.data.get_design(len(self.data)-1)
+            last_design = self.data.get_experiment_sample(len(self.data)-1)
 
             for repetition in range(iterations - (len(self.data) - n_data_before_iterate)):
-                self.data.add_design(last_design)
+                self.data.add_experiment_sample(last_design)
 
         # Evaluate the function on the extra iterations
         self.data.run(function.run)

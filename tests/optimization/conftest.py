@@ -23,7 +23,7 @@ def data():
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
 
-    random_sampler = RandomUniform(design=design, seed=seed)
+    random_sampler = RandomUniform(domain=design, seed=seed)
     data = random_sampler.get_samples(numsamples=N)
 
     return data

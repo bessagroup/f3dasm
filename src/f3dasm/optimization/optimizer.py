@@ -16,7 +16,7 @@ import numpy as np
 
 # Locals
 from ..datageneration.functions.function import Function
-from ..design.design import Design
+from ..design.experimentsample import ExperimentSample
 from ..design.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
@@ -38,7 +38,7 @@ class OptimizerParameters:
     population : int
         population of the optimizer update step
     force_bounds : bool
-        force the optimizer to not exceed the boundaries of the designspace
+        force the optimizer to not exceed the boundaries of the domain
     """
 
     population: int = 1
@@ -164,7 +164,7 @@ class Optimizer:
         return
 
     def _force_bounds(self, x: np.ndarray) -> np.ndarray:
-        """Force the input vector to be within the design boundaries
+        """Force the input vector to be within the domain boundaries
 
         Parameters
         ----------
@@ -208,10 +208,10 @@ class Optimizer:
         for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
             x, y = self.update_step(function=function)
 
-            designs_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
+            experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
 
-            for x_i, y_i in designs_to_add:
-                self.data.add_design(Design.from_numpy(x_i, y_i))
+            for x_i, y_i in experiment_samples_to_add:
+                self.data.add_experiment_sample(ExperimentSample.from_numpy(x_i, y_i))
 
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(

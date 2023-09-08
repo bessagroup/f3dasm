@@ -18,12 +18,12 @@ Benchmarkfunction are a submodule of the :code:`f3dasm.datageneration` module un
 Creating the function
 ^^^^^^^^^^^^^^^^^^^^^
 
-First we make a 2-dimensional continous design space with the helper function :func:`~f3dasm.design.design.make_nd_continuous_design`:
+First we make a 2-dimensional continous domain with the helper function :func:`~f3dasm.design.design.make_nd_continuous_design`:
 
 .. code-block:: python
 
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  design = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
+  domain = f3dasm.make_nd_continuous_design(bounds=bounds, dimensions=2)
 
 Then we create an object of the :class:`~f3dasm.functions.pybenchfunction.Sphere` class, specifying the :attr:`~f3dasm.functions.pybenchfunction.PybenchFunction.dimensionality`:
 

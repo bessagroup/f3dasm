@@ -5,7 +5,7 @@ Module for the design of experiments.
 #                                                                       Modules
 # =============================================================================
 
-from .design import Design
+from .experimentsample import ExperimentSample
 # Local
 from .domain import Domain, make_nd_continuous_domain
 from .experimentdata import ExperimentData
@@ -31,5 +31,5 @@ __all__ = [
     'ContinuousParameter',
     'DiscreteParameter',
     'Parameter',
-    'Design'
+    'ExperimentSample'
 ]

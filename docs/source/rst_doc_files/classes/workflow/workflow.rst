@@ -60,14 +60,14 @@ Because we are using the :class:`~f3dasm.datageneration.functions.pybenchfunctio
 .. code-block:: python
    :caption: my_script.py
 
-    from f3dasm import Design
+    from f3dasm import ExperimentSample
 
-    def my_function(design: Design, benchmark_function) -> Design:
-        return benchmark_function.run(design)
+    def my_function(experiment_sample: ExperimentSample, benchmark_function) -> ExperimentSample:
+        return benchmark_function.run(experiment_sample)
 
 .. note::
-    As shown in the code snippet above, the :class:`~f3dasm.design.design.Design` object is the only connector between your scripts and the :mod:`f3dasm` interface.
-    Therefore, you can use any package or third-party software call you want in your scripts, as long as you can pass the :class:`~f3dasm.design.design.Design` object to the function and return it back.
+    As shown in the code snippet above, the :class:`~f3dasm.design.experimentsample.ExperimentSample` object is the only connector between your scripts and the :mod:`f3dasm` interface.
+    Therefore, you can use any package or third-party software call you want in your scripts, as long as you can pass the :class:`~f3dasm.design.experimentsample.ExperimentSample` object to the function and return it back.
 
 main.py
 ^^^^^^^
@@ -87,7 +87,7 @@ In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sampl
 
     """Design of Experiment"""
     # Create a domain object
-    domain = f3dasm.design.make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (20, 1)), dimensionality=20)
+    domain = make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (20, 1)), dimensionality=20)
 
     # Sampling from the domain
     sampler = f3dasm.sampling.LatinHypercube(domain)

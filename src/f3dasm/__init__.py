@@ -17,9 +17,9 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 from . import datageneration, design, machinelearning, optimization, sampling
 from ._argparser import HPC_JOBID
 from .datageneration.functions.function import Function
-from .design.design import Design
 from .design.domain import Domain, make_nd_continuous_domain
 from .design.experimentdata import ExperimentData
+from .design.experimentsample import ExperimentSample
 from .design.parameter import (CategoricalParameter, ConstantParameter,
                                ContinuousParameter, DiscreteParameter)
 from .logger import DistributedFileHandler, logger
@@ -65,6 +65,7 @@ __all__ = [
     'run_multiple_realizations',
     'run_multiple_realizations_to_disk',
     'run_optimization',
-    'run_optimization_to_disk'
-    'Sampler'
+    'run_optimization_to_disk',
+    'Sampler',
+    'ExperimentSample',
 ]

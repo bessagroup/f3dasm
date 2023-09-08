@@ -5,7 +5,7 @@ Interface class for data generators
 #                                                                       Modules
 # =============================================================================
 
-from ..design.design import Design
+from ..design.experimentsample import ExperimentSample
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -35,24 +35,24 @@ class DataGenerator:
         ...
 
     @time_and_log
-    def run(self, design: Design, **kwargs) -> Design:
+    def run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
         """Run the data generator
 
         Parameters
         ----------
-        design : Design
+        ExperimentSample : ExperimentSample
             The design to run the data generator on
 
         Returns
         -------
-        Design
+        ExperimentSample
             Processed design
         """
         # Cache the design
-        self.design: Design = design
+        self.experiment_sample: ExperimentSample = experiment_sample
 
         self.pre_process(**kwargs)
         self.execute(**kwargs)
         self.post_process(**kwargs)
 
-        return self.design
+        return self.experiment_sample

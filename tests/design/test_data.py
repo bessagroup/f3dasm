@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from f3dasm.design._data import _Data
-from f3dasm.design.design import Design
+from f3dasm.design.experimentsample import ExperimentSample
 from f3dasm.design.domain import Domain
 
 pytestmark = pytest.mark.smoke
@@ -32,14 +32,14 @@ def test_data_repr_html(sample_data: _Data):
 
 
 def test_data_from_design(domain: Domain):
-    # Assuming you have a DesignSpace object named "design"
+    # Assuming you have a Domain object named "domain"
     data = _Data.from_domain(domain)
     assert isinstance(data, _Data)
     assert isinstance(data.data, pd.DataFrame)
 
 
 def test_data_reset(sample_data: _Data):
-    # Assuming you have a DesignSpace object named "design"
+    # Assuming you have a Domain object named "domain"
     design = Domain()
     sample_data.reset(design)
     assert isinstance(sample_data.data, pd.DataFrame)

@@ -39,7 +39,7 @@ class SobolSequence(Sampler):
         -------
             samples
         """
-        continuous = self.design.get_continuous_parameters()
+        continuous = self.domain.get_continuous_parameters()
         dimensions = len(continuous)
 
         samples = sobol_sequence.sample(numsamples, dimensions)

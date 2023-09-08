@@ -4,7 +4,7 @@ Optimizer
 The :class:`~f3dasm.optimization.optimizer.Optimizer` class is used to find the minimum of a particular quantity of interest through an iterative fashion.
 
 * The :meth:`~f3dasm.optimization.optimizer.Optimizer.update_step` method takes a :class:`~f3dasm.datageneration.functions.function.Function` object and outputs a tuple containing the position and evaluated value of the next iteration.
-* The :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method is used to start the optimization process. It takes the number of iterations and a :class:`~f3dasm.base.function.Function` object as arguments. For every iteration, the :meth:`~f3dasm.optimization.optimizer.Optimizer.update_step` method is called and the results are stored as new :class:`~f3dasm.design.design.Design` in the :class:`~f3dasm.design.experimentdata.ExperimentData` object.
+* The :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method is used to start the optimization process. It takes the number of iterations and a :class:`~f3dasm.base.function.Function` object as arguments. For every iteration, the :meth:`~f3dasm.optimization.optimizer.Optimizer.update_step` method is called and the results are stored as new :class:`~f3dasm.design.experimentsample.ExperimentSample` in the :class:`~f3dasm.design.experimentdata.ExperimentData` object.
 
 
 .. image:: ../../../img/f3dasm-optimizer.png
