@@ -12,7 +12,7 @@ Here you will find all information on installing, using and contributing to the 
 Authorship & Citation
 ---------------------
 
-:mod:`f3dasm` was originally created and maintained by Martin van der Schelling [1]_.
+:mod:`f3dasm` is created and maintained by Martin van der Schelling [1]_.
 
 .. [1] PhD Candiate, Delft University of Technology, `Website <https://mpvanderschelling.github.io/>`_ , `GitHub <https://github.com/mpvanderschelling/>`_
 
