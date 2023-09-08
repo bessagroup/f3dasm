@@ -1,6 +1,9 @@
-name: Checks on push
+name: Pull request to pr/** branches
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches:
+      - "main"
 
 jobs:
   check-coding-style:
