@@ -163,5 +163,5 @@ Building from source is required to work on a contribution (bug fix, new feature
 
 .. note::
   If you want to contribute to this project, please read the 
-  `contributing guidelines <https://github.com/bessagroup/f3dasm/blob/main/CONTRIBUTING.md.in>`_ and
+  `contributing guidelines <https://github.com/bessagroup/f3dasm/blob/main/CONTRIBUTING.md>`_ and
   go for more instructions to the `discussion forum <https://github.com/bessagroup/f3dasm/discussions>`_
