@@ -74,6 +74,11 @@ The best way to get started is to:
 * Read the :ref:`overview` section, containting a brief introduction to the framework and a statement of need.
 * Follow the :ref:`installation-instructions` section, containing a step-by-step guide on how to install the package.
 
+Contribute
+----------
+
+:mod:`f3dasm` is an open-source project, and contributions of any kind are welcome and appreciated. If you want to contribute, please go to the `GitHub wiki page <https://github.com/bessagroup/f3dasm/wiki>`_.
+
 
 Useful links
 ------------
