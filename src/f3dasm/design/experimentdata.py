@@ -40,8 +40,8 @@ from pathos.helpers import mp
 from ..logger import logger
 from ._data import _Data
 from ._jobqueue import FINISHED, OPEN, NoOpenJobsError, _JobQueue
-from .experimentsample import ExperimentSample
 from .domain import Domain
+from .experimentsample import ExperimentSample
 from .parameter import Parameter
 
 #                                                          Authorship & Credits
@@ -105,6 +105,17 @@ class ExperimentData:
 
     def __next__(self):
         return self.input_data.__next__()
+
+    def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
+        """The + operator combines two ExperimentData objects"""
+        # Check if the domains are the same
+        if isinstance(other, ExperimentData) and self.domain != other.domain:
+            raise ValueError("Cannot add ExperimentData objects with different domains")
+
+        return ExperimentData._from_object(self.input_data + other.input_data,
+                                           self.output_data + other.output_data,
+                                           self.jobs + other.jobs, self.domain,
+                                           self.filename)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
@@ -320,6 +331,37 @@ class ExperimentData:
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
 
+    @classmethod
+    def _from_object(cls: Type[ExperimentData], input_data: _Data, output_data: _Data,
+                     jobs: _JobQueue, domain: Domain, filename: Optional[str] = 'experimentdata') -> ExperimentData:
+        """Create an ExperimentData object from the given objects
+
+        Parameters
+        ----------
+        cls : Type[ExperimentData]
+            ExperimentData class
+        input_data : _Data
+            input_data
+        output_data : _Data
+            output_data
+        jobs : _JobQueue
+            jobs
+        domain : Domain
+            domain
+        filename : str
+            filename
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data and domain.
+        """
+        experimentdata = cls(domain=domain, filename=filename)
+        experimentdata.input_data = input_data
+        experimentdata.output_data = output_data
+        experimentdata.jobs = jobs
+        return experimentdata
+
     def reset_data(self):
         """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
         self.input_data.reset(self.domain)
@@ -509,20 +551,6 @@ class ExperimentData:
             self.output_data.add_numpy_arrays(output)
 
         self.jobs.add(number_of_jobs=len(input), status=status)
-
-    def add_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
-        """
-        Add a experiment_sample to the ExperimentData object.
-
-        Parameters
-        ----------
-        experiment_sample : ExperimentSample
-            ExperimentSample to add.
-        """
-        # Note: The index needs to be set but will not be used when adding the data!
-        self.input_data.add(pd.DataFrame(experiment_sample.input_data, index=[0]))
-        self.output_data.add(pd.DataFrame(experiment_sample.output_data, index=[0]))
-        self.jobs.add(1, status=OPEN)
 
     def fill_output(self, output: np.ndarray, label: str = "y"):
         """

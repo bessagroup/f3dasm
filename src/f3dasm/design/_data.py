@@ -53,6 +53,33 @@ class _Data:
             self.current_index += 1
             return current_value
 
+    def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
+        """Add two Data objects together.
+
+        Parameters
+        ----------
+        other : Data
+            The Data object to add.
+
+        Returns
+        -------
+            The sum of the two Data objects.
+        """
+        # If other is a dictionary, convert it to a _Data object
+        if isinstance(other, Dict):
+            other = _Data(pd.DataFrame(other, index=[0]).copy())
+
+
+        try:
+            last_index = self.data.index[-1]
+        except IndexError:  # Empty DataFrame
+            return _Data(other.data.copy())  # Make a copy of other.data
+
+        # Make a copy of other.data and modify its index
+        other_data_copy = other.data.copy()
+        other_data_copy.index = other_data_copy.index + last_index + 1
+        return _Data(pd.concat([self.data, other_data_copy]))
+
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
 

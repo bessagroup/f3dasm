@@ -16,8 +16,8 @@ import numpy as np
 
 # Locals
 from ..datageneration.functions.function import Function
-from ..design.experimentsample import ExperimentSample
 from ..design.experimentdata import ExperimentData
+from ..design.experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -211,7 +211,7 @@ class Optimizer:
             experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
 
             for x_i, y_i in experiment_samples_to_add:
-                self.data.add_experiment_sample(ExperimentSample.from_numpy(x_i, y_i))
+                self.data += ExperimentSample.from_numpy(x_i, y_i)
 
         # Remove overiterations
         self.data.remove_rows_bottom(_number_of_overiterations(

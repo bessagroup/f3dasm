@@ -56,6 +56,34 @@ class _JobQueue:
 
         self.jobs: pd.Series = jobs
 
+    def __add__(self, other: _JobQueue | int) -> _JobQueue:
+        """Add two JobQueue objects together.
+
+        Parameters
+        ----------
+        other : JobQueue
+            JobQueue object to add.
+
+        Returns
+        -------
+        JobQueue
+            JobQueue object containing the added jobs.
+        """
+        if isinstance(other, int):
+            # make _JobQueue from the jobnumber
+            other = _JobQueue(pd.Series([OPEN], index=[0], dtype='string'))
+
+        try:
+            last_index = self.jobs.index[-1]
+        except IndexError:  # Empty Series
+            return _JobQueue(other.jobs)
+
+        # Make a copy of other.jobs and modify its index
+        other_jobs_copy = other.jobs.copy()
+        other_jobs_copy.index = other_jobs_copy.index + last_index + 1
+        return _JobQueue(pd.concat([self.jobs, other_jobs_copy]))
+
+
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 
@@ -128,13 +156,13 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    def add(self, number_of_jobs: int, status: str = OPEN):
+    def add(self, number_of_jobs: int = 1, status: str = OPEN):
         """Adds a number of jobs to the job queue.
 
         Parameters
         ----------
-        number_of_jobs : int
-            Number of jobs to add.
+        number_of_jobs : int, optional
+            Number of jobs to add, by default 1
         status : str, optional
             Status of the jobs, by default 'open'.
         """
