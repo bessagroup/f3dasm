@@ -44,6 +44,7 @@ f3dasm
    :hidden:
    :glob:
 
+   rst_doc_files/classes/machinelearning/machinelearning
 
 .. toctree::
    :maxdepth: 2
