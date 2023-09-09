@@ -50,6 +50,14 @@ class Domain:
         """The len() method returns the number of parameters"""
         return len(self.input_space)
 
+    def __eq__(self, other: Domain) -> bool:
+        """Custom equality comparison for Domain objects."""
+        if not isinstance(other, Domain):
+            return False
+
+        # Compare the input_space dictionaries for equality
+        return self.input_space == other.input_space
+
     @property
     def names(self) -> List[str]:
         """Return a list of the names of the parameters"""

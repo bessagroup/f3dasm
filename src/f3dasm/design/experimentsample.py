@@ -247,6 +247,10 @@ class ExperimentSample:
         """
         return self._jobnumber
 
+    @property
+    def jobs(self) -> int:
+        return self._jobnumber
+
 #                                                                        Export
 # =============================================================================
 
