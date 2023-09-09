@@ -332,7 +332,7 @@ class ExperimentData:
             raise FileNotFoundError(f"Cannot find the file {filename}_data.csv.")
 
     @classmethod
-    def _from_object(cls: Type[ExperimentData], input_data: _Data, output_data: _Data, 
+    def _from_object(cls: Type[ExperimentData], input_data: _Data, output_data: _Data,
                      jobs: _JobQueue, domain: Domain, filename: Optional[str] = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from the given objects
 
