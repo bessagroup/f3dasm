@@ -5,7 +5,7 @@ from __future__ import annotations
 
 # Standard
 from pathlib import Path
-from typing import List, Optional, Type
+from typing import Iterable, List, Optional, Type
 
 # Third-party
 import pandas as pd
@@ -83,6 +83,21 @@ class _JobQueue:
         other_jobs_copy.index = other_jobs_copy.index + last_index + 1
         return _JobQueue(pd.concat([self.jobs, other_jobs_copy]))
 
+    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+        """Get a subset of the data.
+
+        Parameters
+        ----------
+        index : int, slice, list
+            The index of the data to get.
+
+        Returns
+        -------
+            A subset of the data.
+        """
+        if isinstance(index, int):
+            index = [index]
+        return _JobQueue(self.jobs[index].copy())
 
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
@@ -175,16 +190,6 @@ class _JobQueue:
         new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
-
-    def select(self, indices: List[int]):
-        """Selects a subset of the jobs.
-
-        Parameters
-        ----------
-        indices : List[int]
-            List of indices to select.
-        """
-        self.jobs = self.jobs.loc[indices]
 
     #                                                                          Mark
     # =============================================================================

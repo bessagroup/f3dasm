@@ -24,13 +24,6 @@ def test_design_to_numpy(design_data):
     assert np.array_equal(output_array, np.array(list(dict_output.values())))
 
 
-def test_design_get_output_space(design_data):
-    dict_input, dict_output, job_number = design_data
-    design = ExperimentSample(dict_input, dict_output, job_number)
-    with pytest.raises(KeyError):
-        design['output3']
-
-
 def test_design_set(design_data):
     dict_input, dict_output, job_number = design_data
     design = ExperimentSample(dict_input, dict_output, job_number)

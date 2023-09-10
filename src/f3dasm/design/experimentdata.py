@@ -371,25 +371,10 @@ class ExperimentData:
     #                                                                        Export
     # =============================================================================
 
-    def select(self, indices: List[int]) -> ExperimentData:
-        """Select a subset of the data.
+    def __getitem__(self, indices: int | slice | list | tuple) -> ExperimentData:
+        return ExperimentData._from_object(self.input_data[indices], self.output_data[indices],
+                                           self.jobs[indices], self.domain, self.filename)
 
-        Parameters
-        ----------
-        indices : List[int]
-            List of indices to select.
-
-        Returns
-        -------
-        ExperimentData
-            ExperimentData object containing the selected data.
-        """
-        new_experimentdata = deepcopy(self)
-        new_experimentdata.input_data.select(indices)
-        new_experimentdata.output_data.select(indices)
-        new_experimentdata.jobs.select(indices)
-
-        return new_experimentdata
 
     def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock

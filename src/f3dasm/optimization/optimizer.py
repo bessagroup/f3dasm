@@ -15,6 +15,7 @@ from typing import Any, List, Mapping, Optional, Tuple
 import numpy as np
 
 # Locals
+from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function import Function
 from ..design.experimentdata import ExperimentData
 from ..design.experimentsample import ExperimentSample
@@ -117,7 +118,7 @@ class Optimizer:
         """If necessary, the algorithm needs to be set"""
         pass
 
-    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
+    def update_step(self, function: DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
         """One iteration of the algorithm.
 
         Parameters
@@ -181,7 +182,7 @@ class Optimizer:
 
         return x
 
-    def _construct_model(self, function: Function):
+    def _construct_model(self, function: DataGenerator):
         """Construct a model necessary for iteration with input of to be evaluated function
 
         Parameters
@@ -191,7 +192,7 @@ class Optimizer:
         """
         pass
 
-    def iterate(self, iterations: int, function: Function):
+    def iterate(self, iterations: int, function: DataGenerator):
         """Calls the update_step function multiple times.
 
         Parameters

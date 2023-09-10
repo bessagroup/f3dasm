@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -52,6 +52,22 @@ class _Data:
             current_value = self.get_data_dict(index)
             self.current_index += 1
             return current_value
+
+    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+        """Get a subset of the data.
+
+        Parameters
+        ----------
+        index : int, slice, list
+            The index of the data to get.
+
+        Returns
+        -------
+            A subset of the data.
+        """
+        if isinstance(index, int):
+            index = [index]
+        return _Data(self.data.loc[index].copy())
 
     def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
         """Add two Data objects together.
@@ -262,9 +278,6 @@ class _Data:
 
 #                                                           Getters and setters
 # =============================================================================
-
-    def select(self, indices: List[int]):
-        self.data = self.data.loc[indices]
 
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         return self.data.loc[index].to_dict()

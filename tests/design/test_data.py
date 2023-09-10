@@ -45,13 +45,6 @@ def test_data_reset(sample_data: _Data):
     assert isinstance(sample_data.data, pd.DataFrame)
     assert len(sample_data) == 0
 
-
-def test_data_select(sample_data: _Data):
-    indices = [0, 2]
-    sample_data.select(indices)
-    assert len(sample_data) == len(indices)
-
-
 def test_data_remove(sample_data: _Data):
     indices = [0, 2]
     sample_data.remove(indices)

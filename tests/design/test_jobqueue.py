@@ -31,13 +31,6 @@ def test_job_queue_initialization(sample_job_queue: _JobQueue):
 def test_job_queue_repr_html(sample_job_queue: _JobQueue):
     assert isinstance(sample_job_queue._repr_html_(), str)
 
-
-def test_job_queue_select(sample_job_queue: _JobQueue):
-    sample_job_queue.select([0, 2, 3])
-    assert sample_job_queue.jobs.equals(
-        pd.Series(['open', 'in progress', 'finished'], index=[0, 2, 3], dtype='string'))
-
-
 def test_job_queue_remove(sample_job_queue: _JobQueue):
     sample_job_queue.remove([1, 3])
     expected_jobs = pd.Series(['open', 'in progress'], index=[0, 2], dtype='string')
