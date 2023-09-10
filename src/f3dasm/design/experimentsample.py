@@ -196,11 +196,29 @@ class ExperimentSample:
         return cls(dict_input=dict_input, dict_output=dict_output, jobnumber=jobnumber)
 
     def get(self, item: str, store_method: Optional[Type[_Store]] = None) -> Any:
+        """Retrieve a sample parameter by its name.
+
+        Parameters
+        ----------
+        item : str
+            name of the parameter
+        store_method : Optional[Type[_Store]], optional
+            class of defined type to load the data. By default None,
+            will try to load the data with the default methods
+
+        Returns
+        -------
+        Any
+            Value of the parameter of the sample
+        """
+        # Load the value literally (even if it is a reference)
         value = self._load_from_experimentdata(item)
 
         if item.startswith(PATH_PREFIX):
+            # Load the object from the reference
             return load_object(value, store_method)
         else:
+            # Return the literal value
             return value
 
     def _load_from_experimentdata(self, item: str) -> Any:
