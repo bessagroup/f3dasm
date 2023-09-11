@@ -54,13 +54,28 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class _OptimizerParameters(Protocol):
+    maxiter: int
+    population: int
+
+
 class _Optimizer(Protocol):
-    parameter: Any
+    parameter: _OptimizerParameters
+    type: str
 
     def _callback(self, xk: np.ndarray) -> None:
         ...
 
     def run_algorithm(self):
+        ...
+
+    def _check_number_of_datapoints(self) -> None:
+        ...
+
+    def update_step(self, function: _DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def _construct_model(self, function: _DataGenerator) -> None:
         ...
 
 
@@ -389,7 +404,6 @@ class ExperimentData:
     def __getitem__(self, indices: int | slice | list | tuple) -> ExperimentData:
         return ExperimentData._from_object(self.input_data[indices], self.output_data[indices],
                                            self.jobs[indices], self.domain, self.filename)
-
 
     def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock
@@ -855,67 +869,130 @@ class ExperimentData:
         # Remove the lockfile from disk
         Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
 
-    # def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
-    #     if isinstance(optimizer, ScipyOptimizer):
-    #         self._iterate_scipy(optimizer, data_generator, iterations)
-    #         return
+    def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+        if optimizer.type == 'scipy':
+            self._iterate_scipy(optimizer, data_generator, iterations)
+        elif optimizer.type == 'evosax':
+            self._iterate_evosax(optimizer, data_generator, iterations)
+        else:
+            self._iterate(optimizer, data_generator, iterations)
 
-    # def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
-    #     """Calls the update_step function multiple times.
+    def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
+        """Calls the update_step function multiple times.
 
-    #     Parameters
-    #     ----------
-    #     iterations
-    #         number of iterations
-    #     function
-    #         objective function to evaluate
-    #     """
-    #     optimizer._construct_model(data_generator)
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            objective function to evaluate
+        """
+        optimizer._construct_model(data_generator)
 
-    #     self._check_number_of_datapoints()
+        optimizer._check_number_of_datapoints()
 
-    #     for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
-    #         x, y = optimizer.update_step(function=data_generator)
+        for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
+            x, y = optimizer.update_step(function=data_generator)
 
-    #         experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
+            experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
 
-    #         for x_i, y_i in experiment_samples_to_add:
-    #             self += ExperimentSample.from_numpy(x_i, y_i)
+            for x_i, y_i in experiment_samples_to_add:
+                self += ExperimentSample.from_numpy(x_i, y_i)
 
-    #     # Remove overiterations
-    #     self.remove_rows_bottom(_number_of_overiterations(
-    #         iterations, population=optimizer.parameter.population))
+        # Remove overiterations
+        self.remove_rows_bottom(_number_of_overiterations(
+            iterations, population=optimizer.parameter.population))
 
-    # def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
-    #     """Iterating on a function
+    def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+        """Iterating on a function
 
-    #     Parameters
-    #     ----------
-    #     iterations
-    #         number of iterations
-    #     function
-    #         function to be evaluated
-    #     """
-    #     n_data_before_iterate = len(self)
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            function to be evaluated
+        """
+        n_data_before_iterate = len(self)
 
-    #     optimizer.parameter.maxiter = iterations
+        optimizer.parameter.maxiter = iterations
 
-    #     optimizer.run_algorithm(iterations, data_generator)
+        optimizer.run_algorithm(iterations, data_generator)
 
-    #     # If x_new is empty, repeat best x0 to fill up total iteration
-    #     if len(self) == n_data_before_iterate:
-    #         repeated_last_element = self.get_n_best_input_parameters_numpy(
-    #             nosamples=1).ravel()
+        # If x_new is empty, repeat best x0 to fill up total iteration
+        if len(self) == n_data_before_iterate:
+            repeated_last_element = self.get_n_best_input_parameters_numpy(
+                nosamples=1).ravel()
 
-    #         for repetition in range(iterations):
-    #             optimizer._callback(repeated_last_element)
+            for repetition in range(iterations):
+                optimizer._callback(repeated_last_element)
 
-    #     # Repeat last iteration to fill up total iteration
-    #     if len(self) < n_data_before_iterate + iterations:
-    #         last_design = self.get_experiment_sample(len(self)-1)
+        # Repeat last iteration to fill up total iteration
+        if len(self) < n_data_before_iterate + iterations:
+            last_design = self.get_experiment_sample(len(self)-1)
 
-    #         for repetition in range(iterations - (len(self) - n_data_before_iterate)):
-    #             self += last_design
+            for repetition in range(iterations - (len(self) - n_data_before_iterate)):
+                self += last_design
 
-    #     # Evaluate the function on the extra iterations
-    #     self.run(data_generator.run)
+        # Evaluate the function on the extra iterations
+        self.run(data_generator.run)
+
+    def _iterate_evosax(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
+        """Calls the update_step function multiple times.
+
+        Parameters
+        ----------
+        iterations
+            number of iterations
+        function
+            objective function to evaluate
+        """
+        optimizer._construct_model(data_generator)
+
+        optimizer._check_number_of_datapoints()
+
+        for _ in range(_number_of_updates(iterations, population=optimizer.parameter.population)):
+            x, y = optimizer.update_step(function=data_generator)
+            self.add_numpy_arrays(input=x, output=y)
+
+        # Remove overiterations
+        self.remove_rows_bottom(_number_of_overiterations(
+            iterations, population=optimizer.parameter.population))
+
+
+def _number_of_updates(iterations: int, population: int):
+    """Calculate number of update steps to acquire the correct number of iterations
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steps
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of consecutive update steps
+    """
+    return iterations // population + (iterations % population > 0)
+
+
+def _number_of_overiterations(iterations: int, population: int) -> int:
+    """Calculate the number of iterations that are over the iteration limit
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steos
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of iterations that are over the limit
+    """
+    overiterations: int = iterations % population
+    if overiterations == 0:
+        return overiterations
+    else:
+        return population - overiterations

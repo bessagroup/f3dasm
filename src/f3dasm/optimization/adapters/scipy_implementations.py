@@ -21,6 +21,8 @@ __status__ = 'Stable'
 
 
 class _SciPyOptimizer(Optimizer):
+    type: str = 'scipy'
+
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.data += ExperimentSample.from_numpy(xk)
 

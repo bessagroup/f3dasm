@@ -9,7 +9,7 @@ Module containing the interface class Optimizer
 import json
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, ClassVar, List, Mapping, Optional, Tuple
 
 # Third-party core
 import numpy as np
@@ -77,6 +77,7 @@ class Optimizer:
     algorithm: Any = field(init=False)
     parameter: OptimizerParameters = field(init=False)
     name: str = None
+    type: ClassVar[str] = 'any'
 
     def __post_init__(self):
         self._check_imports()
@@ -164,23 +165,23 @@ class Optimizer:
             )
         return
 
-    def _force_bounds(self, x: np.ndarray) -> np.ndarray:
-        """Force the input vector to be within the domain boundaries
+    # def _force_bounds(self, x: np.ndarray) -> np.ndarray:
+    #     """Force the input vector to be within the domain boundaries
 
-        Parameters
-        ----------
-        x
-            input vector
+    #     Parameters
+    #     ----------
+    #     x
+    #         input vector
 
-        Returns
-        -------
-            Input vector clipped to the bounds of the search space
-        """
-        if self.parameter.force_bounds:
-            x = x.clip(min=self.data.domain.get_bounds()[
-                       :, 0], max=self.data.domain.get_bounds()[:, 1])
+    #     Returns
+    #     -------
+    #         Input vector clipped to the bounds of the search space
+    #     """
+    #     if self.parameter.force_bounds:
+    #         x = x.clip(min=self.data.domain.get_bounds()[
+    #                    :, 0], max=self.data.domain.get_bounds()[:, 1])
 
-        return x
+    #     return x
 
     def _construct_model(self, function: DataGenerator):
         """Construct a model necessary for iteration with input of to be evaluated function
@@ -218,17 +219,17 @@ class Optimizer:
         self.data.remove_rows_bottom(_number_of_overiterations(
             iterations, population=self.parameter.population))
 
-    def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
-        """Add the iteration to the dataframe
+    # def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
+    #     """Add the iteration to the dataframe
 
-        Parameters
-        ----------
-        x
-            input data
-        y
-            output data
-        """
-        self.data.add_numpy_arrays(input=x, output=y)
+    #     Parameters
+    #     ----------
+    #     x
+    #         input data
+    #     y
+    #         output data
+    #     """
+    #     self.data.add_numpy_arrays(input=x, output=y)
 
     def extract_data(self) -> ExperimentData:
         """Returns a copy of the data
