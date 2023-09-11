@@ -54,6 +54,21 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class _Optimizer(Protocol):
+    parameter: Any
+
+    def _callback(self, xk: np.ndarray) -> None:
+        ...
+
+    def run_algorithm(self):
+        ...
+
+
+class _DataGenerator(Protocol):
+    def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:
+        ...
+
+
 class _Sampler(Protocol):
     """Protocol class for sampling methods."""
     def get_samples(numsamples: int) -> ExperimentData:
@@ -839,3 +854,68 @@ class ExperimentData:
         self = self.from_file(self.filename)
         # Remove the lockfile from disk
         Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
+
+    # def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+    #     if isinstance(optimizer, ScipyOptimizer):
+    #         self._iterate_scipy(optimizer, data_generator, iterations)
+    #         return
+
+    # def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
+    #     """Calls the update_step function multiple times.
+
+    #     Parameters
+    #     ----------
+    #     iterations
+    #         number of iterations
+    #     function
+    #         objective function to evaluate
+    #     """
+    #     optimizer._construct_model(data_generator)
+
+    #     self._check_number_of_datapoints()
+
+    #     for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
+    #         x, y = optimizer.update_step(function=data_generator)
+
+    #         experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
+
+    #         for x_i, y_i in experiment_samples_to_add:
+    #             self += ExperimentSample.from_numpy(x_i, y_i)
+
+    #     # Remove overiterations
+    #     self.remove_rows_bottom(_number_of_overiterations(
+    #         iterations, population=optimizer.parameter.population))
+
+    # def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+    #     """Iterating on a function
+
+    #     Parameters
+    #     ----------
+    #     iterations
+    #         number of iterations
+    #     function
+    #         function to be evaluated
+    #     """
+    #     n_data_before_iterate = len(self)
+
+    #     optimizer.parameter.maxiter = iterations
+
+    #     optimizer.run_algorithm(iterations, data_generator)
+
+    #     # If x_new is empty, repeat best x0 to fill up total iteration
+    #     if len(self) == n_data_before_iterate:
+    #         repeated_last_element = self.get_n_best_input_parameters_numpy(
+    #             nosamples=1).ravel()
+
+    #         for repetition in range(iterations):
+    #             optimizer._callback(repeated_last_element)
+
+    #     # Repeat last iteration to fill up total iteration
+    #     if len(self) < n_data_before_iterate + iterations:
+    #         last_design = self.get_experiment_sample(len(self)-1)
+
+    #         for repetition in range(iterations - (len(self) - n_data_before_iterate)):
+    #             self += last_design
+
+    #     # Evaluate the function on the extra iterations
+    #     self.run(data_generator.run)
