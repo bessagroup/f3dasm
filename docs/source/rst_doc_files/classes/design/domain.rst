@@ -105,9 +105,9 @@ This will store the domain as a pickle file. It can be loaded into memory again 
 
   domain = Domain.from_file('my_domain')
 
-Helper function for single-objective, n-dimensional continuous Domains
-----------------------------------------------------------------------
- 
+Helper function for n-dimensional continuous Domains
+----------------------------------------------------
+
 We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.domain.make_nd_continuous_domain`. We have to specify the boundaries for each of the dimensions with a numpy array:
 
 .. code-block:: python

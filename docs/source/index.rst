@@ -17,14 +17,21 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
+   :caption: Experiment Data
+   :hidden:
+   :glob:
+
+   rst_doc_files/classes/design/experimentdata
+   rst_doc_files/classes/design/experimentsample
+
+.. toctree::
+   :maxdepth: 2
    :caption: Design of Experiments
    :hidden:
    :glob:
 
    rst_doc_files/classes/design/parameters
    rst_doc_files/classes/design/domain
-   rst_doc_files/classes/design/experimentdata
-   rst_doc_files/classes/design/experimentsample
    rst_doc_files/classes/sampling/sampling
 
 .. toctree::

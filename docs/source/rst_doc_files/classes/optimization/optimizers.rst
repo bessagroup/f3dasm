@@ -60,32 +60,7 @@ After that, we can extract the :class:`~f3dasm.design.experimentdata.ExperimentD
 
 .. _implemented optimizers:
 
-Implemented optimizers
-----------------------
 
-The following implementations of optimizers can found under the :mod:`f3dasm.optimization` module: 
-These are ported from `scipy-optimize <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_
-
-======================== ========================================================================= ===============================================================================================
-Name                      Docs of the Python class                                                 Reference
-======================== ========================================================================= ===============================================================================================
-CG                       :class:`~f3dasm.optimization.cg.CG`                                        `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
-LBFGSB                   :class:`~f3dasm.optimization.lbfgsb.LBFGSB`                                `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
-NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`                        `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
-RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                    self implemented with `numpy <https://numpy.org/doc/>`_
-======================== ========================================================================= ===============================================================================================
-
-Extend the optimization capabilities
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The :mod:`f3dasm.optimization` module is designed to be easily extended by third-party libraries.
-More optimization algorithms are available in the `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_ package, which can be installed via pip:
-
-.. code-block:: bash
-
-    pip install f3dasm_optimize
-
-More information about this extension can be found in the `f3dasm_optimize Documentation <https://bessagroup.github.io/f3dasm_optimize/>`_
 
 Create your own optimizer
 ----------------------------
@@ -142,3 +117,25 @@ Next, we create an new optimizer by inheriting from the :class:`~f3dasm.optimiza
 In order to use the optimizer, we call the :func:`~f3dasm.optimization.optimizer.Optimizer.iterate` method, which for-loops over the :func:`~f3dasm.optimization.optimizer.Optimizer.update_step` method, appending the :code:`x` and :code:`y` values to the internal :attr:`~f3dasm.optimization.optimizer.Optimizer.data` attribute.
 
 
+Default optimizers
+------------------
+
+The following implementations of optimizers can found under the :mod:`f3dasm.optimization` module: 
+These are ported from `scipy-optimize <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_
+
+======================== ========================================================================= ===============================================================================================
+Name                      Docs of the Python class                                                 Reference
+======================== ========================================================================= ===============================================================================================
+CG                       :class:`~f3dasm.optimization.cg.CG`                                        `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
+LBFGSB                   :class:`~f3dasm.optimization.lbfgsb.LBFGSB`                                `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
+NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`                        `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
+RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                    self implemented with `numpy <https://numpy.org/doc/>`_
+======================== ========================================================================= ===============================================================================================
+
+More optimization algorithms are available in the `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_ package, which can be installed via pip:
+
+.. code-block:: bash
+
+    pip install f3dasm_optimize
+
+More information about this extension can be found in the `f3dasm_optimize Documentation <https://bessagroup.github.io/f3dasm_optimize/>`_

@@ -1,5 +1,5 @@
-Design
-======
+Experiment Sample
+=================
 
 A :class:`~f3dasm.design.experimentsample.ExperimentSample` object contains a single realization of the design-of-experiment in :class:`~f3dasm.design.experimentdata.ExperimentData`.
 
@@ -11,7 +11,7 @@ A :class:`~f3dasm.design.experimentsample.ExperimentSample` object contains a si
 |
 
 .. note:: 
-    A :class:`~f3dasm.design.experimentsample.ExperimentSample` is not constructed manually, but created inside the ExperimentData when it is required by internal processes. 
+    A :class:`~f3dasm.design.experimentsample.ExperimentSample` is not constructed manually, but created inside the :class:`~f3dasm.design.experimentdata.ExperimentData` when it is required by internal processes. 
     The main use of the :class:`~f3dasm.design.experimentsample.ExperimentSample` is to pass it to your own functions and scripts to extract design variables and store output variables.
 
 
