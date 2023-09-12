@@ -17,6 +17,7 @@ import numpy as np
 # Locals
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function import Function
+from ..design.domain import Domain
 from ..design.experimentdata import ExperimentData
 from ..design.experimentsample import ExperimentSample
 
@@ -71,12 +72,19 @@ class Optimizer:
         When number of datapoints is lower than the population
     """
 
+    # TODO:
+    # The optimizer needs the domain in order to set bounds
+    # Also, the optimizer needs at least the initial population as a starting point
+    # If a callback is forces, the optimizer caches the data and the experimentdata can append
+    # the cache after optimizing
+    # Investigate if we can get rid of the entire data object
+
     data: ExperimentData
     hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
-    seed: int = np.random.randint(low=0, high=1e5)
+    seed: Optional[int] = np.random.randint(low=0, high=1e5)
     algorithm: Any = field(init=False)
     parameter: OptimizerParameters = field(init=False)
-    name: str = None
+    name: Optional[str] = None
     type: ClassVar[str] = 'any'
 
     def __post_init__(self):

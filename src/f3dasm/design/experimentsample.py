@@ -19,7 +19,7 @@ else:
     from typing import Protocol
 
 # Third-party
-import numpy as np
+import autograd.numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -56,7 +56,7 @@ class NumpyStore(_Store):
     suffix: int = '.npy'
 
     def store(self) -> None:
-        np.save(file=self.path.with_suffix(self.suffix), arr=object)
+        np.save(file=self.path.with_suffix(self.suffix), arr=self.object)
 
     def load(self) -> np.ndarray:
         return np.load(file=self.path.with_suffix(self.suffix))

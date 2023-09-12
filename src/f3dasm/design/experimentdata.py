@@ -24,7 +24,8 @@ if sys.version_info < (3, 8):
 else:
     from typing import Protocol
 
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
+                    Tuple, Type)
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -61,12 +62,13 @@ class _OptimizerParameters(Protocol):
 
 class _Optimizer(Protocol):
     parameter: _OptimizerParameters
+    hyperparameters: _OptimizerParameters
     type: str
 
     def _callback(self, xk: np.ndarray) -> None:
         ...
 
-    def run_algorithm(self):
+    def run_algorithm(self, iterations: int, data_generator: _DataGenerator):
         ...
 
     def _check_number_of_datapoints(self) -> None:
@@ -76,6 +78,15 @@ class _Optimizer(Protocol):
         ...
 
     def _construct_model(self, function: _DataGenerator) -> None:
+        ...
+
+    def set_x0(self, experiment_data: ExperimentData) -> None:
+        ...
+
+    def set_data(self, data: ExperimentData) -> None:
+        ...
+
+    def reset(self) -> None:
         ...
 
 
@@ -139,6 +150,10 @@ class ExperimentData:
     def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
         # Check if the domains are the same
+
+        if not isinstance(other, (ExperimentData, ExperimentSample)):
+            raise TypeError(f"Can only add ExperimentData or ExperimentSample objects, not {type(other)}")
+
         if isinstance(other, ExperimentData) and self.domain != other.domain:
             raise ValueError("Cannot add ExperimentData objects with different domains")
 
@@ -146,6 +161,11 @@ class ExperimentData:
                                            self.output_data + other.output_data,
                                            self.jobs + other.jobs, self.domain,
                                            self.filename)
+
+    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+        """The [] operator returns a single datapoint or a subset of datapoints"""
+        return ExperimentData._from_object(self.input_data[index], self.output_data[index],
+                                           self.jobs[index], self.domain, self.filename)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
@@ -249,10 +269,12 @@ class ExperimentData:
 
         if dataframe_output is not None:
             experimentdata.output_data = _Data.from_dataframe(dataframe_output)
+            value = FINISHED
         elif dataframe_output is None:
             experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
+            value = OPEN
 
-        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
+        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data, value)
 
         return experimentdata
 
@@ -285,6 +307,38 @@ class ExperimentData:
             df_output = None
 
         return cls.from_dataframe(df_input, df_output, domain, filename_input.stem)
+
+    @classmethod
+    def from_numpy(cls, domain: Domain, input_array: np.ndarray,
+                   output_array: Optional[np.ndarray] = None, output_names: Iterable[str] = ['y'],
+                   filename: Optional[str] = 'experimentdata') -> ExperimentData:
+        """Create an ExperimentData object from numpy arrays.
+
+        Parameters
+        ----------
+        domain : Domain
+            Domain of the search space
+        input_array : np.ndarray
+            2D numpy array containing the input data. The shape should be (n_samples, n_inputs)
+        output_array : Optional[np.ndarray], optional
+            2D numpy array containing the output data. The shape should be (n_samples, n_outputs)
+        output_names : Iterable[str], optional
+            Names of the output columns, by default ['y']
+        filename : Optional[str], optional
+            name of the created ExperimentData object, by default 'experimentdata'
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+
+        dataframe_input = pd.DataFrame(input_array, columns=domain.names)
+        if output_array is None:
+            dataframe_output = None
+        else:
+            dataframe_output = pd.DataFrame(output_array, columns=output_names)
+        return cls.from_dataframe(dataframe_input, dataframe_output, domain, filename)
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
@@ -401,10 +455,6 @@ class ExperimentData:
     #                                                                        Export
     # =============================================================================
 
-    def __getitem__(self, indices: int | slice | list | tuple) -> ExperimentData:
-        return ExperimentData._from_object(self.input_data[indices], self.output_data[indices],
-                                           self.jobs[indices], self.domain, self.filename)
-
     def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock
 
@@ -461,6 +511,10 @@ class ExperimentData:
         df = self.output_data.n_best_samples(nosamples, self.output_data.names)
         return self.input_data.data.loc[df.index]
 
+    def get_n_best_output(self, n_samples: int) -> ExperimentData:
+        df = self.output_data.n_best_samples(n_samples, self.output_data.names)
+        return self[df.index]
+
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
         """
         Get the input parameters of the n best output samples from the ExperimentData object.
@@ -501,6 +555,19 @@ class ExperimentData:
 
     #                                                         Append or remove data
     # =============================================================================
+
+    def add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
+        """
+        Add an ExperimentSample or ExperimentData to the ExperimentData attribute.
+
+        Parameters
+        ----------
+        experiment_sample : ExperimentSample or ExperimentData
+            Experiment(s) to add.
+        """
+        self.input_data += experiment_sample.input_data
+        self.output_data += experiment_sample.output_data
+        self.jobs += experiment_sample.jobs
 
     def add_new_input_column(self, name: str, parameter: Parameter) -> None:
         """Add a new input column to the ExperimentData object.
@@ -601,6 +668,14 @@ class ExperimentData:
         self.input_data.remove(indices)
         self.output_data.remove(indices)
         self.jobs.remove(indices)
+
+    def reset_index(self) -> None:
+        """
+        Reset the index of the ExperimentData object.
+        """
+        self.input_data.reset_index()
+        self.output_data.reset_index()
+        self.jobs.reset_index()
 
     #                                                                        ExperimentSample
     # =============================================================================
@@ -716,7 +791,8 @@ class ExperimentData:
     #                                                            Run datageneration
     # =============================================================================
 
-    def run(self, operation: _ExperimentSampleCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
+    def run(self, operation: _ExperimentSampleCallable, mode: str = 'sequential',
+            kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirery of the experiments
 
         Parameters
@@ -891,17 +967,74 @@ class ExperimentData:
 
         optimizer._check_number_of_datapoints()
 
-        for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
+        for _ in range(_number_of_updates(iterations, population=optimizer.parameter.population)):
             x, y = optimizer.update_step(function=data_generator)
 
             experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
-
             for x_i, y_i in experiment_samples_to_add:
-                self += ExperimentSample.from_numpy(x_i, y_i)
+                self.add_experiments(ExperimentSample.from_numpy(x_i, y_i))
 
         # Remove overiterations
         self.remove_rows_bottom(_number_of_overiterations(
             iterations, population=optimizer.parameter.population))
+
+    def _iterate2(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                  iterations: int, kwargs: Optional[dict] = None):
+
+        optimizer.set_x0(self)
+        optimizer._check_number_of_datapoints()
+
+        optimizer._construct_model(data_generator)
+
+        for _ in range(_number_of_updates(iterations, population=optimizer.hyperparameters.population)):
+            new_samples = optimizer.update_step(data_generator)
+            self.add_experiments(new_samples)
+
+            # If applicable, evaluate the new designs:
+            self.run(data_generator, mode='sequential', kwargs=kwargs)
+
+            optimizer.set_data(self)
+
+        # Remove overiterations
+        self.remove_rows_bottom(_number_of_overiterations(
+            iterations, population=optimizer.hyperparameters.population))
+
+        # Reset the optimizer
+        optimizer.reset()
+
+    def _iterate2_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                        iterations: int, kwargs: Optional[dict] = None):
+
+        optimizer.set_x0(self)
+        n_data_before_iterate = len(optimizer.data)
+        optimizer._check_number_of_datapoints()
+
+        optimizer.run_algorithm(iterations, data_generator)
+
+        self.add_experiments(optimizer.data)
+
+        # TODO: At the end, the data should have n_data_before_iterate + iterations amount of elements!
+
+        # If x_new is empty, repeat best x0 to fill up total iteration
+        if len(self) == n_data_before_iterate:
+            repeated_last_element = self.get_n_best_input_parameters_numpy(
+                nosamples=1).ravel()
+
+            for repetition in range(iterations):
+                self.add_experiments(ExperimentSample.from_numpy(repeated_last_element))
+
+        # Repeat last iteration to fill up total iteration
+        if len(self) < n_data_before_iterate + iterations:
+            last_design = self.get_experiment_sample(len(self)-1)
+
+            for repetition in range(iterations - (len(self) - n_data_before_iterate)):
+                self.add_experiments(last_design)
+
+        # Evaluate the function on the extra iterations
+        self.run(data_generator.run)
+
+        # Reset the optimizer
+        optimizer.reset()
 
     def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
         """Iterating on a function
@@ -919,20 +1052,22 @@ class ExperimentData:
 
         optimizer.run_algorithm(iterations, data_generator)
 
+        # TODO: Make sure that the data from run_algorithm is stored to the self ExperimentData!
+
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
             repeated_last_element = self.get_n_best_input_parameters_numpy(
                 nosamples=1).ravel()
 
             for repetition in range(iterations):
-                optimizer._callback(repeated_last_element)
+                self.add_experiments(ExperimentSample.from_numpy(repeated_last_element))
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
             last_design = self.get_experiment_sample(len(self)-1)
 
             for repetition in range(iterations - (len(self) - n_data_before_iterate)):
-                self += last_design
+                self.add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
         self.run(data_generator.run)

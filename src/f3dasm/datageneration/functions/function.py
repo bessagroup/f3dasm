@@ -18,9 +18,9 @@ import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 from autograd import grad
 
+from ...design.experimentdata import ExperimentData
 # Locals
 from ...design.experimentsample import ExperimentSample
-from ...design.experimentdata import ExperimentData
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 
@@ -89,6 +89,10 @@ class Function(DataGenerator):
     def execute(self, experiment_sample: ExperimentSample) -> ExperimentSample:
         x, _ = experiment_sample.to_numpy()
         experiment_sample['y'] = float(self(x).ravel())
+        # try:
+        #     experiment_sample['y'] = float(self(x).ravel())
+        # except TypeError:  # float() argument must be a string or a number, not 'ArrayBox'
+        #     experiment_sample['y'] = float(self(x).ravel()._value)
         return experiment_sample
 
     def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:

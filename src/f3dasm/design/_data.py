@@ -85,7 +85,6 @@ class _Data:
         if isinstance(other, Dict):
             other = _Data(pd.DataFrame(other, index=[0]).copy())
 
-
         try:
             last_index = self.data.index[-1]
         except IndexError:  # Empty DataFrame
@@ -291,3 +290,7 @@ class _Data:
             self.data.loc[index] = value
         else:
             self.data.at[index, column] = value
+
+    def reset_index(self) -> None:
+        """Reset the index of the data."""
+        self.data.reset_index(drop=True, inplace=True)
