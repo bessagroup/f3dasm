@@ -10,6 +10,7 @@ functions. It can be called with an input vector to evaluate the function at tha
 from __future__ import annotations
 
 # Standard
+from copy import copy
 from typing import Optional, Tuple
 
 # Third-party core
@@ -17,6 +18,7 @@ import autograd.numpy as np
 import matplotlib.colors as mcol
 import matplotlib.pyplot as plt
 from autograd import grad
+from autograd.numpy.numpy_boxes import ArrayBox
 
 from ...design.experimentdata import ExperimentData
 # Locals
@@ -88,11 +90,13 @@ class Function(DataGenerator):
 
     def execute(self, experiment_sample: ExperimentSample) -> ExperimentSample:
         x, _ = experiment_sample.to_numpy()
-        experiment_sample['y'] = float(self(x).ravel())
-        # try:
-        #     experiment_sample['y'] = float(self(x).ravel())
-        # except TypeError:  # float() argument must be a string or a number, not 'ArrayBox'
-        #     experiment_sample['y'] = float(self(x).ravel()._value)
+
+        if isinstance(x, ArrayBox):
+            x = x._value
+            if isinstance(x, ArrayBox):
+                x = x._value
+
+        experiment_sample["y"] = self(x).ravel().astype(np.float32)
         return experiment_sample
 
     def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:
@@ -151,7 +155,6 @@ class Function(DataGenerator):
 
         grad = []
         for index, param in enumerate(x):
-            # print(f"{index} {param}")
             h = np.zeros(x.shape)
             h[index] = dx
             grad.append(central_differences(x=param, h=h))

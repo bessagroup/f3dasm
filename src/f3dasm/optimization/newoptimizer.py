@@ -302,7 +302,7 @@ class TensorflowOptimizer(NewOptimizer):
     def update_step(self, data_generator: DataGenerator) -> ExperimentData:
         with tf.GradientTape() as tape:
             tape.watch(self.args["tvars"])
-            logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)
+            logits = 0.0 + tf.cast(self.args["model"](None), tf.float64)  # tf.float32
             loss = self.args["func"](tf.reshape(
                 logits, (len(self.domain))))
 
@@ -315,7 +315,7 @@ class TensorflowOptimizer(NewOptimizer):
         # return the data
         return ExperimentData.from_numpy(domain=self.domain,
                                          input_array=x,
-                                         output_array=y)
+                                         output_array=np.atleast_2d(np.array(y)))
 
     def _construct_model(self, data_generator: DataGenerator):
         self.args = {}
@@ -323,7 +323,7 @@ class TensorflowOptimizer(NewOptimizer):
         def fitness(x: np.ndarray) -> np.ndarray:
             evaluated_sample: ExperimentSample = data_generator.run(ExperimentSample.from_numpy(x))
             _, y_ = evaluated_sample.to_numpy()
-            return float(y_)
+            return y_
 
         self.args["model"] = _SimpelModel(
             None,
@@ -336,7 +336,7 @@ class TensorflowOptimizer(NewOptimizer):
         self.args["tvars"] = self.args["model"].trainable_variables
 
         # TODO: This is an important conversion!!
-        self.args["func"] = _convert_autograd_to_tensorflow(fitness)
+        self.args["func"] = _convert_autograd_to_tensorflow(data_generator.__call__)
 
 
 def _convert_autograd_to_tensorflow(func: Callable):

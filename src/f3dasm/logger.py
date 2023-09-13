@@ -63,7 +63,6 @@ class DistributedFileHandler(FileHandler):
                 StreamHandler.emit(self, record)
 
                 _unlock_file(self.stream)
-                # print("Succesfully logged!")
 
                 break
             except IOError as e:
