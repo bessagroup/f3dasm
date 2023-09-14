@@ -13,7 +13,8 @@ from typing import List, Tuple
 import autograd.numpy as np
 
 # Locals
-from ..datageneration.functions import Function
+from ..datageneration.datagenerator import DataGenerator
+from ..design.experimentdata import ExperimentData
 from .optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits
@@ -36,20 +37,34 @@ class RandomSearch_Parameters(OptimizerParameters):
 class RandomSearch(Optimizer):
     """Naive random search"""
 
-    parameter: RandomSearch_Parameters = RandomSearch_Parameters()
+    hyperparameters: RandomSearch_Parameters = RandomSearch_Parameters()
 
-    def update_step(self, function: Function) -> Tuple[np.ndarray, np.ndarray]:
+    def set_seed(self):
+        np.random.seed(self.seed)
+
+    def update_step(self, data_generator: DataGenerator) -> ExperimentData:
+        self.set_seed()
 
         x_new = np.atleast_2d(
             [
                 np.random.uniform(
-                    low=self.data.domain.get_bounds()[d, 0], high=self.data.domain.get_bounds()[d, 1])
-                for d in range(len(self.data.domain))
+                    low=self.domain.get_bounds()[d, 0], high=self.domain.get_bounds()[d, 1])
+                for d in range(len(self.domain))
             ]
         )
 
-        return x_new, function(x_new)
-        # self.data.add_numpy_arrays(input=x_new, output=function(x_new))
+        x_experimentdata = ExperimentData.from_numpy(domain=self.domain, input_array=x_new)
+
+        # Evaluate the candidates
+        x_experimentdata = ExperimentData.from_numpy(domain=self.domain, input_array=x_new)
+        x_experimentdata.run(data_generator)
+
+        _, y = x_experimentdata.to_numpy()
+
+        # return the data
+        return ExperimentData.from_numpy(domain=self.domain,
+                                         input_array=x_new,
+                                         output_array=np.atleast_2d(y))
 
     def get_info(self) -> List[str]:
         return ['Fast', 'Single-Solution']

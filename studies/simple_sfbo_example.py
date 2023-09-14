@@ -20,7 +20,7 @@ def main():
     optimizer.init_parameters()
     res = run_optimization(
         optimizer=optimizer,
-        function=fun,
+        data_generator=fun,
         sampler=SobolSampler,
         iterations=40,
         seed=123,

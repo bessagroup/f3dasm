@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import List
 
 # Locals
-from .adapters.scipy_implementations import _SciPyMinimizeOptimizer
+from .adapters.scipy_implementations import _SciPyOptimizer
 from .optimizer import OptimizerParameters
 
 #                                                          Authorship & Credits
@@ -31,11 +31,11 @@ class NelderMead_Parameters(OptimizerParameters):
     adaptive: bool = False
 
 
-class NelderMead(_SciPyMinimizeOptimizer):
+class NelderMead(_SciPyOptimizer):
     """Nelder-Mead"""
 
     method: str = "Nelder-Mead"
-    parameter: NelderMead_Parameters = NelderMead_Parameters()
+    hyperparameters: NelderMead_Parameters = NelderMead_Parameters()
 
     def get_info(self) -> List[str]:
         return ['Fast', 'Global', 'First-Order', 'Single-Solution']

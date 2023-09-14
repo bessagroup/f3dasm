@@ -99,6 +99,9 @@ class _JobQueue:
             index = [index]
         return _JobQueue(self.jobs[index].copy())
 
+    def __eq__(self, __o: _JobQueue) -> bool:
+        return self.jobs.equals(__o.jobs)
+
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 
@@ -106,20 +109,22 @@ class _JobQueue:
     # =============================================================================
 
     @classmethod
-    def from_data(cls: Type[_JobQueue], data: _Data):
+    def from_data(cls: Type[_JobQueue], data: _Data, value: str = OPEN) -> _JobQueue:
         """Create a JobQueue object from a Data object.
 
         Parameters
         ----------
         data : Data
             Data object containing the data.
+        value : str
+            The value to assign to the jobs. Can be 'open', 'in progress', 'finished', or 'error'.
 
         Returns
         -------
         JobQueue
             JobQueue object containing the loaded data.
         """
-        return cls(pd.Series([OPEN] * len(data), dtype='string'))
+        return cls(pd.Series([value] * len(data), dtype='string'))
 
     @classmethod
     def from_file(cls: Type[_JobQueue], filename: Path) -> _JobQueue:
@@ -194,7 +199,7 @@ class _JobQueue:
     #                                                                          Mark
     # =============================================================================
 
-    def mark_as_in_progress(self, index: int) -> None:
+    def mark_as_in_progress(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as in progress.
 
         Parameters
@@ -204,7 +209,7 @@ class _JobQueue:
         """
         self.jobs.loc[index] = IN_PROGRESS
 
-    def mark_as_finished(self, index: int) -> None:
+    def mark_as_finished(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
 
         Parameters
@@ -214,7 +219,7 @@ class _JobQueue:
         """
         self.jobs.loc[index] = FINISHED
 
-    def mark_as_error(self, index: int) -> None:
+    def mark_as_error(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
 
         Parameters
@@ -257,3 +262,7 @@ class _JobQueue:
             return int(self.jobs[self.jobs == OPEN].index[0])
         except IndexError:
             raise NoOpenJobsError("No open jobs found.")
+
+    def reset_index(self) -> None:
+        """Resets the index of the jobs."""
+        self.jobs.reset_index(drop=True, inplace=True)

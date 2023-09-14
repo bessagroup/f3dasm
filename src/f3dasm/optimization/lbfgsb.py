@@ -9,7 +9,7 @@ L-BFGS-B optimizer
 from dataclasses import dataclass
 from typing import List
 
-from .adapters.scipy_implementations import _SciPyMinimizeOptimizer
+from .adapters.scipy_implementations import _SciPyOptimizer
 # Locals
 from .optimizer import OptimizerParameters
 
@@ -31,11 +31,11 @@ class LBFGSB_Parameters(OptimizerParameters):
     gtol: float = 0.0
 
 
-class LBFGSB(_SciPyMinimizeOptimizer):
+class LBFGSB(_SciPyOptimizer):
     """L-BFGS-B"""
 
     method: str = "L-BFGS-B"
-    parameter: LBFGSB_Parameters = LBFGSB_Parameters()
+    hyperparameters: LBFGSB_Parameters = LBFGSB_Parameters()
 
     def get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']

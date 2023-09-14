@@ -19,12 +19,13 @@ from io import TextIOWrapper
 from pathlib import Path
 from time import sleep
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Protocol
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Protocol  # NOQA
 else:
     from typing import Protocol
 
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
+                    Tuple, Type)
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -52,6 +53,45 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+
+class _OptimizerParameters(Protocol):
+    maxiter: int
+    population: int
+
+
+class _Optimizer(Protocol):
+    hyperparameters: _OptimizerParameters
+    type: str
+
+    def _callback(self, xk: np.ndarray) -> None:
+        ...
+
+    def run_algorithm(self, iterations: int, data_generator: _DataGenerator):
+        ...
+
+    def _check_number_of_datapoints(self) -> None:
+        ...
+
+    def update_step(self, data_generator: _DataGenerator) -> ExperimentData:
+        ...
+
+    def _construct_model(self, data_generator: _DataGenerator) -> None:
+        ...
+
+    def set_x0(self, experiment_data: ExperimentData) -> None:
+        ...
+
+    def set_data(self, data: ExperimentData) -> None:
+        ...
+
+    def reset(self) -> None:
+        ...
+
+
+class _DataGenerator(Protocol):
+    def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:
+        ...
 
 
 class _Sampler(Protocol):
@@ -109,6 +149,10 @@ class ExperimentData:
     def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
         # Check if the domains are the same
+
+        if not isinstance(other, (ExperimentData, ExperimentSample)):
+            raise TypeError(f"Can only add ExperimentData or ExperimentSample objects, not {type(other)}")
+
         if isinstance(other, ExperimentData) and self.domain != other.domain:
             raise ValueError("Cannot add ExperimentData objects with different domains")
 
@@ -116,6 +160,17 @@ class ExperimentData:
                                            self.output_data + other.output_data,
                                            self.jobs + other.jobs, self.domain,
                                            self.filename)
+
+    def __eq__(self, __o: ExperimentData) -> bool:
+        return all([self.input_data == __o.input_data,
+                    self.output_data == __o.output_data,
+                    self.jobs == __o.jobs,
+                    self.domain == __o.domain])
+
+    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+        """The [] operator returns a single datapoint or a subset of datapoints"""
+        return ExperimentData._from_object(self.input_data[index], self.output_data[index],
+                                           self.jobs[index], self.domain, self.filename)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
@@ -219,10 +274,12 @@ class ExperimentData:
 
         if dataframe_output is not None:
             experimentdata.output_data = _Data.from_dataframe(dataframe_output)
+            value = FINISHED
         elif dataframe_output is None:
             experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
+            value = OPEN
 
-        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data)
+        experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data, value)
 
         return experimentdata
 
@@ -255,6 +312,38 @@ class ExperimentData:
             df_output = None
 
         return cls.from_dataframe(df_input, df_output, domain, filename_input.stem)
+
+    @classmethod
+    def from_numpy(cls, domain: Domain, input_array: np.ndarray,
+                   output_array: Optional[np.ndarray] = None, output_names: Iterable[str] = ['y'],
+                   filename: Optional[str] = 'experimentdata') -> ExperimentData:
+        """Create an ExperimentData object from numpy arrays.
+
+        Parameters
+        ----------
+        domain : Domain
+            Domain of the search space
+        input_array : np.ndarray
+            2D numpy array containing the input data. The shape should be (n_samples, n_inputs)
+        output_array : Optional[np.ndarray], optional
+            2D numpy array containing the output data. The shape should be (n_samples, n_outputs)
+        output_names : Iterable[str], optional
+            Names of the output columns, by default ['y']
+        filename : Optional[str], optional
+            name of the created ExperimentData object, by default 'experimentdata'
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+
+        dataframe_input = pd.DataFrame(input_array, columns=domain.names)
+        if output_array is None:
+            dataframe_output = None
+        else:
+            dataframe_output = pd.DataFrame(output_array, columns=output_names)
+        return cls.from_dataframe(dataframe_input, dataframe_output, domain, filename)
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
@@ -371,11 +460,6 @@ class ExperimentData:
     #                                                                        Export
     # =============================================================================
 
-    def __getitem__(self, indices: int | slice | list | tuple) -> ExperimentData:
-        return ExperimentData._from_object(self.input_data[indices], self.output_data[indices],
-                                           self.jobs[indices], self.domain, self.filename)
-
-
     def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock
 
@@ -432,6 +516,10 @@ class ExperimentData:
         df = self.output_data.n_best_samples(nosamples, self.output_data.names)
         return self.input_data.data.loc[df.index]
 
+    def get_n_best_output(self, n_samples: int) -> ExperimentData:
+        df = self.output_data.n_best_samples(n_samples, self.output_data.names)
+        return self[df.index]
+
     def get_n_best_input_parameters_numpy(self, nosamples: int) -> np.ndarray:
         """
         Get the input parameters of the n best output samples from the ExperimentData object.
@@ -472,6 +560,22 @@ class ExperimentData:
 
     #                                                         Append or remove data
     # =============================================================================
+
+    def add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
+        """
+        Add an ExperimentSample or ExperimentData to the ExperimentData attribute.
+
+        Parameters
+        ----------
+        experiment_sample : ExperimentSample or ExperimentData
+            Experiment(s) to add.
+        """
+        if isinstance(experiment_sample, ExperimentData):
+            experiment_sample.reset_index()
+
+        self.input_data += experiment_sample.input_data
+        self.output_data += experiment_sample.output_data
+        self.jobs += experiment_sample.jobs
 
     def add_new_input_column(self, name: str, parameter: Parameter) -> None:
         """Add a new input column to the ExperimentData object.
@@ -551,7 +655,10 @@ class ExperimentData:
         if label not in self.output_data.names:
             self.output_data.add_column(label)
 
-        self.output_data.fill_numpy_arrays(output)
+        filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(output)
+
+        # Set the status of the filled indices to FINISHED
+        self.jobs.mark_as_finished(filled_indices)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -572,6 +679,14 @@ class ExperimentData:
         self.input_data.remove(indices)
         self.output_data.remove(indices)
         self.jobs.remove(indices)
+
+    def reset_index(self) -> None:
+        """
+        Reset the index of the ExperimentData object.
+        """
+        self.input_data.reset_index()
+        self.output_data.reset_index()
+        self.jobs.reset_index()
 
     #                                                                        ExperimentSample
     # =============================================================================
@@ -687,13 +802,14 @@ class ExperimentData:
     #                                                            Run datageneration
     # =============================================================================
 
-    def run(self, operation: _ExperimentSampleCallable, mode: str = 'sequential', kwargs: dict = None) -> None:
+    def run(self, data_generator: _DataGenerator, mode: str = 'sequential',
+            kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirery of the experiments
 
         Parameters
         ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
+        data_generator : DataGenerator
+            data grenerator to use
         mode, optional
             operational mode, by default 'sequential'
         kwargs, optional
@@ -701,28 +817,22 @@ class ExperimentData:
 
         Raises
         ------
-        TypeError
-            Raised when the operation is not a callable function
         ValueError
             Raised when invalid parallelization mode is specified
         """
         if kwargs is None:
             kwargs = {}
 
-        # Check if operation is a function
-        if not callable(operation):
-            raise TypeError("operation must be a function.")
-
         if mode.lower() == "sequential":
-            return self._run_sequential(operation, kwargs)
+            return self._run_sequential(data_generator, kwargs)
         elif mode.lower() == "parallel":
-            return self._run_multiprocessing(operation, kwargs)
+            return self._run_multiprocessing(data_generator, kwargs)
         elif mode.lower() == "cluster":
-            return self._run_cluster(operation, kwargs)
+            return self._run_cluster(data_generator, kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_sequential(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation sequentially
 
         Parameters
@@ -754,7 +864,7 @@ class ExperimentData:
                     logger.info(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _experiment_sample = operation(experiment_sample, **kwargs)  # no *args!
+                _experiment_sample = data_generator.run(experiment_sample, **kwargs)  # no *args!
                 self.set_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -762,7 +872,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_multiprocessing(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
@@ -789,7 +899,7 @@ class ExperimentData:
 
         def f(options: Dict[str, Any]) -> Any:
             logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
-            return operation(**options)
+            return data_generator.run(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
@@ -798,7 +908,7 @@ class ExperimentData:
         for _experiment_sample in _experiment_samples:
             self.set_experiment_sample(_experiment_sample)
 
-    def _run_cluster(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_cluster(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation on the cluster
 
         Parameters
@@ -827,7 +937,7 @@ class ExperimentData:
                 break
 
             try:
-                _experiment_sample = operation(experiment_sample, **kwargs)
+                _experiment_sample = data_generator.run(experiment_sample, **kwargs)
                 self.write_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -839,3 +949,104 @@ class ExperimentData:
         self = self.from_file(self.filename)
         # Remove the lockfile from disk
         Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
+
+    def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+        if optimizer.type == 'scipy':
+            self._iterate_scipy(optimizer, data_generator, iterations)
+        else:
+            self._iterate(optimizer, data_generator, iterations)
+
+    def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                 iterations: int, kwargs: Optional[dict] = None):
+
+        optimizer.set_x0(self)
+        optimizer._check_number_of_datapoints()
+
+        optimizer._construct_model(data_generator)
+
+        for _ in range(_number_of_updates(iterations, population=optimizer.hyperparameters.population)):
+            new_samples = optimizer.update_step(data_generator)
+            self.add_experiments(new_samples)
+
+            # If applicable, evaluate the new designs:
+            self.run(data_generator, mode='sequential', kwargs=kwargs)
+
+            optimizer.set_data(self)
+
+        # Remove overiterations
+        self.remove_rows_bottom(_number_of_overiterations(
+            iterations, population=optimizer.hyperparameters.population))
+
+        # Reset the optimizer
+        optimizer.reset()
+
+    def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                       iterations: int, kwargs: Optional[dict] = None):
+
+        optimizer.set_x0(self)
+        n_data_before_iterate = len(self)
+        optimizer._check_number_of_datapoints()
+
+        optimizer.run_algorithm(iterations, data_generator)
+
+        self.add_experiments(optimizer.data)
+
+        # TODO: At the end, the data should have n_data_before_iterate + iterations amount of elements!
+        # If x_new is empty, repeat best x0 to fill up total iteration
+        if len(self) == n_data_before_iterate:
+            repeated_last_element = self.get_n_best_input_parameters_numpy(
+                nosamples=1).ravel()
+
+            for repetition in range(iterations):
+                self.add_experiments(ExperimentSample.from_numpy(repeated_last_element))
+
+        # Repeat last iteration to fill up total iteration
+        if len(self) < n_data_before_iterate + iterations:
+            last_design = self.get_experiment_sample(len(self)-1)
+
+            for repetition in range(iterations - (len(self) - n_data_before_iterate)):
+                self.add_experiments(last_design)
+
+        # Evaluate the function on the extra iterations
+        self.run(data_generator, mode='sequential')
+
+        # Reset the optimizer
+        optimizer.reset()
+
+
+def _number_of_updates(iterations: int, population: int):
+    """Calculate number of update steps to acquire the correct number of iterations
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steps
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of consecutive update steps
+    """
+    return iterations // population + (iterations % population > 0)
+
+
+def _number_of_overiterations(iterations: int, population: int) -> int:
+    """Calculate the number of iterations that are over the iteration limit
+
+    Parameters
+    ----------
+    iterations
+        number of desired iteration steos
+    population
+        the population size of the optimizer
+
+    Returns
+    -------
+        number of iterations that are over the limit
+    """
+    overiterations: int = iterations % population
+    if overiterations == 0:
+        return overiterations
+    else:
+        return population - overiterations

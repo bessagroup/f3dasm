@@ -9,7 +9,6 @@ Module for sampling
 from typing import List
 
 # Locals
-from .combination import Combination
 from .latinhypercube import LatinHypercube
 from .randomuniform import RandomUniform
 from .sampler import Sampler
@@ -29,7 +28,7 @@ SAMPLERS: List[Sampler] = [RandomUniform, LatinHypercube, SobolSequence]
 
 
 def find_sampler(query: str) -> Sampler:
-    """Find a Sampler from the f3dasm.sampling submodule
+    """Find a Sampler from the sampling submodule
 
     Parameters
     ----------
@@ -51,7 +50,6 @@ __all__ = [
     'RandomUniform',
     'Sampler',
     'SobolSequence',
-    'Combination',
     'SAMPLERS',
     'find_sampler'
 ]
