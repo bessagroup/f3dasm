@@ -28,7 +28,7 @@ SAMPLERS: List[Sampler] = [RandomUniform, LatinHypercube, SobolSequence]
 
 
 def find_sampler(query: str) -> Sampler:
-    """Find a Sampler from the f3dasm.sampling submodule
+    """Find a Sampler from the sampling submodule
 
     Parameters
     ----------
