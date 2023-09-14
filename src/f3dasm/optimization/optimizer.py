@@ -9,7 +9,7 @@ Module containing the interface class Optimizer
 import json
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Mapping, Optional, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Tuple
 
 # Third-party core
 import numpy as np
@@ -47,212 +47,111 @@ class OptimizerParameters:
     force_bounds: bool = True
 
 
-@dataclass
 class Optimizer:
-    """Mainclass to inherit from to implement optimization algorithms
-
-    Parameters
-    -------
-    data : f3dasm.base.data.Data
-        Data-object
-    hyperparameters : dict
-        Dictionary with hyperparameteres
-    seed : int
-        seed to set the optimizer
-    defaults : OptimizerParameters
-        Default hyperparameter arguments
-    name : str
-        Name of the optimizer object. Default to classname. Optional.
-
-    Raises
-    ------
-    NotImplementedError
-        When no update step is implemented
-    ValueError
-        When number of datapoints is lower than the population
-    """
-
-    # TODO:
-    # The optimizer needs the domain in order to set bounds
-    # Also, the optimizer needs at least the initial population as a starting point
-    # If a callback is forces, the optimizer caches the data and the experimentdata can append
-    # the cache after optimizing
-    # Investigate if we can get rid of the entire data object
-
-    data: ExperimentData
-    hyperparameters: Optional[Mapping[str, Any]] = field(default_factory=dict)
-    seed: Optional[int] = np.random.randint(low=0, high=1e5)
-    algorithm: Any = field(init=False)
-    parameter: OptimizerParameters = field(init=False)
-    name: Optional[str] = None
     type: ClassVar[str] = 'any'
+    hyperparameters: OptimizerParameters = OptimizerParameters()
 
-    def __post_init__(self):
-        self._check_imports()
-
-        if self.name is None:
-            self.name = self.__class__.__name__
-
-        if self.seed:
-            self.set_seed(self.seed)
-
-        self.init_parameters()
-        self._set_hyperparameters()
-        self.set_algorithm()
-
-    def reset(self):
-        """Reset the optimizer"""
-        self.__post_init__()
-
-    @staticmethod
-    def set_seed(seed: int):
-        """Set the seed of the optimizer. Needs to be inherited
+    def __init__(self, domain: Domain, hyperparameters: Optional[Dict[str, Any]] = None,
+                 seed: Optional[int] = None, name: Optional[str] = None):
+        """Optimizer class for the optimization of a data-driven process
 
         Parameters
         ----------
-        seed
-            seed for the random number generator
+        domain : Domain
+            Domain indicating the search-space of the optimization parameters
+        hyperparameters : Optional[Dict[str, Any]], optional
+            Hyperparameters of the optimizer, by default None, it will use the default hyperparameters
+        seed : Optional[int], optional
+            Seed of the random number generator for stochastic optimization processes, by default None, set to random
+        name : Optional[str], optional
+            Name of the optimization object, by default None, it will use the name of the class
         """
-        pass
+        # Create an empty dictionary when hyperparameters is None
+        if hyperparameters is None:
+            hyperparameters = {}
+
+        # Overwrite the default hyperparameters with the given hyperparameters
+        self.hyperparameters.__init__(**hyperparameters)
+
+        # Set the name of the optimizer to the class name if no name is given
+        if name is None:
+            name = self.__class__.__name__
+
+        # Set the seed to a random number if no seed is given
+        if seed is None:
+            seed = np.random.randint(low=0, high=1e5)
+
+        self.domain = domain
+        self.seed = seed
+        self.name = name
+        self.__post_init__()
+
+    def __post_init__(self):
+        self._check_imports()
+        self.set_seed()
+        self.init_data()
+        self.set_algorithm()
 
     @staticmethod
     def _check_imports():
         ...
 
-    def init_parameters(self):
-        """Set the initialization parameters. This could be dynamic or static hyperparameters."""
-        pass
+    def init_data(self):
+        """Set the data atrribute to an empty ExperimentData object"""
+        self.data = ExperimentData(self.domain)
 
     def set_algorithm(self):
-        """If necessary, the algorithm needs to be set"""
-        pass
+        """Set the algorithm attribute to the algorithm of choice"""
+        ...
 
-    def update_step(self, function: DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
-        """One iteration of the algorithm.
+    def _construct_model(self, data_generator: DataGenerator):
+        ...
 
-        Parameters
-        ----------
-        function
-            Objective function to evaluate
-
-        Returns
-        -------
-            tuple of new input vector and resulting output vector
-
+    def _check_number_of_datapoints(self):
+        """Check if the number of datapoints is sufficient for the initial population
 
         Raises
         ------
-        NotImplementedError
-            You should implement an update step for your algorithm!
+        ValueError
+            Raises then the number of datapoints is insufficient
         """
-        raise NotImplementedError(
-            "You should implement an update step for your algorithm!")
-
-    def set_data(self, data: ExperimentData):
-        """Overwrite the data attribute
-
-        Parameters
-        ----------
-        data
-            data object
-        """
-        self.data = data
-
-    def _set_hyperparameters(self):
-        """New way of setting hyperparameters with dedicated class"""
-        # if isinstance(self.hyperparameters, dict):
-        #     # Create instance of the specific hyperparameter class
-        self.parameter.__init__(**self.hyperparameters)
-
-    def _check_number_of_datapoints(self):
-        """Check if available data => population size"""
-        if len(self.data) < self.parameter.population:
+        if len(self.data) < self.hyperparameters.population:
             raise ValueError(
                 f'There are {len(self.data)} datapoints available, \
-                     need {self.parameter.population} for update step!'
+                     need {self.hyperparameters.population} for initial population!'
             )
-        return
 
-    # def _force_bounds(self, x: np.ndarray) -> np.ndarray:
-    #     """Force the input vector to be within the domain boundaries
+    def set_seed(self):
+        """Set the seed of the random number generator"""
+        ...
 
-    #     Parameters
-    #     ----------
-    #     x
-    #         input vector
+    def reset(self):
+        """Reset the optimizer to its initial state"""
+        self.__post_init__()
 
-    #     Returns
-    #     -------
-    #         Input vector clipped to the bounds of the search space
-    #     """
-    #     if self.parameter.force_bounds:
-    #         x = x.clip(min=self.data.domain.get_bounds()[
-    #                    :, 0], max=self.data.domain.get_bounds()[:, 1])
+    def set_data(self, data: ExperimentData):
+        """Set the data attribute to the given data"""
+        self.data = data
 
-    #     return x
-
-    def _construct_model(self, function: DataGenerator):
-        """Construct a model necessary for iteration with input of to be evaluated function
+    def set_x0(self, experiment_data: ExperimentData):
+        """Set the initial population to the best n samples of the given data
 
         Parameters
         ----------
-        function
-            function to be evaluated
+        experiment_data : ExperimentData
+            Data to be used for the initial population
+
         """
-        pass
-
-    def iterate(self, iterations: int, function: DataGenerator):
-        """Calls the update_step function multiple times.
-
-        Parameters
-        ----------
-        iterations
-            number of iterations
-        function
-            objective function to evaluate
-        """
-        self._construct_model(function)
-
-        self._check_number_of_datapoints()
-
-        for _ in range(_number_of_updates(iterations, population=self.parameter.population)):
-            x, y = self.update_step(function=function)
-
-            experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
-
-            for x_i, y_i in experiment_samples_to_add:
-                self.data += ExperimentSample.from_numpy(x_i, y_i)
-
-        # Remove overiterations
-        self.data.remove_rows_bottom(_number_of_overiterations(
-            iterations, population=self.parameter.population))
-
-    # def add_iteration_to_data(self, x: np.ndarray, y: np.ndarray):
-    #     """Add the iteration to the dataframe
-
-    #     Parameters
-    #     ----------
-    #     x
-    #         input data
-    #     y
-    #         output data
-    #     """
-    #     self.data.add_numpy_arrays(input=x, output=y)
-
-    def extract_data(self) -> ExperimentData:
-        """Returns a copy of the data
-
-        Returns
-        -------
-            copy of the data
-        """
-        return deepcopy(self.data)
+        x0 = experiment_data.get_n_best_output(self.hyperparameters.population)
+        x0.reset_index()
+        self.data = x0
 
     def get_name(self) -> str:
-        """Retrieve the name of the optimizers
+        """Get the name of the optimizer
 
         Returns
         -------
+        str
             name of the optimizer
         """
         return self.name
@@ -266,40 +165,23 @@ class Optimizer:
         """
         return []
 
+    def update_step(self, data_generator: DataGenerator) -> ExperimentData:
+        """Update step of the optimizer. Needs to be implemented by the child class
 
-def _number_of_updates(iterations: int, population: int):
-    """Calculate number of update steps to acquire the correct number of iterations
+        Parameters
+        ----------
+        data_generator : DataGenerator
+            data generator object to calculate the objective value
 
-    Parameters
-    ----------
-    iterations
-        number of desired iteration steps
-    population
-        the population size of the optimizer
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the new samples
 
-    Returns
-    -------
-        number of consecutive update steps
-    """
-    return iterations // population + (iterations % population > 0)
-
-
-def _number_of_overiterations(iterations: int, population: int) -> int:
-    """Calculate the number of iterations that are over the iteration limit
-
-    Parameters
-    ----------
-    iterations
-        number of desired iteration steos
-    population
-        the population size of the optimizer
-
-    Returns
-    -------
-        number of iterations that are over the limit
-    """
-    overiterations: int = iterations % population
-    if overiterations == 0:
-        return overiterations
-    else:
-        return population - overiterations
+        Raises
+        ------
+        NotImplementedError
+            Raises when the method is not implemented by the child class
+        """
+        raise NotImplementedError(
+            "You should implement an update step for your algorithm!")

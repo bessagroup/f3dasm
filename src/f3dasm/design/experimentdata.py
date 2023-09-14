@@ -61,7 +61,6 @@ class _OptimizerParameters(Protocol):
 
 
 class _Optimizer(Protocol):
-    parameter: _OptimizerParameters
     hyperparameters: _OptimizerParameters
     type: str
 
@@ -74,10 +73,10 @@ class _Optimizer(Protocol):
     def _check_number_of_datapoints(self) -> None:
         ...
 
-    def update_step(self, function: _DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
+    def update_step(self, data_generator: _DataGenerator) -> ExperimentData:
         ...
 
-    def _construct_model(self, function: _DataGenerator) -> None:
+    def _construct_model(self, data_generator: _DataGenerator) -> None:
         ...
 
     def set_x0(self, experiment_data: ExperimentData) -> None:
@@ -161,6 +160,12 @@ class ExperimentData:
                                            self.output_data + other.output_data,
                                            self.jobs + other.jobs, self.domain,
                                            self.filename)
+
+    def __eq__(self, __o: ExperimentData) -> bool:
+        return all([self.input_data == __o.input_data,
+                    self.output_data == __o.output_data,
+                    self.jobs == __o.jobs,
+                    self.domain == __o.domain])
 
     def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
         """The [] operator returns a single datapoint or a subset of datapoints"""
@@ -565,6 +570,9 @@ class ExperimentData:
         experiment_sample : ExperimentSample or ExperimentData
             Experiment(s) to add.
         """
+        if isinstance(experiment_sample, ExperimentData):
+            experiment_sample.reset_index()
+
         self.input_data += experiment_sample.input_data
         self.output_data += experiment_sample.output_data
         self.jobs += experiment_sample.jobs
@@ -791,14 +799,14 @@ class ExperimentData:
     #                                                            Run datageneration
     # =============================================================================
 
-    def run(self, operation: _ExperimentSampleCallable, mode: str = 'sequential',
+    def run(self, data_generator: _DataGenerator, mode: str = 'sequential',
             kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirery of the experiments
 
         Parameters
         ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
+        data_generator : DataGenerator
+            data grenerator to use
         mode, optional
             operational mode, by default 'sequential'
         kwargs, optional
@@ -806,28 +814,22 @@ class ExperimentData:
 
         Raises
         ------
-        TypeError
-            Raised when the operation is not a callable function
         ValueError
             Raised when invalid parallelization mode is specified
         """
         if kwargs is None:
             kwargs = {}
 
-        # Check if operation is a function
-        if not callable(operation):
-            raise TypeError("operation must be a function.")
-
         if mode.lower() == "sequential":
-            return self._run_sequential(operation, kwargs)
+            return self._run_sequential(data_generator, kwargs)
         elif mode.lower() == "parallel":
-            return self._run_multiprocessing(operation, kwargs)
+            return self._run_multiprocessing(data_generator, kwargs)
         elif mode.lower() == "cluster":
-            return self._run_cluster(operation, kwargs)
+            return self._run_cluster(data_generator, kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_sequential(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation sequentially
 
         Parameters
@@ -859,7 +861,7 @@ class ExperimentData:
                     logger.info(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _experiment_sample = operation(experiment_sample, **kwargs)  # no *args!
+                _experiment_sample = data_generator.run(experiment_sample, **kwargs)  # no *args!
                 self.set_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -867,7 +869,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_multiprocessing(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
@@ -894,7 +896,7 @@ class ExperimentData:
 
         def f(options: Dict[str, Any]) -> Any:
             logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
-            return operation(**options)
+            return data_generator.run(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
@@ -903,7 +905,7 @@ class ExperimentData:
         for _experiment_sample in _experiment_samples:
             self.set_experiment_sample(_experiment_sample)
 
-    def _run_cluster(self, operation: _ExperimentSampleCallable, kwargs: dict):
+    def _run_cluster(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation on the cluster
 
         Parameters
@@ -932,7 +934,7 @@ class ExperimentData:
                 break
 
             try:
-                _experiment_sample = operation(experiment_sample, **kwargs)
+                _experiment_sample = data_generator.run(experiment_sample, **kwargs)
                 self.write_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -948,38 +950,11 @@ class ExperimentData:
     def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
         if optimizer.type == 'scipy':
             self._iterate_scipy(optimizer, data_generator, iterations)
-        elif optimizer.type == 'evosax':
-            self._iterate_evosax(optimizer, data_generator, iterations)
         else:
             self._iterate(optimizer, data_generator, iterations)
 
-    def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
-        """Calls the update_step function multiple times.
-
-        Parameters
-        ----------
-        iterations
-            number of iterations
-        function
-            objective function to evaluate
-        """
-        optimizer._construct_model(data_generator)
-
-        optimizer._check_number_of_datapoints()
-
-        for _ in range(_number_of_updates(iterations, population=optimizer.parameter.population)):
-            x, y = optimizer.update_step(function=data_generator)
-
-            experiment_samples_to_add = [(xi, yi) for xi, yi in zip(x, y)] if x.ndim > 1 else [(x, y)]
-            for x_i, y_i in experiment_samples_to_add:
-                self.add_experiments(ExperimentSample.from_numpy(x_i, y_i))
-
-        # Remove overiterations
-        self.remove_rows_bottom(_number_of_overiterations(
-            iterations, population=optimizer.parameter.population))
-
-    def _iterate2(self, optimizer: _Optimizer, data_generator: _DataGenerator,
-                  iterations: int, kwargs: Optional[dict] = None):
+    def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                 iterations: int, kwargs: Optional[dict] = None):
 
         optimizer.set_x0(self)
         optimizer._check_number_of_datapoints()
@@ -1002,11 +977,11 @@ class ExperimentData:
         # Reset the optimizer
         optimizer.reset()
 
-    def _iterate2_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
-                        iterations: int, kwargs: Optional[dict] = None):
+    def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+                       iterations: int, kwargs: Optional[dict] = None):
 
         optimizer.set_x0(self)
-        n_data_before_iterate = len(optimizer.data)
+        n_data_before_iterate = len(self)
         optimizer._check_number_of_datapoints()
 
         optimizer.run_algorithm(iterations, data_generator)
@@ -1014,7 +989,6 @@ class ExperimentData:
         self.add_experiments(optimizer.data)
 
         # TODO: At the end, the data should have n_data_before_iterate + iterations amount of elements!
-
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
             repeated_last_element = self.get_n_best_input_parameters_numpy(
@@ -1031,68 +1005,10 @@ class ExperimentData:
                 self.add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
-        self.run(data_generator.run)
+        self.run(data_generator, mode='sequential')
 
         # Reset the optimizer
         optimizer.reset()
-
-    def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
-        """Iterating on a function
-
-        Parameters
-        ----------
-        iterations
-            number of iterations
-        function
-            function to be evaluated
-        """
-        n_data_before_iterate = len(self)
-
-        optimizer.parameter.maxiter = iterations
-
-        optimizer.run_algorithm(iterations, data_generator)
-
-        # TODO: Make sure that the data from run_algorithm is stored to the self ExperimentData!
-
-        # If x_new is empty, repeat best x0 to fill up total iteration
-        if len(self) == n_data_before_iterate:
-            repeated_last_element = self.get_n_best_input_parameters_numpy(
-                nosamples=1).ravel()
-
-            for repetition in range(iterations):
-                self.add_experiments(ExperimentSample.from_numpy(repeated_last_element))
-
-        # Repeat last iteration to fill up total iteration
-        if len(self) < n_data_before_iterate + iterations:
-            last_design = self.get_experiment_sample(len(self)-1)
-
-            for repetition in range(iterations - (len(self) - n_data_before_iterate)):
-                self.add_experiments(last_design)
-
-        # Evaluate the function on the extra iterations
-        self.run(data_generator.run)
-
-    def _iterate_evosax(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int):
-        """Calls the update_step function multiple times.
-
-        Parameters
-        ----------
-        iterations
-            number of iterations
-        function
-            objective function to evaluate
-        """
-        optimizer._construct_model(data_generator)
-
-        optimizer._check_number_of_datapoints()
-
-        for _ in range(_number_of_updates(iterations, population=optimizer.parameter.population)):
-            x, y = optimizer.update_step(function=data_generator)
-            self.add_numpy_arrays(input=x, output=y)
-
-        # Remove overiterations
-        self.remove_rows_bottom(_number_of_overiterations(
-            iterations, population=optimizer.parameter.population))
 
 
 def _number_of_updates(iterations: int, population: int):

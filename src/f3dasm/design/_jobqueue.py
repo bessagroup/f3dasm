@@ -99,6 +99,9 @@ class _JobQueue:
             index = [index]
         return _JobQueue(self.jobs[index].copy())
 
+    def __eq__(self, __o: _JobQueue) -> bool:
+        return self.jobs.equals(__o.jobs)
+
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 

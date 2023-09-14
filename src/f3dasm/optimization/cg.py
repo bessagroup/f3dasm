@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from .adapters.scipy_implementations import _SciPyMinimizeOptimizer
+from .adapters.scipy_implementations import _SciPyOptimizer
 # Locals
 from .optimizer import OptimizerParameters
 
@@ -26,11 +26,11 @@ class CG_Parameters(OptimizerParameters):
     gtol: float = 0.0
 
 
-class CG(_SciPyMinimizeOptimizer):
+class CG(_SciPyOptimizer):
     """CG"""
 
     method: str = "CG"
-    parameter: CG_Parameters = CG_Parameters()
+    hyperparameters: CG_Parameters = CG_Parameters()
 
     def get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']

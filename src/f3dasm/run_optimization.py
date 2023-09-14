@@ -20,9 +20,9 @@ from pathos.helpers import mp
 from f3dasm.optimization import Optimizer
 from f3dasm.sampling import Sampler
 
-from .datageneration.functions import create_function_from_json
-from .datageneration.functions.function import Function
 # Locals
+from .datageneration.datagenerator import DataGenerator
+from .datageneration.functions import create_function_from_json
 from .design import ExperimentData
 from .logger import logger, time_and_log
 
@@ -37,7 +37,7 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, function: Function,
+    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, data_generator: DataGenerator,
                  sampler: Sampler, number_of_samples: int, seeds: List[int]):
         """Optimization results object
 
@@ -47,8 +47,8 @@ class OptimizationResult:
             Data objects for each realization
         optimizer
             classname of the optimizer used
-        function
-            functionname that was optimized
+        data_generator
+            the data_generator to get objective values
         sampler
             classname of the initial sampling strategy
         number_of_samples
@@ -58,7 +58,7 @@ class OptimizationResult:
         """
         self.data = data
         self.optimizer = optimizer
-        self.function = function
+        self.data_generator = data_generator
         self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
@@ -67,9 +67,9 @@ class OptimizationResult:
     def _log(self):
         # Log
         logger.info(
-            (f"Optimized {self.function.get_name()} function (seed={self.function.seed}, "
-             f"dim={self.function.dimensionality}, "
-             f"noise={self.function.noise}) "
+            (f"Optimized {self.data_generator.get_name()} function (seed={self.data_generator.seed}, "
+             f"dim={self.data_generator.dimensionality}, "
+             f"noise={self.data_generator.noise}) "
              f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations.")
         )
@@ -82,20 +82,20 @@ class OptimizationResult:
         xarr.attrs['realization_seeds']: List[int] = list(self.seeds)
 
         # Benchmark functions
-        xarr.attrs['function_seed']: int = self.function.seed
-        xarr.attrs['function_name']: str = self.function.get_name()
-        xarr.attrs['function_noise']: str = self.function.noise
-        xarr.attrs['function_dimensionality']: int = self.function.dimensionality
+        xarr.attrs['function_seed']: int = self.data_generator.seed
+        xarr.attrs['function_name']: str = self.data_generator.get_name()
+        xarr.attrs['function_noise']: str = self.data_generator.noise
+        xarr.attrs['function_dimensionality']: int = self.data_generator.dimensionality
 
         # Global minimum function
-        _, g = self.function.get_global_minimum(d=self.function.dimensionality)
+        _, g = self.data_generator.get_global_minimum(d=self.data_generator.dimensionality)
         xarr.attrs['function_global_minimum']: float = float(np.array(g if not isinstance(g, list) else g[0])[0, 0])
         return xarr
 
 
 def run_optimization(
     optimizer: Optimizer,
-    function: Function,
+    data_generator: DataGenerator,
     sampler: Sampler,
     iterations: int,
     seed: int,
@@ -107,8 +107,8 @@ def run_optimization(
     ----------
     optimizer
         the optimizer used
-    function
-        the function to be optimized
+    data_generator
+        the data_generator to get objective values
     sampler
         the sampling strategy
     iterations
@@ -124,33 +124,20 @@ def run_optimization(
     """
 
     # Set function seed
-    # function.set_seed(seed)
-    optimizer.set_seed(seed)
+    optimizer.set_seed()
     sampler.set_seed(seed)
 
     # Sample
-    samples = sampler.get_samples(numsamples=number_of_samples)
+    data = sampler.get_samples(numsamples=number_of_samples)
+    data.run(data_generator, mode='sequential')
+    data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
 
-    samples.fill_output(output=function(samples.get_input_data().to_numpy()), label="y")
-
-    optimizer.set_data(samples)
-
-    # Iterate
-    optimizer.iterate(iterations=iterations, function=function)
-    res = optimizer.extract_data()
-
-    # Reset the parameters
-    optimizer.reset()
-
-    # Reset data
-    optimizer.data.reset_data()
-
-    return res
+    return data
 
 
 def run_optimization_to_disk(
     optimizer: Optimizer,
-    function: Function,
+    data_generator: DataGenerator,
     sampler: Sampler,
     iterations: int,
     seed: int,
@@ -163,25 +150,20 @@ def run_optimization_to_disk(
     sampler.set_seed(seed)
 
     # Sample
-    samples = sampler.get_samples(numsamples=number_of_samples)
+    data = sampler.get_samples(numsamples=number_of_samples)
 
-    samples.fill_output(output=function(samples.get_input_data().to_numpy()), label="y")
+    data.run(data_generator, mode='sequential')
+    data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
 
-    optimizer.set_data(samples)
-
-    # Iterate
-    optimizer.iterate(iterations=iterations, function=function)
-
-    optimizer.data.to_xarray().to_netcdf(
-        f'{function.get_name()}_{optimizer.get_name()}_{seed-realization_index}_{realization_index}.temp')
-    optimizer.reset()
-    optimizer.data.reset_data()
+    # TODO: .get_name() method is not implemented for DataGenerator base class
+    data.to_xarray().to_netcdf(
+        f'{data_generator.get_name()}_{optimizer.get_name()}_{seed-realization_index}_{realization_index}.temp')
 
 
 @time_and_log
 def run_multiple_realizations(
     optimizer: Optimizer,
-    function: Function,
+    data_generator: DataGenerator,
     sampler: Sampler,
     iterations: int,
     realizations: int,
@@ -196,8 +178,8 @@ def run_multiple_realizations(
     ----------
     optimizer
         the optimizer used
-    function
-        the function to be optimized
+    data_generator
+        the data_generator to get objective values
     sampler
         the sampling strategy
     iterations
@@ -222,7 +204,7 @@ def run_multiple_realizations(
 
     if parallelization:
         args = [
-            (optimizer, function, sampler, iterations,
+            (optimizer, data_generator, sampler, iterations,
              seed + index, number_of_samples)
             for index, _ in enumerate(range(realizations))
         ]
@@ -236,7 +218,7 @@ def run_multiple_realizations(
         for index in range(realizations):
             args = {
                 "optimizer": optimizer,
-                "function": function,
+                "data_generator": data_generator,
                 "sampler": sampler,
                 "iterations": iterations,
                 "number_of_samples": number_of_samples,
@@ -247,7 +229,7 @@ def run_multiple_realizations(
     return OptimizationResult(
         data=results,
         optimizer=optimizer,
-        function=function,
+        data_generator=data_generator,
         sampler=sampler,
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
@@ -257,7 +239,7 @@ def run_multiple_realizations(
 @time_and_log
 def run_multiple_realizations_to_disk(
     optimizer: Optimizer,
-    function: Function,
+    data_generator: DataGenerator,
     sampler: Sampler,
     iterations: int,
     realizations: int,
@@ -272,7 +254,7 @@ def run_multiple_realizations_to_disk(
 
     if parallelization:
         args = [
-            (optimizer, function, sampler, iterations,
+            (optimizer, data_generator, sampler, iterations,
              seed + index, number_of_samples, index)
             for index, _ in enumerate(range(realizations))
         ]
@@ -286,7 +268,7 @@ def run_multiple_realizations_to_disk(
         for index in range(realizations):
             args = {
                 "optimizer": optimizer,
-                "function": function,
+                "data_generator": data_generator,
                 "sampler": sampler,
                 "iterations": iterations,
                 "number_of_samples": number_of_samples,
@@ -295,11 +277,11 @@ def run_multiple_realizations_to_disk(
             }
             results.append(run_optimization_to_disk(**args))
 
-    files = f'{function.get_name()}_{optimizer.get_name()}_{seed}_*.temp'
+    files = f'{data_generator.get_name()}_{optimizer.get_name()}_{seed}_*.temp'
     combined_dataset = xr.open_mfdataset(files, combine="nested", parallel=True, concat_dim=xr.DataArray(
         range(realizations), dims='realization'))
 
-    combined_dataset.to_netcdf(f'{function.get_name()}_{optimizer.get_name()}_combined_{seed}.temp')
+    combined_dataset.to_netcdf(f'{data_generator.get_name()}_{optimizer.get_name()}_combined_{seed}.temp')
 
     # remove all the files
     for file in Path().glob(files):

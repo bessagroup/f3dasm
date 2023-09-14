@@ -95,6 +95,9 @@ class _Data:
         other_data_copy.index = other_data_copy.index + last_index + 1
         return _Data(pd.concat([self.data, other_data_copy]))
 
+    def __eq__(self, __o: _Data) -> bool:
+        return self.data.equals(__o.data)
+
     def _repr_html_(self) -> str:
         return self.data._repr_html_()
 

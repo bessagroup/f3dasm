@@ -1,6 +1,6 @@
 # Standard
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, List, Mapping, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 
 import autograd.core
 import autograd.numpy as np
@@ -35,22 +35,37 @@ class NewOptimizer:
     type: ClassVar[str] = 'any'
     hyperparameters: OptimizerParameters = OptimizerParameters()
 
-    def __init__(self, domain: Domain, hyperparameters: Optional[Mapping[str, Any]] = None,
+    def __init__(self, domain: Domain, hyperparameters: Optional[Dict[str, Any]] = None,
                  seed: Optional[int] = None, name: Optional[str] = None):
+        """Optimizer class for the optimization of a data-driven process
+
+        Parameters
+        ----------
+        domain : Domain
+            Domain indicating the search-space of the optimization parameters
+        hyperparameters : Optional[Dict[str, Any]], optional
+            Hyperparameters of the optimizer, by default None, it will use the default hyperparameters
+        seed : Optional[int], optional
+            Seed of the random number generator for stochastic optimization processes, by default None, set to random
+        name : Optional[str], optional
+            Name of the optimization object, by default None, it will use the name of the class
+        """
+        # Create an empty dictionary when hyperparameters is None
         if hyperparameters is None:
             hyperparameters = {}
 
+        # Overwrite the default hyperparameters with the given hyperparameters
         self.hyperparameters.__init__(**hyperparameters)
 
+        # Set the name of the optimizer to the class name if no name is given
         if name is None:
             name = self.__class__.__name__
 
+        # Set the seed to a random number if no seed is given
         if seed is None:
             seed = np.random.randint(low=0, high=1e5)
 
         self.domain = domain
-
-        # Create empty ExperimentData object to fill with update steps
         self.seed = seed
         self.name = name
         self.__post_init__()
@@ -58,7 +73,7 @@ class NewOptimizer:
     def __post_init__(self):
         self._check_imports()
         self.set_seed()
-
+        self.init_data()
         self.set_algorithm()
 
     @staticmethod
@@ -66,16 +81,24 @@ class NewOptimizer:
         ...
 
     def init_data(self):
+        """Set the data atrribute to an empty ExperimentData object"""
         self.data = ExperimentData(self.domain)
 
     def set_algorithm(self):
+        """Set the algorithm attribute to the algorithm of choice"""
         ...
 
     def _construct_model(self, data_generator: DataGenerator):
         ...
 
     def _check_number_of_datapoints(self):
-        """Check if available data => population size"""
+        """Check if the number of datapoints is sufficient for the initial population
+
+        Raises
+        ------
+        ValueError
+            Raises then the number of datapoints is insufficient
+        """
         if len(self.data) < self.hyperparameters.population:
             raise ValueError(
                 f'There are {len(self.data)} datapoints available, \
@@ -83,21 +106,69 @@ class NewOptimizer:
             )
 
     def set_seed(self):
+        """Set the seed of the random number generator"""
         ...
 
     def reset(self):
+        """Reset the optimizer to its initial state"""
         self.__post_init__()
 
     def set_data(self, data: ExperimentData):
+        """Set the data attribute to the given data"""
         self.data = data
 
     def set_x0(self, experiment_data: ExperimentData):
+        """Set the initial population to the best n samples of the given data
+
+        Parameters
+        ----------
+        experiment_data : ExperimentData
+            Data to be used for the initial population
+
+        """
         x0 = experiment_data.get_n_best_output(self.hyperparameters.population)
         x0.reset_index()
         self.data = x0
 
+    def get_name(self) -> str:
+        """Get the name of the optimizer
+
+        Returns
+        -------
+        str
+            name of the optimizer
+        """
+        return self.name
+
+    def get_info(self) -> List[str]:
+        """Give a list of characteristic features of this optimizer
+
+        Returns
+        -------
+            List of strings denoting the characteristics of this optimizer
+        """
+        return []
+
     def update_step(self, data_generator: DataGenerator) -> ExperimentData:
-        ...
+        """Update step of the optimizer. Needs to be implemented by the child class
+
+        Parameters
+        ----------
+        data_generator : DataGenerator
+            data generator object to calculate the objective value
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the new samples
+
+        Raises
+        ------
+        NotImplementedError
+            Raises when the method is not implemented by the child class
+        """
+        raise NotImplementedError(
+            "You should implement an update step for your algorithm!")
 
 
 class PartialExperimentData(ExperimentData):
@@ -287,11 +358,6 @@ class CMAES(PygmoAlgorithm):
 
     def get_info(self) -> List[str]:
         return ['Stable', 'Global', 'Population-Based']
-
-
-class TensorflowProblem:
-    def __init__(self, data_generator: DataGenerator):
-        self.data_generator = data_generator
 
 
 class TensorflowOptimizer(NewOptimizer):
