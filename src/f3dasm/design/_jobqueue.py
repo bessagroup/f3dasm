@@ -199,7 +199,7 @@ class _JobQueue:
     #                                                                          Mark
     # =============================================================================
 
-    def mark_as_in_progress(self, index: int) -> None:
+    def mark_as_in_progress(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as in progress.
 
         Parameters
@@ -209,7 +209,7 @@ class _JobQueue:
         """
         self.jobs.loc[index] = IN_PROGRESS
 
-    def mark_as_finished(self, index: int) -> None:
+    def mark_as_finished(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
 
         Parameters
@@ -219,7 +219,7 @@ class _JobQueue:
         """
         self.jobs.loc[index] = FINISHED
 
-    def mark_as_error(self, index: int) -> None:
+    def mark_as_error(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
 
         Parameters

@@ -39,7 +39,6 @@ def test_all_optimizers_and_functions(seed: int, data_generator: DataGenerator, 
     domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    ran_sampler = RandomUniform(domain=domain, seed=seed)
     data1 = RandomUniform(domain, seed=seed).get_samples(30)
     data2 = RandomUniform(domain, seed=seed).get_samples(30)
 

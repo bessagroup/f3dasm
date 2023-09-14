@@ -19,8 +19,8 @@ from io import TextIOWrapper
 from pathlib import Path
 from time import sleep
 
-if sys.version_info < (3, 8):
-    from typing_extensions import Protocol
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Protocol  # NOQA
 else:
     from typing import Protocol
 
@@ -655,7 +655,10 @@ class ExperimentData:
         if label not in self.output_data.names:
             self.output_data.add_column(label)
 
-        self.output_data.fill_numpy_arrays(output)
+        filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(output)
+
+        # Set the status of the filled indices to FINISHED
+        self.jobs.mark_as_finished(filled_indices)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """

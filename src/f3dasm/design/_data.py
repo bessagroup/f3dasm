@@ -270,10 +270,11 @@ class _Data:
                           columns=self.data.columns)
         self.add(df)
 
-    def fill_numpy_arrays(self, array: np.ndarray):
+    def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
         # get the indices of the nan values
         idx, _ = np.where(np.isnan(self.data))
         self.data.loc[np.unique(idx)] = array
+        return np.unique(idx)
 
     def remove(self, indices: List[int]):
         self.data = self.data.drop(indices)

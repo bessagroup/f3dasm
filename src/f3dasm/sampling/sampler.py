@@ -96,7 +96,7 @@ class Sampler:
         """
 
         self.set_seed(self.seed)
-        
+
         # If numsamples is None, take the object attribute number_of_samples
         if numsamples is None:
             numsamples = self.number_of_samples

@@ -9,7 +9,6 @@ Module for sampling
 from typing import List
 
 # Locals
-from .combination import Combination
 from .latinhypercube import LatinHypercube
 from .randomuniform import RandomUniform
 from .sampler import Sampler
@@ -51,7 +50,6 @@ __all__ = [
     'RandomUniform',
     'Sampler',
     'SobolSequence',
-    'Combination',
     'SAMPLERS',
     'find_sampler'
 ]
