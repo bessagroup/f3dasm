@@ -21,8 +21,7 @@ Welcome to `f3dasm`, a Python package for data-driven design and analysis of str
 
 ## Authorship
 
-* Created by M.A. Bessa (M.A.Bessa@tudelft.nl) in September 2016
-* Current developer and maintainer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
+* Current created and developer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
 
