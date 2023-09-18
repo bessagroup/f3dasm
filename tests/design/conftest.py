@@ -1,10 +1,8 @@
 import pandas as pd
 import pytest
 
-from f3dasm.design._jobqueue import _JobQueue
-from f3dasm.design.domain import Domain
-from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter)
+from f3dasm.design import (CategoricalParameter, ContinuousParameter,
+                           DiscreteParameter, Domain, _JobQueue)
 
 
 @pytest.fixture(scope="package")

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.sampling import RandomUniform
 
 pytestmark = pytest.mark.smoke
 

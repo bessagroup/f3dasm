@@ -8,12 +8,12 @@ Parameters are the variables that we want to  .. parameterize!.
    :align: center
    :alt: Parameters
 
-There are four types of parameters that can be created: :class:`~f3dasm.design.parameter.ContinuousParameter`, :class:`~f3dasm.design.parameter.DiscreteParameter`, :class:`~f3dasm.design.parameter.CategoricalParameter` and :class:`~f3dasm.design.parameter.ConstantParameter`:
+There are four types of parameters that can be created: :class:`~f3dasm.design.ContinuousParameter`, :class:`~f3dasm.design.DiscreteParameter`, :class:`~f3dasm.design.CategoricalParameter` and :class:`~f3dasm.design.ConstantParameter`:
 
 Continuous Parameter
 --------------------
 
-* We can create **continous** parameters with a :attr:`~f3dasm.design.parameter.ContinuousParameter.lower_bound` and :attr:`~f3dasm.design.parameter.ContinuousParameter.upper_bound` with the :class:`~f3dasm.design.parameter.ContinuousParameter` class
+* We can create **continous** parameters with a :attr:`~f3dasm.design.ContinuousParameter.lower_bound` and :attr:`~f3dasm.design.ContinuousParameter.upper_bound` with the :class:`~f3dasm.design.ContinuousParameter` class
 
 .. code-block:: python
 
@@ -23,7 +23,7 @@ Continuous Parameter
 Discrete Parameter
 ------------------
 
-* We can create **discrete** parameters with a :attr:`~f3dasm.design.parameter.DiscreteParameter.lower_bound` and :attr:`~f3dasm.design.parameter.DiscreteParameter.upper_bound` with the :class:`~f3dasm.design.parameter.DiscreteParameter` class
+* We can create **discrete** parameters with a :attr:`~f3dasm.design.DiscreteParameter.lower_bound` and :attr:`~f3dasm.design.DiscreteParameter.upper_bound` with the :class:`~f3dasm.design.DiscreteParameter` class
 
 .. code-block:: python
 
@@ -33,7 +33,7 @@ Discrete Parameter
 Categorical Parameter
 ---------------------
 
-* We can create **categorical** parameters with a list of items (:attr:`~f3dasm.design.parameter.CategoricalParameter.categories`) with the :class:`~f3dasm.design.parameter.CategoricalParameter` class
+* We can create **categorical** parameters with a list of items (:attr:`~f3dasm.design.CategoricalParameter.categories`) with the :class:`~f3dasm.design.CategoricalParameter` class
 
 .. code-block:: python
 
@@ -43,7 +43,7 @@ Categorical Parameter
 Constant Parameter
 ---------------------
 
-* We can create **constant** parameters with any value (:attr:`~f3dasm.design.parameter.ConstantParameter.value`) with the :class:`~f3dasm.design.parameter.ConstantParameter` class
+* We can create **constant** parameters with any value (:attr:`~f3dasm.design.ConstantParameter.value`) with the :class:`~f3dasm.design.ConstantParameter` class
 
 .. code-block:: python
 

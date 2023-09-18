@@ -1,11 +1,9 @@
 import pytest
 
-from f3dasm.datageneration.functions import FUNCTIONS_7D
-from f3dasm.datageneration.functions.function import Function
+from f3dasm import OptimizationResult, run_multiple_realizations
+from f3dasm.datageneration import FUNCTIONS_7D, Function
 from f3dasm.design import Domain
 from f3dasm.optimization import OPTIMIZERS, Optimizer
-from f3dasm.run_optimization import (OptimizationResult,
-                                     run_multiple_realizations)
 from f3dasm.sampling import LatinHypercube
 
 # @pytest.mark.smoke

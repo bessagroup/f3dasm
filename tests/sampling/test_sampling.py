@@ -2,12 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design.domain import Domain
-from f3dasm.design.parameter import ContinuousParameter
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.sampler import Sampler
-from f3dasm.sampling.sobolsequence import SobolSequence
+from f3dasm.design import ContinuousParameter, Domain
+from f3dasm.sampling import (LatinHypercube, RandomUniform, Sampler,
+                             SobolSequence)
 
 pytestmark = pytest.mark.smoke
 

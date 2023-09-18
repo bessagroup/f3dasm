@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import pytest
 
-from f3dasm.design.experimentsample import ExperimentSample
+from f3dasm.design import ExperimentSample
 
 pytestmark = pytest.mark.smoke
 
