@@ -6,7 +6,7 @@ Module for sampling
 # =============================================================================
 
 # Locals
-from ._src.sampling import SAMPLERS
+from ._src.sampling import SAMPLERS, find_sampler
 from ._src.sampling.latinhypercube import LatinHypercube
 from ._src.sampling.randomuniform import RandomUniform
 from ._src.sampling.sampler import Sampler

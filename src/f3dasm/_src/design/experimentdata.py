@@ -859,9 +859,9 @@ class ExperimentData:
 
                 # If kwargs is empty dict
                 if not kwargs:
-                    logger.info(f"Running experiment_sample {experiment_sample._jobnumber}")
+                    logger.debug(f"Running experiment_sample {experiment_sample._jobnumber}")
                 else:
-                    logger.info(
+                    logger.debug(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
                 _experiment_sample = data_generator.run(experiment_sample, **kwargs)  # no *args!

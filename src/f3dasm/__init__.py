@@ -25,7 +25,7 @@ from ._src.design.parameter import (CategoricalParameter, ConstantParameter,
                                     ContinuousParameter, DiscreteParameter)
 from ._src.logger import DistributedFileHandler, logger
 from ._src.optimization.optimizer import Optimizer
-from ._src.run_optimization import (OptimizationResult,
+from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
                                     run_multiple_realizations,
                                     run_multiple_realizations_to_disk,
                                     run_optimization, run_optimization_to_disk)

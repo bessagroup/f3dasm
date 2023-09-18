@@ -8,8 +8,8 @@ Module for data-generation
 from ._src.datageneration import abaqus
 from ._src.datageneration.datagenerator import DataGenerator
 from ._src.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
-                                            FUNCTIONS_7D, get_functions,
-                                            pybenchfunction)
+                                            FUNCTIONS_7D, find_function,
+                                            get_functions, pybenchfunction)
 from ._src.datageneration.functions.adapters.augmentor import (
     FunctionAugmentor, Noise, Offset, Scale)
 from ._src.datageneration.functions.function import Function
