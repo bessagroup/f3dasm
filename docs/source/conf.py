@@ -86,7 +86,7 @@ napoleon_include_private_with_doc = False
 # autosummary: https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html#module-sphinx.ext.autosummary
 autosummary_generate = True
 autosummary_generate_overwrite = True
-autosummary_imported_members = False
+autosummary_imported_members = True
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),

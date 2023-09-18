@@ -1,18 +1,18 @@
 Experiment Data
 ===============
 
-The :class:`~f3dasm.design.experimentdata.ExperimentData` object is the main object used to store implementations of a design-of-experiments, 
+The :class:`~f3dasm.design.ExperimentData` object is the main object used to store implementations of a design-of-experiments, 
 keep track of results, perform optimization and extract data for machine learning purposes.
 
 All other processses of f3dasm use this object to manipulate and access data about your experiments.
 
-The :class:`~f3dasm.design.experimentdata.ExperimentData` object consists of the following attributes:
+The :class:`~f3dasm.design.ExperimentData` object consists of the following attributes:
 
-- :attr:`~f3dasm.design.experimentdata.ExperimentData.filename`: Name of the ExperimentData, used for storing and loading.
-- :attr:`~f3dasm.design.experimentdata.ExperimentData.domain`: The feasible :class:`~f3dasm.design.domain.Domain` of the Experiment. Used for sampling and optimization.
-- :attr:`~f3dasm.design.experimentdata.ExperimentData.input_data`: Tabular data containing the input variables of the experiments as column and the experiments as rows.
-- :attr:`~f3dasm.design.experimentdata.ExperimentData.output_data`: Tabular data containing the tracked outputs of the experiments.
-- :attr:`~f3dasm.design.experimentdata.ExperimentData.jobs`: Index-like object tracking if experiments have been executed.
+- :attr:`~f3dasm.design.ExperimentData.filename`: Name of the ExperimentData, used for storing and loading.
+- :attr:`~f3dasm.design.ExperimentData.domain`: The feasible :class:`~f3dasm.design.Domain` of the Experiment. Used for sampling and optimization.
+- :attr:`~f3dasm.design.ExperimentData.input_data`: Tabular data containing the input variables of the experiments as column and the experiments as rows.
+- :attr:`~f3dasm.design.ExperimentData.output_data`: Tabular data containing the tracked outputs of the experiments.
+- :attr:`~f3dasm.design.ExperimentData.jobs`: Index-like object tracking if experiments have been executed.
 
 .. image:: ../../../img/f3dasm-experimentdata.png
     :width: 100%
@@ -28,15 +28,15 @@ The :class:`~f3dasm.design.experimentdata.ExperimentData` object consists of the
 Constructing
 ------------
 
-The default constructor (:meth:`~f3dasm.design.experimentdata.ExperimentData.__init__`) requires a :class:`~f3dasm.design.domain.Domain` object and a name.
-It will construct an empty :class:`~f3dasm.design.experimentdata.ExperimentData` object with the given name and domain.
+The default constructor (:meth:`~f3dasm.design.ExperimentData.__init__`) requires a :class:`~f3dasm.design.Domain` object and a name.
+It will construct an empty :class:`~f3dasm.design.ExperimentData` object with the given name and domain.
 
-If you already have a source of data, there are alternative ways to construct an :class:`~f3dasm.design.experimentdata.ExperimentData` object:
+If you already have a source of data, there are alternative ways to construct an :class:`~f3dasm.design.ExperimentData` object:
 
-ExperimentData from a file containing a serialized :class:`~f3dasm.design.experimentdata.ExperimentData` object
+ExperimentData from a file containing a serialized :class:`~f3dasm.design.ExperimentData` object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you already have constructed the :class:`~f3dasm.design.experimentdata.ExperimentData` object before, you can retrieve it from disk by calling the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_file`
+If you already have constructed the :class:`~f3dasm.design.ExperimentData` object before, you can retrieve it from disk by calling the :meth:`~f3dasm.design.ExperimentData.from_file`
 method. 
 
 .. code-block:: python
@@ -44,10 +44,10 @@ method.
     >>> from f3dasm import ExperimentData
     >>> data = ExperimentData.from_file("my_experiment")
 
-ExperimentData from a :class:`~f3dasm.sampling.sampler.Sampler`
+ExperimentData from a :class:`~f3dasm.sampling.Sampler`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Sample a :class:`~f3dasm.design.experimentdata.ExperimentData` object from a :class:`~f3dasm.sampling.sampler.Sampler` object by using the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_sampling` method.
+Sample a :class:`~f3dasm.design.ExperimentData` object from a :class:`~f3dasm.sampling.Sampler` object by using the :meth:`~f3dasm.design.ExperimentData.from_sampling` method.
 You can use the built-in samplers from the sampling module or construct your own.
 
 .. code-block:: python
@@ -61,10 +61,10 @@ You can use the built-in samplers from the sampling module or construct your own
 ExperimentData from a csv file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you already have already created realizations of your design-of-experiments, you can load them from a csv file with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_csv` method.
+If you already have already created realizations of your design-of-experiments, you can load them from a csv file with the :meth:`~f3dasm.design.ExperimentData.from_csv` method.
 The csv file should contain a header row with the names of the input variables and the first column should be indices for the experiments.
 
-Additionally, you can provide the :class:`~f3dasm.design.domain.Domain` object that suits your design-of-experiments.
+Additionally, you can provide the :class:`~f3dasm.design.Domain` object that suits your design-of-experiments.
 
 
 .. code-block:: python
@@ -80,10 +80,10 @@ Additionally, you can provide the :class:`~f3dasm.design.domain.Domain` object t
 ExperimentData from a pandas DataFrame
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you already have already created realizations of your design-of-experiments, you can also load them from a pandas DataFrame with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_dataframe` method.
+If you already have already created realizations of your design-of-experiments, you can also load them from a pandas DataFrame with the :meth:`~f3dasm.design.ExperimentData.from_dataframe` method.
 The pandas DataFrame should contain a header row with the names of the input variables and indices for the experiments.
 
-Additionally, you can provide the :class:`~f3dasm.design.domain.Domain` object that suits your design-of-experiments.
+Additionally, you can provide the :class:`~f3dasm.design.Domain` object that suits your design-of-experiments.
 
 .. code-block:: python
 
@@ -98,11 +98,11 @@ ExperimentData from a hydra configuration file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you are using hydra for configuring your experiments, you can use it to construct 
-an :class:`~f3dasm.design.experimentdata.ExperimentData` object from the information in the :code:`config.yaml` file with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_yaml` method.
+an :class:`~f3dasm.design.ExperimentData` object from the information in the :code:`config.yaml` file with the :meth:`~f3dasm.design.ExperimentData.from_yaml` method.
 
-You can create an experimentdata :class:`~f3dasm.design.experimentdata.ExperimentData` object in the same ways as described above, but now using the hydra configuration file.
+You can create an experimentdata :class:`~f3dasm.design.ExperimentData` object in the same ways as described above, but now using the hydra configuration file.
 
-To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_sampling` method, you can use the following configuration:
+To create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3dasm.design.ExperimentData.from_sampling` method, you can use the following configuration:
 
 .. code-block:: yaml
    :caption: config.yaml for from_sampling
@@ -116,10 +116,10 @@ To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with 
 
 .. note:: 
 
-    The :class:`~f3dasm.sampling.sampler.Sampler` object will be constructed using the :class:`~f3dasm.design.domain.Domain` object from the config file. Make sure you have the :code:`domain` key in your :code:`config.yaml`!
-    To see how to configure the :class:`~f3dasm.design.domain.Domain` object with hydra, see :ref:`domain-from-yaml`.
+    The :class:`~f3dasm.sampling.Sampler` object will be constructed using the :class:`~f3dasm.design.Domain` object from the config file. Make sure you have the :code:`domain` key in your :code:`config.yaml`!
+    To see how to configure the :class:`~f3dasm.design.Domain` object with hydra, see :ref:`domain-from-yaml`.
 
-To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_csv` method, you can use the following configuration:
+To create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3dasm.design.ExperimentData.from_csv` method, you can use the following configuration:
 
 
 .. code-block:: yaml
@@ -130,7 +130,7 @@ To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with 
             input_filepath: /path/to/my_experiment_data.csv
             output_filepath: /optional/path/to/my_experiment_data_output.csv
 
-To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_file` method, you can use the following configuration:
+To create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3dasm.design.ExperimentData.from_file` method, you can use the following configuration:
 
 .. code-block:: yaml
    :caption: config.yaml for from_file
@@ -139,7 +139,7 @@ To create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with 
         from_file:
             filepath: /path/to/my_experiment_data
 
-Inside your python script, you can then create the :class:`~f3dasm.design.experimentdata.ExperimentData` object with the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_yaml` method:
+Inside your python script, you can then create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3dasm.design.ExperimentData.from_yaml` method:
 
 .. code-block:: python
 
@@ -152,20 +152,20 @@ Inside your python script, you can then create the :class:`~f3dasm.design.experi
 
 .. note:: 
 
-    Make sure to pass the full :code:`config` to the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_yaml` constructor!
+    Make sure to pass the full :code:`config` to the :meth:`~f3dasm.design.ExperimentData.from_yaml` constructor!
 
 Exporting
 ---------
 
-The :class:`~f3dasm.design.experimentdata.ExperimentData` object can be exported to a file using the :meth:`~f3dasm.design.experimentdata.ExperimentData.store` method.
+The :class:`~f3dasm.design.ExperimentData` object can be exported to a file using the :meth:`~f3dasm.design.ExperimentData.store` method.
 This will create a series of files containing its attributes:
 
-- :code:`<filename>_domain.pkl`: The :class:`~f3dasm.design.domain.Domain` object
-- :code:`<filename>_data.csv`: The :attr:`~f3dasm.design.experimentdata.ExperimentData.input_data` table
-- :code:`<filename>_output.csv`: The :attr:`~f3dasm.design.experimentdata.ExperimentData.output_data` table
-- :code:`<filename>_jobs.pkl`: The :attr:`~f3dasm.design.experimentdata.ExperimentData.jobs` object
+- :code:`<filename>_domain.pkl`: The :class:`~f3dasm.design.Domain` object
+- :code:`<filename>_data.csv`: The :attr:`~f3dasm.design.ExperimentData.input_data` table
+- :code:`<filename>_output.csv`: The :attr:`~f3dasm.design.ExperimentData.output_data` table
+- :code:`<filename>_jobs.pkl`: The :attr:`~f3dasm.design.ExperimentData.jobs` object
 
-These files can be used to load the :class:`~f3dasm.design.experimentdata.ExperimentData` object again using the :meth:`~f3dasm.design.experimentdata.ExperimentData.from_file` method.
+These files can be used to load the :class:`~f3dasm.design.ExperimentData` object again using the :meth:`~f3dasm.design.ExperimentData.from_file` method.
 
 .. code-block:: python
 
@@ -185,4 +185,4 @@ This will result in the creation of the following files:
    └── my_experiment_jobs.pkl
 
 
-Alternatively, you can convert the input- and outputdata to numpy arrays (:meth:`~f3dasm.design.experimentdata.ExperimentData.to_numpy`) or xarray (:meth:`~f3dasm.design.experimentdata.ExperimentData.to_xarray`).
+Alternatively, you can convert the input- and outputdata to numpy arrays (:meth:`~f3dasm.design.ExperimentData.to_numpy`) or xarray (:meth:`~f3dasm.design.ExperimentData.to_xarray`).

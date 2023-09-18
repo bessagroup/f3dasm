@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
 
-from f3dasm import make_nd_continuous_domain
-from f3dasm.datageneration.functions import Ackley
-from f3dasm.datageneration.datagenerator import DataGenerator
-from f3dasm.design.domain import Domain
+from f3dasm import (OptimizationResult, make_nd_continuous_domain,
+                    run_multiple_realizations)
+from f3dasm.datageneration import Ackley, DataGenerator
+from f3dasm.design import Domain
 from f3dasm.optimization import Optimizer, RandomSearch
-from f3dasm.run_optimization import (OptimizationResult,
-                                     run_multiple_realizations)
 from f3dasm.sampling import LatinHypercube, Sampler
 
 SEED = 42

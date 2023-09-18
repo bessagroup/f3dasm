@@ -7,12 +7,10 @@ import pytest
 import xarray as xr
 from omegaconf import OmegaConf
 
-from f3dasm.datageneration.datagenerator import DataGenerator
-from f3dasm.datageneration.functions import Ackley
-from f3dasm.design.domain import Domain, make_nd_continuous_domain
-from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter)
+from f3dasm.datageneration import Ackley, DataGenerator
+from f3dasm.design import (CategoricalParameter, ContinuousParameter,
+                           DiscreteParameter, Domain, ExperimentData,
+                           make_nd_continuous_domain)
 from f3dasm.sampling import RandomUniform
 
 SEED = 42

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter, Parameter)
+from f3dasm.design import (CategoricalParameter, ContinuousParameter,
+                           DiscreteParameter, Parameter)
 
 pytestmark = pytest.mark.smoke
 

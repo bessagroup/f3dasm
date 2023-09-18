@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 import pytest
 
-from f3dasm.design._jobqueue import NoOpenJobsError, _JobQueue
+from f3dasm.design import NoOpenJobsError, _JobQueue
 
 pytestmark = pytest.mark.smoke
 

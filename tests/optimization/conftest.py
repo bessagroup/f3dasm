@@ -1,9 +1,8 @@
 import pytest
 
-from f3dasm.design.domain import Domain
-from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter)
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.design import (CategoricalParameter, ContinuousParameter,
+                           DiscreteParameter, Domain)
+from f3dasm.sampling import RandomUniform
 
 
 @pytest.fixture(scope="package")

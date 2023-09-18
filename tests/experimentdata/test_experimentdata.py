@@ -10,10 +10,10 @@ import xarray as xr
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
-from f3dasm.design._jobqueue import ERROR
-from f3dasm.design.domain import Domain
-from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.design.parameter import ContinuousParameter
+from f3dasm.design import ERROR
+from f3dasm.design import Domain
+from f3dasm.design import ExperimentData
+from f3dasm.design import ContinuousParameter
 from f3dasm.sampling import Sampler  # Import your Sampler class
 from f3dasm.sampling import RandomUniform
 

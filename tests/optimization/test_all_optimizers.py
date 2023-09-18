@@ -4,14 +4,11 @@ from typing import List
 import numpy as np
 import pytest
 
-from f3dasm.datageneration.datagenerator import DataGenerator
-from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D, Ackley,
-                                             Levy, Sphere)
-from f3dasm.design import make_nd_continuous_domain
-from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.optimization import OPTIMIZERS
-from f3dasm.optimization.optimizer import Optimizer
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.datageneration import (FUNCTIONS, FUNCTIONS_2D, Ackley,
+                                   DataGenerator, Levy, Sphere)
+from f3dasm.design import ExperimentData, make_nd_continuous_domain
+from f3dasm.optimization import OPTIMIZERS, Optimizer
+from f3dasm.sampling import RandomUniform
 
 
 @pytest.mark.smoke

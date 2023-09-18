@@ -1,7 +1,7 @@
 Domain
 ======
 
-The :class:`~f3dasm.design.domain.Domain` is a set of :class:`f3dasm.design.parameter.Parameter` instances that make up the feasible search space.
+The :class:`~f3dasm.design.Domain` is a set of :class:`f3dasm.design.Parameter` instances that make up the feasible search space.
 
 .. image:: ../../../img/f3dasm-domain.png
     :width: 100%
@@ -16,8 +16,8 @@ Creating the Domain
 Domain from a dictionary
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The domain can be constructed by initializing the :class:`~f3dasm.design.domain.Domain` class and 
-providing an attribute (:attr:`~f3dasm.design.domain.Domain.input_space`) containing string names as keys and parameters as values.
+The domain can be constructed by initializing the :class:`~f3dasm.design.Domain` class and 
+providing an attribute (:attr:`~f3dasm.design.Domain.input_space`) containing string names as keys and parameters as values.
 
 .. code-block:: python
 
@@ -79,7 +79,7 @@ If you are using hydra to manage your configuration files, you can create a doma
                 value: some_value
 
   
-The same domain can now be created by calling the :func:`~f3dasm.design.domain.Domain.from_yaml` method:
+The same domain can now be created by calling the :func:`~f3dasm.design.Domain.from_yaml` method:
 
 .. code-block:: python
 
@@ -93,13 +93,13 @@ The same domain can now be created by calling the :func:`~f3dasm.design.domain.D
 Storing a domain
 ----------------
 
-You can store a domain to disk by calling the :func:`~f3dasm.design.domain.Domain.store` method:
+You can store a domain to disk by calling the :func:`~f3dasm.design.Domain.store` method:
 
 .. code-block:: python
 
   domain.store('my_domain')
 
-This will store the domain as a pickle file. It can be loaded into memory again by calling the :func:`~f3dasm.design.domain.Domain.from_file` method:
+This will store the domain as a pickle file. It can be loaded into memory again by calling the :func:`~f3dasm.design.Domain.from_file` method:
 
 .. code-block:: python
 
@@ -108,7 +108,7 @@ This will store the domain as a pickle file. It can be loaded into memory again 
 Helper function for single-objective, n-dimensional continuous Domains
 ----------------------------------------------------------------------
  
-We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.domain.make_nd_continuous_domain`. We have to specify the boundaries for each of the dimensions with a numpy array:
+We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.make_nd_continuous_domain`. We have to specify the boundaries for each of the dimensions with a numpy array:
 
 .. code-block:: python
 

@@ -1,10 +1,10 @@
 Optimizer
 =========
 
-The :class:`~f3dasm.optimization.optimizer.Optimizer` class is used to find the minimum of a particular quantity of interest through an iterative fashion.
+The :class:`~f3dasm.optimization.Optimizer` class is used to find the minimum of a particular quantity of interest through an iterative fashion.
 
-* The :meth:`~f3dasm.optimization.optimizer.Optimizer.update_step` method takes a :class:`~f3dasm.datageneration.functions.function.Function` object and outputs a tuple containing the position and evaluated value of the next iteration.
-* The :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method is used to start the optimization process. It takes the number of iterations and a :class:`~f3dasm.base.function.Function` object as arguments. For every iteration, the :meth:`~f3dasm.optimization.optimizer.Optimizer.update_step` method is called and the results are stored as new :class:`~f3dasm.design.experimentsample.ExperimentSample` in the :class:`~f3dasm.design.experimentdata.ExperimentData` object.
+* The :meth:`~f3dasm.optimization.Optimizer.update_step` method takes a :class:`~f3dasm.datageneration.functions.function.Function` object and outputs a tuple containing the position and evaluated value of the next iteration.
+* The :meth:`~f3dasm.optimization.Optimizer.iterate` method is used to start the optimization process. It takes the number of iterations and a :class:`~f3dasm.base.function.Function` object as arguments. For every iteration, the :meth:`~f3dasm.optimization.Optimizer.update_step` method is called and the results are stored as new :class:`~f3dasm.design.experimentsample.ExperimentSample` in the :class:`~f3dasm.design.ExperimentData` object.
 
 
 .. image:: ../../../img/f3dasm-optimizer.png
@@ -16,7 +16,7 @@ The :class:`~f3dasm.optimization.optimizer.Optimizer` class is used to find the 
 Create an optimizer
 -------------------
 
-First, we have to determine the suitable search-space by creating a :class:`~f3dasm.design.domain.Domain` object.
+First, we have to determine the suitable search-space by creating a :class:`~f3dasm.design.Domain` object.
 
 .. code-block:: python
 
@@ -43,7 +43,7 @@ We will use the :class:`~f3dasm.optimization.lbfgsb.LBFGSB` optimizer to find th
 
     optimizer = LBFGSB(samples)
 
-By calling the :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method and specifying the : and the number of iterations, we will start the optimization process:
+By calling the :meth:`~f3dasm.optimization.Optimizer.iterate` method and specifying the : and the number of iterations, we will start the optimization process:
 
 .. code-block:: python
     
@@ -52,7 +52,7 @@ By calling the :meth:`~f3dasm.optimization.optimizer.Optimizer.iterate` method a
     f = Ackley()
     optimizer.iterate(iterations=100, function=f)
 
-After that, we can extract the :class:`~f3dasm.design.experimentdata.ExperimentData` object from the optimizer:
+After that, we can extract the :class:`~f3dasm.design.ExperimentData` object from the optimizer:
 
 .. code-block:: python
 
@@ -69,10 +69,10 @@ These are ported from `scipy-optimize <https://docs.scipy.org/doc/scipy/referenc
 ======================== ========================================================================= ===============================================================================================
 Name                      Docs of the Python class                                                 Reference
 ======================== ========================================================================= ===============================================================================================
-CG                       :class:`~f3dasm.optimization.cg.CG`                                        `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
-LBFGSB                   :class:`~f3dasm.optimization.lbfgsb.LBFGSB`                                `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
-NelderMead               :class:`~f3dasm.optimization.neldermead.NelderMead`                        `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
-RandomSearch             :class:`~f3dasm.optimization.randomsearch.RandomSearch`                    self implemented with `numpy <https://numpy.org/doc/>`_
+CG                       :class:`~f3dasm.optimization.CG`                                          `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
+LBFGSB                   :class:`~f3dasm.optimization.LBFGSB`                                      `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
+NelderMead               :class:`~f3dasm.optimization.NelderMead`                                  `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
+RandomSearch             :class:`~f3dasm.optimization.RandomSearch`                                `numpy <https://numpy.org/doc/>`_
 ======================== ========================================================================= ===============================================================================================
 
 Extend the optimization capabilities
@@ -92,10 +92,10 @@ Create your own optimizer
 
 First, we create a class storing the potential hyper-parameters for our optimizers. Even if we our optimizer doesn't have hyper-parameters, you still have to create this class
 
-This class has to be inhereted from the :class:`~f3dasm.optimization.optimizer.OptimizerParameters` class. This inhereted class consists two mandatory attributes: 
+This class has to be inhereted from the :class:`~f3dasm.optimization.OptimizerParameters` class. This inhereted class consists two mandatory attributes: 
 
-* :attr:`~f3dasm.optimization.optimizer.OptimizerParameters.population`: how many points are created for each update step. Defaults to 1
-* :attr:`~f3dasm.optimization.optimizer.OptimizerParameters.force_bounds`: if the optimizer is forced to stay between the domain bounds. Defaults to True. Currently does not work when set to False!
+* :attr:`~f3dasm.optimization.OptimizerParameters.population`: how many points are created for each update step. Defaults to 1
+* :attr:`~f3dasm.optimization.OptimizerParameters.force_bounds`: if the optimizer is forced to stay between the domain bounds. Defaults to True. Currently does not work when set to False!
 
 .. code-block:: python
 
@@ -107,11 +107,11 @@ This class has to be inhereted from the :class:`~f3dasm.optimization.optimizer.O
     example_hyperparameter_2: bool = True
 
 
-Next, we create an new optimizer by inheriting from the :class:`~f3dasm.optimization.optimizer.Optimizer` class
+Next, we create an new optimizer by inheriting from the :class:`~f3dasm.optimization.Optimizer` class
 
-* We create a class attribute :attr:`~f3dasm.optimization.optimizer.Optimizer.parameter` and initialize it without any arguments in order to use the defaults specified above
-* The only function we have to implement is the :func:`~f3dasm.optimization.optimizer.Optimizer.update_step` function, which takes a :class:`~f3dasm.base.function.Function` and outputs a tuple containing the position and evaluated value of the next iteration
-* The :func:`~f3dasm.optimization.optimizer.Optimizer.init_parameters` function is optional. It can be used to store dynamic hyper-parameters that update throughout updating
+* We create a class attribute :attr:`~f3dasm.optimization.Optimizer.parameter` and initialize it without any arguments in order to use the defaults specified above
+* The only function we have to implement is the :func:`~f3dasm.optimization.Optimizer.update_step` function, which takes a :class:`~f3dasm.Function` and outputs a tuple containing the position and evaluated value of the next iteration
+* The :func:`~f3dasm.optimization.Optimizer.init_parameters` function is optional. It can be used to store dynamic hyper-parameters that update throughout updating
 
 
 .. code-block:: python
@@ -139,6 +139,6 @@ Next, we create an new optimizer by inheriting from the :class:`~f3dasm.optimiza
         """
         return x, y
 
-In order to use the optimizer, we call the :func:`~f3dasm.optimization.optimizer.Optimizer.iterate` method, which for-loops over the :func:`~f3dasm.optimization.optimizer.Optimizer.update_step` method, appending the :code:`x` and :code:`y` values to the internal :attr:`~f3dasm.optimization.optimizer.Optimizer.data` attribute.
+In order to use the optimizer, we call the :func:`~f3dasm.optimization.Optimizer.iterate` method, which for-loops over the :func:`~f3dasm.optimization.Optimizer.update_step` method, appending the :code:`x` and :code:`y` values to the internal :attr:`~f3dasm.optimization.Optimizer.data` attribute.
 
 
