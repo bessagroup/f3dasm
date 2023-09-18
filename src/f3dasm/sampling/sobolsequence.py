@@ -25,7 +25,9 @@ __status__ = 'Stable'
 
 
 class SobolSequence(Sampler):
-    """Sampling via Sobol Sequencing with SALib"""
+    """Sampling via Sobol Sequencing with SALib
+
+    Reference: `SALib <https://salib.readthedocs.io/en/latest/>`_"""
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Sample from continuous space

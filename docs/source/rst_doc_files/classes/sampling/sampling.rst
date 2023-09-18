@@ -89,6 +89,14 @@ Latin Hypercube sampling :class:`f3dasm.sampling.latinhypercube.LatinHypercube` 
 Sobol Sequence sampling  :class:`f3dasm.sampling.sobolsequence.SobolSequence`                   `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
 ======================== ====================================================================== ===========================================================================================================
 
+.. autosummary::
+  :toctree: _autosummary
+
+    f3dasm.sampling.RandomUniform
+    f3dasm.sampling.LatinHypercube
+    f3dasm.sampling.SobolSequence
+
+
 Create your own sampler
 --------------------------
 

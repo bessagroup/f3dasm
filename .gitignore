@@ -80,6 +80,7 @@ docs/_build/
 # Ignore _autosummary generated files
 docs/source/_autosummary/
 !docs/source/_autosummary/.gitkeep
+_autosummary/
 
 # PyBuilder
 target/

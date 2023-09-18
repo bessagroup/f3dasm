@@ -1,4 +1,7 @@
-"""Random uniform Sampling"""
+"""
+Random uniform Sampling
+Reference: `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
+"""
 
 #                                                                       Modules
 # =============================================================================
@@ -20,7 +23,9 @@ __status__ = 'Stable'
 
 
 class RandomUniform(Sampler):
-    """Sampling via random uniform sampling"""
+    """
+    Sampling via random uniform sampling
+    """
 
     def sample_continuous(self, numsamples: int) -> np.ndarray:
         """Sample from continuous space
