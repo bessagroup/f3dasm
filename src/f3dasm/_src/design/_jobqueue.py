@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 # Standard
 from pathlib import Path
 from typing import Iterable, List, Optional, Type
@@ -22,10 +23,16 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-OPEN = 'open'
-IN_PROGRESS = 'in progress'
-FINISHED = 'finished'
-ERROR = 'error'
+
+class Status(str, Enum):
+    """Enum class for the status of a job."""
+    OPEN = 'open'
+    IN_PROGRESS = 'in progress'
+    FINISHED = 'finished'
+    ERROR = 'error'
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class NoOpenJobsError(Exception):
@@ -71,7 +78,7 @@ class _JobQueue:
         """
         if isinstance(other, int):
             # make _JobQueue from the jobnumber
-            other = _JobQueue(pd.Series([OPEN], index=[0], dtype='string'))
+            other = _JobQueue(pd.Series([Status.OPEN], index=[0], dtype='string'))
 
         try:
             last_index = self.jobs.index[-1]
@@ -109,7 +116,7 @@ class _JobQueue:
     # =============================================================================
 
     @classmethod
-    def from_data(cls: Type[_JobQueue], data: _Data, value: str = OPEN) -> _JobQueue:
+    def from_data(cls: Type[_JobQueue], data: _Data, value: str = Status.OPEN) -> _JobQueue:
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -176,7 +183,7 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    def add(self, number_of_jobs: int = 1, status: str = OPEN):
+    def add(self, number_of_jobs: int = 1, status: str = Status.OPEN):
         """Adds a number of jobs to the job queue.
 
         Parameters
@@ -207,7 +214,7 @@ class _JobQueue:
         index : int
             Index of the job to mark as in progress.
         """
-        self.jobs.loc[index] = IN_PROGRESS
+        self.jobs.loc[index] = Status.IN_PROGRESS
 
     def mark_as_finished(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
@@ -217,7 +224,7 @@ class _JobQueue:
         index : int
             Index of the job to mark as finished.
         """
-        self.jobs.loc[index] = FINISHED
+        self.jobs.loc[index] = Status.FINISHED
 
     def mark_as_error(self, index: int | slice | Iterable[int]) -> None:
         """Marks a job as finished.
@@ -227,15 +234,15 @@ class _JobQueue:
         index : int
             Index of the job to mark as finished.
         """
-        self.jobs.loc[index] = ERROR
+        self.jobs.loc[index] = Status.ERROR
 
     def mark_all_in_progress_open(self) -> None:
         """Marks all jobs as 'open'."""
-        self.jobs = self.jobs.replace(IN_PROGRESS, OPEN)
+        self.jobs = self.jobs.replace(Status.IN_PROGRESS, Status.OPEN)
 
     def mark_all_open(self) -> None:
         """Marks all jobs as 'open'."""
-        self.jobs = self.jobs.replace([IN_PROGRESS, FINISHED, ERROR], OPEN)
+        self.jobs = self.jobs.replace([Status.IN_PROGRESS, Status.FINISHED, Status.ERROR], Status.OPEN)
 
     #                                                                  Miscellanous
     # =============================================================================
@@ -248,7 +255,7 @@ class _JobQueue:
         bool
             True if all jobs are finished, False otherwise.
         """
-        return all(self.jobs.isin([FINISHED, ERROR]))
+        return all(self.jobs.isin([Status.FINISHED, Status.ERROR]))
 
     def get_open_job(self) -> int:
         """Returns the index of an open job.
@@ -259,7 +266,7 @@ class _JobQueue:
             Index of an open job.
         """
         try:  # try to find an open job
-            return int(self.jobs[self.jobs == OPEN].index[0])
+            return int(self.jobs[self.jobs == Status.OPEN].index[0])
         except IndexError:
             raise NoOpenJobsError("No open jobs found.")
 

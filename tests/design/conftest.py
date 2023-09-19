@@ -15,20 +15,20 @@ def doe():
 
     designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
 
-    doe = Domain(input_space=designspace)
+    doe = Domain(space=designspace)
     return doe
 
 
 @pytest.fixture(scope="package")
 def domain():
 
-    input_space = {
+    space = {
         'x1': ContinuousParameter(-5.12, 5.12),
         'x2': DiscreteParameter(-3, 3),
         'x3': CategoricalParameter(["red", "green", "blue"])
     }
 
-    return Domain(input_space=input_space)
+    return Domain(space=space)
 
 
 @pytest.fixture(scope="package")

@@ -39,10 +39,8 @@ class RandomUniform(Sampler):
         -------
             samples
         """
-        continuous = self.domain.get_continuous_parameters()
-        dimensions = len(continuous)
-
-        samples = np.random.uniform(size=(numsamples, dimensions))
+        continuous = self.domain.continuous
+        samples = np.random.uniform(size=(numsamples, len(continuous)))
 
         # stretch samples
         samples = self._stretch_samples(samples)

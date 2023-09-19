@@ -162,7 +162,7 @@ class Sampler:
         for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
                 range(param.lower_bound,
-                      param.upper_bound + 1),
+                      param.upper_bound + 1, param.step),
                 size=numsamples,
             )
 
@@ -187,5 +187,9 @@ class Sampler:
                     param.upper_bound - param.lower_bound
                 ) + param.lower_bound
             )
+
+            # If param.log is True, take the 10** of the samples
+            if param.log:
+                samples[:, dim] = 10**samples[:, dim]
 
         return samples

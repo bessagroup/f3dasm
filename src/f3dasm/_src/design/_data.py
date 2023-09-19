@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -143,7 +143,7 @@ class _Data:
         -------
             _description_
         """
-        df = pd.DataFrame(columns=list(domain.input_space.keys())).astype(
+        df = pd.DataFrame(columns=list(domain.space.keys())).astype(
             domain._cast_types_dataframe()
         )
 
@@ -176,6 +176,17 @@ class _Data:
         return cls(pd.read_csv(file, header=0, index_col=0))
 
     @classmethod
+    def from_numpy(cls: Type[_Data], array: np.ndarray) -> _Data:
+        """Loads the data from a numpy array.
+
+        Parameters
+        ----------
+        array : np.ndarray
+            The numpy array to load the data from.
+        """
+        return cls(pd.DataFrame(array))
+
+    @classmethod
     def from_dataframe(cls, dataframe: pd.DataFrame) -> _Data:
         """Loads the data from a dataframe.
 
@@ -185,6 +196,17 @@ class _Data:
             The dataframe to load the data from.
         """
         return cls(dataframe)
+
+    @classmethod
+    def from_csv(cls, dataframe: Path | str) -> _Data:
+        """Loads the data from a csv file.
+
+        Parameters
+        ----------
+        dataframe : Path | str
+            The filename to load the data from.
+        """
+        return cls(pd.read_csv(dataframe, header=0, index_col=0))
 
     def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
@@ -298,3 +320,7 @@ class _Data:
     def reset_index(self) -> None:
         """Reset the index of the data."""
         self.data.reset_index(drop=True, inplace=True)
+
+    def is_empty(self) -> bool:
+        """Check if the data is empty."""
+        return self.data.empty

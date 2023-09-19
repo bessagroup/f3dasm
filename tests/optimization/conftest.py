@@ -18,7 +18,7 @@ def data():
     }
 
     # Create the design space
-    design = Domain(input_space=input_parameters)
+    design = Domain(space=input_parameters)
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
 

@@ -25,7 +25,7 @@ else:
     from typing import Protocol
 
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, Type)
+                    Tuple, Type, Union)
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ from pathos.helpers import mp
 # Local
 from ..logger import logger
 from ._data import _Data
-from ._jobqueue import FINISHED, OPEN, NoOpenJobsError, _JobQueue
+from ._jobqueue import NoOpenJobsError, Status, _JobQueue
 from .domain import Domain
 from .experimentsample import ExperimentSample
 from .parameter import Parameter
@@ -53,6 +53,8 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
 
 
 class _OptimizerParameters(Protocol):
@@ -119,22 +121,85 @@ class ExperimentData:
     A class that contains data for experiments.
     """
 
-    def __init__(self, domain: Domain, filename: Optional[str] = 'experimentdata'):
+    def __init__(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
+                 output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None,
+                 filename: Optional[str] = 'experimentdata'):
         """
         Initializes an instance of ExperimentData.
 
         Parameters
         ----------
-        domain : Domain
-            A Domain object defining the input and output spaces of the experiment.
+        domain : Domain, optional
+            The domain of the experiment, by default None
+        input_data : DataTypes, optional
+            The input data of the experiment, by default None
+        output_data : DataTypes, optional
+            The output data of the experiment, by default None
+        jobs : Path | str, optional
+            The path to the jobs file, by default None
         filename : str, optional
-            Name of the file, excluding suffix, by default 'experimentdata'.
+            The filename of the experiment, by default 'experimentdata'
         """
-        self.domain = domain
         self.filename = filename
-        self.input_data = _Data.from_domain(self.domain)
-        self.output_data = _Data()
-        self.jobs = _JobQueue.from_data(self.input_data)
+
+        self.input_data = self._construct_data(input_data)
+        self.output_data = self._construct_data(output_data)
+
+        if self.output_data.is_empty():
+            self.output_data = _Data.from_indices(self.input_data.indices)
+            job_value = Status.OPEN
+
+        else:
+            job_value = Status.FINISHED
+
+        self.domain = self._construct_domain(domain)
+
+        if self.input_data.is_empty():
+            self.input_data = _Data.from_domain(domain)
+
+        if isinstance(jobs, (Path, str)):
+            self.jobs = _JobQueue.from_file(Path(jobs))
+
+        self.jobs = _JobQueue.from_data(self.input_data, value=job_value)
+
+    def _construct_data(self, data: DataTypes) -> _Data:
+        if data is None:
+            return _Data()
+
+        elif isinstance(data, _Data):
+            return data
+
+        elif isinstance(data, pd.DataFrame):
+            return _Data.from_dataframe(data)
+
+        elif isinstance(data, (Path, str)):
+            if data.suffix == '.csv':
+                return _Data.from_csv(data)
+
+            return _Data.from_file(data)
+
+        elif isinstance(data, np.ndarray):
+            return _Data.from_numpy(data)
+
+        else:
+            raise TypeError(
+                f"Data must be of type _Data, pd.DataFrame, np.ndarray, Path or str, not {type(data)}")
+
+    def _construct_domain(self, domain: Union[None, Domain]) -> Domain:
+        if isinstance(domain, Domain):
+            return domain
+
+        elif isinstance(domain, (Path, str)):
+            return Domain.from_file(Path(domain))
+
+        elif self.input_data.is_empty() and domain is None:
+            return Domain()
+
+        elif domain is None:
+            return Domain.from_data(self.input_data)
+
+        else:
+            raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -274,10 +339,10 @@ class ExperimentData:
 
         if dataframe_output is not None:
             experimentdata.output_data = _Data.from_dataframe(dataframe_output)
-            value = FINISHED
+            value = Status.FINISHED
         elif dataframe_output is None:
             experimentdata.output_data = _Data.from_indices(experimentdata.input_data.indices)
-            value = OPEN
+            value = Status.OPEN
 
         experimentdata.jobs = _JobQueue.from_data(experimentdata.input_data, value)
 
@@ -450,12 +515,6 @@ class ExperimentData:
         experimentdata.output_data = output_data
         experimentdata.jobs = jobs
         return experimentdata
-
-    def reset_data(self):
-        """Reset the dataframe to an empty dataframe with the appropriate input and output columns"""
-        self.input_data.reset(self.domain)
-        self.output_data.reset()
-        self.jobs.reset()
 
     #                                                                        Export
     # =============================================================================
@@ -633,10 +692,10 @@ class ExperimentData:
         self.input_data.add_numpy_arrays(input)
 
         if output is None:
-            status = OPEN
+            status = Status.OPEN
             self.output_data.add_empty_rows(len(input))
         else:
-            status = FINISHED
+            status = Status.FINISHED
             self.output_data.add_numpy_arrays(output)
 
         self.jobs.add(number_of_jobs=len(input), status=status)
@@ -831,6 +890,9 @@ class ExperimentData:
             return self._run_cluster(data_generator, kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
+
+    # create an alias for the self.run function called self.evaluate
+    evaluate = run
 
     def _run_sequential(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation sequentially

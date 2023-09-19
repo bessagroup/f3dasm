@@ -24,13 +24,13 @@ def seed() -> int:
 @pytest.fixture(scope="package")
 def domain() -> Domain:
 
-    input_space = {
+    space = {
         'x1': ContinuousParameter(-5.12, 5.12),
         'x2': DiscreteParameter(-3, 3),
         'x3': CategoricalParameter(["red", "green", "blue"])
     }
 
-    return Domain(input_space=input_space)
+    return Domain(space=space)
 
 
 @pytest.fixture(scope="package")

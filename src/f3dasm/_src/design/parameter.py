@@ -8,7 +8,7 @@ from __future__ import annotations
 # Standard
 import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Sequence, Type
+from typing import Any, ClassVar, List, Optional, Sequence, Type, Union
 
 # Third-party
 import numpy as np
@@ -21,6 +21,8 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+CategoricalType = Union[None, int, float, str]
 
 
 @dataclass
@@ -79,6 +81,8 @@ class ContinuousParameter(Parameter):
         The lower bound of the continuous search space. Defaults to negative infinity.
     upper_bound : float, optional
         The upper bound of the continuous search space (exclusive). Defaults to infinity.
+    log : bool, optional
+        Whether the search space is logarithmic. Defaults to False.
 
     Raises
     ------
@@ -94,9 +98,17 @@ class ContinuousParameter(Parameter):
 
     lower_bound: float = field(default=-np.inf)
     upper_bound: float = field(default=np.inf)
+    log: bool = field(default=False)
     _type: ClassVar[str] = field(init=False, default="float")
 
     def __post_init__(self):
+
+        if self.log and self.lower_bound <= 0.0:
+            raise ValueError(
+                f"The `lower_bound` value must be larger than 0 for a log distribution "
+                f"(low={self.lower_bound}, high={self.upper_bound})."
+            )
+
         self._check_types()
         self._check_range()
 
@@ -121,17 +133,21 @@ class DiscreteParameter(Parameter):
 
     Parameters
     ----------
-    lower_bound
+    lower_bound : int, optional
         lower bound of discrete search space
-    upper_bound
+    upper_bound : int, optional
         upper bound of discrete search space (exclusive)
+    step : int, optional
+        step size of discrete search space
     """
 
     lower_bound: int = field(default=0)
     upper_bound: int = field(default=1)
+    step: int = field(default=1)
     _type: ClassVar[str] = field(init=False, default="int")
 
     def __post_init__(self):
+
         self._check_types()
         self._check_range()
 
@@ -149,6 +165,9 @@ class DiscreteParameter(Parameter):
         if self.upper_bound == self.lower_bound:
             raise ValueError("same lower as upper bound!")
 
+        if self.step <= 0:
+            raise ValueError("step size must be larger than 0!")
+
 
 @dataclass
 class CategoricalParameter(Parameter):
@@ -160,11 +179,10 @@ class CategoricalParameter(Parameter):
         list of strings that represent available categories
     """
 
-    categories: Sequence[Any]
+    categories: Sequence[CategoricalType]
     _type: str = field(init=False, default="category")
 
     def __post_init__(self):
-        self._check_types()
         self._check_duplicates()
 
     def _check_duplicates(self):
@@ -172,20 +190,24 @@ class CategoricalParameter(Parameter):
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
-    def _check_types(self):
-        """Check if the entries of the lists are all strings"""
-
-        self.categories = list(self.categories)  # Convert to list because hydra parses omegaconf.ListConfig
-
-        for category in self.categories:
-            if not any(
-                (
-                    isinstance(category, str),
-                    isinstance(category, int),
-                    isinstance(category, float)
-                )
-            ):
-                raise TypeError(f"Expect string, int or float, got {type(category)}")
-
 
 PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
+
+
+def create_inputvariable(type: str, lower_bound: Optional[int | float] = None,
+                         upper_bound: Optional[int | float] = None,
+                         values: Optional[CategoricalType | Sequence[CategoricalType]] = None) -> Parameter:
+    if type.lower == "float":
+        return ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+
+    elif type.upper == "int":
+        return DiscreteParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+
+    elif type.lower == "category":
+        return CategoricalParameter(categories=values)
+
+    elif type.lower == "constant":
+        return ConstantParameter(value=values)
+
+    else:
+        raise ValueError(f"Unknown type argument: {type}. Choose from 'float', 'int', 'category' or 'constant'.")

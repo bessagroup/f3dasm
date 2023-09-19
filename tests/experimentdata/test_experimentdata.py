@@ -10,10 +10,7 @@ import xarray as xr
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
-from f3dasm.design import ERROR
-from f3dasm.design import Domain
-from f3dasm.design import ExperimentData
-from f3dasm.design import ContinuousParameter
+from f3dasm.design import ContinuousParameter, Domain, ExperimentData, Status
 from f3dasm.sampling import Sampler  # Import your Sampler class
 from f3dasm.sampling import RandomUniform
 
@@ -135,11 +132,6 @@ def test_from_object(experimentdata_continuous: ExperimentData):
     experiment_data = ExperimentData._from_object(input_data, output_data, jobs, domain)
     assert experiment_data == experimentdata_continuous
 
-
-def test_reset(experimentdata: ExperimentData, domain: Domain):
-    experimentdata.reset_data()
-    assert experimentdata == ExperimentData(domain)
-
 #                                                                              Exporters
 # ======================================================================================
 
@@ -187,7 +179,7 @@ def test_fill_outputs(experimentdata_continuous: ExperimentData,
 
 def test_set_error(experimentdata_continuous: ExperimentData):
     experimentdata_continuous.set_error(3)
-    assert experimentdata_continuous.jobs.jobs[3] == ERROR
+    assert experimentdata_continuous.jobs.jobs[3] == Status.ERROR
 
 
 if __name__ == "__main__":  # pragma: no cover
