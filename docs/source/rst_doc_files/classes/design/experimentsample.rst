@@ -1,5 +1,5 @@
-Design
-======
+Experment Sample
+================
 
 A :class:`~f3dasm.design.ExperimentSample` object contains a single realization of the design-of-experiment in :class:`~f3dasm.design.ExperimentData`.
 
@@ -11,7 +11,7 @@ A :class:`~f3dasm.design.ExperimentSample` object contains a single realization 
 |
 
 .. note:: 
-    A :class:`~f3dasm.design.ExperimentSample` is not constructed manually, but created inside the ExperimentData when it is required by internal processes. 
+    A :class:`~f3dasm.design.ExperimentSample` is not constructed manually, but created inside the :class:`~f3dasm.design.ExperimentData` when it is required by internal processes. 
     The main use of the :class:`~f3dasm.design.ExperimentSample` is to pass it to your own functions and scripts to extract design variables and store output variables.
 
 
@@ -42,12 +42,11 @@ A function with a signature like :code:`my_function` can be used as a callable i
 Extract parameters from a experiment sample
 -------------------------------------------
 
-Input parameters of an experiment sample can be accessed using the :code:`[]` operator, with the name of the parameter as the key.
-Only input parameters of the experiment sample can be accessed this way, and an error will be raised if the key is not found.
+Input parameters of an experiment sample can be accessed using the :meth:`~f3dasm.ExperimentSample.get` operator, with the name of the parameter as the key.
 
 .. code-block:: python
 
-    >>> experiment_sample['param_1']
+    >>> experiment_sampleget('param_1')
     0.0249
 
 
@@ -68,22 +67,23 @@ The input and output parameters of an experiment sample can be extracted as a tu
 Storing output parameters to the experiment sample
 --------------------------------------------------
 
-After running your calculation, you can store the result back into the experiment sample in two ways:
+After running your calculation, you can store the result back into the experiment sample with the :meth:`f3dasm.design.ExperimentSample.store` method.
+This can be done in two ways
 
-* Singular values and small lists can be stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data`
-* Large objects can be stored to disk with the :meth:`f3dasm.design.ExperimentSample.store` method.
+* Singular values and small lists can be stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data`: ``on_disk=False``.
+* Large objects can be stored to disk with the :meth:`f3dasm.design.ExperimentSample.store` method: ``on_disk=True``.
 
 Single values or small lists
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Single values or small lists can be stored to the :class:`~f3dasm.design.ExperimentData` using the :code:`[]` operator, with the name of the parameter as the key. 
+Single values or small lists can be stored to the :class:`~f3dasm.design.ExperimentData` directly, with the name of the parameter as the key. 
 This will create a new output parameter if the parameter name is not found in :attr:`~f3dasm.design.ExperimentData.output_data` of the :class:`~f3dasm.design.ExperimentData`.
 
 .. code-block:: python
 
-    >>> experiment_sample['output_1'] = 0.123
-    >>> experiment_sample['output_2'] = [0.123, 0.456, 0.789]
-    >>> experiment_sample['output_3'] = 'Hello world'
+    >>> experiment_sample.store(object=0.123, name='output_1', to_disk=False)
+    >>> experiment_sample[.store(object=[0.123, 0.456, 0.789], name='output_2', to_disk=False)
+    >>> experiment_sample.store(object='Hello world', name='output_3', to_disk=False)
 
 All built-in types are supported for storing to the :class:`~f3dasm.design.ExperimentData` this way. Array-like data such as numpy arrays and pandas dataframes are **not** supported and will raise an error.
 
@@ -94,11 +94,11 @@ All built-in types are supported for storing to the :class:`~f3dasm.design.Exper
 Large objects and array-like data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to store large objects or array-like data, the :meth:`~f3dasm.design.ExperimentSample.store` method can be used. A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.ExperimentData.output_data`.
+In order to store large objects or array-like data, the the argument ``on_disk=True`` method can be used. A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.ExperimentData.output_data`.
 
 .. code-block:: python
 
-    >>> experiment_sample.store('output_1', my_large_object)
+    >>> experiment_sample.store(object=my_larg_object, name='output_1', to_disk=True)
 
 :mod:`f3dasm` will automatically create a new directory for each output parameter and store the object with a generated filename referencing the :attr:`~f3dasm.design.ExperimentSample.job_number` of the design.
 
@@ -117,31 +117,36 @@ In order to store large objects or array-like data, the :meth:`~f3dasm.design.Ex
    └── my_experiment_jobs.pkl
 
 In the :attr:`~f3dasm.design.ExperimentData.output_data`, a reference to the stored object (e.g. :code:`my_project/output_1/0.npy`) will be automatically appended to the `<output parameter name>_path` parameter.
+When the reference to the stored object is accessed, the object will be automatically loaded from disk.
 
-.. code-block:: python
+Custom storage classes
+^^^^^^^^^^^^^^^^^^^^^^
 
-    >>> experiment_sample['output_1_path']
-    'my_project/output_1/0.npy'
+:mod:`f3dasm` has built-in storing functions for numpy arrays, pandas DataFrames and xarray DataArrays and Datasets.
+For any other type of object, you can provide a storing class to the :meth:`~f3dasm.design.ExperimentSample.store` method call:
 
+* The class must inherit from :class:`~f3dasm.design._Store`. class
+* The class variable ``suffix`` must be defined. This is the file extension of the stored object.
+* The ``store(self)`` method must be defined. This method will be called when the object is stored to disk.
+* The ``load(self)`` method must be defined. This method will be called when the object is loaded from disk.
 
-
-:mod:`f3dasm` has built-in storing functions for numpy arrays, pandas DataFrames and xarray DataArrays and Datasets. 
-For any other type of object, you can provide a storing function to the :meth:`~f3dasm.design.ExperimentSample.store` method call:
-
-* The arguments must be the object itself and the path that it should store to
-* The function should store the object to disk.
-* The return value must be the file extension of the stored object as a string.
+The object attributes ``self.path`` and ``self.object`` can be used to access the path to the stored object and the object itself.
 
 You can take the following function as an example:
 
 .. code-block:: python
 
-    def numpy_storing_function(object, path: Path) -> str:
-        np.save(file=path.with_suffix('.npy'), arr=object)
-        return '.npy'
+    class NumpyStore(_Store):
+        suffix: int = '.npy'
+
+        def store(self) -> None:
+            np.save(file=self.path.with_suffix(self.suffix), arr=self.object)
+
+        def load(self) -> np.ndarray:
+            return np.load(file=self.path.with_suffix(self.suffix))
 
 
-After defining the storing function, it can be used as a callable in the :meth:`~f3dasm.design.ExperimentSample.store` method:
+After defining the storing class, it can be used as an argument in the :meth:`~f3dasm.design.ExperimentSample.store` method:
 
 .. code-block:: python
 
