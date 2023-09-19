@@ -3,8 +3,8 @@ Optimizer
 
 The :class:`~f3dasm.optimization.Optimizer` class is used to find the minimum of a particular quantity of interest through an iterative fashion.
 
-* The :meth:`~f3dasm.optimization.Optimizer.update_step` method takes a :class:`~f3dasm.datageneration.functions.function.Function` object and outputs a tuple containing the position and evaluated value of the next iteration.
-* The :meth:`~f3dasm.optimization.Optimizer.iterate` method is used to start the optimization process. It takes the number of iterations and a :class:`~f3dasm.base.function.Function` object as arguments. For every iteration, the :meth:`~f3dasm.optimization.Optimizer.update_step` method is called and the results are stored as new :class:`~f3dasm.design.experimentsample.ExperimentSample` in the :class:`~f3dasm.design.ExperimentData` object.
+* The :meth:`~f3dasm.optimization.Optimizer.update_step` method takes a :class:`~f3dasm.datageneration.DataGenerator` object and outputs an :class:`~f3dasm.design.ExperimentData` object containing the position and evaluated values of the next iteration.
+* The :meth:`~f3dasm.design.ExperimentData.optimize` method from the :class:`~f3dasm.design.ExperimentData` class is used to start the optimization process. It takes the number of iterations, an :class:`~f3dasm.optimization.Optimizer` object and a :class:`~f3dasm.datageneration.DataGenerator` object. For every iteration, the :meth:`~f3dasm.optimization.Optimizer.update_step` method is called and the results are appended to the :class:`~f3dasm.design.experimentdata.ExperimentData` object.
 
 
 .. image:: ../../../img/f3dasm-optimizer.png
@@ -41,22 +41,18 @@ We will use the :class:`~f3dasm.optimization.lbfgsb.LBFGSB` optimizer to find th
 
     from f3dasm.optimization import LBFGSB
 
-    optimizer = LBFGSB(samples)
+    optimizer = LBFGSB(domain)
 
-By calling the :meth:`~f3dasm.optimization.Optimizer.iterate` method and specifying the : and the number of iterations, we will start the optimization process:
+By calling the :meth:`~f3dasm.design.ExperimenData.optimize` method and specifying the :class:`~f3dasm.optimization.Optimizer`, :class:`~f3dasm.datageneration.DataGenerator` and the number of iterations, we will start the optimization process:
 
 .. code-block:: python
     
     from f3dasm.datageneration.functions import Ackley
 
     f = Ackley()
-    optimizer.iterate(iterations=100, function=f)
+    samples.optimize(optimizer=optimizer,, data_generator=f, iterations=100)
 
-After that, we can extract the :class:`~f3dasm.design.ExperimentData` object from the optimizer:
-
-.. code-block:: python
-
-    lbfgsb_data = optimizer.extract_data()
+Upon inspecting the :class:`~f3dasm.design.ExperimentData` object, we can see that ``input_data``, and ``output_data`` attributes contain the results of the optimization process:
 
 .. _implemented optimizers:
 
@@ -74,6 +70,15 @@ LBFGSB                   :class:`~f3dasm.optimization.LBFGSB`                   
 NelderMead               :class:`~f3dasm.optimization.NelderMead`                                  `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
 RandomSearch             :class:`~f3dasm.optimization.RandomSearch`                                `numpy <https://numpy.org/doc/>`_
 ======================== ========================================================================= ===============================================================================================
+
+.. autosummary::
+  :toctree: _autosummary
+
+    f3dasm.optimization.CG
+    f3dasm.optimization.LBFGSB
+    f3dasm.optimization.NelderMead
+    f3dasm.optimization.RandomSearch
+
 
 Extend the optimization capabilities
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
