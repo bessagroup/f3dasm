@@ -103,7 +103,7 @@ class Domain:
 # =============================================================================
 
     @classmethod
-    def from_file(cls: Type[Domain], filename: Path) -> Domain:
+    def from_file(cls: Type[Domain], filename: Path | str) -> Domain:
         """Create a Domain object from a pickle file.
 
         Parameters
@@ -116,6 +116,8 @@ class Domain:
         Domain
             Domain object containing the loaded data.
         """
+        # convert filename to Path object
+        filename = Path(filename)
 
         # Check if filename exists
         if not filename.with_suffix('.pkl').exists():
@@ -180,7 +182,7 @@ class Domain:
 
     @classmethod
     def from_data(cls: Type[Domain], data: _Data) -> Domain:
-        cls.from_dataframe(data.data)
+        return cls.from_dataframe(data.data)
 
 #                                                                        Export
 # =============================================================================

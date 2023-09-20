@@ -134,7 +134,7 @@ class _JobQueue:
         return cls(pd.Series([value] * len(data), dtype='string'))
 
     @classmethod
-    def from_file(cls: Type[_JobQueue], filename: Path) -> _JobQueue:
+    def from_file(cls: Type[_JobQueue], filename: Path | str) -> _JobQueue:
         """Create a JobQueue object from a pickle file.
 
         Parameters
@@ -147,6 +147,9 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the loaded data.
         """
+        # Convert filename to Path
+        filename = Path(filename)
+
         # Check if the file exists
         if not filename.with_suffix('.pkl').exists():
             raise FileNotFoundError(f"Jobfile {filename} does not exist.")

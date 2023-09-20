@@ -57,6 +57,35 @@ def experimentdata_continuous(domain_continuous: Domain) -> ExperimentData:
 
 
 @pytest.fixture(scope="package")
+def experimentdata_expected() -> ExperimentData:
+    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    sampler = RandomUniform(domain=domain_continuous, number_of_samples=10, seed=SEED)
+    data = ExperimentData.from_sampling(sampler)
+    data.fill_output(np.zeros((10, 1)))
+    data.add_numpy_arrays(np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), np.array([[0.0], [0.0]]))
+
+    data.input_data.data = data.input_data.data.round(6)
+    return data
+
+
+@pytest.fixture(scope="package")
+def experimentdata_expected_no_output() -> ExperimentData:
+    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    sampler = RandomUniform(domain=domain_continuous, number_of_samples=10, seed=SEED)
+    data = ExperimentData.from_sampling(sampler)
+    data.add_numpy_arrays(np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]))
+
+    data.input_data.data = data.input_data.data.round(6)
+    return data
+
+
+@pytest.fixture(scope="package")
+def experimentdata_expected_only_domain() -> ExperimentData:
+    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    return ExperimentData(domain=domain_continuous)
+
+
+@pytest.fixture(scope="package")
 def numpy_array(domain_continuous: Domain) -> np.ndarray:
     np.random.seed(SEED)
     return np.random.rand(10, len(domain_continuous))

@@ -145,6 +145,7 @@ class ExperimentData:
         self.input_data = self._construct_data(input_data)
         self.output_data = self._construct_data(output_data)
 
+        # Create empty output_data from indices if output_data is empty
         if self.output_data.is_empty():
             self.output_data = _Data.from_indices(self.input_data.indices)
             job_value = Status.OPEN
@@ -154,8 +155,9 @@ class ExperimentData:
 
         self.domain = self._construct_domain(domain)
 
+        # Create empty input_data from domain if input_data is empty
         if self.input_data.is_empty():
-            self.input_data = _Data.from_domain(domain)
+            self.input_data = _Data.from_domain(self.domain)
 
         if isinstance(jobs, (Path, str)):
             self.jobs = _JobQueue.from_file(Path(jobs))
@@ -173,9 +175,6 @@ class ExperimentData:
             return _Data.from_dataframe(data)
 
         elif isinstance(data, (Path, str)):
-            if data.suffix == '.csv':
-                return _Data.from_csv(data)
-
             return _Data.from_file(data)
 
         elif isinstance(data, np.ndarray):

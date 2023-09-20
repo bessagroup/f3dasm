@@ -155,7 +155,7 @@ class _Data:
         return cls(df)
 
     @classmethod
-    def from_file(cls, filename: Path, text_io: Optional[TextIOWrapper] = None) -> _Data:
+    def from_file(cls, filename: Path | str, text_io: Optional[TextIOWrapper] = None) -> _Data:
         """Loads the data from a file.
 
         Parameters
@@ -168,7 +168,7 @@ class _Data:
         """
         # Load the data from a csv
         if text_io is None:
-            file = filename.with_suffix('.csv')
+            file = Path(filename).with_suffix('.csv')
 
         else:
             file = text_io
@@ -196,17 +196,6 @@ class _Data:
             The dataframe to load the data from.
         """
         return cls(dataframe)
-
-    @classmethod
-    def from_csv(cls, dataframe: Path | str) -> _Data:
-        """Loads the data from a csv file.
-
-        Parameters
-        ----------
-        dataframe : Path | str
-            The filename to load the data from.
-        """
-        return cls(pd.read_csv(dataframe, header=0, index_col=0))
 
     def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
