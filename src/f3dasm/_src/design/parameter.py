@@ -108,6 +108,12 @@ class ContinuousParameter(Parameter):
                 f"The `lower_bound` value must be larger than 0 for a log distribution "
                 f"(low={self.lower_bound}, high={self.upper_bound})."
             )
+        
+        if isinstance(self.lower_bound, int):
+            self.lower_bound=float(self.lower_bound)
+        
+        if isinstance(self.upper_bound, int):
+            self.upper_bound=float(self.upper_bound)
 
         self._check_types()
         self._check_range()
