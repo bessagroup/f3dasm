@@ -9,7 +9,7 @@ from typing import List
 
 # Local
 from .._imports import try_import
-from . import abaqus
+from .abaqus_simulator import AbaqusSimulator
 from .datagenerator import DataGenerator
 from .functions import pybenchfunction
 from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,

@@ -5,7 +5,7 @@ Module for data-generation
 # =============================================================================
 
 # Local
-from ._src.datageneration import abaqus
+from ._src.datageneration.abaqus_simulator import AbaqusSimulator
 from ._src.datageneration.datagenerator import DataGenerator
 from ._src.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
                                             FUNCTIONS_7D, find_function,
