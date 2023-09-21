@@ -143,7 +143,7 @@ class _Data:
         -------
             _description_
         """
-        df = pd.DataFrame(columns=list(domain.space.keys())).astype(
+        df = pd.DataFrame(columns=domain.names).astype(
             domain._cast_types_dataframe()
         )
 
@@ -155,24 +155,15 @@ class _Data:
         return cls(df)
 
     @classmethod
-    def from_file(cls, filename: Path | str, text_io: Optional[TextIOWrapper] = None) -> _Data:
+    def from_file(cls, filename: Path | str) -> _Data:
         """Loads the data from a file.
 
         Parameters
         ----------
         filename : Path
             The filename to load the data from.
-
-        text_io: TextIOWrapper, optional
-            A text io object to load the data from.
         """
-        # Load the data from a csv
-        if text_io is None:
-            file = Path(filename).with_suffix('.csv')
-
-        else:
-            file = text_io
-
+        file = Path(filename).with_suffix('.csv')
         return cls(pd.read_csv(file, header=0, index_col=0))
 
     @classmethod
@@ -183,6 +174,7 @@ class _Data:
         ----------
         array : np.ndarray
             The numpy array to load the data from.
+        data_type : str
         """
         return cls(pd.DataFrame(array))
 
@@ -225,10 +217,13 @@ class _Data:
         return xr.DataArray(self.data, dims=['iterations', label], coords={
             'iterations': range(len(self)), label: self.names})
 
+    def to_dataframe(self) -> pd.DataFrame:
+        return self.data
+
     def combine_data_to_multiindex(self, other: _Data) -> pd.DataFrame:
         return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])
 
-    def store(self, filename: Path, text_io: TextIOWrapper = None) -> None:
+    def store(self, filename: Path) -> None:
         """Stores the data to a file.
 
         Parameters
@@ -236,11 +231,6 @@ class _Data:
         filename : Path
             The filename to store the data to.
         """
-
-        if text_io is not None:
-            self.data.to_csv(text_io)
-            return
-
         self.data.to_csv(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
@@ -313,3 +303,9 @@ class _Data:
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         return self.data.empty
+
+    def has_columnnames(self, names: Iterable[str]) -> bool:
+        return set(names).issubset(self.names)
+
+    def set_columnnames(self, names: Iterable[str]) -> None:
+        self.data.columns = names

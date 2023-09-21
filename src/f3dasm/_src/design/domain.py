@@ -78,7 +78,7 @@ class Domain:
     @property
     def names(self) -> List[str]:
         """Return a list of the names of the parameters"""
-        return list(self.space.keys())
+        return list(self.keys())
 
     @property
     def continuous(self) -> Domain:

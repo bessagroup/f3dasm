@@ -65,9 +65,10 @@ class Function(DataGenerator):
 
     def __call__(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
 
+        # TODO: Can I get rid of this? When input_x = type(ExperimentData)
         # If the input is a Data object
         if isinstance(input_x, ExperimentData):
-            x = input_x.get_input_data().to_numpy()
+            x = input_x.input_data.to_numpy()
 
         else:
             x = input_x
@@ -324,8 +325,8 @@ class Function(DataGenerator):
             matplotlib figure and axes
         """
         fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        x1 = data.get_input_data().iloc[:, 0]
-        x2 = data.get_input_data().iloc[:, 1]
+        x1 = data.input_data.to_dataframe().iloc[:, 0]
+        x2 = data.input_data.to_dataframe().iloc[:, 1]
         ax.scatter(
             x=x1,
             y=x2,
@@ -344,18 +345,18 @@ class Function(DataGenerator):
 
         # Mark selected point
         if numsamples is not None:
-            x_selected = data.get_input_data().iloc[numsamples]
+            x_selected = data.input_data.to_dataframe().iloc[numsamples]
             ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
                        marker="*", edgecolors="cyan")
 
         # Mark last point
-        x_last = data.get_input_data().iloc[-1]
+        x_last = data.input_data.to_dataframe().iloc[-1]
         ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
                    marker="*", edgecolors="magenta")
 
         # Best point
-        x1_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 0]
-        x2_best = data.get_n_best_output_samples(nosamples=1).iloc[:, 1]
+        x1_best, _ = data.get_n_best_output(1).to_numpy()[:, 0]
+        x2_best, _ = data.get_n_best_output(1).to_numpy()[:, 1]
         ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
                    marker="*", edgecolors="red")
         return fig, ax

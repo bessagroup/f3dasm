@@ -62,11 +62,11 @@ def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, op
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
 @pytest.mark.smoke
-@pytest.mark.parametrize("iterations", np.random.randint(low=1, high=100, size=5))
+@pytest.mark.parametrize("iterations", [10, 23, 66, 86])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", [Sphere])
 def test_optimizer_iterations(iterations: int, data_generator: DataGenerator, optimizer: Optimizer):
-    numsamples = 40  # iterations
+    numsamples = 40  # initial samples
     seed = 42
 
     dim = 6

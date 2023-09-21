@@ -53,18 +53,18 @@ class RandomSearch(Optimizer):
             ]
         )
 
-        x_experimentdata = ExperimentData.from_numpy(domain=self.domain, input_array=x_new)
+        x_experimentdata = ExperimentData(domain=self.domain, input_data=x_new)
 
         # Evaluate the candidates
-        x_experimentdata = ExperimentData.from_numpy(domain=self.domain, input_array=x_new)
+        x_experimentdata = ExperimentData(domain=self.domain, input_data=x_new)
         x_experimentdata.run(data_generator)
 
         _, y = x_experimentdata.to_numpy()
 
         # return the data
-        return ExperimentData.from_numpy(domain=self.domain,
-                                         input_array=x_new,
-                                         output_array=np.atleast_2d(y))
+        return ExperimentData(domain=self.domain,
+                              input_data=x_new,
+                              output_data=np.atleast_2d(y))
 
     def get_info(self) -> List[str]:
         return ['Fast', 'Single-Solution']

@@ -56,8 +56,10 @@ class _SciPyOptimizer(Optimizer):
             method=self.method,
             # TODO: #89 Fix this with the newest gradient method!
             jac='3-point',
-            x0=self.data.get_n_best_input_parameters_numpy(
-                nosamples=1).ravel(),
+            x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
+
+            # x0=self.data.get_n_best_input_parameters_numpy(
+            #     nosamples=1).ravel(),
             callback=self._callback,
             options=self.hyperparameters.__dict__,
             bounds=self.domain.get_bounds(),

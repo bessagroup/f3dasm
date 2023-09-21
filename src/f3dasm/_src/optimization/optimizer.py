@@ -143,7 +143,7 @@ class Optimizer:
 
         """
         x0 = experiment_data.get_n_best_output(self.hyperparameters.population)
-        x0.reset_index()
+        x0._reset_index()
         self.data = x0
 
     def get_name(self) -> str:
