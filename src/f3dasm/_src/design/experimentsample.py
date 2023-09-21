@@ -296,7 +296,7 @@ class ExperimentSample:
         """
         return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
 
-    def store(self, object: Any, name: str, to_disk: Optional[bool] = False,
+    def store(self, object: Any, name: str, to_disk: bool = False,
               store_method: Optional[Type[_Store]] = None) -> None:
         """Store an object to disk.
 
