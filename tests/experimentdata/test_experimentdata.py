@@ -37,8 +37,8 @@ def test_experiment_data_init(experimentdata: ExperimentData, domain: Domain):
 def test_experiment_data_add(experimentdata: ExperimentData,
                              experimentdata2: ExperimentData, domain: Domain):
     experimentdata_total = ExperimentData(domain)
-    experimentdata_total.add_experiments(experimentdata)
-    experimentdata_total.add_experiments(experimentdata2)
+    experimentdata_total._add_experiments(experimentdata)
+    experimentdata_total._add_experiments(experimentdata2)
     assert experimentdata_total == experimentdata + experimentdata2
 
 
@@ -134,17 +134,11 @@ def test_add_new_output_column(experimentdata: ExperimentData):
     assert 'test' in experimentdata.output_data.names
 
 
-def test_add_numpy_arrays(numpy_array: np.ndarray, experimentdata_continuous: ExperimentData):
-    exp_data = ExperimentData(experimentdata_continuous.domain)
-    exp_data.add_numpy_arrays(numpy_array)
-    assert exp_data == experimentdata_continuous
-
-
 def test_fill_outputs(experimentdata_continuous: ExperimentData,
                       numpy_output_array: np.ndarray, numpy_array: np.ndarray):
     exp_data = ExperimentData(experimentdata_continuous.domain)
     exp_data.add_output_parameter(name='y')
-    exp_data.add_numpy_arrays(numpy_array, numpy_output_array)
+    exp_data.add(domain=exp_data.domain, input_data=numpy_array, output_data=numpy_output_array)
     experimentdata_continuous.fill_output(numpy_output_array)
 
     assert exp_data == experimentdata_continuous

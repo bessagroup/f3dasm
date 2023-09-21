@@ -129,7 +129,7 @@ def run_optimization(
 
     # Sample
     data = sampler.get_samples(numsamples=number_of_samples)
-    data.run(data_generator, mode='sequential')
+    data.evaluate(data_generator, mode='sequential')
     data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
 
     return data
@@ -152,7 +152,7 @@ def run_optimization_to_disk(
     # Sample
     data = sampler.get_samples(numsamples=number_of_samples)
 
-    data.run(data_generator, mode='sequential')
+    data.evaluate(data_generator, mode='sequential')
     data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
 
     # TODO: .get_name() method is not implemented for DataGenerator base class

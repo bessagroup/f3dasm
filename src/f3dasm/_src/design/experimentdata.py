@@ -55,6 +55,10 @@ __status__ = 'Stable'
 # =============================================================================
 
 DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
+DOMAIN_SUFFIX = "_domain"
+INPUT_DATA_SUFFIX = "_data"
+OUTPUT_DATA_SUFFIX = "_output"
+JOBS_SUFFIX = "_jobs"
 
 
 class _OptimizerParameters(Protocol):
@@ -146,8 +150,8 @@ class ExperimentData:
 
         self.filename = filename
 
-        self.input_data = _construct_data(input_data)
-        self.output_data = _construct_data(output_data)
+        self.input_data = _data_factory(input_data)
+        self.output_data = _data_factory(output_data)
 
         # Create empty output_data from indices if output_data is empty
         if self.output_data.is_empty():
@@ -157,18 +161,19 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        self.domain = _construct_domain(domain, self.input_data)
+        self.domain = _domain_factory(domain, self.input_data)
 
         # Create empty input_data from domain if input_data is empty
         if self.input_data.is_empty():
             self.input_data = _Data.from_domain(self.domain)
 
-        self.jobs = _construct_jobs(jobs, self.input_data, job_value)
+        self.jobs = _jobs_factory(jobs, self.input_data, job_value)
 
         # Check if the columns of input_data are in the domain
         if not self.input_data.has_columnnames(self.domain.names):
             self.input_data.set_columnnames(self.domain.names)
 
+        # For backwards compatibility; if the output_data has only one column, rename it to 'y'
         if self.output_data.names == [0]:
             self.output_data.set_columnnames(['y'])
 
@@ -299,7 +304,7 @@ class ExperimentData:
             # return cls.from_sampling(sampler)
 
         else:
-            raise ValueError("No valid experimentdata option found in the config file!")
+            return cls(**config)
 
     @classmethod
     def _from_file_attempt(cls: Type[ExperimentData], filename: str) -> ExperimentData:
@@ -320,10 +325,9 @@ class ExperimentData:
         FileNotFoundError
             If the file cannot be found.
         """
-
         try:
-            return cls(domain=Path(f"{filename}_domain"), input_data=Path(f"{filename}_data"),
-                       output_data=Path(f"{filename}_output"), jobs=Path(f"{filename}_jobs"))
+            return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"), input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
+                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"), jobs=Path(f"{filename}{JOBS_SUFFIX}"))
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
 
@@ -356,10 +360,10 @@ class ExperimentData:
         if filename is None:
             filename = self.filename
 
-        self.input_data.store(Path(f"{filename}_data"))
-        self.output_data.store(Path(f"{filename}_output"))
-        self.jobs.store(Path(f"{filename}_jobs"))
-        self.domain.store(Path(f"{filename}_domain"))
+        self.input_data.store(Path(f"{filename}{INPUT_DATA_SUFFIX}"))
+        self.output_data.store(Path(f"{filename}{OUTPUT_DATA_SUFFIX}"))
+        self.jobs.store(Path(f"{filename}{JOBS_SUFFIX}"))
+        self.domain.store(Path(f"{filename}{DOMAIN_SUFFIX}"))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -391,11 +395,24 @@ class ExperimentData:
     #                                                         Append or remove data
     # =============================================================================
 
-    def _add(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
-             output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None) -> None:
-        self.add_experiments(ExperimentData(domain=domain, input_data=input_data, output_data=output_data, jobs=jobs))
+    def add(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None) -> None:
+        """Add data to the ExperimentData object.
 
-    def add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
+        Parameters
+        ----------
+        domain : Optional[Domain], optional
+            Domain of the added object, by default None
+        input_data : Optional[DataTypes], optional
+            input parameters of the added object, by default None
+        output_data : Optional[DataTypes], optional
+            output parameters of the added object, by default None
+        jobs : Optional[Path  |  str], optional
+            jobs off the added object, by default None
+        """
+        self._add_experiments(ExperimentData(domain=domain, input_data=input_data, output_data=output_data, jobs=jobs))
+
+    def _add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData attribute.
 
@@ -404,12 +421,29 @@ class ExperimentData:
         experiment_sample : ExperimentSample or ExperimentData
             Experiment(s) to add.
         """
+
         if isinstance(experiment_sample, ExperimentData):
             experiment_sample._reset_index()
 
         self.input_data += experiment_sample.input_data
         self.output_data += experiment_sample.output_data
         self.jobs += experiment_sample.jobs
+
+        # Check if indices of the internal objects are equal
+        if not _equal_indices(self.input_data, self.output_data, self.jobs):
+            raise ValueError(f"Indices of the internal objects are not equal."
+                             f"input_data {self.input_data.indices}, output_data {self.output_data.indices},"
+                             f"jobs: {self.jobs.indices}")
+
+        # if self.domain.names != experiment_sample.input_data.names:
+        #     raise ValueError(f"Domain names do not match. "
+        #                      f"\n(left): {self.domain.names}, "
+        #                      f"\n(right): {experiment_sample.input_data.names}")
+
+        # Apparently you need to cast the types again
+        # TODO: Breaks if values are NaN or infinite
+        self.input_data.data = self.input_data.data.astype(
+            self.domain._cast_types_dataframe())
 
     def add_input_parameter(self, name: str, parameter: Parameter) -> None:
         """Add a new input column to the ExperimentData object.
@@ -434,47 +468,6 @@ class ExperimentData:
         """
         self.output_data.add_column(name)
 
-    def add(self, data: pd.DataFrame):
-        """
-        Append data to the ExperimentData object.
-
-        Parameters
-        ----------
-        data : pd.DataFrame
-            Data to append.
-        """
-        self.input_data.add(data)
-        self.output_data.add_empty_rows(len(data))
-
-        # Apparently you need to cast the types again
-        # TODO: Breaks if values are NaN or infinite
-        self.input_data.data = self.input_data.data.astype(
-            self.domain._cast_types_dataframe())
-
-        self.jobs.add(number_of_jobs=len(data))
-
-    def add_numpy_arrays(self, input: np.ndarray, output: Optional[np.ndarray] = None):
-        """
-        Append a numpy array to the ExperimentData object.
-
-        Parameters
-        ----------
-        input : np.ndarray
-            2D numpy array to add to the input data.
-        output : np.ndarray, optional
-            2D numpy array to add to the output data. By default None.
-        """
-        self.input_data.add_numpy_arrays(input)
-
-        if output is None:
-            status = Status.OPEN
-            self.output_data.add_empty_rows(len(input))
-        else:
-            status = Status.FINISHED
-            self.output_data.add_numpy_arrays(output)
-
-        self.jobs.add(number_of_jobs=len(input), status=status)
-
     def fill_output(self, output: np.ndarray, label: str = "y"):
         """
         Fill NaN values in the output data with the given array
@@ -492,7 +485,8 @@ class ExperimentData:
         filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(output)
 
         # Set the status of the filled indices to FINISHED
-        self.jobs.mark_as_finished(filled_indices)
+        # self.jobs.mark_as_finished(filled_indices)
+        self.jobs.mark(filled_indices, Status.FINISHED)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -554,7 +548,8 @@ class ExperimentData:
         for column, value in experiment_sample.output_data.items():
             self.output_data.set_data(index=experiment_sample.job_number, value=value, column=column)
 
-        self.jobs.mark_as_finished(experiment_sample._jobnumber)
+        # self.jobs.mark_as_finished(experiment_sample._jobnumber)
+        self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
     @_access_file
     def _write_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
@@ -577,7 +572,8 @@ class ExperimentData:
             The ExperimentSample object of the first available open job.
         """
         job_index = self.jobs.get_open_job()
-        self.jobs.mark_as_in_progress(job_index)
+        # self.jobs.mark_as_in_progress(job_index)
+        self.jobs.mark(job_index, status=Status.IN_PROGRESS)
         experiment_sample = self._get_experiment_sample(job_index)
         return experiment_sample
 
@@ -604,7 +600,8 @@ class ExperimentData:
         index
             index of the experiment_sample to mark as error
         """
-        self.jobs.mark_as_error(index)
+        # self.jobs.mark_as_error(index)
+        self.jobs.mark(index, status=Status.ERROR)
         self.output_data.set_data(index, value='ERROR')
 
     @_access_file
@@ -629,16 +626,48 @@ class ExperimentData:
         """
         return self.jobs.is_all_finished()
 
-    def mark_all_open(self) -> None:
-        """Mark all jobs as open"""
-        self.jobs.mark_all_open()
+    def mark(self, indices: Iterable[int], status: str) -> None:
+        """Mark the jobs at the given indices with the given status.
 
+        Parameters
+        ----------
+        indices : Iterable[int]
+            indices of the jobs to mark
+        status : str
+            status to mark the jobs with: choose between: 'open', 'in progress', 'finished' or 'error'
+
+        Raises
+        ------
+        ValueError
+            If the given status is not any of 'open', 'in progress', 'finished' or 'error'
+        """
+        # Check if the status is in Status
+        if not any(status.lower() == s.value for s in Status):
+            raise ValueError(f"Invalid status {status} given. "
+                             f"\nChoose from values: {', '.join([s.value for s in Status])}")
+
+        self.jobs.mark(indices, status)
+
+    def mark_all(self, status: str) -> None:
+        """Mark all the experiments with the given status
+
+        Parameters
+        ----------
+        status : str
+            status to mark the jobs with: choose between: 'open', 'in progress', 'finished' or 'error'
+
+        Raises
+        ------
+        ValueError
+            If the given status is not any of 'open', 'in progress', 'finished' or 'error'        
+        """
+        self.mark(self.jobs.indices, status)
     #                                                                Datageneration
     # =============================================================================
 
-    def run(self, data_generator: _DataGenerator, mode: str = 'sequential',
-            kwargs: Optional[dict] = None) -> None:
-        """Run any function over the entirery of the experiments
+    def evaluate(self, data_generator: _DataGenerator, mode: str = 'sequential',
+                 kwargs: Optional[dict] = None) -> None:
+        """Run any function over the entirety of the experiments
 
         Parameters
         ----------
@@ -665,9 +694,6 @@ class ExperimentData:
             return self._run_cluster(data_generator, kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
-
-    # create an alias for the self.run function called self.evaluate
-    evaluate = run
 
     def _run_sequential(self, data_generator: _DataGenerator, kwargs: dict):
         """Run the operation sequentially
@@ -806,10 +832,10 @@ class ExperimentData:
 
         for _ in range(_number_of_updates(iterations, population=optimizer.hyperparameters.population)):
             new_samples = optimizer.update_step(data_generator)
-            self.add_experiments(new_samples)
+            self._add_experiments(new_samples)
 
             # If applicable, evaluate the new designs:
-            self.run(data_generator, mode='sequential', kwargs=kwargs)
+            self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
             optimizer.set_data(self)
 
@@ -829,7 +855,7 @@ class ExperimentData:
 
         optimizer.run_algorithm(iterations, data_generator)
 
-        self.add_experiments(optimizer.data)
+        self._add_experiments(optimizer.data)
 
         # TODO: At the end, the data should have n_data_before_iterate + iterations amount of elements!
         # If x_new is empty, repeat best x0 to fill up total iteration
@@ -838,17 +864,17 @@ class ExperimentData:
                 nosamples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
-                self.add_experiments(ExperimentSample.from_numpy(repeated_last_element))
+                self._add_experiments(ExperimentSample.from_numpy(repeated_last_element))
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
             last_design = self._get_experiment_sample(len(self)-1)
 
             for repetition in range(iterations - (len(self) - n_data_before_iterate)):
-                self.add_experiments(last_design)
+                self._add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
-        self.run(data_generator, mode='sequential')
+        self.evaluate(data_generator, mode='sequential')
 
         # Reset the optimizer
         optimizer.reset()
@@ -892,7 +918,7 @@ def _number_of_overiterations(iterations: int, population: int) -> int:
         return population - overiterations
 
 
-def _construct_data(data: DataTypes) -> _Data:
+def _data_factory(data: DataTypes) -> _Data:
     if data is None:
         return _Data()
 
@@ -913,7 +939,7 @@ def _construct_data(data: DataTypes) -> _Data:
             f"Data must be of type _Data, pd.DataFrame, np.ndarray, Path or str, not {type(data)}")
 
 
-def _construct_domain(domain: Union[None, Domain], input_data: _Data) -> Domain:
+def _domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
     if isinstance(domain, Domain):
         return domain
 
@@ -930,8 +956,12 @@ def _construct_domain(domain: Union[None, Domain], input_data: _Data) -> Domain:
         raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def _construct_jobs(jobs: Path | str | None, input_data: _Data, job_value: Status) -> _JobQueue:
+def _jobs_factory(jobs: Path | str | None, input_data: _Data, job_value: Status) -> _JobQueue:
     if isinstance(jobs, (Path, str)):
         return _JobQueue.from_file(Path(jobs))
 
     return _JobQueue.from_data(input_data, value=job_value)
+
+
+def _equal_indices(input_data: _Data, output_data: _Data, jobs: _JobQueue) -> bool:
+    return input_data.indices.equals(output_data.indices) and input_data.indices.equals(jobs.indices)

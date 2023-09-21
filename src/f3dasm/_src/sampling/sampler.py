@@ -143,7 +143,8 @@ class Sampler:
         df = pd.concat([empty_frame, samples_frame], sort=True)
 
         # Add the samples to the Data object
-        data.add(data=df)
+        # data.add(data=df)
+        data.add(input_data=df)
 
         return data
 

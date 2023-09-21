@@ -83,7 +83,7 @@ class _Data:
         """
         # If other is a dictionary, convert it to a _Data object
         if isinstance(other, Dict):
-            other = _Data(pd.DataFrame(other, index=[0]).copy())
+            other = _convert_dict_to_data(other)
 
         try:
             last_index = self.data.index[-1]
@@ -266,11 +266,6 @@ class _Data:
     def add_column(self, name: str):
         self.data[name] = np.nan
 
-    def add_numpy_arrays(self, array: np.ndarray):
-        df = pd.DataFrame(array,
-                          columns=self.data.columns)
-        self.add(df)
-
     def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
         # get the indices of the nan values
         idx, _ = np.where(np.isnan(self.data))
@@ -309,3 +304,19 @@ class _Data:
 
     def set_columnnames(self, names: Iterable[str]) -> None:
         self.data.columns = names
+
+
+def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
+    """Converts a dictionary with scalar values to a data object.
+
+    Parameters
+    ----------
+    dict : Dict[str, Any]
+        The dictionary to convert. Note that the dictionary should only have scalar values!
+
+    Returns
+    -------
+    _Data
+        The data object.
+    """
+    return _Data(pd.DataFrame(dictionary, index=[0]).copy())

@@ -112,6 +112,10 @@ class _JobQueue:
     def _repr_html_(self) -> str:
         return self.jobs.__repr__()
 
+    @property
+    def indices(self) -> pd.Index:
+        """The indices of the jobs."""
+        return self.jobs.index
     #                                                      Alternative Constructors
     # =============================================================================
 
@@ -209,43 +213,21 @@ class _JobQueue:
     #                                                                          Mark
     # =============================================================================
 
-    def mark_as_in_progress(self, index: int | slice | Iterable[int]) -> None:
-        """Marks a job as in progress.
+    def mark(self, index: int | slice | Iterable[int], status: Status) -> None:
+        """Marks a job with a certain status.
 
         Parameters
         ----------
         index : int
-            Index of the job to mark as in progress.
+            Index of the job to mark.
+        status : str
+            Status to mark the job with.
         """
-        self.jobs.loc[index] = Status.IN_PROGRESS
-
-    def mark_as_finished(self, index: int | slice | Iterable[int]) -> None:
-        """Marks a job as finished.
-
-        Parameters
-        ----------
-        index : int
-            Index of the job to mark as finished.
-        """
-        self.jobs.loc[index] = Status.FINISHED
-
-    def mark_as_error(self, index: int | slice | Iterable[int]) -> None:
-        """Marks a job as finished.
-
-        Parameters
-        ----------
-        index : int
-            Index of the job to mark as finished.
-        """
-        self.jobs.loc[index] = Status.ERROR
+        self.jobs.loc[index] = status
 
     def mark_all_in_progress_open(self) -> None:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace(Status.IN_PROGRESS, Status.OPEN)
-
-    def mark_all_open(self) -> None:
-        """Marks all jobs as 'open'."""
-        self.jobs = self.jobs.replace([Status.IN_PROGRESS, Status.FINISHED, Status.ERROR], Status.OPEN)
 
     #                                                                  Miscellanous
     # =============================================================================

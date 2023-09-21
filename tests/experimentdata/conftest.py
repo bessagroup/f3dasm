@@ -62,7 +62,8 @@ def experimentdata_expected() -> ExperimentData:
     sampler = RandomUniform(domain=domain_continuous, number_of_samples=10, seed=SEED)
     data = ExperimentData.from_sampling(sampler)
     data.fill_output(np.zeros((10, 1)))
-    data.add_numpy_arrays(np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), np.array([[0.0], [0.0]]))
+    data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
+             output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 
     data.input_data.data = data.input_data.data.round(6)
     return data
@@ -73,7 +74,7 @@ def experimentdata_expected_no_output() -> ExperimentData:
     domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
     sampler = RandomUniform(domain=domain_continuous, number_of_samples=10, seed=SEED)
     data = ExperimentData.from_sampling(sampler)
-    data.add_numpy_arrays(np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]))
+    data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
     data.input_data.data = data.input_data.data.round(6)
     return data

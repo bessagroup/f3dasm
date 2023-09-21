@@ -57,7 +57,7 @@ class RandomSearch(Optimizer):
 
         # Evaluate the candidates
         x_experimentdata = ExperimentData(domain=self.domain, input_data=x_new)
-        x_experimentdata.run(data_generator)
+        x_experimentdata.evaluate(data_generator)
 
         _, y = x_experimentdata.to_numpy()
 

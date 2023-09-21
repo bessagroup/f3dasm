@@ -3,7 +3,7 @@ from typing import List
 import pandas as pd
 import pytest
 
-from f3dasm.design import NoOpenJobsError, _JobQueue
+from f3dasm.design import NoOpenJobsError, _JobQueue, Status
 
 pytestmark = pytest.mark.smoke
 
@@ -62,17 +62,20 @@ def test_job_queue_get_open_job_no_jobs():
 
 
 def test_job_queue_mark_as_in_progress(sample_job_queue: _JobQueue):
-    sample_job_queue.mark_as_in_progress(0)
+    # sample_job_queue.mark_as_in_progress(0)
+    sample_job_queue.mark(0, Status.IN_PROGRESS)
     assert sample_job_queue.jobs.loc[0] == 'in progress'
 
 
 def test_job_queue_mark_as_finished(sample_job_queue: _JobQueue):
-    sample_job_queue.mark_as_finished(1)
+    # sample_job_queue.mark_as_finished(1)
+    sample_job_queue.mark(1, Status.FINISHED)
     assert sample_job_queue.jobs.loc[1] == 'finished'
 
 
 def test_job_queue_mark_as_error(sample_job_queue: _JobQueue):
-    sample_job_queue.mark_as_error(2)
+    # sample_job_queue.mark_as_error(2)
+    sample_job_queue.mark(2, Status.ERROR)
     assert sample_job_queue.jobs.loc[2] == 'error'
 
 

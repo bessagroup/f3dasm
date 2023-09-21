@@ -41,8 +41,8 @@ def test_all_optimizers_and_functions(seed: int, data_generator: DataGenerator, 
 
     func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
-    data1.run(func)
-    data2.run(func)
+    data1.evaluate(func)
+    data2.evaluate(func)
 
     opt1 = optimizer(domain=domain, seed=seed)
 
@@ -86,7 +86,7 @@ def test_optimizer_iterations(iterations: int, data_generator: DataGenerator, op
     func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
-    data.run(func, mode='sequential')
+    data.evaluate(func, mode='sequential')
 
     opt1: Optimizer = optimizer(domain=domain, seed=seed)
 
