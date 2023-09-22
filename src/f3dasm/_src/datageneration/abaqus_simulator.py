@@ -12,7 +12,7 @@ import subprocess
 from pathlib import Path
 from time import perf_counter, sleep
 
-from .. import logger
+from ..logger import logger
 from .datagenerator import DataGenerator
 
 #                                                          Authorship & Credits
