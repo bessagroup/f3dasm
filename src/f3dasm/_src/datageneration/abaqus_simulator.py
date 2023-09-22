@@ -96,7 +96,7 @@ class AbaqusSimulator(DataGenerator):
             file.write("import sys \n")
             file.write("import json \n")
             file.write(
-                "sys.path.extend(['r"
+                "sys.path.extend([r'"
                 + str(self.script_path)
                 + "']) \n"
             )
