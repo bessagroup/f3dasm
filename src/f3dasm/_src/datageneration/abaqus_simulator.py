@@ -11,6 +11,7 @@ import pickle
 import subprocess
 from pathlib import Path
 from time import perf_counter, sleep
+from typing import Any, Dict
 
 from ..logger import logger
 from .datagenerator import DataGenerator
@@ -26,38 +27,41 @@ __status__ = "Alpha"
 
 
 class AbaqusSimulator(DataGenerator):
-    EXECUTE_COMMAND = "abaqus cae noGUI=" + "abaScript.py" + " -mesa"
-    POST_PROCESS_COMMAND = "abaqus cae noGUI=" + "getResults.py" + " -mesa"
+    EXECUTE_COMMAND = "abaqus cae noGUI=abaqus_script.py -mesa"
+    POST_PROCESS_COMMAND = "abaqus cae noGUI=abaqus_post_process.py -mesa"
 
-    def __init__(self, platform: str = "ubuntu",
-                 sim_path: str = None, sim_script: str = None, script_path: str = None, max_time: float = None,
+    def __init__(self, platform: str = "ubuntu", num_cpus: int = 1,
+                 script_python_file: str = None, function_name_execute: str = None,
+                 script_parent_folder_path: str = None, max_time: float = None,
                  sleep_time: float = 20.0, refresh_time: float = 5.0,
-                 delete_odb: bool = True, post_path: str = None,
-                 post_script: str = None, **kwargs):
+                 delete_odb: bool = True, post_python_file: str = None,
+                 function_name_post: str = None, **kwargs):
         """Abaqus simulator class
 
         Parameters
         ----------
         platform : str, optional
             Platform to use; either 'cluster' or 'ubuntu', by default "ubuntu"
-        sim_path : str, optional
+        num_cpus : int, optional
+            Number of CPUs to use, by default 1
+        script_python_file : str, optional
             name of the .py file that needs to be executed by abaqus, by default None
-        sim_script : str, optional
+        function_name_execute : str, optional
             Python function or class that is called, by default None
-        script_path : str, optional
-            parent folder where the sim_path and post_path are located. By default None
+        script_parent_folder_path : str, optional
+            parent folder where the script_python_file and script_post_processing are located. By default None
         max_time : float, optional
-            (platform=abaqus only) Number of seconds before killing the simulation, by default None
+            (platform=ubuntu only) Number of seconds before killing the simulation, by default None
         sleep_time : float, optional
-            (platform=abaqus only) Number of seconds to wait before checking the log file
+            (platform=ubuntu only) Number of seconds to wait before checking the log file
             for the first time, by default 20.0
         refresh_time : float, optional
-            (platform=abaqus onlyo) Number of seconds to wait before checking the log file, by default 5.0
+            (platform=ubuntu onlyo) Number of seconds to wait before checking the log file, by default 5.0
         delete_odb : bool, optional
             Set true if you want to delete the original .odb file after post-processing, by default True
-        post_path : str, optional
-            parent folder of where the simulation post-processing script is located, by default None
-        post_script : str, optional
+        post_python_file : str, optional
+            name of the .py file that is needed for post-processing by abaqus, by default None
+        function_name_post : str, optional
             name of the .py file that needs to be executed for post-processing by abaqus, by default None
 
 
@@ -69,74 +73,66 @@ class AbaqusSimulator(DataGenerator):
         The platform is an artifact from the original code. The TU Delft Abaqus
         version is broken, so the process needs to be manually killed.
 
-        The class or function that is called (argument 'sim_script'), should be callable
+        The execute function that is called (argument 'function_name_execute'), should be callable
         and accept one dictionary argument. This dictionary contains the parameters
         that are passed to the simulation script.
+
+        The post-processing function that is called (argument 'function_name_execute'), should be callable
+        and accept one dictionary argument. This dictionary contains the parameters
+        that are passed to the simulation script.
+
+        The post-processing function should read the .odb file and save the results to a results.p file as a dictionary
+        The simulator.post_process() function will read this dictionary from disk and stores the arguments to
+        the ExperimentSample object.
         """
+
+        # Rule of thumb:
+        # All arguments that are specific in the __init__ function are only used
+        # for setting up the ABAQUS simulator.
+        # All extra keyword arguments are used to pass to the simulation and post-processing scripts!
+
+        # Running parameters
         self.max_time = max_time
         self.platform = platform
-        self.sim_path = sim_path
-        self.script_path = script_path
-        self.sim_script = sim_script
-        self.post_path = post_path
-        self.post_script = post_script
+        self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.sleep_time = sleep_time
         self.refresh_time = refresh_time
         self.delete_odb = delete_odb
 
+        # Script location parameters
+        self.script_parent_folder_path = script_parent_folder_path
+        self.script_python_file = script_python_file
+        self.function_name_execute = function_name_execute
+        self.post_python_file = post_python_file
+        self.function_name_post = function_name_post
+
+        # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
 
-        # save kwargs to attributes
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
     def _make_execute_script(self):
-        with open("abaScript.py", "w") as file:
-            file.write("import os \n")
-            file.write("import sys \n")
-            file.write("import json \n")
-            file.write(
-                "sys.path.extend([r'"
-                + str(self.script_path)
-                + "']) \n"
-            )
-            file.write(
-                "from "
-                + str(self.sim_path)
-                + " import "
-                + str(self.sim_script)
-                + "\n"
-            )
-            line = "file = '" + "sim_info.json" + "' \n"
-            file.write(line)
-            file.write("with open(file, 'r') as f:\n")
-            file.write("	dict = json.load(f)\n")
-            file.write(str(self.sim_script) + "(dict)\n")
-        file.close()
-
-    def _make_post_process_script(self, file_name: str, script_path: str, post_path: str, post_script: str):
-        with open("getResults.py", "w") as file:
+        with open("abaqus_script.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
+            file.write("import json\n")
+            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
             file.write(
-                "sys.path.extend(['"
-                + str(self.script_path)
-                + "']) \n"
+                f"from {self.script_python_file} import {self.function_name_execute}\n"
             )
+            line = "file = 'sim_info.json'\n"
+            file.write(line)
+            file.write("with open(file, 'r') as f:\n")
+            file.write("    dict = json.load(f)\n")
+            file.write(f"{self.function_name_execute}(dict)\n")
+
+    def _make_post_process_script(self):
+        with open("abaqus_post_process.py", "w") as file:
+            file.write("import os\n")
+            file.write("import sys\n")
+            file.write(f"sys.path.extend(['{self.script_parent_folder_path}'])\n")
             file.write(
-                "from "
-                + str(self.post_path)
-                + " import "
-                + str(self.post_script)
-                + "\n"
+                f"from {self.post_python_file} import {self.function_name_post}\n"
             )
-            file.write(
-                str(self.post_script)
-                + "('"
-                + str("job")
-                + "')\n"
-            )
-        file.close()
+            file.write(f"{self.function_name_post}('job')\n")
 
     def execute(self) -> None:
 
@@ -178,13 +174,14 @@ class AbaqusSimulator(DataGenerator):
             self._run_abaqus()
 
         else:
-            raise NotImplementedError("platform not be implemented")
+            raise NotImplementedError(f"Platform '{self.platform}' not be implemented"
+                                      f"Choose from 'ubuntu' or 'cluster'")
 
         #############################
         # Post-analysis script
         #############################
 
-        logger.info("abaqus post analysis")
+        logger.info("ABAQUS post analysis")
 
         # path with the post-processing python-script
         self._make_post_process_script()
@@ -205,7 +202,14 @@ class AbaqusSimulator(DataGenerator):
         os.chdir(self.home_path)
 
         # Store results in self.results so that you can access it later
-        self.results = results
+        self.results: Dict[str, Any] = results
+
+    def post_process(self) -> None:
+        """Function that handles the post-processing"""
+
+        # for every key in self.results, store the value in the ExperimentSample object
+        for key, value in self.results.items():
+            self.experiment_sample.store(object=value, name=key, to_disk=True)
 
     def _run_abaqus(self) -> str:
         start_time = perf_counter()
@@ -226,14 +230,14 @@ class AbaqusSimulator(DataGenerator):
             end_time = perf_counter()
             #
             try:
-                file = open("job" + ".msg")
+                file = open("job.msg")
                 word1 = "THE ANALYSIS HAS BEEN COMPLETED"
                 if word1 in file.read():
                     proc.kill()
                     kill_abaqus_process()
                     break
             except Exception:
-                print(
+                logger.info(
                     "abaqus license is not enough,"
                     "waiting for license authorization"
                 )
@@ -257,18 +261,8 @@ def kill_abaqus_process() -> None:
 
 
 def remove_files(
-    directory: str,
-    file_types: list = [
-        ".log",
-        ".lck",
-        ".SMABulk",
-        ".rec",
-        ".SMAFocus",
-        ".exception",
-        ".simlog",
-        ".023",
-        ".exception",
-    ],
+    directory: str, file_types: list = [".log", ".lck", ".SMABulk", ".rec", ".SMAFocus",
+                                        ".exception", ".simlog", ".023", ".exception"],
 ) -> None:
     """Remove files of specified types in a directory.
 
@@ -282,14 +276,11 @@ def remove_files(
     # Create a Path object for the directory
     dir_path = Path(directory)
 
-    # Get all files in this folder
-    all_files = dir_path.iterdir()
-
     for target_file in file_types:
-        # Get the target file names
-        filtered_files = [file for file in all_files if file.name.endswith(target_file)]
+        # Use glob to find files matching the target extension
+        target_files = dir_path.glob(f"*{target_file}")
 
         # Remove the target files if they exist
-        for file in filtered_files:
+        for file in target_files:
             if file.is_file():
                 file.unlink()
