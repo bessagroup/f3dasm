@@ -27,9 +27,6 @@ __status__ = "Alpha"
 
 
 class AbaqusSimulator(DataGenerator):
-    EXECUTE_COMMAND = "abaqus cae noGUI=abaqus_script.py -mesa"
-    POST_PROCESS_COMMAND = "abaqus cae noGUI=abaqus_post_process.py -mesa"
-
     def __init__(self, job_name: str = "job", platform: str = "ubuntu", num_cpus: int = 1,
                  script_python_file: str = None, function_name_execute: str = None,
                  script_parent_folder_path: str = None, max_time: float = None,
@@ -109,6 +106,9 @@ class AbaqusSimulator(DataGenerator):
         self.post_python_file = post_python_file
         self.function_name_post = function_name_post
 
+        EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
+        POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
+
         # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
 
@@ -116,7 +116,7 @@ class AbaqusSimulator(DataGenerator):
         self.sim_info["job_name"] = job_name
 
     def _make_execute_script(self):
-        with open("abaqus_script.py", "w") as file:
+        with open(f"{self.job_name}_script.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
             file.write("import json\n")
@@ -124,14 +124,14 @@ class AbaqusSimulator(DataGenerator):
             file.write(
                 f"from {self.script_python_file} import {self.function_name_execute}\n"
             )
-            line = "file = 'sim_info.json'\n"
+            line = f"file = '{self.job_name}_sim_info.json'\n"
             file.write(line)
             file.write("with open(file, 'r') as f:\n")
             file.write("    dict = json.load(f)\n")
             file.write(f"{self.function_name_execute}(dict)\n")
 
     def _make_execute_script_pickle(self):
-        with open("abaqus_script.py", "w") as file:
+        with open(f"{self.job_name}_post.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
             file.write("import pickle\n")
@@ -139,7 +139,7 @@ class AbaqusSimulator(DataGenerator):
             file.write(
                 f"from {self.script_python_file} import {self.function_name_execute}\n"
             )
-            line = "file = 'sim_info.pkl'\n"
+            line = f"file = '{self.job_name}_sim_info.pkl'\n"
             file.write(line)
             file.write("with open(file, 'rb') as f:\n")
             file.write("    dict = pickle.load(f)\n")
@@ -179,7 +179,7 @@ class AbaqusSimulator(DataGenerator):
         # with open("sim_info.json", "w") as fp:
         #     json.dump(self.sim_info, fp)
 
-        with open("sim_info.pkl", "wb") as fp:
+        with open(f"{self.job_name}_sim_info.pkl", "wb") as fp:
             pickle.dump(self.sim_info, fp, protocol=0)
 
         # Create python file for abaqus to run
@@ -204,7 +204,7 @@ class AbaqusSimulator(DataGenerator):
         #############################
         # Post-analysis script
         #############################
-        logger.info(f"({self.experiment_sample.job_number}) ABAQUS POST: {self.script_python_file}")
+        logger.info(f"({self.experiment_sample.job_number}) ABAQUS POST: {self.post_python_file}")
 
         # path with the post-processing python-script
         self._make_post_process_script()
@@ -218,7 +218,7 @@ class AbaqusSimulator(DataGenerator):
         # if self.delete_odb:
         #     remove_files(directory=os.getcwd(), file_types=[".odb"])
 
-        with open("results.pkl", "rb") as fd:
+        with open(f"{self.job_name}.pkl", "rb") as fd:
             results = pickle.load(fd, fix_imports=True, encoding="latin1")
 
         # Back to home path
