@@ -106,8 +106,11 @@ class AbaqusSimulator(DataGenerator):
         self.post_python_file = post_python_file
         self.function_name_post = function_name_post
 
-        self.EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
-        self.POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
+        # self.EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
+        # self.POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
+
+        self.EXECUTE_COMMAND = "abaqus cae noGUI=execute.py -mesa"
+        self.POST_PROCESS_COMMAND = "abaqus cae noGUI=post.py -mesa"
 
         # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
@@ -155,6 +158,26 @@ class AbaqusSimulator(DataGenerator):
             )
             file.write(f"{self.function_name_post}('{self.job_name}')\n")
 
+    def _make_execute_script_inp(self):
+        with open("execute.py", "w") as file:
+            file.write("from abaqus import mdb\n")
+            file.write("from abaqusConstants import OFF\n")
+            file.write(f"modelJob = mdb.JobFromInputFile(inputFileName='{self.job_name}.inp', name={self.job_name}\n")
+            file.write("modelJob.submit(consistencyChecking=OFF)\n")
+            file.write("modelJob.waitForCompletion()\n")
+
+    def _make_post_script_odb(self):
+        with open("post.py", "w") as file:
+            file.write("import os\n")
+            file.write("import sys\n")
+            file.write("from abaqus import session\n")
+            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
+            file.write(
+                f"from {self.post_python_file} import {self.function_name_post}\n"
+            )
+            file.write(f"odb = session.openOdb(name='{self.job_name}.odb')\n")
+            file.write(f"{self.function_name_post}(odb, '{self.job_name}')\n")
+
     def execute(self) -> None:
 
         #############################
@@ -183,7 +206,7 @@ class AbaqusSimulator(DataGenerator):
             pickle.dump(self.sim_info, fp, protocol=0)
 
         # Create python file for abaqus to run
-        self._make_execute_script_pickle()
+        self._make_execute_script_inp()
 
         #############################
         # Running Abaqus
@@ -207,7 +230,7 @@ class AbaqusSimulator(DataGenerator):
         logger.info(f"({self.experiment_sample.job_number}) ABAQUS POST: {self.post_python_file}")
 
         # path with the post-processing python-script
-        self._make_post_process_script()
+        self._make_post_script_odb()
 
         os.system(self.POST_PROCESS_COMMAND)
 
