@@ -190,7 +190,7 @@ class AbaqusSimulator(DataGenerator):
         #############################
 
         # Log start of simulation
-        logger.info("Start ABAQUS Simulation")
+        logger.info(f"({self.experiment_sample.job_number}) ABAQUS: {self.script_python_file}")
 
         if self.platform == 'ubuntu':
             self._run_abaqus_broken_version()
@@ -204,8 +204,7 @@ class AbaqusSimulator(DataGenerator):
         #############################
         # Post-analysis script
         #############################
-
-        logger.info("ABAQUS post analysis")
+        logger.info(f"({self.experiment_sample.job_number}) ABAQUS POST: {self.script_python_file}")
 
         # path with the post-processing python-script
         self._make_post_process_script()
@@ -233,7 +232,6 @@ class AbaqusSimulator(DataGenerator):
 
         # for every key in self.results, store tNonehe value in the ExperimentSample object
         for key, value in self.results.items():
-            logger.info(f"Storing {key} with type {type(value)}in ExperimentSample object")
             # Check if value is of one of these types: int, float, str, list
             if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
