@@ -192,8 +192,8 @@ class AbaqusSimulator(DataGenerator):
         # remove_files(directory=os.getcwd())
 
         # remove the odb file to save memory
-        if self.delete_odb:
-            remove_files(directory=os.getcwd(), file_types=[".odb"])
+        # if self.delete_odb:
+        #     remove_files(directory=os.getcwd(), file_types=[".odb"])
 
         with open("results.pkl", "rb") as fd:
             results = pickle.load(fd, fix_imports=True, encoding="latin1")
