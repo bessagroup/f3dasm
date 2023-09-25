@@ -215,6 +215,7 @@ class AbaqusSimulator(DataGenerator):
 
         # for every key in self.results, store tNonehe value in the ExperimentSample object
         for key, value in self.results.items():
+            logger.info(f"Storing {key} with type {type(value)}in ExperimentSample object")
             # Check if value is of one of these types: int, float, str, list
             if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
