@@ -113,7 +113,7 @@ class AbaqusSimulator(DataGenerator):
         self.sim_info = kwargs
 
         # add the job name to the sim_info dictionary
-        self.sim_info["job_name"] = self.job_name
+        self.sim_info["job_name"] = job_name
 
     def _make_execute_script(self):
         with open("abaqus_script.py", "w") as file:
