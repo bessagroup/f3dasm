@@ -131,7 +131,7 @@ class AbaqusSimulator(DataGenerator):
             file.write(f"{self.function_name_execute}(dict)\n")
 
     def _make_execute_script_pickle(self):
-        with open(f"{self.job_name}_post.py", "w") as file:
+        with open(f"{self.job_name}_script.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
             file.write("import pickle\n")
@@ -146,7 +146,7 @@ class AbaqusSimulator(DataGenerator):
             file.write(f"{self.function_name_execute}(dict)\n")
 
     def _make_post_process_script(self):
-        with open("abaqus_post_process.py", "w") as file:
+        with open(f"{self.job_name}_post.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
             file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
