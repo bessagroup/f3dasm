@@ -234,6 +234,11 @@ class ExperimentSample:
         value = self._load_from_experimentdata(item)
 
         if item.startswith(PATH_PREFIX):
+
+            if isinstance(value, float):
+                # value is NaN
+                return item
+
             # Load the object from the reference
             return load_object(Path(value), store_method)
         else:
