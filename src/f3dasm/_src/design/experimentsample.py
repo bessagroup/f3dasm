@@ -282,7 +282,8 @@ class ExperimentSample:
         Dict[str, Any]
             The output data of the design as a dictionary.
         """
-        return self._dict_output
+        # Load all the data from the experiment data
+        return {key: self.get(key) for key in self._dict_output.keys()}
 
     @property
     def job_number(self) -> int:
