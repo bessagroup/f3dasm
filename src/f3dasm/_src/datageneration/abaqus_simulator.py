@@ -162,7 +162,8 @@ class AbaqusSimulator(DataGenerator):
         with open("execute.py", "w") as file:
             file.write("from abaqus import mdb\n")
             file.write("from abaqusConstants import OFF\n")
-            file.write(f"modelJob = mdb.JobFromInputFile(inputFileName='{self.job_name}.inp', name={self.job_name}\n")
+            file.write(
+                f"modelJob = mdb.JobFromInputFile(inputFileName='{self.job_name}.inp', name='{self.job_name}')\n")
             file.write("modelJob.submit(consistencyChecking=OFF)\n")
             file.write("modelJob.waitForCompletion()\n")
 
