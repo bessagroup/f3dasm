@@ -30,7 +30,7 @@ class AbaqusSimulator(DataGenerator):
     EXECUTE_COMMAND = "abaqus cae noGUI=abaqus_script.py -mesa"
     POST_PROCESS_COMMAND = "abaqus cae noGUI=abaqus_post_process.py -mesa"
 
-    def __init__(self, platform: str = "ubuntu", num_cpus: int = 1,
+    def __init__(self, job_name: str = "job", platform: str = "ubuntu", num_cpus: int = 1,
                  script_python_file: str = None, function_name_execute: str = None,
                  script_parent_folder_path: str = None, max_time: float = None,
                  sleep_time: float = 20.0, refresh_time: float = 5.0,
@@ -40,6 +40,8 @@ class AbaqusSimulator(DataGenerator):
 
         Parameters
         ----------
+        job_name : str, optional
+            Name of the job, by default "job"
         platform : str, optional
             Platform to use; either 'cluster' or 'ubuntu', by default "ubuntu"
         num_cpus : int, optional
@@ -92,6 +94,7 @@ class AbaqusSimulator(DataGenerator):
         # All extra keyword arguments are used to pass to the simulation and post-processing scripts!
 
         # Running parameters
+        self.job_name = job_name
         self.max_time = max_time
         self.platform = platform
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
@@ -108,6 +111,9 @@ class AbaqusSimulator(DataGenerator):
 
         # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
+
+        # add the job name to the sim_info dictionary
+        self.sim_info["job_name"] = self.job_name
 
     def _make_execute_script(self):
         with open("abaqus_script.py", "w") as file:
@@ -132,7 +138,7 @@ class AbaqusSimulator(DataGenerator):
             file.write(
                 f"from {self.post_python_file} import {self.function_name_post}\n"
             )
-            file.write(f"{self.function_name_post}('job')\n")
+            file.write(f"{self.function_name_post}('{self.job_name}')\n")
 
     def execute(self) -> None:
 
@@ -235,7 +241,7 @@ class AbaqusSimulator(DataGenerator):
             end_time = perf_counter()
             #
             try:
-                file = open("job.msg")
+                file = open(f"{self.job_name}.msg")
                 word1 = "THE ANALYSIS HAS BEEN COMPLETED"
                 if word1 in file.read():
                     proc.kill()
