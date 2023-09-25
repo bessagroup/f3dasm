@@ -104,9 +104,12 @@ STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
 }
 
 
-def load_object(path: Path, store_method: Optional[Type[_Store]] = None) -> Any:
+def load_object(path: Path, store_method: Type[_Store] = PickleStore) -> Any:
     if store_method is not None:
         return store_method(None, path).load()
+
+    if not path.exists():
+        return None
 
     # Extract the suffix from the item's path
     item_suffix = path.suffix
