@@ -77,9 +77,9 @@ class ContinuousParameter(Parameter):
 
     Attributes
     ----------
-    lower_bound : float, optional
+    lower_bound : float | int | str, optional
         The lower bound of the continuous search space. Defaults to negative infinity.
-    upper_bound : float, optional
+    upper_bound : float | int | str, optional
         The upper bound of the continuous search space (exclusive). Defaults to infinity.
     log : bool, optional
         Whether the search space is logarithmic. Defaults to False.
@@ -87,9 +87,11 @@ class ContinuousParameter(Parameter):
     Raises
     ------
     TypeError
-        If the boundaries are not floats.
+        If the boundaries are not floats, ints or strings.
     ValueError
-        If the upper bound is less than the lower bound, or if the lower bound is equal to the upper bound.
+        If the upper bound is less than the lower bound,
+        or if the lower bound is equal to the upper bound,
+        or if the strings cannot be converted to float.
 
     Notes
     -----
@@ -103,26 +105,25 @@ class ContinuousParameter(Parameter):
 
     def __post_init__(self):
 
+        self._check_types()
+        self._check_range()
+
         if self.log and self.lower_bound <= 0.0:
             raise ValueError(
                 f"The `lower_bound` value must be larger than 0 for a log distribution "
                 f"(low={self.lower_bound}, high={self.upper_bound})."
             )
-        
-        if isinstance(self.lower_bound, int):
-            self.lower_bound=float(self.lower_bound)
-        
-        if isinstance(self.upper_bound, int):
-            self.upper_bound=float(self.upper_bound)
-
-        self._check_types()
-        self._check_range()
 
     def _check_types(self):
         """Check if the boundaries are actually floats"""
-        if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
+        try:
+            self.lower_bound = float(self.lower_bound)
+            self.upper_bound = float(self.upper_bound)
+        except TypeError:
             raise TypeError(
-                f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+                f"Expect float, int or str, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+        except ValueError as e:
+            raise e
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""

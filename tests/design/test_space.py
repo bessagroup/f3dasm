@@ -20,8 +20,20 @@ def test_check_default_upper_bound():
     assert continuous.upper_bound == np.inf
 
 
-def test_correct_continuous_space():
+def test_correct_float_args_continuous_space():
     lower_bound = 3.3
+    upper_bound = 3.8
+    continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+
+
+def test_correct_int_args_continuous_space():
+    lower_bound = 3
+    upper_bound = 3.8
+    continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+
+
+def test_correct_int_args_continuous_space():
+    lower_bound = "3"
     upper_bound = 3.8
     continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
@@ -41,7 +53,7 @@ def test_same_lower_and_upper_bound_continuous_space():
 
 
 def test_invalid_types_arg1_int_continuous_space():
-    lower_bound = 1  # int
+    lower_bound = [1.0,]  # list
     upper_bound = 1.5
     with pytest.raises(TypeError):
         continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
@@ -49,13 +61,13 @@ def test_invalid_types_arg1_int_continuous_space():
 
 def test_invalid_types_arg2_int_continuous_space():
     lower_bound = 1.0
-    upper_bound = 2  # int
+    upper_bound = {"2": 2.0}  # dict
     with pytest.raises(TypeError):
         continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
 
 def test_invalid_types_string_continuous_space():
-    lower_bound = "1"  # string
+    lower_bound = "lower bound"  # invalid string
     upper_bound = 1.5
     with pytest.raises(TypeError):
         continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
