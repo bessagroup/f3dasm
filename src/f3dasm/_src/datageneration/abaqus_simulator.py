@@ -106,8 +106,8 @@ class AbaqusSimulator(DataGenerator):
         self.post_python_file = post_python_file
         self.function_name_post = function_name_post
 
-        EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
-        POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
+        self.EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
+        self.POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
 
         # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
