@@ -180,7 +180,7 @@ class AbaqusSimulator(DataGenerator):
         #     json.dump(self.sim_info, fp)
 
         with open("sim_info.pkl", "wb") as fp:
-            pickle.dump(self.sim_info, fp)
+            pickle.dump(self.sim_info, fp, protocol=0)
 
         # Create python file for abaqus to run
         self._make_execute_script_pickle()
