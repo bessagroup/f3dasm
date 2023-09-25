@@ -189,7 +189,7 @@ class AbaqusSimulator(DataGenerator):
         os.system(self.POST_PROCESS_COMMAND)
 
         # remove files that influence the simulation process
-        remove_files(directory=os.getcwd())
+        # remove_files(directory=os.getcwd())
 
         # remove the odb file to save memory
         if self.delete_odb:
