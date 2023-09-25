@@ -290,6 +290,18 @@ class ExperimentSample:
         return self._dict_output
 
     @property
+    def output_data_loaded(self) -> Dict[str, Any]:
+        """Retrieve the output data of the design as a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            The output data of the design as a dictionary.
+        """
+        # Load all the data from the experiment data
+        return {key: self.get(key) for key in self._dict_output.keys()}
+
+    @property
     def job_number(self) -> int:
         """Retrieve the job number of the design.
 
