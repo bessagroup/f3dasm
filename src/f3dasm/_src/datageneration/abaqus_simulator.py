@@ -106,12 +106,6 @@ class AbaqusSimulator(DataGenerator):
         self.post_python_file = post_python_file
         self.function_name_post = function_name_post
 
-        # self.EXECUTE_COMMAND = f"abaqus cae noGUI={self.job_name}_script.py -mesa"
-        # self.POST_PROCESS_COMMAND = f"abaqus cae noGUI={self.job_name}_post.py -mesa"
-
-        self.EXECUTE_COMMAND = "abaqus cae noGUI=execute.py -mesa"
-        self.POST_PROCESS_COMMAND = "abaqus cae noGUI=post.py -mesa"
-
         # add all arguments to the sim_info dictionary
         self.sim_info = kwargs
 
@@ -119,38 +113,7 @@ class AbaqusSimulator(DataGenerator):
         self.sim_info["job_name"] = job_name
 
     def submit_file(self, filename: str):
-        cmd = "abaqus cae noGUI=execute.py -mesa"
         os.system(f"abaqus cae noGUI={filename} -mesa")
-
-    def _make_execute_script(self):
-        with open(f"{self.job_name}_script.py", "w") as file:
-            file.write("import os\n")
-            file.write("import sys\n")
-            file.write("import json\n")
-            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
-            file.write(
-                f"from {self.script_python_file} import {self.function_name_execute}\n"
-            )
-            line = f"file = '{self.job_name}_sim_info.json'\n"
-            file.write(line)
-            file.write("with open(file, 'r') as f:\n")
-            file.write("    dict = json.load(f)\n")
-            file.write(f"{self.function_name_execute}(dict)\n")
-
-    def _make_execute_script_pickle(self):
-        with open(f"{self.job_name}_script.py", "w") as file:
-            file.write("import os\n")
-            file.write("import sys\n")
-            file.write("import pickle\n")
-            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
-            file.write(
-                f"from {self.script_python_file} import {self.function_name_execute}\n"
-            )
-            line = f"file = '{self.job_name}_sim_info.pkl'\n"
-            file.write(line)
-            file.write("with open(file, 'rb') as f:\n")
-            file.write("    dict = pickle.load(f)\n")
-            file.write(f"{self.function_name_execute}(dict)\n")
 
     def _make_preprocess_script_pickle(self):
         with open(f"{self.job_name}_script.py", "w") as file:
@@ -166,16 +129,6 @@ class AbaqusSimulator(DataGenerator):
             file.write("with open(file, 'rb') as f:\n")
             file.write("    dict = pickle.load(f)\n")
             file.write(f"{self.function_name_execute}(dict)\n")
-
-    def _make_post_process_script(self):
-        with open(f"{self.job_name}_post.py", "w") as file:
-            file.write("import os\n")
-            file.write("import sys\n")
-            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
-            file.write(
-                f"from {self.post_python_file} import {self.function_name_post}\n"
-            )
-            file.write(f"{self.function_name_post}('{self.job_name}')\n")
 
     def _make_execute_script_inp(self):
         with open("execute.py", "w") as file:
@@ -198,7 +151,7 @@ class AbaqusSimulator(DataGenerator):
             file.write(f"odb = session.openOdb(name='{self.job_name}.odb')\n")
             file.write(f"{self.function_name_post}(odb, '{self.job_name}')\n")
 
-    def execute(self) -> None:
+    def pre_process(self) -> None:
 
         #############################
         # Creating execution script
@@ -218,10 +171,7 @@ class AbaqusSimulator(DataGenerator):
         # Change to working directory
         os.chdir(working_dir)
 
-        # Wrtie sim_info to a JSON file
-        # with open("sim_info.json", "w") as fp:
-        #     json.dump(self.sim_info, fp)
-
+        # Write sim_info to a pickle file
         with open(f"{self.job_name}_sim_info.pkl", "wb") as fp:
             pickle.dump(self.sim_info, fp, protocol=0)
 
@@ -229,26 +179,32 @@ class AbaqusSimulator(DataGenerator):
 
         self.submit_file(f"{self.job_name}_script.py")
 
-        # Create python file for abaqus to run
-        self._make_execute_script_inp()
-
-        self.submit_file("execute.py")
-
+    def execute(self) -> None:
         #############################
         # Running Abaqus
         #############################
 
+        # Create python file for abaqus to run
+        self._make_execute_script_inp()
+
         # Log start of simulation
         logger.info(f"({self.experiment_sample.job_number}) ABAQUS: {self.script_python_file}")
 
-        if self.platform == 'ubuntu':
-            self._run_abaqus_broken_version()
-        elif self.platform == 'cluster':
-            self._run_abaqus()
+        start_time = perf_counter()
+        self.submit_file("execute.py")
 
-        else:
-            raise NotImplementedError(f"Platform '{self.platform}' not be implemented"
-                                      f"Choose from 'ubuntu' or 'cluster'")
+        logger.info(f"Simulation time: {(perf_counter() - start_time):2f} s")
+        # if self.platform == 'ubuntu':
+        #     self._run_abaqus_broken_version()
+        # elif self.platform == 'cluster':
+        #     self._run_abaqus()
+
+        # else:
+        #     raise NotImplementedError(f"Platform '{self.platform}' not be implemented"
+        #                               f"Choose from 'ubuntu' or 'cluster'")
+
+    def post_process(self) -> None:
+        """Function that handles the post-processing"""
 
         #############################
         # Post-analysis script
@@ -260,8 +216,6 @@ class AbaqusSimulator(DataGenerator):
 
         self.submit_file("post.py")
 
-        # os.system(self.POST_PROCESS_COMMAND)
-
         # remove files that influence the simulation process
         # remove_files(directory=os.getcwd())
 
@@ -269,74 +223,21 @@ class AbaqusSimulator(DataGenerator):
         # if self.delete_odb:
         #     remove_files(directory=os.getcwd(), file_types=[".odb"])
 
+        # Load the results
         with open(f"{self.job_name}.pkl", "rb") as fd:
-            results = pickle.load(fd, fix_imports=True, encoding="latin1")
+            results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
 
         # Back to home path
         os.chdir(self.home_path)
 
-        # Store results in self.results so that you can access it later
-        self.results: Dict[str, Any] = results
-
-    def post_process(self) -> None:
-        """Function that handles the post-processing"""
-
         # for every key in self.results, store tNonehe value in the ExperimentSample object
-        for key, value in self.results.items():
+        for key, value in results.items():
             # Check if value is of one of these types: int, float, str, list
             if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
-
-    def _run_abaqus(self) -> str:
-        start_time = perf_counter()
-        os.system(self.EXECUTE_COMMAND)
-        end_time = perf_counter()
-        logger.info(f"simulation time :{(end_time - start_time):2f} s")
-
-    def _run_abaqus_broken_version(self) -> str:
-        proc = subprocess.Popen(self.EXECUTE_COMMAND, shell=True)
-
-        start_time = perf_counter()
-        sleep(self.sleep_time)
-        while True:
-
-            sleep(
-                self.refresh_time - ((perf_counter() - start_time) % self.refresh_time)
-            )
-            end_time = perf_counter()
-            #
-            try:
-                file = open(f"{self.job_name}.msg")
-                word1 = "THE ANALYSIS HAS BEEN COMPLETED"
-                if word1 in file.read():
-                    proc.kill()
-                    kill_abaqus_process()
-                    break
-            except Exception:
-                logger.info(
-                    "abaqus license is not enough,"
-                    "waiting for license authorization"
-                )
-            # over time killing
-            if self.max_time is not None:
-                if (end_time - start_time) > self.max_time:
-                    proc.kill()
-                    kill_abaqus_process()
-                    logger.info("overtime kill")
-                    break
-        logger.info(f"simulation time :{(end_time - start_time):2f} s")
-        # remove files that influence the simulation process
-        remove_files(directory=os.getcwd())
-
-
-def kill_abaqus_process() -> None:
-    """kill abaqus simulation process"""
-    os.system("pkill standard")
-    os.system("pkill ABQcaeK")
-    os.system("pkill SMAPython")
 
 
 def remove_files(
