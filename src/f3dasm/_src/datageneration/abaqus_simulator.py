@@ -130,6 +130,21 @@ class AbaqusSimulator(DataGenerator):
             file.write("    dict = json.load(f)\n")
             file.write(f"{self.function_name_execute}(dict)\n")
 
+    def _make_execute_script_pickle(self):
+        with open("abaqus_script.py", "w") as file:
+            file.write("import os\n")
+            file.write("import sys\n")
+            file.write("import pickle\n")
+            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
+            file.write(
+                f"from {self.script_python_file} import {self.function_name_execute}\n"
+            )
+            line = "file = 'sim_info.pkl'\n"
+            file.write(line)
+            file.write("with open(file, 'rb') as f:\n")
+            file.write("    dict = pickle.load(f)\n")
+            file.write(f"{self.function_name_execute}(dict)\n")
+
     def _make_post_process_script(self):
         with open("abaqus_post_process.py", "w") as file:
             file.write("import os\n")
@@ -161,11 +176,14 @@ class AbaqusSimulator(DataGenerator):
         os.chdir(working_dir)
 
         # Wrtie sim_info to a JSON file
-        with open("sim_info.json", "w") as fp:
-            json.dump(self.sim_info, fp)
+        # with open("sim_info.json", "w") as fp:
+        #     json.dump(self.sim_info, fp)
+
+        with open("sim_info.pkl", "wb") as fp:
+            pickle.dump(self.sim_info, fp)
 
         # Create python file for abaqus to run
-        self._make_execute_script()
+        self._make_execute_script_pickle()
 
         #############################
         # Running Abaqus
