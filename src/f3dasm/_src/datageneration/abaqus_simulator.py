@@ -118,6 +118,10 @@ class AbaqusSimulator(DataGenerator):
         # add the job name to the sim_info dictionary
         self.sim_info["job_name"] = job_name
 
+    def submit_file(self, filename: str):
+        cmd = "abaqus cae noGUI=execute.py -mesa"
+        os.system(f"abaqus cae noGUI={filename} -mesa")
+
     def _make_execute_script(self):
         with open(f"{self.job_name}_script.py", "w") as file:
             file.write("import os\n")
@@ -223,8 +227,12 @@ class AbaqusSimulator(DataGenerator):
 
         self._make_preprocess_script_pickle()
 
+        self.submit_file(f"{self.job_name}_script.py")
+
         # Create python file for abaqus to run
         self._make_execute_script_inp()
+
+        self.submit_file("execute.py")
 
         #############################
         # Running Abaqus
@@ -250,7 +258,9 @@ class AbaqusSimulator(DataGenerator):
         # path with the post-processing python-script
         self._make_post_script_odb()
 
-        os.system(self.POST_PROCESS_COMMAND)
+        self.submit_file("post.py")
+
+        # os.system(self.POST_PROCESS_COMMAND)
 
         # remove files that influence the simulation process
         # remove_files(directory=os.getcwd())
