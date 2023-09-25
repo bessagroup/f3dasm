@@ -8,6 +8,7 @@ A ExperimentSample object contains a single realization of the design-of-experim
 from __future__ import annotations
 
 # Standard
+import pickle
 import sys
 from abc import ABC
 from pathlib import Path
@@ -50,6 +51,18 @@ class _Store:
 
     def load(self) -> Any:
         raise NotImplementedError()
+
+
+class PickleStore(_Store):
+    suffix: str = '.pkl'
+
+    def store(self) -> None:
+        with open(self.path.with_suffix(self.suffix), 'wb') as file:
+            pickle.dump(self.object, file)
+
+    def load(self) -> Any:
+        with open(self.path.with_suffix(self.suffix), 'rb') as file:
+            return pickle.load(file)
 
 
 class NumpyStore(_Store):
@@ -100,7 +113,7 @@ def load_object(path: Path, store_method: Optional[Type[_Store]] = None) -> Any:
 
     # Use a generator expression to find the first matching store type, or None if no match is found
     matched_store_type: _Store = next(
-        (store_type for store_type in STORE_TYPE_MAPPING.values() if store_type.suffix == item_suffix), None)
+        (store_type for store_type in STORE_TYPE_MAPPING.values() if store_type.suffix == item_suffix), PickleStore)
 
     if matched_store_type:
         return matched_store_type(None, path).load()
