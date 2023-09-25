@@ -150,7 +150,7 @@ def save_object(object: Any, path: Path, store_method: Optional[Type[_Store]] = 
 
     # Check if object type is supported
     object_type = type(object)
-    
+
     if object_type not in STORE_TYPE_MAPPING:
         storage: _Store = PickleStore(object, path)
         logger.debug(f"Object type {object_type} is not natively supported. "
@@ -232,7 +232,7 @@ class ExperimentSample:
 
         if item.startswith(PATH_PREFIX):
             # Load the object from the reference
-            return load_object(value, store_method)
+            return load_object(Path(value), store_method)
         else:
             # Return the literal value
             return value
