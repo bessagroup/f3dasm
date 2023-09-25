@@ -151,7 +151,7 @@ class AbaqusSimulator(DataGenerator):
 
         # Updating simulation info with experiment sample data
         self.sim_info.update(self.experiment_sample.input_data)
-        self.sim_info.update(self.experiment_sample.output_data)
+        self.sim_info.update(self.experiment_sample.output_data_loaded)
 
         # Create working directory
         working_dir = Path(f"case_{self.experiment_sample.job_number}")
