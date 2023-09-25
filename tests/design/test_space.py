@@ -69,7 +69,7 @@ def test_invalid_types_arg2_int_continuous_space():
 def test_invalid_types_string_continuous_space():
     lower_bound = "lower bound"  # invalid string
     upper_bound = 1.5
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
 
