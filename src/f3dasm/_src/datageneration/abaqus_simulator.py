@@ -128,7 +128,7 @@ class AbaqusSimulator(DataGenerator):
         with open("abaqus_post_process.py", "w") as file:
             file.write("import os\n")
             file.write("import sys\n")
-            file.write(f"sys.path.extend(['{self.script_parent_folder_path}'])\n")
+            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
             file.write(
                 f"from {self.post_python_file} import {self.function_name_post}\n"
             )
