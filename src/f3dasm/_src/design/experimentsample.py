@@ -150,11 +150,14 @@ def save_object(object: Any, path: Path, store_method: Optional[Type[_Store]] = 
 
     # Check if object type is supported
     object_type = type(object)
+    
     if object_type not in STORE_TYPE_MAPPING:
-        raise TypeError(f"Object type {object_type} is not natively supported. "
-                        f"You can provide a custom store method to save other object types.")
+        storage: _Store = PickleStore(object, path)
+        logger.debug(f"Object type {object_type} is not natively supported. "
+                     f"The default pickle storage method will be used.")
 
-    storage: _Store = STORE_TYPE_MAPPING[object_type](object, path)
+    else:
+        storage: _Store = STORE_TYPE_MAPPING[object_type](object, path)
     # Store object
     storage.store()
     return storage.suffix
