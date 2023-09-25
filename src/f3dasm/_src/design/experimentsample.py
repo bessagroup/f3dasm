@@ -286,7 +286,8 @@ class ExperimentSample:
             The output data of the design as a dictionary.
         """
         # Load all the data from the experiment data
-        return {key: self.get(key) for key in self._dict_output.keys()}
+        # return {key: self.get(key) for key in self._dict_output.keys()}
+        return self._dict_output
 
     @property
     def job_number(self) -> int:
