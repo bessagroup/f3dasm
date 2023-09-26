@@ -9,6 +9,7 @@ import json
 import os
 import pickle
 import subprocess
+from copy import copy
 from pathlib import Path
 from time import perf_counter, sleep
 from typing import Any, Dict
@@ -27,11 +28,10 @@ __status__ = "Alpha"
 
 
 class AbaqusSimulator(DataGenerator):
-    def __init__(self, job_name: str = "job", platform: str = "ubuntu", num_cpus: int = 1,
+    def __init__(self, job_name: str = "job", num_cpus: int = 1,
                  script_python_file: str = None, function_name_execute: str = None,
-                 script_parent_folder_path: str = None, max_time: float = None,
-                 sleep_time: float = 20.0, refresh_time: float = 5.0,
-                 delete_odb: bool = True, post_python_file: str = None,
+                 script_parent_folder_path: str = None, delete_odb: bool = True,
+                 post_python_file: str = None,
                  function_name_post: str = None, **kwargs):
         """Abaqus simulator class
 
@@ -39,8 +39,6 @@ class AbaqusSimulator(DataGenerator):
         ----------
         job_name : str, optional
             Name of the job, by default "job"
-        platform : str, optional
-            Platform to use; either 'cluster' or 'ubuntu', by default "ubuntu"
         num_cpus : int, optional
             Number of CPUs to use, by default 1
         script_python_file : str, optional
@@ -49,13 +47,6 @@ class AbaqusSimulator(DataGenerator):
             Python function or class that is called, by default None
         script_parent_folder_path : str, optional
             parent folder where the script_python_file and script_post_processing are located. By default None
-        max_time : float, optional
-            (platform=ubuntu only) Number of seconds before killing the simulation, by default None
-        sleep_time : float, optional
-            (platform=ubuntu only) Number of seconds to wait before checking the log file
-            for the first time, by default 20.0
-        refresh_time : float, optional
-            (platform=ubuntu onlyo) Number of seconds to wait before checking the log file, by default 5.0
         delete_odb : bool, optional
             Set true if you want to delete the original .odb file after post-processing, by default True
         post_python_file : str, optional
@@ -92,129 +83,41 @@ class AbaqusSimulator(DataGenerator):
 
         # Running parameters
         self.job_name = job_name
-        self.max_time = max_time
-        self.platform = platform
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
-        self.sleep_time = sleep_time
-        self.refresh_time = refresh_time
         self.delete_odb = delete_odb
 
         # Script location parameters
-        self.script_parent_folder_path = script_parent_folder_path
-        self.script_python_file = script_python_file
-        self.function_name_execute = function_name_execute
-        self.post_python_file = post_python_file
-        self.function_name_post = function_name_post
+        # self.script_parent_folder_path = script_parent_folder_path
+        # self.script_python_file = script_python_file
+        # self.function_name_execute = function_name_execute
+        # self.post_python_file = post_python_file
+        # self.function_name_post = function_name_post
 
-        # add all arguments to the sim_info dictionary
-        self.sim_info = kwargs
-
-        # add the job name to the sim_info dictionary
-        self.sim_info["job_name"] = job_name
-
-    def submit_file(self, filename: str):
-        os.system(f"abaqus cae noGUI={filename} -mesa")
-
-    def _make_preprocess_script_pickle(self):
-        with open(f"{self.job_name}_script.py", "w") as file:
-            file.write("import os\n")
-            file.write("import sys\n")
-            file.write("import pickle\n")
-            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
-            file.write(
-                f"from {self.script_python_file} import {self.function_name_execute}\n"
-            )
-            line = f"file = '{self.job_name}_sim_info.pkl'\n"
-            file.write(line)
-            file.write("with open(file, 'rb') as f:\n")
-            file.write("    dict = pickle.load(f)\n")
-            file.write(f"{self.function_name_execute}(dict)\n")
-
-    def _make_execute_script_inp(self):
-        with open("execute.py", "w") as file:
-            file.write("from abaqus import mdb\n")
-            file.write("from abaqusConstants import OFF\n")
-            file.write(
-                f"modelJob = mdb.JobFromInputFile(inputFileName='{self.job_name}.inp', name='{self.job_name}')\n")
-            file.write("modelJob.submit(consistencyChecking=OFF)\n")
-            file.write("modelJob.waitForCompletion()\n")
-
-    def _make_post_script_odb(self):
-        with open("post.py", "w") as file:
-            file.write("import os\n")
-            file.write("import sys\n")
-            file.write("from abaqus import session\n")
-            file.write(f"sys.path.extend([r'{self.script_parent_folder_path}'])\n")
-            file.write(
-                f"from {self.post_python_file} import {self.function_name_post}\n"
-            )
-            file.write(f"odb = session.openOdb(name='{self.job_name}.odb')\n")
-            file.write(f"{self.function_name_post}(odb, '{self.job_name}')\n")
-
-    def pre_process(self) -> None:
-
-        #############################
-        # Creating execution script
-        #############################
-
+    def _pre_simulation(self) -> None:
         # Save cwd for later
         self.home_path: str = os.getcwd()
-
-        # Updating simulation info with experiment sample data
-        self.sim_info.update(self.experiment_sample.input_data)
-        self.sim_info.update(self.experiment_sample.output_data_loaded)
 
         # Create working directory
         working_dir = Path(f"case_{self.experiment_sample.job_number}")
         working_dir.mkdir(parents=True, exist_ok=True)
 
         # Change to working directory
-        os.chdir(working_dir)
-
-        # Write sim_info to a pickle file
-        with open(f"{self.job_name}_sim_info.pkl", "wb") as fp:
-            pickle.dump(self.sim_info, fp, protocol=0)
-
-        self._make_preprocess_script_pickle()
-
-        self.submit_file(f"{self.job_name}_script.py")
+        os.chdir(working_dir)  # TODO: Get rid of this cwd change
 
     def execute(self) -> None:
-        #############################
-        # Running Abaqus
-        #############################
+        with open("execute.py", "w") as file:
+            file.write("from abaqus import mdb\n")
+            file.write("from abaqusConstants import OFF\n")
+            file.write(
+                f"modelJob = mdb.JobFromInputFile(inputFileName='{self.experiment_sample.job_number}.inp',"
+                f"name='{self.experiment_sample.job_number}')\n")
+            file.write("modelJob.submit(consistencyChecking=OFF)\n")
+            file.write("modelJob.waitForCompletion()\n")
 
-        # Create python file for abaqus to run
-        self._make_execute_script_inp()
+        os.system("abaqus cae noGUI=execute.py -mesa")
+        # This will execute the simulation and create an .odb file with name: f"{experiment_sample.job_number}.odb"
 
-        # Log start of simulation
-        logger.info(f"({self.experiment_sample.job_number}) ABAQUS: {self.script_python_file}")
-
-        start_time = perf_counter()
-        self.submit_file("execute.py")
-
-        logger.info(f"Simulation time: {(perf_counter() - start_time):2f} s")
-        # if self.platform == 'ubuntu':
-        #     self._run_abaqus_broken_version()
-        # elif self.platform == 'cluster':
-        #     self._run_abaqus()
-
-        # else:
-        #     raise NotImplementedError(f"Platform '{self.platform}' not be implemented"
-        #                               f"Choose from 'ubuntu' or 'cluster'")
-
-    def post_process(self) -> None:
-        """Function that handles the post-processing"""
-
-        #############################
-        # Post-analysis script
-        #############################
-        logger.info(f"({self.experiment_sample.job_number}) ABAQUS POST: {self.post_python_file}")
-
-        # path with the post-processing python-script
-        self._make_post_script_odb()
-
-        self.submit_file("post.py")
+    def _post_simulation(self):
 
         # remove files that influence the simulation process
         # remove_files(directory=os.getcwd())
@@ -223,21 +126,25 @@ class AbaqusSimulator(DataGenerator):
         # if self.delete_odb:
         #     remove_files(directory=os.getcwd(), file_types=[".odb"])
 
+        # Check if path exists
+        if not Path("results.pkl").exists():
+            raise FileNotFoundError("results_.pkl")
+
         # Load the results
-        with open(f"{self.job_name}.pkl", "rb") as fd:
+        with open("results.pkl", "rb") as fd:
             results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
 
-        # Back to home path
-        os.chdir(self.home_path)
-
-        # for every key in self.results, store tNonehe value in the ExperimentSample object
+        # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
-            # Check if value is of one of these types: int, float, str, list
+            # Check if value is of one of these types: int, float, str
             if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
+
+        # Back to home path
+        os.chdir(self.home_path)
 
 
 def remove_files(

@@ -334,6 +334,16 @@ class ExperimentSample:
         """
         return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the design to a dictionary.
+
+        Returns
+        -------
+        Dict[str, Any]
+            A dictionary containing the input and output data.
+        """
+        return {**self.input_data, **self.output_data_loaded, 'job_number': self.job_number}
+
     def store(self, object: Any, name: str, to_disk: bool = False,
               store_method: Optional[Type[_Store]] = None) -> None:
         """Store an object to disk.

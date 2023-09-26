@@ -5,6 +5,9 @@ Interface class for data generators
 #                                                                       Modules
 # =============================================================================
 
+from functools import partial
+from typing import Callable
+
 from ..design.experimentsample import ExperimentSample
 from ..logger import time_and_log
 
@@ -51,8 +54,24 @@ class DataGenerator:
         # Cache the design
         self.experiment_sample: ExperimentSample = experiment_sample
 
-        self.pre_process(**kwargs)
+        self._pre_simulation()
+
+        self.pre_process(self.experiment_sample, **kwargs)
         self.execute(**kwargs)
-        self.post_process(**kwargs)
+        self.post_process(self.experiment_sample, **kwargs)
+
+        self._post_simulation()
 
         return self.experiment_sample
+
+    def _pre_simulation(self) -> None:
+        ...
+
+    def _post_simulation(self) -> None:
+        ...
+
+    def add_pre_process(self, func: Callable, **kwargs):
+        self.pre_process = partial(func, **kwargs)
+
+    def add_post_process(self, func: Callable, **kwargs):
+        self.post_process = partial(func, **kwargs)
