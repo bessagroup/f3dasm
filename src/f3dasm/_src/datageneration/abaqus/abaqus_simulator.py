@@ -28,77 +28,34 @@ __status__ = "Alpha"
 
 
 class AbaqusSimulator(DataGenerator):
-    def __init__(self, job_name: str = "job", num_cpus: int = 1,
-                 script_python_file: str = None, function_name_execute: str = None,
-                 script_parent_folder_path: str = None, delete_odb: bool = True,
-                 post_python_file: str = None,
-                 function_name_post: str = None, **kwargs):
+    def __init__(self, name: str = "job", num_cpus: int = 1,
+                 delete_odb: bool = True, **kwargs):
         """Abaqus simulator class
 
         Parameters
         ----------
-        job_name : str, optional
+        name : str, optional
             Name of the job, by default "job"
         num_cpus : int, optional
             Number of CPUs to use, by default 1
-        script_python_file : str, optional
-            name of the .py file that needs to be executed by abaqus, by default None
-        function_name_execute : str, optional
-            Python function or class that is called, by default None
-        script_parent_folder_path : str, optional
-            parent folder where the script_python_file and script_post_processing are located. By default None
         delete_odb : bool, optional
             Set true if you want to delete the original .odb file after post-processing, by default True
-        post_python_file : str, optional
-            name of the .py file that is needed for post-processing by abaqus, by default None
-        function_name_post : str, optional
-            name of the .py file that needs to be executed for post-processing by abaqus, by default None
-
 
         Notes
         -----
         The kwargs are saved as attributes to the class. This is useful for the
         simulation script to access the parameters.
-
-        The platform is an artifact from the original code. The TU Delft Abaqus
-        version is broken, so the process needs to be manually killed.
-
-        The execute function that is called (argument 'function_name_execute'), should be callable
-        and accept one dictionary argument. This dictionary contains the parameters
-        that are passed to the simulation script.
-
-        The post-processing function that is called (argument 'function_name_execute'), should be callable
-        and accept one dictionary argument. This dictionary contains the parameters
-        that are passed to the simulation script.
-
-        The post-processing function should read the .odb file and save the results to a results.p file as a dictionary
-        The simulator.post_process() function will read this dictionary from disk and stores the arguments to
-        the ExperimentSample object.
         """
-
-        # Rule of thumb:
-        # All arguments that are specific in the __init__ function are only used
-        # for setting up the ABAQUS simulator.
-        # All extra keyword arguments are used to pass to the simulation and post-processing scripts!
-
-        # Running parameters
-        self.job_name = job_name
+        self.name = name
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.delete_odb = delete_odb
-
-        # Script location parameters
-        # self.script_parent_folder_path = script_parent_folder_path
-        # self.script_python_file = script_python_file
-        # self.function_name_execute = function_name_execute
-        # self.post_python_file = post_python_file
-        # self.function_name_post = function_name_post
 
     def _pre_simulation(self) -> None:
         # Save cwd for later
         self.home_path: str = os.getcwd()
 
         # Create working directory
-        working_dir = Path(f"case_{self.experiment_sample.job_number}")
+        working_dir = Path(f"{self.name}_{self.experiment_sample.job_number}")
         working_dir.mkdir(parents=True, exist_ok=True)
 
         # Change to working directory
@@ -120,11 +77,11 @@ class AbaqusSimulator(DataGenerator):
     def _post_simulation(self):
 
         # remove files that influence the simulation process
-        # remove_files(directory=os.getcwd())
+        remove_files(directory=os.getcwd())
 
         # remove the odb file to save memory
-        # if self.delete_odb:
-        #     remove_files(directory=os.getcwd(), file_types=[".odb"])
+        if self.delete_odb:
+            remove_files(directory=os.getcwd(), file_types=[".odb"])
 
         # Check if path exists
         if not Path("results.pkl").exists():
