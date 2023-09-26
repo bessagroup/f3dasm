@@ -14,8 +14,8 @@ from pathlib import Path
 from time import perf_counter, sleep
 from typing import Any, Dict
 
-from ..logger import logger
-from .datagenerator import DataGenerator
+from ...logger import logger
+from ..datagenerator import DataGenerator
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -134,6 +134,9 @@ class AbaqusSimulator(DataGenerator):
         with open("results.pkl", "rb") as fd:
             results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
 
+        # Back to home path
+        os.chdir(self.home_path)
+
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
@@ -142,9 +145,6 @@ class AbaqusSimulator(DataGenerator):
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
-
-        # Back to home path
-        os.chdir(self.home_path)
 
 
 def remove_files(

@@ -5,8 +5,9 @@ Module for data-generation
 # =============================================================================
 
 # Local
-from .._src.datageneration.abaqus_functions import post_process, pre_process
-from .._src.datageneration.abaqus_simulator import AbaqusSimulator
+from .._src.datageneration.abaqus.abaqus_functions import (post_process,
+                                                           pre_process)
+from .._src.datageneration.abaqus.abaqus_simulator import AbaqusSimulator
 
 #                                                          Authorship & Credits
 # =============================================================================
