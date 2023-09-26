@@ -5,15 +5,8 @@ Module for data-generation
 # =============================================================================
 
 # Local
-from ._src.datageneration.abaqus_simulator import AbaqusSimulator
-from ._src.datageneration.datagenerator import DataGenerator
-from ._src.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
-                                            FUNCTIONS_7D, find_function,
-                                            get_functions, pybenchfunction)
-from ._src.datageneration.functions.adapters.augmentor import (
-    FunctionAugmentor, Noise, Offset, Scale)
-from ._src.datageneration.functions.function import Function
-from ._src.datageneration.functions.pybenchfunction import *
+from .._src.datageneration.abaqus_functions import post_process, pre_process
+from .._src.datageneration.abaqus_simulator import AbaqusSimulator
 
 #                                                          Authorship & Credits
 # =============================================================================
