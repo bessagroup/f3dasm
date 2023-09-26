@@ -61,23 +61,23 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
     with open(filename, "wb") as fp:
         pickle.dump(sim_info, fp, protocol=0)
 
-    with open("preprocess.py", "w") as file:
-        file.write("import os\n")
-        file.write("import sys\n")
-        file.write("import pickle\n")
-        file.write(f"sys.path.extend([r'{folder_path}'])\n")
-        file.write(
+    with open("preprocess.py", "w") as f:
+        f.write("import os\n")
+        f.write("import sys\n")
+        f.write("import pickle\n")
+        f.write(f"sys.path.extend([r'{folder_path}'])\n")
+        f.write(
             f"from {python_file} import {function_name}\n"
         )
-        file.write(f"with open('{filename}', 'rb') as f:\n")
-        file.write("    dict = pickle.load(f)\n")
-        file.write(f"{function_name}(dict)\n")
+        f.write(f"with open('{filename}', 'rb') as f:\n")
+        f.write("    dict = pickle.load(f)\n")
+        f.write(f"{function_name}(dict)\n")
 
     os.system("abaqus cae noGUI=preprocess.py -mesa")
 
 
 def post_process(experiment_sample: ExperimentSample, folder_path: str,
-                 python_file: str, function_name: str = "main") -> None:
+                 python_file: str, function_name: str = "main", **kwargs) -> None:
     """Function that handles the post-processing of Abaqus with a Python script
 
     Parameters
@@ -97,15 +97,15 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
     with the name: results.pkl. This file will be handled by the pipeline.
     """
 
-    with open("post.py", "w") as file:
-        file.write("import os\n")
-        file.write("import sys\n")
-        file.write("from abaqus import session\n")
-        file.write(f"sys.path.extend([r'{folder_path}'])\n")
-        file.write(
+    with open("post.py", "w") as f:
+        f.write("import os\n")
+        f.write("import sys\n")
+        f.write("from abaqus import session\n")
+        f.write(f"sys.path.extend([r'{folder_path}'])\n")
+        f.write(
             f"from {python_file} import {function_name}\n"
         )
-        file.write(f"odb = session.openOdb(name='{experiment_sample.job_number}.odb')\n")
-        file.write(f"{function_name}(odb)\n")
+        f.write(f"odb = session.openOdb(name='{experiment_sample.job_number}.odb')\n")
+        f.write(f"{function_name}(odb)\n")
 
     os.system("abaqus cae noGUI=post.py -mesa")

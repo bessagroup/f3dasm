@@ -1,10 +1,11 @@
 """
-Interface class for data generators
+Abaqus simulator class
 """
 
 #                                                                       Modules
 # =============================================================================
 
+# Standard
 import json
 import os
 import pickle
@@ -14,8 +15,10 @@ from pathlib import Path
 from time import perf_counter, sleep
 from typing import Any, Dict
 
+# Local
 from ...logger import logger
 from ..datagenerator import DataGenerator
+from .utils import remove_files
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,7 +32,7 @@ __status__ = "Alpha"
 
 class AbaqusSimulator(DataGenerator):
     def __init__(self, name: str = "job", num_cpus: int = 1,
-                 delete_odb: bool = True, **kwargs):
+                 delete_odb: bool = True):
         """Abaqus simulator class
 
         Parameters
@@ -51,6 +54,10 @@ class AbaqusSimulator(DataGenerator):
         self.delete_odb = delete_odb
 
     def _pre_simulation(self) -> None:
+        """Setting up the abaqus simulator
+        - Create working directory: /<name>_<job_number>
+        - Changing to this working directory
+        """
         # Save cwd for later
         self.home_path: str = os.getcwd()
 
@@ -62,20 +69,41 @@ class AbaqusSimulator(DataGenerator):
         os.chdir(working_dir)  # TODO: Get rid of this cwd change
 
     def execute(self) -> None:
-        with open("execute.py", "w") as file:
-            file.write("from abaqus import mdb\n")
-            file.write("from abaqusConstants import OFF\n")
-            file.write(
+        """Submit the .inp file to run the ABAQUS simulator, creating an .odb file
+
+        Note
+        ----
+        This will execute the simulation and create an .odb file with name: <job_number>.odb
+        """
+        logger.info(f"Executing ABAQUS simulator for job: {self.experiment_sample.job_number}")
+
+        with open("execute.py", "w") as f:
+            f.write("from abaqus import mdb\n")
+            f.write("from abaqusConstants import OFF\n")
+            f.write(
                 f"modelJob = mdb.JobFromInputFile(inputFileName='{self.experiment_sample.job_number}.inp',"
                 f"name='{self.experiment_sample.job_number}')\n")
-            file.write("modelJob.submit(consistencyChecking=OFF)\n")
-            file.write("modelJob.waitForCompletion()\n")
+            f.write("modelJob.submit(consistencyChecking=OFF)\n")
+            f.write("modelJob.waitForCompletion()\n")
 
         os.system("abaqus cae noGUI=execute.py -mesa")
-        # This will execute the simulation and create an .odb file with name: f"{experiment_sample.job_number}.odb"
 
     def _post_simulation(self):
+        """Opening the results.pkl file and storing the data to the ExperimentData object
 
+        Note
+        ----
+        Temporary files will be removed. If the simulator has its argument 'delete_odb' to True,
+        the .odb file will be removed as well to save storage space.
+
+        After the post-processing, the working directory will be changed back to directory
+        before running the simulator.
+
+        Raises
+        ------
+        FileNotFoundError
+            When results.pkl is not found in the working directory
+        """
         # remove files that influence the simulation process
         remove_files(directory=os.getcwd())
 
@@ -102,29 +130,3 @@ class AbaqusSimulator(DataGenerator):
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
-
-
-def remove_files(
-    directory: str, file_types: list = [".log", ".lck", ".SMABulk", ".rec", ".SMAFocus",
-                                        ".exception", ".simlog", ".023", ".exception"],
-) -> None:
-    """Remove files of specified types in a directory.
-
-    Parameters
-    ----------
-    directory : str
-        Target folder.
-    file_types : list
-        List of file extensions to be removed.
-    """
-    # Create a Path object for the directory
-    dir_path = Path(directory)
-
-    for target_file in file_types:
-        # Use glob to find files matching the target extension
-        target_files = dir_path.glob(f"*{target_file}")
-
-        # Remove the target files if they exist
-        for file in target_files:
-            if file.is_file():
-                file.unlink()
