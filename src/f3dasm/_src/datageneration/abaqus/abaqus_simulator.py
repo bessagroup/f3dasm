@@ -75,7 +75,7 @@ class AbaqusSimulator(DataGenerator):
         ----
         This will execute the simulation and create an .odb file with name: <job_number>.odb
         """
-        logger.info(f"Executing ABAQUS simulator for job: {self.experiment_sample.job_number}")
+        logger.info(f"Executing ABAQUS simulator '{self.name}' for sample: {self.experiment_sample.job_number}")
 
         with open("execute.py", "w") as f:
             f.write("from abaqus import mdb\n")
