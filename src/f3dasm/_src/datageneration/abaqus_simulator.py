@@ -128,7 +128,7 @@ class AbaqusSimulator(DataGenerator):
 
         # Check if path exists
         if not Path("results.pkl").exists():
-            raise FileNotFoundError("results_.pkl")
+            raise FileNotFoundError("results.pkl")
 
         # Load the results
         with open("results.pkl", "rb") as fd:
