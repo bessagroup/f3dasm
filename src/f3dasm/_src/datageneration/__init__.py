@@ -15,11 +15,11 @@ from .functions import pybenchfunction
 from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,
                                            Scale)
 from .functions.function import Function
-from .functions.pybenchfunction import *
+from .functions.pybenchfunction import *  # NOQA
 
 # Try importing f3dasm_optimize package
 with try_import('f3dasm_simulate') as _imports:
-    import f3dasm_simulate
+    import f3dasm_simulate  # NOQA
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -40,6 +40,8 @@ __all__ = [
     'Noise',
     'Offset',
     'Scale',
+    'DATAGENERATORS',
+    'AbaqusSimulator',
     *pybenchfunction.__all__
 ]
 

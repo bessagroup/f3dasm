@@ -5,8 +5,6 @@ Module for optimization
 # =============================================================================
 
 # Standard
-import sys
-from os import path
 from typing import List
 
 # Local

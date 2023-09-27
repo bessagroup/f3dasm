@@ -8,11 +8,10 @@ The Domain is a set of Parameter instances that make up the feasible search spac
 from __future__ import annotations
 
 # Standard
-import json
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Sequence, Tuple, Type, TypeVar
+from typing import Any, Dict, Iterator, List, Sequence, Type
 
 # Third-party core
 import numpy as np

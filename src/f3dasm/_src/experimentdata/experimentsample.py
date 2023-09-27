@@ -9,15 +9,8 @@ from __future__ import annotations
 
 # Standard
 import pickle
-import sys
-from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Tuple, Type
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Protocol
-else:
-    from typing import Protocol
 
 # Third-party
 import autograd.numpy as np

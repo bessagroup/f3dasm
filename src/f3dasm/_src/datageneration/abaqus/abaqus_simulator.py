@@ -6,13 +6,10 @@ Abaqus simulator class
 # =============================================================================
 
 # Standard
-import json
+
 import os
 import pickle
-import subprocess
-from copy import copy
 from pathlib import Path
-from time import perf_counter, sleep
 from typing import Any, Dict
 
 # Local

@@ -5,7 +5,7 @@ Note
 ----
 I'm assuming that every process could have a different pre-processing, execution and post-processing function.
 But they are used in that order and only once.
-If multiple e.g. pre_process steps need to be taken, then they should be combined in one function.   
+If multiple e.g. pre_process steps need to be taken, then they should be combined in one function.
 """
 
 #                                                                       Modules
@@ -14,12 +14,9 @@ If multiple e.g. pre_process steps need to be taken, then they should be combine
 # Standard
 import os
 import pickle
-from functools import partial
-from pathlib import Path
-from typing import Any, Dict
 
 # Local
-from ...design.experimentsample import ExperimentSample
+from ...experimentdata.experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================

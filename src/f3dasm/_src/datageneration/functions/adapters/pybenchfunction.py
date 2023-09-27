@@ -2,7 +2,6 @@
 # =============================================================================
 
 # Standard
-import json
 from typing import Optional
 
 # Third-party

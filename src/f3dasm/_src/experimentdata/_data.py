@@ -4,20 +4,16 @@
 from __future__ import annotations
 
 # Standard
-import os
-from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 # Local
-from .domain import Domain
-from .parameter import Parameter
+from ..design.domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -211,17 +207,62 @@ class _Data:
 # =============================================================================
 
     def to_numpy(self) -> np.ndarray:
+        """Export the _Data object to a numpy array.
+
+        Returns
+        -------
+        np.ndarray
+            numpy array with the data.
+        """
         return self.data.to_numpy()
 
     def to_xarray(self, label: str) -> xr.DataArray:
+        """Export the _Data object to a xarray DataArray.
+
+        Parameters
+        ----------
+        label : str
+            The name of the data.
+
+        Returns
+        -------
+        xr.DataArray
+            xarray DataArray with the data.
+        """
         return xr.DataArray(self.data, dims=['iterations', label], coords={
             'iterations': range(len(self)), label: self.names})
 
     def to_dataframe(self) -> pd.DataFrame:
+        """Export the _Data object to a pandas DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+            pandas dataframe with the data.
+        """
         return self.data
 
-    def combine_data_to_multiindex(self, other: _Data) -> pd.DataFrame:
-        return pd.concat([self.data, other.data], axis=1, keys=['input', 'output'])
+    def combine_data_to_multiindex(self, other: _Data, jobs_df: pd.DataFrame) -> pd.DataFrame:
+        """Combine the data to a multiindex dataframe.
+
+        Parameters
+        ----------
+        other : _Data
+            The other data to combine.
+        jobs : pd.DataFrame
+            The jobs dataframe.
+
+        Returns
+        -------
+        pd.DataFrame
+            The combined dataframe.
+
+        Note
+        ----
+        This function is mainly used to show the combined ExperimentData object in a
+        Jupyter Notebook
+        """
+        return pd.concat([jobs_df, self.data, other.data], axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -234,6 +275,20 @@ class _Data:
         self.data.to_csv(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
+        """Returns the n best samples. We consider to be lower values better.
+
+        Parameters
+        ----------
+        nosamples : int
+            The number of samples to return.
+        column_name : List[str] | str
+            The column name to sort on.
+
+        Returns
+        -------
+        pd.DataFrame
+            The n best samples.
+        """
         return self.data.nsmallest(n=nosamples, columns=column_name)
 
 #                                                        Append and remove data

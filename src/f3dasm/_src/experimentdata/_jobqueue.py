@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from enum import Enum
 # Standard
+from enum import Enum
 from pathlib import Path
 from typing import Iterable, List, Optional, Type
 
@@ -176,6 +176,25 @@ class _JobQueue:
             Path of the file.
         """
         self.jobs.to_pickle(filename.with_suffix('.pkl'))
+
+    def to_dataframe(self, name: str = "") -> pd.DataFrame:
+        """Converts the job queue to a DataFrame.
+
+        Parameters
+        ----------
+        name : str, optional
+            Name of the column, by default "".
+
+        Notes
+        -----
+        If the name is not specified, the column name will be an empty string
+
+        Returns
+        -------
+        DataFrame
+            DataFrame containing the jobs.
+        """
+        return self.jobs.to_frame("")
 
     #                                                        Append and remove jobs
     # =============================================================================

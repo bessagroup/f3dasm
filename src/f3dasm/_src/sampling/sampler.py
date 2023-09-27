@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 # Standard
-import json
-from typing import Any, List, Optional
+from typing import List, Optional
 
 # Third-party core
 import numpy as np
@@ -17,7 +16,7 @@ from omegaconf import DictConfig
 
 # Locals
 from ..design.domain import Domain
-from ..design.experimentdata import ExperimentData
+from ..experimentdata.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================

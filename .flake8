@@ -46,9 +46,8 @@ max-complexity = 15
 #       Remark: Use the appropriate delimiters if not following PEP8!
 # E226: Missing whitespace around arithmetic operator
 #       Remark: Flake8 does not distinguish +, - from *, /, ** cases yet.
-# MvdS: I added F841: local variable is assigned to but never used
-# Mvds: I added F401 and F403 related to star imports
-extend-ignore = E226, E3, F841, F401, F403
+extend-ignore = E226, E3
+
 
 # List of (additional) error codes to check:
 # E241 : Multiple spaces after ‘,’

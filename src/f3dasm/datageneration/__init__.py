@@ -13,7 +13,7 @@ from .._src.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
 from .._src.datageneration.functions.adapters.augmentor import (
     FunctionAugmentor, Noise, Offset, Scale)
 from .._src.datageneration.functions.function import Function
-from .._src.datageneration.functions.pybenchfunction import *
+from .._src.datageneration.functions.pybenchfunction import *  # NOQA
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -23,3 +23,20 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+__all__ = [
+    'AbaqusSimulator',
+    'DataGenerator',
+    'Function',
+    'FunctionAugmentor',
+    'FUNCTIONS',
+    'FUNCTIONS_2D',
+    'FUNCTIONS_7D',
+    'Noise',
+    'Offset',
+    'pybenchfunction',
+    'Scale',
+    'find_function',
+    'get_functions',
+    *pybenchfunction.__all__
+]

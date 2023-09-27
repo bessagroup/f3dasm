@@ -7,14 +7,14 @@ Random Search optimizer
 
 # Standard
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 
 # Third-party core
 import autograd.numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from ..design.experimentdata import ExperimentData
+from ..experimentdata.experimentdata import ExperimentData
 from .optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits

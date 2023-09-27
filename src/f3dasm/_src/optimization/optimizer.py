@@ -6,20 +6,16 @@ Module containing the interface class Optimizer
 # =============================================================================
 
 # Standard
-import json
-from copy import deepcopy
-from dataclasses import dataclass, field
-from typing import Any, ClassVar, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, ClassVar, Dict, List, Optional
 
 # Third-party core
 import numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from ..datageneration.functions.function import Function
 from ..design.domain import Domain
-from ..design.experimentdata import ExperimentData
-from ..design.experimentsample import ExperimentSample
+from ..experimentdata.experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================

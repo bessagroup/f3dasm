@@ -5,8 +5,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from .adapters.scipy_implementations import _SciPyOptimizer
 # Locals
+from .adapters.scipy_implementations import _SciPyOptimizer
 from .optimizer import OptimizerParameters
 
 #                                                          Authorship & Credits

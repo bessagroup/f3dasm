@@ -10,7 +10,6 @@ import logging
 import os
 from logging import FileHandler, StreamHandler
 from time import sleep
-from typing import TextIO
 
 if os.name == 'nt':
     import msvcrt

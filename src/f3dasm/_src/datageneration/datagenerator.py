@@ -8,7 +8,7 @@ Interface class for data generators
 from functools import partial
 from typing import Callable
 
-from ..design.experimentsample import ExperimentSample
+from ..experimentdata.experimentsample import ExperimentSample
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits

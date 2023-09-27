@@ -5,11 +5,8 @@ Module to optimize benchmark optimization functions
 # =============================================================================
 
 # Standard
-import json
-import os
-import time
 from pathlib import Path
-from typing import Any, List, Type
+from typing import Any, List
 
 # Third-party
 import numpy as np
@@ -22,8 +19,7 @@ from f3dasm.sampling import Sampler
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
-from .datageneration.functions import create_function_from_json
-from .design import ExperimentData
+from .experimentdata.experimentdata import ExperimentData
 from .logger import logger, time_and_log
 
 #                                                          Authorship & Credits

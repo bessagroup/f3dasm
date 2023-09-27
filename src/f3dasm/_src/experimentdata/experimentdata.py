@@ -8,16 +8,13 @@ keep track of results, perform optimization and extract data for machine learnin
 
 from __future__ import annotations
 
-# Standard
-import json
-import os
 import sys
 import traceback
-from copy import deepcopy
 from functools import wraps
-from io import TextIOWrapper
 from pathlib import Path
-from time import sleep
+
+# Standard
+
 
 if sys.version_info < (3, 8):  # NOQA
     from typing_extensions import Protocol  # NOQA
@@ -28,7 +25,6 @@ from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
                     Tuple, Type, Union)
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -38,12 +34,15 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
+from ..design.domain import Domain
+from ..design.parameter import Parameter
 from ..logger import logger
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
-from .domain import Domain
 from .experimentsample import ExperimentSample
-from .parameter import Parameter
+from .utils import (DOMAIN_SUFFIX, INPUT_DATA_SUFFIX, JOBS_SUFFIX,
+                    OUTPUT_DATA_SUFFIX, DataTypes, number_of_overiterations,
+                    number_of_updates)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -53,12 +52,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
-DOMAIN_SUFFIX = "_domain"
-INPUT_DATA_SUFFIX = "_data"
-OUTPUT_DATA_SUFFIX = "_output"
-JOBS_SUFFIX = "_jobs"
 
 
 class _OptimizerParameters(Protocol):
@@ -150,8 +143,8 @@ class ExperimentData:
 
         self.filename = filename
 
-        self.input_data = _data_factory(input_data)
-        self.output_data = _data_factory(output_data)
+        self.input_data = data_factory(input_data)
+        self.output_data = data_factory(output_data)
 
         # Create empty output_data from indices if output_data is empty
         if self.output_data.is_empty():
@@ -161,13 +154,13 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        self.domain = _domain_factory(domain, self.input_data)
+        self.domain = domain_factory(domain, self.input_data)
 
         # Create empty input_data from domain if input_data is empty
         if self.input_data.is_empty():
             self.input_data = _Data.from_domain(self.domain)
 
-        self.jobs = _jobs_factory(jobs, self.input_data, job_value)
+        self.jobs = jobs_factory(jobs, self.input_data, job_value)
 
         # Check if the columns of input_data are in the domain
         if not self.input_data.has_columnnames(self.domain.names):
@@ -214,7 +207,7 @@ class ExperimentData:
                               jobs=self.jobs[index], domain=self.domain, filename=self.filename)
 
     def _repr_html_(self) -> str:
-        return self.input_data.combine_data_to_multiindex(self.output_data)._repr_html_()
+        return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
 
     def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
@@ -376,6 +369,17 @@ class ExperimentData:
         """
         return self.input_data.to_numpy(), self.output_data.to_numpy()
 
+    def to_pandas(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Convert the ExperimentData object to a pandas DataFrame.
+
+        Returns
+        -------
+        tuple
+            A tuple containing two pandas DataFrames, the first one for input columns, and the second for output
+        """
+        return self.input_data.to_dataframe(), self.output_data.to_dataframe()
+
     def to_xarray(self) -> xr.Dataset:
         """
         Convert the ExperimentData object to an xarray Dataset.
@@ -389,6 +393,18 @@ class ExperimentData:
                            'output': self.output_data.to_xarray('output_dim')})
 
     def get_n_best_output(self, n_samples: int) -> ExperimentData:
+        """Get the n best samples from the output data. We consider a minimization problem
+
+        Parameters
+        ----------
+        n_samples : int
+            Number of samples to select.
+
+        Returns
+        -------
+        ExperimentData
+            New experimentData object with a selection of the n best samples.
+        """
         df = self.output_data.n_best_samples(n_samples, self.output_data.names)
         return self[df.index]
 
@@ -430,15 +446,11 @@ class ExperimentData:
         self.jobs += experiment_sample.jobs
 
         # Check if indices of the internal objects are equal
-        if not _equal_indices(self.input_data, self.output_data, self.jobs):
+        if not (self.input_data.indices.equals(self.output_data.indices)
+                and self.input_data.indices.equals(self.jobs.indices)):
             raise ValueError(f"Indices of the internal objects are not equal."
                              f"input_data {self.input_data.indices}, output_data {self.output_data.indices},"
                              f"jobs: {self.jobs.indices}")
-
-        # if self.domain.names != experiment_sample.input_data.names:
-        #     raise ValueError(f"Domain names do not match. "
-        #                      f"\n(left): {self.domain.names}, "
-        #                      f"\n(right): {experiment_sample.input_data.names}")
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
@@ -659,7 +671,7 @@ class ExperimentData:
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress', 'finished' or 'error'        
+            If the given status is not any of 'open', 'in progress', 'finished' or 'error'
         """
         self.mark(self.jobs.indices, status)
     #                                                                Datageneration
@@ -817,6 +829,22 @@ class ExperimentData:
     # =============================================================================
 
     def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+        """Optimize the experimentdata object
+
+        Parameters
+        ----------
+        optimizer : Optimizer
+            Optimizer object to use
+        data_generator : DataGenerator
+            Data generator object to use
+        iterations : int
+            Number of iterations to run
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid optimizer type is specified
+        """
         if optimizer.type == 'scipy':
             self._iterate_scipy(optimizer, data_generator, iterations)
         else:
@@ -824,13 +852,25 @@ class ExperimentData:
 
     def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator,
                  iterations: int, kwargs: Optional[dict] = None):
+        """Internal represenation of the iteration process
 
+        Parameters
+        ----------
+        optimizer : _Optimizer
+            Optimizer object
+        data_generator : _DataGenerator
+            DataGenerator object
+        iterations : int
+            number of iterations
+        kwargs : Optional[dict], optional
+            any additional keyword arguments that will be passed to the DataGenerator, by default None
+        """
         optimizer.set_x0(self)
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
 
-        for _ in range(_number_of_updates(iterations, population=optimizer.hyperparameters.population)):
+        for _ in range(number_of_updates(iterations, population=optimizer.hyperparameters.population)):
             new_samples = optimizer.update_step(data_generator)
             self._add_experiments(new_samples)
 
@@ -840,7 +880,7 @@ class ExperimentData:
             optimizer.set_data(self)
 
         # Remove overiterations
-        self.remove_rows_bottom(_number_of_overiterations(
+        self.remove_rows_bottom(number_of_overiterations(
             iterations, population=optimizer.hyperparameters.population))
 
         # Reset the optimizer
@@ -848,6 +888,19 @@ class ExperimentData:
 
     def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
                        iterations: int, kwargs: Optional[dict] = None):
+        """Internal represenation of the iteration process for scipy-optimize algorithms
+
+        Parameters
+        ----------
+        optimizer : _Optimizer
+            Optimizer object
+        data_generator : _DataGenerator
+            DataGenerator object
+        iterations : int
+            number of iterations
+        kwargs : Optional[dict], optional
+            any additional keyword arguments that will be passed to the DataGenerator, by default None
+        """
 
         optimizer.set_x0(self)
         n_data_before_iterate = len(self)
@@ -880,45 +933,7 @@ class ExperimentData:
         optimizer.reset()
 
 
-def _number_of_updates(iterations: int, population: int):
-    """Calculate number of update steps to acquire the correct number of iterations
-
-    Parameters
-    ----------
-    iterations
-        number of desired iteration steps
-    population
-        the population size of the optimizer
-
-    Returns
-    -------
-        number of consecutive update steps
-    """
-    return iterations // population + (iterations % population > 0)
-
-
-def _number_of_overiterations(iterations: int, population: int) -> int:
-    """Calculate the number of iterations that are over the iteration limit
-
-    Parameters
-    ----------
-    iterations
-        number of desired iteration steos
-    population
-        the population size of the optimizer
-
-    Returns
-    -------
-        number of iterations that are over the limit
-    """
-    overiterations: int = iterations % population
-    if overiterations == 0:
-        return overiterations
-    else:
-        return population - overiterations
-
-
-def _data_factory(data: DataTypes) -> _Data:
+def data_factory(data: DataTypes) -> _Data:
     if data is None:
         return _Data()
 
@@ -939,7 +954,7 @@ def _data_factory(data: DataTypes) -> _Data:
             f"Data must be of type _Data, pd.DataFrame, np.ndarray, Path or str, not {type(data)}")
 
 
-def _domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
+def domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
     if isinstance(domain, Domain):
         return domain
 
@@ -956,12 +971,24 @@ def _domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
         raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def _jobs_factory(jobs: Path | str | None, input_data: _Data, job_value: Status) -> _JobQueue:
+def jobs_factory(jobs: Path | str | None, input_data: _Data, job_value: Status) -> _JobQueue:
+    """Creates a _JobQueue object from particular inpute
+
+    Parameters
+    ----------
+    jobs : Path | str | None
+        input data for the jobs
+    input_data : _Data
+        _Data object to extract indices from, if necessary
+    job_value : Status
+        initial value of all the jobs
+
+    Returns
+    -------
+    _JobQueue
+        JobQueue object
+    """
     if isinstance(jobs, (Path, str)):
         return _JobQueue.from_file(Path(jobs))
 
     return _JobQueue.from_data(input_data, value=job_value)
-
-
-def _equal_indices(input_data: _Data, output_data: _Data, jobs: _JobQueue) -> bool:
-    return input_data.indices.equals(output_data.indices) and input_data.indices.equals(jobs.indices)

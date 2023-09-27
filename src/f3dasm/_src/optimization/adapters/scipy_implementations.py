@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 
 # Locals
 from ...datageneration.datagenerator import DataGenerator
-from ...design.experimentsample import ExperimentSample
+from ...experimentdata.experimentsample import ExperimentSample
 from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits

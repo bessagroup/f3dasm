@@ -6,9 +6,8 @@
 from __future__ import annotations
 
 # Standard
-import json
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Optional, Sequence, Type, Union
+from typing import Any, ClassVar, Optional, Sequence, Union
 
 # Third-party
 import numpy as np

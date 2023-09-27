@@ -7,9 +7,8 @@ and modified to fit the specific case of f3dasm.
 # =============================================================================
 
 # Standard
-import importlib
-from types import ModuleType, TracebackType
-from typing import Any, Optional, Tuple, Type
+from types import TracebackType
+from typing import Optional, Tuple, Type
 
 #                                                          Authorship & Credits
 # =============================================================================

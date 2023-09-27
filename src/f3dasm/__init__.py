@@ -19,10 +19,10 @@ from ._src._argparser import HPC_JOBID
 from ._src._imports import try_import
 from ._src.datageneration.functions.function import Function
 from ._src.design.domain import Domain, make_nd_continuous_domain
-from ._src.design.experimentdata import ExperimentData
-from ._src.design.experimentsample import ExperimentSample
 from ._src.design.parameter import (CategoricalParameter, ConstantParameter,
                                     ContinuousParameter, DiscreteParameter)
+from ._src.experimentdata.experimentdata import ExperimentData
+from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
 from ._src.optimization.optimizer import Optimizer
 from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
@@ -70,4 +70,8 @@ __all__ = [
     'run_optimization_to_disk',
     'Sampler',
     'ExperimentSample',
+    'HPC_JOBID',
+    'try_import',
+    'calculate_mean_std',
+    '_imports',
 ]

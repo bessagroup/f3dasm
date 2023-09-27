@@ -55,7 +55,6 @@ class Thevenot(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
         res = res - 2 * np.exp(-np.prod(X**2)) * np.prod(np.cos(X) ** 2)
         return res
@@ -96,7 +95,6 @@ class Ackley(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = -self.a * np.exp(-self.b * np.sqrt(np.mean(X**2)))
         res = res - np.exp(np.mean(np.cos(self.c * X))) + self.a + np.exp(1)
         return res
@@ -239,7 +237,6 @@ class Adjiman(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-1, 2], [-1, 1]])
 
     def get_param(self):
@@ -252,7 +249,6 @@ class Adjiman(PyBenchFunction):
         return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
-        d = X.shape[0]
         x, y = X
         res = np.cos(x) * np.sin(y) - x / (y**2 + 1)
         return res
@@ -278,7 +274,6 @@ class Bartels(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-500, 500], [-500, 500]])
 
     def get_param(self):
@@ -315,7 +310,6 @@ class Beale(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-4.5, 4.5], [-4.5, 4.5]])
 
     def get_param(self):
@@ -351,7 +345,6 @@ class Bird(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array(
             [[-2 * np.pi, 2 * np.pi], [-2 * np.pi, 2 * np.pi]])
 
@@ -389,7 +382,6 @@ class BohachevskyN1(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
     def get_param(self):
@@ -426,7 +418,6 @@ class BohachevskyN2(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
     def get_param(self):
@@ -463,7 +454,6 @@ class BohachevskyN3(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-50, 50], [-50, 50]])
 
     def get_param(self):
@@ -500,7 +490,6 @@ class Booth(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -544,7 +533,6 @@ class Branin(PyBenchFunction):
         s=10,
         t=1 / (8 * np.pi),
     ):
-        d = self.dimensionality
         self.input_domain = np.array([[-5, 10], [0, 15]])
         self.a = a
         self.b = b
@@ -594,7 +582,6 @@ class Brent(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-20, 0], [-20, 0]])
 
     def get_param(self):
@@ -667,7 +654,6 @@ class BukinN6(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-15, -5], [-3, 3]])
 
     def get_param(self):
@@ -703,7 +689,6 @@ class Colville(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -741,7 +726,6 @@ class CrossInTray(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -787,7 +771,6 @@ class DeJongN5(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self, a=None):
-        d = self.dimensionality
         self.input_domain = np.array([[-65.536, 65.536], [-65.536, 65.536]])
         if a is None:
             l_parameter = [-32, -16, 0, 16, 32]
@@ -832,7 +815,6 @@ class DeckkersAarts(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-20, 20], [-20, 20]])
 
     def get_param(self):
@@ -906,7 +888,6 @@ class DropWave(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-5.2, 5.2], [-5.2, 5.2]])
 
     def get_param(self):
@@ -943,7 +924,6 @@ class Easom(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
     def get_param(self):
@@ -980,7 +960,6 @@ class EggCrate(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
     def get_param(self):
@@ -1016,7 +995,6 @@ class EggHolder(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-512, 512], [-512, 512]])
 
     def get_param(self):
@@ -1064,7 +1042,6 @@ class Exponential(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = -np.exp(-0.5 * np.sum(X**2))
         return res
 
@@ -1089,7 +1066,6 @@ class GoldsteinPrice(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-2, 2], [-2, 2]])
 
     def get_param(self):
@@ -1204,7 +1180,6 @@ class Himmelblau(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-6, 6], [-6, 6]])
 
     def get_param(self):
@@ -1247,7 +1222,6 @@ class HolderTable(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -1292,7 +1266,6 @@ class Keane(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -1345,7 +1318,6 @@ class Langermann(PyBenchFunction):
         return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(
             [
                 self.c[i] * np.exp(-1 / np.pi * np.sum(
@@ -1377,7 +1349,6 @@ class Leon(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[0, 10], [0, 10]])
 
     def get_param(self):
@@ -1454,7 +1425,6 @@ class LevyN13(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -1494,7 +1464,6 @@ class Matyas(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
     def get_param(self):
@@ -1530,7 +1499,6 @@ class McCormick(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-1.5, 4], [-3, 3]])
 
     def get_param(self):
@@ -1619,91 +1587,8 @@ class Periodic(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = 1 + np.sum(np.sin(X) ** 2) - 0.1 * np.exp(-np.sum(X**2))
         return res
-
-
-# class PermZeroDBeta(PyBenchFunction):
-#     """.. image:: ../img/functions/PermZeroDBeta.png"""
-
-#     name = "Perm 0, d, beta"
-#     continuous = True
-#     convex = True
-#     separable = False
-#     differentiable = True
-#     multimodal = False
-#     randomized_term = False
-#     parametric = True
-
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return (d is None) or (d > 0)
-
-#     def _set_parameters(self, beta=10):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[-d, d] for _ in range(d)])
-#         self.beta = beta
-
-#     def get_param(self):
-#         return {"beta": self.beta}
-
-#     def get_global_minimum(self, d):
-#         X = np.array([1 / (i + 1) for i in range(d)])
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
-
-#     def evaluate(self, X):
-#         d = X.shape[0]
-#         res = np.sum(
-#             [
-#                 (np.sum([((j + 1) + self.beta * (X[j] ** (i + 1) - j ** (i + 1)))
-#                  for j in range(d)])) ** 2
-#                 for i in range(d)
-#             ]
-#         )
-#         return res
-
-
-# class PermDBeta(PyBenchFunction):
-#     """.. image:: ../img/functions/PermDBeta.png"""
-
-#     name = "Perm d, beta"
-#     continuous = True
-#     convex = False
-#     separable = False
-#     differentiable = True
-#     multimodal = True
-#     randomized_term = False
-#     parametric = True
-
-#     @classmethod
-#     def is_dim_compatible(cls, d):
-#         assert (d is None) or (
-#             isinstance(d, int) and (not d < 0)
-#         ), "The dimension d must be None or a positive integer"
-#         return (d is None) or (d > 0)
-
-#     def _set_parameters(self, beta=0.5):
-#         d = self.dimensionality
-#         self.input_domain = np.array([[-d, d] for _ in range(d)])
-#         self.beta = beta
-
-#     def get_param(self):
-#         return {"beta": self.beta}
-
-#     def get_global_minimum(self, d):
-#         X = np.array([1 / (i + 1) for i in range(d)])
-#         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
-
-#     def evaluate(self, X):
-#         d = X.shape[0]
-#         j = np.arange(1, d + 1)
-#         res = np.sum([np.sum((j**i + self.beta) * (
-#             (X / j) ** i - 1)) ** 2 for i in range(1, d + 1)])
-#         return res
 
 
 class Powell(PyBenchFunction):
@@ -1895,7 +1780,6 @@ class Ridge(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = X[0] + self.beta * np.sum(X[1:] ** 2) ** self.alpha
         return res
 
@@ -1933,7 +1817,6 @@ class Rosenbrock(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(
             np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (self.a - X[:-1]) ** 2))
         return res
@@ -2010,7 +1893,6 @@ class Salomon(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(X**2)))
         res = res + 0.1 * np.sqrt(np.sum(X**2))
         return res
@@ -2036,7 +1918,6 @@ class SchaffelN1(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
     def get_param(self):
@@ -2073,7 +1954,6 @@ class SchaffelN2(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
     def get_param(self):
@@ -2110,7 +1990,6 @@ class SchaffelN3(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
     def get_param(self):
@@ -2148,7 +2027,6 @@ class SchaffelN4(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
     def get_param(self):
@@ -2237,7 +2115,6 @@ class Schwefel2_20(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.abs(X))
         return res
 
@@ -2275,7 +2152,6 @@ class Schwefel2_21(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.max(np.abs(X))
         return res
 
@@ -2314,7 +2190,6 @@ class Schwefel2_22(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.abs(X)) + np.prod(np.abs(X))
         return res
 
@@ -2352,7 +2227,6 @@ class Schwefel2_23(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(X**10)
         return res
 
@@ -2377,7 +2251,6 @@ class Shekel(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self, m=None, C=None, beta=None):
-        d = self.dimensionality
         self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
         self.m = m if m is not None else 10
         self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
@@ -2489,7 +2362,6 @@ class ShubertN3(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.sum([j * np.sin((j + 1) * X + j)
                      for j in range(1, 5 + 1)]))
         return res
@@ -2528,7 +2400,6 @@ class ShubertN4(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.sum([j * np.cos((j + 1) * X + j)
                      for j in range(1, 5 + 1)]))
         return res
@@ -2567,7 +2438,6 @@ class Sphere(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(X**2)
         return res
 
@@ -2605,7 +2475,6 @@ class StyblinskiTang(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = 0.5 * np.sum(X**4 - 16 * X**2 + 5 * X)
         return res
 
@@ -2667,7 +2536,6 @@ class ThreeHump(PyBenchFunction):
         return d == 2
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
     def get_param(self):
@@ -2714,8 +2582,6 @@ class Trid(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
-        i = np.arange(1, d + 1)
         res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
         return res
 
@@ -2740,7 +2606,6 @@ class Wolfe(PyBenchFunction):
         return d == 3
 
     def _set_parameters(self):
-        d = self.dimensionality
         self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
 
     def get_param(self):
@@ -2789,7 +2654,6 @@ class XinSheYang(PyBenchFunction):
     def evaluate(self, X):
         d = X.shape[0]
         i = np.arange(1, d + 1)
-        # rand = np.random.random(d)
         res = np.sum(np.abs(X) ** i)
         return res
 
@@ -2827,7 +2691,6 @@ class XinSheYangN2(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.abs(X)) * np.exp(-np.sum(np.sin(X**2)))
         return res
 
@@ -2866,7 +2729,6 @@ class XinSheYangN3(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
         res = res - 2 * np.exp(-np.sum(X**2)) * np.prod(np.cos(X) ** 2)
         return res
@@ -2904,7 +2766,6 @@ class XinSheYangN4(PyBenchFunction):
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
-        d = X.shape[0]
         res = np.sum(np.sin(X) ** 2 - np.exp(-np.sum(X) ** 2)) * \
             np.exp(-np.sum(np.sin(np.sqrt(np.abs(X))) ** 2))
         return res

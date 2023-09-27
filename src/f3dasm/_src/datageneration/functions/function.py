@@ -10,7 +10,6 @@ functions. It can be called with an input vector to evaluate the function at tha
 from __future__ import annotations
 
 # Standard
-from copy import copy
 from typing import Optional, Tuple
 
 # Third-party core
@@ -20,9 +19,9 @@ import matplotlib.pyplot as plt
 from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
-from ...design.experimentdata import ExperimentData
 # Locals
-from ...design.experimentsample import ExperimentSample
+from ...experimentdata.experimentdata import ExperimentData
+from ...experimentdata.experimentsample import ExperimentSample
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 

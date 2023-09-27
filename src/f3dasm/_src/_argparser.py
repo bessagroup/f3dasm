@@ -3,8 +3,6 @@
 
 # Standard
 import argparse
-import os
-import sys
 
 #                                                          Authorship & Credits
 # =============================================================================
