@@ -296,6 +296,25 @@ class Domain:
 
         self._add(name, CategoricalParameter(categories))
 
+    def add_constant(self, name: str, value: Any):
+        """Add a new constant input parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+        value : Any
+            Value of the input parameter.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_constant('param1', 0)
+        >>> domain.space
+        {'param1': ConstantParameter(value=0)}
+        """
+        self._add(name, ConstantParameter(value))
+
     def add(self, name: str, space: Parameter):
         """Add a new input parameter to the domain.
 
