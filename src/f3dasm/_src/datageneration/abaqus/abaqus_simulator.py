@@ -131,7 +131,7 @@ class AbaqusSimulator(DataGenerator):
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
-            if isinstance(value, (int, float, str)):
+            if isinstance(value, (int, float, str, list)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
 
             else:
