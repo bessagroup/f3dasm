@@ -492,13 +492,29 @@ class ExperimentData:
             Label of the output column to add to, by default "y".
         """
         if label not in self.output_data.names:
-            self.output_data.add_column(label)
+            self.add_output_parameter(label)
 
         filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(output)
 
         # Set the status of the filled indices to FINISHED
-        # self.jobs.mark_as_finished(filled_indices)
         self.jobs.mark(filled_indices, Status.FINISHED)
+
+    def fill_input(self, input: np.ndarray, label: str):
+        """
+        Fill NaN values in the input data with the given array
+
+        Parameters
+        ----------
+        input : np.ndarray
+            Input data to fill
+        label : str
+            Label of the input column to add to.
+        """
+        if label not in self.input_data.names:
+            raise KeyError(f"Input column {label} does not exist in the input data. "
+                           f"Add the parameter first to the domain with the 'add_input_parameter' method.")
+
+        _ = self.input_data.fill_numpy_arrays(input)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
