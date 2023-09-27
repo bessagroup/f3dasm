@@ -53,7 +53,7 @@ class AbaqusSimulator(DataGenerator):
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.delete_odb = delete_odb
 
-    def _pre_simulation(self) -> None:
+    def _pre_simulation(self, **kwargs) -> None:
         """Setting up the abaqus simulator
         - Create working directory: /<name>_<job_number>
         - Changing to this working directory
@@ -86,7 +86,13 @@ class AbaqusSimulator(DataGenerator):
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
             f.write("modelJob.waitForCompletion()\n")
 
+        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numCpus=4, numDomains=
+        #     4, numThreadsPerMpiProcess=1)
+        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numGPUs=2,
+        #     numThreadsPerMpiProcess=1)
+
         os.system("abaqus cae noGUI=execute.py -mesa")
+        # os.system("abaqus j=input_file.inp cpus=4 ask_delete=OFF")
 
     def _post_simulation(self):
         """Opening the results.pkl file and storing the data to the ExperimentData object
