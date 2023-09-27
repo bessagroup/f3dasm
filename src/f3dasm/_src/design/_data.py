@@ -290,12 +290,15 @@ class _Data:
             self.data.loc[index] = value
         else:
 
-            if isinstance(value, list):
-                # If the value is a list, we can only set
-                # the value if we cast the dataframe to the object type
+            # if isinstance(value, list):
+            #     # If the value is a list, we can only set
+            #     # the value if we cast the dataframe to the object type
+            #     self.data = self.data.astype(object)
+            try:
+                self.data.at[index, column] = value
+            except ValueError:
                 self.data = self.data.astype(object)
-
-            self.data.at[index, column] = value
+                self.data.at[index, column] = value
 
     def reset_index(self) -> None:
         """Reset the index of the data."""
