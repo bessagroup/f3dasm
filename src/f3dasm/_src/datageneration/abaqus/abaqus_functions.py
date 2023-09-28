@@ -14,6 +14,7 @@ If multiple e.g. pre_process steps need to be taken, then they should be combine
 # Standard
 import os
 import pickle
+from pathlib import Path
 
 # Local
 from ...experimentdata.experimentsample import ExperimentSample
@@ -29,7 +30,7 @@ __status__ = "Alpha"
 
 
 def pre_process(experiment_sample: ExperimentSample, folder_path: str,
-                python_file: str, function_name: str = "main", **kwargs) -> None:
+                python_file: str, function_name: str = "main", name: str = "job", **kwargs) -> None:
     """Function that handles the pre-processing of Abaqus with a Python script
 
     Parameters
@@ -50,15 +51,16 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
     """
 
     sim_info = kwargs
+    working_dir = Path("datageneration") / Path(f"{name}_{experiment_sample.job_number}")
 
     # Updating simulation info with experiment sample data
     sim_info.update(experiment_sample.to_dict())
 
-    filename = f"sim_info_{experiment_sample.job_number}.pkl"
+    filename = working_dir / "sim_info.pkl"
     with open(filename, "wb") as fp:
         pickle.dump(sim_info, fp, protocol=0)
 
-    with open("preprocess.py", "w") as f:
+    with open(f"{working_dir / 'preprocess.py'}", "w") as f:
         f.write("import os\n")
         f.write("import sys\n")
         f.write("import pickle\n")
@@ -66,15 +68,16 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(
             f"from {python_file} import {function_name}\n"
         )
+        f.write(f"os.chdir(r'{working_dir}')\n")
         f.write(f"with open('{filename}', 'rb') as f:\n")
         f.write("    dict = pickle.load(f)\n")
         f.write(f"{function_name}(dict)\n")
 
-    os.system("abaqus cae noGUI=preprocess.py -mesa")
+    os.system(f"abaqus cae noGUI={working_dir / 'preprocess.py'} -mesa")
 
 
 def post_process(experiment_sample: ExperimentSample, folder_path: str,
-                 python_file: str, function_name: str = "main", **kwargs) -> None:
+                 python_file: str, function_name: str = "main", name: str = "job", **kwargs) -> None:
     """Function that handles the post-processing of Abaqus with a Python script
 
     Parameters
@@ -94,7 +97,9 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
     with the name: results.pkl. This file will be handled by the pipeline.
     """
 
-    with open("post.py", "w") as f:
+    working_dir = Path("datageneration") / Path(f"{name}_{experiment_sample.job_number}")
+
+    with open(f"{working_dir / 'post.py'}", "w") as f:
         f.write("import os\n")
         f.write("import sys\n")
         f.write("from abaqus import session\n")
@@ -102,7 +107,8 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(
             f"from {python_file} import {function_name}\n"
         )
+        f.write(f"os.chdir(r'{working_dir}')\n")
         f.write(f"odb = session.openOdb(name='{experiment_sample.job_number}.odb')\n")
         f.write(f"{function_name}(odb)\n")
 
-    os.system("abaqus cae noGUI=post.py -mesa")
+    os.system(f"abaqus cae noGUI={working_dir / 'post.py'} -mesa")
