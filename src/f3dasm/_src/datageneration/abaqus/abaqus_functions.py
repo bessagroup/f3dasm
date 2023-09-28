@@ -30,7 +30,8 @@ __status__ = "Alpha"
 
 
 def pre_process(experiment_sample: ExperimentSample, folder_path: str,
-                python_file: str, function_name: str = "main", name: str = "job", **kwargs) -> None:
+                python_file: str, function_name: str = "main", name: str = "job",
+                remove_temp_files: bool = True, **kwargs) -> None:
     """Function that handles the pre-processing of Abaqus with a Python script
 
     Parameters
@@ -43,6 +44,9 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
         Name of the python file to be executed
     function_name : str, optional
         Name of the function within the python file to be executed, by default "main"
+    name : str, optional
+        Name of the job, by default "job"
+    remove_temp_files : bool, optional
 
     Note
     ----
@@ -74,10 +78,15 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(f"{function_name}(dict)\n")
 
     os.system(f"abaqus cae noGUI={working_dir / 'preprocess.py'} -mesa")
-    Path(working_dir / "preprocess.py").unlink(missing_ok=True)
+
+    if remove_temp_files:
+        Path(working_dir / "preprocess.py").unlink(missing_ok=True)
+        Path(working_dir / "sim_info.pkl").unlink(missing_ok=True)
+
 
 def post_process(experiment_sample: ExperimentSample, folder_path: str,
-                 python_file: str, function_name: str = "main", name: str = "job", **kwargs) -> None:
+                 python_file: str, function_name: str = "main", name: str = "job",
+                 remove_temp_files: bool = True, **kwargs) -> None:
     """Function that handles the post-processing of Abaqus with a Python script
 
     Parameters
@@ -90,6 +99,10 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
         Name of the python file to be executed
     function_name : str, optional
         Name of the function within the python file to be executed, by default "main"
+    name : str, optional
+        Name of the job, by default "job"
+    remove_temp_files : bool, optional
+        Whether to remove the temporary files, by default True
 
     Note
     ----
@@ -112,4 +125,5 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(f"{function_name}(odb)\n")
 
     os.system(f"abaqus cae noGUI={working_dir / 'post.py'} -mesa")
-    Path(working_dir / "post.py").unlink(missing_ok=True)
+    if remove_temp_files:
+        Path(working_dir / "post.py").unlink(missing_ok=True)
