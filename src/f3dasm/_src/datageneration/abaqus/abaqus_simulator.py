@@ -115,7 +115,7 @@ class AbaqusSimulator(DataGenerator):
             When results.pkl is not found in the working directory
         """
         # remove files that influence the simulation process
-        remove_files(directory=Path(), file_types=[".rpy", ".rpy.1", ".rpy.2"])
+        # remove_files(directory=Path(), file_types=[".rpy", ".rpy.1", ".rpy.2"])
         Path("abaqus_acis.log").unlink(missing_ok=True)
 
         if self.delete_temp_files:
