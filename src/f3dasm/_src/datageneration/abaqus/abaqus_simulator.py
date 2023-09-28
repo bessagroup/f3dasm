@@ -29,7 +29,7 @@ __status__ = "Alpha"
 
 class AbaqusSimulator(DataGenerator):
     def __init__(self, name: str = "job", num_cpus: int = 1,
-                 delete_odb: bool = False, delete_temp_file: bool = True):
+                 delete_odb: bool = False, delete_temp_files: bool = True):
         """Abaqus simulator class
 
         Parameters
@@ -49,7 +49,7 @@ class AbaqusSimulator(DataGenerator):
         self.name = name
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.delete_odb = delete_odb
-        self.delete_temp_file = delete_temp_file
+        self.delete_temp_files = delete_temp_files
 
     def _pre_simulation(self, **kwargs) -> None:
         """Setting up the abaqus simulator
