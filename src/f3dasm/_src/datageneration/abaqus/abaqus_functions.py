@@ -107,7 +107,7 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(
             f"from {python_file} import {function_name}\n"
         )
-        f.write(f"odb = session.openOdb(name=r'{working_dir / experiment_sample.job_number}.odb')\n")
+        f.write(f"odb = session.openOdb(name=r'{working_dir / str(experiment_sample.job_number)}.odb')\n")
         f.write(f"os.chdir(r'{working_dir}')\n")
         f.write(f"{function_name}(odb)\n")
 
