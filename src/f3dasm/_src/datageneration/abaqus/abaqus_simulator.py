@@ -81,7 +81,7 @@ class AbaqusSimulator(DataGenerator):
             f.write("from abaqusConstants import OFF\n")
             f.write(
                 f"modelJob = mdb.JobFromInputFile(inputFileName="
-                f"r'{self.working_dir / self.experiment_sample.job_number}.inp',"
+                f"r'{self.working_dir / str(self.experiment_sample.job_number)}.inp',"
                 f"name='{self.experiment_sample.job_number}')\n")
             f.write(f"os.chdir(r'{self.working_dir}')\n")
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
