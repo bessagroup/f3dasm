@@ -167,6 +167,7 @@ class Domain:
         Domain
             Domain object
         """
+        # TODO : If lower_bound and upper_bound are similar, then it is a constant parameter
         space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':
