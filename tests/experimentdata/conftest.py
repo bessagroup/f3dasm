@@ -7,7 +7,8 @@ import pytest
 import xarray as xr
 from omegaconf import OmegaConf
 
-from f3dasm.datageneration import Ackley, DataGenerator
+from f3dasm.datageneration import DataGenerator
+from f3dasm.datageneration.functions import Ackley
 from f3dasm.design import (CategoricalParameter, ContinuousParameter,
                            DiscreteParameter, Domain, ExperimentData,
                            make_nd_continuous_domain)

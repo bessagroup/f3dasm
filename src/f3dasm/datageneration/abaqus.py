@@ -1,5 +1,5 @@
 """
-Module for data-generation
+Module for data-generation with ABAQUS Simulation software
 """
 #                                                                       Modules
 # =============================================================================

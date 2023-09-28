@@ -113,17 +113,21 @@ class ContinuousParameter(Parameter):
 
     def _check_types(self):
         """Check if the boundaries are actually floats"""
+        if isinstance(self.lower_bound, int):
+            self.lower_bound = float(self.lower_bound)
+
+        if isinstance(self.upper_bound, int):
+            self.upper_bound = float(self.upper_bound)
+
         if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
             raise TypeError(
                 f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
-        if self.upper_bound < self.lower_bound:
-            raise ValueError("not the right range!")
-
-        if self.upper_bound == self.lower_bound:
-            raise ValueError("same lower as upper bound!")
+        if self.upper_bound <= self.lower_bound:
+            raise ValueError(f"The `upper_bound` value must be larger than the `lower_bound` value "
+                             f"(lower_bound={self.lower_bound}, higher_bound={self.upper_bound}")
 
 
 @dataclass

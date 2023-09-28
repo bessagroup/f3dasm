@@ -17,7 +17,6 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 from ._src import _imports as _imports
 from ._src._argparser import HPC_JOBID
 from ._src._imports import try_import
-from ._src.datageneration.functions.function import Function
 from ._src.design.domain import Domain, make_nd_continuous_domain
 from ._src.design.parameter import (CategoricalParameter, ConstantParameter,
                                     ContinuousParameter, DiscreteParameter)
@@ -27,8 +26,7 @@ from ._src.logger import DistributedFileHandler, logger
 from ._src.optimization.optimizer import Optimizer
 from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
                                     run_multiple_realizations,
-                                    run_multiple_realizations_to_disk,
-                                    run_optimization, run_optimization_to_disk)
+                                    run_optimization)
 from ._src.sampling.sampler import Sampler
 
 #                                                        Authorship and Credits
@@ -50,7 +48,6 @@ __all__ = [
     'machinelearning',
     'optimization',
     'sampling',
-    'Function',
     'Domain',
     'make_nd_continuous_domain',
     'ExperimentData',

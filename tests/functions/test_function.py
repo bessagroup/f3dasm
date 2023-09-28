@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from f3dasm.datageneration import Ackley
+from f3dasm.datageneration.functions import Ackley
 
 pytestmark = pytest.mark.smoke
 

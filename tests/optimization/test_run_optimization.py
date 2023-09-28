@@ -5,9 +5,10 @@ import numpy as np
 import pytest
 
 from f3dasm import run_multiple_realizations
-from f3dasm.datageneration import (FUNCTIONS, FUNCTIONS_2D, FUNCTIONS_7D,
-                                   Ackley, DataGenerator, Griewank, Levy,
-                                   Rastrigin, Schwefel, Sphere)
+from f3dasm.datageneration import DataGenerator
+from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
+                                             FUNCTIONS_7D, Ackley, Griewank,
+                                             Levy, Rastrigin, Schwefel, Sphere)
 from f3dasm.design import ExperimentData, make_nd_continuous_domain
 from f3dasm.optimization import OPTIMIZERS, Optimizer
 from f3dasm.sampling import RandomUniform

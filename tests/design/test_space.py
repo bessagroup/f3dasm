@@ -40,20 +40,6 @@ def test_same_lower_and_upper_bound_continuous_space():
         continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
 
-def test_invalid_types_arg1_int_continuous_space():
-    lower_bound = 1  # int
-    upper_bound = 1.5
-    with pytest.raises(TypeError):
-        continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
-
-
-def test_invalid_types_arg2_int_continuous_space():
-    lower_bound = 1.0
-    upper_bound = 2  # int
-    with pytest.raises(TypeError):
-        continuous = ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
-
-
 def test_invalid_types_string_continuous_space():
     lower_bound = "1"  # string
     upper_bound = 1.5
