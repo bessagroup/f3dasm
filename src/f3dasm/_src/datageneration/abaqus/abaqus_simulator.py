@@ -95,7 +95,7 @@ class AbaqusSimulator(DataGenerator):
         #     numThreadsPerMpiProcess=1)
 
         os.system(f"abaqus cae noGUI={filename} -mesa")
-        filename.unlink(missing_ok=True)
+        # filename.unlink(missing_ok=True)
         # os.system("abaqus j=input_file.inp cpus=4 ask_delete=OFF")
 
     def _post_simulation(self):
