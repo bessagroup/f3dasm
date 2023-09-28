@@ -79,10 +79,11 @@ class AbaqusSimulator(DataGenerator):
             f.write("from abaqus import mdb\n")
             f.write("import os\n")
             f.write("from abaqusConstants import OFF\n")
-            f.write(f"os.chdir(r'{self.working_dir}')\n")
             f.write(
-                f"modelJob = mdb.JobFromInputFile(inputFileName='{self.experiment_sample.job_number}.inp',"
+                f"modelJob = mdb.JobFromInputFile(inputFileName="
+                f"r'{self.working_dir / self.experiment_sample.job_number}.inp',"
                 f"name='{self.experiment_sample.job_number}')\n")
+            f.write(f"os.chdir(r'{self.working_dir}')\n")
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
             f.write("modelJob.waitForCompletion()\n")
 
