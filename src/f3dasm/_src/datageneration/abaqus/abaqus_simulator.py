@@ -55,18 +55,11 @@ class AbaqusSimulator(DataGenerator):
 
     def _pre_simulation(self, **kwargs) -> None:
         """Setting up the abaqus simulator
-        - Create working directory: /<name>_<job_number>
-        - Changing to this working directory
+        - Create working directory: datageneration/<name>_<job_number>
         """
-        # Save cwd for later
-        # self.home_path: str = os.getcwd()
-
         # Create working directory
         self.working_dir = Path("datageneration") / Path(f"{self.name}_{self.experiment_sample.job_number}")
         self.working_dir.mkdir(parents=True, exist_ok=True)
-
-        # Change to working directory
-        # os.chdir(working_dir)  # TODO: Get rid of this cwd change
 
     def execute(self) -> None:
         """Submit the .inp file to run the ABAQUS simulator, creating an .odb file
@@ -91,12 +84,9 @@ class AbaqusSimulator(DataGenerator):
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
             f.write("modelJob.waitForCompletion()\n")
 
-        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numGPUs=2,
-        #     numThreadsPerMpiProcess=1)
-
         os.system(f"abaqus cae noGUI={filename} -mesa")
-        # filename.unlink(missing_ok=True)
-        # os.system("abaqus j=input_file.inp cpus=4 ask_delete=OFF")
+        if self.delete_temp_files:
+            filename.unlink(missing_ok=True)
 
     def _post_simulation(self):
         """Opening the results.pkl file and storing the data to the ExperimentData object
@@ -114,10 +104,6 @@ class AbaqusSimulator(DataGenerator):
         FileNotFoundError
             When results.pkl is not found in the working directory
         """
-        # remove files that influence the simulation process
-        # remove_files(directory=Path(), file_types=[".rpy", ".rpy.1", ".rpy.2"])
-        # Path("abaqus_acis.log").unlink(missing_ok=True)
-
         if self.delete_temp_files:
             remove_files(directory=self.working_dir)
 
@@ -133,9 +119,6 @@ class AbaqusSimulator(DataGenerator):
         with open(Path(self.working_dir / "results.pkl"), "rb") as fd:
             results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
 
-        # Back to home path
-        # os.chdir(self.home_path)
-
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
@@ -146,4 +129,5 @@ class AbaqusSimulator(DataGenerator):
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
 
         # Remove the results.pkl file
-        Path(self.working_dir / "results.pkl").unlink(missing_ok=True)
+        if self.delete_temp_files:
+            Path(self.working_dir / "results.pkl").unlink(missing_ok=True)

@@ -29,9 +29,21 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# Logging things
-logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
-logging.getLogger('tensorflow').setLevel(logging.ERROR)
+# Create a logger for "f3dasm"
+logger = logging.getLogger("f3dasm")
+
+# Create a custom formatter for the "f3dasm" logger
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+# Create a custom handler for the "f3dasm" logger
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
+# Set the level for the "f3dasm" logger
+logger.setLevel(logging.INFO)
+
+# Add the custom handler to the "f3dasm" logger
+logger.addHandler(handler)
 
 
 class DistributedFileHandler(FileHandler):
@@ -119,6 +131,4 @@ def _time_and_log(
     return wrapper
 
 
-# Create a logger
-logger = logging.getLogger("f3dasm")
 time_and_log = partial(_time_and_log, logger=logger)
