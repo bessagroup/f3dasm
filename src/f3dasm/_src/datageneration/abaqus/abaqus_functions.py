@@ -56,7 +56,7 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
     # Updating simulation info with experiment sample data
     sim_info.update(experiment_sample.to_dict())
 
-    filename = working_dir / "sim_info.pkl"
+    filename = "sim_info.pkl"
     with open(filename, "wb") as fp:
         pickle.dump(sim_info, fp, protocol=0)
 
@@ -69,7 +69,7 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
             f"from {python_file} import {function_name}\n"
         )
         f.write(f"os.chdir(r'{working_dir}')\n")
-        f.write(f"with open('{filename}', 'rb') as f:\n")
+        f.write(f"with open(r'{filename}', 'rb') as f:\n")
         f.write("    dict = pickle.load(f)\n")
         f.write(f"{function_name}(dict)\n")
 
