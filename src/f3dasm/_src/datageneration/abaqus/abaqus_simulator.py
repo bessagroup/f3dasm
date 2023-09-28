@@ -116,7 +116,7 @@ class AbaqusSimulator(DataGenerator):
         """
         # remove files that influence the simulation process
         # remove_files(directory=Path(), file_types=[".rpy", ".rpy.1", ".rpy.2"])
-        Path("abaqus_acis.log").unlink(missing_ok=True)
+        # Path("abaqus_acis.log").unlink(missing_ok=True)
 
         if self.delete_temp_files:
             remove_files(directory=self.working_dir)
