@@ -29,7 +29,7 @@ __status__ = "Alpha"
 
 class AbaqusSimulator(DataGenerator):
     def __init__(self, name: str = "job", num_cpus: int = 1,
-                 delete_odb: bool = True):
+                 delete_odb: bool = False, delete_temp_file: bool = True):
         """Abaqus simulator class
 
         Parameters
@@ -49,6 +49,7 @@ class AbaqusSimulator(DataGenerator):
         self.name = name
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.delete_odb = delete_odb
+        self.delete_temp_file = delete_temp_file
 
     def _pre_simulation(self, **kwargs) -> None:
         """Setting up the abaqus simulator
@@ -112,7 +113,11 @@ class AbaqusSimulator(DataGenerator):
             When results.pkl is not found in the working directory
         """
         # remove files that influence the simulation process
-        remove_files(directory=self.working_dir)
+        remove_files(directory=Path(), file_types=[".rpy", ".rpy.1", ".rpy.2"])
+        Path("abaqus_acis.log").unlink(missing_ok=True)
+
+        if self.delete_temp_files:
+            remove_files(directory=self.working_dir)
 
         # remove the odb file to save memory
         if self.delete_odb:
