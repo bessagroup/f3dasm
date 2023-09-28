@@ -40,6 +40,8 @@ class AbaqusSimulator(DataGenerator):
             Number of CPUs to use, by default 1
         delete_odb : bool, optional
             Set true if you want to delete the original .odb file after post-processing, by default True
+        delete_temp_files : bool, optional
+            Set true if you want to delete the temporary files after post-processing, by default True
 
         Notes
         -----
@@ -84,16 +86,16 @@ class AbaqusSimulator(DataGenerator):
             f.write(
                 f"modelJob = mdb.JobFromInputFile(inputFileName="
                 f"r'{self.experiment_sample.job_number}.inp',"
-                f"name='{self.experiment_sample.job_number}')\n")
+                f"name='{self.experiment_sample.job_number}',"
+                f"numCpus={self.num_cpus})\n")
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
             f.write("modelJob.waitForCompletion()\n")
 
-        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numCpus=4, numDomains=
-        #     4, numThreadsPerMpiProcess=1)
         # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numGPUs=2,
         #     numThreadsPerMpiProcess=1)
 
         os.system(f"abaqus cae noGUI={filename} -mesa")
+        filename.unlink(missing_ok=True)
         # os.system("abaqus j=input_file.inp cpus=4 ask_delete=OFF")
 
     def _post_simulation(self):
@@ -137,8 +139,11 @@ class AbaqusSimulator(DataGenerator):
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
-            if isinstance(value, (int, float, str, list)):
+            if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
+
+        # Remove the results.pkl file
+        Path(self.working_dir / "results.pkl").unlink(missing_ok=True)
