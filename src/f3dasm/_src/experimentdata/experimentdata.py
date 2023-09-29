@@ -942,8 +942,9 @@ class ExperimentData:
         # if isinstance(sampler, str):
         #     sampler = sampler_factory(sampler)
 
-        sample_data: DataTypes = sampler(self.domain, n_samples, seed)
-        self.add(input_data=ExperimentData(sample_data))
+        sample_data: DataTypes = sampler(domain=self.domain, n_samples=n_samples, seed=seed)
+        # self.add(input_data=ExperimentData(sample_data), domain=self.domain)
+        self._add_experiments(sample_data)
 
 
 def data_factory(data: DataTypes) -> _Data:
