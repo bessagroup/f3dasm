@@ -1,5 +1,5 @@
-Design
-======
+Experiment Sample
+=================
 
 A :class:`~f3dasm.design.ExperimentSample` object contains a single realization of the design-of-experiment in :class:`~f3dasm.design.ExperimentData`.
 

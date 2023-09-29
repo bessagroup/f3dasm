@@ -96,6 +96,7 @@ Sobol Sequence sampling  :class:`f3dasm.sampling.SobolSequence`                 
     f3dasm.sampling.LatinHypercube
     f3dasm.sampling.SobolSequence
 
+.. _integrating-samplers:
 
 Create your own sampler
 --------------------------
