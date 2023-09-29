@@ -1,3 +1,5 @@
+.. _data-generation:
+
 Datagenerator
 =============
 

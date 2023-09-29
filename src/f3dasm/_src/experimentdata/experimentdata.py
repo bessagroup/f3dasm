@@ -292,13 +292,12 @@ class ExperimentData:
         """
         # Option 1: From exisiting ExperimentData files
         if 'from_file' in config.experimentdata:
-            return cls.from_file(filename=config.experimentdata.from_file.filepath)
+            return cls.from_file(filename=config.experimentdata.from_file)
 
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
             sampler = _Sampler.from_yaml(config.domain, config.experimentdata.from_sampling)
             return sampler.get_samples()
-            # return cls.from_sampling(sampler)
 
         else:
             return cls(**config)

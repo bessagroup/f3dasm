@@ -207,14 +207,14 @@ class ExperimentSample:
 
         return cls(dict_input=dict_input, dict_output=dict_output, jobnumber=jobnumber)
 
-    def get(self, item: str, store_method: Optional[Type[_Store]] = None) -> Any:
+    def get(self, item: str, load_method: Optional[Type[_Store]] = None) -> Any:
         """Retrieve a sample parameter by its name.
 
         Parameters
         ----------
         item : str
             name of the parameter
-        store_method : Optional[Type[_Store]], optional
+        load_method : Optional[Type[_Store]], optional
             class of defined type to load the data. By default None,
             will try to load the data with the default methods
 
@@ -233,7 +233,7 @@ class ExperimentSample:
                 return item
 
             # Load the object from the reference
-            return load_object(Path(value), store_method)
+            return load_object(Path(value), load_method)
         else:
             # Return the literal value
             return value

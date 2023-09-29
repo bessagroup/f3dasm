@@ -5,7 +5,8 @@ import pandas as pd
 import pytest
 
 from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain)
+                           DiscreteParameter, Domain,
+                           make_nd_continuous_domain)
 
 pytestmark = pytest.mark.smoke
 
@@ -147,6 +148,16 @@ def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
     ground_truth = Domain(space={'feature1': ContinuousParameter(lower_bound=1.0, upper_bound=3.0),
                                  'feature2': DiscreteParameter(lower_bound=4, upper_bound=6),
                                  'feature3': CategoricalParameter(['A', 'B', 'C'])})
+    assert (domain.space == ground_truth.space)
+
+
+@pytest.mark.parametrize("bounds", [((0., 1.), (0., 1.), (0., 1.)), ([0., 1.], [0., 1.], [0., 1.]),
+                                    np.array([[0., 1.], [0., 1.], [0., 1.]]), np.tile([0., 1.], (3, 1))])
+def test_make_nd_continuous_domain(bounds):
+    domain = make_nd_continuous_domain(bounds=bounds, dimensionality=3)
+    ground_truth = Domain(space={'x0': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+                                 'x1': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+                                 'x2': ContinuousParameter(lower_bound=0.0, upper_bound=1.0)})
     assert (domain.space == ground_truth.space)
 
 
