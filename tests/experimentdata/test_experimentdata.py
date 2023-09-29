@@ -13,6 +13,7 @@ import xarray as xr
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
+from f3dasm.datageneration import DataGenerator
 from f3dasm.design import (ContinuousParameter, DataTypes, Domain,
                            ExperimentData, Status, _Data, _JobQueue,
                            make_nd_continuous_domain)
@@ -64,8 +65,43 @@ def test_experiment_data_getitem_(slice_type: int | Iterable[int], experimentdat
         input_data=input_data, output_data=output_data, jobs=jobs, domain=experimentdata.domain)
     assert constructed_experimentdata == experimentdata[slice_type]
 
+
+@pytest.mark.parametrize("slice_type", [3, [0, 1, 3], slice(0, 3)])
+def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
+    input_data = experimentdata.input_data[slice_type]
+    output_data = experimentdata.output_data[slice_type]
+    jobs = experimentdata.jobs[slice_type]
+    constructed_experimentdata = ExperimentData(
+        input_data=input_data, output_data=output_data, jobs=jobs, domain=experimentdata.domain)
+    assert constructed_experimentdata == experimentdata.select(slice_type)
+
 #                                                                           Constructors
 # ======================================================================================
+
+
+def test_from_file(experimentdata_continuous: ExperimentData, seed: int, tmp_path: Path):
+    # experimentdata_continuous.filename = tmp_path / 'test001'
+    experimentdata_continuous.store(tmp_path / 'experimentdata')
+
+    experimentdata_from_file = ExperimentData.from_file(tmp_path / 'experimentdata')
+
+    # Check if the input_data attribute of ExperimentData matches the expected_data
+    pd.testing.assert_frame_equal(experimentdata_continuous.input_data.data, experimentdata_from_file.input_data.data)
+    pd.testing.assert_frame_equal(experimentdata_continuous.output_data.data,
+                                  experimentdata_from_file.output_data.data)
+    pd.testing.assert_series_equal(experimentdata_continuous.jobs.jobs, experimentdata_from_file.jobs.jobs)
+    # assert experimentdata_continuous.input_data == experimentdata_from_file.input_data
+    assert experimentdata_continuous.output_data == experimentdata_from_file.output_data
+    assert experimentdata_continuous.domain == experimentdata_from_file.domain
+    assert experimentdata_continuous.jobs == experimentdata_from_file.jobs
+
+
+def test_from_file_wrong_name(experimentdata_continuous: ExperimentData, seed: int, tmp_path: Path):
+    experimentdata_continuous.filename = tmp_path / 'test001'
+    experimentdata_continuous.store()
+
+    with pytest.raises(FileNotFoundError):
+        _ = ExperimentData.from_file(tmp_path / 'experimentdata')
 
 
 def test_from_sampling(experimentdata_continuous: ExperimentData, seed: int):
@@ -120,6 +156,11 @@ def test_to_xarray(experimentdata_continuous: ExperimentData, xarray_dataset: xr
     # assert if xr_dataset is equal to xarray
     assert exported_dataset.equals(xarray_dataset)
 
+
+def test_to_pandas(experimentdata_continuous: ExperimentData, pandas_dataframe: pd.DataFrame):
+    exported_dataframe, _ = experimentdata_continuous.to_pandas()
+    # assert if pandas_dataframe is equal to exported_dataframe
+    assert exported_dataframe.equals(pandas_dataframe)
 #                                                                              Exporters
 # ======================================================================================
 
@@ -581,6 +622,48 @@ def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain:
 def test_invalid_type(input_data):
     with pytest.raises(TypeError):
         ExperimentData(input_data=input_data)
+
+
+def test_add_invalid_type(experimentdata: ExperimentData):
+    with pytest.raises(TypeError):
+        experimentdata + 1
+
+
+def test_add_two_different_domains(experimentdata: ExperimentData, experimentdata_continuous: ExperimentData):
+    with pytest.raises(ValueError):
+        experimentdata + experimentdata_continuous
+
+
+def test_repr_html(experimentdata: ExperimentData, monkeypatch):
+    assert isinstance(experimentdata._repr_html_(), str)
+
+
+def test_store(experimentdata: ExperimentData, tmp_path: Path):
+    experimentdata.store(tmp_path / "test")
+    assert (tmp_path / "test_data.csv").exists()
+    assert (tmp_path / "test_output.csv").exists()
+    assert (tmp_path / "test_domain.pkl").exists()
+    assert (tmp_path / "test_jobs.pkl").exists()
+
+
+def test_store_give_no_filename(experimentdata: ExperimentData, tmp_path: Path):
+    experimentdata.filename = tmp_path / 'test2'
+    experimentdata.store()
+    assert (tmp_path / "test2_data.csv").exists()
+    assert (tmp_path / "test2_output.csv").exists()
+    assert (tmp_path / "test2_domain.pkl").exists()
+    assert (tmp_path / "test2_jobs.pkl").exists()
+
+
+@pytest.mark.parametrize("mode", ["sequential", "parallel", "typo"])
+def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, func: DataGenerator, tmp_path: Path):
+    experimentdata_continuous.filename = tmp_path / 'test009'
+
+    if mode == "typo":
+        with pytest.raises(ValueError):
+            experimentdata_continuous.evaluate(func, mode=mode)
+    else:
+        experimentdata_continuous.evaluate(func, mode=mode)
 
 
 if __name__ == "__main__":  # pragma: no cover
