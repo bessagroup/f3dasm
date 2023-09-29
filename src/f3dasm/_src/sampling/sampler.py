@@ -130,6 +130,13 @@ class Sampler:
             samples=samples, columnnames=columnnames)
         return data
 
+    def __call__(self, domain: Domain, n_samples: int, seed: int):
+        """Call the sampler"""
+        self.domain = domain
+        self.number_of_samples = n_samples
+        self.seed = seed
+        return self.get_samples()
+
     def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
         """Cast the samples to a Data object"""
         data = ExperimentData(domain=self.domain)

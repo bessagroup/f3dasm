@@ -107,6 +107,10 @@ class _Sampler(Protocol):
         sampler.domain = Domain.from_yaml(domain_config)
         return sampler
 
+    @staticmethod
+    def __call__(domain: Domain, n_samples: int, seed: int) -> DataTypes:
+        ...
+
 
 class _ExperimentSampleCallable(Protocol):
     def __call__(experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
@@ -930,6 +934,17 @@ class ExperimentData:
 
         # Reset the optimizer
         optimizer.reset()
+
+    #                                                                      Sampling
+    # =============================================================================
+
+    def sample(self, sampler: _Sampler | str, n_samples: int = 1, seed: Optional[int] = None) -> None:
+
+        # if isinstance(sampler, str):
+        #     sampler = sampler_factory(sampler)
+
+        sample_data: DataTypes = sampler(self.domain, n_samples, seed)
+        self.add(input_data=ExperimentData(sample_data))
 
 
 def data_factory(data: DataTypes) -> _Data:
