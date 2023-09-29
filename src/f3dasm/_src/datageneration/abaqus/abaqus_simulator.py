@@ -29,7 +29,7 @@ __status__ = "Alpha"
 
 class AbaqusSimulator(DataGenerator):
     def __init__(self, name: str = "job", num_cpus: int = 1,
-                 delete_odb: bool = True):
+                 delete_odb: bool = False, delete_temp_files: bool = True):
         """Abaqus simulator class
 
         Parameters
@@ -40,6 +40,8 @@ class AbaqusSimulator(DataGenerator):
             Number of CPUs to use, by default 1
         delete_odb : bool, optional
             Set true if you want to delete the original .odb file after post-processing, by default True
+        delete_temp_files : bool, optional
+            Set true if you want to delete the temporary files after post-processing, by default True
 
         Notes
         -----
@@ -49,21 +51,15 @@ class AbaqusSimulator(DataGenerator):
         self.name = name
         self.num_cpus = num_cpus  # TODO: Where do I specify this in the execution of abaqus?
         self.delete_odb = delete_odb
+        self.delete_temp_files = delete_temp_files
 
     def _pre_simulation(self, **kwargs) -> None:
         """Setting up the abaqus simulator
-        - Create working directory: /<name>_<job_number>
-        - Changing to this working directory
+        - Create working directory: datageneration/<name>_<job_number>
         """
-        # Save cwd for later
-        self.home_path: str = os.getcwd()
-
         # Create working directory
-        working_dir = Path(f"{self.name}_{self.experiment_sample.job_number}")
-        working_dir.mkdir(parents=True, exist_ok=True)
-
-        # Change to working directory
-        os.chdir(working_dir)  # TODO: Get rid of this cwd change
+        self.working_dir = Path("datageneration") / Path(f"{self.name}_{self.experiment_sample.job_number}")
+        self.working_dir.mkdir(parents=True, exist_ok=True)
 
     def execute(self) -> None:
         """Submit the .inp file to run the ABAQUS simulator, creating an .odb file
@@ -72,24 +68,25 @@ class AbaqusSimulator(DataGenerator):
         ----
         This will execute the simulation and create an .odb file with name: <job_number>.odb
         """
+        filename = self.working_dir / "execute.py"
         logger.info(f"Executing ABAQUS simulator '{self.name}' for sample: {self.experiment_sample.job_number}")
 
-        with open("execute.py", "w") as f:
+        with open(f"{filename}", "w") as f:
             f.write("from abaqus import mdb\n")
+            f.write("import os\n")
             f.write("from abaqusConstants import OFF\n")
+            f.write(f"os.chdir(r'{self.working_dir}')\n")
             f.write(
-                f"modelJob = mdb.JobFromInputFile(inputFileName='{self.experiment_sample.job_number}.inp',"
-                f"name='{self.experiment_sample.job_number}')\n")
+                f"modelJob = mdb.JobFromInputFile(inputFileName="
+                f"r'{self.experiment_sample.job_number}.inp',"
+                f"name='{self.experiment_sample.job_number}',"
+                f"numCpus={self.num_cpus})\n")
             f.write("modelJob.submit(consistencyChecking=OFF)\n")
             f.write("modelJob.waitForCompletion()\n")
 
-        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numCpus=4, numDomains=
-        #     4, numThreadsPerMpiProcess=1)
-        # mdb.jobs['Simul_SUPERCOMPRESSIBLE_LIN_BUCKLE'].setValues(numGPUs=2,
-        #     numThreadsPerMpiProcess=1)
-
-        os.system("abaqus cae noGUI=execute.py -mesa")
-        # os.system("abaqus j=input_file.inp cpus=4 ask_delete=OFF")
+        os.system(f"abaqus cae noGUI={filename} -mesa")
+        if self.delete_temp_files:
+            filename.unlink(missing_ok=True)
 
     def _post_simulation(self):
         """Opening the results.pkl file and storing the data to the ExperimentData object
@@ -107,29 +104,30 @@ class AbaqusSimulator(DataGenerator):
         FileNotFoundError
             When results.pkl is not found in the working directory
         """
-        # remove files that influence the simulation process
-        remove_files(directory=os.getcwd())
+        if self.delete_temp_files:
+            remove_files(directory=self.working_dir)
 
         # remove the odb file to save memory
         if self.delete_odb:
-            remove_files(directory=os.getcwd(), file_types=[".odb"])
+            remove_files(directory=self.working_dir, file_types=[".odb"])
 
         # Check if path exists
-        if not Path("results.pkl").exists():
-            raise FileNotFoundError("results.pkl")
+        if not Path(self.working_dir / "results.pkl").exists():
+            raise FileNotFoundError(f"{Path(self.working_dir) / 'results.pkl'}")
 
         # Load the results
-        with open("results.pkl", "rb") as fd:
+        with open(Path(self.working_dir / "results.pkl"), "rb") as fd:
             results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
-
-        # Back to home path
-        os.chdir(self.home_path)
 
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
-            if isinstance(value, (int, float, str, list)):
+            if isinstance(value, (int, float, str)):
                 self.experiment_sample.store(object=value, name=key, to_disk=False)
 
             else:
                 self.experiment_sample.store(object=value, name=key, to_disk=True)
+
+        # Remove the results.pkl file
+        if self.delete_temp_files:
+            Path(self.working_dir / "results.pkl").unlink(missing_ok=True)

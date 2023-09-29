@@ -125,3 +125,5 @@ notebooks/tutorials/Data/
 
 # Exclude obj files in tests folder
 !tests/*/*.obj
+
+*.lock
