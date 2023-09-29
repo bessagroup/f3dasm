@@ -4,8 +4,10 @@ Module to optimize benchmark optimization functions
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import Any, List
+from typing import Any, Callable, List
 
 # Third-party
 import numpy as np
@@ -13,8 +15,8 @@ import pandas as pd
 import xarray as xr
 from pathos.helpers import mp
 
+from f3dasm.design import Domain
 from f3dasm.optimization import Optimizer
-from f3dasm.sampling import Sampler
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
@@ -33,7 +35,7 @@ __status__ = 'Stable'
 
 class OptimizationResult:
     def __init__(self, data: List[ExperimentData], optimizer: Optimizer, data_generator: DataGenerator,
-                 sampler: Sampler, number_of_samples: int, seeds: List[int]):
+                 number_of_samples: int, seeds: List[int]):
         """Optimization results object
 
         Parameters
@@ -44,8 +46,6 @@ class OptimizationResult:
             classname of the optimizer used
         data_generator
             the data_generator to get objective values
-        sampler
-            classname of the initial sampling strategy
         number_of_samples
             number of initial samples, sampled by the sampling strategy
         seeds
@@ -54,7 +54,6 @@ class OptimizationResult:
         self.data = data
         self.optimizer = optimizer
         self.data_generator = data_generator
-        self.sampler = sampler
         self.number_of_samples = number_of_samples
         self.seeds = seeds
         self._log()
@@ -91,7 +90,8 @@ class OptimizationResult:
 def run_optimization(
     optimizer: Optimizer,
     data_generator: DataGenerator,
-    sampler: Sampler,
+    sampler: Callable | str,
+    domain: Domain,
     iterations: int,
     seed: int,
     number_of_samples: int = 30,
@@ -106,6 +106,8 @@ def run_optimization(
         the data_generator to get objective values
     sampler
         the sampling strategy
+    domain
+        the domain
     iterations
         number of iterations
     seed
@@ -120,10 +122,10 @@ def run_optimization(
 
     # Set function seed
     optimizer.set_seed()
-    sampler.set_seed(seed)
 
     # Sample
-    data = sampler.get_samples(numsamples=number_of_samples)
+    data = ExperimentData.from_sampling(sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
+
     data.evaluate(data_generator, mode='sequential')
     data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
 
@@ -159,7 +161,8 @@ def run_optimization(
 def run_multiple_realizations(
     optimizer: Optimizer,
     data_generator: DataGenerator,
-    sampler: Sampler,
+    sampler: Callable | str,
+    domain: Domain,
     iterations: int,
     realizations: int,
     number_of_samples: int = 30,
@@ -177,6 +180,8 @@ def run_multiple_realizations(
         the data_generator to get objective values
     sampler
         the sampling strategy
+    domain
+        the domain
     iterations
         number of iterations
     realizations
@@ -199,7 +204,7 @@ def run_multiple_realizations(
 
     if parallelization:
         args = [
-            (optimizer, data_generator, sampler, iterations,
+            (optimizer, data_generator, sampler, domain, iterations,
              seed + index, number_of_samples)
             for index, _ in enumerate(range(realizations))
         ]
@@ -215,6 +220,7 @@ def run_multiple_realizations(
                 "optimizer": optimizer,
                 "data_generator": data_generator,
                 "sampler": sampler,
+                "domain": domain,
                 "iterations": iterations,
                 "number_of_samples": number_of_samples,
                 "seed": seed + index,
@@ -225,7 +231,6 @@ def run_multiple_realizations(
         data=results,
         optimizer=optimizer,
         data_generator=data_generator,
-        sampler=sampler,
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
     )

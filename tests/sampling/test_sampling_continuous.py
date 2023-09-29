@@ -3,8 +3,9 @@
 import numpy as np
 import pytest
 
+from f3dasm._src.design.samplers import (LatinHypercube, RandomUniform,
+                                         SobolSequence)
 from f3dasm.design import Domain
-from f3dasm.sampling import LatinHypercube, RandomUniform, SobolSequence
 
 pytestmark = pytest.mark.smoke
 

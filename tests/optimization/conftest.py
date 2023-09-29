@@ -1,8 +1,7 @@
 import pytest
 
-from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain)
-from f3dasm.sampling import RandomUniform
+from f3dasm import ExperimentData
+from f3dasm.design import ContinuousParameter, Domain
 
 
 @pytest.fixture(scope="package")
@@ -21,8 +20,4 @@ def data():
     design = Domain(space=input_parameters)
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
-
-    random_sampler = RandomUniform(domain=design, seed=seed)
-    data = random_sampler.get_samples(numsamples=N)
-
-    return data
+    return ExperimentData.from_sampling(sampler='random', domain=design, n_samples=N, seed=seed)

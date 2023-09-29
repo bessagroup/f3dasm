@@ -179,24 +179,46 @@ method with the path of the files.
 
 .. _experimentdata-sampling:
 
-ExperimentData from a :class:`~f3dasm.sampling.Sampler`
--------------------------------------------------------
+ExperimentData from a sampling
+------------------------------
 
-Sample a :class:`~f3dasm.design.ExperimentData` object from a :class:`~f3dasm.sampling.Sampler` object by using the :meth:`~f3dasm.design.ExperimentData.from_sampling` method.
-You can use the built-in samplers from the sampling module or construct your own.
+You can directly construct an :class:`~f3dasm.design.ExperimentData` object from a sampling strategy by using the :meth:`~f3dasm.design.ExperimentData.from_sampling` method.
+You have to provide the following arguments:
+
+* A sampling function. To learn more about integrating your sampling function, please refer to :ref:`this <integrating-sampling>` section.
+* A :class:`~f3dasm.design.Domain` object describing the input variables of the sampling function.
+* The number of samples to generate.
+* An optional seed for the random number generator.
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain, ContinuousParameter
-    >>> from f3dasm.sampling import RandomUniform
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
-    >>> sampler = RandomUniform(domain, 10)
-    >>> data = ExperimentData.from_sampling(sampler)
+    from f3dasm import ExperimentData, Domain, ContinuousParameter
 
+    def your_sampling_function(domain, n_samples, seed):
+        # your sampling function
+        # ...
+        return samples
 
-.. note::
+    domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
+    sampler = RandomUniform(domain, 10)
+    data = ExperimentData.from_sampling(sampler=your_sampling_function, domain=domain, n_samples=10, seed=42)
 
-    To learn about integrating your sampler into the :mod:`f3dasm` framework:, learn more about it in :ref:`this section <integrating-samplers>`.
+You can use the built-in samplers from the sampling module by providing one of the following strings as the ``sampler`` argument:
+
+======================== ====================================================================== ===========================================================================================================
+Name                     Method                                                                 Reference
+======================== ====================================================================== ===========================================================================================================
+``"random"``             Random Uniform sampling                                                `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
+``"latin"``              Latin Hypercube sampling                                               `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
+``"sobol"``              Sobol Sequence sampling                                                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
+======================== ====================================================================== ===========================================================================================================
+
+.. code-block:: python
+
+    from f3dasm import ExperimentData, Domain, ContinuousParameter
+
+    domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
+    data = ExperimentData.from_sampling(sampler="latin", domain=domain, n_samples=10, seed=42)
 
 .. _experimentdata-hydra:
 

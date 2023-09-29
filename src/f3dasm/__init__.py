@@ -27,7 +27,6 @@ from ._src.optimization.optimizer import Optimizer
 from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
                                     run_multiple_realizations,
                                     run_optimization)
-from ._src.sampling.sampler import Sampler
 
 #                                                        Authorship and Credits
 # =============================================================================

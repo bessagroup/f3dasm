@@ -29,13 +29,14 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from filelock import FileLock
-from hydra.utils import get_original_cwd, instantiate
+from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
 from ..design.domain import Domain
 from ..design.parameter import Parameter
+from ..design.samplers import sampler_factory
 from ..logger import logger
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
@@ -95,17 +96,6 @@ class _DataGenerator(Protocol):
 
 class _Sampler(Protocol):
     """Protocol class for sampling methods."""
-    def get_samples(numsamples: int) -> ExperimentData:
-        ...
-
-    @classmethod
-    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> '_Sampler':
-        """Create a sampler from a yaml configuration"""
-
-        args = {**sampler_config, 'domain': None}
-        sampler: _Sampler = instantiate(args)
-        sampler.domain = Domain.from_yaml(domain_config)
-        return sampler
 
     @staticmethod
     def __call__(domain: Domain, n_samples: int, seed: int) -> DataTypes:
@@ -259,21 +249,30 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path)
 
     @classmethod
-    def from_sampling(cls, sampler: _Sampler, filename: str = 'experimentdata') -> ExperimentData:
+    def from_sampling(cls, sampler: _Sampler | str, domain: Domain, n_samples: int = 1,
+                      seed: Optional[int] = None, filename: str = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
         ----------
         sampler : Sampler
             Sampler object containing the sampling strategy.
+        domain : Domain
+            Domain object containing the domain of the experiment.
+        n_samples : int, optional
+            Number of samples, by default 1.
+        seed : int, optional
+            Seed for the random number generator, by default None.
+        filename : str, optional
+            Name of the file, excluding suffix, by default 'experimentdata'.
 
         Returns
         -------
         ExperimentData
             ExperimentData object containing the sampled data.
         """
-        experimentdata = sampler.get_samples()
-        experimentdata.filename = filename
+        experimentdata = cls(domain=domain, filename=filename)
+        experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
         return experimentdata
 
     @classmethod
@@ -296,8 +295,11 @@ class ExperimentData:
 
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
-            sampler = _Sampler.from_yaml(config.domain, config.experimentdata.from_sampling)
-            return sampler.get_samples()
+            domain = Domain.from_yaml(config.domain)
+            return cls.from_sampling(sampler=config.sampler, domain=domain,
+                                     n_samples=config.experimentdata.from_sampling.n_samples,
+                                     seed=config.experimentdata.from_sampling.seed,
+                                     filename=config.experimentdata.from_sampling.filename)
 
         else:
             return cls(**config)
@@ -938,13 +940,35 @@ class ExperimentData:
     # =============================================================================
 
     def sample(self, sampler: _Sampler | str, n_samples: int = 1, seed: Optional[int] = None) -> None:
+        """Sample data from the domain providing the sampler strategy
 
-        # if isinstance(sampler, str):
-        #     sampler = sampler_factory(sampler)
+        Parameters
+        ----------
+        sampler : Sampler or str
+            Sampler callable or string of built-in sampler
+        n_samples : int, optional
+            Number of samples to generate, by default 1
+        seed : Optional[int], optional
+            Seed to use for the sampler, by default None
+
+        Note
+        ----
+        If a string is passed, it should be one of the built-in samplers:
+        - 'random' : Random sampling
+        - 'latin' : Latin Hypercube Sampling
+        - 'sobol' : Sobol Sequence Sampling
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid sampler type is specified
+        """
+
+        if isinstance(sampler, str):
+            sampler = sampler_factory(sampler, self.domain)
 
         sample_data: DataTypes = sampler(domain=self.domain, n_samples=n_samples, seed=seed)
-        # self.add(input_data=ExperimentData(sample_data), domain=self.domain)
-        self._add_experiments(sample_data)
+        self.add(input_data=sample_data, domain=self.domain)
 
 
 def data_factory(data: DataTypes) -> _Data:

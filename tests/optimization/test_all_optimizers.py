@@ -9,7 +9,6 @@ from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D, Ackley,
                                              Levy, Sphere)
 from f3dasm.design import ExperimentData, make_nd_continuous_domain
 from f3dasm.optimization import OPTIMIZERS, Optimizer
-from f3dasm.sampling import RandomUniform
 
 
 @pytest.mark.smoke
@@ -37,8 +36,9 @@ def test_all_optimizers_and_functions(seed: int, data_generator: DataGenerator, 
     domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    data1 = RandomUniform(domain, seed=seed).get_samples(30)
-    data2 = RandomUniform(domain, seed=seed).get_samples(30)
+
+    data1 = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=30, seed=seed)
+    data2 = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=30, seed=seed)
 
     func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
@@ -80,9 +80,7 @@ def test_optimizer_iterations(iterations: int, data_generator: DataGenerator, op
 
     domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
-    # Sampler
-    ran_sampler = RandomUniform(domain=domain, seed=seed)
-    data: ExperimentData = ran_sampler.get_samples(numsamples=numsamples)
+    data = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=numsamples, seed=seed)
 
     func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 

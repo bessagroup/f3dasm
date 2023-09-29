@@ -17,8 +17,6 @@ from f3dasm.datageneration import DataGenerator
 from f3dasm.design import (ContinuousParameter, DataTypes, Domain,
                            ExperimentData, Status, _Data, _JobQueue,
                            make_nd_continuous_domain)
-from f3dasm.sampling import Sampler  # Import your Sampler class
-from f3dasm.sampling import RandomUniform
 
 pytestmark = pytest.mark.smoke
 
@@ -105,8 +103,10 @@ def test_from_file_wrong_name(experimentdata_continuous: ExperimentData, seed: i
 
 
 def test_from_sampling(experimentdata_continuous: ExperimentData, seed: int):
-    sampler = RandomUniform(domain=experimentdata_continuous.domain, number_of_samples=10, seed=seed)
-    experimentdata_from_sampling = ExperimentData.from_sampling(sampler)
+    # sampler = RandomUniform(domain=experimentdata_continuous.domain, number_of_samples=10, seed=seed)
+    experimentdata_from_sampling = ExperimentData.from_sampling(sampler='random',
+                                                                domain=experimentdata_continuous.domain,
+                                                                n_samples=10, seed=seed)
     assert experimentdata_from_sampling == experimentdata_continuous
 
 
