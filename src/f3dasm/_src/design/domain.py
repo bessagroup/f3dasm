@@ -273,7 +273,7 @@ class Domain:
         """
         self._add(name, ContinuousParameter(low, high, log))
 
-    def add_category(self, name: str, categories: CategoricalType | Sequence[CategoricalType]):
+    def add_category(self, name: str, categories: Sequence[CategoricalType]):
         """Add a new categorical input parameter to the domain.
 
         Parameters
@@ -290,10 +290,6 @@ class Domain:
         >>> domain.space
         {'param1': CategoricalParameter(categories=[0, 1, 2])}
         """
-        # Check if categories is a sequence or a single value
-        if isinstance(categories, CategoricalType):
-            categories = [categories]
-
         self._add(name, CategoricalParameter(categories))
 
     def add_constant(self, name: str, value: Any):
@@ -580,7 +576,7 @@ class Domain:
         return len(self) == len(self._filter(ContinuousParameter))
 
 
-def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain:
+def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensionality: int) -> Domain:
     """Create a continuous domain.
 
     Parameters
@@ -608,6 +604,10 @@ def make_nd_continuous_domain(bounds: np.ndarray, dimensionality: int) -> Domain
     >>> domain = make_nd_continuous_domain(bounds, dimensionality)
     """
     space = {}
+
+    # bounds is a list of lists, convert to numpy array:
+    bounds = np.array(bounds)
+
     for dim in range(dimensionality):
         space[f"x{dim}"] = ContinuousParameter(lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 

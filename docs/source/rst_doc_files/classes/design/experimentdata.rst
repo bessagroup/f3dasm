@@ -66,6 +66,7 @@ Learn more about the :class:`~f3dasm.design.Domain` object in the :ref:`domain <
 .. warning ::
 
     If you don't provide a :class:`~f3dasm.design.Domain` object, the domain will be inferred from the input data. 
+    Constructing the dataframe by inferring it from samples can be useful if you have a large number of parameters and you don't want to manually specify the domain.
     This will be done by looking at the data-type and boundaries of the input data. 
     However, this is not recommended as it can lead to unexpected results.
 
@@ -337,7 +338,7 @@ This will result in the creation of the following files:
 
 
 Storing to other datatypes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Alternatively, you can convert the input- and outputdata of your data-driven process to other well-knowndatatypes:
 

@@ -21,7 +21,6 @@ f3dasm
    :hidden:
    :glob:
 
-   rst_doc_files/classes/design/parameters
    rst_doc_files/classes/design/domain
    rst_doc_files/classes/sampling/sampling
 

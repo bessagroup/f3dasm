@@ -94,6 +94,7 @@ intersphinx_mapping = {
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "pandas": ('https://pandas.pydata.org/docs/', None),
+    "xarray": ('https://docs.xarray.dev/en/stable/', None),
 }
 
 # -- Options for HTML output -------------------------------------------------
