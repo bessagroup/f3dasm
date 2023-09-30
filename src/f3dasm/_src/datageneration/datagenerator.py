@@ -5,10 +5,16 @@ Interface class for data generators
 #                                                                       Modules
 # =============================================================================
 
+# Standard
+import sys
 from functools import partial
 from typing import Callable
 
-from ..experimentdata.experimentsample import ExperimentSample
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Protocol  # NOQA
+else:
+    from typing import Protocol
+
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -21,13 +27,16 @@ __status__ = "Alpha"
 # =============================================================================
 
 
+class ExperimentSample(Protocol):
+    ...
+
+
 class DataGenerator:
     """Base class for a data generator"""
 
     def pre_process(self, **kwargs) -> None:
         """Function that handles the pre-processing"""
         ...
-        # raise NotImplementedError("No pre-process function implemented!")
 
     def execute(self, **kwargs) -> None:
         """Function that calls the FEM simulator the pre-processing"""

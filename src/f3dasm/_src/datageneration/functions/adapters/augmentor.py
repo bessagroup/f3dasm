@@ -1,6 +1,8 @@
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
 from abc import ABC, abstractmethod
 from copy import copy
@@ -103,7 +105,7 @@ class Offset(_Augmentor):
 
 
 class Scale(_Augmentor):
-    def __init__(self, scale_bounds: np.ndarray, input_domain: np.ndarray):
+    def __init__(self, scale_bounds: np.ndarray | List[List[float]], input_domain: np.ndarray):
         """Augmentor class to scale the input vector of a function to some bounds
 
         Parameters
@@ -113,7 +115,7 @@ class Scale(_Augmentor):
         input_domain
             input domain of the objective function
         """
-        self.scale_bounds = scale_bounds
+        self.scale_bounds = np.array(scale_bounds)
         self.input_domain = input_domain
 
     def augment(self, input: np.ndarray) -> np.ndarray:

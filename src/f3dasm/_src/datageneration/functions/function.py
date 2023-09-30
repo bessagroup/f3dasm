@@ -10,7 +10,13 @@ functions. It can be called with an input vector to evaluate the function at tha
 from __future__ import annotations
 
 # Standard
+import sys
 from typing import Optional, Tuple
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Protocol  # NOQA
+else:
+    from typing import Protocol
 
 # Third-party core
 import autograd.numpy as np
@@ -20,8 +26,6 @@ from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
 # Locals
-from ...experimentdata.experimentdata import ExperimentData
-from ...experimentdata.experimentsample import ExperimentSample
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 
@@ -33,6 +37,11 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+
+class ExperimentSample(Protocol):
+    def __setitem__(self, key: str, value: np.ndarray):
+        ...
 
 
 class Function(DataGenerator):
@@ -62,15 +71,8 @@ class Function(DataGenerator):
             return
         np.random.seed(seed)
 
-    def __call__(self, input_x: np.ndarray | ExperimentData) -> np.ndarray:
-
-        # TODO: Can I get rid of this? When input_x = type(ExperimentData)
-        # If the input is a Data object
-        if isinstance(input_x, ExperimentData):
-            x = input_x.input_data.to_numpy()
-
-        else:
-            x = input_x
+    def __call__(self, input_x: np.ndarray) -> np.ndarray:
+        x = input_x
 
         x = np.atleast_2d(x)
         y = []
@@ -80,11 +82,6 @@ class Function(DataGenerator):
 
             yyi = self.augmentor.augment_output(yi)
             y.append(yyi)
-
-        # If the input is a Data object
-        if isinstance(input_x, ExperimentData):
-            input_x.fill_output(np.array(y).reshape(-1, 1))
-            return input_x
 
         return np.array(y).reshape(-1, 1)
 
@@ -99,7 +96,7 @@ class Function(DataGenerator):
         experiment_sample["y"] = self(x).ravel().astype(np.float32)
         return experiment_sample
 
-    def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:
+    def run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
         return self.execute(experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):
@@ -304,58 +301,58 @@ class Function(DataGenerator):
 
         return fig, ax
 
-    def plot_data(
-        self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
-        numsamples=None, arrow=False
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-        """Create a 2D contout plot with the datapoints as scatter
+    # def plot_data(
+    #     self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
+    #     numsamples=None, arrow=False
+    # ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+    #     """Create a 2D contout plot with the datapoints as scatter
 
-        Parameters
-        ----------
-        data
-            Data object containing samples
-        px, optional
-            number of pixels on each axis
-        domain, optional
-            domain that needs to be plotted
+    #     Parameters
+    #     ----------
+    #     data
+    #         Data object containing samples
+    #     px, optional
+    #         number of pixels on each axis
+    #     domain, optional
+    #         domain that needs to be plotted
 
-        Returns
-        -------
-            matplotlib figure and axes
-        """
-        fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-        x1 = data.input_data.to_dataframe().iloc[:, 0]
-        x2 = data.input_data.to_dataframe().iloc[:, 1]
-        ax.scatter(
-            x=x1,
-            y=x2,
-            s=10,
-            c=np.linspace(0, 1, len(x1)),
-            cmap="Blues",
-            edgecolors="black",
-        )
-        if arrow:
-            for p_index in range(len(x1)-1):
-                dx = (x1[p_index+1] - x1[p_index])
-                dy = (x2[p_index+1] - x2[p_index])
-                length = 1/np.sqrt(dx**2 + dy**2)
-                ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
-                         length_includes_head=True)
+    #     Returns
+    #     -------
+    #         matplotlib figure and axes
+    #     """
+    #     fig, ax = self.plot(orientation="2D", px=px, domain=domain)
+    #     x1 = data.input_data.to_dataframe().iloc[:, 0]
+    #     x2 = data.input_data.to_dataframe().iloc[:, 1]
+    #     ax.scatter(
+    #         x=x1,
+    #         y=x2,
+    #         s=10,
+    #         c=np.linspace(0, 1, len(x1)),
+    #         cmap="Blues",
+    #         edgecolors="black",
+    #     )
+    #     if arrow:
+    #         for p_index in range(len(x1)-1):
+    #             dx = (x1[p_index+1] - x1[p_index])
+    #             dy = (x2[p_index+1] - x2[p_index])
+    #             length = 1/np.sqrt(dx**2 + dy**2)
+    #             ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
+    #                      length_includes_head=True)
 
-        # Mark selected point
-        if numsamples is not None:
-            x_selected = data.input_data.to_dataframe().iloc[numsamples]
-            ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
-                       marker="*", edgecolors="cyan")
+    #     # Mark selected point
+    #     if numsamples is not None:
+    #         x_selected = data.input_data.to_dataframe().iloc[numsamples]
+    #         ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
+    #                    marker="*", edgecolors="cyan")
 
-        # Mark last point
-        x_last = data.input_data.to_dataframe().iloc[-1]
-        ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
-                   marker="*", edgecolors="magenta")
+    #     # Mark last point
+    #     x_last = data.input_data.to_dataframe().iloc[-1]
+    #     ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
+    #                marker="*", edgecolors="magenta")
 
-        # Best point
-        x1_best, _ = data.get_n_best_output(1).to_numpy()[:, 0]
-        x2_best, _ = data.get_n_best_output(1).to_numpy()[:, 1]
-        ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
-                   marker="*", edgecolors="red")
-        return fig, ax
+    #     # Best point
+    #     x1_best, _ = data.get_n_best_output(1).to_numpy()[:, 0]
+    #     x2_best, _ = data.get_n_best_output(1).to_numpy()[:, 1]
+    #     ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
+    #                marker="*", edgecolors="red")
+    #     return fig, ax

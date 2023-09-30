@@ -34,6 +34,7 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
+from ..datageneration.functions.function_factory import datagenerator_factory
 from ..design.domain import Domain
 from ..design.parameter import Parameter
 from ..design.samplers import sampler_factory
@@ -701,6 +702,9 @@ class ExperimentData:
         """
         if kwargs is None:
             kwargs = {}
+
+        if isinstance(data_generator, str):
+            data_generator = datagenerator_factory(data_generator, self.domain, kwargs)
 
         if mode.lower() == "sequential":
             return self._run_sequential(data_generator, kwargs)
