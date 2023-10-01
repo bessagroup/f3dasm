@@ -68,7 +68,7 @@ class _Optimizer(Protocol):
     def _callback(self, xk: np.ndarray) -> None:
         ...
 
-    def run_algorithm(self, iterations: int, data_generator: _DataGenerator):
+    def run_algorithm(self, iterations: int, data_generator: _DataGenerator, kwargs: Dict[str, Any]) -> None:
         ...
 
     def _check_number_of_datapoints(self) -> None:
@@ -836,27 +836,33 @@ class ExperimentData:
     #                                                                  Optimization
     # =============================================================================
 
-    def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator, iterations: int) -> None:
+    def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator | str,
+                 iterations: int, kwargs: Optional[Dict[str, Any]] = None) -> None:
         """Optimize the experimentdata object
 
         Parameters
         ----------
         optimizer : Optimizer
             Optimizer object to use
-        data_generator : DataGenerator
+        data_generator : DataGenerator | str
             Data generator object to use
         iterations : int
             Number of iterations to run
+        kwargs : Optional[Dict[str, Any]], optional
+            Any additional keyword arguments that need to be supplied to the data generator, by default None
 
         Raises
         ------
         ValueError
             Raised when invalid optimizer type is specified
         """
+        if isinstance(data_generator, str):
+            data_generator: _DataGenerator = datagenerator_factory(data_generator, self.domain, kwargs)
+
         if optimizer.type == 'scipy':
-            self._iterate_scipy(optimizer, data_generator, iterations)
+            self._iterate_scipy(optimizer, data_generator, iterations, kwargs)
         else:
-            self._iterate(optimizer, data_generator, iterations)
+            self._iterate(optimizer, data_generator, iterations, kwargs)
 
     def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator,
                  iterations: int, kwargs: Optional[dict] = None):

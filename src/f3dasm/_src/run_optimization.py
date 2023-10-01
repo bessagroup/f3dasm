@@ -7,7 +7,7 @@ Module to optimize benchmark optimization functions
 from __future__ import annotations
 
 # Standard
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List, Optional
 
 # Third-party
 import numpy as np
@@ -20,6 +20,7 @@ from f3dasm.optimization import Optimizer
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
+from .datageneration.functions.function_factory import datagenerator_factory
 from .experimentdata.experimentdata import ExperimentData
 from .logger import logger, time_and_log
 
@@ -34,7 +35,8 @@ __status__ = 'Stable'
 
 
 class OptimizationResult:
-    def __init__(self, data: List[ExperimentData], optimizer: Optimizer, data_generator: DataGenerator,
+    def __init__(self, data: List[ExperimentData], optimizer: Optimizer,
+                 kwargs: Optional[Dict[str, Any]], data_generator: DataGenerator,
                  number_of_samples: int, seeds: List[int]):
         """Optimization results object
 
@@ -46,6 +48,8 @@ class OptimizationResult:
             classname of the optimizer used
         data_generator
             the data_generator to get objective values
+        kwargs
+            the kwargs used for the data_generator
         number_of_samples
             number of initial samples, sampled by the sampling strategy
         seeds
@@ -54,16 +58,20 @@ class OptimizationResult:
         self.data = data
         self.optimizer = optimizer
         self.data_generator = data_generator
+        self.kwargs = kwargs,
         self.number_of_samples = number_of_samples
         self.seeds = seeds
+
+        self.func = datagenerator_factory(data_generator=self.data_generator,
+                                          domain=self.data[0].domain, kwargs=kwargs)
         self._log()
 
     def _log(self):
         # Log
         logger.info(
-            (f"Optimized {self.data_generator.get_name()} function (seed={self.data_generator.seed}, "
-             f"dim={self.data_generator.dimensionality}, "
-             f"noise={self.data_generator.noise}) "
+            (f"Optimized {self.data_generator} function (seed={self.func.seed}, "
+             f"dim={len(self.data[0].domain)}, "
+             f"noise={self.func.noise}) "
              f"with {self.optimizer.get_name()} optimizer for "
              f"{len(self.data)} realizations.")
         )
@@ -76,24 +84,28 @@ class OptimizationResult:
         xarr.attrs['realization_seeds']: List[int] = list(self.seeds)
 
         # Benchmark functions
-        xarr.attrs['function_seed']: int = self.data_generator.seed
-        xarr.attrs['function_name']: str = self.data_generator.get_name()
-        xarr.attrs['function_noise']: str = self.data_generator.noise
-        xarr.attrs['function_dimensionality']: int = self.data_generator.dimensionality
+        xarr.attrs['function_seed']: int = self.kwargs['seed']
+        xarr.attrs['function_name']: str = self.data_generator
+        xarr.attrs['function_noise']: str = self.kwargs['noise']
+        xarr.attrs['function_dimensionality']: int = len(self.data[0].domain)
 
         # Global minimum function
-        _, g = self.data_generator.get_global_minimum(d=self.data_generator.dimensionality)
+        func = datagenerator_factory(data_generator=self.data_generator,
+                                     domain=self.data[0].domain, kwargs=self.kwargs)
+
+        _, g = func.get_global_minimum(d=func.dimensionality)
         xarr.attrs['function_global_minimum']: float = float(np.array(g if not isinstance(g, list) else g[0])[0, 0])
         return xarr
 
 
 def run_optimization(
     optimizer: Optimizer,
-    data_generator: DataGenerator,
+    data_generator: DataGenerator | str,
     sampler: Callable | str,
     domain: Domain,
     iterations: int,
     seed: int,
+    kwargs: Optional[Dict[str, Any]] = None,
     number_of_samples: int = 30,
 ) -> ExperimentData:
     """Run optimization on some benchmark function
@@ -112,6 +124,8 @@ def run_optimization(
         number of iterations
     seed
         seed for the random number generator
+    kwargs
+        additional keyword arguments for the data generator
     number_of_samples, optional
         number of initial samples, sampled by the sampling strategy
 
@@ -119,6 +133,8 @@ def run_optimization(
     -------
         Data object with the optimization data results
     """
+    if kwargs is None:
+        kwargs = {}
 
     # Set function seed
     optimizer.set_seed()
@@ -126,8 +142,8 @@ def run_optimization(
     # Sample
     data = ExperimentData.from_sampling(sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
 
-    data.evaluate(data_generator, mode='sequential')
-    data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations)
+    data.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+    data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations, kwargs=kwargs)
 
     return data
 
@@ -160,11 +176,12 @@ def run_optimization(
 @time_and_log
 def run_multiple_realizations(
     optimizer: Optimizer,
-    data_generator: DataGenerator,
+    data_generator: DataGenerator | str,
     sampler: Callable | str,
     domain: Domain,
     iterations: int,
     realizations: int,
+    kwargs: Optional[Dict[str, Any]] = None,
     number_of_samples: int = 30,
     parallelization: bool = True,
     verbal: bool = False,
@@ -199,13 +216,17 @@ def run_multiple_realizations(
     -------
         Object with the optimization data results
     """
+
+    if kwargs is None:
+        kwargs = {}
+
     if seed is None:
         seed = np.random.randint(low=0, high=1e5)
 
     if parallelization:
         args = [
             (optimizer, data_generator, sampler, domain, iterations,
-             seed + index, number_of_samples)
+             seed + index, kwargs, number_of_samples)
             for index, _ in enumerate(range(realizations))
         ]
 
@@ -222,6 +243,7 @@ def run_multiple_realizations(
                 "sampler": sampler,
                 "domain": domain,
                 "iterations": iterations,
+                "kwargs": kwargs,
                 "number_of_samples": number_of_samples,
                 "seed": seed + index,
             }
@@ -231,6 +253,7 @@ def run_multiple_realizations(
         data=results,
         optimizer=optimizer,
         data_generator=data_generator,
+        kwargs=kwargs,
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
     )

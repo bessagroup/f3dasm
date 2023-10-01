@@ -7,8 +7,6 @@ import pytest
 import xarray as xr
 from omegaconf import OmegaConf
 
-from f3dasm.datageneration import DataGenerator
-from f3dasm.datageneration.functions import Ackley
 from f3dasm.design import (CategoricalParameter, ContinuousParameter,
                            DiscreteParameter, Domain, ExperimentData,
                            make_nd_continuous_domain)
@@ -145,8 +143,3 @@ def config_yaml() -> OmegaConf:
 @pytest.fixture(scope="package")
 def continuous_parameter() -> ContinuousParameter:
     return ContinuousParameter(lower_bound=0., upper_bound=1.)
-
-
-@pytest.fixture(scope="package")
-def func() -> DataGenerator:
-    return Ackley(dimensionality=3, scale_bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), seed=SEED)

@@ -1,12 +1,9 @@
-from io import TextIOWrapper
-from typing import Any, Dict, List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design import Domain, ExperimentSample, _Data
+from f3dasm.design import Domain, _Data
 
 pytestmark = pytest.mark.smoke
 

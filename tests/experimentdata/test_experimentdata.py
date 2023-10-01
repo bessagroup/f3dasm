@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import csv
 import pickle
-from copy import copy
 from pathlib import Path
 from typing import Iterable
 
@@ -10,15 +9,14 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from omegaconf import OmegaConf
-from omegaconf.dictconfig import DictConfig
 
-from f3dasm.datageneration import DataGenerator
 from f3dasm.design import (ContinuousParameter, DataTypes, Domain,
                            ExperimentData, Status, _Data, _JobQueue,
                            make_nd_continuous_domain)
 
 pytestmark = pytest.mark.smoke
+
+SEED = 42
 
 
 def test_check_experimentdata(experimentdata: ExperimentData):
@@ -656,14 +654,16 @@ def test_store_give_no_filename(experimentdata: ExperimentData, tmp_path: Path):
 
 
 @pytest.mark.parametrize("mode", ["sequential", "parallel", "typo"])
-def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, func: DataGenerator, tmp_path: Path):
+def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp_path: Path):
     experimentdata_continuous.filename = tmp_path / 'test009'
 
     if mode == "typo":
         with pytest.raises(ValueError):
-            experimentdata_continuous.evaluate(func, mode=mode)
+            experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
+                                               "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
     else:
-        experimentdata_continuous.evaluate(func, mode=mode)
+        experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
+            "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
 
 
 if __name__ == "__main__":  # pragma: no cover
