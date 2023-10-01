@@ -26,7 +26,7 @@ __status__ = 'Stable'
 _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)
 
 
-def get_functions(
+def get_function_classes(
     d: Optional[int] = None, continuous: Optional[bool] = None, convex: Optional[bool] = None,
     separable: Optional[bool] = None, differentiable: Optional[bool] = None,
     multimodal: Optional[bool] = None, randomized_term: Optional[bool] = None
@@ -77,6 +77,44 @@ def get_functions(
     return functions
 
 
+def get_functions(
+    d: Optional[int] = None, continuous: Optional[bool] = None, convex: Optional[bool] = None,
+    separable: Optional[bool] = None, differentiable: Optional[bool] = None,
+    multimodal: Optional[bool] = None, randomized_term: Optional[bool] = None
+) -> List[str]:
+    """Get a list of benchmark functions based on the given parameters
+
+    Parameters
+    ----------
+    d : Optional[int], optional
+        number of dimensions, by default None
+    continuous : Optional[bool], optional
+        filter for continuous functions, by default None
+    convex : Optional[bool], optional
+        filter for convex functions, by default None
+    separable : Optional[bool], optional
+        filter for separable functions, by default None
+    differentiable : Optional[bool], optional
+        filter for differentiable functions, by default None
+    multimodal : Optional[bool], optional
+        filter for multimodal functions, by default None
+    randomized_term : Optional[bool], optional
+        filter for functions that have a randomized term, by default None
+
+    Returns
+    -------
+    List[Function]
+        List of function classes that match the given parameters
+    """
+    function_classes = get_function_classes(d, continuous, convex, separable,
+                                            differentiable, multimodal, randomized_term)
+    return [function_class.name for function_class in function_classes]
+
+
+_FUNCTIONS = get_function_classes()
+_FUNCTIONS_2D = get_function_classes(d=2)
+_FUNCTIONS_7D = get_function_classes(d=7)
+
 FUNCTIONS = get_functions()
 FUNCTIONS_2D = get_functions(d=2)
 FUNCTIONS_7D = get_functions(d=7)
@@ -93,6 +131,6 @@ def find_function(query: str) -> Function:
         class of the requested function
     """
     try:
-        return list(filter(lambda function: function.__name__ == query, FUNCTIONS))[0]
+        return list(filter(lambda function: function.__name__ == query, _FUNCTIONS))[0]
     except IndexError:
         return ValueError(f'Function {query} not found!')

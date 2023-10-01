@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain, _JobQueue)
+                           DiscreteParameter, Domain)
 
 
 @pytest.fixture(scope="package")

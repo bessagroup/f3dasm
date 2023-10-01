@@ -6,12 +6,7 @@ Module for Benchmark functions
 
 # Local
 from .._src.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D,
-                                             FUNCTIONS_7D, find_function,
-                                             get_functions, pybenchfunction)
-from .._src.datageneration.functions.adapters.augmentor import (
-    FunctionAugmentor, Noise, Offset, Scale)
-from .._src.datageneration.functions.function import Function
-from .._src.datageneration.functions.pybenchfunction import *  # NOQA
+                                             FUNCTIONS_7D, get_functions)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,13 +21,5 @@ __all__ = [
     'FUNCTIONS',
     'FUNCTIONS_2D',
     'FUNCTIONS_7D',
-    'Function',
-    'FunctionAugmentor',
-    'Noise',
-    'Offset',
-    'Scale',
-    'find_function',
     'get_functions',
-    'pybenchfunction',
-    *pybenchfunction.__all__,
 ]

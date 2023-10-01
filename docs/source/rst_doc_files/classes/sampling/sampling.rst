@@ -1,80 +1,64 @@
 Sampling
 ========
 
-Samplers take a :class:`~f3dasm.design.Domain` object and 
-return a :class:`~f3dasm.design.ExperimentData` object filled with samples based on the sampling strategy.
+Samplers take the :class:`~f3dasm.design.Domain` object and return input data  based on the sampling strategy.
 
 .. _integrating-samplers:
 
 Implement your sampling strategy
 --------------------------------
 
-Implementing your own sampling strategy in the data-driven process works as follows:
+To integrate your sampling strategy in in the data-driven process, you should create a function that takes the following arguments:
 
-* Create a new class inhereting from the :class:`~f3dasm.sampling.Sampler` class
-* Implement our own :func:`~f3dasm.sampling.Sampler.sample_continuous` function:
+* A :class:`~f3dasm.design.Domain` object
+* The number of samples to create
+* A random seed (optional)
+
+The function should return the samples (``input_data``) in one of the following formats:
+
+* A :class:`~pandas.DataFrame` object
+* A :class:`~numpy.ndarray` object
+
+.. note::
+   
+   ...
+
+
+.. _implemented samplers:
+
+Use the sampler in the data-driven process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the sampler in the data-driven process, you should pass the function to the :class:`~f3dasm.design.ExperimentData` object as follows:
+
+.. code-block:: python
+
+   from f3dasm.design import ExperimentData, Domain
+   from 
+
+   domain = Domain(...)
+   # Create the ExperimentData object
+   experiment_data = ExperimentData(domain=domain)
+
+   # Generate samples
+   experiment_data.sample(sampler=your_sampling_method, n_samples=10, seed=42)
+
 
 .. note::
 
-   We can also implement sampling strategies for all the other parameters but this is not necessary
-
-This :func:`~f3dasm.sampling.Sampler.sample_continuous` function inputs the number of samples you want to create and returns a 2D numpy-array with the coordinates of those samples
-
-.. code-block:: python
-
-   class NewSampler(f3dasm.Sampler):
-      def sample_continuous(self, numsamples: int) -> np.ndarray:
-         ...
-
-
-
-Creating a sampler
-------------------
-
-Using the sampler
------------------
-
-A sampler object can be created by initializing the class with:
-
-* A :class:`~f3dasm.design.Domain` object
-* A random :attr:`~f3dasm.sampling.Sampler.seed` (optional)
-* (Optionally) the number of samples :attr:`~f3dasm.samplingSampler.number_of_samples` to create
-
-
-.. code-block:: python
-
-  ran = f3dasm.sampling.RandomUniformSampling(design=design, seed=42)
-  
-Then we can evoke sampling by calling the :meth:`~f3dasm.sampling.Sampler.get_samples` method:
-
-.. code-block:: python
-
-  N = 100 # Number of samples
-  data_ran = ran.get_samples(numsamples=N)
-  
-This will return a :class:`~f3dasm.design.ExperimentData` object filled with the requested samples.
-
-.. _implemented samplers:
+   This method will throw an error if you do not have any prior ``input_data`` in the :class:`~f3dasm.design.ExperimentData` 
+   object before sampling **and** you do not provide a :class:`~f3dasm.design.Domain` object in the initializer.
 
 Implemented samplers
 --------------------
 
-The following implementations of samplers can found under the :mod:`f3dasm.sampling` module: 
+The following built-in implementations of samplers can be used in the data-driven process.
+To use these samplers
 
-.. ======================== ====================================================================== ===========================================================================================================
-.. Name                      Docs of the Python class                                              Reference
-.. ======================== ====================================================================== ===========================================================================================================
-.. Random Uniform sampling  :class:`f3dasm.sampling.RandomUniform`                                 `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
-.. Latin Hypercube sampling :class:`f3dasm.sampling.LatinHypercube`                                `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
-.. Sobol Sequence sampling  :class:`f3dasm.sampling.SobolSequence`                                 `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
-.. ======================== ====================================================================== ===========================================================================================================
-
-.. autosummary::
-  :toctree: _autosummary
-
-    f3dasm.sampling.RandomUniform
-    f3dasm.sampling.LatinHypercube
-    f3dasm.sampling.SobolSequence
-
-
-
+======================== ====================================================================== ===========================================================================================================
+Name                     Method                                                                 Reference
+======================== ====================================================================== ===========================================================================================================
+``"random"``             Random Uniform sampling                                                `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
+``"latin"``              Latin Hypercube sampling                                               `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
+``"sobol"``              Sobol Sequence sampling                                                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
+======================== ====================================================================== ===========================================================================================================

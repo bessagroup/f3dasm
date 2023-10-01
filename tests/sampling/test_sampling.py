@@ -2,37 +2,27 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from f3dasm import ExperimentData
 from f3dasm.design import ContinuousParameter, Domain
-from f3dasm.sampling import (LatinHypercube, RandomUniform, Sampler,
-                             SobolSequence)
 
 pytestmark = pytest.mark.smoke
 
 
-# Sampling interface
-
-
 def test_sampling_interface_not_implemented_error():
     seed = 42
-
-    class NewSamplingStrategy(Sampler):
-        pass
 
     # Define the parameters
     x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
     space = {'x1': x1}
 
     design = Domain(space)
-    new_sampler = NewSamplingStrategy(domain=design, seed=seed)
-    with pytest.raises(NotImplementedError):
-        _ = new_sampler.sample_continuous(numsamples=5)
+    with pytest.raises(KeyError):
+        samples = ExperimentData(domain=design)
+        samples.sample(sampler='test', n_samples=5, seed=seed)
 
 
 def test_correct_sampling_ran(design3: Domain):
     seed = 42
-    # Construct sampler
-    random_sequencing = RandomUniform(domain=design3, seed=seed)
-
     numsamples = 5
 
     ground_truth_samples = np.array(
@@ -57,7 +47,9 @@ def test_correct_sampling_ran(design3: Domain):
         }
     )
 
-    samples = random_sequencing.get_samples(numsamples=numsamples)
+    samples = ExperimentData(domain=design3)
+    samples.sample(sampler='random', n_samples=numsamples, seed=seed)
+
     samples = samples.input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
@@ -65,10 +57,6 @@ def test_correct_sampling_ran(design3: Domain):
 
 def test_correct_sampling_sobol(design3: Domain):
     seed = 42
-
-    # Construct sampler
-    sobol_sequencing = SobolSequence(domain=design3, seed=seed)
-
     numsamples = 5
 
     ground_truth_samples = np.array(
@@ -93,17 +81,15 @@ def test_correct_sampling_sobol(design3: Domain):
         }
     )
 
-    samples = sobol_sequencing.get_samples(numsamples=numsamples)
+    samples = ExperimentData(domain=design3)
+    samples.sample(sampler='sobol', n_samples=numsamples, seed=seed)
+
     samples = samples.input_data.data.round(6)
     assert df_ground_truth.equals(samples)
 
 
 def test_correct_sampling_lhs(design3: Domain):
     seed = 42
-
-    # Construct sampler
-    lhs_sampler = LatinHypercube(domain=design3, seed=seed)
-
     numsamples = 5
 
     ground_truth_samples = np.array(
@@ -128,7 +114,9 @@ def test_correct_sampling_lhs(design3: Domain):
         }
     )
 
-    samples = lhs_sampler.get_samples(numsamples=numsamples)
+    samples = ExperimentData(domain=design3)
+    samples.sample(sampler='latin', n_samples=numsamples, seed=seed)
+
     samples = samples.input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)

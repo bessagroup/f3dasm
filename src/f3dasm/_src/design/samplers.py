@@ -6,17 +6,17 @@
 from __future__ import annotations
 
 # Standard
-from typing import List, Optional
+from typing import Optional
 
-# Third-party core
+# Third-party
 import numpy as np
 import pandas as pd
 from hydra.utils import instantiate
 from omegaconf import DictConfig
+from SALib.sample import latin, sobol_sequence
 
 # Locals
-from ..design.domain import Domain
-from ..experimentdata.experimentdata import ExperimentData
+from .domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,6 +25,28 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+
+#                                                              Factory function
+# =============================================================================
+
+def sampler_factory(sampler: str, domain: Domain) -> Sampler:
+    if sampler.lower() == 'random':
+        return RandomUniform(domain)
+
+    elif sampler.lower() == 'latin':
+        return LatinHypercube(domain)
+
+    elif sampler.lower() == 'sobol':
+        return SobolSequence(domain)
+
+    else:
+        raise KeyError(f'Sampler {sampler} not found!'
+                       f"Available built-in samplers are: 'random', 'latin' and 'sobol'")
+
+
+#                                                                    Base Class
 # =============================================================================
 
 
@@ -81,7 +103,7 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: Optional[int] = None) -> ExperimentData:
+    def get_samples(self, numsamples: Optional[int] = None) -> pd.DataFrame:
         """Receive samples of the search space
 
         Parameters
@@ -126,21 +148,6 @@ class Sampler:
             ) + self.domain.get_constant_names()
         ]
 
-        data = self._cast_to_data_object(
-            samples=samples, columnnames=columnnames)
-        return data
-
-    def __call__(self, domain: Domain, n_samples: int, seed: int):
-        """Call the sampler"""
-        self.domain = domain
-        self.number_of_samples = n_samples
-        self.seed = seed
-        return self.get_samples()
-
-    def _cast_to_data_object(self, samples: np.ndarray, columnnames: List[str]) -> ExperimentData:
-        """Cast the samples to a Data object"""
-        data = ExperimentData(domain=self.domain)
-
         # First get an empty reference frame from the DoE
         empty_frame = self.domain._create_empty_dataframe()
 
@@ -148,11 +155,14 @@ class Sampler:
         samples_frame = pd.DataFrame(data=samples, columns=columnnames)
         df = pd.concat([empty_frame, samples_frame], sort=True)
 
-        # Add the samples to the Data object
-        # data.add(data=df)
-        data.add(input_data=df)
+        return df
 
-        return data
+    def __call__(self, domain: Domain, n_samples: int, seed: int):
+        """Call the sampler"""
+        self.domain = domain
+        self.number_of_samples = n_samples
+        self.seed = seed
+        return self.get_samples()
 
     def _sample_constant(self, numsamples: int):
         constant = self.domain.get_constant_parameters()
@@ -199,4 +209,84 @@ class Sampler:
             if param.log:
                 samples[:, dim] = 10**samples[:, dim]
 
+        return samples
+
+
+#                                                             Built-in samplers
+# =============================================================================
+
+class LatinHypercube(Sampler):
+    """Sampling via Latin Hypercube Sampling"""
+
+    def sample_continuous(self, numsamples: int) -> np.ndarray:
+        """Sample from continuous space
+
+        Parameters
+        ----------
+        numsamples
+            number of samples
+
+        Returns
+        -------
+            samples
+        """
+        continuous = self.domain.continuous
+        problem = {
+            "num_vars": len(continuous),
+            "names": continuous.names,
+            "bounds": [[s.lower_bound, s.upper_bound] for s in continuous.values()],
+        }
+
+        samples = latin.sample(problem, N=numsamples, seed=self.seed)
+        return samples
+
+
+class RandomUniform(Sampler):
+    """
+    Sampling via random uniform sampling
+    """
+
+    def sample_continuous(self, numsamples: int) -> np.ndarray:
+        """Sample from continuous space
+
+        Parameters
+        ----------
+        numsamples
+            number of samples
+
+        Returns
+        -------
+            samples
+        """
+        continuous = self.domain.continuous
+        samples = np.random.uniform(size=(numsamples, len(continuous)))
+
+        # stretch samples
+        samples = self._stretch_samples(samples)
+        return samples
+
+
+class SobolSequence(Sampler):
+    """Sampling via Sobol Sequencing with SALib
+
+    Reference: `SALib <https://salib.readthedocs.io/en/latest/>`_"""
+
+    def sample_continuous(self, numsamples: int) -> np.ndarray:
+        """Sample from continuous space
+
+        Parameters
+        ----------
+        numsamples
+            number of samples
+
+        Returns
+        -------
+            samples
+        """
+        continuous = self.domain.continuous
+
+        samples = sobol_sequence.sample(numsamples, len(continuous))
+
+        # stretch samples
+        samples = self._stretch_samples(samples)
         return samples
