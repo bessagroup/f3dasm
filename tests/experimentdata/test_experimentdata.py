@@ -297,13 +297,13 @@ def str_jobs_open(tmp_path):
 
 
 def path_input(tmp_path):
-    csv_file_path = tmp_path / "test_data.csv"
+    csv_file_path = tmp_path / "test_input.csv"
     create_sample_csv_input(csv_file_path)
     return csv_file_path
 
 
 def str_input(tmp_path):
-    csv_file_path = tmp_path / "test_data.csv"
+    csv_file_path = tmp_path / "test_input.csv"
     create_sample_csv_input(csv_file_path)
     return str(csv_file_path)
 
@@ -434,7 +434,7 @@ def test_init_with_output(input_data: DataTypes, output_data: DataTypes, domain:
         if isinstance(args[0], str):
             path = Path(path)
 
-        if path == tmp_path / "test_data.csv":
+        if path == tmp_path / "test_input.csv":
             return expected_data_input
 
         elif path == tmp_path / "test_output.csv":
@@ -510,7 +510,7 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
         if isinstance(args[0], str):
             path = Path(path)
 
-        if path == tmp_path / "test_data.csv":
+        if path == tmp_path / "test_input.csv":
             return expected_data_input
 
         elif path == tmp_path / "test_output.csv":
@@ -586,7 +586,7 @@ def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain:
         if isinstance(args[0], str):
             path = Path(path)
 
-        if path == tmp_path / "test_data.csv":
+        if path == tmp_path / "test_input.csv":
             return expected_data_input
 
         elif path == tmp_path / "test_output.csv":
@@ -639,7 +639,7 @@ def test_repr_html(experimentdata: ExperimentData, monkeypatch):
 
 def test_store(experimentdata: ExperimentData, tmp_path: Path):
     experimentdata.store(tmp_path / "test")
-    assert (tmp_path / "test_data.csv").exists()
+    assert (tmp_path / "test_input.csv").exists()
     assert (tmp_path / "test_output.csv").exists()
     assert (tmp_path / "test_domain.pkl").exists()
     assert (tmp_path / "test_jobs.pkl").exists()
@@ -648,7 +648,7 @@ def test_store(experimentdata: ExperimentData, tmp_path: Path):
 def test_store_give_no_filename(experimentdata: ExperimentData, tmp_path: Path):
     experimentdata.filename = tmp_path / 'test2'
     experimentdata.store()
-    assert (tmp_path / "test2_data.csv").exists()
+    assert (tmp_path / "test2_input.csv").exists()
     assert (tmp_path / "test2_output.csv").exists()
     assert (tmp_path / "test2_domain.pkl").exists()
     assert (tmp_path / "test2_jobs.pkl").exists()

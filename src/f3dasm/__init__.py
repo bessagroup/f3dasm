@@ -37,7 +37,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 
 # Log welcome message and the version of f3dasm

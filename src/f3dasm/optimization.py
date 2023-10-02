@@ -5,6 +5,7 @@ Module for optimization
 # =============================================================================
 
 # Local
+# from ._src._imports import try_import
 from ._src.optimization.cg import CG, CG_Parameters
 from ._src.optimization.lbfgsb import LBFGSB, LBFGSB_Parameters
 from ._src.optimization.neldermead import NelderMead, NelderMead_Parameters
@@ -12,6 +13,11 @@ from ._src.optimization.optimizer import Optimizer, OptimizerParameters
 from ._src.optimization.optimizer_factory import OPTIMIZERS
 from ._src.optimization.randomsearch import (RandomSearch,
                                              RandomSearch_Parameters)
+
+# # Try importing f3dasm_optimize package
+# with try_import('f3dasm_optimize') as _imports:
+#     import f3dasm_optimize
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -35,3 +41,7 @@ __all__ = [
     'RandomSearch',
     'RandomSearch_Parameters',
 ]
+
+# # Add the optimizers from f3dasm_optimize if applicable
+# if _imports.is_successful():
+#     OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)

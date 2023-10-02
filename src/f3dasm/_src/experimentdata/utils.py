@@ -28,7 +28,7 @@ __status__ = 'Stable'
 
 DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
 DOMAIN_SUFFIX = "_domain"
-INPUT_DATA_SUFFIX = "_data"
+INPUT_DATA_SUFFIX = "_input"
 OUTPUT_DATA_SUFFIX = "_output"
 JOBS_SUFFIX = "_jobs"
 
