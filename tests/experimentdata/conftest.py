@@ -7,8 +7,9 @@ import pytest
 import xarray as xr
 from omegaconf import OmegaConf
 
+from f3dasm import ExperimentData
 from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain, ExperimentData,
+                           DiscreteParameter, Domain,
                            make_nd_continuous_domain)
 
 SEED = 42

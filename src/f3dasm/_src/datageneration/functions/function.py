@@ -43,6 +43,9 @@ class ExperimentSample(Protocol):
     def __setitem__(self, key: str, value: np.ndarray):
         ...
 
+    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
 
 class Function(DataGenerator):
     def __init__(self, seed: Optional[int] = None):

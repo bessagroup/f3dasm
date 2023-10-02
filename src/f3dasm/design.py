@@ -5,8 +5,6 @@ from ._src.design.parameter import (PARAMETERS, CategoricalParameter,
                                     DiscreteParameter, Parameter)
 from ._src.experimentdata._data import _Data
 from ._src.experimentdata._jobqueue import NoOpenJobsError, Status, _JobQueue
-from ._src.experimentdata.experimentdata import DataTypes, ExperimentData
-from ._src.experimentdata.experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -23,8 +21,6 @@ __all__ = [
     'ContinuousParameter',
     'DiscreteParameter',
     'Domain',
-    'ExperimentData',
-    'ExperimentSample',
     'make_nd_continuous_domain',
     'NoOpenJobsError',
     'PARAMETERS',
@@ -32,5 +28,4 @@ __all__ = [
     'Status',
     '_Data',
     '_JobQueue',
-    'DataTypes',
 ]

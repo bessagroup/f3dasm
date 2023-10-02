@@ -39,6 +39,7 @@ from ..design.domain import Domain
 from ..design.parameter import Parameter
 from ..design.samplers import sampler_factory
 from ..logger import logger
+from ..optimization.optimizer_factory import optimizer_factory
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
 from .experimentsample import ExperimentSample
@@ -86,7 +87,7 @@ class _Optimizer(Protocol):
     def set_data(self, data: ExperimentData) -> None:
         ...
 
-    def reset(self) -> None:
+    def reset(self, data: ExperimentData) -> None:
         ...
 
 
@@ -886,7 +887,13 @@ class ExperimentData:
 
         for _ in range(number_of_updates(iterations, population=optimizer.hyperparameters.population)):
             new_samples = optimizer.update_step(data_generator)
-            self._add_experiments(new_samples)
+
+            # If new_samples is a tuple of input_data and output_data
+            if isinstance(new_samples, tuple):
+                self.add(domain=self.domain, input_data=new_samples[0], output_data=new_samples[1])
+
+            else:
+                self._add_experiments(new_samples)
 
             # If applicable, evaluate the new designs:
             self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
@@ -898,7 +905,7 @@ class ExperimentData:
             iterations, population=optimizer.hyperparameters.population))
 
         # Reset the optimizer
-        optimizer.reset()
+        optimizer.reset(ExperimentData(domain=self.domain))
 
     def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
                        iterations: int, kwargs: Optional[dict] = None):
@@ -944,7 +951,7 @@ class ExperimentData:
         self.evaluate(data_generator, mode='sequential')
 
         # Reset the optimizer
-        optimizer.reset()
+        optimizer.reset(ExperimentData(domain=self.domain))
 
     #                                                                      Sampling
     # =============================================================================

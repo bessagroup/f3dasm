@@ -5,11 +5,12 @@ from typing import List
 import numpy as np
 import pytest
 
+from f3dasm import ExperimentData
 from f3dasm._src.datageneration.functions.function_factory import \
     is_dim_compatible
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
-from f3dasm.design import ExperimentData, make_nd_continuous_domain
+from f3dasm.design import make_nd_continuous_domain
 from f3dasm.optimization import OPTIMIZERS, Optimizer
 
 
