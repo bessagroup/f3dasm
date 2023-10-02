@@ -358,6 +358,7 @@ This will result in the creation of the following files:
    ├── my_experiment_output.csv
    └── my_experiment_jobs.pkl
 
+.. _experimentdata-store-other:
 
 Storing to other datatypes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -17,7 +17,7 @@ import pickle
 from pathlib import Path
 
 # Local
-from ...experimentsample import ExperimentSample
+from ...experimentdata.experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================

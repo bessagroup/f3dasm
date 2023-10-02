@@ -63,7 +63,7 @@ f3dasm
 
 .. toctree::
    :maxdepth: 2
-   :caption: Workflow execution
+   :caption: Data-driven process
    :hidden:
    :glob:
 

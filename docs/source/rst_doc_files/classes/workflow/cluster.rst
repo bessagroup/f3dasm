@@ -8,7 +8,7 @@ This is especially useful when you have a large number of experiments to run.
 Inside the execution of a design, you can parallelize across the cores of a node.
 
 .. note::
-    :code:`mode=cluster` and :code:`mode=parallel` simultaneous on the :meth:`~f3dasm.design.experimentdata.ExperimentData.run` function cannot be used.
+    :code:`mode=cluster` and :code:`mode=parallel` simultaneous on the :meth:`~f3dasm.design.experimentdata.ExperimentData.evaluate` function cannot be used.
     In the case of extended paralellization on cores, you have to implement this in your own scripts!.
 
 Working with array-jobs
@@ -49,7 +49,7 @@ You can use the global variable :code:`f3dasm.HPC_JOBID` to get the :code:`${PBS
 Using the cluster mode on ExperimentData
 ----------------------------------------
 
-The :meth:`~f3dasm.design.experimentdata.ExperimentData.run` method of the :class:`~f3dasm.design.experimentdata.ExperimentData` class has a parameter :code:`mode` that can be set to :code:`cluster`.
+The :meth:`~f3dasm.design.experimentdata.ExperimentData.evaluate` method of the :class:`~f3dasm.design.experimentdata.ExperimentData` class has a parameter :code:`mode` that can be set to :code:`cluster`.
 What this does is that for all the methods that alter the data of the :class:`~f3dasm.design.experimentdata.ExperimentData`, the :class:`~f3dasm.design.experimentdata.ExperimentData` object will be retrieved from disk and after each operation be written to the disk again.
 During the operation, no other process can access the data of the :class:`~f3dasm.design.experimentdata.ExperimentData` object, as the file will be locked.
 
@@ -73,8 +73,8 @@ Example
 The following example is the same as in section :ref:`workflow`; only now we are omiting the optimization part and only parallelize the data generation:
 
 * Create a 20D continuous :class:`~f3dasm.design.domain.Domain`
-* Sample from the domain using a the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler
-* With multiple nodes; use a data generation function, which will be the :class:`~f3dasm.datageneration.functions.pybenchfunction.Ackley` function a from the :ref:`benchmark-functions`
+* Sample from the domain using a the Latin-hypercube sampler
+* With multiple nodes; use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
 
 
 .. image:: ../../../img/f3dasm-workflow-example-cluster.png
@@ -177,17 +177,15 @@ main.py
 
 The `main.py` file is the main entry point of the project. It contains the :mod:`f3dasm` classes and acts on these interfaces.
 It imports :mod:`f3dasm` and the `my_function` from `my_script.py`. 
-In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.run` method with the specified execution mode.
+In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.evaluate` method with the specified execution mode.
 
 Additionally, the `main.py` file handles which node takes which role.
 
 .. code-block:: python
    :caption: main.py
 
-    from f3dasm.sampling import LatinHypercube
+    from f3dasm import ExperimentData
     from f3dasm.domain import make_nd_continuous_domain
-    from f3dasm.datageneration.functions import Ackley
-    from f3dasm.optimization import LBFGSB
     from my_script import my_function
     from time import sleep
 
@@ -196,10 +194,13 @@ Additionally, the `main.py` file handles which node takes which role.
         # Create a domain object
         domain = make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (20, 1)), dimensionality=20)
 
-        # Sampling from the domain
-        sampler = f3dasm.sampling.LatinHypercube(domain)
-        data = sampler.get_samples(numsamples=10)
+        # Create the ExperimentData object
+        data = ExperimentData()
 
+        # Sampling from the domain
+        data.sample(sampler='latin', n_samples=10)
+
+        # Store the data to disk
         data.store(filename='my_data')
 
     def worker_node():
@@ -207,11 +208,8 @@ Additionally, the `main.py` file handles which node takes which role.
         data = f3dasm.ExperimentData.from_file(filename='my_data')
 
         """Data Generation"""
-        # Initialize the simulator
-        ackley_function = Ackley(dimensionality=20, bounds=data.domain.get_bounds())
-
         # Use the data-generator to evaluate the initial samples
-        data.run(my_function, mode='cluster', kwargs={'benchmark_function': ackley_function)
+        data.evaluate(data_generator='Ackley', mode='cluster')
 
 
     if __name__ is '__main__':
