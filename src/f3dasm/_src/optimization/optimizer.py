@@ -10,7 +10,7 @@ from __future__ import annotations
 # Standard
 import sys
 from dataclasses import dataclass
-from typing import Any, ClassVar, Dict, List, Optional, Tuple
+from typing import ClassVar, List, Optional, Tuple
 
 if sys.version_info < (3, 8):  # NOQA
     from typing_extensions import Protocol  # NOQA
@@ -73,23 +73,27 @@ class Optimizer:
     type: ClassVar[str] = 'any'
     hyperparameters: OptimizerParameters = OptimizerParameters()
 
-    def __init__(self, domain: Domain, hyperparameters: Optional[Dict[str, Any]] = None,
-                 seed: Optional[int] = None, name: Optional[str] = None):
+    def __init__(self, domain: Domain, seed: Optional[int] = None, name: Optional[str] = None, **hyperparameters):
         """Optimizer class for the optimization of a data-driven process
 
         Parameters
         ----------
         domain : Domain
             Domain indicating the search-space of the optimization parameters
-        hyperparameters : Optional[Dict[str, Any]], optional
-            Hyperparameters of the optimizer, by default None, it will use the default hyperparameters
         seed : Optional[int], optional
             Seed of the random number generator for stochastic optimization processes, by default None, set to random
         name : Optional[str], optional
             Name of the optimization object, by default None, it will use the name of the class
+
+
+        Note
+        ----
+
+        Any additional keyword arguments will be used to overwrite the default hyperparameters of the optimizer.
         """
-        # Create an empty dictionary when hyperparameters is None
-        if hyperparameters is None:
+
+        # Check if **hyperparameters is empty
+        if not hyperparameters:
             hyperparameters = {}
 
         # Overwrite the default hyperparameters with the given hyperparameters

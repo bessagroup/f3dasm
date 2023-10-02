@@ -8,6 +8,7 @@ import pytest
 from f3dasm import ExperimentData
 from f3dasm._src.datageneration.functions.function_factory import \
     is_dim_compatible
+from f3dasm._src.optimization.optimizer_factory import optimizer_factory
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
@@ -16,8 +17,8 @@ from f3dasm.optimization import OPTIMIZERS, Optimizer
 
 @pytest.mark.smoke
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
-def test_get_info(data: ExperimentData, optimizer: Optimizer):
-    opt: Optimizer = optimizer(data.domain)
+def test_get_info(data: ExperimentData, optimizer: str):
+    opt: Optimizer = optimizer_factory(optimizer, data.domain)
     characteristics = opt.get_info()
     assert isinstance(characteristics, List)
 
@@ -25,7 +26,7 @@ def test_get_info(data: ExperimentData, optimizer: Optimizer):
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", FUNCTIONS)
-def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer: Optimizer):
+def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer: str):
     i = 10  # iterations
 
     dim = 6
@@ -50,12 +51,14 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
     data2.evaluate(data_generator, kwargs={'noise': None, 'seed': seed,
                    'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
 
-    opt1 = optimizer(domain=domain, seed=seed)
-
-    data1.optimize(optimizer=opt1, data_generator=data_generator, iterations=i, kwargs={'noise': None, 'seed': seed,
-                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
-    data2.optimize(optimizer=opt1, data_generator=data_generator, iterations=i, kwargs={'noise': None, 'seed': seed,
-                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
+    data1.optimize(optimizer=optimizer, data_generator=data_generator,
+                   iterations=i, kwargs={'noise': None, 'seed': seed,
+                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))},
+                   hyperparameters={'seed': seed})
+    data2.optimize(optimizer=optimizer, data_generator=data_generator,
+                   iterations=i, kwargs={'noise': None, 'seed': seed,
+                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))},
+                   hyperparameters={'seed': seed})
 
     assert (data1 == data2)
 
@@ -64,7 +67,7 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
-def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: Optimizer):
+def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: str):
     test_all_optimizers_and_functions(seed, data_generator, optimizer)
 
 
@@ -73,7 +76,7 @@ def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, op
 @pytest.mark.parametrize("iterations", [10, 23, 66, 86])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", ["sphere"])
-def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: Optimizer):
+def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: str):
     numsamples = 40  # initial samples
     seed = 42
 
@@ -97,11 +100,10 @@ def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: O
     data.evaluate(data_generator, mode='sequential', kwargs={'seed': seed, 'noise': None,
                                                              'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
 
-    opt1: Optimizer = optimizer(domain=domain, seed=seed)
-
-    data.optimize(optimizer=opt1, data_generator=data_generator,
+    data.optimize(optimizer=optimizer, data_generator=data_generator,
                   iterations=iterations, kwargs={'seed': seed, 'noise': None,
-                                                 'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
+                                                 'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
+                  hyperparameters={'seed': seed})
 
     assert len(data) == (iterations + numsamples)
 

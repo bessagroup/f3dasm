@@ -30,7 +30,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 # List of available optimizers
-OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
+_OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
 
 
 __all__ = [
@@ -43,13 +43,13 @@ __all__ = [
     'Optimizer',
     'RandomSearch',
     'RandomSearch_Parameters',
-    'OPTIMIZERS',
+    '_OPTIMIZERS',
     'find_optimizer',
 ]
 
 # Add the optimizers from f3dasm_optimize if applicable
 if _imports.is_successful():
-    OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
+    _OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
     __all__.extend(f3dasm_optimize.__all__)
 
 
@@ -66,6 +66,6 @@ def find_optimizer(query: str) -> Optimizer:
         class of the requested optimizer
     """
     try:
-        return list(filter(lambda optimizer: optimizer.__name__ == query, OPTIMIZERS))[0]
+        return list(filter(lambda optimizer: optimizer.__name__ == query, _OPTIMIZERS))[0]
     except IndexError:
         return ValueError(f'Optimizer {query} not found!')

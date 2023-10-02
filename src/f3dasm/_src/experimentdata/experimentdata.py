@@ -8,19 +8,10 @@ keep track of results, perform optimization and extract data for machine learnin
 
 from __future__ import annotations
 
-import sys
+# Standard
 import traceback
 from functools import wraps
 from pathlib import Path
-
-# Standard
-
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Protocol  # NOQA
-else:
-    from typing import Protocol
-
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
                     Tuple, Type, Union)
 
@@ -34,11 +25,13 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
+from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import datagenerator_factory
 from ..design.domain import Domain
 from ..design.parameter import Parameter
-from ..design.samplers import sampler_factory
+from ..design.samplers import Sampler, sampler_factory
 from ..logger import logger
+from ..optimization import Optimizer
 from ..optimization.optimizer_factory import optimizer_factory
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
@@ -55,58 +48,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class _OptimizerParameters(Protocol):
-    maxiter: int
-    population: int
-
-
-class _Optimizer(Protocol):
-    hyperparameters: _OptimizerParameters
-    type: str
-
-    def _callback(self, xk: np.ndarray) -> None:
-        ...
-
-    def run_algorithm(self, iterations: int, data_generator: _DataGenerator, kwargs: Dict[str, Any]) -> None:
-        ...
-
-    def _check_number_of_datapoints(self) -> None:
-        ...
-
-    def update_step(self, data_generator: _DataGenerator) -> ExperimentData:
-        ...
-
-    def _construct_model(self, data_generator: _DataGenerator) -> None:
-        ...
-
-    def set_x0(self, experiment_data: ExperimentData) -> None:
-        ...
-
-    def set_data(self, data: ExperimentData) -> None:
-        ...
-
-    def reset(self, data: ExperimentData) -> None:
-        ...
-
-
-class _DataGenerator(Protocol):
-    def run(self, experiment_sample: ExperimentSample) -> ExperimentSample:
-        ...
-
-
-class _Sampler(Protocol):
-    """Protocol class for sampling methods."""
-
-    @staticmethod
-    def __call__(domain: Domain, n_samples: int, seed: int) -> DataTypes:
-        ...
-
-
-class _ExperimentSampleCallable(Protocol):
-    def __call__(experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
-        ...
 
 
 class ExperimentData:
@@ -251,7 +192,7 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path)
 
     @classmethod
-    def from_sampling(cls, sampler: _Sampler | str, domain: Domain, n_samples: int = 1,
+    def from_sampling(cls, sampler: Sampler | str, domain: Domain, n_samples: int = 1,
                       seed: Optional[int] = None, filename: str = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
@@ -683,7 +624,7 @@ class ExperimentData:
     #                                                                Datageneration
     # =============================================================================
 
-    def evaluate(self, data_generator: _DataGenerator, mode: str = 'sequential',
+    def evaluate(self, data_generator: DataGenerator, mode: str = 'sequential',
                  kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirety of the experiments
 
@@ -716,7 +657,7 @@ class ExperimentData:
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, data_generator: _DataGenerator, kwargs: dict):
+    def _run_sequential(self, data_generator: DataGenerator, kwargs: dict):
         """Run the operation sequentially
 
         Parameters
@@ -756,7 +697,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, data_generator: _DataGenerator, kwargs: dict):
+    def _run_multiprocessing(self, data_generator: DataGenerator, kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
@@ -792,7 +733,7 @@ class ExperimentData:
         for _experiment_sample in _experiment_samples:
             self._set_experiment_sample(_experiment_sample)
 
-    def _run_cluster(self, data_generator: _DataGenerator, kwargs: dict):
+    def _run_cluster(self, data_generator: DataGenerator, kwargs: dict):
         """Run the operation on the cluster
 
         Parameters
@@ -837,8 +778,9 @@ class ExperimentData:
     #                                                                  Optimization
     # =============================================================================
 
-    def optimize(self, optimizer: _Optimizer, data_generator: _DataGenerator | str,
-                 iterations: int, kwargs: Optional[Dict[str, Any]] = None) -> None:
+    def optimize(self, optimizer: Optimizer | str, data_generator: DataGenerator | str,
+                 iterations: int, kwargs: Optional[Dict[str, Any]] = None,
+                 hyperparameters: Optional[Dict[str, Any]] = None) -> None:
         """Optimize the experimentdata object
 
         Parameters
@@ -849,8 +791,10 @@ class ExperimentData:
             Data generator object to use
         iterations : int
             Number of iterations to run
-        kwargs : Optional[Dict[str, Any]], optional
+        kwargs : Dict[str, Any], optional
             Any additional keyword arguments that need to be supplied to the data generator, by default None
+        hyperparameters : Dict[str, Any], optional
+            Any additional hyperparameters that need to be supplied to the optimizer, by default None
 
         Raises
         ------
@@ -858,22 +802,25 @@ class ExperimentData:
             Raised when invalid optimizer type is specified
         """
         if isinstance(data_generator, str):
-            data_generator: _DataGenerator = datagenerator_factory(data_generator, self.domain, kwargs)
+            data_generator: DataGenerator = datagenerator_factory(data_generator, self.domain, kwargs)
+
+        if isinstance(optimizer, str):
+            optimizer: Optimizer = optimizer_factory(optimizer, self.domain, hyperparameters)
 
         if optimizer.type == 'scipy':
             self._iterate_scipy(optimizer, data_generator, iterations, kwargs)
         else:
             self._iterate(optimizer, data_generator, iterations, kwargs)
 
-    def _iterate(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+    def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
                  iterations: int, kwargs: Optional[dict] = None):
         """Internal represenation of the iteration process
 
         Parameters
         ----------
-        optimizer : _Optimizer
+        optimizer : Optimizer
             Optimizer object
-        data_generator : _DataGenerator
+        data_generator : DataGenerator
             DataGenerator object
         iterations : int
             number of iterations
@@ -907,7 +854,7 @@ class ExperimentData:
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
 
-    def _iterate_scipy(self, optimizer: _Optimizer, data_generator: _DataGenerator,
+    def _iterate_scipy(self, optimizer: Optimizer, data_generator: DataGenerator,
                        iterations: int, kwargs: Optional[dict] = None):
         """Internal represenation of the iteration process for scipy-optimize algorithms
 
@@ -915,7 +862,7 @@ class ExperimentData:
         ----------
         optimizer : _Optimizer
             Optimizer object
-        data_generator : _DataGenerator
+        data_generator : DataGenerator
             DataGenerator object
         iterations : int
             number of iterations
@@ -956,7 +903,7 @@ class ExperimentData:
     #                                                                      Sampling
     # =============================================================================
 
-    def sample(self, sampler: _Sampler | str, n_samples: int = 1, seed: Optional[int] = None) -> None:
+    def sample(self, sampler: Sampler | str, n_samples: int = 1, seed: Optional[int] = None) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
