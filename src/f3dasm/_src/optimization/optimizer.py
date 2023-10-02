@@ -5,9 +5,17 @@ Module containing the interface class Optimizer
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
+import sys
 from dataclasses import dataclass
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import ClassVar, List, Optional, Tuple
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Protocol  # NOQA
+else:
+    from typing import Protocol
 
 # Third-party core
 import numpy as np
@@ -15,7 +23,7 @@ import numpy as np
 # Locals
 from ..datageneration.datagenerator import DataGenerator
 from ..design.domain import Domain
-from ..experimentdata.experimentdata import ExperimentData
+from ..experimentdata._data import _Data
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,6 +33,24 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+
+class ExperimentData(Protocol):
+    domain: Domain
+    input_data: _Data
+    output_data: _Data
+
+    def get_n_best_output(self, n_samples: int) -> ExperimentData:
+        ...
+
+    def _reset_index() -> None:
+        ...
+
+    def to_numpy() -> Tuple[np.ndarray, np.ndarray]:
+        ...
+
+    def empty() -> None:
+        ...
 
 
 @dataclass
@@ -47,23 +73,27 @@ class Optimizer:
     type: ClassVar[str] = 'any'
     hyperparameters: OptimizerParameters = OptimizerParameters()
 
-    def __init__(self, domain: Domain, hyperparameters: Optional[Dict[str, Any]] = None,
-                 seed: Optional[int] = None, name: Optional[str] = None):
+    def __init__(self, domain: Domain, seed: Optional[int] = None, name: Optional[str] = None, **hyperparameters):
         """Optimizer class for the optimization of a data-driven process
 
         Parameters
         ----------
         domain : Domain
             Domain indicating the search-space of the optimization parameters
-        hyperparameters : Optional[Dict[str, Any]], optional
-            Hyperparameters of the optimizer, by default None, it will use the default hyperparameters
         seed : Optional[int], optional
             Seed of the random number generator for stochastic optimization processes, by default None, set to random
         name : Optional[str], optional
             Name of the optimization object, by default None, it will use the name of the class
+
+
+        Note
+        ----
+
+        Any additional keyword arguments will be used to overwrite the default hyperparameters of the optimizer.
         """
-        # Create an empty dictionary when hyperparameters is None
-        if hyperparameters is None:
+
+        # Check if **hyperparameters is empty
+        if not hyperparameters:
             hyperparameters = {}
 
         # Overwrite the default hyperparameters with the given hyperparameters
@@ -85,16 +115,16 @@ class Optimizer:
     def __post_init__(self):
         self._check_imports()
         self.set_seed()
-        self.init_data()
+        # self.init_data()
         self.set_algorithm()
 
     @staticmethod
     def _check_imports():
         ...
 
-    def init_data(self):
-        """Set the data atrribute to an empty ExperimentData object"""
-        self.data = ExperimentData(self.domain)
+    # def init_data(self):
+    #     """Set the data atrribute to an empty ExperimentData object"""
+    #     self.data = ExperimentData(self.domain)
 
     def set_algorithm(self):
         """Set the algorithm attribute to the algorithm of choice"""
@@ -121,8 +151,9 @@ class Optimizer:
         """Set the seed of the random number generator"""
         ...
 
-    def reset(self):
+    def reset(self, data: ExperimentData):
         """Reset the optimizer to its initial state"""
+        self.data = data
         self.__post_init__()
 
     def set_data(self, data: ExperimentData):

@@ -4,25 +4,24 @@ import numpy as np
 import pytest
 
 from f3dasm import run_multiple_realizations
-from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS_2D, FUNCTIONS_7D
 from f3dasm.design import make_nd_continuous_domain
-from f3dasm.optimization import OPTIMIZERS, Optimizer
+from f3dasm.optimization import OPTIMIZERS
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", ['Levy', 'Ackley', 'Sphere'])
 @pytest.mark.parametrize("dimensionality", [2])
-def test_run_multiple_realizations_3_functions(data_generator: DataGenerator,
-                                               optimizer: Optimizer, dimensionality: int):
+def test_run_multiple_realizations_3_functions(data_generator: str,
+                                               optimizer: str, dimensionality: int):
     test_run_multiple_realizations(data_generator, optimizer, dimensionality)
 
 
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", FUNCTIONS_2D)
 @pytest.mark.parametrize("dimensionality", [2])
-def test_run_multiple_realizations(data_generator: str, optimizer: Optimizer, dimensionality: int):
+def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensionality: int):
     iterations = 30
     realizations = 3
     domain = np.tile([0.0, 1.0], (dimensionality, 1))
@@ -30,7 +29,6 @@ def test_run_multiple_realizations(data_generator: str, optimizer: Optimizer, di
     domain = make_nd_continuous_domain(dimensionality=dimensionality, bounds=domain)
 
     kwargs = {'scale_bounds': domain.get_bounds()}
-    opt = optimizer(domain=domain)
     sampler = 'random'
 
     # Check if os is windows
@@ -39,11 +37,11 @@ def test_run_multiple_realizations(data_generator: str, optimizer: Optimizer, di
     else:
         PARALLELIZATION = True
 
-    if opt.get_name() in ['EvoSaxCMAES', 'EvoSaxSimAnneal', 'EvoSaxPSO', 'EvoSaxDE']:
+    if optimizer in ['EvoSaxCMAES', 'EvoSaxSimAnneal', 'EvoSaxPSO', 'EvoSaxDE']:
         PARALLELIZATION = False
 
     _ = run_multiple_realizations(
-        optimizer=opt,
+        optimizer=optimizer,
         data_generator=data_generator,
         kwargs=kwargs,
         sampler=sampler,
@@ -57,14 +55,14 @@ def test_run_multiple_realizations(data_generator: str, optimizer: Optimizer, di
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", FUNCTIONS_7D)
 @pytest.mark.parametrize("dimensionality", [7])
-def test_run_multiple_realizations_7D(data_generator: str, optimizer: Optimizer, dimensionality: int):
+def test_run_multiple_realizations_7D(data_generator: str, optimizer: str, dimensionality: int):
     test_run_multiple_realizations(data_generator, optimizer, dimensionality)
 
 
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", ['griewank'])
 @pytest.mark.parametrize("dimensionality", [2])
-def test_run_multiple_realizations_fast(data_generator: str, optimizer: Optimizer, dimensionality: int):
+def test_run_multiple_realizations_fast(data_generator: str, optimizer: str, dimensionality: int):
     test_run_multiple_realizations(data_generator, optimizer, dimensionality)
 
 

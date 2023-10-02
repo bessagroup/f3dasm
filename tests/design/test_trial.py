@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from f3dasm.design import ExperimentSample
+from f3dasm import ExperimentSample
 
 pytestmark = pytest.mark.smoke
 

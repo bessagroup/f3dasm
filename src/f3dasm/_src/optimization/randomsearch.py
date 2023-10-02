@@ -7,14 +7,13 @@ Random Search optimizer
 
 # Standard
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 # Third-party core
 import autograd.numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from ..experimentdata.experimentdata import ExperimentData
 from .optimizer import Optimizer, OptimizerParameters
 
 #                                                          Authorship & Credits
@@ -42,7 +41,7 @@ class RandomSearch(Optimizer):
     def set_seed(self):
         np.random.seed(self.seed)
 
-    def update_step(self, data_generator: DataGenerator) -> ExperimentData:
+    def update_step(self, data_generator: DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
         self.set_seed()
 
         x_new = np.atleast_2d(
@@ -53,18 +52,8 @@ class RandomSearch(Optimizer):
             ]
         )
 
-        x_experimentdata = ExperimentData(domain=self.domain, input_data=x_new)
-
-        # Evaluate the candidates
-        x_experimentdata = ExperimentData(domain=self.domain, input_data=x_new)
-        x_experimentdata.evaluate(data_generator)
-
-        _, y = x_experimentdata.to_numpy()
-
         # return the data
-        return ExperimentData(domain=self.domain,
-                              input_data=x_new,
-                              output_data=np.atleast_2d(y))
+        return x_new, None
 
     def get_info(self) -> List[str]:
         return ['Fast', 'Single-Solution']

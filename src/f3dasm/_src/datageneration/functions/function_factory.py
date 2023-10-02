@@ -23,7 +23,8 @@ FUNTION_MAPPING: Dict[str, DataGenerator] = {
     f.name.lower().replace(' ', '').replace('-', '').replace('_', ''): f for f in _FUNCTIONS}
 
 
-def datagenerator_factory(data_generator: str, domain: Domain, kwargs: Optional[Dict[str, Any]] = None):
+def datagenerator_factory(data_generator: str, domain: Domain,
+                          kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
 
     if kwargs is None:
         kwargs = {}

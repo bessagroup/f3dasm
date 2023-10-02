@@ -23,6 +23,7 @@ from .datageneration.datagenerator import DataGenerator
 from .datageneration.functions.function_factory import datagenerator_factory
 from .experimentdata.experimentdata import ExperimentData
 from .logger import logger, time_and_log
+from .optimization.optimizer_factory import optimizer_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -56,7 +57,7 @@ class OptimizationResult:
             list of seeds that were used for each realization
         """
         self.data = data
-        self.optimizer = optimizer
+        self.optimizer = optimizer_factory(optimizer=optimizer, domain=self.data[0].domain)
         self.data_generator = data_generator
         self.kwargs = kwargs,
         self.number_of_samples = number_of_samples
@@ -99,13 +100,14 @@ class OptimizationResult:
 
 
 def run_optimization(
-    optimizer: Optimizer,
+    optimizer: Optimizer | str,
     data_generator: DataGenerator | str,
     sampler: Callable | str,
     domain: Domain,
     iterations: int,
     seed: int,
     kwargs: Optional[Dict[str, Any]] = None,
+    hyperparameters: Optional[Dict[str, Any]] = None,
     number_of_samples: int = 30,
 ) -> ExperimentData:
     """Run optimization on some benchmark function
@@ -126,6 +128,8 @@ def run_optimization(
         seed for the random number generator
     kwargs
         additional keyword arguments for the data generator
+    hyperparameters
+        additional keyword arguments for the optimizer
     number_of_samples, optional
         number of initial samples, sampled by the sampling strategy
 
@@ -136,14 +140,20 @@ def run_optimization(
     if kwargs is None:
         kwargs = {}
 
+    if hyperparameters is None:
+        hyperparameters = {}
+
     # Set function seed
+    optimizer = optimizer_factory(optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
+
     optimizer.set_seed()
 
     # Sample
     data = ExperimentData.from_sampling(sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
 
     data.evaluate(data_generator, mode='sequential', kwargs=kwargs)
-    data.optimize(optimizer=optimizer, data_generator=data_generator, iterations=iterations, kwargs=kwargs)
+    data.optimize(optimizer=optimizer, data_generator=data_generator,
+                  iterations=iterations, kwargs=kwargs, hyperparameters=hyperparameters)
 
     return data
 
@@ -182,6 +192,7 @@ def run_multiple_realizations(
     iterations: int,
     realizations: int,
     kwargs: Optional[Dict[str, Any]] = None,
+    hyperparameters: Optional[Dict[str, Any]] = None,
     number_of_samples: int = 30,
     parallelization: bool = True,
     verbal: bool = False,
@@ -203,6 +214,10 @@ def run_multiple_realizations(
         number of iterations
     realizations
         number of realizations
+    kwargs
+        additional keyword arguments for the data generator
+    hyperparameters
+        additional keyword arguments for the optimizer
     number_of_samples, optional
         number of initial samples, sampled by the sampling strategy
     parallelization, optional
@@ -220,13 +235,16 @@ def run_multiple_realizations(
     if kwargs is None:
         kwargs = {}
 
+    if hyperparameters is None:
+        hyperparameters = {}
+
     if seed is None:
         seed = np.random.randint(low=0, high=1e5)
 
     if parallelization:
         args = [
             (optimizer, data_generator, sampler, domain, iterations,
-             seed + index, kwargs, number_of_samples)
+             seed + index, kwargs, hyperparameters, number_of_samples)
             for index, _ in enumerate(range(realizations))
         ]
 
@@ -244,6 +262,7 @@ def run_multiple_realizations(
                 "domain": domain,
                 "iterations": iterations,
                 "kwargs": kwargs,
+                "hyperparameters": hyperparameters,
                 "number_of_samples": number_of_samples,
                 "seed": seed + index,
             }
