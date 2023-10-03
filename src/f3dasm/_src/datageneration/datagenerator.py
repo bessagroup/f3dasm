@@ -8,7 +8,7 @@ Interface class for data generators
 # Standard
 import sys
 from functools import partial
-from typing import Callable
+from typing import Any, Callable
 
 if sys.version_info < (3, 8):  # NOQA
     from typing_extensions import Protocol  # NOQA
@@ -28,8 +28,15 @@ __status__ = "Alpha"
 
 
 class ExperimentSample(Protocol):
-    ...
+    def get(self, key: str) -> Any:
+        ...
 
+    def store(object: Any, name: str, to_disk: bool) -> None:
+        ...
+
+    @property
+    def job_number(self) -> int:
+        ...
 
 class DataGenerator:
     """Base class for a data generator"""
