@@ -3,10 +3,9 @@
 import numpy as np
 import pytest
 
-from f3dasm.design.domain import Domain
-from f3dasm.sampling.latinhypercube import LatinHypercube
-from f3dasm.sampling.randomuniform import RandomUniform
-from f3dasm.sampling.sobolsequence import SobolSequence
+from f3dasm._src.design.samplers import (LatinHypercube, RandomUniform,
+                                         SobolSequence)
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 
@@ -18,7 +17,7 @@ def test_correct_randomuniform_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design3, seed=seed)
+    random_uniform = RandomUniform(domain=design3, seed=seed)
 
     numsamples = 5
 
@@ -40,7 +39,7 @@ def test_correct_latinhypercube_sampling(design3: Domain):
     seed = 42
 
     # Construct sampler
-    latin_hypercube = LatinHypercube(design=design3, seed=seed)
+    latin_hypercube = LatinHypercube(domain=design3, seed=seed)
 
     numsamples = 5
 
@@ -61,7 +60,7 @@ def test_correct_sobolsequence_sampling(design3):
     seed = 42
 
     # Construct sampler
-    sobol_sequencing = SobolSequence(design=design3, seed=seed)
+    sobol_sequencing = SobolSequence(domain=design3, seed=seed)
 
     numsamples = 5
 

@@ -1,7 +1,70 @@
-Domain
-======
+Domain and parameters
+=====================
 
-The :class:`~f3dasm.design.domain.Domain` is a set of :class:`f3dasm.design.parameter.Parameter` instances that make up the feasible search space.
+This section will give you information on how to set up your search space with the :ref:`domain <domain>` class and the :ref:`parameter classes <parameters>`
+
+.. _parameters:
+
+Parameters
+----------
+
+Parameters are singular features of the input search space. They are used to define the search space of the design.
+
+.. image:: ../../../img/f3dasm-parameter.png
+   :width: 50%
+   :align: center
+   :alt: Parameters
+
+|
+
+There are four types of parameters that can be created: :class:`~f3dasm.design.ContinuousParameter`, :class:`~f3dasm.design.DiscreteParameter`, :class:`~f3dasm.design.CategoricalParameter` and :class:`~f3dasm.design.ConstantParameter`:
+
+Continuous Parameter
+^^^^^^^^^^^^^^^^^^^^
+
+* We can create **continous** parameters with a :attr:`~f3dasm.design.ContinuousParameter.lower_bound` and :attr:`~f3dasm.design.ContinuousParameter.upper_bound` with the :class:`~f3dasm.design.ContinuousParameter` class
+
+.. code-block:: python
+
+  x1 = f3dasm.ContinuousParameter(lower_bound=0.0, upper_bound=100.0)
+  x2 = f3dasm.ContinuousParameter(lower_bound=0.0, upper_bound=4.0)
+
+Discrete Parameter
+^^^^^^^^^^^^^^^^^^
+
+* We can create **discrete** parameters with a :attr:`~f3dasm.design.DiscreteParameter.lower_bound` and :attr:`~f3dasm.design.DiscreteParameter.upper_bound` with the :class:`~f3dasm.design.DiscreteParameter` class
+
+.. code-block:: python
+
+  x3 = f3dasm.DiscreteParameter(lower_bound=2, upper_bound=4)
+  x4 = f3dasm.DiscreteParameter(lower_bound=74, upper_bound=99)
+
+Categorical Parameter
+^^^^^^^^^^^^^^^^^^^^^
+
+* We can create **categorical** parameters with a list of items (:attr:`~f3dasm.design.CategoricalParameter.categories`) with the :class:`~f3dasm.design.CategoricalParameter` class
+
+.. code-block:: python
+
+  x5 = f3dasm.CategoricalParameter(categories=['test1','test2','test3','test4'])
+  x6 = f3dasm.CategoricalParameter(categories=[0.9, 0.2, 0.1, -2])
+
+Constant Parameter
+^^^^^^^^^^^^^^^^^^
+
+* We can create **constant** parameters with any value (:attr:`~f3dasm.design.ConstantParameter.value`) with the :class:`~f3dasm.design.ConstantParameter` class
+
+.. code-block:: python
+
+  x7 = f3dasm.ConstantParameter(value=0.9)
+
+
+Domain
+------
+
+.. _domain:
+
+The :class:`~f3dasm.design.Domain` is a set of :class:`f3dasm.design.Parameter` instances that make up the feasible search space.
 
 .. image:: ../../../img/f3dasm-domain.png
     :width: 100%
@@ -10,14 +73,11 @@ The :class:`~f3dasm.design.domain.Domain` is a set of :class:`f3dasm.design.para
 
 |
 
-Creating the Domain
--------------------
-
 Domain from a dictionary
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The domain can be constructed by initializing the :class:`~f3dasm.design.domain.Domain` class and 
-providing an attribute (:attr:`~f3dasm.design.domain.Domain.input_space`) containing string names as keys and parameters as values.
+The domain can be constructed by initializing the :class:`~f3dasm.design.Domain` class and 
+providing an attribute (:attr:`~f3dasm.design.Domain.input_space`) containing string names as keys and parameters as values.
 
 .. code-block:: python
 
@@ -30,56 +90,34 @@ providing an attribute (:attr:`~f3dasm.design.domain.Domain.input_space`) contai
 
   domain = f3dasm.Domain(input_space={'param_1': param_1, 'param_2': param_2, 'param_3': param_3, 'param_4': param_4})
 
-Domain from a dataframe
-^^^^^^^^^^^^^^^^
-
-The domain can also be infered from a pandas dataframe containg samples. 
-The dataframe needs to have the column names as the parameter names and the values as the parameter values. The dataframe can contain any number of samples. The domain will be infered from the first sample.
-
-.. code-block:: python
-
-  import pandas as pd
-  from f3dasm import Domain
-
-  df = pd.DataFrame({'param_1': [0.1, -0.3, 0.6], 'param_2': [1, 3, 9], 'param_3': ['red', 'blue', 'purple'], 'param_4': ['some_value', 'some_value', 'some_value']})
-  domain = Domain.from_dataframe(df)
-
-.. note:: 
-  
-  Constructing the dataframe by inferring it from samples can be useful if you have a large number of parameters and you don't want to manually specify the domain.
-  However, the domain will be a guess based on the information it has and this might be inacurate. 
-  In the above example, the domain for param_3 will not include the 'green' and 'yellow' categories, as they do not appear in the samples.
-
-
 .. _domain-from-yaml:
 
-Domain from a hydra configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Domain from a `hydra <https://hydra.cc/>`_ configuration file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are using hydra to manage your configuration files, you can create a domain from a configuration file. Your config needs to have the following structure:
+If you are using `hydra <https://hydra.cc/>`_ to manage your configuration files, you can create a domain from a configuration file. Your config needs to have the following key:
 
 .. code-block:: yaml
    :caption: config.yaml
 
     domain:
-        input_space:
-            param_1:
-                _target_: f3dasm.ContinuousParameter
-                lower_bound: -1.0
-                upper_bound: 1.0
-            param_2:
-                _target_: f3dasm.DiscreteParameter
-                lower_bound: 1
-                upper_bound: 10
-            param_3:
-                _target_: f3dasm.CategoricalParameter
-                categories: ['red', 'blue', 'green', 'yellow', 'purple']
-            param_4:
-                _target_: f3dasm.ConstantParameter
-                value: some_value
+        param_1:
+            _target_: f3dasm.ContinuousParameter
+            lower_bound: -1.0
+            upper_bound: 1.0
+        param_2:
+            _target_: f3dasm.DiscreteParameter
+            lower_bound: 1
+            upper_bound: 10
+        param_3:
+            _target_: f3dasm.CategoricalParameter
+            categories: ['red', 'blue', 'green', 'yellow', 'purple']
+        param_4:
+            _target_: f3dasm.ConstantParameter
+            value: some_value
 
   
-The same domain can now be created by calling the :func:`~f3dasm.design.domain.Domain.from_yaml` method:
+The same domain can now be created by calling the :func:`~f3dasm.design.Domain.from_yaml` method:
 
 .. code-block:: python
 
@@ -89,28 +127,13 @@ The same domain can now be created by calling the :func:`~f3dasm.design.domain.D
     def my_app(cfg):
       domain = Domain.from_yaml(cfg.domain)
 
-
-Storing a domain
-----------------
-
-You can store a domain to disk by calling the :func:`~f3dasm.design.domain.Domain.store` method:
-
-.. code-block:: python
-
-  domain.store('my_domain')
-
-This will store the domain as a pickle file. It can be loaded into memory again by calling the :func:`~f3dasm.design.domain.Domain.from_file` method:
-
-.. code-block:: python
-
-  domain = Domain.from_file('my_domain')
-
 Helper function for single-objective, n-dimensional continuous Domains
 ----------------------------------------------------------------------
  
-We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.domain.make_nd_continuous_domain`. We have to specify the boundaries for each of the dimensions with a numpy array:
+We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.make_nd_continuous_domain`. 
+We have to specify the boundaries (``bounds``) for each of the dimensions with a list of lists or numpy :class:`~numpy.ndarray`:
 
 .. code-block:: python
 
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  design = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+  domain = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)

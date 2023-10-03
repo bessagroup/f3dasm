@@ -14,10 +14,10 @@ Example
 
 The following example is the same as in section :ref:`workflow`; we will create a workflow for the following data-driven process:
 
-* Create a 20D continuous :class:`~f3dasm.design.domain.Domain`
-* Sample from the domain using a the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler
-* Use a data generation function, which will be the :class:`~f3dasm.datageneration.functions.pybenchfunction.Ackley` function a from the :ref:`benchmark-functions`
-* Optimize the data generation function using the built-in :class:`~f3dasm.optimization.lbfgsb.LBFGSB` optimizer.
+* Create a 2D continuous :class:`~f3dasm.design.domain.Domain`
+* Sample from the domain using a the Latin-hypercube sampler
+* Use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
+* Optimize the data generation function using the built-in ``"L-BFGS-B"`` optimizer.
 
 .. image:: ../../../img/f3dasm-workflow-example.png
    :width: 70%
@@ -73,23 +73,21 @@ Class                                                         Section referencin
    :caption: config.yaml
 
     domain:
-        input_space:
-            x0:
-                _target_: f3dasm.ContinuousParameter
-                lower_bound: 0.0
-                upper_bound: 1.0
-            x1:
-                _target_: f3dasm.ContinuousParameter
-                lower_bound: 0.0
-                upper_bound: 1.0
-
-    sampler:
-        _target_: f3dasm.sampling.LatinHypercube
-        seed: 1
-        number_of_samples: 3
+        x0:
+            _target_: f3dasm.ContinuousParameter
+            lower_bound: 0.0
+            upper_bound: 1.0
+        x1:
+            _target_: f3dasm.ContinuousParameter
+            lower_bound: 0.0
+            upper_bound: 1.0
 
     experimentdata:
-        from_sampling: ${sampler}
+        from_sampling:
+            domain: ${domain}
+            sampler: 'latin'
+            seed: 1
+            n_samples: 10
 
     mode: sequential
 
@@ -129,19 +127,11 @@ The `main.py` file is the main entry point of the project.
         data = f3dasm.ExperimentData.from_yaml(config)
 
         """Data Generation"""
-        # Initialize the simulator
-        ackley_function = Ackley(dimensionality=20, bounds=domain.get_bounds())
-
         # Use the data-generator to evaluate the initial samples
-        data.run(my_function, mode=config.mode, kwargs={'benchmark_function': ackley_function)
+        data.run(data_generator='ackley', mode=config.mode)
 
         """Optimization"""
-        optimizer = LBFGSB(data)
-        optimizer.iterate(100, my_function, mode=config.mode, kwargs={'benchmark_function': ackley_function})
-
-        # Extract and store the optimization results
-        optimized_data = optimizer.extract_data()
-        optimized_data.store()
+        data.optimize(data_generator="ackley", optimizer="lbfgsb", iterations=100)
 
     if __name__ == "__main__":
         main()

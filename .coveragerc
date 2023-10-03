@@ -23,6 +23,12 @@ exclude_lines =
     raise AssertionError
     raise NotImplementedError
 
+    # TYPE_CHECKING is used for type hinting, don't complain about it:
+    if TYPE_CHECKING:
+
+    # Don't complain for Protocol classes
+    class .*\bProtocol\):
+
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:

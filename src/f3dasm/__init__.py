@@ -14,20 +14,19 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 #                                                                       Modules
 # =============================================================================
 
-from . import datageneration, design, machinelearning, optimization, sampling
-from ._argparser import HPC_JOBID
-from .datageneration.functions.function import Function
-from .design.design import Design
-from .design.domain import Domain, make_nd_continuous_domain
-from .design.experimentdata import ExperimentData
-from .design.parameter import (CategoricalParameter, ConstantParameter,
-                               ContinuousParameter, DiscreteParameter)
-from .logger import DistributedFileHandler, logger
-from .optimization.optimizer import Optimizer
-from .run_optimization import (OptimizationResult, run_multiple_realizations,
-                               run_multiple_realizations_to_disk,
-                               run_optimization, run_optimization_to_disk)
-from .sampling.sampler import Sampler
+from ._src import _imports as _imports
+from ._src._argparser import HPC_JOBID
+from ._src._imports import try_import
+from ._src.design.domain import Domain, make_nd_continuous_domain
+from ._src.design.parameter import (CategoricalParameter, ConstantParameter,
+                                    ContinuousParameter, DiscreteParameter)
+from ._src.experimentdata.experimentdata import ExperimentData
+from ._src.experimentdata.experimentsample import ExperimentSample
+from ._src.logger import DistributedFileHandler, logger
+from ._src.optimization.optimizer import Optimizer
+from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
+                                    run_multiple_realizations,
+                                    run_optimization)
 
 #                                                        Authorship and Credits
 # =============================================================================
@@ -37,7 +36,9 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-__version__ = '1.3.2'
+
+__version__ = '1.4.1'
+
 
 # Log welcome message and the version of f3dasm
 logger.info(f"Imported f3dasm (version: {__version__})")
@@ -48,7 +49,6 @@ __all__ = [
     'machinelearning',
     'optimization',
     'sampling',
-    'Function',
     'Domain',
     'make_nd_continuous_domain',
     'ExperimentData',
@@ -65,6 +65,11 @@ __all__ = [
     'run_multiple_realizations',
     'run_multiple_realizations_to_disk',
     'run_optimization',
-    'run_optimization_to_disk'
-    'Sampler'
+    'run_optimization_to_disk',
+    'Sampler',
+    'ExperimentSample',
+    'HPC_JOBID',
+    'try_import',
+    'calculate_mean_std',
+    '_imports',
 ]

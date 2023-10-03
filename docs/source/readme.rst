@@ -12,11 +12,9 @@ Here you will find all information on installing, using and contributing to the 
 Authorship & Citation
 ---------------------
 
-:mod:`f3dasm` was originally created by Miguel A. Bessa [1]_, and is now maintained by Martin van der Schelling [2]_.
+:mod:`f3dasm` is created and maintained by Martin van der Schelling [1]_.
 
-.. [1] Associate Professor, Brown University. `Website <https://mabessa.github.io/>`_
-
-.. [2] PhD Candiate, Delft University of Technology, `Website <https://mpvanderschelling.github.io/>`_ , `GitHub <https://github.com/mpvanderschelling/>`_
+.. [1] PhD Candiate, Delft University of Technology, `Website <https://mpvanderschelling.github.io/>`_ , `GitHub <https://github.com/mpvanderschelling/>`_
 
 If you use :mod:`f3dasm` in your research or in a scientific publication, it is appreciated that you cite the paper below:
 
@@ -73,6 +71,11 @@ The best way to get started is to:
 
 * Read the :ref:`overview` section, containting a brief introduction to the framework and a statement of need.
 * Follow the :ref:`installation-instructions` section, containing a step-by-step guide on how to install the package.
+
+Contribute
+----------
+
+:mod:`f3dasm` is an open-source project, and contributions of any kind are welcome and appreciated. If you want to contribute, please go to the `GitHub wiki page <https://github.com/bessagroup/f3dasm/wiki>`_.
 
 
 Useful links

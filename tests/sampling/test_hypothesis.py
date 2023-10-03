@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List
+from typing import Callable, Dict
 
 import numpy as np
 import pytest
@@ -6,9 +6,8 @@ from hypothesis import given, settings
 from hypothesis.strategies import (SearchStrategy, composite, floats, integers,
                                    text)
 
-from f3dasm.design.domain import Domain
-from f3dasm.design.parameter import (CategoricalParameter, ContinuousParameter,
-                                     DiscreteParameter, Parameter)
+from f3dasm.design import (CategoricalParameter, ContinuousParameter,
+                           DiscreteParameter, Domain, Parameter)
 
 pytestmark = pytest.mark.smoke
 
@@ -52,7 +51,7 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
         return space
 
     design_space = Domain(
-        input_space=get_space(number_of_input_parameters),
+        space=get_space(number_of_input_parameters),
     )
     return design_space
 
@@ -60,10 +59,10 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 @given(design_space())
 @settings(max_examples=10)
 def test_check_length_input_when_adding_parameter(design: Domain):
-    length_input_space = len(design.input_space)
+    length_input_space = len(design.space)
     parameter = DiscreteParameter()
     design.add(name="test", space=parameter)
-    assert length_input_space + 1 == (len(design.input_space))
+    assert length_input_space + 1 == (len(design.space))
 
 
 if __name__ == "__main__":  # pragma: no cover

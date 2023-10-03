@@ -1,14 +1,9 @@
-from io import TextIOWrapper
-from typing import Any, Dict, List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design._data import _Data
-from f3dasm.design.design import Design
-from f3dasm.design.domain import Domain
+from f3dasm.design import Domain, _Data
 
 pytestmark = pytest.mark.smoke
 
@@ -32,24 +27,18 @@ def test_data_repr_html(sample_data: _Data):
 
 
 def test_data_from_design(domain: Domain):
-    # Assuming you have a DesignSpace object named "design"
+    # Assuming you have a Domain object named "domain"
     data = _Data.from_domain(domain)
     assert isinstance(data, _Data)
     assert isinstance(data.data, pd.DataFrame)
 
 
 def test_data_reset(sample_data: _Data):
-    # Assuming you have a DesignSpace object named "design"
+    # Assuming you have a Domain object named "domain"
     design = Domain()
     sample_data.reset(design)
     assert isinstance(sample_data.data, pd.DataFrame)
     assert len(sample_data) == 0
-
-
-def test_data_select(sample_data: _Data):
-    indices = [0, 2]
-    sample_data.select(indices)
-    assert len(sample_data) == len(indices)
 
 
 def test_data_remove(sample_data: _Data):
@@ -60,7 +49,8 @@ def test_data_remove(sample_data: _Data):
 
 def test_data_add_numpy_arrays(sample_data: _Data):
     input_array = np.array([[1, 4], [2, 5]])
-    sample_data.add_numpy_arrays(input_array)
+    df = pd.DataFrame(input_array, columns=sample_data.names)
+    sample_data.add(df)
     assert len(sample_data) == 5
 
 
@@ -95,3 +85,14 @@ def test_data_n_best_samples(sample_data: _Data):
     result = sample_data.n_best_samples(nosamples, output_names)
     assert isinstance(result, pd.DataFrame)
     assert len(result) == nosamples
+
+
+def test_compatible_columns_add():
+    # create a 4 column dataframe with random numpy values
+    df = pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD'))
+    dg = pd.DataFrame(np.random.randn(100, 4), columns=list('ABCD'))
+
+    f = _Data(df)
+    g = _Data(dg)
+
+    _ = f + g

@@ -1,104 +1,109 @@
-import copy
+from __future__ import annotations
+
 from typing import List
 
 import numpy as np
 import pytest
 
-from f3dasm.datageneration.functions import (FUNCTIONS, FUNCTIONS_2D, Ackley,
-                                             Levy, Sphere)
-from f3dasm.datageneration.functions.function import Function
+from f3dasm import ExperimentData
+from f3dasm._src.datageneration.functions.function_factory import \
+    is_dim_compatible
+from f3dasm._src.optimization.optimizer_factory import optimizer_factory
+from f3dasm.datageneration import DataGenerator
+from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
-from f3dasm.design.experimentdata import ExperimentData
-from f3dasm.optimization import OPTIMIZERS
-from f3dasm.optimization.optimizer import Optimizer
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm.optimization import OPTIMIZERS, Optimizer
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
-def test_get_info(data: ExperimentData, optimizer: Optimizer):
-    opt: Optimizer = optimizer(data=data)
+def test_get_info(data: ExperimentData, optimizer: str):
+    opt: Optimizer = optimizer_factory(optimizer, data.domain)
     characteristics = opt.get_info()
     assert isinstance(characteristics, List)
 
 
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("function", FUNCTIONS)
-def test_all_optimizers_and_functions(seed: int, function: Function, optimizer: Optimizer):
+@pytest.mark.parametrize("data_generator", FUNCTIONS)
+def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer: str):
     i = 10  # iterations
 
     dim = 6
-    if not function.is_dim_compatible(dim):
+    domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    if not is_dim_compatible(data_generator, domain):
         dim = 4
-        if not function.is_dim_compatible(dim):
+        domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+        if not is_dim_compatible(data_generator, domain):
             dim = 3
-            if not function.is_dim_compatible(dim):
+            domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+            if not is_dim_compatible(data_generator, domain):
                 dim = 2
-
-    design = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+                domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Sampler
-    ran_sampler = RandomUniform(design=design, seed=seed)
-    data = ran_sampler.get_samples(numsamples=30)
 
-    func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    data1 = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=30, seed=seed)
+    data2 = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=30, seed=seed)
 
-    # Evaluate the initial samples
-    data.fill_output(output=func(data), label="y")
+    data1.evaluate(data_generator, kwargs={'noise': None, 'seed': seed,
+                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
+    data2.evaluate(data_generator, kwargs={'noise': None, 'seed': seed,
+                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
 
-    opt1 = optimizer(data=copy.copy(data), seed=seed)
-    opt2 = optimizer(data=copy.copy(data), seed=seed)
+    data1.optimize(optimizer=optimizer, data_generator=data_generator,
+                   iterations=i, kwargs={'noise': None, 'seed': seed,
+                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))},
+                   hyperparameters={'seed': seed})
+    data2.optimize(optimizer=optimizer, data_generator=data_generator,
+                   iterations=i, kwargs={'noise': None, 'seed': seed,
+                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))},
+                   hyperparameters={'seed': seed})
 
-    opt1.iterate(iterations=i, function=func)
-    opt2.iterate(iterations=i, function=func)
-    data1 = opt1.extract_data()
-    data2 = opt2.extract_data()
-    assert all(data1.input_data.data == data2.input_data.data)
-    assert all(data1.output_data.data == data2.output_data.data)
+    assert (data1 == data2)
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize("seed", [42])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("function", [Levy, Ackley, Sphere])
-def test_all_optimizers_3_functions(seed: int, function: Function, optimizer: Optimizer):
-    test_all_optimizers_and_functions(seed, function, optimizer)
+@pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
+def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: str):
+    test_all_optimizers_and_functions(seed, data_generator, optimizer)
 
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
 @pytest.mark.smoke
-@pytest.mark.parametrize("iterations", np.random.randint(low=1, high=100, size=5))
+@pytest.mark.parametrize("iterations", [10, 23, 66, 86])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("function", [Sphere])
-def test_optimizer_iterations(iterations: int, function: Function, optimizer: Optimizer):
-    numsamples = 40  # iterations
+@pytest.mark.parametrize("data_generator", ["sphere"])
+def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: str):
+    numsamples = 40  # initial samples
     seed = 42
 
     dim = 6
-    if not function.is_dim_compatible(dim):
+    domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    if not is_dim_compatible(data_generator, domain):
         dim = 4
-        if not function.is_dim_compatible(dim):
+        domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+        if not is_dim_compatible(data_generator, domain):
             dim = 3
-            if not function.is_dim_compatible(dim):
+            domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+            if not is_dim_compatible(data_generator, domain):
                 dim = 2
+                domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
-    design = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    data = ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=numsamples, seed=seed)
 
-    # Sampler
-    ran_sampler = RandomUniform(design=design, seed=seed)
-    data: ExperimentData = ran_sampler.get_samples(numsamples=numsamples)
-
-    func = function(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    # func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
-    data.fill_output(output=func(data), label="y")
+    data.evaluate(data_generator, mode='sequential', kwargs={'seed': seed, 'noise': None,
+                                                             'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
 
-    opt1: Optimizer = optimizer(data=data, seed=seed)
-
-    opt1.iterate(iterations=iterations, function=func)
-
-    data = opt1.extract_data()
+    data.optimize(optimizer=optimizer, data_generator=data_generator,
+                  iterations=iterations, kwargs={'seed': seed, 'noise': None,
+                                                 'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
+                  hyperparameters={'seed': seed})
 
     assert len(data) == (iterations + numsamples)
 

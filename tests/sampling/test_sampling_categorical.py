@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from f3dasm.sampling.randomuniform import RandomUniform
+from f3dasm._src.design.samplers import RandomUniform
 
 pytestmark = pytest.mark.smoke
 
@@ -10,7 +10,7 @@ def test_correct_discrete_sampling_1(design):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design, seed=seed)
+    random_uniform = RandomUniform(domain=design, seed=seed)
 
     numsamples = 5
 
@@ -32,7 +32,7 @@ def test_correct_discrete_sampling_2(design2):
     seed = 42
 
     # Construct sampler
-    random_uniform = RandomUniform(design=design2, seed=seed)
+    random_uniform = RandomUniform(domain=design2, seed=seed)
 
     numsamples = 5
 
