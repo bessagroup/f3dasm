@@ -13,7 +13,7 @@ import traceback
 from functools import wraps
 from pathlib import Path
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, Type, Union)
+                    Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -57,7 +57,7 @@ class ExperimentData:
 
     def __init__(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
                  output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None,
-                 filename: Optional[str] = 'experimentdata'):
+                 filename: Optional[str] = 'experimentdata', path: Optional[Path] = None):
         """
         Initializes an instance of ExperimentData.
 
@@ -73,12 +73,19 @@ class ExperimentData:
             The path to the jobs file, by default None
         filename : str, optional
             The filename of the experiment, by default 'experimentdata'
+        path : Path, optional
+            The path to the experimentdata file, by default the current working directory
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
             raise ValueError('If you provide a numpy array as input_data, you have to provide the domain!')
 
         self.filename = filename
+
+        if path is None:
+            path = Path().cwd()
+
+        self.path = path
 
         self.input_data = data_factory(input_data)
         self.output_data = data_factory(output_data)
@@ -141,7 +148,7 @@ class ExperimentData:
     def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
         """The [] operator returns a single datapoint or a subset of datapoints"""
         return ExperimentData(input_data=self.input_data[index], output_data=self.output_data[index],
-                              jobs=self.jobs[index], domain=self.domain, filename=self.filename)
+                              jobs=self.jobs[index], domain=self.domain, filename=self.filename, path=self.path)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
@@ -269,7 +276,7 @@ class ExperimentData:
         try:
             return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"), input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
                        output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"), jobs=Path(f"{filename}{JOBS_SUFFIX}"),
-                       filename=filename.name)
+                       filename=filename.name, path=filename.parent)
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
 
@@ -494,7 +501,8 @@ class ExperimentData:
             The ExperimentSample at the given index.
         """
         return ExperimentSample(dict_input=self.input_data.get_data_dict(index),
-                                dict_output=self.output_data.get_data_dict(index), jobnumber=index)
+                                dict_output=self.output_data.get_data_dict(index), jobnumber=index,
+                                experimentdata_directory=self.path)
 
     def _set_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
         """
@@ -508,7 +516,6 @@ class ExperimentData:
         for column, value in experiment_sample.output_data.items():
             self.output_data.set_data(index=experiment_sample.job_number, value=value, column=column)
 
-        # self.jobs.mark_as_finished(experiment_sample._jobnumber)
         self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
     @_access_file
@@ -532,7 +539,6 @@ class ExperimentData:
             The ExperimentSample object of the first available open job.
         """
         job_index = self.jobs.get_open_job()
-        # self.jobs.mark_as_in_progress(job_index)
         self.jobs.mark(job_index, status=Status.IN_PROGRESS)
         experiment_sample = self._get_experiment_sample(job_index)
         return experiment_sample
@@ -957,7 +963,7 @@ def data_factory(data: DataTypes) -> _Data:
             f"Data must be of type _Data, pd.DataFrame, np.ndarray, Path or str, not {type(data)}")
 
 
-def domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
+def domain_factory(domain: Domain | None, input_data: _Data) -> Domain:
     if isinstance(domain, Domain):
         return domain
 
@@ -974,7 +980,7 @@ def domain_factory(domain: Union[None, Domain], input_data: _Data) -> Domain:
         raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def jobs_factory(jobs: Path | str | None, input_data: _Data, job_value: Status) -> _JobQueue:
+def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data, job_value: Status) -> _JobQueue:
     """Creates a _JobQueue object from particular inpute
 
     Parameters
@@ -991,6 +997,9 @@ def jobs_factory(jobs: Path | str | None, input_data: _Data, job_value: Status) 
     _JobQueue
         JobQueue object
     """
+    if isinstance(jobs, _JobQueue):
+        return jobs
+
     if isinstance(jobs, (Path, str)):
         return _JobQueue.from_file(Path(jobs))
 
