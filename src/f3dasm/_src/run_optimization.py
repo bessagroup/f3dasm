@@ -13,10 +13,9 @@ from typing import Any, Callable, Dict, List, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pathos.helpers import mp
-
 from f3dasm.design import Domain
 from f3dasm.optimization import Optimizer
+from pathos.helpers import mp
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
@@ -85,16 +84,13 @@ class OptimizationResult:
         xarr.attrs['realization_seeds']: List[int] = list(self.seeds)
 
         # Benchmark functions
-        xarr.attrs['function_seed']: int = self.kwargs['seed']
+        xarr.attrs['function_seed']: int = self.func.seed
         xarr.attrs['function_name']: str = self.data_generator
-        xarr.attrs['function_noise']: str = self.kwargs['noise']
+        xarr.attrs['function_noise']: str = self.func.noise
         xarr.attrs['function_dimensionality']: int = len(self.data[0].domain)
 
         # Global minimum function
-        func = datagenerator_factory(data_generator=self.data_generator,
-                                     domain=self.data[0].domain, kwargs=self.kwargs)
-
-        _, g = func.get_global_minimum(d=func.dimensionality)
+        _, g = self.func.get_global_minimum(d=self.func.dimensionality)
         xarr.attrs['function_global_minimum']: float = float(np.array(g if not isinstance(g, list) else g[0])[0, 0])
         return xarr
 

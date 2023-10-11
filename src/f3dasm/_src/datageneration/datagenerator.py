@@ -38,10 +38,11 @@ class ExperimentSample(Protocol):
     def job_number(self) -> int:
         ...
 
+
 class DataGenerator:
     """Base class for a data generator"""
 
-    def pre_process(self, **kwargs) -> None:
+    def pre_process(self, experiment_sample: ExperimentSample, **kwargs) -> None:
         """Function that handles the pre-processing"""
         ...
 
@@ -49,7 +50,7 @@ class DataGenerator:
         """Function that calls the FEM simulator the pre-processing"""
         raise NotImplementedError("No execute function implemented!")
 
-    def post_process(self, **kwargs) -> None:
+    def post_process(self, experiment_sample: ExperimentSample, **kwargs) -> None:
         """Function that handles the post-processing"""
         ...
 
