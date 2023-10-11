@@ -97,28 +97,32 @@ STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
 }
 
 
-def load_object(path: Path, store_method: Type[_Store] = PickleStore) -> Any:
-    if store_method is not None:
-        return store_method(None, path).load()
+def load_object(path: Path, experimentdata_directory: Path, store_method: Type[_Store] = PickleStore) -> Any:
 
-    if not path.exists():
+    _path = experimentdata_directory / path
+
+    if store_method is not None:
+        return store_method(None, _path).load()
+
+    if not _path.exists():
         return None
 
     # Extract the suffix from the item's path
-    item_suffix = path.suffix
+    item_suffix = _path.suffix
 
     # Use a generator expression to find the first matching store type, or None if no match is found
     matched_store_type: _Store = next(
         (store_type for store_type in STORE_TYPE_MAPPING.values() if store_type.suffix == item_suffix), PickleStore)
 
     if matched_store_type:
-        return matched_store_type(None, path).load()
+        return matched_store_type(None, _path).load()
     else:
         # Handle the case when no matching suffix is found
         raise ValueError(f"No matching store type for item type: '{item_suffix}'")
 
 
-def save_object(object: Any, path: Path, store_method: Optional[Type[_Store]] = None) -> str:
+def save_object(object: Any, path: Path, experimentdata_directory: Path,
+                store_method: Optional[Type[_Store]] = None) -> str:
     """Function to save the object to path, with the appropriate storing method.
 
     Parameters
@@ -140,20 +144,22 @@ def save_object(object: Any, path: Path, store_method: Optional[Type[_Store]] = 
     TypeError
         Raises if the object type is not supported, and you haven't provided a custom store method.
     """
+    _path = experimentdata_directory / path
+
     if store_method is not None:
-        storage = store_method(object, path)
+        storage = store_method(object, _path)
         return
 
     # Check if object type is supported
     object_type = type(object)
 
     if object_type not in STORE_TYPE_MAPPING:
-        storage: _Store = PickleStore(object, path)
+        storage: _Store = PickleStore(object, _path)
         logger.debug(f"Object type {object_type} is not natively supported. "
                      f"The default pickle storage method will be used.")
 
     else:
-        storage: _Store = STORE_TYPE_MAPPING[object_type](object, path)
+        storage: _Store = STORE_TYPE_MAPPING[object_type](object, _path)
     # Store object
     storage.store()
     return storage.suffix
@@ -163,7 +169,8 @@ def save_object(object: Any, path: Path, store_method: Optional[Type[_Store]] = 
 
 
 class ExperimentSample:
-    def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any], jobnumber: int):
+    def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any],
+                 jobnumber: int, experimentdata_directory: Optional[Path] = None):
         """Single realization of a design of experiments.
 
         Parameters
@@ -178,6 +185,11 @@ class ExperimentSample:
         self._dict_input = dict_input
         self._dict_output = dict_output
         self._jobnumber = jobnumber
+
+        if experimentdata_directory is None:
+            experimentdata_directory = Path.cwd()
+
+        self._experimentdata_directory = experimentdata_directory
 
     @classmethod
     def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
@@ -233,7 +245,7 @@ class ExperimentSample:
                 return item
 
             # Load the object from the reference
-            return load_object(Path(value), load_method)
+            return load_object(Path(value), self._experimentdata_directory, load_method)
         else:
             # Return the literal value
             return value
@@ -365,14 +377,15 @@ class ExperimentSample:
             self._store_to_experimentdata(object=object, name=name)
 
     def _store_to_disk(self, object: Any, name: str, store_method: Optional[Type[_Store]] = None) -> None:
-        file_dir = Path().cwd() / name
-        file_path = file_dir / str(self.job_number)
+        file_path = Path(name) / str(self.job_number)
 
         # Check if the file_dir exists
-        file_dir.mkdir(parents=True, exist_ok=True)
+        (self._experimentdata_directory / Path(name)).mkdir(parents=True, exist_ok=True)
 
         # Save the object to disk
-        suffix = save_object(object=object, path=file_dir/str(self.job_number), store_method=store_method)
+        suffix = save_object(object=object, path=file_path,
+                             experimentdata_directory=self._experimentdata_directory,
+                             store_method=store_method)
 
         # Store the path to the object in the output_data
         self._dict_output[f"{PATH_PREFIX}{name}"] = str(file_path.with_suffix(suffix))
