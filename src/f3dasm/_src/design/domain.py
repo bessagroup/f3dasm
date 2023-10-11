@@ -148,10 +148,7 @@ class Domain:
         Domain
             Domain object
         """
-        args = {}
-        for space, params in yaml.items():
-            args[space] = {name: instantiate(param, _convert_="all") for name, param in params.items()}
-        return cls(**args)
+        return cls({name: instantiate(param, _convert_="all") for name, param in yaml.items()})
 
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame) -> Domain:
@@ -171,9 +168,17 @@ class Domain:
         space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':
+                if float(df[name].min()) == float(df[name].max()):
+                    space[name] = ConstantParameter(value=float(df[name].min()))
+                    continue
+
                 space[name] = ContinuousParameter(lower_bound=float(
                     df[name].min()), upper_bound=float(df[name].max()))
             elif type == 'int64':
+                if int(df[name].min()) == int(df[name].max()):
+                    space[name] = ConstantParameter(value=int(df[name].min()))
+                    continue
+
                 space[name] = DiscreteParameter(lower_bound=int(df[name].min()), upper_bound=int(df[name].max()))
             else:
                 space[name] = CategoricalParameter(df[name].unique().tolist())

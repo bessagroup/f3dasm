@@ -182,7 +182,7 @@ class ExperimentData:
             ExperimentData object containing the loaded data.
         """
         try:
-            return cls._from_file_attempt(filename)
+            return cls._from_file_attempt(Path(filename))
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / filename
@@ -239,21 +239,21 @@ class ExperimentData:
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
             domain = Domain.from_yaml(config.domain)
-            return cls.from_sampling(sampler=config.sampler, domain=domain,
+            return cls.from_sampling(sampler=config.experimentdata.from_sampling.sampler, domain=domain,
                                      n_samples=config.experimentdata.from_sampling.n_samples,
                                      seed=config.experimentdata.from_sampling.seed,
-                                     filename=config.experimentdata.from_sampling.filename)
+                                     filename=config.experimentdata.name)
 
         else:
             return cls(**config)
 
     @classmethod
-    def _from_file_attempt(cls: Type[ExperimentData], filename: str) -> ExperimentData:
+    def _from_file_attempt(cls: Type[ExperimentData], filename: Path) -> ExperimentData:
         """Attempt to create an ExperimentData object from .csv and .json files.
 
         Parameters
         ----------
-        filename : str
+        filename : Path
             Name of the file, excluding suffix.
 
         Returns
@@ -268,7 +268,8 @@ class ExperimentData:
         """
         try:
             return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"), input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
-                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"), jobs=Path(f"{filename}{JOBS_SUFFIX}"))
+                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"), jobs=Path(f"{filename}{JOBS_SUFFIX}"),
+                       filename=filename.name)
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
 

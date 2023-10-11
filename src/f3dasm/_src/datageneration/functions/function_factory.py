@@ -4,6 +4,8 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 from typing import Any, Dict, Optional
 
 from ...design.domain import Domain
@@ -19,20 +21,26 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-FUNTION_MAPPING: Dict[str, DataGenerator] = {
-    f.name.lower().replace(' ', '').replace('-', '').replace('_', ''): f for f in _FUNCTIONS}
+FUNCTION_MAPPING: Dict[str, DataGenerator] = {
+    f.name.lower().replace(' ', '').replace('-', '').replace('_', '').replace('.', ''): f for f in _FUNCTIONS}
 
 
-def datagenerator_factory(data_generator: str, domain: Domain,
+def datagenerator_factory(data_generator: str, domain: Domain | int,
                           kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
+
+    if isinstance(domain, int):
+        dim = domain
+
+    else:
+        dim = len(domain)
 
     if kwargs is None:
         kwargs = {}
 
-    filtered_name = data_generator.lower().replace(' ', '').replace('-', '').replace('_', '')
+    filtered_name = data_generator.lower().replace(' ', '').replace('-', '').replace('_', '').replace('.', '')
 
-    if filtered_name in FUNTION_MAPPING:
-        return FUNTION_MAPPING[filtered_name](dimensionality=len(domain), **kwargs)
+    if filtered_name in FUNCTION_MAPPING:
+        return FUNCTION_MAPPING[filtered_name](dimensionality=dim, **kwargs)
 
     else:
         raise KeyError(f"Unknown data generator: {data_generator}")
