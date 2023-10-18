@@ -628,6 +628,12 @@ class ExperimentData:
             If the given status is not any of 'open', 'in progress', 'finished' or 'error'
         """
         self.mark(self.jobs.indices, status)
+
+    def mark_all_error_open(self) -> None:
+        """
+        Mark all the experiments that have the status 'error' open
+        """
+        self.jobs.mark_all_error_open()
     #                                                                Datageneration
     # =============================================================================
 

@@ -248,6 +248,9 @@ class _JobQueue:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace(Status.IN_PROGRESS, Status.OPEN)
 
+    def mark_all_error_open(self) -> None:
+        """Marks all jobs as 'open'."""
+        self.jobs = self.jobs.replace(Status.ERROR, Status.OPEN)
     #                                                                  Miscellanous
     # =============================================================================
 
