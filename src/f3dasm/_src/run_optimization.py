@@ -7,15 +7,17 @@ Module to optimize benchmark optimization functions
 from __future__ import annotations
 
 # Standard
+from time import perf_counter
 from typing import Any, Callable, Dict, List, Optional
 
 # Third-party
 import numpy as np
 import pandas as pd
 import xarray as xr
+from pathos.helpers import mp
+
 from f3dasm.design import Domain
 from f3dasm.optimization import Optimizer
-from pathos.helpers import mp
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
@@ -37,7 +39,7 @@ __status__ = 'Stable'
 class OptimizationResult:
     def __init__(self, data: List[ExperimentData], optimizer: Optimizer,
                  kwargs: Optional[Dict[str, Any]], data_generator: DataGenerator,
-                 number_of_samples: int, seeds: List[int]):
+                 number_of_samples: int, seeds: List[int], opt_time: float = 0.0):
         """Optimization results object
 
         Parameters
@@ -54,6 +56,8 @@ class OptimizationResult:
             number of initial samples, sampled by the sampling strategy
         seeds
             list of seeds that were used for each realization
+        opt_time
+            total optimization time
         """
         self.data = data
         self.optimizer = optimizer_factory(optimizer=optimizer, domain=self.data[0].domain)
@@ -61,6 +65,7 @@ class OptimizationResult:
         self.kwargs = kwargs,
         self.number_of_samples = number_of_samples
         self.seeds = seeds
+        self.opt_time = opt_time
 
         self.func = datagenerator_factory(data_generator=self.data_generator,
                                           domain=self.data[0].domain, kwargs=kwargs)
@@ -73,7 +78,7 @@ class OptimizationResult:
              f"dim={len(self.data[0].domain)}, "
              f"noise={self.func.noise}) "
              f"with {self.optimizer.get_name()} optimizer for "
-             f"{len(self.data)} realizations.")
+             f"{len(self.data)} realizations ({self.opt_time:.3f} s).")
         )
 
     def to_xarray(self) -> xr.Dataset:
@@ -228,6 +233,8 @@ def run_multiple_realizations(
         Object with the optimization data results
     """
 
+    start_timer = perf_counter()
+
     if kwargs is None:
         kwargs = {}
 
@@ -264,6 +271,8 @@ def run_multiple_realizations(
             }
             results.append(run_optimization(**args))
 
+    opt_time = perf_counter() - start_timer
+
     return OptimizationResult(
         data=results,
         optimizer=optimizer,
@@ -271,6 +280,7 @@ def run_multiple_realizations(
         kwargs=kwargs,
         number_of_samples=number_of_samples,
         seeds=[seed + i for i in range(realizations)],
+        opt_time=opt_time,
     )
 
 
