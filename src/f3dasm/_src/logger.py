@@ -39,8 +39,8 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 
-# Set the level for the "f3dasm" logger
-logger.setLevel(logging.INFO)
+# Set the default level for the "f3dasm" logger
+logger.setLevel(logging.WARNING)
 
 # Add the custom handler to the "f3dasm" logger
 logger.addHandler(handler)
