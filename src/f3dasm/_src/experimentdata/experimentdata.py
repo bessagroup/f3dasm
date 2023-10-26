@@ -119,10 +119,16 @@ class ExperimentData:
         return len(self.input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
-        return self.input_data.__iter__()
+        self.current_index = 0
+        return self
 
-    def __next__(self):
-        return self.input_data.__next__()
+    def __next__(self) -> ExperimentSample:
+        if self.current_index >= len(self):
+            raise StopIteration
+        else:
+            index = self.index[self.current_index]
+            self.current_index += 1
+            return self._get_experiment_sample(index)
 
     def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
@@ -170,6 +176,20 @@ class ExperimentData:
             return value
 
         return wrapper_func
+
+    #                                                                    Properties
+    # =============================================================================
+
+    @property
+    def index(self) -> pd.Index:
+        """Returns the index of the ExperimentData
+
+        Returns
+        -------
+        pd.Index
+            The indices of the experiments
+        """
+        return self.input_data.indices
 
     #                                                      Alternative Constructors
     # =============================================================================
