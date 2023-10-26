@@ -252,7 +252,14 @@ class Domain:
         >>> domain.add_int('param1', 0, 10, 2)
         >>> domain.space
         {'param1': DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
+
+        Note
+        ----
+        If the lower and upper bound are equal, then then a constant parameter
+        will be added to the domain!
         """
+        if low == high:
+            self.add_constant(name, low)
         self._add(name, DiscreteParameter(low, high, step))
 
     def add_float(self, name: str, low: float, high: float, log: bool = False):
@@ -267,7 +274,7 @@ class Domain:
         high : float
             Upper bound of the input parameter.
         log : bool, optional
-            Whether to use a logarithmic scale, by default False.
+            Whether to u_add(name, ConstantParameter(low))se a logarithmic scale, by default False.
 
         Example
         -------
@@ -275,8 +282,16 @@ class Domain:
         >>> domain.add_float('param1', 0., 10., log=True)
         >>> domain.space
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=10., log=True)}
+
+        Note
+        ----
+        If the lower and upper bound are equal, then then a constant parameter
+        will be added to the domain!
         """
-        self._add(name, ContinuousParameter(low, high, log))
+        if low == high:
+            self.add_constant(name, low)
+        else:
+            self._add(name, ContinuousParameter(low, high, log))
 
     def add_category(self, name: str, categories: Sequence[CategoricalType]):
         """Add a new categorical input parameter to the domain.
