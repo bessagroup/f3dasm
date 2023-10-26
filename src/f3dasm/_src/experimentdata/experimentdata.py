@@ -702,7 +702,7 @@ class ExperimentData:
                     logger.debug(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _experiment_sample = data_generator.run(experiment_sample, **kwargs)  # no *args!
+                _experiment_sample = data_generator._run(experiment_sample, **kwargs)  # no *args!
                 self._set_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -737,7 +737,7 @@ class ExperimentData:
 
         def f(options: Dict[str, Any]) -> Any:
             logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
-            return data_generator.run(**options)
+            return data_generator._run(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
@@ -775,7 +775,7 @@ class ExperimentData:
                 break
 
             try:
-                _experiment_sample = data_generator.run(experiment_sample, **kwargs)
+                _experiment_sample = data_generator._run(experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
