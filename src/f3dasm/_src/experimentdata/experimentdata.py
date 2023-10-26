@@ -145,10 +145,10 @@ class ExperimentData:
                     self.jobs == __o.jobs,
                     self.domain == __o.domain])
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
-        """The [] operator returns a single datapoint or a subset of datapoints"""
-        return ExperimentData(input_data=self.input_data[index], output_data=self.output_data[index],
-                              jobs=self.jobs[index], domain=self.domain, filename=self.filename, path=self.path)
+    # def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+    #     """The [] operator returns a single datapoint or a subset of datapoints"""
+    #     return ExperimentData(input_data=self.input_data[index], output_data=self.output_data[index],
+    #                           jobs=self.jobs[index], domain=self.domain, filename=self.filename, path=self.path)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
@@ -296,7 +296,9 @@ class ExperimentData:
         ExperimentData
             The selected ExperimentData object with only the selected indices.
         """
-        return self[indices]
+
+        return ExperimentData(input_data=self.input_data[indices], output_data=self.output_data[indices],
+                              jobs=self.jobs[indices], domain=self.domain, filename=self.filename, path=self.path)
 
     def store(self, filename: str = None):
         """Store the ExperimentData to disk, with checking for a lock
@@ -362,7 +364,7 @@ class ExperimentData:
             New experimentData object with a selection of the n best samples.
         """
         df = self.output_data.n_best_samples(n_samples, self.output_data.names)
-        return self[df.index]
+        return self.select(df.index)
 
     #                                                         Append or remove data
     # =============================================================================

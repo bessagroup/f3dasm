@@ -54,16 +54,6 @@ def test_experiment_data_len_equals_output_data(experimentdata: ExperimentData):
 
 
 @pytest.mark.parametrize("slice_type", [3, [0, 1, 3], slice(0, 3)])
-def test_experiment_data_getitem_(slice_type: int | Iterable[int], experimentdata: ExperimentData):
-    input_data = experimentdata.input_data[slice_type]
-    output_data = experimentdata.output_data[slice_type]
-    jobs = experimentdata.jobs[slice_type]
-    constructed_experimentdata = ExperimentData(
-        input_data=input_data, output_data=output_data, jobs=jobs, domain=experimentdata.domain)
-    assert constructed_experimentdata == experimentdata[slice_type]
-
-
-@pytest.mark.parametrize("slice_type", [3, [0, 1, 3], slice(0, 3)])
 def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
     input_data = experimentdata.input_data[slice_type]
     output_data = experimentdata.output_data[slice_type]
