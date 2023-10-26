@@ -298,7 +298,7 @@ class ExperimentData:
         """
         return self[indices]
 
-    def store(self, filename: str = None):
+    def store(self, filename: Optional[str] = None):
         """Store the ExperimentData to disk, with checking for a lock
 
         Parameters
