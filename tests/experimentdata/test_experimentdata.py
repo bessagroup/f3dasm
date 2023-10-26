@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, ExperimentSample
 from f3dasm._src.experimentdata.experimentdata import DataTypes
 from f3dasm.design import (ContinuousParameter, Domain, Status, _Data,
                            _JobQueue, make_nd_continuous_domain)
@@ -665,6 +665,15 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
     else:
         experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
             "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
+
+
+def test_iter_behaviour(experimentdata_continuous: ExperimentData):
+    for i in experimentdata_continuous:
+        assert isinstance(i, ExperimentSample)
+
+    selected_experimentdata = experimentdata_continuous.select([0, 2, 4])
+    for i in selected_experimentdata:
+        assert isinstance(i, ExperimentSample)
 
 
 if __name__ == "__main__":  # pragma: no cover
