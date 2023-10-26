@@ -7,6 +7,7 @@ Interface class for data generators
 
 # Standard
 import sys
+from abc import abstractmethod
 from functools import partial
 from typing import Any, Callable
 
@@ -43,15 +44,32 @@ class DataGenerator:
     """Base class for a data generator"""
 
     def pre_process(self, experiment_sample: ExperimentSample, **kwargs) -> None:
-        """Function that handles the pre-processing"""
+        """Interface function that handles the pre-processing of the data generator
+
+        Notes
+        -----
+        If not implemented the function will be skipped
+        """
         ...
 
+    @abstractmethod
     def execute(self, **kwargs) -> None:
-        """Function that calls the FEM simulator the pre-processing"""
-        raise NotImplementedError("No execute function implemented!")
+        """Interface function that handles the execution of the data generator
+
+        Raises
+        ------
+        NotImplementedError
+            If the function is not implemented by the user
+        """
+        ...
 
     def post_process(self, experiment_sample: ExperimentSample, **kwargs) -> None:
-        """Function that handles the post-processing"""
+        """Interface function that handles the post-processing of the data generator
+
+        Notes
+        -----
+        If not implemented the function will be skipped
+        """
         ...
 
     @time_and_log
@@ -88,7 +106,25 @@ class DataGenerator:
         ...
 
     def add_pre_process(self, func: Callable, **kwargs):
+        """Add a pre-processing function to the data generator
+
+        Parameters
+        ----------
+        func : Callable
+            The function to add to the pre-processing
+        kwargs : dict
+            The keyword arguments to pass to the pre-processing function
+        """
         self.pre_process = partial(func, **kwargs)
 
     def add_post_process(self, func: Callable, **kwargs):
+        """Add a post-processing function to the data generator
+
+        Parameters
+        ----------
+        func : Callable
+            The function to add to the post-processing
+        kwargs : dict
+            The keyword arguments to pass to the post-processing function
+        """
         self.post_process = partial(func, **kwargs)
