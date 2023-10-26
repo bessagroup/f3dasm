@@ -291,6 +291,23 @@ class _Data:
         """
         return self.data.nsmallest(n=nosamples, columns=column_name)
 
+    def select_columns(self, columns: Iterable[str] | str) -> _Data:
+        """Filter the data on the selected columns.
+
+        Parameters
+        ----------
+        columns : Iterable[str] | str
+            The columns to select.
+
+        Returns
+        -------
+        _Data
+            The data only with the selected columns
+        """
+        # This is necessary otherwise self.data[columns] will be a Series
+        if isinstance(columns, str):
+            columns = [columns]
+        return _Data(self.data[columns])
 #                                                        Append and remove data
 # =============================================================================
 

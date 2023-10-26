@@ -657,5 +657,39 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
             "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
 
 
+def test_get_input_data(experimentdata_expected_no_output: ExperimentData):
+    input_data = experimentdata_expected_no_output.get_input_data()
+    df, _ = input_data.to_pandas()
+    pd.testing.assert_frame_equal(df, pd_input())
+    assert experimentdata_expected_no_output.input_data == input_data.input_data
+
+
+@pytest.mark.parametrize("selection", ["x0", ["x0"], ["x0", "x2"]])
+def test_get_input_data_selection(experimentdata_expected_no_output: ExperimentData, selection: Iterable[str] | str):
+    input_data = experimentdata_expected_no_output.get_input_data(selection)
+    df, _ = input_data.to_pandas()
+    if isinstance(selection, str):
+        selection = [selection]
+    selected_pd = pd_input()[selection]
+    pd.testing.assert_frame_equal(df, selected_pd)
+
+
+def test_get_output_data(experimentdata_expected: ExperimentData):
+    output_data = experimentdata_expected.get_output_data()
+    _, df = output_data.to_pandas()
+    pd.testing.assert_frame_equal(df, pd_output())
+    assert experimentdata_expected.output_data == output_data.output_data
+
+
+@pytest.mark.parametrize("selection", ["y", ["y"]])
+def test_get_output_data_selection(experimentdata_expected: ExperimentData, selection: Iterable[str] | str):
+    output_data = experimentdata_expected.get_output_data(selection)
+    _, df = output_data.to_pandas()
+    if isinstance(selection, str):
+        selection = [selection]
+    selected_pd = pd_output()[selection]
+    pd.testing.assert_frame_equal(df, selected_pd)
+
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()
