@@ -128,7 +128,7 @@ class ExperimentData:
         else:
             index = self.index[self.current_index]
             self.current_index += 1
-            return self._get_experiment_sample(index)
+            return self.get_experiment_sample(index)
 
     def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
@@ -506,7 +506,7 @@ class ExperimentData:
     #                                                                        ExperimentSample
     # =============================================================================
 
-    def _get_experiment_sample(self, index: int) -> ExperimentSample:
+    def get_experiment_sample(self, index: int) -> ExperimentSample:
         """
         Gets the experiment_sample at the given index.
 
@@ -560,7 +560,7 @@ class ExperimentData:
         """
         job_index = self.jobs.get_open_job()
         self.jobs.mark(job_index, status=Status.IN_PROGRESS)
-        experiment_sample = self._get_experiment_sample(job_index)
+        experiment_sample = self.get_experiment_sample(job_index)
         return experiment_sample
 
     @_access_file
@@ -922,7 +922,7 @@ class ExperimentData:
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
-            last_design = self._get_experiment_sample(len(self)-1)
+            last_design = self.get_experiment_sample(len(self)-1)
 
             for repetition in range(iterations - (len(self) - n_data_before_iterate)):
                 self._add_experiments(last_design)

@@ -54,6 +54,19 @@ An KeyError will be raised if the key is not found.
     >>> experiment_sample.get('param_1')
     0.0249
 
+Manually iterating over ExperimentData
+----------------------------------------
+
+The :class:`~f3dasm.design.ExperimentData` object can be manually iterated over to get :class:`~f3dasm.design.ExperimentSample` objects for each experiment:
+
+.. code-block:: python
+
+    >>> for experiment_sample in experiment_data:
+    ...     print(experiment_sample)
+    ExperimentSample(0 : {'x0': 0.8184054141827567, 'x1': 0.937852542255321, 'x2': 0.7376563782762678} - {})
+    ExperimentSample(1 : {'x0': 0.7203461491873061, 'x1': 0.7320604457665572, 'x2': 0.2524387342272223} - {})
+    ExperimentSample(2 : {'x0': 0.35449352388104904, 'x1': 0.11413412225748525, 'x2': 0.1467895592274866} - {})
+
 Storing output parameters to the experiment sample
 --------------------------------------------------
 
