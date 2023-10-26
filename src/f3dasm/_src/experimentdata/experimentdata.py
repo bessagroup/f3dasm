@@ -145,11 +145,6 @@ class ExperimentData:
                     self.jobs == __o.jobs,
                     self.domain == __o.domain])
 
-    # def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
-    #     """The [] operator returns a single datapoint or a subset of datapoints"""
-    #     return ExperimentData(input_data=self.input_data[index], output_data=self.output_data[index],
-    #                           jobs=self.jobs[index], domain=self.domain, filename=self.filename, path=self.path)
-
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
 
