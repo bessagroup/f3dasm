@@ -305,6 +305,16 @@ class ExperimentData:
         ----------
         filename : str, optional
             filename of the files to store, without suffix
+
+        Notes
+        -----
+        The ExperimentData object is stored at the location provided by the `.path` attribute
+        that is set upon creation of the object.
+        The ExperimentData object is stored in four files. The name is used as a prefix for the four files:
+        - the input data (<name>_input.csv)
+        - the output data (<name>_output.csv)
+        - the jobs (<name>_jobs.pkl)
+        - the domain (<name>_domain.pkl)
         """
         if filename is None:
             filename = self.filename
