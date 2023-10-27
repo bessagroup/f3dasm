@@ -8,6 +8,7 @@ The Domain is a set of Parameter instances that make up the feasible search spac
 from __future__ import annotations
 
 # Standard
+import math
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -252,7 +253,14 @@ class Domain:
         >>> domain.add_int('param1', 0, 10, 2)
         >>> domain.space
         {'param1': DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
+
+        Note
+        ----
+        If the lower and upper bound are equal, then a constant parameter
+        will be added to the domain!
         """
+        if low == high:
+            self.add_constant(name, low)
         self._add(name, DiscreteParameter(low, high, step))
 
     def add_float(self, name: str, low: float, high: float, log: bool = False):
@@ -275,8 +283,16 @@ class Domain:
         >>> domain.add_float('param1', 0., 10., log=True)
         >>> domain.space
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=10., log=True)}
+
+        Note
+        ----
+        If the lower and upper bound are equal, then a constant parameter
+        will be added to the domain!
         """
-        self._add(name, ContinuousParameter(low, high, log))
+        if math.isclose(low, high):
+            self.add_constant(name, low)
+        else:
+            self._add(name, ContinuousParameter(low, high, log))
 
     def add_category(self, name: str, categories: Sequence[CategoricalType]):
         """Add a new categorical input parameter to the domain.
