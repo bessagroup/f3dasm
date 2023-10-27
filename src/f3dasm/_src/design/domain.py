@@ -8,6 +8,7 @@ The Domain is a set of Parameter instances that make up the feasible search spac
 from __future__ import annotations
 
 # Standard
+import math
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -255,7 +256,7 @@ class Domain:
 
         Note
         ----
-        If the lower and upper bound are equal, then then a constant parameter
+        If the lower and upper bound are equal, then a constant parameter
         will be added to the domain!
         """
         if low == high:
@@ -274,7 +275,7 @@ class Domain:
         high : float
             Upper bound of the input parameter.
         log : bool, optional
-            Whether to u_add(name, ConstantParameter(low))se a logarithmic scale, by default False.
+            Whether to use a logarithmic scale, by default False.
 
         Example
         -------
@@ -285,10 +286,10 @@ class Domain:
 
         Note
         ----
-        If the lower and upper bound are equal, then then a constant parameter
+        If the lower and upper bound are equal, then a constant parameter
         will be added to the domain!
         """
-        if low == high:
+        if math.isclose(low, high):
             self.add_constant(name, low)
         else:
             self._add(name, ContinuousParameter(low, high, log))
