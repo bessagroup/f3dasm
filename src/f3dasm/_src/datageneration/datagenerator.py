@@ -55,7 +55,7 @@ class DataGenerator:
         ...
 
     @time_and_log
-    def run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
+    def _run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
         """Run the data generator
 
         Parameters

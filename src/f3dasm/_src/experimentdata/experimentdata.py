@@ -119,10 +119,16 @@ class ExperimentData:
         return len(self.input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
-        return self.input_data.__iter__()
+        self.current_index = 0
+        return self
 
-    def __next__(self):
-        return self.input_data.__next__()
+    def __next__(self) -> ExperimentSample:
+        if self.current_index >= len(self):
+            raise StopIteration
+        else:
+            index = self.index[self.current_index]
+            self.current_index += 1
+            return self.get_experiment_sample(index)
 
     def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
@@ -165,6 +171,20 @@ class ExperimentData:
             return value
 
         return wrapper_func
+
+    #                                                                    Properties
+    # =============================================================================
+
+    @property
+    def index(self) -> pd.Index:
+        """Returns an iterable of the job number of the experiments
+
+        Returns
+        -------
+        pd.Index
+            The job number of all the experiments in pandas Index format
+        """
+        return self.input_data.indices
 
     #                                                      Alternative Constructors
     # =============================================================================
@@ -351,13 +371,25 @@ class ExperimentData:
     #                                                                        Export
     # =============================================================================
 
-    def store(self, filename: str = None):
+    def store(self, filename: Optional[str] = None):
         """Store the ExperimentData to disk, with checking for a lock
 
         Parameters
         ----------
         filename : str, optional
             filename of the files to store, without suffix
+
+        Notes
+        -----
+        If no filename is given, the filename of the ExperimentData object is used.
+
+        The ExperimentData object is stored at the location provided by the `.path` attribute
+        that is set upon creation of the object.
+        The ExperimentData object is stored in four files. The name is used as a prefix for the four files:
+        - the input data (<name>_input.csv)
+        - the output data (<name>_output.csv)
+        - the jobs (<name>_jobs.pkl)
+        - the domain (<name>_domain.pkl)
         """
         if filename is None:
             filename = self.filename
@@ -539,7 +571,7 @@ class ExperimentData:
 #                                                                  ExperimentSample
     # =============================================================================
 
-    def _get_experiment_sample(self, index: int) -> ExperimentSample:
+    def get_experiment_sample(self, index: int) -> ExperimentSample:
         """
         Gets the experiment_sample at the given index.
 
@@ -593,7 +625,7 @@ class ExperimentData:
         """
         job_index = self.jobs.get_open_job()
         self.jobs.mark(job_index, status=Status.IN_PROGRESS)
-        experiment_sample = self._get_experiment_sample(job_index)
+        experiment_sample = self.get_experiment_sample(job_index)
         return experiment_sample
 
     @_access_file
@@ -755,7 +787,7 @@ class ExperimentData:
                     logger.debug(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _experiment_sample = data_generator.run(experiment_sample, **kwargs)  # no *args!
+                _experiment_sample = data_generator._run(experiment_sample, **kwargs)  # no *args!
                 self._set_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -790,7 +822,7 @@ class ExperimentData:
 
         def f(options: Dict[str, Any]) -> Any:
             logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
-            return data_generator.run(**options)
+            return data_generator._run(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
@@ -828,7 +860,7 @@ class ExperimentData:
                 break
 
             try:
-                _experiment_sample = data_generator.run(experiment_sample, **kwargs)
+                _experiment_sample = data_generator._run(experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -955,7 +987,7 @@ class ExperimentData:
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
-            last_design = self._get_experiment_sample(len(self)-1)
+            last_design = self.get_experiment_sample(len(self)-1)
 
             for repetition in range(iterations - (len(self) - n_data_before_iterate)):
                 self._add_experiments(last_design)

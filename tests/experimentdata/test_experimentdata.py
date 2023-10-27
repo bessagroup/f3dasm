@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, ExperimentSample
 from f3dasm._src.experimentdata.experimentdata import DataTypes
 from f3dasm.design import (ContinuousParameter, Domain, Status, _Data,
                            _JobQueue, make_nd_continuous_domain)
@@ -545,8 +545,8 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
     assert experiment_data.jobs == experimentdata_expected_no_output.jobs
 
     assert experiment_data == experimentdata_expected_no_output
-
-
+    
+    
 @pytest.mark.parametrize("input_data", [None])
 @pytest.mark.parametrize("output_data", [None])
 @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
@@ -656,7 +656,6 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
         experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
             "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
 
-
 def test_get_input_data(experimentdata_expected_no_output: ExperimentData):
     input_data = experimentdata_expected_no_output.get_input_data()
     df, _ = input_data.to_pandas()
@@ -673,13 +672,11 @@ def test_get_input_data_selection(experimentdata_expected_no_output: ExperimentD
     selected_pd = pd_input()[selection]
     pd.testing.assert_frame_equal(df, selected_pd)
 
-
 def test_get_output_data(experimentdata_expected: ExperimentData):
     output_data = experimentdata_expected.get_output_data()
     _, df = output_data.to_pandas()
     pd.testing.assert_frame_equal(df, pd_output())
     assert experimentdata_expected.output_data == output_data.output_data
-
 
 @pytest.mark.parametrize("selection", ["y", ["y"]])
 def test_get_output_data_selection(experimentdata_expected: ExperimentData, selection: Iterable[str] | str):
@@ -690,6 +687,13 @@ def test_get_output_data_selection(experimentdata_expected: ExperimentData, sele
     selected_pd = pd_output()[selection]
     pd.testing.assert_frame_equal(df, selected_pd)
 
+def test_iter_behaviour(experimentdata_continuous: ExperimentData):
+    for i in experimentdata_continuous:
+        assert isinstance(i, ExperimentSample)
+
+    selected_experimentdata = experimentdata_continuous.select([0, 2, 4])
+    for i in selected_experimentdata:
+        assert isinstance(i, ExperimentSample)
 
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()

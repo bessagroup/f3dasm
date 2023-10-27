@@ -44,7 +44,7 @@ class _SciPyOptimizer(Optimizer):
         """
 
         def fun(x):
-            sample: ExperimentSample = data_generator.run(
+            sample: ExperimentSample = data_generator._run(
                 ExperimentSample.from_numpy(x))
             _, y = sample.to_numpy()
             return float(y)
