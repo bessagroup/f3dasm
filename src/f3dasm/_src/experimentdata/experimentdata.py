@@ -182,12 +182,12 @@ class ExperimentData:
 
     @property
     def index(self) -> pd.Index:
-        """Returns the index of the ExperimentData
+        """Returns an iterable of the job number of the experiments
 
         Returns
         -------
         pd.Index
-            The indices of the experiments
+            The job number of all the experiments in pandas Index format
         """
         return self.input_data.indices
 
@@ -503,7 +503,7 @@ class ExperimentData:
         self.output_data.reset_index()
         self.jobs.reset_index()
 
-    #                                                                        ExperimentSample
+#                                                                  ExperimentSample
     # =============================================================================
 
     def get_experiment_sample(self, index: int) -> ExperimentSample:
