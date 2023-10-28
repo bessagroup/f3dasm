@@ -104,7 +104,7 @@ class ExperimentData:
         if self.input_data.is_empty():
             self.input_data = _Data.from_domain(self.domain)
 
-        self.jobs = jobs_factory(jobs, self.input_data, job_value)
+        self.jobs = jobs_factory(jobs, self.input_data, self.output_data, job_value)
 
         # Check if the columns of input_data are in the domain
         if not self.input_data.has_columnnames(self.domain.names):
@@ -150,11 +150,6 @@ class ExperimentData:
                     self.output_data == __o.output_data,
                     self.jobs == __o.jobs,
                     self.domain == __o.domain])
-
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
-        """The [] operator returns a single datapoint or a subset of datapoints"""
-        return ExperimentData(input_data=self.input_data[index], output_data=self.output_data[index],
-                              jobs=self.jobs[index], domain=self.domain, filename=self.filename, path=self.path)
 
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
@@ -300,7 +295,7 @@ class ExperimentData:
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
 
-    #                                                                        Export
+    #                                                             Selecting subsets
     # =============================================================================
 
     def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
@@ -316,7 +311,65 @@ class ExperimentData:
         ExperimentData
             The selected ExperimentData object with only the selected indices.
         """
-        return self[indices]
+
+        return ExperimentData(input_data=self.input_data[indices], output_data=self.output_data[indices],
+                              jobs=self.jobs[indices], domain=self.domain, filename=self.filename, path=self.path)
+
+    def get_input_data(self, parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
+        """Retrieve a subset of the input data from the ExperimentData object
+
+        Parameters
+        ----------
+        parameter_names : str | Iterable[str], optional
+            The name(s) of the input parameters that you want to retrieve,
+            if None all input parameters are retrieved, by default None
+
+        Returns
+        -------
+        ExperimentData
+            The selected ExperimentData object with only the selected input data.
+
+        Notes
+        -----
+        If parameter_names is None, all input data is retrieved.
+        The returned ExperimentData object has the domain of the original ExperimentData object,
+        but only with the selected input parameters.
+        """
+        if parameter_names is None:
+            return ExperimentData(input_data=self.input_data, jobs=self.jobs,
+                                  domain=self.domain, filename=self.filename, path=self.path)
+        else:
+            return ExperimentData(input_data=self.input_data.select_columns(parameter_names), jobs=self.jobs,
+                                  domain=self.domain.select(parameter_names), filename=self.filename, path=self.path)
+
+    def get_output_data(self, parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
+        """Retrieve a subset of the output data from the ExperimentData object
+
+        Parameters
+        ----------
+        parameter_names : str | Iterable[str], optional
+            The name(s) of the output parameters that you want to retrieve,
+            if None all output parameters are retrieved, by default None
+
+        Returns
+        -------
+        ExperimentData
+            The selected ExperimentData object with only the selected output data.
+
+        Notes
+        -----
+        If parameter_names is None, all output data is retrieved.
+        The returned ExperimentData object has no domain object and no input data!
+        """
+        if parameter_names is None:
+            return ExperimentData(output_data=self.output_data, jobs=self.jobs,
+                                  filename=self.filename, path=self.path)
+        else:
+            return ExperimentData(output_data=self.output_data.select_columns(parameter_names), jobs=self.jobs,
+                                  filename=self.filename, path=self.path)
+
+    #                                                                        Export
+    # =============================================================================
 
     def store(self, filename: Optional[str] = None):
         """Store the ExperimentData to disk, with checking for a lock
@@ -394,7 +447,7 @@ class ExperimentData:
             New experimentData object with a selection of the n best samples.
         """
         df = self.output_data.n_best_samples(n_samples, self.output_data.names)
-        return self[df.index]
+        return self.select(df.index)
 
     #                                                         Append or remove data
     # =============================================================================
@@ -1018,7 +1071,8 @@ def domain_factory(domain: Domain | None, input_data: _Data) -> Domain:
         raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data, job_value: Status) -> _JobQueue:
+def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
+                 output_data: _Data, job_value: Status) -> _JobQueue:
     """Creates a _JobQueue object from particular inpute
 
     Parameters
@@ -1026,7 +1080,9 @@ def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data, job_val
     jobs : Path | str | None
         input data for the jobs
     input_data : _Data
-        _Data object to extract indices from, if necessary
+        _Data object of input data to extract indices from, if necessary
+    output_data : _Data
+        _Data object of output data to extract indices from, if necessary
     job_value : Status
         initial value of all the jobs
 
@@ -1040,5 +1096,8 @@ def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data, job_val
 
     if isinstance(jobs, (Path, str)):
         return _JobQueue.from_file(Path(jobs))
+
+    if input_data.is_empty():
+        return _JobQueue.from_data(output_data, value=job_value)
 
     return _JobQueue.from_data(input_data, value=job_value)

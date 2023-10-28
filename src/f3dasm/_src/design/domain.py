@@ -12,7 +12,7 @@ import math
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Sequence, Type
+from typing import Any, Dict, Iterable, Iterator, List, Sequence, Type
 
 # Third-party core
 import numpy as np
@@ -588,6 +588,38 @@ class Domain:
             space={name: parameter for name, parameter in self.space.items()
                    if isinstance(parameter, type)}
         )
+
+    def select(self, names: str | Iterable[str]) -> Domain:
+        """Select a subset of parameters from the domain.
+
+        Parameters
+        ----------
+
+        names : str or Iterable[str]
+            The names of the parameters to select.
+
+        Returns
+        -------
+        Domain
+            A new domain with the selected parameters.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.space = {
+        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
+        ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
+        ... }
+        >>> domain.select(['param1', 'param3'])
+        Domain({'param1': ContinuousParameter(lower_bound=0, upper_bound=1),
+                'param3': CategoricalParameter(categories=['cat1', 'cat2'])})
+        """
+
+        if isinstance(names, str):
+            names = [names]
+
+        return Domain(space={key: self.space[key] for key in names})
 
 #                                                                 Miscellaneous
 # =============================================================================
