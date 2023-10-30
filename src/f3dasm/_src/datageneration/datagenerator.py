@@ -116,7 +116,7 @@ class DataGenerator:
         Returns
         -------
         ExperimentSample
-            Processed design with the response of the data generator saved in the 
+            Processed design with the response of the data generator saved in the
             experiment_sample
         """
         # Cache the design
