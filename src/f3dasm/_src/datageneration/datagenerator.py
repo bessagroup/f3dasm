@@ -88,8 +88,10 @@ class DataGenerator:
         ...
 
     @time_and_log
-    def run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
-        """This function chains the following methods together
+    def _run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
+        """
+        Run the data generator
+        This function chains the following methods together
 
         * pre_process(); to combine the experiment_sample and the parameters
         of the data generator to an input file that can be used to run the data generator

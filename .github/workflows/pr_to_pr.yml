@@ -1,7 +1,10 @@
-name: Pull request to pr/** branches
+name: Pull request and push to pr/** branches
 
 on:
   pull_request:
+    branches:
+      - "pr/**"
+  push:
     branches:
       - "pr/**"
 
