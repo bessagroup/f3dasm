@@ -70,7 +70,7 @@ def test_data_get_inputdata_dict(sample_data: _Data):
 def test_data_set_data(sample_data: _Data):
     index = 0
     sample_data.set_data(index, 15, 'output1')
-    _column_index = sample_data.columns.index('output1')[0]
+    _column_index = sample_data.columns.iloc('output1')[0]
     assert sample_data.data.loc[index, _column_index] == 15
 
 

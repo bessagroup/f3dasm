@@ -49,7 +49,7 @@ class _Columns:
     def remove(self, name: str):
         del self.columns[name]
 
-    def index(self, name: str | List[str]) -> List[int]:
+    def iloc(self, name: str | List[str]) -> List[int]:
         if isinstance(name, str):
             name = [name]
 
@@ -62,8 +62,26 @@ class _Columns:
         self.columns[new_name] = self.columns.pop(old_name)
 
 
+# class _Indices:
+#     def __init__(self, indices: Optional[pd.Index] = None):
+#         if indices is None:
+#             indices = pd.Index([])
+
+#         self.indices: pd.Index = indices
+
+#     def iloc(self, index: int | Iterable[int]) -> List[int]:
+#         if isinstance(index, int):
+#             return [self.indices.get_loc(index)]
+
+#         _indices = []
+#         for i in index:
+#             _indices.append(self.indices.get_loc(i))
+#         return _indices
+
+
 class _Data:
-    def __init__(self, data: Optional[pd.DataFrame] = None, columns: Optional[_Columns] = None):
+    def __init__(self, data: Optional[pd.DataFrame] = None,
+                 columns: Optional[_Columns] = None):
         if data is None:
             data = pd.DataFrame()
 
@@ -243,13 +261,13 @@ class _Data:
         ----
         If the domain is None, the data will be reset to an empty dataframe.
         """
+
         if domain is None:
             self.data = pd.DataFrame()
             self.columns = _Columns()
-            return
-
-        self.data = self.from_domain(domain).data
-        self.columns = self.from_domain(domain).columns
+        else:
+            self.data = self.from_domain(domain).data
+            self.columns = self.from_domain(domain).columns
 
 #                                                                        Export
 # =============================================================================
@@ -278,7 +296,7 @@ class _Data:
             xarray DataArray with the data.
         """
         return xr.DataArray(self.data, dims=['iterations', label], coords={
-            'iterations': range(len(self)), label: self.names})
+            'iterations': self.indices, label: self.names})
 
     def to_dataframe(self) -> pd.DataFrame:
         """Export the _Data object to a pandas DataFrame.
@@ -340,7 +358,7 @@ class _Data:
         pd.DataFrame
             The n best samples.
         """
-        return self.data.nsmallest(n=nosamples, columns=self.columns.index(column_name))
+        return self.data.nsmallest(n=nosamples, columns=self.columns.iloc(column_name))
 
     def select_columns(self, columns: Iterable[str] | str) -> _Data:
         """Filter the data on the selected columns.
@@ -359,7 +377,7 @@ class _Data:
         if isinstance(columns, str):
             columns = [columns]
         _selected_columns = _Columns({column: self.columns.columns[column] for column in columns})
-        return _Data(self.data[self.columns.index(columns)], columns=_selected_columns)
+        return _Data(self.data[self.columns.iloc(columns)], columns=_selected_columns)
 #                                                        Append and remove data
 # =============================================================================
 
@@ -424,7 +442,7 @@ class _Data:
             # TODO this is_disk value needs to be provided by set_data call
             self.columns.add(column, is_disk=False)
 
-        _column_index = self.columns.index(column)[0]
+        _column_index = self.columns.iloc(column)[0]
         try:
             self.data.at[index, _column_index] = value
         except ValueError:
