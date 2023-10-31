@@ -59,7 +59,8 @@ class PyBenchFunction(Function):
         """Create a Scale augmentor"""
         if self.scale_bounds is None:
             return
-        s = Scale(scale_bounds=self.scale_bounds, input_domain=self.input_domain)
+        s = Scale(scale_bounds=self.scale_bounds,
+                  input_domain=self.input_domain)
         self.augmentor.add_input_augmentor(s)
 
     def _configure_noise(self):

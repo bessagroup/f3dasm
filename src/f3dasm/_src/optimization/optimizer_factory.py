@@ -64,7 +64,8 @@ def optimizer_factory(optimizer: str, domain: Domain, hyperparameters: Optional[
     if hyperparameters is None:
         hyperparameters = {}
 
-    filtered_name = optimizer.lower().replace(' ', '').replace('-', '').replace('_', '')
+    filtered_name = optimizer.lower().replace(
+        ' ', '').replace('-', '').replace('_', '')
 
     if filtered_name in OPTIMIZER_MAPPING:
         return OPTIMIZER_MAPPING[filtered_name](domain=domain, **hyperparameters)

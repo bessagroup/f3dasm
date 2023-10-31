@@ -118,7 +118,8 @@ def load_object(path: Path, experimentdata_directory: Path, store_method: Type[_
         return matched_store_type(None, _path).load()
     else:
         # Handle the case when no matching suffix is found
-        raise ValueError(f"No matching store type for item type: '{item_suffix}'")
+        raise ValueError(
+            f"No matching store type for item type: '{item_suffix}'")
 
 
 def save_object(object: Any, path: Path, experimentdata_directory: Path,
@@ -371,7 +372,8 @@ class ExperimentSample:
         The default store method is saving the object as a pickle file (.pkl).
         """
         if to_disk:
-            self._store_to_disk(object=object, name=name, store_method=store_method)
+            self._store_to_disk(object=object, name=name,
+                                store_method=store_method)
         else:
             self._store_to_experimentdata(object=object, name=name)
 
@@ -379,7 +381,8 @@ class ExperimentSample:
         file_path = Path(name) / str(self.job_number)
 
         # Check if the file_dir exists
-        (self._experimentdata_directory / Path(name)).mkdir(parents=True, exist_ok=True)
+        (self._experimentdata_directory / Path(name)
+         ).mkdir(parents=True, exist_ok=True)
 
         # Save the object to disk
         suffix = save_object(object=object, path=file_path,
@@ -387,7 +390,8 @@ class ExperimentSample:
                              store_method=store_method)
 
         # Store the path to the object in the output_data
-        self._dict_output[f"{PATH_PREFIX}{name}"] = str(file_path.with_suffix(suffix))
+        self._dict_output[f"{PATH_PREFIX}{name}"] = str(
+            file_path.with_suffix(suffix))
 
         logger.info(f"Stored {name} to {file_path.with_suffix(suffix)}")
 

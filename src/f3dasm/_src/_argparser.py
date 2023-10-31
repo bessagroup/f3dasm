@@ -24,7 +24,8 @@ class ArgumentParser(argparse.ArgumentParser):
 parser = ArgumentParser()
 
 # Option with ++ prefix
-parser.add_argument('--jobid', type=int, help='The PBS job ID for HPC', default=None)
+parser.add_argument('--jobid', type=int,
+                    help='The PBS job ID for HPC', default=None)
 
 # Parse the command-line arguments
 try:

@@ -194,7 +194,8 @@ class CategoricalParameter(Parameter):
             raise ValueError("Categories contain duplicates!")
 
 
-PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
+PARAMETERS = [CategoricalParameter, ConstantParameter,
+              ContinuousParameter, DiscreteParameter]
 
 
 def create_inputvariable(type: str, lower_bound: Optional[int | float] = None,
@@ -213,4 +214,5 @@ def create_inputvariable(type: str, lower_bound: Optional[int | float] = None,
         return ConstantParameter(value=values)
 
     else:
-        raise ValueError(f"Unknown type argument: {type}. Choose from 'float', 'int', 'category' or 'constant'.")
+        raise ValueError(
+            f"Unknown type argument: {type}. Choose from 'float', 'int', 'category' or 'constant'.")

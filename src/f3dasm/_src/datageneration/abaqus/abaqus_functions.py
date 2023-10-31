@@ -55,7 +55,8 @@ def pre_process(experiment_sample: ExperimentSample, folder_path: str,
     """
 
     sim_info = kwargs
-    working_dir = Path("datageneration") / Path(f"{name}_{experiment_sample.job_number}")
+    working_dir = Path("datageneration") / \
+        Path(f"{name}_{experiment_sample.job_number}")
 
     # Updating simulation info with experiment sample data
     sim_info.update(experiment_sample.to_dict())
@@ -110,7 +111,8 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
     with the name: results.pkl. This file will be handled by the pipeline.
     """
 
-    working_dir = Path("datageneration") / Path(f"{name}_{experiment_sample.job_number}")
+    working_dir = Path("datageneration") / \
+        Path(f"{name}_{experiment_sample.job_number}")
 
     with open(f"{working_dir / 'post.py'}", "w") as f:
         f.write("import os\n")
@@ -120,7 +122,8 @@ def post_process(experiment_sample: ExperimentSample, folder_path: str,
         f.write(
             f"from {python_file} import {function_name}\n"
         )
-        f.write(f"odb = session.openOdb(name=r'{working_dir / str(experiment_sample.job_number)}.odb')\n")
+        f.write(
+            f"odb = session.openOdb(name=r'{working_dir / str(experiment_sample.job_number)}.odb')\n")
         f.write(f"os.chdir(r'{working_dir}')\n")
         f.write(f"{function_name}(odb)\n")
 

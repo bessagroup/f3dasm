@@ -60,7 +60,8 @@ class OptimizationResult:
             total optimization time
         """
         self.data = data
-        self.optimizer = optimizer_factory(optimizer=optimizer, domain=self.data[0].domain)
+        self.optimizer = optimizer_factory(
+            optimizer=optimizer, domain=self.data[0].domain)
         self.data_generator = data_generator
         self.kwargs = kwargs,
         self.number_of_samples = number_of_samples
@@ -96,7 +97,8 @@ class OptimizationResult:
 
         # Global minimum function
         _, g = self.func.get_global_minimum(d=self.func.dimensionality)
-        xarr.attrs['function_global_minimum']: float = float(np.array(g if not isinstance(g, list) else g[0])[0, 0])
+        xarr.attrs['function_global_minimum']: float = float(
+            np.array(g if not isinstance(g, list) else g[0])[0, 0])
         return xarr
 
 
@@ -145,12 +147,14 @@ def run_optimization(
         hyperparameters = {}
 
     # Set function seed
-    optimizer = optimizer_factory(optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
+    optimizer = optimizer_factory(
+        optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
 
     optimizer.set_seed()
 
     # Sample
-    data = ExperimentData.from_sampling(sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
+    data = ExperimentData.from_sampling(
+        sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
 
     data.evaluate(data_generator, mode='sequential', kwargs=kwargs)
     data.optimize(optimizer=optimizer, data_generator=data_generator,

@@ -170,7 +170,8 @@ class Domain:
         for name, type in df.dtypes.items():
             if type == 'float64':
                 if float(df[name].min()) == float(df[name].max()):
-                    space[name] = ConstantParameter(value=float(df[name].min()))
+                    space[name] = ConstantParameter(
+                        value=float(df[name].min()))
                     continue
 
                 space[name] = ContinuousParameter(lower_bound=float(
@@ -180,7 +181,8 @@ class Domain:
                     space[name] = ConstantParameter(value=int(df[name].min()))
                     continue
 
-                space[name] = DiscreteParameter(lower_bound=int(df[name].min()), upper_bound=int(df[name].max()))
+                space[name] = DiscreteParameter(lower_bound=int(
+                    df[name].min()), upper_bound=int(df[name].max()))
             else:
                 space[name] = CategoricalParameter(df[name].unique().tolist())
 
@@ -229,7 +231,8 @@ class Domain:
     def _add(self, name: str, parameter: Parameter):
         # Check if parameter is already in the domain
         if name in self.space:
-            raise KeyError(f"Parameter {name} already exists in the domain! Choose a different name.")
+            raise KeyError(
+                f"Parameter {name} already exists in the domain! Choose a different name.")
 
         self.space[name] = parameter
 
@@ -662,6 +665,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensiona
     bounds = np.array(bounds)
 
     for dim in range(dimensionality):
-        space[f"x{dim}"] = ContinuousParameter(lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
+        space[f"x{dim}"] = ContinuousParameter(
+            lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)

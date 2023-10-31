@@ -78,7 +78,8 @@ class _JobQueue:
         """
         if isinstance(other, int):
             # make _JobQueue from the jobnumber
-            other = _JobQueue(pd.Series([Status.OPEN], index=[0], dtype='string'))
+            other = _JobQueue(
+                pd.Series([Status.OPEN], index=[0], dtype='string'))
 
         try:
             last_index = self.jobs.index[-1]
@@ -225,7 +226,8 @@ class _JobQueue:
             self.jobs = pd.Series([status] * number_of_jobs, dtype='string')
             return
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 

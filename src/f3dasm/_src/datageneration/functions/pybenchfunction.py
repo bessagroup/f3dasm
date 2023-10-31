@@ -205,7 +205,8 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
 
         if d != 2:  # WARNING ! Is only is available for d=2
-            return (None, np.array([[-4.5901016]]))  # This is the global minimum for d=2
+            # This is the global minimum for d=2
+            return (None, np.array([[-4.5901016]]))
 
         X = np.array([-1.51, -0.755])
         return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
@@ -321,7 +322,8 @@ class Beale(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) ** 2
+        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x *
+                                        y**2) ** 2 + (2.625 - x + x * y**3) ** 2
         return res
 
 
@@ -689,7 +691,8 @@ class Colville(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self):
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        self.input_domain = np.array(
+            [[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
     def get_param(self):
         return {}
@@ -826,7 +829,8 @@ class DeckkersAarts(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 1e5 * x**2 + y**2 - (x**2 + y**2) ** 2 + 1e-5 * (x**2 + y**2) ** 4
+        res = 1e5 * x**2 + y**2 - (x**2 + y**2) ** 2 + \
+            1e-5 * (x**2 + y**2) ** 4
         return res
 
 
@@ -1077,7 +1081,8 @@ class GoldsteinPrice(PyBenchFunction):
 
     def evaluate(self, X):
         x, y = X
-        res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
+        res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 *
+                                      x**2 - 14 * y + 6 * x * y + 3 * y**2)
         res *= 30 + (2 * x - 3 * y) ** 2 * (
             18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
         return res
@@ -1543,7 +1548,9 @@ class Michalewicz(PyBenchFunction):
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
-            Y = np.array([[4.49903414e-04*(d**2) - 2.15704771e-01*d - 4.85292809e+00]])  # Calculated with polyfit
+            # Calculated with polyfit
+            Y = np.array(
+                [[4.49903414e-04*(d**2) - 2.15704771e-01*d - 4.85292809e+00]])
             return (None, Y)  # Substituted minimum for d=2
         X = np.array([2.20, 1.57])
         Y = np.array([[-1.8013]])
@@ -1700,7 +1707,8 @@ class Quartic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        Y = np.array([[0.0]])  # Global minimum value without the randomized term
+        # Global minimum value without the randomized term
+        Y = np.array([[0.0]])
         return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
@@ -2251,9 +2259,11 @@ class Shekel(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self, m=None, C=None, beta=None):
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        self.input_domain = np.array(
+            [[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
         self.m = m if m is not None else 10
-        self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
+        self.beta = beta if beta is not None else 1 / \
+            10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
         self.C = (
             C
             if C is not None
@@ -2282,7 +2292,8 @@ class Shekel(PyBenchFunction):
 
     def evaluate(self, X):
         x1, x2, x3, x4 = X
-        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
+        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1]
+                      for i in range(self.m)])
         return res
 
 

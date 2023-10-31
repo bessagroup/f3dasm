@@ -318,7 +318,8 @@ class _Data:
             self.data = data
             return
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + len(data) + 1, step=1)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + len(data) + 1, step=1)
 
         # set the indices of the data to new_indices
         data.index = new_indices
@@ -331,8 +332,10 @@ class _Data:
         else:
             last_index = self.data.index[-1]
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
-        empty_data = pd.DataFrame(np.nan, index=new_indices, columns=self.data.columns)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
+        empty_data = pd.DataFrame(
+            np.nan, index=new_indices, columns=self.data.columns)
         self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
     def add_column(self, name: str):

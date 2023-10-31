@@ -78,7 +78,8 @@ class ExperimentData:
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
-            raise ValueError('If you provide a numpy array as input_data, you have to provide the domain!')
+            raise ValueError(
+                'If you provide a numpy array as input_data, you have to provide the domain!')
 
         self.filename = filename
 
@@ -104,7 +105,8 @@ class ExperimentData:
         if self.input_data.is_empty():
             self.input_data = _Data.from_domain(self.domain)
 
-        self.jobs = jobs_factory(jobs, self.input_data, self.output_data, job_value)
+        self.jobs = jobs_factory(
+            jobs, self.input_data, self.output_data, job_value)
 
         # Check if the columns of input_data are in the domain
         if not self.input_data.has_columnnames(self.domain.names):
@@ -135,10 +137,12 @@ class ExperimentData:
         # Check if the domains are the same
 
         if not isinstance(other, (ExperimentData, ExperimentSample)):
-            raise TypeError(f"Can only add ExperimentData or ExperimentSample objects, not {type(other)}")
+            raise TypeError(
+                f"Can only add ExperimentData or ExperimentSample objects, not {type(other)}")
 
         if isinstance(other, ExperimentData) and self.domain != other.domain:
-            raise ValueError("Cannot add ExperimentData objects with different domains")
+            raise ValueError(
+                "Cannot add ExperimentData objects with different domains")
 
         return ExperimentData(input_data=self.input_data + other.input_data,
                               output_data=self.output_data + other.output_data,
@@ -467,7 +471,8 @@ class ExperimentData:
         jobs : Optional[Path  |  str], optional
             jobs off the added object, by default None
         """
-        self._add_experiments(ExperimentData(domain=domain, input_data=input_data, output_data=output_data, jobs=jobs))
+        self._add_experiments(ExperimentData(
+            domain=domain, input_data=input_data, output_data=output_data, jobs=jobs))
 
     def _add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
         """
@@ -535,7 +540,8 @@ class ExperimentData:
         if label not in self.output_data.names:
             self.add_output_parameter(label)
 
-        filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(output)
+        filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(
+            output)
 
         # Set the status of the filled indices to FINISHED
         self.jobs.mark(filled_indices, Status.FINISHED)
@@ -599,7 +605,8 @@ class ExperimentData:
             The ExperimentSample to set.
         """
         for column, value in experiment_sample.output_data.items():
-            self.output_data.set_data(index=experiment_sample.job_number, value=value, column=column)
+            self.output_data.set_data(
+                index=experiment_sample.job_number, value=value, column=column)
 
         self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
@@ -744,7 +751,8 @@ class ExperimentData:
             kwargs = {}
 
         if isinstance(data_generator, str):
-            data_generator = datagenerator_factory(data_generator, self.domain, kwargs)
+            data_generator = datagenerator_factory(
+                data_generator, self.domain, kwargs)
 
         if mode.lower() == "sequential":
             return self._run_sequential(data_generator, kwargs)
@@ -773,7 +781,8 @@ class ExperimentData:
         while True:
             try:
                 experiment_sample = self._access_open_job_data()
-                logger.debug(f"Accessed experiment_sample {experiment_sample._jobnumber}")
+                logger.debug(
+                    f"Accessed experiment_sample {experiment_sample._jobnumber}")
             except NoOpenJobsError:
                 logger.debug("No Open Jobs left")
                 break
@@ -782,12 +791,14 @@ class ExperimentData:
 
                 # If kwargs is empty dict
                 if not kwargs:
-                    logger.debug(f"Running experiment_sample {experiment_sample._jobnumber}")
+                    logger.debug(
+                        f"Running experiment_sample {experiment_sample._jobnumber}")
                 else:
                     logger.debug(
                         f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
 
-                _experiment_sample = data_generator._run(experiment_sample, **kwargs)  # no *args!
+                _experiment_sample = data_generator._run(
+                    experiment_sample, **kwargs)  # no *args!
                 self._set_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -821,12 +832,14 @@ class ExperimentData:
                 break
 
         def f(options: Dict[str, Any]) -> Any:
-            logger.debug(f"Running experiment_sample {options['experiment_sample'].job_number}")
+            logger.debug(
+                f"Running experiment_sample {options['experiment_sample'].job_number}")
             return data_generator._run(**options)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
-            _experiment_samples: List[ExperimentSample] = pool.starmap(f, options)
+            _experiment_samples: List[ExperimentSample] = pool.starmap(
+                f, options)
 
         for _experiment_sample in _experiment_samples:
             self._set_experiment_sample(_experiment_sample)
@@ -860,7 +873,8 @@ class ExperimentData:
                 break
 
             try:
-                _experiment_sample = data_generator._run(experiment_sample, **kwargs)
+                _experiment_sample = data_generator._run(
+                    experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
             except Exception as e:
                 error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
@@ -900,10 +914,12 @@ class ExperimentData:
             Raised when invalid optimizer type is specified
         """
         if isinstance(data_generator, str):
-            data_generator: DataGenerator = datagenerator_factory(data_generator, self.domain, kwargs)
+            data_generator: DataGenerator = datagenerator_factory(
+                data_generator, self.domain, kwargs)
 
         if isinstance(optimizer, str):
-            optimizer: Optimizer = optimizer_factory(optimizer, self.domain, hyperparameters)
+            optimizer: Optimizer = optimizer_factory(
+                optimizer, self.domain, hyperparameters)
 
         if optimizer.type == 'scipy':
             self._iterate_scipy(optimizer, data_generator, iterations, kwargs)
@@ -935,7 +951,8 @@ class ExperimentData:
 
             # If new_samples is a tuple of input_data and output_data
             if isinstance(new_samples, tuple):
-                self.add(domain=self.domain, input_data=new_samples[0], output_data=new_samples[1])
+                self.add(domain=self.domain,
+                         input_data=new_samples[0], output_data=new_samples[1])
 
             else:
                 self._add_experiments(new_samples)
@@ -983,7 +1000,8 @@ class ExperimentData:
                 nosamples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
-                self._add_experiments(ExperimentSample.from_numpy(repeated_last_element))
+                self._add_experiments(
+                    ExperimentSample.from_numpy(repeated_last_element))
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
@@ -1029,7 +1047,8 @@ class ExperimentData:
         if isinstance(sampler, str):
             sampler = sampler_factory(sampler, self.domain)
 
-        sample_data: DataTypes = sampler(domain=self.domain, n_samples=n_samples, seed=seed)
+        sample_data: DataTypes = sampler(
+            domain=self.domain, n_samples=n_samples, seed=seed)
         self.add(input_data=sample_data, domain=self.domain)
 
 
@@ -1068,7 +1087,8 @@ def domain_factory(domain: Domain | None, input_data: _Data) -> Domain:
         return Domain.from_data(input_data)
 
     else:
-        raise TypeError(f"Domain must be of type Domain or None, not {type(domain)}")
+        raise TypeError(
+            f"Domain must be of type Domain or None, not {type(domain)}")
 
 
 def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,

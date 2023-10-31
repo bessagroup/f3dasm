@@ -58,7 +58,8 @@ class AbaqusSimulator(DataGenerator):
         - Create working directory: datageneration/<name>_<job_number>
         """
         # Create working directory
-        self.working_dir = Path("datageneration") / Path(f"{self.name}_{self.experiment_sample.job_number}")
+        self.working_dir = Path(
+            "datageneration") / Path(f"{self.name}_{self.experiment_sample.job_number}")
         self.working_dir.mkdir(parents=True, exist_ok=True)
 
     def execute(self) -> None:
@@ -69,7 +70,8 @@ class AbaqusSimulator(DataGenerator):
         This will execute the simulation and create an .odb file with name: <job_number>.odb
         """
         filename = self.working_dir / "execute.py"
-        logger.info(f"Executing ABAQUS simulator '{self.name}' for sample: {self.experiment_sample.job_number}")
+        logger.info(
+            f"Executing ABAQUS simulator '{self.name}' for sample: {self.experiment_sample.job_number}")
 
         with open(f"{filename}", "w") as f:
             f.write("from abaqus import mdb\n")
@@ -113,20 +115,24 @@ class AbaqusSimulator(DataGenerator):
 
         # Check if path exists
         if not Path(self.working_dir / "results.pkl").exists():
-            raise FileNotFoundError(f"{Path(self.working_dir) / 'results.pkl'}")
+            raise FileNotFoundError(
+                f"{Path(self.working_dir) / 'results.pkl'}")
 
         # Load the results
         with open(Path(self.working_dir / "results.pkl"), "rb") as fd:
-            results: Dict[str, Any] = pickle.load(fd, fix_imports=True, encoding="latin1")
+            results: Dict[str, Any] = pickle.load(
+                fd, fix_imports=True, encoding="latin1")
 
         # for every key in self.results, store the value in the ExperimentSample object
         for key, value in results.items():
             # Check if value is of one of these types: int, float, str
             if isinstance(value, (int, float, str)):
-                self.experiment_sample.store(object=value, name=key, to_disk=False)
+                self.experiment_sample.store(
+                    object=value, name=key, to_disk=False)
 
             else:
-                self.experiment_sample.store(object=value, name=key, to_disk=True)
+                self.experiment_sample.store(
+                    object=value, name=key, to_disk=True)
 
         # Remove the results.pkl file
         if self.delete_temp_files:

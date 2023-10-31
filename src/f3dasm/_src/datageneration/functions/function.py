@@ -261,7 +261,8 @@ class Function(DataGenerator):
         xv, yv, Y = self._create_mesh(px=px, domain=domain)
 
         # Shift Y values to avoid log(0)
-        Y_shifted = Y - np.min(Y) + 1e-6  # Add a small constant to avoid log(0)
+        # Add a small constant to avoid log(0)
+        Y_shifted = Y - np.min(Y) + 1e-6
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
         if orientation == "2D":

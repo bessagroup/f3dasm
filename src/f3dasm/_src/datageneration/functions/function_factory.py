@@ -37,7 +37,8 @@ def datagenerator_factory(data_generator: str, domain: Domain | int,
     if kwargs is None:
         kwargs = {}
 
-    filtered_name = data_generator.lower().replace(' ', '').replace('-', '').replace('_', '').replace('.', '')
+    filtered_name = data_generator.lower().replace(
+        ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
     if filtered_name in FUNCTION_MAPPING:
         return FUNCTION_MAPPING[filtered_name](dimensionality=dim, **kwargs)
