@@ -74,12 +74,14 @@ class ExperimentData:
         filename : str, optional
             The filename of the experiment, by default 'experimentdata'
         path : Path, optional
-            The path to the experimentdata file, by default the current working directory
+            The path to the experimentdata file, by default 
+            the current working directory
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
             raise ValueError(
-                'If you provide a numpy array as input_data, you have to provide the domain!')
+                'If you provide a numpy array as input_data, \
+                you have to provide the domain!')
 
         self.filename = filename
 
@@ -112,7 +114,8 @@ class ExperimentData:
         if not self.input_data.has_columnnames(self.domain.names):
             self.input_data.set_columnnames(self.domain.names)
 
-        # For backwards compatibility; if the output_data has only one column, rename it to 'y'
+        # For backwards compatibility; if the output_data has
+        #  only one column, rename it to 'y'
         if self.output_data.names == [0]:
             self.output_data.set_columnnames(['y'])
 
@@ -132,13 +135,15 @@ class ExperimentData:
             self.current_index += 1
             return self.get_experiment_sample(index)
 
-    def __add__(self, other: ExperimentData | ExperimentSample) -> ExperimentData:
+    def __add__(self,
+                other: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
         # Check if the domains are the same
 
         if not isinstance(other, (ExperimentData, ExperimentSample)):
             raise TypeError(
-                f"Can only add ExperimentData or ExperimentSample objects, not {type(other)}")
+                f"Can only add ExperimentData or "
+                f"ExperimentSample objects, not {type(other)}")
 
         if isinstance(other, ExperimentData) and self.domain != other.domain:
             raise ValueError(
@@ -156,7 +161,8 @@ class ExperimentData:
                     self.domain == __o.domain])
 
     def _repr_html_(self) -> str:
-        return self.input_data.combine_data_to_multiindex(self.output_data, self.jobs.to_dataframe())._repr_html_()
+        return self.input_data.combine_data_to_multiindex(
+            self.output_data, self.jobs.to_dataframe())._repr_html_()
 
     def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
@@ -218,8 +224,10 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path)
 
     @classmethod
-    def from_sampling(cls, sampler: Sampler | str, domain: Domain, n_samples: int = 1,
-                      seed: Optional[int] = None, filename: str = 'experimentdata') -> ExperimentData:
+    def from_sampling(cls, sampler: Sampler | str, domain: Domain,
+                      n_samples: int = 1,
+                      seed: Optional[int] = None,
+                      filename: str = 'experimentdata') -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -265,7 +273,8 @@ class ExperimentData:
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
             domain = Domain.from_yaml(config.domain)
-            return cls.from_sampling(sampler=config.experimentdata.from_sampling.sampler, domain=domain,
+            return cls.from_sampling(sampler=config.experimentdata.from_sampling.sampler,
+                                     domain=domain,
                                      n_samples=config.experimentdata.from_sampling.n_samples,
                                      seed=config.experimentdata.from_sampling.seed,
                                      filename=config.experimentdata.name)
@@ -274,8 +283,10 @@ class ExperimentData:
             return cls(**config)
 
     @classmethod
-    def _from_file_attempt(cls: Type[ExperimentData], filename: Path) -> ExperimentData:
-        """Attempt to create an ExperimentData object from .csv and .json files.
+    def _from_file_attempt(cls: Type[ExperimentData],
+                           filename: Path) -> ExperimentData:
+        """Attempt to create an ExperimentData object
+        from .csv and .json files.
 
         Parameters
         ----------
@@ -293,8 +304,10 @@ class ExperimentData:
             If the file cannot be found.
         """
         try:
-            return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"), input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
-                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"), jobs=Path(f"{filename}{JOBS_SUFFIX}"),
+            return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"),
+                       input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
+                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"),
+                       jobs=Path(f"{filename}{JOBS_SUFFIX}"),
                        filename=filename.name, path=filename.parent)
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
@@ -316,10 +329,14 @@ class ExperimentData:
             The selected ExperimentData object with only the selected indices.
         """
 
-        return ExperimentData(input_data=self.input_data[indices], output_data=self.output_data[indices],
-                              jobs=self.jobs[indices], domain=self.domain, filename=self.filename, path=self.path)
+        return ExperimentData(input_data=self.input_data[indices],
+                              output_data=self.output_data[indices],
+                              jobs=self.jobs[indices],
+                              domain=self.domain,
+                              filename=self.filename, path=self.path)
 
-    def get_input_data(self, parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
+    def get_input_data(self,
+                       parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
         """Retrieve a subset of the input data from the ExperimentData object
 
         Parameters
@@ -340,11 +357,17 @@ class ExperimentData:
         but only with the selected input parameters.
         """
         if parameter_names is None:
-            return ExperimentData(input_data=self.input_data, jobs=self.jobs,
-                                  domain=self.domain, filename=self.filename, path=self.path)
+            return ExperimentData(input_data=self.input_data,
+                                  jobs=self.jobs,
+                                  domain=self.domain,
+                                  filename=self.filename,
+                                  path=self.path)
         else:
-            return ExperimentData(input_data=self.input_data.select_columns(parameter_names), jobs=self.jobs,
-                                  domain=self.domain.select(parameter_names), filename=self.filename, path=self.path)
+            return ExperimentData(input_data=self.input_data.select_columns(parameter_names),
+                                  jobs=self.jobs,
+                                  domain=self.domain.select(parameter_names),
+                                  filename=self.filename,
+                                  path=self.path)
 
     def get_output_data(self, parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
         """Retrieve a subset of the output data from the ExperimentData object
@@ -385,11 +408,13 @@ class ExperimentData:
 
         Notes
         -----
-        If no filename is given, the filename of the ExperimentData object is used.
+        If no filename is given, the filename of the
+        ExperimentData object is used.
 
-        The ExperimentData object is stored at the location provided by the `.path` attribute
-        that is set upon creation of the object.
-        The ExperimentData object is stored in four files. The name is used as a prefix for the four files:
+        The ExperimentData object is stored at the location provided by
+        the `.path` attribute that is set upon creation of the object.
+        The ExperimentData object is stored in four files.
+        The name is used as a prefix for the four files:
         - the input data (<name>_input.csv)
         - the output data (<name>_output.csv)
         - the jobs (<name>_jobs.pkl)
@@ -410,7 +435,8 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two numpy arrays, the first one for input columns, and the second for output columns.
+            A tuple containing two numpy arrays, 
+            the first one for input columns, and the second for output columns.
         """
         return self.input_data.to_numpy(), self.output_data.to_numpy()
 
@@ -421,7 +447,8 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two pandas DataFrames, the first one for input columns, and the second for output
+            A tuple containing two pandas DataFrames, 
+            the first one for input columns, and the second for output
         """
         return self.input_data.to_dataframe(), self.output_data.to_dataframe()
 
@@ -438,7 +465,8 @@ class ExperimentData:
                            'output': self.output_data.to_xarray('output_dim')})
 
     def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        """Get the n best samples from the output data. We consider a minimization problem
+        """Get the n best samples from the output data.
+         We consider a minimization problem
 
         Parameters
         ----------
@@ -456,8 +484,10 @@ class ExperimentData:
     #                                                         Append or remove data
     # =============================================================================
 
-    def add(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
-            output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None) -> None:
+    def add(self, domain: Optional[Domain] = None,
+            input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None,
+            jobs: Optional[Path | str] = None) -> None:
         """Add data to the ExperimentData object.
 
         Parameters
@@ -472,7 +502,9 @@ class ExperimentData:
             jobs off the added object, by default None
         """
         self._add_experiments(ExperimentData(
-            domain=domain, input_data=input_data, output_data=output_data, jobs=jobs))
+            domain=domain, input_data=input_data,
+            output_data=output_data,
+            jobs=jobs))
 
     def _add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
         """
@@ -495,7 +527,8 @@ class ExperimentData:
         if not (self.input_data.indices.equals(self.output_data.indices)
                 and self.input_data.indices.equals(self.jobs.indices)):
             raise ValueError(f"Indices of the internal objects are not equal."
-                             f"input_data {self.input_data.indices}, output_data {self.output_data.indices},"
+                             f"input_data {self.input_data.indices}, "
+                             f"output_data {self.output_data.indices},"
                              f"jobs: {self.jobs.indices}")
 
         # Apparently you need to cast the types again
@@ -591,11 +624,15 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample at the given index.
         """
-        return ExperimentSample(dict_input=self.input_data.get_data_dict(index),
-                                dict_output=self.output_data.get_data_dict(index), jobnumber=index,
-                                experimentdata_directory=self.path)
+        return ExperimentSample(dict_input=self.input_data.get_data_dict(
+            index),
+            dict_output=self.output_data.get_data_dict(
+            index),
+            jobnumber=index,
+            experimentdata_directory=self.path)
 
-    def _set_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
+    def _set_experiment_sample(self,
+                               experiment_sample: ExperimentSample) -> None:
         """
         Sets the ExperimentSample at the given index.
 
@@ -611,7 +648,8 @@ class ExperimentData:
         self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
     @_access_file
-    def _write_experiment_sample(self, experiment_sample: ExperimentSample) -> None:
+    def _write_experiment_sample(self,
+                                 experiment_sample: ExperimentSample) -> None:
         """
         Sets the ExperimentSample at the given index.
 
@@ -664,7 +702,8 @@ class ExperimentData:
 
     @_access_file
     def _write_error(self, index: int):
-        """Mark the experiment_sample at the given index as error and write to ExperimentData file.
+        """Mark the experiment_sample at the given index as 
+        error and write to ExperimentData file.
 
         Parameters
         ----------
@@ -702,7 +741,8 @@ class ExperimentData:
         # Check if the status is in Status
         if not any(status.lower() == s.value for s in Status):
             raise ValueError(f"Invalid status {status} given. "
-                             f"\nChoose from values: {', '.join([s.value for s in Status])}")
+                             f"\nChoose from values: "
+                             f"{', '.join([s.value for s in Status])}")
 
         self.jobs.mark(indices, status)
 
@@ -712,12 +752,14 @@ class ExperimentData:
         Parameters
         ----------
         status : str
-            status to mark the jobs with: choose between: 'open', 'in progress', 'finished' or 'error'
+            status to mark the jobs with: 
+            choose between: 'open', 'in progress', 'finished' or 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress', 'finished' or 'error'
+            If the given status is not any of
+             'open', 'in progress', 'finished' or 'error'
         """
         self.mark(self.jobs.indices, status)
 
@@ -740,7 +782,8 @@ class ExperimentData:
         mode, optional
             operational mode, by default 'sequential'
         kwargs, optional
-            Any keyword arguments that need to be supplied to the function, by default None
+            Any keyword arguments that need to
+            be supplied to the function, by default None
 
         Raises
         ------
@@ -792,10 +835,12 @@ class ExperimentData:
                 # If kwargs is empty dict
                 if not kwargs:
                     logger.debug(
-                        f"Running experiment_sample {experiment_sample._jobnumber}")
+                        f"Running experiment_sample "
+                        f"{experiment_sample._jobnumber}")
                 else:
                     logger.debug(
-                        f"Running experiment_sample {experiment_sample._jobnumber} with kwargs {kwargs}")
+                        f"Running experiment_sample "
+                        f"{experiment_sample._jobnumber} with kwargs {kwargs}")
 
                 _experiment_sample = data_generator._run(
                     experiment_sample, **kwargs)  # no *args!

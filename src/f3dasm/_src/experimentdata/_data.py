@@ -144,7 +144,8 @@ class _Data:
         )
 
         # Set the categories tot the categorical parameters
-        for name, categorical_input in domain.get_categorical_parameters().items():
+        for name, categorical_input in \
+                domain.get_categorical_parameters().items():
             df[name] = pd.Categorical(
                 df[name], categories=categorical_input.categories)
 
@@ -242,7 +243,8 @@ class _Data:
         """
         return self.data
 
-    def combine_data_to_multiindex(self, other: _Data, jobs_df: pd.DataFrame) -> pd.DataFrame:
+    def combine_data_to_multiindex(self, other: _Data,
+                                   jobs_df: pd.DataFrame) -> pd.DataFrame:
         """Combine the data to a multiindex dataframe.
 
         Parameters
@@ -259,10 +261,11 @@ class _Data:
 
         Note
         ----
-        This function is mainly used to show the combined ExperimentData object in a
-        Jupyter Notebook
+        This function is mainly used to show the combined ExperimentData 
+        object in a Jupyter Notebook
         """
-        return pd.concat([jobs_df, self.data, other.data], axis=1, keys=['jobs', 'input', 'output'])
+        return pd.concat([jobs_df, self.data, other.data],
+                         axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -274,7 +277,8 @@ class _Data:
         """
         self.data.to_csv(filename.with_suffix('.csv'))
 
-    def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
+    def n_best_samples(self, nosamples: int,
+                       column_name: List[str] | str) -> pd.DataFrame:
         """Returns the n best samples. We consider to be lower values better.
 
         Parameters
@@ -391,7 +395,8 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     Parameters
     ----------
     dict : Dict[str, Any]
-        The dictionary to convert. Note that the dictionary should only have scalar values!
+        The dictionary to convert. Note that the dictionary 
+        should only have scalar values!
 
     Returns
     -------

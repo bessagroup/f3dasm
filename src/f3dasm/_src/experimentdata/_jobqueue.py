@@ -50,8 +50,8 @@ class NoOpenJobsError(Exception):
 class _JobQueue:
     def __init__(self, jobs: Optional[pd.Series] = None):
         """
-        A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
-        'finished', or 'error'.
+        A class that represents a dictionary of jobs that
+        can be marked as 'open', 'in progress', finished', or 'error'.
 
         Parameters
         ----------
@@ -117,11 +117,12 @@ class _JobQueue:
     def indices(self) -> pd.Index:
         """The indices of the jobs."""
         return self.jobs.index
-    #                                                      Alternative Constructors
-    # =============================================================================
+    #                                                  Alternative Constructors
+    # =========================================================================
 
     @classmethod
-    def from_data(cls: Type[_JobQueue], data: _Data, value: str = Status.OPEN) -> _JobQueue:
+    def from_data(cls: Type[_JobQueue], data: _Data,
+                  value: str = Status.OPEN) -> _JobQueue:
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -129,7 +130,8 @@ class _JobQueue:
         data : Data
             Data object containing the data.
         value : str
-            The value to assign to the jobs. Can be 'open', 'in progress', 'finished', or 'error'.
+            The value to assign to the jobs. Can be 'open',
+            'in progress', 'finished', or 'error'.
 
         Returns
         -------
@@ -165,8 +167,8 @@ class _JobQueue:
         """Resets the job queue."""
         self.jobs = pd.Series(dtype='string')
 
-    #                                                                        Export
-    # =============================================================================
+    #                                                                      Export
+    # ===========================================================================
 
     def store(self, filename: Path) -> None:
         """Stores the jobs in a pickle file.
