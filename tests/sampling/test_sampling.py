@@ -35,15 +35,14 @@ def test_correct_sampling_ran(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 
@@ -69,15 +68,14 @@ def test_correct_sampling_sobol(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 
@@ -102,15 +100,14 @@ def test_correct_sampling_lhs(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 

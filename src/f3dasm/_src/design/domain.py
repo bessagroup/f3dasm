@@ -35,8 +35,16 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class _Columns:
+    names: List[str]
+
+
 class _Data:
     data: pd.DataFrame
+    columns: _Columns
+
+    def to_dataframe() -> pd.DataFrame:
+        ...
 
 
 @dataclass
@@ -165,7 +173,6 @@ class Domain:
         Domain
             Domain object
         """
-        # TODO : If lower_bound and upper_bound are similar, then it is a constant parameter
         space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':
@@ -188,7 +195,7 @@ class Domain:
 
     @classmethod
     def from_data(cls: Type[Domain], data: _Data) -> Domain:
-        return cls.from_dataframe(data.data)
+        return cls.from_dataframe(data.to_dataframe())
 
 #                                                                        Export
 # =============================================================================
