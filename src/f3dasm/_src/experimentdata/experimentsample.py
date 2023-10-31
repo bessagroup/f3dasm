@@ -349,27 +349,26 @@ class ExperimentSample:
         """
         return {**self.input_data, **self.output_data_loaded, 'job_number': self.job_number}
 
-    def store(self, object: Any, name: str, to_disk: bool = False,
+    def store(self, name: str, object: Any, to_disk: bool = False,
               store_method: Optional[Type[_Store]] = None) -> None:
         """Store an object to disk.
 
         Parameters
         ----------
 
-        object : Any
-            The object to store.
         name : str
             The name of the file to store the object in.
+        object : Any
+            The object to store.
         to_disk : bool, optional
             Whether to store the object to disk, by default False
         store_method : Store, optional
             The method to use to store the object, by default None
 
-        Raises
-        ------
-
-        TypeError
-            If the object type is not supported and no store_method is provided.
+        Notes
+        -----
+        If to_disk is True and no store_method is provided, the default store method will be used.
+        The default store method is saving the object as a pickle file (.pkl).
         """
         if to_disk:
             self._store_to_disk(object=object, name=name, store_method=store_method)

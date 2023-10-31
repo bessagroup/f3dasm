@@ -99,7 +99,7 @@ class Function(DataGenerator):
         experiment_sample["y"] = self(x).ravel().astype(np.float32)
         return experiment_sample
 
-    def run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
+    def _run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
         return self.execute(experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):
