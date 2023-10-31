@@ -61,24 +61,6 @@ class _Columns:
     def replace_key(self, old_name: str, new_name: str):
         self.columns[new_name] = self.columns.pop(old_name)
 
-
-# class _Indices:
-#     def __init__(self, indices: Optional[pd.Index] = None):
-#         if indices is None:
-#             indices = pd.Index([])
-
-#         self.indices: pd.Index = indices
-
-#     def iloc(self, index: int | Iterable[int]) -> List[int]:
-#         if isinstance(index, int):
-#             return [self.indices.get_loc(index)]
-
-#         _indices = []
-#         for i in index:
-#             _indices.append(self.indices.get_loc(i))
-#         return _indices
-
-
 class _Data:
     def __init__(self, data: Optional[pd.DataFrame] = None,
                  columns: Optional[_Columns] = None):
