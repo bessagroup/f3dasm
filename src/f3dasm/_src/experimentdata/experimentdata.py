@@ -553,7 +553,9 @@ class ExperimentData:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        _dtypes = {index: parameter._type for index, (_, parameter) in enumerate(self.domain.space.items())}
+        _dtypes = {index: parameter._type
+                   for index, (_, parameter) in enumerate(
+                       self.domain.space.items())}
         self.input_data.data = self.input_data.data.astype(_dtypes)
 
     def add_input_parameter(self, name: str, parameter: Parameter) -> None:

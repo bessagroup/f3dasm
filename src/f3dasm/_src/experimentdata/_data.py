@@ -61,6 +61,7 @@ class _Columns:
     def replace_key(self, old_name: str, new_name: str):
         self.columns[new_name] = self.columns.pop(old_name)
 
+
 class _Data:
     def __init__(self, data: Optional[pd.DataFrame] = None,
                  columns: Optional[_Columns] = None):
@@ -71,7 +72,8 @@ class _Data:
             columns = _Columns({col: False for col in data.columns})
 
         self.columns: _Columns = columns
-        self.data = data.rename(columns={name: i for i, name in enumerate(data.columns)})
+        self.data = data.rename(
+            columns={name: i for i, name in enumerate(data.columns)})
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -125,12 +127,14 @@ class _Data:
         try:
             last_index = self.data.index[-1]
         except IndexError:  # Empty DataFrame
-            return _Data(data=other.data.copy(), columns=other.columns)  # Make a copy of other.data
+            # Make a copy of other.data
+            return _Data(data=other.data.copy(), columns=other.columns)
 
         # Make a copy of other.data and modify its index
         other_data_copy = other.data.copy()
         other_data_copy.index = other_data_copy.index + last_index + 1
-        return _Data(pd.concat([self.data, other_data_copy]), columns=self.columns)
+        return _Data(pd.concat(
+            [self.data, other_data_copy]), columns=self.columns)
 
     def __eq__(self, __o: _Data) -> bool:
         return self.data.equals(__o.data)
@@ -180,12 +184,14 @@ class _Data:
         -------
             _description_
         """
-        _dtypes = {index: parameter._type for index, (_, parameter) in enumerate(domain.space.items())}
+        _dtypes = {index: parameter._type for index,
+                   (_, parameter) in enumerate(domain.space.items())}
 
         df = pd.DataFrame(columns=range(len(domain))).astype(_dtypes)
 
         # Set the categories tot the categorical parameters
-        for index, (name, categorical_input) in enumerate(domain.get_categorical_parameters().items()):
+        for index, (name, categorical_input) in enumerate(
+                domain.get_categorical_parameters().items()):
             df[index] = pd.Categorical(
                 df[index], categories=categorical_input.categories)
 
@@ -204,7 +210,8 @@ class _Data:
         file = Path(filename).with_suffix('.csv')
         df = pd.read_csv(file, header=0, index_col=0)
         _columns = {name: False for name in df.columns.to_list()}
-        df.columns = range(df.columns.size)  # Reset the columns to be consistent
+        # Reset the columns to be consistent
+        df.columns = range(df.columns.size)
         return cls(df, columns=_Columns(_columns))
 
     @classmethod
@@ -314,7 +321,8 @@ class _Data:
          object in a Jupyter Notebook
         """
         return pd.concat([jobs_df, self.to_dataframe(),
-                          other.to_dataframe()], axis=1, keys=['jobs', 'input', 'output'])
+                          other.to_dataframe()],
+                         axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -342,7 +350,8 @@ class _Data:
         pd.DataFrame
             The n best samples.
         """
-        return self.data.nsmallest(n=nosamples, columns=self.columns.iloc(column_name))
+        return self.data.nsmallest(
+            n=nosamples, columns=self.columns.iloc(column_name))
 
     def select_columns(self, columns: Iterable[str] | str) -> _Data:
         """Filter the data on the selected columns.
@@ -360,8 +369,10 @@ class _Data:
         # This is necessary otherwise self.data[columns] will be a Series
         if isinstance(columns, str):
             columns = [columns]
-        _selected_columns = _Columns({column: self.columns.columns[column] for column in columns})
-        return _Data(self.data[self.columns.iloc(columns)], columns=_selected_columns)
+        _selected_columns = _Columns(
+            {column: self.columns.columns[column] for column in columns})
+        return _Data(
+            self.data[self.columns.iloc(columns)], columns=_selected_columns)
 #                                                        Append and remove data
 # =============================================================================
 
