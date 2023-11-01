@@ -19,8 +19,10 @@ __status__ = "Alpha"
 
 
 def remove_files(
-    directory: str, file_types: list = [".log", ".lck", ".SMABulk", ".rec", ".SMAFocus",
-                                        ".exception", ".simlog", ".023", ".exception"],
+    directory: str,
+    file_types: list = [".log", ".lck", ".SMABulk",
+                        ".rec", ".SMAFocus",
+                        ".exception", ".simlog", ".023", ".exception"],
 ) -> None:
     """Remove files of specified types in a directory.
 

@@ -42,8 +42,9 @@ def sampler_factory(sampler: str, domain: Domain) -> Sampler:
         return SobolSequence(domain)
 
     else:
-        raise KeyError(f'Sampler {sampler} not found!'
-                       f"Available built-in samplers are: 'random', 'latin' and 'sobol'")
+        raise KeyError(f"Sampler {sampler} not found!"
+                       f"Available built-in samplers are: 'random',"
+                       f"'latin' and 'sobol'")
 
 
 #                                                                    Base Class
@@ -51,7 +52,8 @@ def sampler_factory(sampler: str, domain: Domain) -> Sampler:
 
 
 class Sampler:
-    def __init__(self, domain: Domain, seed: Optional[int] = None, number_of_samples: Optional[int] = None):
+    def __init__(self, domain: Domain, seed: Optional[int] = None,
+                 number_of_samples: Optional[int] = None):
         """Interface for sampling method
 
         Parameters
@@ -70,7 +72,9 @@ class Sampler:
             np.random.seed(seed)
 
     @classmethod
-    def from_yaml(cls, domain_config: DictConfig, sampler_config: DictConfig) -> Sampler:
+    def from_yaml(
+            cls, domain_config: DictConfig,
+            sampler_config: DictConfig) -> Sampler:
         """Create a sampler from a yaml configuration"""
 
         args = {**sampler_config, 'domain': None}
@@ -136,7 +140,8 @@ class Sampler:
 
         # Merge samples into array
         samples = np.hstack(
-            (samples_continuous, samples_discrete, samples_categorical, samples_constant))
+            (samples_continuous, samples_discrete,
+             samples_categorical, samples_constant))
 
         # TODO #60 : Fix this ordering issue
         # Get the column names in this particular order
@@ -234,7 +239,8 @@ class LatinHypercube(Sampler):
         problem = {
             "num_vars": len(continuous),
             "names": continuous.names,
-            "bounds": [[s.lower_bound, s.upper_bound] for s in continuous.values()],
+            "bounds": [[s.lower_bound, s.upper_bound]
+                       for s in continuous.values()],
         }
 
         samples = latin.sample(problem, N=numsamples, seed=self.seed)

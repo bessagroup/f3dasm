@@ -1,5 +1,6 @@
 """
-A ExperimentSample object contains a single realization of the design-of-experiment in ExperimentData.
+A ExperimentSample object contains a single realization of
+ the design-of-experiment in ExperimentData.
 """
 
 #                                                                       Modules
@@ -97,7 +98,8 @@ STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
 }
 
 
-def load_object(path: Path, experimentdata_directory: Path, store_method: Type[_Store] = PickleStore) -> Any:
+def load_object(path: Path, experimentdata_directory: Path,
+                store_method: Type[_Store] = PickleStore) -> Any:
 
     _path = experimentdata_directory / path
 
@@ -110,20 +112,24 @@ def load_object(path: Path, experimentdata_directory: Path, store_method: Type[_
     # Extract the suffix from the item's path
     item_suffix = _path.suffix
 
-    # Use a generator expression to find the first matching store type, or None if no match is found
+    # Use a generator expression to find the first matching store type,
+    #  or None if no match is found
     matched_store_type: _Store = next(
-        (store_type for store_type in STORE_TYPE_MAPPING.values() if store_type.suffix == item_suffix), PickleStore)
+        (store_type for store_type in STORE_TYPE_MAPPING.values() if
+         store_type.suffix == item_suffix), PickleStore)
 
     if matched_store_type:
         return matched_store_type(None, _path).load()
     else:
         # Handle the case when no matching suffix is found
-        raise ValueError(f"No matching store type for item type: '{item_suffix}'")
+        raise ValueError(
+            f"No matching store type for item type: '{item_suffix}'")
 
 
 def save_object(object: Any, path: Path, experimentdata_directory: Path,
                 store_method: Optional[Type[_Store]] = None) -> str:
-    """Function to save the object to path, with the appropriate storing method.
+    """Function to save the object to path,
+     with the appropriate storing method.
 
     Parameters
     ----------
@@ -142,7 +148,8 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
     Raises
     ------
     TypeError
-        Raises if the object type is not supported, and you haven't provided a custom store method.
+        Raises if the object type is not supported,
+         and you haven't provided a custom store method.
     """
     _path = experimentdata_directory / path
 
@@ -170,7 +177,8 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
 
 class ExperimentSample:
     def __init__(self, dict_input: Dict[str, Any], dict_output: Dict[str, Any],
-                 jobnumber: int, experimentdata_directory: Optional[Path] = None):
+                 jobnumber: int,
+                 experimentdata_directory: Optional[Path] = None):
         """Single realization of a design of experiments.
 
         Parameters
@@ -193,7 +201,8 @@ class ExperimentSample:
 
     @classmethod
     def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
-                   output_value: Optional[float] = None, jobnumber: int = 0) -> ExperimentSample:
+                   output_value: Optional[float] = None,
+                   jobnumber: int = 0) -> ExperimentSample:
         """Create a ExperimentSample object from a numpy array.
 
         Parameters
@@ -217,9 +226,11 @@ class ExperimentSample:
         else:
             dict_output = {"y": output_value}
 
-        return cls(dict_input=dict_input, dict_output=dict_output, jobnumber=jobnumber)
+        return cls(dict_input=dict_input, dict_output=dict_output,
+                   jobnumber=jobnumber)
 
-    def get(self, item: str, load_method: Optional[Type[_Store]] = None) -> Any:
+    def get(self, item: str,
+            load_method: Optional[Type[_Store]] = None) -> Any:
         """Retrieve a sample parameter by its name.
 
         Parameters
@@ -245,7 +256,8 @@ class ExperimentSample:
                 return item
 
             # Load the object from the reference
-            return load_object(Path(value), self._experimentdata_directory, load_method)
+            return load_object(Path(value),
+                               self._experimentdata_directory, load_method)
         else:
             # Return the literal value
             return value
@@ -273,7 +285,8 @@ class ExperimentSample:
         self._dict_output[key] = value
 
     def __repr__(self) -> str:
-        return f"ExperimentSample({self.job_number} : {self.input_data} - {self.output_data})"
+        return f"ExperimentSample({self.job_number} : \
+             {self.input_data} - {self.output_data})"
 
     @property
     def input_data(self) -> Dict[str, Any]:
@@ -337,7 +350,8 @@ class ExperimentSample:
         Tuple[np.ndarray, np.ndarray]
             A tuple of numpy arrays containing the input and output data.
         """
-        return np.array(list(self._dict_input.values())), np.array(list(self._dict_output.values()))
+        return np.array(list(self._dict_input.values())), np.array(
+            list(self._dict_output.values()))
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the design to a dictionary.
@@ -347,7 +361,8 @@ class ExperimentSample:
         Dict[str, Any]
             A dictionary containing the input and output data.
         """
-        return {**self.input_data, **self.output_data_loaded, 'job_number': self.job_number}
+        return {**self.input_data, **self.output_data_loaded,
+                'job_number': self.job_number}
 
     def store(self, name: str, object: Any, to_disk: bool = False,
               store_method: Optional[Type[_Store]] = None) -> None:
@@ -367,27 +382,33 @@ class ExperimentSample:
 
         Notes
         -----
-        If to_disk is True and no store_method is provided, the default store method will be used.
+        If to_disk is True and no store_method is provided, the default store
+         method will be used.
         The default store method is saving the object as a pickle file (.pkl).
         """
         if to_disk:
-            self._store_to_disk(object=object, name=name, store_method=store_method)
+            self._store_to_disk(object=object, name=name,
+                                store_method=store_method)
         else:
             self._store_to_experimentdata(object=object, name=name)
 
-    def _store_to_disk(self, object: Any, name: str, store_method: Optional[Type[_Store]] = None) -> None:
+    def _store_to_disk(self, object: Any, name: str,
+                       store_method: Optional[Type[_Store]] = None) -> None:
         file_path = Path(name) / str(self.job_number)
 
         # Check if the file_dir exists
-        (self._experimentdata_directory / Path(name)).mkdir(parents=True, exist_ok=True)
+        (self._experimentdata_directory / Path(name)
+         ).mkdir(parents=True, exist_ok=True)
 
         # Save the object to disk
-        suffix = save_object(object=object, path=file_path,
-                             experimentdata_directory=self._experimentdata_directory,
-                             store_method=store_method)
+        suffix = save_object(
+            object=object, path=file_path,
+            experimentdata_directory=self._experimentdata_directory,
+            store_method=store_method)
 
         # Store the path to the object in the output_data
-        self._dict_output[f"{PATH_PREFIX}{name}"] = str(file_path.with_suffix(suffix))
+        self._dict_output[f"{PATH_PREFIX}{name}"] = str(
+            file_path.with_suffix(suffix))
 
         logger.info(f"Stored {name} to {file_path.with_suffix(suffix)}")
 

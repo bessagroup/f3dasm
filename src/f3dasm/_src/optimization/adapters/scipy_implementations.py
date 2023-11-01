@@ -29,8 +29,9 @@ class _SciPyOptimizer(Optimizer):
     def update_step(self):
         """Update step function"""
         raise ValueError(
-            'Scipy optimizers don\'t have an update steps. Multiple iterations \
-                 are directly called througout scipy.minimize.')
+            'Scipy optimizers don\'t have an update steps. \
+                 Multiple iterations are directly called \
+                    througout scipy.minimize.')
 
     def run_algorithm(self, iterations: int, data_generator: DataGenerator):
         """Run the algorithm for a number of iterations

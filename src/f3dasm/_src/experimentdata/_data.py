@@ -61,6 +61,7 @@ class _Columns:
     def replace_key(self, old_name: str, new_name: str):
         self.columns[new_name] = self.columns.pop(old_name)
 
+
 class _Data:
     def __init__(self, data: Optional[pd.DataFrame] = None,
                  columns: Optional[_Columns] = None):
@@ -71,7 +72,8 @@ class _Data:
             columns = _Columns({col: False for col in data.columns})
 
         self.columns: _Columns = columns
-        self.data = data.rename(columns={name: i for i, name in enumerate(data.columns)})
+        self.data = data.rename(
+            columns={name: i for i, name in enumerate(data.columns)})
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -125,12 +127,14 @@ class _Data:
         try:
             last_index = self.data.index[-1]
         except IndexError:  # Empty DataFrame
-            return _Data(data=other.data.copy(), columns=other.columns)  # Make a copy of other.data
+            # Make a copy of other.data
+            return _Data(data=other.data.copy(), columns=other.columns)
 
         # Make a copy of other.data and modify its index
         other_data_copy = other.data.copy()
         other_data_copy.index = other_data_copy.index + last_index + 1
-        return _Data(pd.concat([self.data, other_data_copy]), columns=self.columns)
+        return _Data(pd.concat(
+            [self.data, other_data_copy]), columns=self.columns)
 
     def __eq__(self, __o: _Data) -> bool:
         return self.data.equals(__o.data)
@@ -180,12 +184,14 @@ class _Data:
         -------
             _description_
         """
-        _dtypes = {index: parameter._type for index, (_, parameter) in enumerate(domain.space.items())}
+        _dtypes = {index: parameter._type for index,
+                   (_, parameter) in enumerate(domain.space.items())}
 
         df = pd.DataFrame(columns=range(len(domain))).astype(_dtypes)
 
         # Set the categories tot the categorical parameters
-        for index, (name, categorical_input) in enumerate(domain.get_categorical_parameters().items()):
+        for index, (name, categorical_input) in enumerate(
+                domain.get_categorical_parameters().items()):
             df[index] = pd.Categorical(
                 df[index], categories=categorical_input.categories)
 
@@ -204,7 +210,8 @@ class _Data:
         file = Path(filename).with_suffix('.csv')
         df = pd.read_csv(file, header=0, index_col=0)
         _columns = {name: False for name in df.columns.to_list()}
-        df.columns = range(df.columns.size)  # Reset the columns to be consistent
+        # Reset the columns to be consistent
+        df.columns = range(df.columns.size)
         return cls(df, columns=_Columns(_columns))
 
     @classmethod
@@ -292,7 +299,8 @@ class _Data:
         df.columns = self.names
         return df
 
-    def combine_data_to_multiindex(self, other: _Data, jobs_df: pd.DataFrame) -> pd.DataFrame:
+    def combine_data_to_multiindex(self, other: _Data,
+                                   jobs_df: pd.DataFrame) -> pd.DataFrame:
         """Combine the data to a multiindex dataframe.
 
         Parameters
@@ -309,11 +317,12 @@ class _Data:
 
         Note
         ----
-        This function is mainly used to show the combined ExperimentData object in a
-        Jupyter Notebook
+        This function is mainly used to show the combined ExperimentData
+         object in a Jupyter Notebook
         """
         return pd.concat([jobs_df, self.to_dataframe(),
-                          other.to_dataframe()], axis=1, keys=['jobs', 'input', 'output'])
+                          other.to_dataframe()],
+                         axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -325,7 +334,8 @@ class _Data:
         """
         self.to_dataframe().to_csv(filename.with_suffix('.csv'))
 
-    def n_best_samples(self, nosamples: int, column_name: List[str] | str) -> pd.DataFrame:
+    def n_best_samples(self, nosamples: int,
+                       column_name: List[str] | str) -> pd.DataFrame:
         """Returns the n best samples. We consider to be lower values better.
 
         Parameters
@@ -340,7 +350,8 @@ class _Data:
         pd.DataFrame
             The n best samples.
         """
-        return self.data.nsmallest(n=nosamples, columns=self.columns.iloc(column_name))
+        return self.data.nsmallest(
+            n=nosamples, columns=self.columns.iloc(column_name))
 
     def select_columns(self, columns: Iterable[str] | str) -> _Data:
         """Filter the data on the selected columns.
@@ -358,8 +369,10 @@ class _Data:
         # This is necessary otherwise self.data[columns] will be a Series
         if isinstance(columns, str):
             columns = [columns]
-        _selected_columns = _Columns({column: self.columns.columns[column] for column in columns})
-        return _Data(self.data[self.columns.iloc(columns)], columns=_selected_columns)
+        _selected_columns = _Columns(
+            {column: self.columns.columns[column] for column in columns})
+        return _Data(
+            self.data[self.columns.iloc(columns)], columns=_selected_columns)
 #                                                        Append and remove data
 # =============================================================================
 
@@ -370,7 +383,8 @@ class _Data:
             self.data = data
             return
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + len(data) + 1, step=1)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + len(data) + 1, step=1)
 
         # set the indices of the data to new_indices
         data.index = new_indices
@@ -383,8 +397,10 @@ class _Data:
         else:
             last_index = self.data.index[-1]
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
-        empty_data = pd.DataFrame(np.nan, index=new_indices, columns=self.data.columns)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
+        empty_data = pd.DataFrame(
+            np.nan, index=new_indices, columns=self.data.columns)
         self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
     def add_column(self, name: str):
@@ -453,7 +469,8 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     Parameters
     ----------
     dict : Dict[str, Any]
-        The dictionary to convert. Note that the dictionary should only have scalar values!
+        The dictionary to convert. Note that the dictionary
+         should only have scalar values!
 
     Returns
     -------

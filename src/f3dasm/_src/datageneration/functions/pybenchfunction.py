@@ -1,6 +1,8 @@
 """
 Created by Axel Thevenot (2020)
-Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
+Github repository:
+ https://github.com/AxelThevenot/Python_Benchmark_Test_
+Optimization_Function_Single_Objective
 """
 #                                                                       Modules
 # =============================================================================
@@ -52,7 +54,8 @@ class Thevenot(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
@@ -92,7 +95,9 @@ class Ackley(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (
+            self._retrieve_original_input(X), self(
+                self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = -self.a * np.exp(-self.b * np.sqrt(np.mean(X**2)))
@@ -128,7 +133,8 @@ class AckleyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -205,10 +211,12 @@ class AckleyN4(PyBenchFunction):
     def get_global_minimum(self, d):
 
         if d != 2:  # WARNING ! Is only is available for d=2
-            return (None, np.array([[-4.5901016]]))  # This is the global minimum for d=2
+            # This is the global minimum for d=2
+            return (None, np.array([[-4.5901016]]))
 
         X = np.array([-1.51, -0.755])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
@@ -281,7 +289,8 @@ class Bartels(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -317,11 +326,14 @@ class Beale(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([3, 0.5])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
-        res = (1.5 - x + x * y) ** 2 + (2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) ** 2
+        res = (
+            1.5 - x + x * y) ** 2 + (
+                2.25 - x + x * y**2) ** 2 + (2.625 - x + x * y**3) ** 2
         return res
 
 
@@ -353,7 +365,8 @@ class Bird(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[4.70104, 3.15294], [-1.58214, -3.13024]])
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -389,7 +402,8 @@ class BohachevskyN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -425,7 +439,8 @@ class BohachevskyN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -461,7 +476,8 @@ class BohachevskyN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -497,7 +513,8 @@ class Booth(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 3])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -553,7 +570,8 @@ class Branin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[-np.pi, 12.275], [np.pi, 2.275], [9.42478, 2.475]])
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -589,7 +607,8 @@ class Brent(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, -10])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -625,7 +644,8 @@ class Brown(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         X, Xp1 = X[:-1], X[1]
@@ -661,7 +681,8 @@ class BukinN6(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-10, 1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -689,20 +710,23 @@ class Colville(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self):
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        self.input_domain = np.array(
+            [[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
 
     def get_param(self):
         return {}
 
     def get_global_minimum(self, d):
         X = np.array([1, 1, 1, 1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x1, x2, x3, x4 = X
         res = 100 * (x1**2 - x2) ** 2 + (x1 - 1) ** 2 + (x3 - 1) ** 2
-        res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * ((x2 - 1)
-                                                     ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
+        res = res + 90 * (x3**2 - x4) ** 2 + 10.1 * (
+            (x2 - 1)
+            ** 2 + (x4 - 1) ** 2) + 19.8 * (x2 - 1) * (x4 - 1)
         return res
 
 
@@ -740,7 +764,8 @@ class CrossInTray(PyBenchFunction):
                 [+1.349406685353340, -1.349406608602084],
             ]
         )
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -784,7 +809,8 @@ class DeJongN5(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.a[0]
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -822,11 +848,13 @@ class DeckkersAarts(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[0, -15], [0, 15]])
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
-        res = 1e5 * x**2 + y**2 - (x**2 + y**2) ** 2 + 1e-5 * (x**2 + y**2) ** 4
+        res = 1e5 * x**2 + y**2 - (x**2 + y**2) ** 2 + \
+            1e-5 * (x**2 + y**2) ** 4
         return res
 
 
@@ -859,7 +887,8 @@ class DixonPrice(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([2 ** -(((2 ** (i)) - 2) / 2**i)
                      for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -895,7 +924,8 @@ class DropWave(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -931,7 +961,8 @@ class Easom(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([np.pi, np.pi])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -967,7 +998,8 @@ class EggCrate(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1002,7 +1034,8 @@ class EggHolder(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([512, 404.2319])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1039,7 +1072,8 @@ class Exponential(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = -np.exp(-0.5 * np.sum(X**2))
@@ -1073,11 +1107,14 @@ class GoldsteinPrice(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, -1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
-        res = 1 + (x + y + 1) ** 2 * (19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
+        res = 1 + (
+            x + y + 1) ** 2 * (
+            19 - 14 * x + 3 * x**2 - 14 * y + 6 * x * y + 3 * y**2)
         res *= 30 + (2 * x - 3 * y) ** 2 * (
             18 - 32 * x + 12 * x**2 + 48 * y - 36 * x * y + 27 * y**2)
         return res
@@ -1111,7 +1148,8 @@ class Griewank(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1150,7 +1188,8 @@ class HappyCat(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-1 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X), self(
+            self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1194,7 +1233,8 @@ class Himmelblau(PyBenchFunction):
                 [3.584458, -1.848126],
             ]
         )
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1236,7 +1276,8 @@ class HolderTable(PyBenchFunction):
                 [8.05502, -9.66459],
             ]
         )
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1273,7 +1314,8 @@ class Keane(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([[1.393249070031784, 0], [0, 1.393249070031784]])
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         x, y = X
@@ -1313,7 +1355,8 @@ class Langermann(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        # Global minimum is not known but the following is definitely smaller than the global minimum
+        # Global minimum is not known but the following
+        # is definitely smaller than the global minimum
         Y = np.array([[-4.5]])
         return (self._retrieve_original_input(X), Y)
 
@@ -1356,7 +1399,8 @@ class Leon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1392,7 +1436,8 @@ class Levy(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         z = 1 + (X - 1) / 4
@@ -1432,7 +1477,8 @@ class LevyN13(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1, 1])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1471,7 +1517,8 @@ class Matyas(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1506,7 +1553,8 @@ class McCormick(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-0.547, -1.547])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1543,11 +1591,14 @@ class Michalewicz(PyBenchFunction):
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
-            Y = np.array([[4.49903414e-04*(d**2) - 2.15704771e-01*d - 4.85292809e+00]])  # Calculated with polyfit
+            # Calculated with polyfit
+            Y = np.array(
+                [[4.49903414e-04*(d**2) - 2.15704771e-01*d - 4.85292809e+00]])
             return (None, Y)  # Substituted minimum for d=2
         X = np.array([2.20, 1.57])
         Y = np.array([[-1.8013]])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1584,7 +1635,8 @@ class Periodic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = 1 + np.sum(np.sin(X) ** 2) - 0.1 * np.exp(-np.sum(X**2))
@@ -1619,7 +1671,8 @@ class Powell(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1660,7 +1713,8 @@ class Qing(PyBenchFunction):
             neg = X.copy()
             neg[:, i] *= -1
             X = np.vstack((X, neg))
-        return (self._retrieve_original_input(X), [self(x) for x in self._retrieve_original_input(X)])
+        return (self._retrieve_original_input(X),
+                [self(x) for x in self._retrieve_original_input(X)])
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1700,7 +1754,8 @@ class Quartic(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        Y = np.array([[0.0]])  # Global minimum value without the randomized term
+        # Global minimum value without the randomized term
+        Y = np.array([[0.0]])
         return (self._retrieve_original_input(X), Y)
 
     def evaluate(self, X):
@@ -1737,7 +1792,8 @@ class Rastrigin(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1777,7 +1833,8 @@ class Ridge(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         X[0] = self.input_domain[0, 0]
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = X[0] + self.beta * np.sum(X[1:] ** 2) ** self.alpha
@@ -1814,11 +1871,13 @@ class Rosenbrock(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(
-            np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (self.a - X[:-1]) ** 2))
+            np.abs(self.b * (X[1:] - X[:-1] ** 2) ** 2 + (
+                self.a - X[:-1]) ** 2))
         return res
 
 
@@ -1852,7 +1911,8 @@ class RotatedHyperEllipsoid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -1890,7 +1950,8 @@ class Salomon(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(X**2)))
@@ -1925,7 +1986,8 @@ class SchaffelN1(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1961,7 +2023,8 @@ class SchaffelN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -1997,7 +2060,8 @@ class SchaffelN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2034,7 +2098,8 @@ class SchaffelN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2074,7 +2139,8 @@ class Schwefel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([420.9687 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2112,7 +2178,8 @@ class Schwefel2_20(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.abs(X))
@@ -2149,7 +2216,8 @@ class Schwefel2_21(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.max(np.abs(X))
@@ -2187,7 +2255,8 @@ class Schwefel2_22(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.abs(X)) + np.prod(np.abs(X))
@@ -2224,7 +2293,8 @@ class Schwefel2_23(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(X**10)
@@ -2251,9 +2321,11 @@ class Shekel(PyBenchFunction):
         return d == 4
 
     def _set_parameters(self, m=None, C=None, beta=None):
-        self.input_domain = np.array([[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
+        self.input_domain = np.array(
+            [[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
         self.m = m if m is not None else 10
-        self.beta = beta if beta is not None else 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
+        self.beta = beta if beta is not None else 1 / \
+            10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
         self.C = (
             C
             if C is not None
@@ -2278,11 +2350,13 @@ class Shekel(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = self.C[0]
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x1, x2, x3, x4 = X
-        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1] for i in range(self.m)])
+        res = -np.sum([[np.sum((X - self.C[i]) ** 2 + self.beta[i]) ** -1]
+                      for i in range(self.m)])
         return res
 
 
@@ -2315,7 +2389,9 @@ class Shubert(PyBenchFunction):
         return {}
 
     def get_global_minimum(self, d):
-        # Global minimum from https://documentation.sas.com/doc/en/orcdc/14.2/orlsoug/orlsoug_ga_gettingstarted09.htm"
+        # Global minimum from
+        # https://documentation.sas.com/doc/en/orcdc/14.2/
+        # orlsoug/orlsoug_ga_gettingstarted09.htm"
         # X = np.array([-7.708309818, -0.800371886])
         # Has 18 global minima around -186.7309
         return (None, np.array([[-186.7309]]))
@@ -2359,7 +2435,8 @@ class ShubertN3(PyBenchFunction):
     def get_global_minimum(self, d):
         X = np.array([-7.4 for _ in range(d)])
 
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.sum([j * np.sin((j + 1) * X + j)
@@ -2397,7 +2474,8 @@ class ShubertN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([4.85 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.sum([j * np.cos((j + 1) * X + j)
@@ -2435,7 +2513,8 @@ class Sphere(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(X**2)
@@ -2472,7 +2551,8 @@ class StyblinskiTang(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([-2.903534 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = 0.5 * np.sum(X**4 - 16 * X**2 + 5 * X)
@@ -2507,7 +2587,8 @@ class SumSquares(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2543,7 +2624,8 @@ class ThreeHump(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y = X
@@ -2579,7 +2661,8 @@ class Trid(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([i * (d + 1 - i) for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum((X - 1) ** 2) - np.sum(X[1:] * X[:-1])
@@ -2613,7 +2696,8 @@ class Wolfe(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0, 0, 0])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         x, y, z = X
@@ -2649,7 +2733,8 @@ class XinSheYang(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]
@@ -2688,7 +2773,8 @@ class XinSheYangN2(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.abs(X)) * np.exp(-np.sum(np.sin(X**2)))
@@ -2726,7 +2812,8 @@ class XinSheYangN3(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.exp(-np.sum((X / self.beta) ** (2 * self.m)))
@@ -2763,7 +2850,8 @@ class XinSheYangN4(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         res = np.sum(np.sin(X) ** 2 - np.exp(-np.sum(X) ** 2)) * \
@@ -2799,7 +2887,8 @@ class Zakharov(PyBenchFunction):
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
-        return (self._retrieve_original_input(X), self(self._retrieve_original_input(X)))
+        return (self._retrieve_original_input(X),
+                self(self._retrieve_original_input(X)))
 
     def evaluate(self, X):
         d = X.shape[0]

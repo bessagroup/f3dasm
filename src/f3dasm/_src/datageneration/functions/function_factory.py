@@ -22,11 +22,13 @@ __status__ = 'Stable'
 # =============================================================================
 
 FUNCTION_MAPPING: Dict[str, DataGenerator] = {
-    f.name.lower().replace(' ', '').replace('-', '').replace('_', '').replace('.', ''): f for f in _FUNCTIONS}
+    f.name.lower().replace(' ', '').replace('-', '').replace(
+        '_', '').replace('.', ''): f for f in _FUNCTIONS}
 
 
-def datagenerator_factory(data_generator: str, domain: Domain | int,
-                          kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
+def datagenerator_factory(
+        data_generator: str, domain: Domain | int,
+        kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
 
     if isinstance(domain, int):
         dim = domain
@@ -37,7 +39,8 @@ def datagenerator_factory(data_generator: str, domain: Domain | int,
     if kwargs is None:
         kwargs = {}
 
-    filtered_name = data_generator.lower().replace(' ', '').replace('-', '').replace('_', '').replace('.', '')
+    filtered_name = data_generator.lower().replace(
+        ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
     if filtered_name in FUNCTION_MAPPING:
         return FUNCTION_MAPPING[filtered_name](dimensionality=dim, **kwargs)

@@ -34,7 +34,8 @@ JOBS_SUFFIX = "_jobs"
 
 
 def number_of_updates(iterations: int, population: int):
-    """Calculate number of update steps to acquire the correct number of iterations
+    """Calculate number of update steps to acquire the
+     correct number of iterations
 
     Parameters
     ----------

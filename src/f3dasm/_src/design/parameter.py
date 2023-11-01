@@ -77,9 +77,11 @@ class ContinuousParameter(Parameter):
     Attributes
     ----------
     lower_bound : float, optional
-        The lower bound of the continuous search space. Defaults to negative infinity.
+        The lower bound of the continuous search space.
+         Defaults to negative infinity.
     upper_bound : float, optional
-        The upper bound of the continuous search space (exclusive). Defaults to infinity.
+        The upper bound of the continuous search space (exclusive).
+         Defaults to infinity.
     log : bool, optional
         Whether the search space is logarithmic. Defaults to False.
 
@@ -88,11 +90,13 @@ class ContinuousParameter(Parameter):
     TypeError
         If the boundaries are not floats.
     ValueError
-        If the upper bound is less than the lower bound, or if the lower bound is equal to the upper bound.
+        If the upper bound is less than the lower bound, or if the
+         lower bound is equal to the upper bound.
 
     Notes
     -----
-    This class inherits from the `Parameter` class and adds the ability to specify a continuous search space.
+    This class inherits from the `Parameter` class and adds the ability
+     to specify a continuous search space.
     """
 
     lower_bound: float = field(default=-np.inf)
@@ -104,7 +108,8 @@ class ContinuousParameter(Parameter):
 
         if self.log and self.lower_bound <= 0.0:
             raise ValueError(
-                f"The `lower_bound` value must be larger than 0 for a log distribution "
+                f"The `lower_bound` value must be larger than 0 for a \
+                     log distribution "
                 f"(low={self.lower_bound}, high={self.upper_bound})."
             )
 
@@ -119,15 +124,20 @@ class ContinuousParameter(Parameter):
         if isinstance(self.upper_bound, int):
             self.upper_bound = float(self.upper_bound)
 
-        if not isinstance(self.lower_bound, float) or not isinstance(self.upper_bound, float):
+        if not isinstance(
+                self.lower_bound, float) or not isinstance(
+                    self.upper_bound, float):
             raise TypeError(
-                f"Expect float, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+                f"Expect float, got {type(self.lower_bound)} \
+                 and {type(self.upper_bound)}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
         if self.upper_bound <= self.lower_bound:
-            raise ValueError(f"The `upper_bound` value must be larger than the `lower_bound` value "
-                             f"(lower_bound={self.lower_bound}, higher_bound={self.upper_bound}")
+            raise ValueError(f"The `upper_bound` value must be larger than \
+                             the `lower_bound` value "
+                             f"(lower_bound={self.lower_bound}, \
+                                 higher_bound={self.upper_bound}")
 
 
 @dataclass
@@ -156,9 +166,11 @@ class DiscreteParameter(Parameter):
 
     def _check_types(self):
         """Check if the boundaries are actually ints"""
-        if not isinstance(self.lower_bound, int) or not isinstance(self.upper_bound, int):
+        if not isinstance(self.lower_bound, int) or not isinstance(
+                self.upper_bound, int):
             raise TypeError(
-                f"Expect integer, got {type(self.lower_bound)} and {type(self.upper_bound)}")
+                f"Expect integer, got {type(self.lower_bound)} and \
+                     {type(self.upper_bound)}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
@@ -194,17 +206,23 @@ class CategoricalParameter(Parameter):
             raise ValueError("Categories contain duplicates!")
 
 
-PARAMETERS = [CategoricalParameter, ConstantParameter, ContinuousParameter, DiscreteParameter]
+PARAMETERS = [CategoricalParameter, ConstantParameter,
+              ContinuousParameter, DiscreteParameter]
 
 
-def create_inputvariable(type: str, lower_bound: Optional[int | float] = None,
-                         upper_bound: Optional[int | float] = None,
-                         values: Optional[CategoricalType | Sequence[CategoricalType]] = None) -> Parameter:
+def create_inputvariable(
+        type: str,
+        lower_bound: Optional[int | float] = None,
+        upper_bound: Optional[int | float] = None,
+        values: Optional[CategoricalType | Sequence[CategoricalType]] = None
+) -> Parameter:
     if type.lower == "float":
-        return ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+        return ContinuousParameter(lower_bound=lower_bound,
+                                   upper_bound=upper_bound)
 
     elif type.upper == "int":
-        return DiscreteParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+        return DiscreteParameter(lower_bound=lower_bound,
+                                 upper_bound=upper_bound)
 
     elif type.lower == "category":
         return CategoricalParameter(categories=values)
@@ -213,4 +231,6 @@ def create_inputvariable(type: str, lower_bound: Optional[int | float] = None,
         return ConstantParameter(value=values)
 
     else:
-        raise ValueError(f"Unknown type argument: {type}. Choose from 'float', 'int', 'category' or 'constant'.")
+        raise ValueError(
+            f"Unknown type argument: {type}. Choose from 'float', \
+             'int', 'category' or 'constant'.")
