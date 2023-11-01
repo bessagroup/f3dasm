@@ -13,7 +13,7 @@ from .optimizer import Optimizer
 
 # Try importing f3dasm_optimize package
 with try_import('f3dasm_optimize') as _imports:
-    import f3dasm_optimize
+    import f3dasm_optimize  # NOQA
 
 
 #                                                          Authorship & Credits
@@ -29,13 +29,16 @@ if _imports.is_successful():
     _OPTIMIZERS.extend(f3dasm_optimize._OPTIMIZERS)
 
 OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
-    opt.__name__.lower().replace(' ', '').replace('-', '').replace('_', ''): opt for opt in _OPTIMIZERS}
+    opt.__name__.lower().replace(' ', '').replace('-', '').replace(
+        '_', ''): opt for opt in _OPTIMIZERS}
 
 
 OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
 
 
-def optimizer_factory(optimizer: str, domain: Domain, hyperparameters: Optional[Dict[str, Any]] = None) -> Optimizer:
+def optimizer_factory(
+        optimizer: str, domain: Domain,
+        hyperparameters: Optional[Dict[str, Any]] = None) -> Optimizer:
     """Factory function for optimizers
 
     Parameters
@@ -68,7 +71,8 @@ def optimizer_factory(optimizer: str, domain: Domain, hyperparameters: Optional[
         ' ', '').replace('-', '').replace('_', '')
 
     if filtered_name in OPTIMIZER_MAPPING:
-        return OPTIMIZER_MAPPING[filtered_name](domain=domain, **hyperparameters)
+        return OPTIMIZER_MAPPING[filtered_name](
+            domain=domain, **hyperparameters)
 
     else:
         raise KeyError(f"Unknown optimizer: {optimizer}")

@@ -19,7 +19,8 @@ class ArgumentParser(argparse.ArgumentParser):
         raise RuntimeError(message)
 
 
-# if all(("ipykernel_launcher" not in sys.argv[0], os.environ.get("PYTEST_RUN") != "True")):
+# if all(("ipykernel_launcher" not in sys.argv[0],
+#  os.environ.get("PYTEST_RUN") != "True")):
 # Create an ArgumentParser object
 parser = ArgumentParser()
 

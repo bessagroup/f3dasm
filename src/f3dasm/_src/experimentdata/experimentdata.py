@@ -1,6 +1,7 @@
 """
-The ExperimentData object is the main object used to store implementations of a design-of-experiments,
-keep track of results, perform optimization and extract data for machine learning purposes.
+The ExperimentData object is the main object used to store implementations
+ of a design-of-experiments, keep track of results, perform optimization and
+ extract data for machine learning purposes.
 """
 
 #                                                                       Modules
@@ -55,9 +56,12 @@ class ExperimentData:
     A class that contains data for experiments.
     """
 
-    def __init__(self, domain: Optional[Domain] = None, input_data: Optional[DataTypes] = None,
-                 output_data: Optional[DataTypes] = None, jobs: Optional[Path | str] = None,
-                 filename: Optional[str] = 'experimentdata', path: Optional[Path] = None):
+    def __init__(self, domain: Optional[Domain] = None,
+                 input_data: Optional[DataTypes] = None,
+                 output_data: Optional[DataTypes] = None,
+                 jobs: Optional[Path | str] = None,
+                 filename: Optional[str] = 'experimentdata',
+                 path: Optional[Path] = None):
         """
         Initializes an instance of ExperimentData.
 
@@ -74,8 +78,8 @@ class ExperimentData:
         filename : str, optional
             The filename of the experiment, by default 'experimentdata'
         path : Path, optional
-            The path to the experimentdata file, by default 
-            the current working directory
+            The path to the experimentdata file, by default
+             the current working directory
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
@@ -182,8 +186,8 @@ class ExperimentData:
 
         return wrapper_func
 
-    #                                                                    Properties
-    # =============================================================================
+    #                                                                Properties
+    # =========================================================================
 
     @property
     def index(self) -> pd.Index:
@@ -196,11 +200,12 @@ class ExperimentData:
         """
         return self.input_data.indices
 
-    #                                                      Alternative Constructors
-    # =============================================================================
+    #                                                  Alternative Constructors
+    # =========================================================================
 
     @classmethod
-    def from_file(cls: Type[ExperimentData], filename: str = 'experimentdata') -> ExperimentData:
+    def from_file(cls: Type[ExperimentData], filename: str = 'experimentdata'
+                  ) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
 
         Parameters
@@ -273,11 +278,12 @@ class ExperimentData:
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
             domain = Domain.from_yaml(config.domain)
-            return cls.from_sampling(sampler=config.experimentdata.from_sampling.sampler,
-                                     domain=domain,
-                                     n_samples=config.experimentdata.from_sampling.n_samples,
-                                     seed=config.experimentdata.from_sampling.seed,
-                                     filename=config.experimentdata.name)
+            return cls.from_sampling(
+                sampler=config.experimentdata.from_sampling.sampler,
+                domain=domain,
+                n_samples=config.experimentdata.from_sampling.n_samples,
+                seed=config.experimentdata.from_sampling.seed,
+                filename=config.experimentdata.name)
 
         else:
             return cls(**config)
@@ -312,8 +318,8 @@ class ExperimentData:
         except FileNotFoundError:
             raise FileNotFoundError(f"Cannot find the files from {filename}.")
 
-    #                                                             Selecting subsets
-    # =============================================================================
+    #                                                         Selecting subsets
+    # =========================================================================
 
     def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
         """Select a subset of the ExperimentData object
@@ -336,7 +342,8 @@ class ExperimentData:
                               filename=self.filename, path=self.path)
 
     def get_input_data(self,
-                       parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
+                       parameter_names: Optional[str | Iterable[str]] = None
+                       ) -> ExperimentData:
         """Retrieve a subset of the input data from the ExperimentData object
 
         Parameters
@@ -348,12 +355,14 @@ class ExperimentData:
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the selected input data.
+            The selected ExperimentData object with only the
+             selected input data.
 
         Notes
         -----
         If parameter_names is None, all input data is retrieved.
-        The returned ExperimentData object has the domain of the original ExperimentData object,
+        The returned ExperimentData object has the domain of
+         the original ExperimentData object,
         but only with the selected input parameters.
         """
         if parameter_names is None:
@@ -363,13 +372,16 @@ class ExperimentData:
                                   filename=self.filename,
                                   path=self.path)
         else:
-            return ExperimentData(input_data=self.input_data.select_columns(parameter_names),
-                                  jobs=self.jobs,
-                                  domain=self.domain.select(parameter_names),
-                                  filename=self.filename,
-                                  path=self.path)
+            return ExperimentData(input_data=self.input_data.select_columns(
+                parameter_names),
+                jobs=self.jobs,
+                domain=self.domain.select(parameter_names),
+                filename=self.filename,
+                path=self.path)
 
-    def get_output_data(self, parameter_names: Optional[str | Iterable[str]] = None) -> ExperimentData:
+    def get_output_data(self,
+                        parameter_names: Optional[str | Iterable[str]] = None
+                        ) -> ExperimentData:
         """Retrieve a subset of the output data from the ExperimentData object
 
         Parameters
@@ -381,22 +393,26 @@ class ExperimentData:
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the selected output data.
+            The selected ExperimentData object with only
+             the selected output data.
 
         Notes
         -----
         If parameter_names is None, all output data is retrieved.
-        The returned ExperimentData object has no domain object and no input data!
+        The returned ExperimentData object has no domain object and
+         no input data!
         """
         if parameter_names is None:
             return ExperimentData(output_data=self.output_data, jobs=self.jobs,
                                   filename=self.filename, path=self.path)
         else:
-            return ExperimentData(output_data=self.output_data.select_columns(parameter_names), jobs=self.jobs,
-                                  filename=self.filename, path=self.path)
+            return ExperimentData(output_data=self.output_data.select_columns(
+                parameter_names),
+                jobs=self.jobs,
+                filename=self.filename, path=self.path)
 
-    #                                                                        Export
-    # =============================================================================
+    #                                                                    Export
+    # =========================================================================
 
     def store(self, filename: Optional[str] = None):
         """Store the ExperimentData to disk, with checking for a lock
@@ -435,8 +451,9 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two numpy arrays, 
-            the first one for input columns, and the second for output columns.
+            A tuple containing two numpy arrays,
+             the first one for input columns,
+             and the second for output columns.
         """
         return self.input_data.to_numpy(), self.output_data.to_numpy()
 
@@ -447,8 +464,8 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two pandas DataFrames, 
-            the first one for input columns, and the second for output
+            A tuple containing two pandas DataFrames,
+             the first one for input columns, and the second for output
         """
         return self.input_data.to_dataframe(), self.output_data.to_dataframe()
 
@@ -481,8 +498,8 @@ class ExperimentData:
         df = self.output_data.n_best_samples(n_samples, self.output_data.names)
         return self.select(df.index)
 
-    #                                                         Append or remove data
-    # =============================================================================
+    #                                                     Append or remove data
+    # =========================================================================
 
     def add(self, domain: Optional[Domain] = None,
             input_data: Optional[DataTypes] = None,
@@ -506,9 +523,12 @@ class ExperimentData:
             output_data=output_data,
             jobs=jobs))
 
-    def _add_experiments(self, experiment_sample: ExperimentSample | ExperimentData) -> None:
+    def _add_experiments(self,
+                         experiment_sample: ExperimentSample | ExperimentData
+                         ) -> None:
         """
-        Add an ExperimentSample or ExperimentData to the ExperimentData attribute.
+        Add an ExperimentSample or ExperimentData to the ExperimentData
+         attribute.
 
         Parameters
         ----------
@@ -685,8 +705,8 @@ class ExperimentData:
         """
         return self._access_open_job_data()
 
-    #                                                                          Jobs
-    # =============================================================================
+    #                                                                      Jobs
+    # =========================================================================
 
     def _set_error(self, index: int) -> None:
         """Mark the experiment_sample at the given index as error.
@@ -702,8 +722,8 @@ class ExperimentData:
 
     @_access_file
     def _write_error(self, index: int):
-        """Mark the experiment_sample at the given index as 
-        error and write to ExperimentData file.
+        """Mark the experiment_sample at the given index as
+         error and write to ExperimentData file.
 
         Parameters
         ----------
@@ -731,12 +751,14 @@ class ExperimentData:
         indices : Iterable[int]
             indices of the jobs to mark
         status : str
-            status to mark the jobs with: choose between: 'open', 'in progress', 'finished' or 'error'
+            status to mark the jobs with: choose between: 'open',
+             'in progress', 'finished' or 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress', 'finished' or 'error'
+            If the given status is not any of 'open', 'in progress',
+             'finished' or 'error'
         """
         # Check if the status is in Status
         if not any(status.lower() == s.value for s in Status):
@@ -752,8 +774,8 @@ class ExperimentData:
         Parameters
         ----------
         status : str
-            status to mark the jobs with: 
-            choose between: 'open', 'in progress', 'finished' or 'error'
+            status to mark the jobs with:
+             choose between: 'open', 'in progress', 'finished' or 'error'
 
         Raises
         ------
@@ -825,7 +847,8 @@ class ExperimentData:
             try:
                 experiment_sample = self._access_open_job_data()
                 logger.debug(
-                    f"Accessed experiment_sample {experiment_sample._jobnumber}")
+                    f"Accessed experiment_sample \
+                         {experiment_sample._jobnumber}")
             except NoOpenJobsError:
                 logger.debug("No Open Jobs left")
                 break
@@ -846,12 +869,14 @@ class ExperimentData:
                     experiment_sample, **kwargs)  # no *args!
                 self._set_experiment_sample(_experiment_sample)
             except Exception as e:
-                error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
+                error_msg = f"Error in experiment_sample \
+                     {experiment_sample._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, data_generator: DataGenerator, kwargs: dict):
+    def _run_multiprocessing(self, data_generator: DataGenerator,
+                             kwargs: dict):
         """Run the operation on multiple cores
 
         Parameters
@@ -878,7 +903,8 @@ class ExperimentData:
 
         def f(options: Dict[str, Any]) -> Any:
             logger.debug(
-                f"Running experiment_sample {options['experiment_sample'].job_number}")
+                "Running experiment_sample"
+                f"{options['experiment_sample'].job_number}")
             return data_generator._run(**options)
 
         with mp.Pool() as pool:
@@ -922,7 +948,8 @@ class ExperimentData:
                     experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
             except Exception as e:
-                error_msg = f"Error in experiment_sample {experiment_sample._jobnumber}: {e}"
+                error_msg = "Error in experiment_sample "
+                f"{experiment_sample._jobnumber}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._write_error(experiment_sample._jobnumber)
@@ -932,10 +959,11 @@ class ExperimentData:
         # Remove the lockfile from disk
         Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
 
-    #                                                                  Optimization
-    # =============================================================================
+    #                                                              Optimization
+    # =========================================================================
 
-    def optimize(self, optimizer: Optimizer | str, data_generator: DataGenerator | str,
+    def optimize(self, optimizer: Optimizer | str,
+                 data_generator: DataGenerator | str,
                  iterations: int, kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None) -> None:
         """Optimize the experimentdata object
@@ -949,9 +977,11 @@ class ExperimentData:
         iterations : int
             Number of iterations to run
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to the data generator, by default None
+            Any additional keyword arguments that need to be supplied to
+             the data generator, by default None
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the optimizer, by default None
+            Any additional hyperparameters that need to be supplied to the
+             optimizer, by default None
 
         Raises
         ------
@@ -984,14 +1014,17 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : Optional[dict], optional
-            any additional keyword arguments that will be passed to the DataGenerator, by default None
+            any additional keyword arguments that will be passed to
+             the DataGenerator, by default None
         """
         optimizer.set_x0(self)
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
 
-        for _ in range(number_of_updates(iterations, population=optimizer.hyperparameters.population)):
+        for _ in range(number_of_updates(
+                iterations,
+                population=optimizer.hyperparameters.population)):
             new_samples = optimizer.update_step(data_generator)
 
             # If new_samples is a tuple of input_data and output_data
@@ -1014,9 +1047,11 @@ class ExperimentData:
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
 
-    def _iterate_scipy(self, optimizer: Optimizer, data_generator: DataGenerator,
+    def _iterate_scipy(self, optimizer: Optimizer,
+                       data_generator: DataGenerator,
                        iterations: int, kwargs: Optional[dict] = None):
-        """Internal represenation of the iteration process for scipy-optimize algorithms
+        """Internal represenation of the iteration process for s
+        cipy-optimize algorithms
 
         Parameters
         ----------
@@ -1027,7 +1062,8 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : Optional[dict], optional
-            any additional keyword arguments that will be passed to the DataGenerator, by default None
+            any additional keyword arguments that will be passed
+             to the DataGenerator, by default None
         """
 
         optimizer.set_x0(self)
@@ -1038,7 +1074,8 @@ class ExperimentData:
 
         self._add_experiments(optimizer.data)
 
-        # TODO: At the end, the data should have n_data_before_iterate + iterations amount of elements!
+        # TODO: At the end, the data should have
+        # n_data_before_iterate + iterations amount of elements!
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
             repeated_last_element = self.get_n_best_output(
@@ -1052,7 +1089,8 @@ class ExperimentData:
         if len(self) < n_data_before_iterate + iterations:
             last_design = self.get_experiment_sample(len(self)-1)
 
-            for repetition in range(iterations - (len(self) - n_data_before_iterate)):
+            for repetition in range(
+                    iterations - (len(self) - n_data_before_iterate)):
                 self._add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
@@ -1061,10 +1099,11 @@ class ExperimentData:
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
 
-    #                                                                      Sampling
-    # =============================================================================
+    #                                                                  Sampling
+    # =========================================================================
 
-    def sample(self, sampler: Sampler | str, n_samples: int = 1, seed: Optional[int] = None) -> None:
+    def sample(self, sampler: Sampler | str, n_samples: int = 1,
+               seed: Optional[int] = None) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1115,7 +1154,8 @@ def data_factory(data: DataTypes) -> _Data:
 
     else:
         raise TypeError(
-            f"Data must be of type _Data, pd.DataFrame, np.ndarray, Path or str, not {type(data)}")
+            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
+            f"Path or str, not {type(data)}")
 
 
 def domain_factory(domain: Domain | None, input_data: _Data) -> Domain:

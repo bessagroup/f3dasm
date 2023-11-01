@@ -1,8 +1,11 @@
 """
-This module contains a base class for an analytical function that can be inherited
+This module contains a base class for an analytical function that
+ can be inherited
 to create specific analytical functions.
-The Function class is the base class that defines the interface for all analytical
-functions. It can be called with an input vector to evaluate the function at that point.
+The Function class is the base class that defines the interface for
+ all analytical
+functions. It can be called with an input vector to evaluate the
+ function at that point.
 """
 #                                                                       Modules
 # =============================================================================
@@ -63,7 +66,8 @@ class Function(DataGenerator):
         self.set_seed(seed)
 
     def set_seed(self, seed):
-        """Set the seed of the random number generator. By default the numpy generator
+        """Set the seed of the random number generator.
+         By default the numpy generator
 
         Parameters
         ----------
@@ -99,7 +103,9 @@ class Function(DataGenerator):
         experiment_sample["y"] = self(x).ravel().astype(np.float32)
         return experiment_sample
 
-    def _run(self, experiment_sample: ExperimentSample, **kwargs) -> ExperimentSample:
+    def _run(
+            self, experiment_sample: ExperimentSample,
+            **kwargs) -> ExperimentSample:
         return self.execute(experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):
@@ -135,7 +141,8 @@ class Function(DataGenerator):
         return ((bounds[:, 0] <= x) & (x <= bounds[:, 1])).all()
 
     def dfdx_legacy(self, x: np.ndarray, dx=1e-8) -> np.ndarray:
-        """Compute the gradient at a particular point in space. Gradient is computed by central differences
+        """Compute the gradient at a particular point in space.
+         Gradient is computed by central differences
 
         Parameters
         ----------
@@ -234,7 +241,7 @@ class Function(DataGenerator):
         domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
         show: bool = True,
         ax: plt.Axes = None,
-    ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
+    ) -> Tuple[plt.Figure, plt.Axes]:
         # TODO: orientation string is case sensitive!
         """Generate a surface plot, either 2D or 3D, of the function
 
@@ -269,8 +276,7 @@ class Function(DataGenerator):
             if ax is None:
                 ax = plt.axes()
             ax.pcolormesh(xv, yv, Y_shifted, cmap="viridis",
-                          norm=mcol.LogNorm())  # mcol.LogNorm()
-            # fig.colorbar(cm.ScalarMappable(norm=mcol.LogNorm(), cmap="viridis"), ax=ax)
+                          norm=mcol.LogNorm())
 
         if orientation == "3D":
             if ax is None:
@@ -299,64 +305,7 @@ class Function(DataGenerator):
         ax.set_xlim(domain[0, 0], domain[0, 1])
         ax.set_ylim(domain[1, 0], domain[1, 1])
 
-        # ax.legend(fontsize="small", loc="lower right")
         if not show:
             plt.close(fig)
 
         return fig, ax
-
-    # def plot_data(
-    #     self, data: ExperimentData, px: int = 300, domain: np.ndarray = np.array([[0.0, 1.0], [0.0, 1.0]]),
-    #     numsamples=None, arrow=False
-    # ) -> Tuple[plt.Figure, plt.Axes]:  # pragma: no cover
-    #     """Create a 2D contout plot with the datapoints as scatter
-
-    #     Parameters
-    #     ----------
-    #     data
-    #         Data object containing samples
-    #     px, optional
-    #         number of pixels on each axis
-    #     domain, optional
-    #         domain that needs to be plotted
-
-    #     Returns
-    #     -------
-    #         matplotlib figure and axes
-    #     """
-    #     fig, ax = self.plot(orientation="2D", px=px, domain=domain)
-    #     x1 = data.input_data.to_dataframe().iloc[:, 0]
-    #     x2 = data.input_data.to_dataframe().iloc[:, 1]
-    #     ax.scatter(
-    #         x=x1,
-    #         y=x2,
-    #         s=10,
-    #         c=np.linspace(0, 1, len(x1)),
-    #         cmap="Blues",
-    #         edgecolors="black",
-    #     )
-    #     if arrow:
-    #         for p_index in range(len(x1)-1):
-    #             dx = (x1[p_index+1] - x1[p_index])
-    #             dy = (x2[p_index+1] - x2[p_index])
-    #             length = 1/np.sqrt(dx**2 + dy**2)
-    #             ax.arrow(x=x1[p_index], y=x2[p_index], dx=dx*.1*length, dy=dy*.1*length, shape='full',
-    #                      length_includes_head=True)
-
-    #     # Mark selected point
-    #     if numsamples is not None:
-    #         x_selected = data.input_data.to_dataframe().iloc[numsamples]
-    #         ax.scatter(x=x_selected[0], y=x_selected[1], s=25, c="cyan",
-    #                    marker="*", edgecolors="cyan")
-
-    #     # Mark last point
-    #     x_last = data.input_data.to_dataframe().iloc[-1]
-    #     ax.scatter(x=x_last[0], y=x_last[1], s=25, c="magenta",
-    #                marker="*", edgecolors="magenta")
-
-    #     # Best point
-    #     x1_best, _ = data.get_n_best_output(1).to_numpy()[:, 0]
-    #     x2_best, _ = data.get_n_best_output(1).to_numpy()[:, 1]
-    #     ax.scatter(x=x1_best, y=x2_best, s=25, c="red",
-    #                marker="*", edgecolors="red")
-    #     return fig, ax

@@ -81,7 +81,8 @@ class DistributedFileHandler(FileHandler):
                 # the file is locked by another process
                 if e.errno == errno.EAGAIN:
                     logger.debug(
-                        "The log file is currently locked by another process. Retrying in 1 second...")
+                        "The log file is currently locked by another process. \
+                             Retrying in 1 second...")
                     sleep(1)
                 else:
                     logger.info(f"An unexpected IOError occurred: {e}")
@@ -128,7 +129,8 @@ def _time_and_log(
         start_time = perf_counter()
         value = func(*args, **kwargs)
         logger.debug(
-            f"Called {func.__name__} and time taken: {perf_counter() - start_time:.2f}s")
+            f"Called {func.__name__} and time taken: \
+                {perf_counter() - start_time:.2f}s")
         return value
 
     return wrapper

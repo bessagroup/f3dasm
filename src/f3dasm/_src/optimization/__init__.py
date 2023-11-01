@@ -66,6 +66,7 @@ def find_optimizer(query: str) -> Optimizer:
         class of the requested optimizer
     """
     try:
-        return list(filter(lambda optimizer: optimizer.__name__ == query, _OPTIMIZERS))[0]
+        return list(filter(
+            lambda optimizer: optimizer.__name__ == query, _OPTIMIZERS))[0]
     except IndexError:
         return ValueError(f'Optimizer {query} not found!')

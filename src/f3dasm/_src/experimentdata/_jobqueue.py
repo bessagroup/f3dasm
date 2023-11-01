@@ -167,8 +167,8 @@ class _JobQueue:
         """Resets the job queue."""
         self.jobs = pd.Series(dtype='string')
 
-    #                                                                      Export
-    # ===========================================================================
+    #                                                                    Export
+    # =========================================================================
 
     def store(self, filename: Path) -> None:
         """Stores the jobs in a pickle file.
@@ -199,8 +199,8 @@ class _JobQueue:
         """
         return self.jobs.to_frame("")
 
-    #                                                        Append and remove jobs
-    # =============================================================================
+    #                                                    Append and remove jobs
+    # =========================================================================
 
     def remove(self, indices: List[int]):
         """Removes a subset of the jobs.
@@ -233,8 +233,8 @@ class _JobQueue:
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
-    #                                                                          Mark
-    # =============================================================================
+    #                                                                      Mark
+    # =========================================================================
 
     def mark(self, index: int | slice | Iterable[int], status: Status) -> None:
         """Marks a job with a certain status.
@@ -255,8 +255,8 @@ class _JobQueue:
     def mark_all_error_open(self) -> None:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace(Status.ERROR, Status.OPEN)
-    #                                                                  Miscellanous
-    # =============================================================================
+    #                                                              Miscellanous
+    # =========================================================================
 
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.

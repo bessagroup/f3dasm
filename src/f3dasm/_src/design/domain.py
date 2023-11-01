@@ -1,5 +1,6 @@
 """
-The Domain is a set of Parameter instances that make up the feasible search space.
+The Domain is a set of Parameter instances that make up
+ the feasible search space.
 """
 
 #                                                                       Modules
@@ -92,7 +93,8 @@ class Domain:
 
     @property
     def categorical(self) -> Domain:
-        """Returns a Domain object containing only the categorical parameters"""
+        """Returns a Domain object containing only
+         the categorical parameters"""
         return self._filter(CategoricalParameter)
 
     @property
@@ -149,7 +151,9 @@ class Domain:
         Domain
             Domain object
         """
-        return cls({name: instantiate(param, _convert_="all") for name, param in yaml.items()})
+        return cls(
+            {name: instantiate(param, _convert_="all")
+             for name, param in yaml.items()})
 
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame) -> Domain:
@@ -165,7 +169,8 @@ class Domain:
         Domain
             Domain object
         """
-        # TODO : If lower_bound and upper_bound are similar, then it is a constant parameter
+        # TODO : If lower_bound and upper_bound are similar,
+        #  then it is a constant parameter
         space = {}
         for name, type in df.dtypes.items():
             if type == 'float64':
@@ -208,7 +213,8 @@ class Domain:
 
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
-        return {name: parameter._type for name, parameter in self.space.items()}
+        return {name: parameter._type for
+                name, parameter in self.space.items()}
 
     def _create_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with input columns.
@@ -232,7 +238,8 @@ class Domain:
         # Check if parameter is already in the domain
         if name in self.space:
             raise KeyError(
-                f"Parameter {name} already exists in the domain! Choose a different name.")
+                f"Parameter {name} already exists in the domain! \
+                     Choose a different name.")
 
         self.space[name] = parameter
 
@@ -285,7 +292,8 @@ class Domain:
         >>> domain = Domain()
         >>> domain.add_float('param1', 0., 10., log=True)
         >>> domain.space
-        {'param1': ContinuousParameter(lower_bound=0., upper_bound=10., log=True)}
+        {'param1': ContinuousParameter(lower_bound=0.,
+         upper_bound=10., log=True)}
 
         Note
         ----
@@ -348,7 +356,8 @@ class Domain:
         Example
         -------
         >>> domain = Domain()
-        >>> domain.add('param1', ContinuousParameter(lower_bound=0., upper_bound=1.))
+        >>> domain.add('param1',
+         ContinuousParameter(lower_bound=0., upper_bound=1.))
         >>> domain.space
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
@@ -463,7 +472,8 @@ class Domain:
         ...     'param2': ContinuousParameter(lower_bound=0, upper_bound=1),
         ...     'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])
         ... }
-        >>> categorical_input_params = domain.get_categorical_input_parameters()
+        >>> categorical_input_params =
+         domain.get_categorical_input_parameters()
         >>> categorical_input_params
         {'param1': CategoricalParameter(categories=['A', 'B', 'C']),
          'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
@@ -510,7 +520,8 @@ class Domain:
         ... }
         >>> constant_input_params = domain.get_constant_input_parameters()
         >>> constant_input_params
-        {'param1': ConstantParameter(value=0), 'param3': ConstantParameter(value=1)}
+        {'param1': ConstantParameter(value=0),
+         'param3': ConstantParameter(value=1)}
         """
         return self._filter(ConstantParameter).space
 
@@ -540,7 +551,8 @@ class Domain:
 
         Returns
         -------
-            numpy array with lower and upper bound for each continuous inpu dimension
+            numpy array with lower and upper bound for each
+             continuous input dimension
 
         Example
         -------
@@ -632,13 +644,15 @@ class Domain:
         return len(self) == len(self._filter(ContinuousParameter))
 
 
-def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensionality: int) -> Domain:
+def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
+                              dimensionality: int) -> Domain:
     """Create a continuous domain.
 
     Parameters
     ----------
     bounds : numpy.ndarray
-        A 2D numpy array of shape (dimensionality, 2) specifying the lower and upper bounds of every dimension.
+        A 2D numpy array of shape (dimensionality, 2) specifying the lower
+         and upper bounds of every dimension.
     dimensionality : int
         The number of dimensions.
 
@@ -649,8 +663,10 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensiona
 
     Notes
     -----
-    This function creates a Domain object consisting of continuous input parameters.
-    The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
+    This function creates a Domain object consisting of
+     continuous input parameters.
+    The lower and upper bounds of each input dimension are specified
+     in the `bounds` parameter.
     The input parameters are named "x0", "x1" ..
 
     Example

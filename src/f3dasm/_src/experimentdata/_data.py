@@ -261,8 +261,8 @@ class _Data:
 
         Note
         ----
-        This function is mainly used to show the combined ExperimentData 
-        object in a Jupyter Notebook
+        This function is mainly used to show the combined ExperimentData
+         object in a Jupyter Notebook
         """
         return pd.concat([jobs_df, self.data, other.data],
                          axis=1, keys=['jobs', 'input', 'output'])
@@ -395,8 +395,8 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     Parameters
     ----------
     dict : Dict[str, Any]
-        The dictionary to convert. Note that the dictionary 
-        should only have scalar values!
+        The dictionary to convert. Note that the dictionary
+         should only have scalar values!
 
     Returns
     -------

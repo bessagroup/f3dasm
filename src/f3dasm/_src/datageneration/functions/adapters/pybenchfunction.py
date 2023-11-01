@@ -22,21 +22,30 @@ __status__ = 'Stable'
 
 
 class PyBenchFunction(Function):
-    def __init__(self, dimensionality: int, scale_bounds: Optional[np.ndarray] = None,
-                 noise: Optional[float] = None, offset: bool = True, seed: Optional[int] = None):
+    def __init__(
+            self,
+            dimensionality: int,
+            scale_bounds: Optional[np.ndarray] = None,
+            noise: Optional[float] = None,
+            offset: bool = True,
+            seed: Optional[int] = None):
         """Adapter for pybenchfunction, created by Axel Thevenot (2020).
-        Github repository: https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
+        Github repository:
+         https://github.com/AxelThevenot/Python_Benchmark_Test_
+        Optimization_Function_Single_Objective
 
         Parameters
         ----------
         dimensionality
             number of dimensions
         scale_bounds, optional
-            array containing the lower and upper bound of the scaling factor of the input data, by default None
+            array containing the lower and upper bound of the scaling
+             factor of the input data, by default None
         noise, optional
             inflict Gaussian noise on the input, by default None
         offset, optional
-            set this True to randomly off-set the pybenchfunction, by default True
+            set this True to randomly off-set the pybenchfunction,
+             by default True
         seed, optional
             seed for the random number generator, by default None
         """
@@ -81,7 +90,8 @@ class PyBenchFunction(Function):
         unscaled_offset = np.atleast_1d(
             [
                 np.random.uniform(
-                    low=-abs(g[d] - self.scale_bounds[d, 0]), high=abs(g[d] - self.scale_bounds[d, 1]))
+                    low=-abs(g[d] - self.scale_bounds[d, 0]),
+                    high=abs(g[d] - self.scale_bounds[d, 1]))
                 for d in range(self.dimensionality)
             ]
         )

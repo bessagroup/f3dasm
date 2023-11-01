@@ -27,7 +27,8 @@ _available_functions = inspect.getmembers(pybenchfunction, inspect.isclass)
 
 
 def get_function_classes(
-    d: Optional[int] = None, continuous: Optional[bool] = None, convex: Optional[bool] = None,
+    d: Optional[int] = None, continuous: Optional[bool] = None,
+    convex: Optional[bool] = None,
     separable: Optional[bool] = None, differentiable: Optional[bool] = None,
     multimodal: Optional[bool] = None, randomized_term: Optional[bool] = None
 ) -> List[Type[Function]]:
@@ -56,8 +57,9 @@ def get_function_classes(
         List of function classes that match the given parameters
     """
 
-    functions = [cls for clsname, cls in _available_functions if clsname not in [
-        "Function", "PyBenchFunction"]]
+    functions = [cls for clsname, cls in _available_functions
+                 if clsname not in [
+                     "Function", "PyBenchFunction"]]
 
     functions = list(filter(lambda f: (d is None) or (
         f.is_dim_compatible(d)), functions))
@@ -78,7 +80,8 @@ def get_function_classes(
 
 
 def get_functions(
-    d: Optional[int] = None, continuous: Optional[bool] = None, convex: Optional[bool] = None,
+    d: Optional[int] = None, continuous: Optional[bool] = None,
+    convex: Optional[bool] = None,
     separable: Optional[bool] = None, differentiable: Optional[bool] = None,
     multimodal: Optional[bool] = None, randomized_term: Optional[bool] = None
 ) -> List[str]:
@@ -106,8 +109,9 @@ def get_functions(
     List[Function]
         List of function classes that match the given parameters
     """
-    function_classes = get_function_classes(d, continuous, convex, separable,
-                                            differentiable, multimodal, randomized_term)
+    function_classes = get_function_classes(
+        d, continuous, convex, separable,
+        differentiable, multimodal, randomized_term)
     return [function_class.name for function_class in function_classes]
 
 
@@ -131,6 +135,7 @@ def find_function(query: str) -> Function:
         class of the requested function
     """
     try:
-        return list(filter(lambda function: function.__name__ == query, _FUNCTIONS))[0]
+        return list(
+            filter(lambda function: function.__name__ == query, _FUNCTIONS))[0]
     except IndexError:
         return ValueError(f'Function {query} not found!')
