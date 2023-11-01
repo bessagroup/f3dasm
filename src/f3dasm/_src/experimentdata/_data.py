@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 # Standard
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
 
@@ -25,12 +26,52 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class _Columns:
+    def __init__(self, columns: Optional[Dict[str, bool]] = None):
+        if columns is None:
+            columns = {}
+
+        self.columns: Dict[str, bool] = columns
+
+    def __repr__(self) -> str:
+        return self.columns.__repr__()
+
+    @property
+    def names(self) -> List[str]:
+        return list(self.columns.keys())
+
+    def is_disk(self, name: str) -> bool:
+        return self.columns[name]
+
+    def add(self, name: str, is_disk: bool = False):
+        self.columns[name] = is_disk
+
+    def remove(self, name: str):
+        del self.columns[name]
+
+    def iloc(self, name: str | List[str]) -> List[int]:
+        if isinstance(name, str):
+            name = [name]
+
+        _indices = []
+        for n in name:
+            _indices.append(self.names.index(n))
+        return _indices
+
+    def replace_key(self, old_name: str, new_name: str):
+        self.columns[new_name] = self.columns.pop(old_name)
+
 class _Data:
-    def __init__(self, data: Optional[pd.DataFrame] = None):
+    def __init__(self, data: Optional[pd.DataFrame] = None,
+                 columns: Optional[_Columns] = None):
         if data is None:
             data = pd.DataFrame()
 
-        self.data: pd.DataFrame = data
+        if columns is None:
+            columns = _Columns({col: False for col in data.columns})
+
+        self.columns: _Columns = columns
+        self.data = data.rename(columns={name: i for i, name in enumerate(data.columns)})
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -84,18 +125,18 @@ class _Data:
         try:
             last_index = self.data.index[-1]
         except IndexError:  # Empty DataFrame
-            return _Data(other.data.copy())  # Make a copy of other.data
+            return _Data(data=other.data.copy(), columns=other.columns)  # Make a copy of other.data
 
         # Make a copy of other.data and modify its index
         other_data_copy = other.data.copy()
         other_data_copy.index = other_data_copy.index + last_index + 1
-        return _Data(pd.concat([self.data, other_data_copy]))
+        return _Data(pd.concat([self.data, other_data_copy]), columns=self.columns)
 
     def __eq__(self, __o: _Data) -> bool:
         return self.data.equals(__o.data)
 
     def _repr_html_(self) -> str:
-        return self.data._repr_html_()
+        return self.to_dataframe()._repr_html_()
 
 #                                                                    Properties
 # =============================================================================
@@ -106,7 +147,7 @@ class _Data:
 
     @property
     def names(self) -> List[str]:
-        return self.data.columns.to_list()
+        return self.columns.names
 
 #                                                      Alternative constructors
 # =============================================================================
@@ -139,17 +180,17 @@ class _Data:
         -------
             _description_
         """
-        df = pd.DataFrame(columns=domain.names).astype(
-            domain._cast_types_dataframe()
-        )
+        _dtypes = {index: parameter._type for index, (_, parameter) in enumerate(domain.space.items())}
+
+        df = pd.DataFrame(columns=range(len(domain))).astype(_dtypes)
 
         # Set the categories tot the categorical parameters
-        for name, categorical_input in \
-                domain.get_categorical_parameters().items():
-            df[name] = pd.Categorical(
-                df[name], categories=categorical_input.categories)
+        for index, (name, categorical_input) in enumerate(domain.get_categorical_parameters().items()):
+            df[index] = pd.Categorical(
+                df[index], categories=categorical_input.categories)
 
-        return cls(df)
+        _columns = {name: False for name in domain.names}
+        return cls(df, columns=_Columns(_columns))
 
     @classmethod
     def from_file(cls, filename: Path | str) -> _Data:
@@ -161,7 +202,10 @@ class _Data:
             The filename to load the data from.
         """
         file = Path(filename).with_suffix('.csv')
-        return cls(pd.read_csv(file, header=0, index_col=0))
+        df = pd.read_csv(file, header=0, index_col=0)
+        _columns = {name: False for name in df.columns.to_list()}
+        df.columns = range(df.columns.size)  # Reset the columns to be consistent
+        return cls(df, columns=_Columns(_columns))
 
     @classmethod
     def from_numpy(cls: Type[_Data], array: np.ndarray) -> _Data:
@@ -184,7 +228,8 @@ class _Data:
         dataframe : pd.DataFrame
             The dataframe to load the data from.
         """
-        return cls(dataframe)
+        _columns = {name: False for name in dataframe.columns.to_list()}
+        return cls(dataframe, columns=_Columns(_columns))
 
     def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
@@ -198,11 +243,13 @@ class _Data:
         ----
         If the domain is None, the data will be reset to an empty dataframe.
         """
+
         if domain is None:
             self.data = pd.DataFrame()
-            return
-
-        self.data = self.from_domain(domain).data
+            self.columns = _Columns()
+        else:
+            self.data = self.from_domain(domain).data
+            self.columns = self.from_domain(domain).columns
 
 #                                                                        Export
 # =============================================================================
@@ -231,7 +278,7 @@ class _Data:
             xarray DataArray with the data.
         """
         return xr.DataArray(self.data, dims=['iterations', label], coords={
-            'iterations': range(len(self)), label: self.names})
+            'iterations': self.indices, label: self.names})
 
     def to_dataframe(self) -> pd.DataFrame:
         """Export the _Data object to a pandas DataFrame.
@@ -241,7 +288,9 @@ class _Data:
         pd.DataFrame
             pandas dataframe with the data.
         """
-        return self.data
+        df = deepcopy(self.data)
+        df.columns = self.names
+        return df
 
     def combine_data_to_multiindex(self, other: _Data,
                                    jobs_df: pd.DataFrame) -> pd.DataFrame:
@@ -264,8 +313,8 @@ class _Data:
         This function is mainly used to show the combined ExperimentData
          object in a Jupyter Notebook
         """
-        return pd.concat([jobs_df, self.data, other.data],
-                         axis=1, keys=['jobs', 'input', 'output'])
+        return pd.concat([jobs_df, self.to_dataframe(),
+                          other.to_dataframe()], axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -275,7 +324,7 @@ class _Data:
         filename : Path
             The filename to store the data to.
         """
-        self.data.to_csv(filename.with_suffix('.csv'))
+        self.to_dataframe().to_csv(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int,
                        column_name: List[str] | str) -> pd.DataFrame:
@@ -293,7 +342,7 @@ class _Data:
         pd.DataFrame
             The n best samples.
         """
-        return self.data.nsmallest(n=nosamples, columns=column_name)
+        return self.data.nsmallest(n=nosamples, columns=self.columns.iloc(column_name))
 
     def select_columns(self, columns: Iterable[str] | str) -> _Data:
         """Filter the data on the selected columns.
@@ -311,7 +360,8 @@ class _Data:
         # This is necessary otherwise self.data[columns] will be a Series
         if isinstance(columns, str):
             columns = [columns]
-        return _Data(self.data[columns])
+        _selected_columns = _Columns({column: self.columns.columns[column] for column in columns})
+        return _Data(self.data[self.columns.iloc(columns)], columns=_selected_columns)
 #                                                        Append and remove data
 # =============================================================================
 
@@ -343,7 +393,13 @@ class _Data:
         self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
     def add_column(self, name: str):
-        self.data[name] = np.nan
+        if self.data.columns.empty:
+            new_columns_index = 0
+        else:
+            new_columns_index = self.data.columns[-1] + 1
+
+        self.columns.add(name)
+        self.data[new_columns_index] = np.nan
 
     def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
         # get the indices of the nan values
@@ -358,7 +414,7 @@ class _Data:
 # =============================================================================
 
     def get_data_dict(self, index: int) -> Dict[str, Any]:
-        return self.data.loc[index].to_dict()
+        return self.to_dataframe().loc[index].to_dict()
 
     def set_data(self, index: int, value: Any, column: Optional[str] = None):
         # check if the index exists
@@ -367,12 +423,18 @@ class _Data:
 
         if column is None:
             self.data.loc[index] = value
-        else:
-            try:
-                self.data.at[index, column] = value
-            except ValueError:
-                self.data = self.data.astype(object)
-                self.data.at[index, column] = value
+            return
+
+        elif column not in self.columns.names:
+            # TODO this is_disk value needs to be provided by set_data call
+            self.columns.add(column, is_disk=False)
+
+        _column_index = self.columns.iloc(column)[0]
+        try:
+            self.data.at[index, _column_index] = value
+        except ValueError:
+            self.data = self.data.astype(object)
+            self.data.at[index, _column_index] = value
 
     def reset_index(self) -> None:
         """Reset the index of the data."""
@@ -386,7 +448,8 @@ class _Data:
         return set(names).issubset(self.names)
 
     def set_columnnames(self, names: Iterable[str]) -> None:
-        self.data.columns = names
+        for old_name, new_name in zip(self.names, names):
+            self.columns.replace_key(old_name, new_name)
 
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
@@ -403,4 +466,6 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     _Data
         The data object.
     """
-    return _Data(pd.DataFrame(dictionary, index=[0]).copy())
+    _columns = {name: False for name in dictionary.keys()}
+    df = pd.DataFrame(dictionary, index=[0]).copy()
+    return _Data(data=df, columns=_Columns(_columns))
