@@ -24,7 +24,7 @@ from omegaconf import DictConfig
 # Local
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, Parameter)
+                        DiscreteParameter, OutputParameter, Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -34,18 +34,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class _Columns:
-    names: List[str]
-
-
-class _Data:
-    data: pd.DataFrame
-    columns: _Columns
-
-    def to_dataframe() -> pd.DataFrame:
-        ...
 
 
 @dataclass
@@ -59,6 +47,7 @@ class Domain:
     """
 
     space: Dict[str, Parameter] = field(default_factory=dict)
+    output_space: Dict[str, OutputParameter] = field(default_factory=dict)
 
     def __len__(self) -> int:
         """The len() method returns the number of parameters"""
@@ -164,44 +153,51 @@ class Domain:
              for name, param in yaml.items()})
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame) -> Domain:
+    def from_dataframe(cls, df_input: pd.DataFrame,
+                       df_output: pd.DataFrame) -> Domain:
         """Initializes a Domain from a pandas DataFrame.
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df_input : pd.DataFrame
             DataFrame containing the input parameters.
+        df_output : pd.DataFrame
+            DataFrame containing the output parameters.
 
         Returns
         -------
         Domain
             Domain object
         """
-        space = {}
-        for name, type in df.dtypes.items():
+        input_space = {}
+        for name, type in df_input.dtypes.items():
             if type == 'float64':
-                if float(df[name].min()) == float(df[name].max()):
-                    space[name] = ConstantParameter(
-                        value=float(df[name].min()))
+                if float(df_input[name].min()) == float(df_input[name].max()):
+                    input_space[name] = ConstantParameter(
+                        value=float(df_input[name].min()))
                     continue
 
-                space[name] = ContinuousParameter(lower_bound=float(
-                    df[name].min()), upper_bound=float(df[name].max()))
+                input_space[name] = ContinuousParameter(lower_bound=float(
+                    df_input[name].min()),
+                    upper_bound=float(df_input[name].max()))
             elif type == 'int64':
-                if int(df[name].min()) == int(df[name].max()):
-                    space[name] = ConstantParameter(value=int(df[name].min()))
+                if int(df_input[name].min()) == int(df_input[name].max()):
+                    input_space[name] = ConstantParameter(
+                        value=int(df_input[name].min()))
                     continue
 
-                space[name] = DiscreteParameter(lower_bound=int(
-                    df[name].min()), upper_bound=int(df[name].max()))
+                input_space[name] = DiscreteParameter(lower_bound=int(
+                    df_input[name].min()),
+                    upper_bound=int(df_input[name].max()))
             else:
-                space[name] = CategoricalParameter(df[name].unique().tolist())
+                input_space[name] = CategoricalParameter(
+                    df_input[name].unique().tolist())
 
-        return cls(space=space)
+        output_space = {}
+        for name in df_output.columns:
+            output_space[name] = OutputParameter(to_disk=False)
 
-    @classmethod
-    def from_data(cls: Type[Domain], data: _Data) -> Domain:
-        return cls.from_dataframe(data.to_dataframe())
+        return cls(space=input_space, output_space=output_space)
 
 #                                                                        Export
 # =============================================================================
@@ -369,6 +365,29 @@ class Domain:
         """
         self.space[name] = space
 
+    def add_output(self, name: str, to_disk: bool):
+        """Add a new output parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the output parameter.
+        to_disk : bool
+            Whether to store the output parameter on disk.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_output('param1', True)
+        >>> domain.space
+        {'param1': OutputParameter(to_disk=True)}
+        """
+        if name in self.output_space:
+            raise KeyError(
+                f"Parameter {name} already exists in the domain! \
+                     Choose a different name.")
+
+        self.output_space[name] = OutputParameter(to_disk)
 #                                                                       Getters
 # =============================================================================
 
@@ -648,6 +667,35 @@ class Domain:
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
         return len(self) == len(self._filter(ContinuousParameter))
+
+    def check_output(self, names: List[str]):
+        for output_name in names:
+            if not self.is_in_output(output_name):
+                self.add_output(output_name, to_disk=False)
+
+    def is_in_output(self, output_name: str) -> bool:
+        """Check if output is in the domain
+
+        Parameters
+        ----------
+        output_name : str
+            Name of the output
+
+        Returns
+        -------
+        bool
+            True if output is in the domain, False otherwise
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_output('output1')
+        >>> domain.is_in_output('output1')
+        True
+        >>> domain.is_in_output('output2')
+        False
+        """
+        return output_name in self.output_space
 
 
 def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],

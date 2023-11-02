@@ -15,6 +15,7 @@ import xarray as xr
 
 # Local
 from ..design.domain import Domain
+from ._columns import _Columns
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,42 +27,6 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class _Columns:
-    def __init__(self, columns: Optional[Dict[str, bool]] = None):
-        if columns is None:
-            columns = {}
-
-        self.columns: Dict[str, bool] = columns
-
-    def __repr__(self) -> str:
-        return self.columns.__repr__()
-
-    @property
-    def names(self) -> List[str]:
-        return list(self.columns.keys())
-
-    def is_disk(self, name: str) -> bool:
-        return self.columns[name]
-
-    def add(self, name: str, is_disk: bool = False):
-        self.columns[name] = is_disk
-
-    def remove(self, name: str):
-        del self.columns[name]
-
-    def iloc(self, name: str | List[str]) -> List[int]:
-        if isinstance(name, str):
-            name = [name]
-
-        _indices = []
-        for n in name:
-            _indices.append(self.names.index(n))
-        return _indices
-
-    def replace_key(self, old_name: str, new_name: str):
-        self.columns[new_name] = self.columns.pop(old_name)
-
-
 class _Data:
     def __init__(self, data: Optional[pd.DataFrame] = None,
                  columns: Optional[_Columns] = None):
@@ -69,7 +34,7 @@ class _Data:
             data = pd.DataFrame()
 
         if columns is None:
-            columns = _Columns({col: False for col in data.columns})
+            columns = _Columns({col: None for col in data.columns})
 
         self.columns: _Columns = columns
         self.data = data.rename(
@@ -195,7 +160,7 @@ class _Data:
             df[index] = pd.Categorical(
                 df[index], categories=categorical_input.categories)
 
-        _columns = {name: False for name in domain.names}
+        _columns = {name: None for name in domain.names}
         return cls(df, columns=_Columns(_columns))
 
     @classmethod
@@ -235,7 +200,7 @@ class _Data:
         dataframe : pd.DataFrame
             The dataframe to load the data from.
         """
-        _columns = {name: False for name in dataframe.columns.to_list()}
+        _columns = {name: None for name in dataframe.columns.to_list()}
         return cls(dataframe, columns=_Columns(_columns))
 
     def reset(self, domain: Optional[Domain] = None):
@@ -332,6 +297,7 @@ class _Data:
         filename : Path
             The filename to store the data to.
         """
+        # TODO: The column information is not saved in the .csv!
         self.to_dataframe().to_csv(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int,
@@ -433,12 +399,12 @@ class _Data:
             raise IndexError(f"Index {index} does not exist in the data.")
 
         if column is None:
+            # Set the entire row to the values
             self.data.loc[index] = value
             return
 
         elif column not in self.columns.names:
-            # TODO this is_disk value needs to be provided by set_data call
-            self.columns.add(column, is_disk=False)
+            self.add_column(column)
 
         _column_index = self.columns.iloc(column)[0]
         try:
@@ -460,7 +426,7 @@ class _Data:
 
     def set_columnnames(self, names: Iterable[str]) -> None:
         for old_name, new_name in zip(self.names, names):
-            self.columns.replace_key(old_name, new_name)
+            self.columns.rename(old_name, new_name)
 
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
@@ -477,6 +443,6 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     _Data
         The data object.
     """
-    _columns = {name: False for name in dictionary.keys()}
+    _columns = {name: None for name in dictionary.keys()}
     df = pd.DataFrame(dictionary, index=[0]).copy()
     return _Data(data=df, columns=_Columns(_columns))

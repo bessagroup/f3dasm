@@ -105,7 +105,7 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        self.domain = domain_factory(domain, self.input_data)
+        self.domain = domain_factory(domain, self.input_data, self.output_data)
 
         # Create empty input_data from domain if input_data is empty
         if self.input_data.is_empty():
@@ -403,6 +403,8 @@ class ExperimentData:
          no input data!
         """
         if parameter_names is None:
+            # TODO: Make a domain where space is empty
+            # but it tracks output_space!
             return ExperimentData(output_data=self.output_data, jobs=self.jobs,
                                   filename=self.filename, path=self.path)
         else:
@@ -571,15 +573,18 @@ class ExperimentData:
         self.input_data.add_column(name)
         self.domain.add(name, parameter)
 
-    def add_output_parameter(self, name: str) -> None:
+    def add_output_parameter(self, name: str, is_disk: bool) -> None:
         """Add a new output column to the ExperimentData object.
 
         Parameters
         ----------
         name
             name of the new output column
+        is_disk
+            Whether the output column will be stored on disk or not
         """
         self.output_data.add_column(name)
+        self.domain.add_output(name, is_disk)
 
     def fill_output(self, output: np.ndarray, label: str = "y"):
         """
@@ -593,7 +598,7 @@ class ExperimentData:
             Label of the output column to add to, by default "y".
         """
         if label not in self.output_data.names:
-            self.add_output_parameter(label)
+            self.add_output_parameter(label, is_disk=False)
 
         filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(
             output)
@@ -646,10 +651,15 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample at the given index.
         """
+
+        output_experiment_sample_dict = self.output_data.get_data_dict(index)
+
+        dict_output = {k: (v, self.domain.output_space[k].to_disk)
+                       for k, v in output_experiment_sample_dict.items()}
+
         return ExperimentSample(dict_input=self.input_data.get_data_dict(
             index),
-            dict_output=self.output_data.get_data_dict(
-            index),
+            dict_output=dict_output,
             jobnumber=index,
             experimentdata_directory=self.path)
 
@@ -663,9 +673,14 @@ class ExperimentData:
         experiment_sample : ExperimentSample
             The ExperimentSample to set.
         """
-        for column, value in experiment_sample.output_data.items():
+        for column, (value, is_disk) in experiment_sample._dict_output.items():
+
+            if not self.domain.is_in_output(column):
+                self.domain.add_output(column, to_disk=is_disk)
+
             self.output_data.set_data(
-                index=experiment_sample.job_number, value=value, column=column)
+                index=experiment_sample.job_number, value=value,
+                column=column)
 
         self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
@@ -792,8 +807,8 @@ class ExperimentData:
         Mark all the experiments that have the status 'error' open
         """
         self.jobs.mark_all_error_open()
-    #                                                                Datageneration
-    # =============================================================================
+    #                                                            Datageneration
+    # =========================================================================
 
     def evaluate(self, data_generator: DataGenerator, mode: str = 'sequential',
                  kwargs: Optional[dict] = None) -> None:
@@ -1160,18 +1175,21 @@ def data_factory(data: DataTypes) -> _Data:
             f"Path or str, not {type(data)}")
 
 
-def domain_factory(domain: Domain | None, input_data: _Data) -> Domain:
+def domain_factory(domain: Domain | None,
+                   input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
+        domain.check_output(output_data.names)
         return domain
 
     elif isinstance(domain, (Path, str)):
         return Domain.from_file(Path(domain))
 
-    elif input_data.is_empty() and domain is None:
+    elif (input_data.is_empty() and output_data.is_empty() and domain is None):
         return Domain()
 
     elif domain is None:
-        return Domain.from_data(input_data)
+        return Domain.from_dataframe(
+            input_data.to_dataframe(), output_data.to_dataframe())
 
     else:
         raise TypeError(

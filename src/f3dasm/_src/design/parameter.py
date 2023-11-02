@@ -35,6 +35,11 @@ class Parameter:
 
 
 @dataclass
+class OutputParameter(Parameter):
+    to_disk: bool = field(default=False)
+
+
+@dataclass
 class ConstantParameter(Parameter):
     """Create a search space parameter that is constant.
 
