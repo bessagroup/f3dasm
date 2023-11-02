@@ -1178,7 +1178,7 @@ def data_factory(data: DataTypes) -> _Data:
 def domain_factory(domain: Domain | None,
                    input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
-        domain.check_output(output_data)
+        domain.check_output(output_data.names)
         return domain
 
     elif isinstance(domain, (Path, str)):
@@ -1188,7 +1188,8 @@ def domain_factory(domain: Domain | None,
         return Domain()
 
     elif domain is None:
-        return Domain.from_data(input_data, output_data)
+        return Domain.from_dataframe(
+            input_data.to_dataframe(), output_data.to_dataframe())
 
     else:
         raise TypeError(

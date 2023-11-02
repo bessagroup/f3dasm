@@ -36,23 +36,6 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class _Columns:
-    @property
-    def names(self) -> List[str]:
-        ...
-
-    def is_disk(self, name: str) -> bool:
-        ...
-
-
-class _Data:
-    data: pd.DataFrame
-    columns: _Columns
-
-    def to_dataframe() -> pd.DataFrame:
-        ...
-
-
 @dataclass
 class Domain:
     """Main class for defining the domain of the design of experiments.
@@ -215,12 +198,6 @@ class Domain:
             output_space[name] = OutputParameter(to_disk=False)
 
         return cls(space=input_space, output_space=output_space)
-
-    @classmethod
-    def from_data(cls: Type[Domain], input_data: _Data,
-                  output_data: _Data) -> Domain:
-        return cls.from_dataframe(input_data.to_dataframe(),
-                                  output_data.to_dataframe())
 
 #                                                                        Export
 # =============================================================================
@@ -691,8 +668,8 @@ class Domain:
         """Check if all input parameters are continuous"""
         return len(self) == len(self._filter(ContinuousParameter))
 
-    def check_output(self, output_data: _Data):
-        for output_name in output_data.columns.names:
+    def check_output(self, names: List[str]):
+        for output_name in names:
             if not self.is_in_output(output_name):
                 self.add_output(output_name, to_disk=False)
 
