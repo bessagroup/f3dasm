@@ -662,7 +662,9 @@ class ExperimentData:
             jobnumber=index,
             experimentdata_directory=self.path)
 
-    def get_experiment_samples(self, indices: Optional[Iterable[int]] = None) -> List[ExperimentSample]:
+    def get_experiment_samples(
+            self,
+            indices: Optional[Iterable[int]] = None) -> List[ExperimentSample]:
         """
         Gets the experiment_samples at the given indices.
 
