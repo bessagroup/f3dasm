@@ -68,7 +68,8 @@ def test_add_input_space():
     }
 
     design = Domain(space=designspace)
-    design.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
+    design.add('x4', CategoricalParameter(
+        categories=["test1", "test2", "test3"]))
     design.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
 
     assert design.space == {
@@ -88,7 +89,8 @@ def test_add_space():
     }
 
     domain = Domain(space=designspace)
-    domain.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
+    domain.add('x4', CategoricalParameter(
+        categories=["test1", "test2", "test3"]))
     domain.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
 
     assert domain.space == {
@@ -142,7 +144,8 @@ def test_get_number_of_input_parameters(domain: Domain):
 
 
 def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
-    domain = Domain.from_dataframe(sample_dataframe)
+    domain = Domain.from_dataframe(
+        df_input=sample_dataframe, df_output=pd.DataFrame())
     ground_truth = Domain(space={'feature1': ContinuousParameter(lower_bound=1.0, upper_bound=3.0),
                                  'feature2': DiscreteParameter(lower_bound=4, upper_bound=6),
                                  'feature3': CategoricalParameter(['A', 'B', 'C'])})

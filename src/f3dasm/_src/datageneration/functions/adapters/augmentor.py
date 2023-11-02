@@ -105,13 +105,16 @@ class Offset(_Augmentor):
 
 
 class Scale(_Augmentor):
-    def __init__(self, scale_bounds: np.ndarray | List[List[float]], input_domain: np.ndarray):
-        """Augmentor class to scale the input vector of a function to some bounds
+    def __init__(self, scale_bounds: np.ndarray | List[List[float]],
+                 input_domain: np.ndarray):
+        """Augmentor class to scale the input vector of a
+         function to some bounds
 
         Parameters
         ----------
         scale_bounds
-            continuous bounds (lower and upper for every dimension) to be scaled towards
+            continuous bounds (lower and upper for every dimension)
+             to be scaled towards
         input_domain
             input domain of the objective function
         """
@@ -119,22 +122,30 @@ class Scale(_Augmentor):
         self.input_domain = input_domain
 
     def augment(self, input: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(input, scale=self.scale_bounds), scale=self.input_domain)
+        return _scale_vector(
+            x=_descale_vector(input, scale=self.scale_bounds),
+            scale=self.input_domain)
 
     def reverse_augment(self, output: np.ndarray) -> np.ndarray:
-        return _scale_vector(x=_descale_vector(output, scale=self.input_domain), scale=self.scale_bounds)
+        return _scale_vector(
+            x=_descale_vector(output, scale=self.input_domain),
+            scale=self.scale_bounds)
 
 
 class FunctionAugmentor:
-    """Combination of Augmentors that can change the input and output of an objective function
+    """Combination of Augmentors that can change the input and
+     output of an objective function
 
     Args:
         input_augmentors (List[Augmentor]): list of input augmentors
         output_augmentors (List[Augmentor]): list of output augmentors
     """
 
-    def __init__(self, input_augmentors: List[_Augmentor] = None, output_augmentors: List[_Augmentor] = None):
-        """Combination of augmentors that can change the input and output of an objective function
+    def __init__(
+            self, input_augmentors: List[_Augmentor] = None,
+            output_augmentors: List[_Augmentor] = None):
+        """Combination of augmentors that can change the input and output of
+         an objective function
 
         Parameters
         ----------
@@ -143,8 +154,10 @@ class FunctionAugmentor:
         output_augmentors, optional
             list of output augmentors, by default None
         """
-        self.input_augmentors = [] if input_augmentors is None else input_augmentors
-        self.output_augmentors = [] if output_augmentors is None else output_augmentors
+        self.input_augmentors = [] if \
+            input_augmentors is None else input_augmentors
+        self.output_augmentors = [] if \
+            output_augmentors is None else output_augmentors
 
     def add_input_augmentor(self, augmentor: _Augmentor) -> None:
         """Add an input augmentor
@@ -156,7 +169,8 @@ class FunctionAugmentor:
         """
         self.input_augmentors.append(augmentor)
 
-    def insert_input_augmentor(self, augmentor: _Augmentor, position: int) -> None:
+    def insert_input_augmentor(
+            self, augmentor: _Augmentor, position: int) -> None:
         """Insert an input augmentor at any place in the input_augmentors list
 
         Parameters

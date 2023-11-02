@@ -1,9 +1,10 @@
 """
-f3dasm - A package for data-driven design and analysis of structures and materials
+f3dasm - A package for data-driven design and analysis of structures
+ and materials
 
 This package provides tools for designing and optimizing materials, including
-functions for data analysis, design of experiments, machine learning, optimization,
-sampling, and simulation.
+functions for data analysis, design of experiments, machine learning,
+ optimization, sampling, and simulation.
 
 Usage:
   import f3dasm

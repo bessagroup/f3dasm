@@ -35,7 +35,8 @@ def domain():
 def continuous_parameter():
     lower_bound = 3.3
     upper_bound = 3.8
-    return ContinuousParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+    return ContinuousParameter(lower_bound=lower_bound,
+                               upper_bound=upper_bound)
 
 
 @pytest.fixture(scope="package")
@@ -54,7 +55,7 @@ def categorical_parameter():
 @pytest.fixture(scope="package")
 def design_data():
     dict_input = {'input1': 1, 'input2': 2}
-    dict_output = {'output1': 3, 'output2': 4}
+    dict_output = {'output1': (3, False), 'output2': (4, False)}
     job_number = 123
     return dict_input, dict_output, job_number
 

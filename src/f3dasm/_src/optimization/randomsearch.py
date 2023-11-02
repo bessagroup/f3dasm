@@ -41,14 +41,18 @@ class RandomSearch(Optimizer):
     def set_seed(self):
         np.random.seed(self.seed)
 
-    def update_step(self, data_generator: DataGenerator) -> Tuple[np.ndarray, np.ndarray]:
-        # BUG: This setting of seed results in the same value being samples all the time!
+    def update_step(
+            self, data_generator: DataGenerator
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        # BUG: This setting of seed results in the same value
+        # being samples all the time!
         # self.set_seed()
 
         x_new = np.atleast_2d(
             [
                 np.random.uniform(
-                    low=self.domain.get_bounds()[d, 0], high=self.domain.get_bounds()[d, 1])
+                    low=self.domain.get_bounds()[d, 0],
+                    high=self.domain.get_bounds()[d, 1])
                 for d in range(len(self.domain))
             ]
         )

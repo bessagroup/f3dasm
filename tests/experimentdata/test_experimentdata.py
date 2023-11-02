@@ -70,13 +70,16 @@ def test_from_file(experimentdata_continuous: ExperimentData, seed: int, tmp_pat
     # experimentdata_continuous.filename = tmp_path / 'test001'
     experimentdata_continuous.store(tmp_path / 'experimentdata')
 
-    experimentdata_from_file = ExperimentData.from_file(tmp_path / 'experimentdata')
+    experimentdata_from_file = ExperimentData.from_file(
+        tmp_path / 'experimentdata')
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
-    pd.testing.assert_frame_equal(experimentdata_continuous.input_data.data, experimentdata_from_file.input_data.data)
+    pd.testing.assert_frame_equal(
+        experimentdata_continuous.input_data.data, experimentdata_from_file.input_data.data)
     pd.testing.assert_frame_equal(experimentdata_continuous.output_data.data,
                                   experimentdata_from_file.output_data.data)
-    pd.testing.assert_series_equal(experimentdata_continuous.jobs.jobs, experimentdata_from_file.jobs.jobs)
+    pd.testing.assert_series_equal(
+        experimentdata_continuous.jobs.jobs, experimentdata_from_file.jobs.jobs)
     # assert experimentdata_continuous.input_data == experimentdata_from_file.input_data
     assert experimentdata_continuous.output_data == experimentdata_from_file.output_data
     assert experimentdata_continuous.domain == experimentdata_from_file.domain
@@ -105,7 +108,8 @@ def sample_csv_inputdata(tmp_path):
     input_csv_file = tmp_path / 'experimentdata_data.csv'
 
     # Create sample input and output dataframes
-    input_data = pd.DataFrame({'input_col1': [1, 2, 3], 'input_col2': [4, 5, 6]})
+    input_data = pd.DataFrame(
+        {'input_col1': [1, 2, 3], 'input_col2': [4, 5, 6]})
 
     return input_csv_file, input_data
 
@@ -116,7 +120,8 @@ def sample_csv_outputdata(tmp_path):
     output_csv_file = tmp_path / 'experimentdata_output.csv'
 
     # Create sample input and output dataframes
-    output_data = pd.DataFrame({'output_col1': [7, 8, 9], 'output_col2': [10, 11, 12]})
+    output_data = pd.DataFrame(
+        {'output_col1': [7, 8, 9], 'output_col2': [10, 11, 12]})
 
     return output_csv_file, output_data
 
@@ -126,8 +131,10 @@ def test_from_object(experimentdata_continuous: ExperimentData):
     output_data = experimentdata_continuous.output_data
     jobs = experimentdata_continuous.jobs
     domain = experimentdata_continuous.domain
-    experiment_data = ExperimentData(input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
-    assert experiment_data == ExperimentData(input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
+    experiment_data = ExperimentData(
+        input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
+    assert experiment_data == ExperimentData(
+        input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
     assert experiment_data == experimentdata_continuous
 
 #                                                                              Exporters
@@ -155,20 +162,21 @@ def test_to_pandas(experimentdata_continuous: ExperimentData, pandas_dataframe: 
 
 
 def test_add_new_input_column(experimentdata: ExperimentData, continuous_parameter: ContinuousParameter):
-    experimentdata.add_input_parameter(name='test', parameter=continuous_parameter)
+    experimentdata.add_input_parameter(
+        name='test', parameter=continuous_parameter)
     assert 'test' in experimentdata.input_data.names
 
 
 def test_add_new_output_column(experimentdata: ExperimentData):
-    experimentdata.add_output_parameter(name='test')
+    experimentdata.add_output_parameter(name='test', is_disk=False)
     assert 'test' in experimentdata.output_data.names
 
 
 def test_fill_outputs(experimentdata_continuous: ExperimentData,
                       numpy_output_array: np.ndarray, numpy_array: np.ndarray):
     exp_data = ExperimentData(experimentdata_continuous.domain)
-    exp_data.add_output_parameter(name='y')
-    exp_data.add(domain=exp_data.domain, input_data=numpy_array, output_data=numpy_output_array)
+    exp_data.add(domain=exp_data.domain, input_data=numpy_array,
+                 output_data=numpy_output_array)
     experimentdata_continuous.fill_output(numpy_output_array)
 
     assert exp_data == experimentdata_continuous
@@ -237,7 +245,8 @@ def create_jobs_pickle_finished(filepath):
 
     _data_input = _Data(pd_input())
     _data_output = _Data(pd_output())
-    experimentdata = ExperimentData(domain=domain, input_data=_data_input, output_data=_data_output)
+    experimentdata = ExperimentData(
+        domain=domain, input_data=_data_input, output_data=_data_output)
     experimentdata.jobs.store(filepath)
 
 
@@ -454,20 +463,22 @@ def test_init_with_output(input_data: DataTypes, output_data: DataTypes, domain:
 
     if isinstance(input_data, np.ndarray) and domain is None:
         with pytest.raises(ValueError):
-            ExperimentData(domain=domain, input_data=input_data, output_data=output_data, jobs=jobs)
+            ExperimentData(domain=domain, input_data=input_data,
+                           output_data=output_data, jobs=jobs)
         return
     # Initialize ExperimentData with the CSV file
     experiment_data = ExperimentData(domain=domain, input_data=input_data,
                                      output_data=output_data, jobs=jobs)
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
-    pd.testing.assert_frame_equal(experiment_data.input_data.data, experimentdata_expected.input_data.data)
+    pd.testing.assert_frame_equal(
+        experiment_data.input_data.data, experimentdata_expected.input_data.data)
     pd.testing.assert_frame_equal(experiment_data.output_data.data,
                                   experimentdata_expected.output_data.data)
     assert experiment_data == experimentdata_expected
 
 
-@pytest.mark.parametrize("input_data", [path_input, str_input, pd_input(), data_input(), numpy_input()])
+@pytest.mark.parametrize("input_data", [pd_input(), path_input, str_input, data_input(), numpy_input()])
 @pytest.mark.parametrize("output_data", [None])
 @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
                                                               dimensionality=3), None, path_domain, str_domain])
@@ -527,7 +538,8 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
 
     if isinstance(input_data, np.ndarray) and domain is None:
         with pytest.raises(ValueError):
-            ExperimentData(domain=domain, input_data=input_data, output_data=output_data, jobs=jobs)
+            ExperimentData(domain=domain, input_data=input_data,
+                           output_data=output_data, jobs=jobs)
         return
 
     # Initialize ExperimentData with the CSV file
@@ -535,18 +547,20 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
                                      output_data=output_data, jobs=jobs)
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
-    pd.testing.assert_frame_equal(experiment_data.input_data.data, experimentdata_expected_no_output.input_data.data)
+    pd.testing.assert_frame_equal(
+        experiment_data.input_data.data, experimentdata_expected_no_output.input_data.data)
     pd.testing.assert_frame_equal(experiment_data.output_data.data,
                                   experimentdata_expected_no_output.output_data.data)
-    pd.testing.assert_series_equal(experiment_data.jobs.jobs, experimentdata_expected_no_output.jobs.jobs)
+    pd.testing.assert_series_equal(
+        experiment_data.jobs.jobs, experimentdata_expected_no_output.jobs.jobs)
     assert experiment_data.input_data == experimentdata_expected_no_output.input_data
     assert experiment_data.output_data == experimentdata_expected_no_output.output_data
     assert experiment_data.domain == experimentdata_expected_no_output.domain
     assert experiment_data.jobs == experimentdata_expected_no_output.jobs
 
     assert experiment_data == experimentdata_expected_no_output
-    
-    
+
+
 @pytest.mark.parametrize("input_data", [None])
 @pytest.mark.parametrize("output_data", [None])
 @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
@@ -596,7 +610,8 @@ def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain:
                                      output_data=output_data)
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
-    pd.testing.assert_frame_equal(experiment_data.input_data.data, experimentdata_expected_only_domain.input_data.data)
+    pd.testing.assert_frame_equal(
+        experiment_data.input_data.data, experimentdata_expected_only_domain.input_data.data)
     pd.testing.assert_frame_equal(experiment_data.output_data.data,
                                   experimentdata_expected_only_domain.output_data.data)
     assert experiment_data.input_data == experimentdata_expected_only_domain.input_data
@@ -656,6 +671,7 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
         experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
             "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
 
+
 def test_get_input_data(experimentdata_expected_no_output: ExperimentData):
     input_data = experimentdata_expected_no_output.get_input_data()
     df, _ = input_data.to_pandas()
@@ -672,11 +688,13 @@ def test_get_input_data_selection(experimentdata_expected_no_output: ExperimentD
     selected_pd = pd_input()[selection]
     pd.testing.assert_frame_equal(df, selected_pd)
 
+
 def test_get_output_data(experimentdata_expected: ExperimentData):
     output_data = experimentdata_expected.get_output_data()
     _, df = output_data.to_pandas()
     pd.testing.assert_frame_equal(df, pd_output())
     assert experimentdata_expected.output_data == output_data.output_data
+
 
 @pytest.mark.parametrize("selection", ["y", ["y"]])
 def test_get_output_data_selection(experimentdata_expected: ExperimentData, selection: Iterable[str] | str):
@@ -687,6 +705,7 @@ def test_get_output_data_selection(experimentdata_expected: ExperimentData, sele
     selected_pd = pd_output()[selection]
     pd.testing.assert_frame_equal(df, selected_pd)
 
+
 def test_iter_behaviour(experimentdata_continuous: ExperimentData):
     for i in experimentdata_continuous:
         assert isinstance(i, ExperimentSample)
@@ -694,6 +713,7 @@ def test_iter_behaviour(experimentdata_continuous: ExperimentData):
     selected_experimentdata = experimentdata_continuous.select([0, 2, 4])
     for i in selected_experimentdata:
         assert isinstance(i, ExperimentSample)
+
 
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()

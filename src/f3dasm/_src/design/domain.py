@@ -1,5 +1,6 @@
 """
-The Domain is a set of Parameter instances that make up the feasible search space.
+The Domain is a set of Parameter instances that make up
+ the feasible search space.
 """
 
 #                                                                       Modules
@@ -23,7 +24,7 @@ from omegaconf import DictConfig
 # Local
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, Parameter)
+                        DiscreteParameter, OutputParameter, Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,10 +34,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class _Data:
-    data: pd.DataFrame
 
 
 @dataclass
@@ -50,6 +47,7 @@ class Domain:
     """
 
     space: Dict[str, Parameter] = field(default_factory=dict)
+    output_space: Dict[str, OutputParameter] = field(default_factory=dict)
 
     def __len__(self) -> int:
         """The len() method returns the number of parameters"""
@@ -92,7 +90,8 @@ class Domain:
 
     @property
     def categorical(self) -> Domain:
-        """Returns a Domain object containing only the categorical parameters"""
+        """Returns a Domain object containing only
+         the categorical parameters"""
         return self._filter(CategoricalParameter)
 
     @property
@@ -149,46 +148,56 @@ class Domain:
         Domain
             Domain object
         """
-        return cls({name: instantiate(param, _convert_="all") for name, param in yaml.items()})
+        return cls(
+            {name: instantiate(param, _convert_="all")
+             for name, param in yaml.items()})
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame) -> Domain:
+    def from_dataframe(cls, df_input: pd.DataFrame,
+                       df_output: pd.DataFrame) -> Domain:
         """Initializes a Domain from a pandas DataFrame.
 
         Parameters
         ----------
-        df : pd.DataFrame
+        df_input : pd.DataFrame
             DataFrame containing the input parameters.
+        df_output : pd.DataFrame
+            DataFrame containing the output parameters.
 
         Returns
         -------
         Domain
             Domain object
         """
-        # TODO : If lower_bound and upper_bound are similar, then it is a constant parameter
-        space = {}
-        for name, type in df.dtypes.items():
+        input_space = {}
+        for name, type in df_input.dtypes.items():
             if type == 'float64':
-                if float(df[name].min()) == float(df[name].max()):
-                    space[name] = ConstantParameter(value=float(df[name].min()))
+                if float(df_input[name].min()) == float(df_input[name].max()):
+                    input_space[name] = ConstantParameter(
+                        value=float(df_input[name].min()))
                     continue
 
-                space[name] = ContinuousParameter(lower_bound=float(
-                    df[name].min()), upper_bound=float(df[name].max()))
+                input_space[name] = ContinuousParameter(lower_bound=float(
+                    df_input[name].min()),
+                    upper_bound=float(df_input[name].max()))
             elif type == 'int64':
-                if int(df[name].min()) == int(df[name].max()):
-                    space[name] = ConstantParameter(value=int(df[name].min()))
+                if int(df_input[name].min()) == int(df_input[name].max()):
+                    input_space[name] = ConstantParameter(
+                        value=int(df_input[name].min()))
                     continue
 
-                space[name] = DiscreteParameter(lower_bound=int(df[name].min()), upper_bound=int(df[name].max()))
+                input_space[name] = DiscreteParameter(lower_bound=int(
+                    df_input[name].min()),
+                    upper_bound=int(df_input[name].max()))
             else:
-                space[name] = CategoricalParameter(df[name].unique().tolist())
+                input_space[name] = CategoricalParameter(
+                    df_input[name].unique().tolist())
 
-        return cls(space=space)
+        output_space = {}
+        for name in df_output.columns:
+            output_space[name] = OutputParameter(to_disk=False)
 
-    @classmethod
-    def from_data(cls: Type[Domain], data: _Data) -> Domain:
-        return cls.from_dataframe(data.data)
+        return cls(space=input_space, output_space=output_space)
 
 #                                                                        Export
 # =============================================================================
@@ -206,7 +215,8 @@ class Domain:
 
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
-        return {name: parameter._type for name, parameter in self.space.items()}
+        return {name: parameter._type for
+                name, parameter in self.space.items()}
 
     def _create_empty_dataframe(self) -> pd.DataFrame:
         """Create an empty DataFrame with input columns.
@@ -229,7 +239,9 @@ class Domain:
     def _add(self, name: str, parameter: Parameter):
         # Check if parameter is already in the domain
         if name in self.space:
-            raise KeyError(f"Parameter {name} already exists in the domain! Choose a different name.")
+            raise KeyError(
+                f"Parameter {name} already exists in the domain! \
+                     Choose a different name.")
 
         self.space[name] = parameter
 
@@ -282,7 +294,8 @@ class Domain:
         >>> domain = Domain()
         >>> domain.add_float('param1', 0., 10., log=True)
         >>> domain.space
-        {'param1': ContinuousParameter(lower_bound=0., upper_bound=10., log=True)}
+        {'param1': ContinuousParameter(lower_bound=0.,
+         upper_bound=10., log=True)}
 
         Note
         ----
@@ -345,12 +358,36 @@ class Domain:
         Example
         -------
         >>> domain = Domain()
-        >>> domain.add('param1', ContinuousParameter(lower_bound=0., upper_bound=1.))
+        >>> domain.add('param1',
+         ContinuousParameter(lower_bound=0., upper_bound=1.))
         >>> domain.space
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
         self.space[name] = space
 
+    def add_output(self, name: str, to_disk: bool):
+        """Add a new output parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the output parameter.
+        to_disk : bool
+            Whether to store the output parameter on disk.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_output('param1', True)
+        >>> domain.space
+        {'param1': OutputParameter(to_disk=True)}
+        """
+        if name in self.output_space:
+            raise KeyError(
+                f"Parameter {name} already exists in the domain! \
+                     Choose a different name.")
+
+        self.output_space[name] = OutputParameter(to_disk)
 #                                                                       Getters
 # =============================================================================
 
@@ -460,7 +497,8 @@ class Domain:
         ...     'param2': ContinuousParameter(lower_bound=0, upper_bound=1),
         ...     'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])
         ... }
-        >>> categorical_input_params = domain.get_categorical_input_parameters()
+        >>> categorical_input_params =
+         domain.get_categorical_input_parameters()
         >>> categorical_input_params
         {'param1': CategoricalParameter(categories=['A', 'B', 'C']),
          'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
@@ -507,7 +545,8 @@ class Domain:
         ... }
         >>> constant_input_params = domain.get_constant_input_parameters()
         >>> constant_input_params
-        {'param1': ConstantParameter(value=0), 'param3': ConstantParameter(value=1)}
+        {'param1': ConstantParameter(value=0),
+         'param3': ConstantParameter(value=1)}
         """
         return self._filter(ConstantParameter).space
 
@@ -537,7 +576,8 @@ class Domain:
 
         Returns
         -------
-            numpy array with lower and upper bound for each continuous inpu dimension
+            numpy array with lower and upper bound for each
+             continuous input dimension
 
         Example
         -------
@@ -628,14 +668,45 @@ class Domain:
         """Check if all input parameters are continuous"""
         return len(self) == len(self._filter(ContinuousParameter))
 
+    def check_output(self, names: List[str]):
+        for output_name in names:
+            if not self.is_in_output(output_name):
+                self.add_output(output_name, to_disk=False)
 
-def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensionality: int) -> Domain:
+    def is_in_output(self, output_name: str) -> bool:
+        """Check if output is in the domain
+
+        Parameters
+        ----------
+        output_name : str
+            Name of the output
+
+        Returns
+        -------
+        bool
+            True if output is in the domain, False otherwise
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_output('output1')
+        >>> domain.is_in_output('output1')
+        True
+        >>> domain.is_in_output('output2')
+        False
+        """
+        return output_name in self.output_space
+
+
+def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
+                              dimensionality: int) -> Domain:
     """Create a continuous domain.
 
     Parameters
     ----------
     bounds : numpy.ndarray
-        A 2D numpy array of shape (dimensionality, 2) specifying the lower and upper bounds of every dimension.
+        A 2D numpy array of shape (dimensionality, 2) specifying the lower
+         and upper bounds of every dimension.
     dimensionality : int
         The number of dimensions.
 
@@ -646,8 +717,10 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensiona
 
     Notes
     -----
-    This function creates a Domain object consisting of continuous input parameters.
-    The lower and upper bounds of each input dimension are specified in the `bounds` parameter.
+    This function creates a Domain object consisting of
+     continuous input parameters.
+    The lower and upper bounds of each input dimension are specified
+     in the `bounds` parameter.
     The input parameters are named "x0", "x1" ..
 
     Example
@@ -662,6 +735,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]], dimensiona
     bounds = np.array(bounds)
 
     for dim in range(dimensionality):
-        space[f"x{dim}"] = ContinuousParameter(lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
+        space[f"x{dim}"] = ContinuousParameter(
+            lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)
