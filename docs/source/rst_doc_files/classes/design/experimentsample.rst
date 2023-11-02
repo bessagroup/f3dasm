@@ -123,13 +123,7 @@ A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.Experiment
    ├── my_experiment_output.csv
    └── my_experiment_jobs.pkl
 
-In the :attr:`~f3dasm.design.ExperimentData.output_data`, a reference to the stored object (e.g. :code:`my_project/output_1/0.npy`) will be automatically appended to the `path_<output parameter name>` parameter.
-
-.. code-block:: python
-
-    >>> experiment_sample['output_numpy']
-    'my_project/output_numpy/0.npy'
-
+In the :attr:`~f3dasm.design.ExperimentData.output_data`, a reference to the stored object (e.g. :code:`my_project/output_1/0.npy`) will be automatically appended to the parameter.
 
 
 :mod:`f3dasm` has built-in storing functions for numpy :class:`~numpy.ndarray`, pandas :class:`~pandas.DataFrame` and xarray :class:`~xarray.DataArray` and :class:`~xarray.Dataset`. 
