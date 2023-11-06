@@ -982,7 +982,8 @@ class ExperimentData:
     def optimize(self, optimizer: Optimizer | str,
                  data_generator: DataGenerator | str,
                  iterations: int, kwargs: Optional[Dict[str, Any]] = None,
-                 hyperparameters: Optional[Dict[str, Any]] = None) -> None:
+                 hyperparameters: Optional[Dict[str, Any]] = None,
+                 x0_selection: str = 'best') -> None:
         """Optimize the experimentdata object
 
         Parameters
@@ -999,11 +1000,25 @@ class ExperimentData:
         hyperparameters : Dict[str, Any], optional
             Any additional hyperparameters that need to be supplied to the
              optimizer, by default None
+        x0_selection : str, optional
+            How to select the initial design, by default 'best'
 
         Raises
         ------
         ValueError
+            Raised when invalid x0_selection is specified
+        ValueError
             Raised when invalid optimizer type is specified
+
+        Notes
+        -----
+        The following x0_selections are available:
+        - 'best': Select the best designs from the current experimentdata
+        - 'random': Select random designs from the current experimentdata
+        - 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the
+         population size of the optimizer
         """
         if isinstance(data_generator, str):
             data_generator: DataGenerator = datagenerator_factory(
@@ -1014,12 +1029,14 @@ class ExperimentData:
                 optimizer, self.domain, hyperparameters)
 
         if optimizer.type == 'scipy':
-            self._iterate_scipy(optimizer, data_generator, iterations, kwargs)
+            self._iterate_scipy(
+                optimizer, data_generator, iterations, kwargs, x0_selection)
         else:
-            self._iterate(optimizer, data_generator, iterations, kwargs)
+            self._iterate(
+                optimizer, data_generator, iterations, kwargs, x0_selection)
 
     def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
-                 iterations: int, kwargs: Optional[dict] = None):
+                 iterations: int, kwargs: dict, x0_selection: str):
         """Internal represenation of the iteration process
 
         Parameters
@@ -1030,11 +1047,28 @@ class ExperimentData:
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : Optional[dict], optional
+        kwargs : dict, optional
             any additional keyword arguments that will be passed to
              the DataGenerator, by default None
+        x0_selection : str
+            How to select the initial design
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid x0_selection is specified
+
+        Notes
+        -----
+        The following x0_selections are available:
+        - 'best': Select the best designs from the current experimentdata
+        - 'random': Select random designs from the current experimentdata
+        - 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the
+         population size of the optimizer
         """
-        optimizer.set_x0(self)
+        optimizer.set_x0(self, mode=x0_selection)
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
@@ -1066,7 +1100,8 @@ class ExperimentData:
 
     def _iterate_scipy(self, optimizer: Optimizer,
                        data_generator: DataGenerator,
-                       iterations: int, kwargs: Optional[dict] = None):
+                       iterations: int, kwargs: dict,
+                       x0_selection: str):
         """Internal represenation of the iteration process for s
         cipy-optimize algorithms
 
@@ -1078,25 +1113,43 @@ class ExperimentData:
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : Optional[dict], optional
+        kwargs : dict, optional
             any additional keyword arguments that will be passed
              to the DataGenerator, by default None
+        x0_selection : str
+            How to select the initial design
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid x0_selection is specified
+
+        Notes
+        -----
+        The following x0_selections are available:
+        - 'best': Select the best designs from the current experimentdata
+        - 'random': Select random designs from the current experimentdata
+        - 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the
+         population size of the optimizer
         """
 
-        optimizer.set_x0(self)
+        optimizer.set_x0(self, mode=x0_selection)
         n_data_before_iterate = len(self)
         optimizer._check_number_of_datapoints()
 
         optimizer.run_algorithm(iterations, data_generator)
 
-        self._add_experiments(optimizer.data)
+        # Do not add the first element, as this is already in the sampled data
+        self._add_experiments(optimizer.data.select(optimizer.data.index[1:]))
 
         # TODO: At the end, the data should have
         # n_data_before_iterate + iterations amount of elements!
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
             repeated_last_element = self.get_n_best_output(
-                nosamples=1).to_numpy()[0].ravel()
+                n_samples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
                 self._add_experiments(
@@ -1106,8 +1159,7 @@ class ExperimentData:
         if len(self) < n_data_before_iterate + iterations:
             last_design = self.get_experiment_sample(len(self)-1)
 
-            for repetition in range(
-                    iterations - (len(self) - n_data_before_iterate)):
+            while len(self) < n_data_before_iterate + iterations:
                 self._add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
