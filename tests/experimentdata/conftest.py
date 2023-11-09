@@ -69,7 +69,7 @@ def experimentdata_expected() -> ExperimentData:
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 
-    data.input_data.data = data.input_data.data.round(6)
+    data._input_data.data = data._input_data.data.round(6)
     return data
 
 
@@ -82,7 +82,7 @@ def experimentdata_expected_no_output() -> ExperimentData:
     data.add(input_data=np.array(
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
-    data.input_data.data = data.input_data.data.round(6)
+    data._input_data.data = data._input_data.data.round(6)
     return data
 
 

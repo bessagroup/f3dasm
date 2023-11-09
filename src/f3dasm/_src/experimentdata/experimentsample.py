@@ -155,6 +155,8 @@ class ExperimentSample:
         """
         return self._dict_input
 
+    _input_data = input_data
+
     @property
     def output_data(self) -> Dict[str, Any]:
         """Retrieve the output data of the design as a dictionary.
@@ -170,6 +172,8 @@ class ExperimentSample:
     # create an alias for output_data names output_data_loaded
     # this is for backward compatibility
     output_data_loaded = output_data
+
+    _output_data = output_data
 
     @property
     def output_data_with_references(self) -> Dict[str, Any]:
@@ -201,6 +205,7 @@ class ExperimentSample:
 
     # Alias
     jobs = job_number
+    _jobs = jobs
 
 #                                                                        Export
 # =============================================================================

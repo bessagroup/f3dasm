@@ -49,7 +49,7 @@ def test_correct_sampling_ran(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='random', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
@@ -82,7 +82,7 @@ def test_correct_sampling_sobol(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='sobol', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
     assert df_ground_truth.equals(samples)
 
 
@@ -114,7 +114,7 @@ def test_correct_sampling_lhs(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='latin', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
