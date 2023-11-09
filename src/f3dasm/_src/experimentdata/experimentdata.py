@@ -651,7 +651,6 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample at the given index.
         """
-
         output_experiment_sample_dict = self.output_data.get_data_dict(index)
 
         dict_output = {k: (v, self.domain.output_space[k].to_disk)
@@ -662,6 +661,29 @@ class ExperimentData:
             dict_output=dict_output,
             jobnumber=index,
             experimentdata_directory=self.path)
+
+    def get_experiment_samples(
+            self,
+            indices: Optional[Iterable[int]] = None) -> List[ExperimentSample]:
+        """
+        Gets the experiment_samples at the given indices.
+
+        Parameters
+        ----------
+        indices : Optional[Iterable[int]], optional
+            The indices of the experiment_samples to retrieve, by default None
+            If None, all experiment_samples are retrieved.
+
+        Returns
+        -------
+        List[ExperimentSample]
+            The ExperimentSamples at the given indices.
+        """
+        if indices is None:
+            # Return a list of the iterator over ExperimentData
+            return list(self)
+
+        return [self.get_experiment_sample(index) for index in indices]
 
     def _set_experiment_sample(self,
                                experiment_sample: ExperimentSample) -> None:
