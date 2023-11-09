@@ -353,21 +353,21 @@ class ExperimentData:
         Parameters
         ----------
         parameter_names : str | Iterable[str], optional
-            The name(s) of the input parameters that you want to retrieve,
+            The name(s) of the input parameters that you want to retrieve, \
             if None all input parameters are retrieved, by default None
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the
+            The selected ExperimentData object with only the\
              selected input data.
 
-        Notes
-        -----
-        If parameter_names is None, all input data is retrieved.
-        The returned ExperimentData object has the domain of
-         the original ExperimentData object,
-        but only with the selected input parameters.
+        Note
+        ----
+        If parameter_names is None, all input data is retrieved. \
+        The returned ExperimentData object has the domain of \
+        the original ExperimentData object, \
+        but only with the selected input parameters.\
         """
         if parameter_names is None:
             return ExperimentData(input_data=self.input_data,
@@ -391,20 +391,20 @@ class ExperimentData:
         Parameters
         ----------
         parameter_names : str | Iterable[str], optional
-            The name(s) of the output parameters that you want to retrieve,
+            The name(s) of the output parameters that you want to retrieve, \
             if None all output parameters are retrieved, by default None
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only
-             the selected output data.
+            The selected ExperimentData object with only \
+            the selected output data.
 
-        Notes
-        -----
-        If parameter_names is None, all output data is retrieved.
-        The returned ExperimentData object has no domain object and
-         no input data!
+        Note
+        ----
+        If parameter_names is None, all output data is retrieved. \
+        The returned ExperimentData object has no domain object and \
+        no input data!
         """
         if parameter_names is None:
             # TODO: Make a domain where space is empty
@@ -428,19 +428,20 @@ class ExperimentData:
         filename : str, optional
             filename of the files to store, without suffix
 
-        Notes
-        -----
-        If no filename is given, the filename of the
+        Note
+        ----
+        If no filename is given, the filename of the \
         ExperimentData object is used.
 
-        The ExperimentData object is stored at the location provided by
-        the `.path` attribute that is set upon creation of the object.
-        The ExperimentData object is stored in four files.
+        The ExperimentData object is stored at the location provided by \
+        the `.path` attribute that is set upon creation of the object. \
+        The ExperimentData object is stored in four files. \
         The name is used as a prefix for the four files:
-        - the input data (<name>_input.csv)
-        - the output data (<name>_output.csv)
-        - the jobs (<name>_jobs.pkl)
-        - the domain (<name>_domain.pkl)
+
+        * the input data (`<name>_input.csv`)
+        * the output data (`<name>_output.csv`)
+        * the jobs (`<name>_jobs.pkl`)
+        * the domain (`<name>_domain.pkl`)
         """
         if filename is None:
             filename = self.filename
@@ -457,9 +458,9 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two numpy arrays,
-             the first one for input columns,
-             and the second for output columns.
+            A tuple containing two numpy arrays, \
+            the first one for input columns, \
+            and the second for output columns.
         """
         return self.input_data.to_numpy(), self.output_data.to_numpy()
 
@@ -470,8 +471,8 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two pandas DataFrames,
-             the first one for input columns, and the second for output
+            A tuple containing two pandas DataFrames, \
+            the first one for input columns, and the second for output
         """
         return self.input_data.to_dataframe(), self.output_data.to_dataframe()
 
@@ -769,22 +770,23 @@ class ExperimentData:
         """
         return self.jobs.is_all_finished()
 
-    def mark(self, indices: Iterable[int], status: str) -> None:
+    def mark(self, indices: Iterable[int],
+             status: Literal['open', 'in progress', 'finished', 'error']):
         """Mark the jobs at the given indices with the given status.
 
         Parameters
         ----------
         indices : Iterable[int]
             indices of the jobs to mark
-        status : str
-            status to mark the jobs with: choose between: 'open',
-             'in progress', 'finished' or 'error'
+        status : Literal['open', 'in progress', 'finished', 'error']
+            status to mark the jobs with: choose between: 'open', \
+            'in progress', 'finished' or 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress',
-             'finished' or 'error'
+            If the given status is not any of 'open', 'in progress', \
+            'finished' or 'error'
         """
         # Check if the status is in Status
         if not any(status.lower() == s.value for s in Status):
@@ -794,20 +796,26 @@ class ExperimentData:
 
         self.jobs.mark(indices, status)
 
-    def mark_all(self, status: str) -> None:
+    def mark_all(self,
+                 status: Literal['open', 'in progress', 'finished', 'error']):
         """Mark all the experiments with the given status
 
         Parameters
         ----------
-        status : str
-            status to mark the jobs with:
-             choose between: 'open', 'in progress', 'finished' or 'error'
+        status : Literal['open', 'in progress', 'finished', 'error']
+            status to mark the jobs with: \
+            choose between:
+
+            * 'open',
+            * 'in progress',
+            * 'finished'
+            * 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of
-             'open', 'in progress', 'finished' or 'error'
+            If the given status is not any of \
+            'open', 'in progress', 'finished' or 'error'
         """
         self.mark(self.jobs.indices, status)
 
@@ -1004,11 +1012,11 @@ class ExperimentData:
         iterations : int
             Number of iterations to run
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to
-             the data generator, by default None
+            Any additional keyword arguments that need to be supplied to \
+            the data generator, by default None
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the
-             optimizer, by default None
+            Any additional hyperparameters that need to be supplied to the \
+            optimizer, by default None
         x0_selection : str, optional
             How to select the initial design, by default 'best'
 
@@ -1019,15 +1027,16 @@ class ExperimentData:
         ValueError
             Raised when invalid optimizer type is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
@@ -1057,8 +1066,8 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : dict, optional
-            any additional keyword arguments that will be passed to
-             the DataGenerator, by default None
+            any additional keyword arguments that will be passed to \
+            the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
 
@@ -1067,15 +1076,16 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
         optimizer.set_x0(self, mode=x0_selection)
         optimizer._check_number_of_datapoints()
@@ -1123,8 +1133,8 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : dict, optional
-            any additional keyword arguments that will be passed
-             to the DataGenerator, by default None
+            any additional keyword arguments that will be passed \
+            to the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
 
@@ -1133,15 +1143,16 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
 
         optimizer.set_x0(self, mode=x0_selection)
@@ -1196,9 +1207,10 @@ class ExperimentData:
         Note
         ----
         If a string is passed, it should be one of the built-in samplers:
-        - 'random' : Random sampling
-        - 'latin' : Latin Hypercube Sampling
-        - 'sobol' : Sobol Sequence Sampling
+
+        * 'random' : Random sampling
+        * 'latin' : Latin Hypercube Sampling
+        * 'sobol' : Sobol Sequence Sampling
 
         Raises
         ------
@@ -1239,7 +1251,7 @@ def _data_factory(data: DataTypes) -> _Data:
 def _domain_factory(domain: Domain | None,
                     input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
-        domain.check_output(output_data.names)
+        domain._check_output(output_data.names)
         return domain
 
     elif isinstance(domain, (Path, str)):

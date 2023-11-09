@@ -61,7 +61,6 @@ You can create configurations for each of the :mod:`f3dasm` classes:
 Class                                                         Section referencing how to create the `hydra`_ config            
 ============================================================= ======================================================
 :class:`~f3dasm.design.domain.Domain`                         :ref:`domain-from-yaml`         
-:class:`~f3dasm.sampling.Sampler`                             :ref:`sampler-hydra`  
 :class:`~f3dasm.design.experimentdata.ExperimentData`         :ref:`experimentdata-hydra`
 :class:`~f3dasm.optimization.optimizer.Optimizer`             to be implemented!
 :class:`~f3dasm.datageneration.datagenerator.DataGenerator`   to be implemented!
@@ -74,13 +73,13 @@ Class                                                         Section referencin
 
     domain:
         x0:
-            _target_: f3dasm.ContinuousParameter
-            lower_bound: 0.0
-            upper_bound: 1.0
+            type: float
+            low: 0.0
+            high: 1.0
         x1:
-            _target_: f3dasm.ContinuousParameter
-            lower_bound: 0.0
-            upper_bound: 1.0
+            type: float
+            low: 0.0
+            high: 1.0
 
     experimentdata:
         from_sampling:
@@ -105,7 +104,7 @@ The `main.py` file is the main entry point of the project.
 
 * It imports the necessary modules (`f3dasm`, `hydra`) and the `my_function` from `my_script.py`. 
 * Inside `main.py` script defines a :code:`main` function decorated with :code:`@hydra.main`, which reads the configuration from :code:`config.yaml`. 
-* Within the :code:`main` function, we instantiate the :class:`~f3dasm.design.domain.Domain`, sample from the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.run` method with the specified execution mode.
+* Within the :code:`main` function, we instantiate the :class:`~f3dasm.design.domain.Domain`, sample from the Lating Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.run` method with the specified execution mode.
 
 
 

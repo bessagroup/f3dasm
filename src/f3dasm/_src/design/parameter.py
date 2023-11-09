@@ -98,8 +98,8 @@ class _ContinuousParameter(_Parameter):
         If the upper bound is less than the lower bound, or if the
          lower bound is equal to the upper bound.
 
-    Notes
-    -----
+    Note
+    ----
     This class inherits from the `Parameter` class and adds the ability
      to specify a continuous search space.
     """

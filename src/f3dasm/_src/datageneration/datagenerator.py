@@ -48,14 +48,14 @@ class DataGenerator:
         """Interface function that handles the pre-processing of
          the data generator
 
-        Notes
-        -----
-        If not implemented the function will be skipped
+        Note
+        ----
+        If not implemented the function will be skipped.
 
-        The experiment_sample is cached inside the data generator. This
-        allows the user to access the experiment_sample in the pre_process,
-         execute and post_process functions as a class variable called
-          self.experiment_sample.
+        The experiment_sample is cached inside the data generator. This \
+        allows the user to access the experiment_sample in the pre_process, \
+        execute and post_process functions as a class variable called \
+        self.experiment_sample.
         """
         ...
 
@@ -68,29 +68,29 @@ class DataGenerator:
         NotImplementedError
             If the function is not implemented by the user
 
-        Notes
-        -----
-        The experiment_sample is cached inside the data generator. This
-        allows the user to access the experiment_sample in
-         the pre_process, execute and post_process functions as a class
-          variable called self.experiment_sample.
+        Note
+        ----
+        The experiment_sample is cached inside the data generator. This \
+        allows the user to access the experiment_sample in \
+        the pre_process, execute and post_process functions as a class \
+        variable called self.experiment_sample.
         """
 
         ...
 
     def post_process(
             self, experiment_sample: ExperimentSample, **kwargs) -> None:
-        """Interface function that handles the post-processing
-         of the data generator
+        """Interface function that handles the post-processing \
+        of the data generator
 
-        Notes
-        -----
-        If not implemented the function will be skipped
+        Note
+        ----
+        If not implemented the function will be skipped.
 
-        The experiment_sample is cached inside the data generator. This
-        allows the user to access the experiment_sample in the
-         pre_process, execute and post_process functions as a class variable
-         called self.experiment_sample.
+        The experiment_sample is cached inside the data generator. This \
+        allows the user to access the experiment_sample in the \
+        pre_process, execute and post_process functions as a class variable \
+        called self.experiment_sample.
         """
         ...
 
@@ -99,23 +99,23 @@ class DataGenerator:
             self, experiment_sample: ExperimentSample,
             **kwargs) -> ExperimentSample:
         """
-        Run the data generator
+        Run the data generator.
         This function chains the following methods together
 
-        * pre_process(); to combine the experiment_sample and the parameters
-        of the data generator to an input file that can be used to run the
-         data generator
+        * pre_process(); to combine the experiment_sample and the parameters \
+        of the data generator to an input file that can be used to run the \
+        data generator.
 
-        * execute(); to run the data generator and generate the response of
-         the experiment
+        * execute(); to run the data generator and generate the response of \
+        the experiment
 
-        * post_process(); to process the response of the experiment and store
-         it back in the experiment_sample
+        * post_process(); to process the response of the experiment and store \
+        it back in the experiment_sample
 
-        The function also caches the experiment_sample in the data generator.
-         This allows the user to access the experiment_sample in the
-         pre_process, execute and post_process functions as a class variable
-         called self.experiment_sample.
+        The function also caches the experiment_sample in the data generator. \
+        This allows the user to access the experiment_sample in the \
+        pre_process, execute and post_process functions as a class variable \
+        called self.experiment_sample.
 
         Parameters
         ----------
@@ -123,14 +123,14 @@ class DataGenerator:
             The design to run the data generator on
 
         kwargs : dict
-            The keyword arguments to pass to the pre_process, execute
-             and post_process
+            The keyword arguments to pass to the pre_process, execute \
+            and post_process
 
         Returns
         -------
         ExperimentSample
-            Processed design with the response of the data generator
-             saved in the experiment_sample
+            Processed design with the response of the data generator \
+            saved in the experiment_sample
         """
         # Cache the design
         self.experiment_sample: ExperimentSample = experiment_sample

@@ -131,8 +131,8 @@ class Domain:
         """Initialize a Domain from a Hydra YAML configuration file key
 
 
-        Notes
-        -----
+        Note
+        ----
         The YAML file should have the following structure:
 
         .. code-block:: yaml
@@ -610,8 +610,8 @@ class Domain:
 
         Returns
         -------
-            numpy array with lower and upper bound for each
-             continuous input dimension
+            numpy array with lower and upper bound for each \
+            continuous input dimension
 
         Example
         -------
@@ -702,7 +702,26 @@ class Domain:
         """Check if all input parameters are continuous"""
         return len(self) == len(self._filter(_ContinuousParameter))
 
-    def check_output(self, names: List[str]):
+    def _check_output(self, names: List[str]):
+        """Check if output is in the domain and add it if not
+
+        Parameters
+        ----------
+
+        names : list of str
+            Names of the outputs to be checked
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_output('output1')
+        >>> domain.add_output('output2')
+        >>> domain._check_output(['output1', 'output2', 'output3'])
+        >>> domain.output_space
+        {'output1': _ContinuousParameter(lower_bound=-inf, upper_bound=inf),
+         'output2': _ContinuousParameter(lower_bound=-inf, upper_bound=inf),
+         'output3': _ContinuousParameter(lower_bound=-inf, upper_bound=inf)}
+        """
         for output_name in names:
             if not self.is_in_output(output_name):
                 self.add_output(output_name, to_disk=False)
@@ -739,8 +758,8 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     Parameters
     ----------
     bounds : numpy.ndarray
-        A 2D numpy array of shape (dimensionality, 2) specifying the lower
-         and upper bounds of every dimension.
+        A 2D numpy array of shape (dimensionality, 2) specifying the lower \
+        and upper bounds of every dimension.
     dimensionality : int
         The number of dimensions.
 
@@ -749,12 +768,14 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     Domain
         A continuous domain with a continuous input.
 
-    Notes
-    -----
-    This function creates a Domain object consisting of
-     continuous input parameters.
-    The lower and upper bounds of each input dimension are specified
-     in the `bounds` parameter.
+    Note
+    ----
+    This function creates a Domain object consisting of \
+    continuous input parameters.
+
+    The lower and upper bounds of each input dimension are specified \
+    in the `bounds` parameter.
+
     The input parameters are named "x0", "x1" ..
 
     Example

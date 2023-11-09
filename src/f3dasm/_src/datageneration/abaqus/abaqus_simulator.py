@@ -45,8 +45,8 @@ class AbaqusSimulator(DataGenerator):
             Set true if you want to delete the temporary files after
              post-processing, by default True
 
-        Notes
-        -----
+        Note
+        ----
         The kwargs are saved as attributes to the class. This is useful for the
         simulation script to access the parameters.
         """
