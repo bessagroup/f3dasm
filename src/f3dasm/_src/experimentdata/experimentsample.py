@@ -332,7 +332,7 @@ class ExperimentSample:
         Dict[str, Any]
             The output data of the design as a dictionary with references.
         """
-        return self._dict_output
+        return {key: value for key, (value, _) in self._dict_output.items()}
 
     @property
     def job_number(self) -> int:
