@@ -633,7 +633,7 @@ class Brown(PyBenchFunction):
         assert (d is None) or (
             isinstance(d, int) and (not d < 0)
         ), "The dimension d must be None or a positive integer"
-        return (d is None) or (d > 0)
+        return (d is None) or (d > 1)
 
     def _set_parameters(self=None):
         d = self.dimensionality
