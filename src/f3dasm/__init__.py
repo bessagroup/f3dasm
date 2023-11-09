@@ -18,11 +18,9 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 from ._src import _imports as _imports
 from ._src._argparser import HPC_JOBID
 from ._src._imports import try_import
-from ._src.design.domain import Domain, make_nd_continuous_domain
 from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
-from ._src.optimization.optimizer import Optimizer
 from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
                                     run_multiple_realizations,
                                     run_optimization)
@@ -45,24 +43,16 @@ logger.info(f"Imported f3dasm (version: {__version__})")
 __all__ = [
     'datageneration',
     'design',
-    'machinelearning',
     'optimization',
-    'sampling',
-    'Domain',
-    'make_nd_continuous_domain',
     'ExperimentData',
+    'ExperimentSample',
     'DistributedFileHandler',
     'logger',
-    'Optimizer',
     'run_on_experimentdata',
     'run_operation_on_experiments',
     'OptimizationResult',
     'run_multiple_realizations',
-    'run_multiple_realizations_to_disk',
     'run_optimization',
-    'run_optimization_to_disk',
-    'Sampler',
-    'ExperimentSample',
     'HPC_JOBID',
     'try_import',
     'calculate_mean_std',
