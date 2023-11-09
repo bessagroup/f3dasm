@@ -264,7 +264,7 @@ class Domain:
         >>> domain = Domain()
         >>> domain.add_int('param1', 0, 10, 2)
         >>> domain.space
-        {'param1': DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
+        {'param1': _DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
 
         Note
         ----
@@ -294,7 +294,7 @@ class Domain:
         >>> domain = Domain()
         >>> domain.add_float('param1', 0., 10., log=True)
         >>> domain.space
-        {'param1': ContinuousParameter(lower_bound=0.,
+        {'param1': _ContinuousParameter(lower_bound=0.,
          upper_bound=10., log=True)}
 
         Note
@@ -359,9 +359,9 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add('param1',
-         ContinuousParameter(lower_bound=0., upper_bound=1.))
+         _ContinuousParameter(lower_bound=0., upper_bound=1.))
         >>> domain.space
-        {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
+        {'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
         self.space[name] = space
 
@@ -396,21 +396,21 @@ class Domain:
 
         Returns
         -------
-        Dict[str, ContinuousParameter]
+        Dict[str, _ContinuousParameter]
             Space of continuous input parameters.
 
         Example
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
         ...     'param2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)
+        ...     'param3': _ContinuousParameter(lower_bound=2., upper_bound=5.)
         ... }
         >>> continuous_input_params = domain.get_continuous_input_parameters()
         >>> continuous_input_params
-        {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-         'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)}
+        {'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
+         'param3': _ContinuousParameter(lower_bound=2., upper_bound=5.)}
         """
         return self._filter(_ContinuousParameter).space
 
@@ -426,9 +426,9 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': DiscreteParameter(lower_bound=1, upper_bound=3),
-        ...     'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)
+        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param2': _DiscreteParameter(lower_bound=1, upper_bound=3),
+        ...     'param3': _ContinuousParameter(lower_bound=2., upper_bound=5.)
         ... }
         >>> continuous_input_names = domain.get_continuous_input_names()
         >>> continuous_input_names
@@ -441,21 +441,21 @@ class Domain:
 
         Returns
         -------
-        Dict[str, DiscreteParameter]
+        Dict[str, _DiscreteParameter]
             Space of discrete input parameters.
 
         Example
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': DiscreteParameter(lower_bound=1, upperBound=4),
+        ...     'param1': _DiscreteParameter(lower_bound=1, upperBound=4),
         ...     'param2': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param3': DiscreteParameter(lower_bound=4, upperBound=6)
+        ...     'param3': _DiscreteParameter(lower_bound=4, upperBound=6)
         ... }
         >>> discrete_input_params = domain.get_discrete_input_parameters()
         >>> discrete_input_params
-        {'param1': DiscreteParameter(lower_bound=1, upperBound=4)),
-         'param3': DiscreteParameter(lower_bound=4, upperBound=6)}
+        {'param1': _DiscreteParameter(lower_bound=1, upperBound=4)),
+         'param3': _DiscreteParameter(lower_bound=4, upperBound=6)}
         """
         return self._filter(_DiscreteParameter).space
 
@@ -471,9 +471,9 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': DiscreteParameter(lower_bound=1, upperBound=4),
-        ...     'param2': ContinuousParameter(lower_bound=0, upper_bound=1),
-        ...     'param3': DiscreteParameter(lower_bound=4, upperBound=6)
+        ...     'param1': _DiscreteParameter(lower_bound=1, upperBound=4),
+        ...     'param2': _ContinuousParameter(lower_bound=0, upper_bound=1),
+        ...     'param3': _DiscreteParameter(lower_bound=4, upperBound=6)
         ... }
         >>> discrete_input_names = domain.get_discrete_input_names()
         >>> discrete_input_names
@@ -494,7 +494,7 @@ class Domain:
         >>> domain = Domain()
         >>> domain.space = {
         ...     'param1': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param2': ContinuousParameter(lower_bound=0, upper_bound=1),
+        ...     'param2': _ContinuousParameter(lower_bound=0, upper_bound=1),
         ...     'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])
         ... }
         >>> categorical_input_params =
@@ -518,7 +518,7 @@ class Domain:
         >>> domain = Domain()
         >>> domain.space = {
         ...     'param1': CategoricalParameter(categories=['A', 'B', 'C']),
-        ...     'param2': ContinuousParameter(lower_bound=0, upper_bound=1),
+        ...     'param2': _ContinuousParameter(lower_bound=0, upper_bound=1),
         ...     'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])
         ... }
         >>> categorical_input_names = domain.get_categorical_input_names()
@@ -563,7 +563,7 @@ class Domain:
         >>> domain.space = {
         ...     'param1': ConstantParameter(value=0),
         ...     'param2': ConstantParameter(value=1),
-        ...     'param3': ContinuousParameter(lower_bound=0, upper_bound=1)
+        ...     'param3': _ContinuousParameter(lower_bound=0, upper_bound=1)
         ... }
         >>> constant_input_names = domain.get_constant_input_names()
         >>> constant_input_names
@@ -583,9 +583,9 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': ContinuousParameter(lower_bound=0, upper_bound=1),
-        ...     'param2': ContinuousParameter(lower_bound=-1, upper_bound=1),
-        ...     'param3': ContinuousParameter(lower_bound=0, upper_bound=10)
+        ...     'param1': _ContinuousParameter(lower_bound=0, upper_bound=1),
+        ...     'param2': _ContinuousParameter(lower_bound=-1, upper_bound=1),
+        ...     'param3': _ContinuousParameter(lower_bound=0, upper_bound=10)
         ... }
         >>> bounds = domain.get_bounds()
         >>> bounds
@@ -615,13 +615,13 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
+        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param2': _DiscreteParameter(lower_bound=0, upper_bound=8),
         ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
         ... }
-        >>> filtered_domain = domain.filter_parameters(ContinuousParameter)
+        >>> filtered_domain = domain.filter_parameters(_ContinuousParameter)
         >>> filtered_domain.space
-        {'param1': ContinuousParameter(lower_bound=0, upper_bound=1)}
+        {'param1': _ContinuousParameter(lower_bound=0, upper_bound=1)}
 
         """
         return Domain(
@@ -647,12 +647,12 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.space = {
-        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
+        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param2': _DiscreteParameter(lower_bound=0, upper_bound=8),
         ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
         ... }
         >>> domain.select(['param1', 'param3'])
-        Domain({'param1': ContinuousParameter(lower_bound=0, upper_bound=1),
+        Domain({'param1': _ContinuousParameter(lower_bound=0, upper_bound=1),
                 'param3': CategoricalParameter(categories=['cat1', 'cat2'])})
         """
 
