@@ -67,9 +67,9 @@ def test_add_input_space():
     }
 
     design = Domain(space=designspace)
-    design.add('x4', _CategoricalParameter(
-        categories=["test1", "test2", "test3"]))
-    design.add('x5', _DiscreteParameter(lower_bound=2, upper_bound=3))
+    design.add('x4', type='category',
+               categories=["test1", "test2", "test3"])
+    design.add('x5', type='int', low=2, high=3)
 
     assert design.space == {
         'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
@@ -88,9 +88,9 @@ def test_add_space():
     }
 
     domain = Domain(space=designspace)
-    domain.add('x4', _CategoricalParameter(
-        categories=["test1", "test2", "test3"]))
-    domain.add('x5', _DiscreteParameter(lower_bound=2, upper_bound=3))
+    domain.add('x4', type='category',
+               categories=["test1", "test2", "test3"])
+    domain.add('x5', type='int', low=2, high=3)
 
     assert domain.space == {
         'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),

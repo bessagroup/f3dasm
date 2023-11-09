@@ -161,9 +161,12 @@ def test_to_pandas(experimentdata_continuous: ExperimentData, pandas_dataframe: 
 # ======================================================================================
 
 
-def test_add_new_input_column(experimentdata: ExperimentData, continuous_parameter: _ContinuousParameter):
+def test_add_new_input_column(experimentdata: ExperimentData,
+                              continuous_parameter: _ContinuousParameter):
+    kwargs = {'low': continuous_parameter.lower_bound,
+              'high': continuous_parameter.upper_bound}
     experimentdata.add_input_parameter(
-        name='test', parameter=continuous_parameter)
+        name='test', type='float', **kwargs)
     assert 'test' in experimentdata.input_data.names
 
 
