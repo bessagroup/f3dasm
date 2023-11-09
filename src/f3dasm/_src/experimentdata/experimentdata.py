@@ -493,8 +493,8 @@ class ExperimentData:
              'output': self._output_data.to_xarray('output_dim')})
 
     def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        """Get the n best samples from the output data.
-         We consider a minimization problem
+        """Get the n best samples from the output data. \
+        We consider lower values to be better.
 
         Parameters
         ----------
@@ -505,6 +505,13 @@ class ExperimentData:
         -------
         ExperimentData
             New experimentData object with a selection of the n best samples.
+
+        Note
+        ----
+
+        The n best samples are selected based on the output data. \
+        The output data is sorted based on the first output parameter. \
+        The n best samples are selected based on this sorting. \
         """
         df = self._output_data.n_best_samples(
             n_samples, self._output_data.names)
@@ -667,7 +674,6 @@ class ExperimentData:
             The ExperimentSample at the given index.
         """
         output_experiment_sample_dict = self._output_data.get_data_dict(index)
-
 
         dict_output = {k: (v, self.domain.output_space[k].to_disk)
                        for k, v in output_experiment_sample_dict.items()}

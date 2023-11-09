@@ -309,7 +309,8 @@ class _Data:
         nosamples : int
             The number of samples to return.
         column_name : List[str] | str
-            The column name to sort on.
+            The column name(s) to sort on. If this is a list; priority will \
+            be given on the first entry.
 
         Returns
         -------
