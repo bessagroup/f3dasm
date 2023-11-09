@@ -36,8 +36,9 @@ from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
 from .experimentsample import ExperimentSample
-from .utils import (DOMAIN_SUFFIX, INPUT_DATA_SUFFIX, JOBS_SUFFIX,
-                    OUTPUT_DATA_SUFFIX, DataTypes, number_of_overiterations,
+from .utils import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
+                    INPUT_DATA_FILENAME, JOBS_FILENAME, LOCKFILE,
+                    OUTPUT_DATA_FILENAME, DataTypes, number_of_overiterations,
                     number_of_updates)
 
 #                                                          Authorship & Credits
@@ -55,11 +56,11 @@ class ExperimentData:
     A class that contains data for experiments.
     """
 
-    def __init__(self, domain: Optional[Domain] = None,
+    def __init__(self,
+                 domain: Optional[Domain] = None,
                  input_data: Optional[DataTypes] = None,
                  output_data: Optional[DataTypes] = None,
                  jobs: Optional[Path | str] = None,
-                 filename: Optional[str] = 'experimentdata',
                  path: Optional[Path] = None):
         """
         Initializes an instance of ExperimentData.
@@ -74,11 +75,9 @@ class ExperimentData:
             The output data of the experiment, by default None
         jobs : Path | str, optional
             The path to the jobs file, by default None
-        filename : str, optional
-            The filename of the experiment, by default 'experimentdata'
-        path : Path, optional
-            The path to the experimentdata file, by default\
-            the current working directory
+        path : Path | str, optional
+            A user-defined directory where the f3dasm project folder will be \
+            created, by default the current working directory.
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
@@ -86,12 +85,7 @@ class ExperimentData:
                 'If you provide a numpy array as input_data, \
                 you have to provide the domain!')
 
-        self.filename = filename
-
-        if path is None:
-            path = Path().cwd()
-
-        self.path = path
+        self.path = _path_factory(path)
 
         self._input_data = _data_factory(input_data)
         self._output_data = _data_factory(output_data)
@@ -157,7 +151,7 @@ class ExperimentData:
             input_data=self._input_data + other._input_data,
             output_data=self._output_data + other._output_data,
             jobs=self._jobs + other._jobs, domain=self.domain,
-            filename=self.filename)
+            path=self.path)
 
     def __eq__(self, __o: ExperimentData) -> bool:
         return all([self._input_data == __o._input_data,
@@ -182,11 +176,13 @@ class ExperimentData:
         """
         @wraps(operation)
         def wrapper_func(self, *args, **kwargs) -> None:
-            lock = FileLock(Path(self.filename).with_suffix('.lock'))
+            lock = FileLock(
+                Path(self.path / EXPERIMENTDATA_SUBFOLDER / LOCKFILE)
+                .with_suffix('.lock'))
             with lock:
-                self = ExperimentData.from_file(filename=Path(self.filename))
+                self = ExperimentData.from_file(self.path)
                 value = operation(self, *args, **kwargs)
-                self.store(filename=Path(self.filename))
+                self.store()
             return value
 
         return wrapper_func
@@ -209,35 +205,37 @@ class ExperimentData:
     # =========================================================================
 
     @classmethod
-    def from_file(cls: Type[ExperimentData], filename: str = 'experimentdata'
-                  ) -> ExperimentData:
+    def from_file(cls: Type[ExperimentData],
+                  path: Path | str) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
 
         Parameters
         ----------
-        filename : str, optional
-            Name of the file, excluding suffix, by default 'experimentdata'.
+        path : Path | str
+            User defined path of the experimentdata directory.
 
         Returns
         -------
         ExperimentData
             ExperimentData object containing the loaded data.
         """
+        if isinstance(path, str):
+            path = Path(path)
+
         try:
-            return cls._from_file_attempt(Path(filename))
+            return cls._from_file_attempt(path)
         except FileNotFoundError:
             try:
-                filename_with_path = Path(get_original_cwd()) / filename
+                filename_with_path = Path(get_original_cwd()) / path
             except ValueError:  # get_original_cwd() hydra initialization error
-                raise FileNotFoundError(f"Cannot find the file {filename} !")
+                raise FileNotFoundError(f"Cannot find the folder {path} !")
 
             return cls._from_file_attempt(filename_with_path)
 
     @classmethod
     def from_sampling(cls, sampler: Sampler | str, domain: Domain,
                       n_samples: int = 1,
-                      seed: Optional[int] = None,
-                      filename: str = 'experimentdata') -> ExperimentData:
+                      seed: Optional[int] = None) -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -250,15 +248,13 @@ class ExperimentData:
             Number of samples, by default 1.
         seed : int, optional
             Seed for the random number generator, by default None.
-        filename : str, optional
-            Name of the file, excluding suffix, by default 'experimentdata'.
 
         Returns
         -------
         ExperimentData
             ExperimentData object containing the sampled data.
         """
-        experimentdata = cls(domain=domain, filename=filename)
+        experimentdata = cls(domain=domain)
         experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
         return experimentdata
 
@@ -278,7 +274,7 @@ class ExperimentData:
         """
         # Option 1: From exisiting ExperimentData files
         if 'from_file' in config.experimentdata:
-            return cls.from_file(filename=config.experimentdata.from_file)
+            return cls.from_file(path=config.experimentdata.from_file)
 
         # Option 2: Sample from the domain
         elif 'from_sampling' in config.experimentdata:
@@ -287,22 +283,21 @@ class ExperimentData:
                 sampler=config.experimentdata.from_sampling.sampler,
                 domain=domain,
                 n_samples=config.experimentdata.from_sampling.n_samples,
-                seed=config.experimentdata.from_sampling.seed,
-                filename=config.experimentdata.name)
+                seed=config.experimentdata.from_sampling.seed)
 
         else:
             return cls(**config)
 
     @classmethod
     def _from_file_attempt(cls: Type[ExperimentData],
-                           filename: Path) -> ExperimentData:
+                           path: Path) -> ExperimentData:
         """Attempt to create an ExperimentData object
-        from .csv and .json files.
+        from .csv and .pkl files.
 
         Parameters
         ----------
-        filename : Path
-            Name of the file, excluding suffix.
+        path : Path
+            Name of the user-defined directory where the files are stored.
 
         Returns
         -------
@@ -312,16 +307,19 @@ class ExperimentData:
         Raises
         ------
         FileNotFoundError
-            If the file cannot be found.
+            If the files cannot be found.
         """
+        subdirectory = path / EXPERIMENTDATA_SUBFOLDER
+
         try:
-            return cls(domain=Path(f"{filename}{DOMAIN_SUFFIX}"),
-                       input_data=Path(f"{filename}{INPUT_DATA_SUFFIX}"),
-                       output_data=Path(f"{filename}{OUTPUT_DATA_SUFFIX}"),
-                       jobs=Path(f"{filename}{JOBS_SUFFIX}"),
-                       filename=filename.name, path=filename.parent)
+            return cls(domain=subdirectory / DOMAIN_FILENAME,
+                       input_data=subdirectory / INPUT_DATA_FILENAME,
+                       output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                       jobs=subdirectory / JOBS_FILENAME,
+                       path=path)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Cannot find the files from {filename}.")
+            raise FileNotFoundError(
+                f"Cannot find the files from {subdirectory}.")
 
     #                                                         Selecting subsets
     # =========================================================================
@@ -343,8 +341,7 @@ class ExperimentData:
         return ExperimentData(input_data=self._input_data[indices],
                               output_data=self._output_data[indices],
                               jobs=self._jobs[indices],
-                              domain=self.domain,
-                              filename=self.filename, path=self.path)
+                              domain=self.domain, path=self.path)
 
     def get_input_data(self,
                        parameter_names: Optional[str | Iterable[str]] = None
@@ -374,14 +371,12 @@ class ExperimentData:
             return ExperimentData(input_data=self._input_data,
                                   jobs=self._jobs,
                                   domain=self.domain,
-                                  filename=self.filename,
                                   path=self.path)
         else:
             return ExperimentData(input_data=self._input_data.select_columns(
                 parameter_names),
                 jobs=self._jobs,
                 domain=self.domain.select(parameter_names),
-                filename=self.filename,
                 path=self.path)
 
     def get_output_data(self,
@@ -412,46 +407,41 @@ class ExperimentData:
             # but it tracks output_space!
             return ExperimentData(
                 output_data=self._output_data, jobs=self._jobs,
-                filename=self.filename, path=self.path)
+                path=self.path)
         else:
             return ExperimentData(
                 output_data=self._output_data.select_columns(parameter_names),
                 jobs=self._jobs,
-                filename=self.filename, path=self.path)
+                path=self.path)
 
     #                                                                    Export
     # =========================================================================
 
-    def store(self, filename: Optional[str] = None):
+    def store(self):
         """Store the ExperimentData to disk, with checking for a lock
-
-        Parameters
-        ----------
-        filename : str, optional
-            filename of the files to store, without suffix
 
         Note
         ----
-        If no filename is given, the filename of the \
-        ExperimentData object is used.
+        The ExperimentData object is stored in a subfolder 'experiment_data' \
+        at the location provided by the `.path` attribute that is set upon \
+        creation of the object.
 
-        The ExperimentData object is stored at the location provided by \
-        the `.path` attribute that is set upon creation of the object. \
-        The ExperimentData object is stored in four files. \
-        The name is used as a prefix for the four files:
+        The ExperimentData object is stored in four files:
 
-        * the input data (`<name>_input.csv`)
-        * the output data (`<name>_output.csv`)
-        * the jobs (`<name>_jobs.pkl`)
-        * the domain (`<name>_domain.pkl`)
+        * the input data (`input.csv`)
+        * the output data (`output.csv`)
+        * the jobs (`jobs.pkl`)
+        * the domain (`domain.pkl`)
         """
-        if filename is None:
-            filename = self.filename
+        subdirectory = self.path / EXPERIMENTDATA_SUBFOLDER
 
-        self._input_data.store(Path(f"{filename}{INPUT_DATA_SUFFIX}"))
-        self._output_data.store(Path(f"{filename}{OUTPUT_DATA_SUFFIX}"))
-        self._jobs.store(Path(f"{filename}{JOBS_SUFFIX}"))
-        self.domain.store(Path(f"{filename}{DOMAIN_SUFFIX}"))
+        # Create the subdirectory if it does not exist
+        subdirectory.mkdir(parents=True, exist_ok=True)
+
+        self._input_data.store(subdirectory / Path(INPUT_DATA_FILENAME))
+        self._output_data.store(subdirectory / Path(OUTPUT_DATA_FILENAME))
+        self._jobs.store(subdirectory / Path(JOBS_FILENAME))
+        self.domain.store(subdirectory / Path(DOMAIN_FILENAME))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -1000,7 +990,7 @@ class ExperimentData:
         """
         # Retrieve the updated experimentdata object from disc
         try:
-            self = self.from_file(self.filename)
+            self = self.from_file(self.path)
         except FileNotFoundError:  # If not found, store current
             self.store()
 
@@ -1023,9 +1013,10 @@ class ExperimentData:
                 self._write_error(experiment_sample._jobnumber)
                 continue
 
-        self = self.from_file(self.filename)
+        self = self.from_file(self.path)
         # Remove the lockfile from disk
-        Path(self.filename).with_suffix('.lock').unlink(missing_ok=True)
+        (self.path / EXPERIMENTDATA_SUBFOLDER / LOCKFILE).with_suffix(
+            '.lock').unlink(missing_ok=True)
 
     #                                                              Optimization
     # =========================================================================
@@ -1333,3 +1324,30 @@ def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
         return _JobQueue.from_data(output_data, value=job_value)
 
     return _JobQueue.from_data(input_data, value=job_value)
+
+
+def _path_factory(path: Path | str | None) -> Path:
+    """Creates a Path object from particular input
+
+    Parameters
+    ----------
+    path : Path | str | None
+        path of the user-defined directory where to create the f3dasm project \
+        folder.
+
+    Returns
+    -------
+    Path
+        Path object
+    """
+    if isinstance(path, Path):
+        return path
+
+    if path is None:
+        return Path().cwd()
+
+    if isinstance(path, str):
+        return Path(path)
+
+    raise TypeError(
+        f"Path must be of type Path, str or None, not {type(path)}")

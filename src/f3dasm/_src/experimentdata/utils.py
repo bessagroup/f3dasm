@@ -27,10 +27,14 @@ __status__ = 'Stable'
 #
 
 DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
-DOMAIN_SUFFIX = "_domain"
-INPUT_DATA_SUFFIX = "_input"
-OUTPUT_DATA_SUFFIX = "_output"
-JOBS_SUFFIX = "_jobs"
+
+EXPERIMENTDATA_SUBFOLDER = "experiment_data"
+
+LOCKFILE = "lock"
+DOMAIN_FILENAME = "domain"
+INPUT_DATA_FILENAME = "input"
+OUTPUT_DATA_FILENAME = "output"
+JOBS_FILENAME = "jobs"
 
 
 def number_of_updates(iterations: int, population: int):
