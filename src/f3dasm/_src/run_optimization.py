@@ -21,10 +21,10 @@ from f3dasm.optimization import Optimizer
 
 # Locals
 from .datageneration.datagenerator import DataGenerator
-from .datageneration.functions.function_factory import datagenerator_factory
+from .datageneration.functions.function_factory import _datagenerator_factory
 from .experimentdata.experimentdata import ExperimentData
 from .logger import logger, time_and_log
-from .optimization.optimizer_factory import optimizer_factory
+from .optimization.optimizer_factory import _optimizer_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -62,7 +62,7 @@ class OptimizationResult:
             total optimization time
         """
         self.data = data
-        self.optimizer = optimizer_factory(
+        self.optimizer = _optimizer_factory(
             optimizer=optimizer, domain=self.data[0].domain)
         self.data_generator = data_generator
         self.kwargs = kwargs,
@@ -70,7 +70,7 @@ class OptimizationResult:
         self.seeds = seeds
         self.opt_time = opt_time
 
-        self.func = datagenerator_factory(
+        self.func = _datagenerator_factory(
             data_generator=self.data_generator,
             domain=self.data[0].domain, kwargs=kwargs)
         self._log()
@@ -154,7 +154,7 @@ def run_optimization(
         hyperparameters = {}
 
     # Set function seed
-    optimizer = optimizer_factory(
+    optimizer = _optimizer_factory(
         optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
 
     optimizer.set_seed()

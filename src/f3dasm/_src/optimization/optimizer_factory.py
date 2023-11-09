@@ -36,7 +36,7 @@ OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
 OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
 
 
-def optimizer_factory(
+def _optimizer_factory(
         optimizer: str, domain: Domain,
         hyperparameters: Optional[Dict[str, Any]] = None) -> Optimizer:
     """Factory function for optimizers

@@ -27,13 +27,13 @@ from pathos.helpers import mp
 
 # Local
 from ..datageneration.datagenerator import DataGenerator
-from ..datageneration.functions.function_factory import datagenerator_factory
+from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain
 from ..design.parameter import Parameter
-from ..design.samplers import Sampler, sampler_factory
+from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
-from ..optimization.optimizer_factory import optimizer_factory
+from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
 from .experimentsample import ExperimentSample
@@ -94,8 +94,8 @@ class ExperimentData:
 
         self.path = path
 
-        self.input_data = data_factory(input_data)
-        self.output_data = data_factory(output_data)
+        self.input_data = _data_factory(input_data)
+        self.output_data = _data_factory(output_data)
 
         # Create empty output_data from indices if output_data is empty
         if self.output_data.is_empty():
@@ -105,13 +105,14 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        self.domain = domain_factory(domain, self.input_data, self.output_data)
+        self.domain = _domain_factory(
+            domain, self.input_data, self.output_data)
 
         # Create empty input_data from domain if input_data is empty
         if self.input_data.is_empty():
             self.input_data = _Data.from_domain(self.domain)
 
-        self.jobs = jobs_factory(
+        self.jobs = _jobs_factory(
             jobs, self.input_data, self.output_data, job_value)
 
         # Check if the columns of input_data are in the domain
@@ -833,7 +834,7 @@ class ExperimentData:
             kwargs = {}
 
         if isinstance(data_generator, str):
-            data_generator = datagenerator_factory(
+            data_generator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
         if mode.lower() == "sequential":
@@ -1021,11 +1022,11 @@ class ExperimentData:
          population size of the optimizer
         """
         if isinstance(data_generator, str):
-            data_generator: DataGenerator = datagenerator_factory(
+            data_generator: DataGenerator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
         if isinstance(optimizer, str):
-            optimizer: Optimizer = optimizer_factory(
+            optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
         if optimizer.type == 'scipy':
@@ -1198,14 +1199,14 @@ class ExperimentData:
         """
 
         if isinstance(sampler, str):
-            sampler = sampler_factory(sampler, self.domain)
+            sampler = _sampler_factory(sampler, self.domain)
 
         sample_data: DataTypes = sampler(
             domain=self.domain, n_samples=n_samples, seed=seed)
         self.add(input_data=sample_data, domain=self.domain)
 
 
-def data_factory(data: DataTypes) -> _Data:
+def _data_factory(data: DataTypes) -> _Data:
     if data is None:
         return _Data()
 
@@ -1227,8 +1228,8 @@ def data_factory(data: DataTypes) -> _Data:
             f"Path or str, not {type(data)}")
 
 
-def domain_factory(domain: Domain | None,
-                   input_data: _Data, output_data: _Data) -> Domain:
+def _domain_factory(domain: Domain | None,
+                    input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
         domain.check_output(output_data.names)
         return domain
@@ -1248,8 +1249,8 @@ def domain_factory(domain: Domain | None,
             f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
-                 output_data: _Data, job_value: Status) -> _JobQueue:
+def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
+                  output_data: _Data, job_value: Status) -> _JobQueue:
     """Creates a _JobQueue object from particular inpute
 
     Parameters
