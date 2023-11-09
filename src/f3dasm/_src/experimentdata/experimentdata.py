@@ -77,8 +77,8 @@ class ExperimentData:
         filename : str, optional
             The filename of the experiment, by default 'experimentdata'
         path : Path, optional
-            The path to the experimentdata file, by default
-             the current working directory
+            The path to the experimentdata file, by default\
+            the current working directory
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
@@ -167,6 +167,10 @@ class ExperimentData:
     def _repr_html_(self) -> str:
         return self.input_data.combine_data_to_multiindex(
             self.output_data, self.jobs.to_dataframe())._repr_html_()
+
+    def __repr__(self) -> str:
+        return self.input_data.combine_data_to_multiindex(
+            self.output_data, self.jobs.to_dataframe()).__repr__()
 
     def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
@@ -477,7 +481,7 @@ class ExperimentData:
 
         Returns
         -------
-        xr.Dataset
+        xarray.Dataset
             An xarray Dataset containing the data.
         """
         return xr.Dataset({'input': self.input_data.to_xarray('input_dim'),
