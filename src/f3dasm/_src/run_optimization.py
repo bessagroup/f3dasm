@@ -272,8 +272,8 @@ def run_multiple_realizations(
 
 
 def calculate_mean_std(results: OptimizationResult):  # OptimizationResult
-    mean_y = pd.concat([d.output_data.to_dataframe().cummin()
+    mean_y = pd.concat([d._output_data.to_dataframe().cummin()
                        for d in results.data], axis=1).mean(axis=1)
-    std_y = pd.concat([d.output_data.to_dataframe().cummin()
+    std_y = pd.concat([d._output_data.to_dataframe().cummin()
                       for d in results.data], axis=1).std(axis=1)
     return mean_y, std_y
