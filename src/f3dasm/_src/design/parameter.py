@@ -133,8 +133,8 @@ class _ContinuousParameter(_Parameter):
                 self.lower_bound, float) or not isinstance(
                     self.upper_bound, float):
             raise TypeError(
-                f"Expect float, got {type(self.lower_bound)} \
-                 and {type(self.upper_bound)}")
+                f"Expect float, got {type(self.lower_bound).__name__} \
+                 and {type(self.upper_bound).__name__}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
@@ -174,8 +174,8 @@ class _DiscreteParameter(_Parameter):
         if not isinstance(self.lower_bound, int) or not isinstance(
                 self.upper_bound, int):
             raise TypeError(
-                f"Expect integer, got {type(self.lower_bound)} and \
-                     {type(self.upper_bound)}")
+                f"Expect integer, got {type(self.lower_bound).__name__} and \
+                     {type(self.upper_bound).__name__}")
 
     def _check_range(self):
         """Check if the lower boundary is lower than the higher boundary"""
