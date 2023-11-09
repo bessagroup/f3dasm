@@ -18,8 +18,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Sequence, Type
 # Third-party core
 import numpy as np
 import pandas as pd
-from hydra.utils import instantiate
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 # Local
 from .parameter import (CategoricalType, _CategoricalParameter,
@@ -128,29 +127,48 @@ class Domain:
         return obj
 
     @classmethod
-    def from_yaml(cls: Type[Domain], yaml: DictConfig) -> Domain:
-        """Initializ a Domain from a Hydra YAML configuration file
+    def from_yaml(cls: Type[Domain], cfg: DictConfig) -> Domain:
+        """Initialize a Domain from a Hydra YAML configuration file key
 
 
         Notes
         -----
         The YAML file should have the following structure:
-        A nested dictionary where the dictionary denote the space
+
+        .. code-block:: yaml
+
+            domain:
+                <parameter_name>:
+                    type: <parameter_type>
+                    <parameter_type_specific_parameters>
+                <parameter_name>:
+                    type: <parameter_type>
+                    <parameter_type_specific_parameters>
 
 
         Parameters
         ----------
-        yaml : DictConfig
-            yaml dictionary
+        cfg : DictConfig
+            YAML dictionary key of the domain.
 
         Returns
         -------
         Domain
             Domain object
         """
-        return cls(
-            {name: instantiate(param, _convert_="all")
-             for name, param in yaml.items()})
+        domain = cls()
+
+        YAML_MAPPING = {'float': domain.add_float,
+                        'int': domain.add_int,
+                        'category': domain.add_category,
+                        'constant': domain.add_constant,
+                        }
+
+        for key, value in cfg.items():
+            _dict = OmegaConf.to_container(value, resolve=True)
+            YAML_MAPPING[_dict.pop('type')](**_dict, name=key)
+
+        return domain
 
     @classmethod
     def from_dataframe(cls, df_input: pd.DataFrame,

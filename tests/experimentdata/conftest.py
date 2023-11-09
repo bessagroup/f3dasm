@@ -8,8 +8,8 @@ import xarray as xr
 from omegaconf import OmegaConf
 
 from f3dasm import ExperimentData
-from f3dasm.design import (_CategoricalParameter, _DiscreteParameter, Domain,
-                           _ContinuousParameter, make_nd_continuous_domain)
+from f3dasm.design import (Domain, _CategoricalParameter, _ContinuousParameter,
+                           _DiscreteParameter, make_nd_continuous_domain)
 
 SEED = 42
 
@@ -138,7 +138,7 @@ def config_yaml() -> OmegaConf:
             # Add other options as needed for testing
         },
         "domain": {
-            "input_space": {"x1": {"_target_": "f3dasm.ContinuousParameter", "lower": -5.12, "upper": 5.12},
+            "input_space": {"x1": {"_target_": "f3dasm._ContinuousParameter", "lower": -5.12, "upper": 5.12},
                             "x2": {"_target_": "f3dasm._DiscreteParameter", "lower": -3, "upper": 3},
                             "x3": {"_target_": "f3dasm._CategoricalParameter", "categories": ["red", "green", "blue"]}}}
     }
