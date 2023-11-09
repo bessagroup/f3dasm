@@ -188,8 +188,8 @@ class _JobQueue:
         name : str, optional
             Name of the column, by default "".
 
-        Notes
-        -----
+        Note
+        ----
         If the name is not specified, the column name will be an empty string
 
         Returns

@@ -186,8 +186,8 @@ class Optimizer:
         ValueError
             Raises when the mode is not recognized
 
-        Notes
-        -----
+        Note
+        ----
         The following modes are available:
             - best: select the best n samples
             - random: select n random samples

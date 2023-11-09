@@ -4,8 +4,8 @@ columns. This class is not intended to be used directly by the user.
  It is used by the _Data class to provide an interface to datatypes that do not
   have a column structure, such as numpy arrays.
 
-Notes
------
+Note
+----
 
 For the default back-end of _Data, this class is obsolete since pandas
  DataFrames have a column structure. However, this class is intended to be a
@@ -41,8 +41,8 @@ class _Columns:
             dictionary with names as column names and None as values
             , by default None
 
-        Notes
-        -----
+        Note
+        ----
         The datatype of a dict with nonsensical values is used to prevent
          duplicate keys. This is because the dict is used as a set.
         """

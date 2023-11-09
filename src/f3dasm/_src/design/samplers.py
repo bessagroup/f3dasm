@@ -31,7 +31,7 @@ __status__ = 'Stable'
 #                                                              Factory function
 # =============================================================================
 
-def sampler_factory(sampler: str, domain: Domain) -> Sampler:
+def _sampler_factory(sampler: str, domain: Domain) -> Sampler:
     if sampler.lower() == 'random':
         return RandomUniform(domain)
 

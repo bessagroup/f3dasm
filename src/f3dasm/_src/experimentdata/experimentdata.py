@@ -13,8 +13,8 @@ from __future__ import annotations
 import traceback
 from functools import wraps
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, Type)
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
+                    Optional, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -27,13 +27,12 @@ from pathos.helpers import mp
 
 # Local
 from ..datageneration.datagenerator import DataGenerator
-from ..datageneration.functions.function_factory import datagenerator_factory
+from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain
-from ..design.parameter import Parameter
-from ..design.samplers import Sampler, sampler_factory
+from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
-from ..optimization.optimizer_factory import optimizer_factory
+from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import _Data
 from ._jobqueue import NoOpenJobsError, Status, _JobQueue
 from .experimentsample import ExperimentSample
@@ -78,8 +77,8 @@ class ExperimentData:
         filename : str, optional
             The filename of the experiment, by default 'experimentdata'
         path : Path, optional
-            The path to the experimentdata file, by default
-             the current working directory
+            The path to the experimentdata file, by default\
+            the current working directory
         """
 
         if isinstance(input_data, np.ndarray) and domain is None:
@@ -94,38 +93,39 @@ class ExperimentData:
 
         self.path = path
 
-        self.input_data = data_factory(input_data)
-        self.output_data = data_factory(output_data)
+        self._input_data = _data_factory(input_data)
+        self._output_data = _data_factory(output_data)
 
         # Create empty output_data from indices if output_data is empty
-        if self.output_data.is_empty():
-            self.output_data = _Data.from_indices(self.input_data.indices)
+        if self._output_data.is_empty():
+            self._output_data = _Data.from_indices(self._input_data.indices)
             job_value = Status.OPEN
 
         else:
             job_value = Status.FINISHED
 
-        self.domain = domain_factory(domain, self.input_data, self.output_data)
+        self.domain = _domain_factory(
+            domain, self._input_data, self._output_data)
 
         # Create empty input_data from domain if input_data is empty
-        if self.input_data.is_empty():
-            self.input_data = _Data.from_domain(self.domain)
+        if self._input_data.is_empty():
+            self._input_data = _Data.from_domain(self.domain)
 
-        self.jobs = jobs_factory(
-            jobs, self.input_data, self.output_data, job_value)
+        self._jobs = _jobs_factory(
+            jobs, self._input_data, self._output_data, job_value)
 
         # Check if the columns of input_data are in the domain
-        if not self.input_data.has_columnnames(self.domain.names):
-            self.input_data.set_columnnames(self.domain.names)
+        if not self._input_data.has_columnnames(self.domain.names):
+            self._input_data.set_columnnames(self.domain.names)
 
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
-        if self.output_data.names == [0]:
-            self.output_data.set_columnnames(['y'])
+        if self._output_data.names == [0]:
+            self._output_data.set_columnnames(['y'])
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
-        return len(self.input_data)
+        return len(self._input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
@@ -153,20 +153,25 @@ class ExperimentData:
             raise ValueError(
                 "Cannot add ExperimentData objects with different domains")
 
-        return ExperimentData(input_data=self.input_data + other.input_data,
-                              output_data=self.output_data + other.output_data,
-                              jobs=self.jobs + other.jobs, domain=self.domain,
-                              filename=self.filename)
+        return ExperimentData(
+            input_data=self._input_data + other._input_data,
+            output_data=self._output_data + other._output_data,
+            jobs=self._jobs + other._jobs, domain=self.domain,
+            filename=self.filename)
 
     def __eq__(self, __o: ExperimentData) -> bool:
-        return all([self.input_data == __o.input_data,
-                    self.output_data == __o.output_data,
-                    self.jobs == __o.jobs,
+        return all([self._input_data == __o._input_data,
+                    self._output_data == __o._output_data,
+                    self._jobs == __o._jobs,
                     self.domain == __o.domain])
 
     def _repr_html_(self) -> str:
-        return self.input_data.combine_data_to_multiindex(
-            self.output_data, self.jobs.to_dataframe())._repr_html_()
+        return self._input_data.combine_data_to_multiindex(
+            self._output_data, self._jobs.to_dataframe())._repr_html_()
+
+    def __repr__(self) -> str:
+        return self._input_data.combine_data_to_multiindex(
+            self._output_data, self._jobs.to_dataframe()).__repr__()
 
     def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
@@ -198,7 +203,7 @@ class ExperimentData:
         pd.Index
             The job number of all the experiments in pandas Index format
         """
-        return self.input_data.indices
+        return self._input_data.indices
 
     #                                                  Alternative Constructors
     # =========================================================================
@@ -335,9 +340,9 @@ class ExperimentData:
             The selected ExperimentData object with only the selected indices.
         """
 
-        return ExperimentData(input_data=self.input_data[indices],
-                              output_data=self.output_data[indices],
-                              jobs=self.jobs[indices],
+        return ExperimentData(input_data=self._input_data[indices],
+                              output_data=self._output_data[indices],
+                              jobs=self._jobs[indices],
                               domain=self.domain,
                               filename=self.filename, path=self.path)
 
@@ -349,32 +354,32 @@ class ExperimentData:
         Parameters
         ----------
         parameter_names : str | Iterable[str], optional
-            The name(s) of the input parameters that you want to retrieve,
+            The name(s) of the input parameters that you want to retrieve, \
             if None all input parameters are retrieved, by default None
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the
+            The selected ExperimentData object with only the\
              selected input data.
 
-        Notes
-        -----
-        If parameter_names is None, all input data is retrieved.
-        The returned ExperimentData object has the domain of
-         the original ExperimentData object,
-        but only with the selected input parameters.
+        Note
+        ----
+        If parameter_names is None, all input data is retrieved. \
+        The returned ExperimentData object has the domain of \
+        the original ExperimentData object, \
+        but only with the selected input parameters.\
         """
         if parameter_names is None:
-            return ExperimentData(input_data=self.input_data,
-                                  jobs=self.jobs,
+            return ExperimentData(input_data=self._input_data,
+                                  jobs=self._jobs,
                                   domain=self.domain,
                                   filename=self.filename,
                                   path=self.path)
         else:
-            return ExperimentData(input_data=self.input_data.select_columns(
+            return ExperimentData(input_data=self._input_data.select_columns(
                 parameter_names),
-                jobs=self.jobs,
+                jobs=self._jobs,
                 domain=self.domain.select(parameter_names),
                 filename=self.filename,
                 path=self.path)
@@ -387,30 +392,31 @@ class ExperimentData:
         Parameters
         ----------
         parameter_names : str | Iterable[str], optional
-            The name(s) of the output parameters that you want to retrieve,
+            The name(s) of the output parameters that you want to retrieve, \
             if None all output parameters are retrieved, by default None
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only
-             the selected output data.
+            The selected ExperimentData object with only \
+            the selected output data.
 
-        Notes
-        -----
-        If parameter_names is None, all output data is retrieved.
-        The returned ExperimentData object has no domain object and
-         no input data!
+        Note
+        ----
+        If parameter_names is None, all output data is retrieved. \
+        The returned ExperimentData object has no domain object and \
+        no input data!
         """
         if parameter_names is None:
             # TODO: Make a domain where space is empty
             # but it tracks output_space!
-            return ExperimentData(output_data=self.output_data, jobs=self.jobs,
-                                  filename=self.filename, path=self.path)
+            return ExperimentData(
+                output_data=self._output_data, jobs=self._jobs,
+                filename=self.filename, path=self.path)
         else:
-            return ExperimentData(output_data=self.output_data.select_columns(
-                parameter_names),
-                jobs=self.jobs,
+            return ExperimentData(
+                output_data=self._output_data.select_columns(parameter_names),
+                jobs=self._jobs,
                 filename=self.filename, path=self.path)
 
     #                                                                    Export
@@ -424,26 +430,27 @@ class ExperimentData:
         filename : str, optional
             filename of the files to store, without suffix
 
-        Notes
-        -----
-        If no filename is given, the filename of the
+        Note
+        ----
+        If no filename is given, the filename of the \
         ExperimentData object is used.
 
-        The ExperimentData object is stored at the location provided by
-        the `.path` attribute that is set upon creation of the object.
-        The ExperimentData object is stored in four files.
+        The ExperimentData object is stored at the location provided by \
+        the `.path` attribute that is set upon creation of the object. \
+        The ExperimentData object is stored in four files. \
         The name is used as a prefix for the four files:
-        - the input data (<name>_input.csv)
-        - the output data (<name>_output.csv)
-        - the jobs (<name>_jobs.pkl)
-        - the domain (<name>_domain.pkl)
+
+        * the input data (`<name>_input.csv`)
+        * the output data (`<name>_output.csv`)
+        * the jobs (`<name>_jobs.pkl`)
+        * the domain (`<name>_domain.pkl`)
         """
         if filename is None:
             filename = self.filename
 
-        self.input_data.store(Path(f"{filename}{INPUT_DATA_SUFFIX}"))
-        self.output_data.store(Path(f"{filename}{OUTPUT_DATA_SUFFIX}"))
-        self.jobs.store(Path(f"{filename}{JOBS_SUFFIX}"))
+        self._input_data.store(Path(f"{filename}{INPUT_DATA_SUFFIX}"))
+        self._output_data.store(Path(f"{filename}{OUTPUT_DATA_SUFFIX}"))
+        self._jobs.store(Path(f"{filename}{JOBS_SUFFIX}"))
         self.domain.store(Path(f"{filename}{DOMAIN_SUFFIX}"))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -453,11 +460,11 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two numpy arrays,
-             the first one for input columns,
-             and the second for output columns.
+            A tuple containing two numpy arrays, \
+            the first one for input columns, \
+            and the second for output columns.
         """
-        return self.input_data.to_numpy(), self.output_data.to_numpy()
+        return self._input_data.to_numpy(), self._output_data.to_numpy()
 
     def to_pandas(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -466,10 +473,11 @@ class ExperimentData:
         Returns
         -------
         tuple
-            A tuple containing two pandas DataFrames,
-             the first one for input columns, and the second for output
+            A tuple containing two pandas DataFrames, \
+            the first one for input columns, and the second for output
         """
-        return self.input_data.to_dataframe(), self.output_data.to_dataframe()
+        return (self._input_data.to_dataframe(),
+                self._output_data.to_dataframe())
 
     def to_xarray(self) -> xr.Dataset:
         """
@@ -477,11 +485,12 @@ class ExperimentData:
 
         Returns
         -------
-        xr.Dataset
+        xarray.Dataset
             An xarray Dataset containing the data.
         """
-        return xr.Dataset({'input': self.input_data.to_xarray('input_dim'),
-                           'output': self.output_data.to_xarray('output_dim')})
+        return xr.Dataset(
+            {'input': self._input_data.to_xarray('input_dim'),
+             'output': self._output_data.to_xarray('output_dim')})
 
     def get_n_best_output(self, n_samples: int) -> ExperimentData:
         """Get the n best samples from the output data.
@@ -497,7 +506,8 @@ class ExperimentData:
         ExperimentData
             New experimentData object with a selection of the n best samples.
         """
-        df = self.output_data.n_best_samples(n_samples, self.output_data.names)
+        df = self._output_data.n_best_samples(
+            n_samples, self._output_data.names)
         return self.select(df.index)
 
     #                                                     Append or remove data
@@ -541,37 +551,42 @@ class ExperimentData:
         if isinstance(experiment_sample, ExperimentData):
             experiment_sample._reset_index()
 
-        self.input_data += experiment_sample.input_data
-        self.output_data += experiment_sample.output_data
-        self.jobs += experiment_sample.jobs
+        self._input_data += experiment_sample._input_data
+        self._output_data += experiment_sample._output_data
+        self._jobs += experiment_sample._jobs
 
         # Check if indices of the internal objects are equal
-        if not (self.input_data.indices.equals(self.output_data.indices)
-                and self.input_data.indices.equals(self.jobs.indices)):
+        if not (self._input_data.indices.equals(self._output_data.indices)
+                and self._input_data.indices.equals(self._jobs.indices)):
             raise ValueError(f"Indices of the internal objects are not equal."
-                             f"input_data {self.input_data.indices}, "
-                             f"output_data {self.output_data.indices},"
-                             f"jobs: {self.jobs.indices}")
+                             f"input_data {self._input_data.indices}, "
+                             f"output_data {self._output_data.indices},"
+                             f"jobs: {self._jobs.indices}")
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
         _dtypes = {index: parameter._type
                    for index, (_, parameter) in enumerate(
                        self.domain.space.items())}
-        self.input_data.data = self.input_data.data.astype(_dtypes)
+        self._input_data.data = self._input_data.data.astype(_dtypes)
 
-    def add_input_parameter(self, name: str, parameter: Parameter) -> None:
+    def add_input_parameter(
+        self, name: str,
+        type: Literal['float', 'int', 'category', 'constant'],
+            **kwargs):
         """Add a new input column to the ExperimentData object.
 
         Parameters
         ----------
         name
             name of the new input column
-        parameter
-            Parameter object of the new input column
+        type
+            type of the new input column: float, int, category or constant
+        kwargs
+            additional arguments for the new parameter
         """
-        self.input_data.add_column(name)
-        self.domain.add(name, parameter)
+        self._input_data.add_column(name)
+        self.domain.add(name=name, type=type, **kwargs)
 
     def add_output_parameter(self, name: str, is_disk: bool) -> None:
         """Add a new output column to the ExperimentData object.
@@ -583,7 +598,7 @@ class ExperimentData:
         is_disk
             Whether the output column will be stored on disk or not
         """
-        self.output_data.add_column(name)
+        self._output_data.add_column(name)
         self.domain.add_output(name, is_disk)
 
     def fill_output(self, output: np.ndarray, label: str = "y"):
@@ -597,14 +612,14 @@ class ExperimentData:
         label : str, optional
             Label of the output column to add to, by default "y".
         """
-        if label not in self.output_data.names:
+        if label not in self._output_data.names:
             self.add_output_parameter(label, is_disk=False)
 
-        filled_indices: Iterable[int] = self.output_data.fill_numpy_arrays(
+        filled_indices: Iterable[int] = self._output_data.fill_numpy_arrays(
             output)
 
         # Set the status of the filled indices to FINISHED
-        self.jobs.mark(filled_indices, Status.FINISHED)
+        self._jobs.mark(filled_indices, Status.FINISHED)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -619,20 +634,20 @@ class ExperimentData:
             return  # Don't do anything if 0 rows need to be removed
 
         # get the last indices from data.data
-        indices = self.input_data.data.index[-number_of_rows:]
+        indices = self._input_data.data.index[-number_of_rows:]
 
         # remove the indices rows_to_remove from data.data
-        self.input_data.remove(indices)
-        self.output_data.remove(indices)
-        self.jobs.remove(indices)
+        self._input_data.remove(indices)
+        self._output_data.remove(indices)
+        self._jobs.remove(indices)
 
     def _reset_index(self) -> None:
         """
         Reset the index of the ExperimentData object.
         """
-        self.input_data.reset_index()
-        self.output_data.reset_index()
-        self.jobs.reset_index()
+        self._input_data.reset_index()
+        self._output_data.reset_index()
+        self._jobs.reset_index()
 
 #                                                                  ExperimentSample
     # =============================================================================
@@ -651,12 +666,13 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample at the given index.
         """
-        output_experiment_sample_dict = self.output_data.get_data_dict(index)
+        output_experiment_sample_dict = self._output_data.get_data_dict(index)
+
 
         dict_output = {k: (v, self.domain.output_space[k].to_disk)
                        for k, v in output_experiment_sample_dict.items()}
 
-        return ExperimentSample(dict_input=self.input_data.get_data_dict(
+        return ExperimentSample(dict_input=self._input_data.get_data_dict(
             index),
             dict_output=dict_output,
             jobnumber=index,
@@ -700,11 +716,11 @@ class ExperimentData:
             if not self.domain.is_in_output(column):
                 self.domain.add_output(column, to_disk=is_disk)
 
-            self.output_data.set_data(
+            self._output_data.set_data(
                 index=experiment_sample.job_number, value=value,
                 column=column)
 
-        self.jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
+        self._jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
     @_access_file
     def _write_experiment_sample(self,
@@ -727,8 +743,8 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample object of the first available open job.
         """
-        job_index = self.jobs.get_open_job()
-        self.jobs.mark(job_index, status=Status.IN_PROGRESS)
+        job_index = self._jobs.get_open_job()
+        self._jobs.mark(job_index, status=Status.IN_PROGRESS)
         experiment_sample = self.get_experiment_sample(job_index)
         return experiment_sample
 
@@ -756,8 +772,8 @@ class ExperimentData:
             index of the experiment_sample to mark as error
         """
         # self.jobs.mark_as_error(index)
-        self.jobs.mark(index, status=Status.ERROR)
-        self.output_data.set_data(index, value='ERROR')
+        self._jobs.mark(index, status=Status.ERROR)
+        self._output_data.set_data(index, value='ERROR')
 
     @_access_file
     def _write_error(self, index: int):
@@ -780,24 +796,25 @@ class ExperimentData:
         bool
             True if all jobs are finished, False otherwise
         """
-        return self.jobs.is_all_finished()
+        return self._jobs.is_all_finished()
 
-    def mark(self, indices: Iterable[int], status: str) -> None:
+    def mark(self, indices: Iterable[int],
+             status: Literal['open', 'in progress', 'finished', 'error']):
         """Mark the jobs at the given indices with the given status.
 
         Parameters
         ----------
         indices : Iterable[int]
             indices of the jobs to mark
-        status : str
-            status to mark the jobs with: choose between: 'open',
-             'in progress', 'finished' or 'error'
+        status : Literal['open', 'in progress', 'finished', 'error']
+            status to mark the jobs with: choose between: 'open', \
+            'in progress', 'finished' or 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress',
-             'finished' or 'error'
+            If the given status is not any of 'open', 'in progress', \
+            'finished' or 'error'
         """
         # Check if the status is in Status
         if not any(status.lower() == s.value for s in Status):
@@ -805,30 +822,36 @@ class ExperimentData:
                              f"\nChoose from values: "
                              f"{', '.join([s.value for s in Status])}")
 
-        self.jobs.mark(indices, status)
+        self._jobs.mark(indices, status)
 
-    def mark_all(self, status: str) -> None:
+    def mark_all(self,
+                 status: Literal['open', 'in progress', 'finished', 'error']):
         """Mark all the experiments with the given status
 
         Parameters
         ----------
-        status : str
-            status to mark the jobs with:
-             choose between: 'open', 'in progress', 'finished' or 'error'
+        status : Literal['open', 'in progress', 'finished', 'error']
+            status to mark the jobs with: \
+            choose between:
+
+            * 'open',
+            * 'in progress',
+            * 'finished'
+            * 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of
-             'open', 'in progress', 'finished' or 'error'
+            If the given status is not any of \
+            'open', 'in progress', 'finished' or 'error'
         """
-        self.mark(self.jobs.indices, status)
+        self.mark(self._jobs.indices, status)
 
     def mark_all_error_open(self) -> None:
         """
         Mark all the experiments that have the status 'error' open
         """
-        self.jobs.mark_all_error_open()
+        self._jobs.mark_all_error_open()
     #                                                            Datageneration
     # =========================================================================
 
@@ -855,7 +878,7 @@ class ExperimentData:
             kwargs = {}
 
         if isinstance(data_generator, str):
-            data_generator = datagenerator_factory(
+            data_generator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
         if mode.lower() == "sequential":
@@ -1017,11 +1040,11 @@ class ExperimentData:
         iterations : int
             Number of iterations to run
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to
-             the data generator, by default None
+            Any additional keyword arguments that need to be supplied to \
+            the data generator, by default None
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the
-             optimizer, by default None
+            Any additional hyperparameters that need to be supplied to the \
+            optimizer, by default None
         x0_selection : str, optional
             How to select the initial design, by default 'best'
 
@@ -1032,22 +1055,23 @@ class ExperimentData:
         ValueError
             Raised when invalid optimizer type is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
         if isinstance(data_generator, str):
-            data_generator: DataGenerator = datagenerator_factory(
+            data_generator: DataGenerator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
         if isinstance(optimizer, str):
-            optimizer: Optimizer = optimizer_factory(
+            optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
         if optimizer.type == 'scipy':
@@ -1070,8 +1094,8 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : dict, optional
-            any additional keyword arguments that will be passed to
-             the DataGenerator, by default None
+            any additional keyword arguments that will be passed to \
+            the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
 
@@ -1080,15 +1104,16 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
         optimizer.set_x0(self, mode=x0_selection)
         optimizer._check_number_of_datapoints()
@@ -1136,8 +1161,8 @@ class ExperimentData:
         iterations : int
             number of iterations
         kwargs : dict, optional
-            any additional keyword arguments that will be passed
-             to the DataGenerator, by default None
+            any additional keyword arguments that will be passed \
+            to the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
 
@@ -1146,15 +1171,16 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
 
-        Notes
-        -----
+        Note
+        ----
         The following x0_selections are available:
-        - 'best': Select the best designs from the current experimentdata
-        - 'random': Select random designs from the current experimentdata
-        - 'last': Select the last designs from the current experimentdata
 
-        The number of designs selected is equal to the
-         population size of the optimizer
+        * 'best': Select the best designs from the current experimentdata
+        * 'random': Select random designs from the current experimentdata
+        * 'last': Select the last designs from the current experimentdata
+
+        The number of designs selected is equal to the \
+        population size of the optimizer
         """
 
         optimizer.set_x0(self, mode=x0_selection)
@@ -1209,9 +1235,10 @@ class ExperimentData:
         Note
         ----
         If a string is passed, it should be one of the built-in samplers:
-        - 'random' : Random sampling
-        - 'latin' : Latin Hypercube Sampling
-        - 'sobol' : Sobol Sequence Sampling
+
+        * 'random' : Random sampling
+        * 'latin' : Latin Hypercube Sampling
+        * 'sobol' : Sobol Sequence Sampling
 
         Raises
         ------
@@ -1220,14 +1247,14 @@ class ExperimentData:
         """
 
         if isinstance(sampler, str):
-            sampler = sampler_factory(sampler, self.domain)
+            sampler = _sampler_factory(sampler, self.domain)
 
         sample_data: DataTypes = sampler(
             domain=self.domain, n_samples=n_samples, seed=seed)
         self.add(input_data=sample_data, domain=self.domain)
 
 
-def data_factory(data: DataTypes) -> _Data:
+def _data_factory(data: DataTypes) -> _Data:
     if data is None:
         return _Data()
 
@@ -1249,10 +1276,10 @@ def data_factory(data: DataTypes) -> _Data:
             f"Path or str, not {type(data)}")
 
 
-def domain_factory(domain: Domain | None,
-                   input_data: _Data, output_data: _Data) -> Domain:
+def _domain_factory(domain: Domain | None,
+                    input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
-        domain.check_output(output_data.names)
+        domain._check_output(output_data.names)
         return domain
 
     elif isinstance(domain, (Path, str)):
@@ -1270,8 +1297,8 @@ def domain_factory(domain: Domain | None,
             f"Domain must be of type Domain or None, not {type(domain)}")
 
 
-def jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
-                 output_data: _Data, job_value: Status) -> _JobQueue:
+def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
+                  output_data: _Data, job_value: Status) -> _JobQueue:
     """Creates a _JobQueue object from particular inpute
 
     Parameters

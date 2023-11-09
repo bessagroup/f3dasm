@@ -26,7 +26,7 @@ FUNCTION_MAPPING: Dict[str, DataGenerator] = {
         '_', '').replace('.', ''): f for f in _FUNCTIONS}
 
 
-def datagenerator_factory(
+def _datagenerator_factory(
         data_generator: str, domain: Domain | int,
         kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
 
@@ -50,5 +50,5 @@ def datagenerator_factory(
 
 
 def is_dim_compatible(data_generator: str, domain: Domain) -> bool:
-    func = datagenerator_factory(data_generator, domain)
+    func = _datagenerator_factory(data_generator, domain)
     return func.is_dim_compatible(len(domain))

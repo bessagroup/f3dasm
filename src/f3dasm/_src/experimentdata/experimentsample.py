@@ -9,167 +9,21 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 # Standard
-import pickle
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 # Third-party
 import autograd.numpy as np
-import pandas as pd
-import xarray as xr
 
 # Local
 from ..logger import logger
+from ._io import _Store, load_object, save_object
 
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
-# =============================================================================
-#                                                               Storing to disk
-# =============================================================================
-
-
-class _Store:
-    suffix: int
-
-    def __init__(self, object: Any, path: Path):
-        self.path = path
-        self.object = object
-
-    def store(self) -> None:
-        raise NotImplementedError()
-
-    def load(self) -> Any:
-        raise NotImplementedError()
-
-
-class PickleStore(_Store):
-    suffix: str = '.pkl'
-
-    def store(self) -> None:
-        with open(self.path.with_suffix(self.suffix), 'wb') as file:
-            pickle.dump(self.object, file)
-
-    def load(self) -> Any:
-        with open(self.path.with_suffix(self.suffix), 'rb') as file:
-            return pickle.load(file)
-
-
-class NumpyStore(_Store):
-    suffix: int = '.npy'
-
-    def store(self) -> None:
-        np.save(file=self.path.with_suffix(self.suffix), arr=self.object)
-
-    def load(self) -> np.ndarray:
-        return np.load(file=self.path.with_suffix(self.suffix))
-
-
-class PandasStore(_Store):
-    suffix: int = '.csv'
-
-    def store(self) -> None:
-        self.object.to_csv(self.path.with_suffix(self.suffix))
-
-    def load(self) -> pd.DataFrame:
-        return pd.read_csv(self.path.with_suffix(self.suffix))
-
-
-class XarrayStore(_Store):
-    suffix: int = '.nc'
-
-    def store(self) -> None:
-        self.object.to_netcdf(self.path.with_suffix(self.suffix))
-
-    def load(self) -> xr.DataArray | xr.Dataset:
-        return xr.open_dataset(self.path.with_suffix(self.suffix))
-
-
-STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
-    np.ndarray: NumpyStore,
-    pd.DataFrame: PandasStore,
-    pd.Series: PandasStore,
-    xr.DataArray: XarrayStore,
-    xr.Dataset: XarrayStore
-}
-
-
-def load_object(path: Path, experimentdata_directory: Path,
-                store_method: Type[_Store] = PickleStore) -> Any:
-
-    _path = experimentdata_directory / path
-
-    if store_method is not None:
-        return store_method(None, _path).load()
-
-    if not _path.exists():
-        return None
-
-    # Extract the suffix from the item's path
-    item_suffix = _path.suffix
-
-    # Use a generator expression to find the first matching store type,
-    #  or None if no match is found
-    matched_store_type: _Store = next(
-        (store_type for store_type in STORE_TYPE_MAPPING.values() if
-         store_type.suffix == item_suffix), PickleStore)
-
-    if matched_store_type:
-        return matched_store_type(None, _path).load()
-    else:
-        # Handle the case when no matching suffix is found
-        raise ValueError(
-            f"No matching store type for item type: '{item_suffix}'")
-
-
-def save_object(object: Any, path: Path, experimentdata_directory: Path,
-                store_method: Optional[Type[_Store]] = None) -> str:
-    """Function to save the object to path,
-     with the appropriate storing method.
-
-    Parameters
-    ----------
-    object : Any
-        Object to store
-    path : Path
-        Path to store the object to
-    store_method : Optional[Store], optional
-        Storage method, by default None
-
-    Returns
-    -------
-    str
-        suffix of the storage method
-
-    Raises
-    ------
-    TypeError
-        Raises if the object type is not supported,
-         and you haven't provided a custom store method.
-    """
-    _path = experimentdata_directory / path
-
-    if store_method is not None:
-        storage = store_method(object, _path)
-        return
-
-    # Check if object type is supported
-    object_type = type(object)
-
-    if object_type not in STORE_TYPE_MAPPING:
-        storage: _Store = PickleStore(object, _path)
-        logger.debug(f"Object type {object_type} is not natively supported. "
-                     f"The default pickle storage method will be used.")
-
-    else:
-        storage: _Store = STORE_TYPE_MAPPING[object_type](object, _path)
-    # Store object
-    storage.store()
-    return storage.suffix
-
-#                                                              ExperimentSample
 # =============================================================================
 
 
@@ -183,13 +37,13 @@ class ExperimentSample:
         Parameters
         ----------
         dict_input : Dict[str, Any]
-            Input parameters of one experiment.
-             The key is the name of the parameter.
+            Input parameters of one experiment. \
+            The key is the name of the parameter.
         dict_output : Dict[str, Tuple[Any, bool]]
-            Output parameters of one experiment.
-             The key is the name of the parameter,
-             the first value of the tuple is the actual value and the second
-             if the value is stored to disk or not
+            Output parameters of one experiment. \
+            The key is the name of the parameter, \
+            the first value of the tuple is the actual value and the second \
+            if the value is stored to disk or not.
         jobnumber : int
             Index of the experiment
         """
@@ -212,7 +66,7 @@ class ExperimentSample:
         ----------
         input_array : np.ndarray
             input 1D numpy array
-            output_value : Optional[float], optional
+        output_value : Optional[float], optional
             objective value, by default None
 
         jobnumber : int
@@ -241,7 +95,7 @@ class ExperimentSample:
         item : str
             name of the parameter
         load_method : Optional[Type[_Store]], optional
-            class of defined type to load the data. By default None,
+            class of defined type to load the data. By default None, \
             will try to load the data with the default methods
 
         Returns
@@ -301,6 +155,8 @@ class ExperimentSample:
         """
         return self._dict_input
 
+    _input_data = input_data
+
     @property
     def output_data(self) -> Dict[str, Any]:
         """Retrieve the output data of the design as a dictionary.
@@ -317,14 +173,16 @@ class ExperimentSample:
     # this is for backward compatibility
     output_data_loaded = output_data
 
+    _output_data = output_data
+
     @property
     def output_data_with_references(self) -> Dict[str, Any]:
-        """Retrieve the output data of the design as a dictionary, but refrain
-        from loading the data from disk and give the references.
+        """Retrieve the output data of the design as a dictionary, \
+           but refrain from loading the data from disk and give the references.
 
-        Notes
-        -----
-        If you want to use the data, you can load it in memory with the
+        Note
+        ----
+        If you want to use the data, you can load it in memory with the \
         :func:`output_data` property.
 
         Returns
@@ -332,7 +190,7 @@ class ExperimentSample:
         Dict[str, Any]
             The output data of the design as a dictionary with references.
         """
-        return self._dict_output
+        return {key: value for key, (value, _) in self._dict_output.items()}
 
     @property
     def job_number(self) -> int:
@@ -345,9 +203,9 @@ class ExperimentSample:
         """
         return self._jobnumber
 
-    @property
-    def jobs(self) -> int:
-        return self._jobnumber
+    # Alias
+    jobs = job_number
+    _jobs = jobs
 
 #                                                                        Export
 # =============================================================================
@@ -390,10 +248,11 @@ class ExperimentSample:
         store_method : Store, optional
             The method to use to store the object, by default None
 
-        Notes
-        -----
-        If to_disk is True and no store_method is provided, the default store
-         method will be used.
+        Note
+        ----
+        If to_disk is True and no store_method is provided, the default store \
+        method will be used.
+
         The default store method is saving the object as a pickle file (.pkl).
         """
         if to_disk:
