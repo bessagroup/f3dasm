@@ -13,8 +13,8 @@ from __future__ import annotations
 import traceback
 from functools import wraps
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, Type)
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
+                    Optional, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -29,7 +29,6 @@ from pathos.helpers import mp
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain
-from ..design.parameter import _Parameter
 from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
@@ -561,18 +560,23 @@ class ExperimentData:
                        self.domain.space.items())}
         self.input_data.data = self.input_data.data.astype(_dtypes)
 
-    def add_input_parameter(self, name: str, parameter: _Parameter) -> None:
+    def add_input_parameter(
+        self, name: str,
+        type: Literal['float', 'int', 'category', 'constant'],
+            **kwargs):
         """Add a new input column to the ExperimentData object.
 
         Parameters
         ----------
         name
             name of the new input column
-        parameter
-            Parameter object of the new input column
+        type
+            type of the new input column: float, int, category or constant
+        kwargs
+            additional arguments for the new parameter
         """
         self.input_data.add_column(name)
-        self.domain.add(name, parameter)
+        self.domain.add(name=name, type=type, **kwargs)
 
     def add_output_parameter(self, name: str, is_disk: bool) -> None:
         """Add a new output column to the ExperimentData object.

@@ -13,7 +13,7 @@ import math
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Sequence, Type
+from typing import Any, Dict, Iterable, Iterator, List, Literal, Sequence, Type
 
 # Third-party core
 import numpy as np
@@ -158,15 +158,9 @@ class Domain:
         """
         domain = cls()
 
-        YAML_MAPPING = {'float': domain.add_float,
-                        'int': domain.add_int,
-                        'category': domain.add_category,
-                        'constant': domain.add_constant,
-                        }
-
         for key, value in cfg.items():
             _dict = OmegaConf.to_container(value, resolve=True)
-            YAML_MAPPING[_dict.pop('type')](**_dict, name=key)
+            domain.add(name=key, type=_dict.pop('type'), **_dict)
 
         return domain
 
@@ -293,17 +287,18 @@ class Domain:
             self.add_constant(name, low)
         self._add(name, _DiscreteParameter(low, high, step))
 
-    def add_float(self, name: str, low: float, high: float, log: bool = False):
+    def add_float(self, name: str, low: float = -np.inf, high: float = np.inf,
+                  log: bool = False):
         """Add a new continuous input parameter to the domain.
 
         Parameters
         ----------
         name : str
             Name of the input parameter.
-        low : float
-            Lower bound of the input parameter.
+        low : float, optional
+            Lower bound of the input parameter. By default -np.inf.
         high : float
-            Upper bound of the input parameter.
+            Upper bound of the input parameter. By default np.inf.
         log : bool, optional
             Whether to use a logarithmic scale, by default False.
 
@@ -363,25 +358,46 @@ class Domain:
         """
         self._add(name, _ConstantParameter(value))
 
-    def add(self, name: str, space: _Parameter):
+    def add(self, name: str,
+            type: Literal['float', 'int', 'category', 'constant'],
+            **kwargs):
         """Add a new input parameter to the domain.
 
         Parameters
         ----------
+
         name : str
             Name of the input parameter.
-        space : Parameter
-            Input parameter to be added.
+        type : Literal['float', 'int', 'category', 'constant']
+            Type of the input parameter.
+        **kwargs
+            Keyword arguments for the input parameter.
+
+        Raises
+        ------
+        ValueError
+            If the type is not known.
 
         Example
         -------
         >>> domain = Domain()
-        >>> domain.add('param1',
-         _ContinuousParameter(lower_bound=0., upper_bound=1.))
+        >>> domain._new_add('param1', 'float', low=0., high=1.)
         >>> domain.space
         {'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
-        self.space[name] = space
+
+        if type == 'float':
+            self.add_float(name, **kwargs)
+        elif type == 'int':
+            self.add_int(name, **kwargs)
+        elif type == 'category':
+            self.add_category(name, **kwargs)
+        elif type == 'constant':
+            self.add_constant(name, **kwargs)
+        else:
+            raise ValueError(
+                f"Unknown type {type}!"
+                f"Possible types are: 'float', 'int', 'category', 'constant'.")
 
     def add_output(self, name: str, to_disk: bool):
         """Add a new output parameter to the domain.
