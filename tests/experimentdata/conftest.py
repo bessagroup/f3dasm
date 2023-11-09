@@ -8,9 +8,8 @@ import xarray as xr
 from omegaconf import OmegaConf
 
 from f3dasm import ExperimentData
-from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain,
-                           make_nd_continuous_domain)
+from f3dasm.design import (_CategoricalParameter, _DiscreteParameter, Domain,
+                           _ContinuousParameter, make_nd_continuous_domain)
 
 SEED = 42
 
@@ -24,9 +23,9 @@ def seed() -> int:
 def domain() -> Domain:
 
     space = {
-        'x1': ContinuousParameter(-5.12, 5.12),
-        'x2': DiscreteParameter(-3, 3),
-        'x3': CategoricalParameter(["red", "green", "blue"])
+        'x1': _ContinuousParameter(-5.12, 5.12),
+        'x2': _DiscreteParameter(-3, 3),
+        'x3': _CategoricalParameter(["red", "green", "blue"])
     }
 
     return Domain(space=space)
@@ -62,8 +61,10 @@ def experimentdata_continuous(domain_continuous: Domain) -> ExperimentData:
 
 @pytest.fixture(scope="package")
 def experimentdata_expected() -> ExperimentData:
-    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
-    data = ExperimentData.from_sampling(sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
+    domain_continuous = make_nd_continuous_domain(
+        bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    data = ExperimentData.from_sampling(
+        sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
     data.fill_output(np.zeros((10, 1)))
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
@@ -74,9 +75,12 @@ def experimentdata_expected() -> ExperimentData:
 
 @pytest.fixture(scope="package")
 def experimentdata_expected_no_output() -> ExperimentData:
-    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
-    data = ExperimentData.from_sampling(sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
-    data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
+    domain_continuous = make_nd_continuous_domain(
+        bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    data = ExperimentData.from_sampling(
+        sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
+    data.add(input_data=np.array(
+        [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
     data.input_data.data = data.input_data.data.round(6)
     return data
@@ -84,7 +88,8 @@ def experimentdata_expected_no_output() -> ExperimentData:
 
 @pytest.fixture(scope="package")
 def experimentdata_expected_only_domain() -> ExperimentData:
-    domain_continuous = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
+    domain_continuous = make_nd_continuous_domain(
+        bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
     return ExperimentData(domain=domain_continuous)
 
 
@@ -134,13 +139,13 @@ def config_yaml() -> OmegaConf:
         },
         "domain": {
             "input_space": {"x1": {"_target_": "f3dasm.ContinuousParameter", "lower": -5.12, "upper": 5.12},
-                            "x2": {"_target_": "f3dasm.DiscreteParameter", "lower": -3, "upper": 3},
-                            "x3": {"_target_": "f3dasm.CategoricalParameter", "categories": ["red", "green", "blue"]}}}
+                            "x2": {"_target_": "f3dasm._DiscreteParameter", "lower": -3, "upper": 3},
+                            "x3": {"_target_": "f3dasm._CategoricalParameter", "categories": ["red", "green", "blue"]}}}
     }
 
     return OmegaConf.create(config_dict)
 
 
 @pytest.fixture(scope="package")
-def continuous_parameter() -> ContinuousParameter:
-    return ContinuousParameter(lower_bound=0., upper_bound=1.)
+def continuous_parameter() -> _ContinuousParameter:
+    return _ContinuousParameter(lower_bound=0., upper_bound=1.)

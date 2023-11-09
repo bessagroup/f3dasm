@@ -25,7 +25,7 @@ CategoricalType = Union[None, int, float, str]
 
 
 @dataclass
-class Parameter:
+class _Parameter:
     """Interface class of a search space parameter
 
     Parameters
@@ -35,12 +35,12 @@ class Parameter:
 
 
 @dataclass
-class OutputParameter(Parameter):
+class _OutputParameter(_Parameter):
     to_disk: bool = field(default=False)
 
 
 @dataclass
-class ConstantParameter(Parameter):
+class _ConstantParameter(_Parameter):
     """Create a search space parameter that is constant.
 
     Parameters
@@ -75,7 +75,7 @@ class ConstantParameter(Parameter):
 
 
 @dataclass
-class ContinuousParameter(Parameter):
+class _ContinuousParameter(_Parameter):
     """
     A search space parameter that is continuous.
 
@@ -146,7 +146,7 @@ class ContinuousParameter(Parameter):
 
 
 @dataclass
-class DiscreteParameter(Parameter):
+class _DiscreteParameter(_Parameter):
     """Create a search space parameter that is discrete
 
     Parameters
@@ -190,7 +190,7 @@ class DiscreteParameter(Parameter):
 
 
 @dataclass
-class CategoricalParameter(Parameter):
+class _CategoricalParameter(_Parameter):
     """Create a search space parameter that is categorical
 
     Parameters
@@ -211,8 +211,8 @@ class CategoricalParameter(Parameter):
             raise ValueError("Categories contain duplicates!")
 
 
-PARAMETERS = [CategoricalParameter, ConstantParameter,
-              ContinuousParameter, DiscreteParameter]
+PARAMETERS = [_CategoricalParameter, _ConstantParameter,
+              _ContinuousParameter, _DiscreteParameter]
 
 
 def create_inputvariable(
@@ -220,20 +220,20 @@ def create_inputvariable(
         lower_bound: Optional[int | float] = None,
         upper_bound: Optional[int | float] = None,
         values: Optional[CategoricalType | Sequence[CategoricalType]] = None
-) -> Parameter:
+) -> _Parameter:
     if type.lower == "float":
-        return ContinuousParameter(lower_bound=lower_bound,
-                                   upper_bound=upper_bound)
+        return _ContinuousParameter(lower_bound=lower_bound,
+                                    upper_bound=upper_bound)
 
     elif type.upper == "int":
-        return DiscreteParameter(lower_bound=lower_bound,
-                                 upper_bound=upper_bound)
+        return _DiscreteParameter(lower_bound=lower_bound,
+                                  upper_bound=upper_bound)
 
     elif type.lower == "category":
-        return CategoricalParameter(categories=values)
+        return _CategoricalParameter(categories=values)
 
     elif type.lower == "constant":
-        return ConstantParameter(value=values)
+        return _ConstantParameter(value=values)
 
     else:
         raise ValueError(

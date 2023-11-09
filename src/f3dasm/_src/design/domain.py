@@ -22,9 +22,9 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 # Local
-from .parameter import (CategoricalParameter, CategoricalType,
-                        ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, OutputParameter, Parameter)
+from .parameter import (CategoricalType, _CategoricalParameter,
+                        _ConstantParameter, _ContinuousParameter,
+                        _DiscreteParameter, _OutputParameter, _Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,8 +46,8 @@ class Domain:
         Dict of input parameters, by default an empty dict
     """
 
-    space: Dict[str, Parameter] = field(default_factory=dict)
-    output_space: Dict[str, OutputParameter] = field(default_factory=dict)
+    space: Dict[str, _Parameter] = field(default_factory=dict)
+    output_space: Dict[str, _OutputParameter] = field(default_factory=dict)
 
     def __len__(self) -> int:
         """The len() method returns the number of parameters"""
@@ -61,11 +61,11 @@ class Domain:
         # Compare the space dictionaries for equality
         return self.space == other.space
 
-    def items(self) -> Iterator[Parameter]:
+    def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
         return self.space.items()
 
-    def values(self) -> Iterator[Parameter]:
+    def values(self) -> Iterator[_Parameter]:
         """Return an iterator over the values of the parameters"""
         return self.space.values()
 
@@ -81,23 +81,23 @@ class Domain:
     @property
     def continuous(self) -> Domain:
         """Returns a Domain object containing only the continuous parameters"""
-        return self._filter(ContinuousParameter)
+        return self._filter(_ContinuousParameter)
 
     @property
     def discrete(self) -> Domain:
         """Returns a Domain object containing only the discrete parameters"""
-        return self._filter(DiscreteParameter)
+        return self._filter(_DiscreteParameter)
 
     @property
     def categorical(self) -> Domain:
         """Returns a Domain object containing only
          the categorical parameters"""
-        return self._filter(CategoricalParameter)
+        return self._filter(_CategoricalParameter)
 
     @property
     def constant(self) -> Domain:
         """Returns a Domain object containing only the constant parameters"""
-        return self._filter(ConstantParameter)
+        return self._filter(_ConstantParameter)
 #                                                      Alternative constructors
 # =============================================================================
 
@@ -173,29 +173,29 @@ class Domain:
         for name, type in df_input.dtypes.items():
             if type == 'float64':
                 if float(df_input[name].min()) == float(df_input[name].max()):
-                    input_space[name] = ConstantParameter(
+                    input_space[name] = _ConstantParameter(
                         value=float(df_input[name].min()))
                     continue
 
-                input_space[name] = ContinuousParameter(lower_bound=float(
+                input_space[name] = _ContinuousParameter(lower_bound=float(
                     df_input[name].min()),
                     upper_bound=float(df_input[name].max()))
             elif type == 'int64':
                 if int(df_input[name].min()) == int(df_input[name].max()):
-                    input_space[name] = ConstantParameter(
+                    input_space[name] = _ConstantParameter(
                         value=int(df_input[name].min()))
                     continue
 
-                input_space[name] = DiscreteParameter(lower_bound=int(
+                input_space[name] = _DiscreteParameter(lower_bound=int(
                     df_input[name].min()),
                     upper_bound=int(df_input[name].max()))
             else:
-                input_space[name] = CategoricalParameter(
+                input_space[name] = _CategoricalParameter(
                     df_input[name].unique().tolist())
 
         output_space = {}
         for name in df_output.columns:
-            output_space[name] = OutputParameter(to_disk=False)
+            output_space[name] = _OutputParameter(to_disk=False)
 
         return cls(space=input_space, output_space=output_space)
 
@@ -236,7 +236,7 @@ class Domain:
 #                                                  Append and remove parameters
 # =============================================================================
 
-    def _add(self, name: str, parameter: Parameter):
+    def _add(self, name: str, parameter: _Parameter):
         # Check if parameter is already in the domain
         if name in self.space:
             raise KeyError(
@@ -273,7 +273,7 @@ class Domain:
         """
         if low == high:
             self.add_constant(name, low)
-        self._add(name, DiscreteParameter(low, high, step))
+        self._add(name, _DiscreteParameter(low, high, step))
 
     def add_float(self, name: str, low: float, high: float, log: bool = False):
         """Add a new continuous input parameter to the domain.
@@ -305,7 +305,7 @@ class Domain:
         if math.isclose(low, high):
             self.add_constant(name, low)
         else:
-            self._add(name, ContinuousParameter(low, high, log))
+            self._add(name, _ContinuousParameter(low, high, log))
 
     def add_category(self, name: str, categories: Sequence[CategoricalType]):
         """Add a new categorical input parameter to the domain.
@@ -324,7 +324,7 @@ class Domain:
         >>> domain.space
         {'param1': CategoricalParameter(categories=[0, 1, 2])}
         """
-        self._add(name, CategoricalParameter(categories))
+        self._add(name, _CategoricalParameter(categories))
 
     def add_constant(self, name: str, value: Any):
         """Add a new constant input parameter to the domain.
@@ -343,9 +343,9 @@ class Domain:
         >>> domain.space
         {'param1': ConstantParameter(value=0)}
         """
-        self._add(name, ConstantParameter(value))
+        self._add(name, _ConstantParameter(value))
 
-    def add(self, name: str, space: Parameter):
+    def add(self, name: str, space: _Parameter):
         """Add a new input parameter to the domain.
 
         Parameters
@@ -387,11 +387,11 @@ class Domain:
                 f"Parameter {name} already exists in the domain! \
                      Choose a different name.")
 
-        self.output_space[name] = OutputParameter(to_disk)
+        self.output_space[name] = _OutputParameter(to_disk)
 #                                                                       Getters
 # =============================================================================
 
-    def get_continuous_parameters(self) -> Dict[str, ContinuousParameter]:
+    def get_continuous_parameters(self) -> Dict[str, _ContinuousParameter]:
         """Get all continuous input parameters.
 
         Returns
@@ -412,7 +412,7 @@ class Domain:
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
          'param3': ContinuousParameter(lower_bound=2., upper_bound=5.)}
         """
-        return self._filter(ContinuousParameter).space
+        return self._filter(_ContinuousParameter).space
 
     def get_continuous_names(self) -> List[str]:
         """Get the names of continuous input parameters in the input space.
@@ -434,9 +434,9 @@ class Domain:
         >>> continuous_input_names
         ['param1', 'param3']
         """
-        return self._filter(ContinuousParameter).names
+        return self._filter(_ContinuousParameter).names
 
-    def get_discrete_parameters(self) -> Dict[str, DiscreteParameter]:
+    def get_discrete_parameters(self) -> Dict[str, _DiscreteParameter]:
         """Retrieve all discrete input parameters.
 
         Returns
@@ -457,7 +457,7 @@ class Domain:
         {'param1': DiscreteParameter(lower_bound=1, upperBound=4)),
          'param3': DiscreteParameter(lower_bound=4, upperBound=6)}
         """
-        return self._filter(DiscreteParameter).space
+        return self._filter(_DiscreteParameter).space
 
     def get_discrete_names(self) -> List[str]:
         """Retrieve the names of all discrete input parameters.
@@ -479,9 +479,9 @@ class Domain:
         >>> discrete_input_names
         ['param1', 'param3']
         """
-        return self._filter(DiscreteParameter).names
+        return self._filter(_DiscreteParameter).names
 
-    def get_categorical_parameters(self) -> Dict[str, CategoricalParameter]:
+    def get_categorical_parameters(self) -> Dict[str, _CategoricalParameter]:
         """Retrieve all categorical input parameters.
 
         Returns
@@ -503,7 +503,7 @@ class Domain:
         {'param1': CategoricalParameter(categories=['A', 'B', 'C']),
          'param3': CategoricalParameter(categories=['X', 'Y', 'Z'])}
         """
-        return self._filter(CategoricalParameter).space
+        return self._filter(_CategoricalParameter).space
 
     def get_categorical_names(self) -> List[str]:
         """Retrieve the names of categorical input parameters.
@@ -525,9 +525,9 @@ class Domain:
         >>> categorical_input_names
         ['param1', 'param3']
         """
-        return self._filter(CategoricalParameter).names
+        return self._filter(_CategoricalParameter).names
 
-    def get_constant_parameters(self) -> Dict[str, ConstantParameter]:
+    def get_constant_parameters(self) -> Dict[str, _ConstantParameter]:
         """Retrieve all constant input parameters.
 
         Returns
@@ -548,7 +548,7 @@ class Domain:
         {'param1': ConstantParameter(value=0),
          'param3': ConstantParameter(value=1)}
         """
-        return self._filter(ConstantParameter).space
+        return self._filter(_ConstantParameter).space
 
     def get_constant_names(self) -> List[str]:
         """Receive the names of the constant input parameters
@@ -569,7 +569,7 @@ class Domain:
         >>> constant_input_names
         ['param1', 'param2']
         """
-        return self._filter(ConstantParameter).names
+        return self._filter(_ConstantParameter).names
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -598,7 +598,7 @@ class Domain:
                 for _, parameter in self.get_continuous_parameters().items()]
         )
 
-    def _filter(self, type: Type[Parameter]) -> Domain:
+    def _filter(self, type: Type[_Parameter]) -> Domain:
         """Filter the parameters of the domain by type
 
         Parameters
@@ -666,7 +666,7 @@ class Domain:
 
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return len(self) == len(self._filter(ContinuousParameter))
+        return len(self) == len(self._filter(_ContinuousParameter))
 
     def check_output(self, names: List[str]):
         for output_name in names:
@@ -735,7 +735,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     bounds = np.array(bounds)
 
     for dim in range(dimensionality):
-        space[f"x{dim}"] = ContinuousParameter(
+        space[f"x{dim}"] = _ContinuousParameter(
             lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)

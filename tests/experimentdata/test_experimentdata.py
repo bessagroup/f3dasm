@@ -12,7 +12,7 @@ import xarray as xr
 
 from f3dasm import ExperimentData, ExperimentSample
 from f3dasm._src.experimentdata.experimentdata import DataTypes
-from f3dasm.design import (ContinuousParameter, Domain, Status, _Data,
+from f3dasm.design import (Domain, Status, _ContinuousParameter, _Data,
                            _JobQueue, make_nd_continuous_domain)
 
 pytestmark = pytest.mark.smoke
@@ -161,7 +161,7 @@ def test_to_pandas(experimentdata_continuous: ExperimentData, pandas_dataframe: 
 # ======================================================================================
 
 
-def test_add_new_input_column(experimentdata: ExperimentData, continuous_parameter: ContinuousParameter):
+def test_add_new_input_column(experimentdata: ExperimentData, continuous_parameter: _ContinuousParameter):
     experimentdata.add_input_parameter(
         name='test', parameter=continuous_parameter)
     assert 'test' in experimentdata.input_data.names

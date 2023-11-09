@@ -19,8 +19,6 @@ from ._src import _imports as _imports
 from ._src._argparser import HPC_JOBID
 from ._src._imports import try_import
 from ._src.design.domain import Domain, make_nd_continuous_domain
-from ._src.design.parameter import (CategoricalParameter, ConstantParameter,
-                                    ContinuousParameter, DiscreteParameter)
 from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
@@ -53,10 +51,6 @@ __all__ = [
     'Domain',
     'make_nd_continuous_domain',
     'ExperimentData',
-    'CategoricalParameter',
-    'ConstantParameter',
-    'ContinuousParameter',
-    'DiscreteParameter',
     'DistributedFileHandler',
     'logger',
     'Optimizer',

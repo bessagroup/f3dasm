@@ -29,7 +29,7 @@ from pathos.helpers import mp
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain
-from ..design.parameter import Parameter
+from ..design.parameter import _Parameter
 from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
@@ -561,7 +561,7 @@ class ExperimentData:
                        self.domain.space.items())}
         self.input_data.data = self.input_data.data.astype(_dtypes)
 
-    def add_input_parameter(self, name: str, parameter: Parameter) -> None:
+    def add_input_parameter(self, name: str, parameter: _Parameter) -> None:
         """Add a new input column to the ExperimentData object.
 
         Parameters
