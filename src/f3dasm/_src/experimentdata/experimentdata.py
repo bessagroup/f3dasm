@@ -9,12 +9,18 @@ The ExperimentData object is the main object used to store implementations
 
 from __future__ import annotations
 
+import sys
 # Standard
 import traceback
 from functools import wraps
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Tuple, Type)
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
+                    Tuple, Type)
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Literal  # NOQA
+else:
+    from typing import Literal
 
 # Third-party
 import numpy as np

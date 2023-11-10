@@ -11,9 +11,15 @@ from __future__ import annotations
 # Standard
 import math
 import pickle
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Literal, Sequence, Type
+from typing import Any, Dict, Iterable, Iterator, List, Sequence, Type
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Literal  # NOQA
+else:
+    from typing import Literal
 
 # Third-party core
 import numpy as np
