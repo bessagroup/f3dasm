@@ -28,7 +28,7 @@ def test_check_experimentdata(experimentdata: ExperimentData):
 
 def test_experiment_data_init(experimentdata: ExperimentData, domain: Domain):
     assert experimentdata.domain == domain
-    assert experimentdata.filename == 'experimentdata'
+    assert experimentdata.project_dir == Path.cwd()
     # Add more assertions as needed
 
 
@@ -647,19 +647,19 @@ def test_repr_html(experimentdata: ExperimentData, monkeypatch):
 
 def test_store(experimentdata: ExperimentData, tmp_path: Path):
     experimentdata.store(tmp_path / "test")
-    assert (tmp_path / "test_input.csv").exists()
-    assert (tmp_path / "test_output.csv").exists()
-    assert (tmp_path / "test_domain.pkl").exists()
-    assert (tmp_path / "test_jobs.pkl").exists()
+    assert (tmp_path / "test" / "experiment_data" / "input.csv").exists()
+    assert (tmp_path / "test" / "experiment_data" / "output.csv").exists()
+    assert (tmp_path / "test" / "experiment_data" / "domain.pkl").exists()
+    assert (tmp_path / "test" / "experiment_data" / "jobs.pkl").exists()
 
 
 def test_store_give_no_filename(experimentdata: ExperimentData, tmp_path: Path):
-    experimentdata.filename = tmp_path / 'test2'
+    experimentdata.set_project_dir(tmp_path / 'test2')
     experimentdata.store()
-    assert (tmp_path / "test2_input.csv").exists()
-    assert (tmp_path / "test2_output.csv").exists()
-    assert (tmp_path / "test2_domain.pkl").exists()
-    assert (tmp_path / "test2_jobs.pkl").exists()
+    assert (tmp_path / "test2" / "experiment_data" / "input.csv").exists()
+    assert (tmp_path / "test2" / "experiment_data" / "output.csv").exists()
+    assert (tmp_path / "test2" / "experiment_data" / "domain.pkl").exists()
+    assert (tmp_path / "test2" / "experiment_data" / "jobs.pkl").exists()
 
 
 @pytest.mark.parametrize("mode", ["sequential", "parallel", "typo"])
