@@ -11,7 +11,7 @@ The :class:`~f3dasm.design.ExperimentData` object consists of the following attr
 - :ref:`domain <domain-format>`: The feasible :class:`~f3dasm.design.Domain` of the Experiment. Used for sampling and optimization.
 - :ref:`input_data <input-data-format>`: Tabular data containing the input variables of the experiments as column and the experiments as rows.
 - :ref:`output_data <output-data-format>`: Tabular data containing the tracked outputs of the experiments.
-- :ref:`filename <filename-format>`: Name of the ExperimentData, used for storing and loading.
+- :ref:`project_dir <filename-format>`: A user-defined project directory where all files related to your data-driven process will be stored. 
 
 
 .. image:: ../../../img/f3dasm-experimentdata.png
@@ -28,7 +28,7 @@ The :class:`~f3dasm.design.ExperimentData` object consists of the following attr
 The :class:`~f3dasm.design.ExperimentData` object can be constructed in several ways:
 
 * :ref:`By providing your own data <experimentdata-own>`
-* :ref:`Retrieved from disk <experimentdata-file>`
+* :ref:`Reconstructed from the project directory <experimentdata-file>`
 * :ref:`By a sampling strategy <experimentdata-sampling>`
 * :ref:`From a hydra configuration file <experimentdata-hydra>`
 
@@ -57,7 +57,8 @@ Learn more about the :class:`~f3dasm.design.Domain` object in the :ref:`domain <
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> domain = Domain()
     >>> domain.add_float('x0', 0., 1.)
     >>> domain.add_float('x1', 0., 1.)
@@ -86,7 +87,8 @@ Several datatypes are supported for the ``input_data`` argument:
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> df = pd.DataFrame(...) # your data in a pandas DataFrame
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
     >>> data = ExperimentData.from_dataframe(df, domain)
@@ -95,7 +97,8 @@ Several datatypes are supported for the ``input_data`` argument:
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> import numpy as np
     >>> input_data = np.array([[0.1, 0.2], [0.3, 0.4]])
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
@@ -111,7 +114,8 @@ Several datatypes are supported for the ``input_data`` argument:
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
     >>> data = ExperimentData.from_csv("my_experiment_data.csv", domain)
 
@@ -128,54 +132,68 @@ Several datatypes are supported for the ``output_data`` argument:
 
 * A :class:`~pandas.DataFrame` object with the output variable names as columns and the experiments as rows.
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> df = pd.DataFrame(...) # your data in a pandas DataFrame
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_dataframe(df, domain)
+    >>> data = ExperimentData(input_data=df, domain=domain)
 
 * A two-dimensional :class:`~numpy.ndarray` object with shape (<number of experiments>, <number of output dimensions>)
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> import numpy as np
-    >>> input_data = np.array([[0.1, 0.2], [0.3, 0.4]])
+    >>> input_array = np.array([[0.1, 0.2], [0.3, 0.4]])
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_array(input_data, domain)
+    >>> data = ExperimentData(input_data=input_array, domain=domain)
 
 * A string or path to a ``.csv`` file containing the output data. The ``.csv`` file should contain a header row with the names of the output variables and the first column should be indices for the experiments.
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_csv("my_experiment_data.csv", domain)
+    >>> data = ExperimentData(input_data="my_experiment_data.csv", domain=domain)
 
 If you don't have output data yet, you can also construct an :class:`~f3dasm.design.ExperimentData` object without providing output data.
 
 
 .. _filename-format:
 
-filename
-^^^^^^^^
+project directory
+^^^^^^^^^^^^^^^^^
 
-The ``filename`` argument is optional and can be used to :ref:`store the ExperimentData to disk <experimentdata-store>`
-You can provide a string or a path to a file.
-
-.. code-block:: python
-
-    >>> from f3dasm import ExperimentData, Domain
-    >>> filename = "folder/to/my_experiment_data"
-    >>> data = ExperimentData(filename=filename)
-
-.. _experimentdata-file:
-
-ExperimentData from a file containing a serialized :class:`~f3dasm.design.ExperimentData` object
-------------------------------------------------------------------------------------------------
-
-If you already have constructed the :class:`~f3dasm.design.ExperimentData` object before, you can retrieve it from disk by calling the :meth:`~f3dasm.design.ExperimentData.from_file`
-method with the path of the files. 
+The ``project_dir`` argument is used to :ref:`store the ExperimentData to disk <experimentdata-store>`
+You can provide a string or a path to a directory. If the directory does not exist, it will be created.
 
 .. code-block:: python
 
     >>> from f3dasm import ExperimentData
-    >>> data = ExperimentData.from_file("my_experiment")
+    >>> from f3dasm.design import Domain
+    >>> project_dir = "folder/to/my_project_directory"
+    >>> data = ExperimentData(project_dir=project_dir)
+
+You can also set the project directoy manually after creation with the :meth:`~f3dasm.design.ExperimentData.set_project_dir` method"
+
+.. code-block:: python
+
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
+    >>> data = ExperimentData()
+    >>> data.set_project_dir("folder/to/my_project_directory")
+
+
+.. _experimentdata-file:
+
+ExperimentData from project directory
+-------------------------------------
+
+If you already have constructed the :class:`~f3dasm.design.ExperimentData` object before, you can retrieve it from disk by calling the :meth:`~f3dasm.design.ExperimentData.from_file`
+classmethod with the path of project directory:
+
+.. code-block:: python
+
+    >>> from f3dasm import ExperimentData
+    >>> data = ExperimentData.from_file("folder/to/my_project_directory")
 
 .. _experimentdata-sampling:
 
@@ -215,9 +233,12 @@ Name                     Method                                                 
 
 .. code-block:: python
 
-    from f3dasm import ExperimentData, Domain, ContinuousParameter
+    from f3dasm import ExperimentData
+    from f3dasm.design import Domain
 
-    domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
+    domain = Domain()
+    domain.add_float(name='x0', low=0., high=0.)
+    domain.add_float(name='x1', low=0., high=0.)
     data = ExperimentData.from_sampling(sampler="latin", domain=domain, n_samples=10, seed=42)
 
 .. _experimentdata-hydra:
@@ -237,11 +258,11 @@ You can create an experimentdata :class:`~f3dasm.design.ExperimentData` object i
 
     domain:
         x0: 
-            _target_: f3dasm.ContinuousParameter
+            type: float
             lower_bound: 0.
             upper_bound: 1.
         x1:
-            _target_: f3dasm.ContinuousParameter
+            type: float
             lower_bound: 0.
             upper_bound: 1.
 
@@ -277,13 +298,13 @@ To create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3d
 
     domain:
         x0: 
-            _target_: f3dasm.ContinuousParameter
+            type: float
             lower_bound: 0.
             upper_bound: 1.
         x1:
-            _target_: f3dasm.ContinuousParameter
+            type: float
             lower_bound: 0.
-            upper_bound: 1.    
+            upper_bound: 1.  
 
     experimentdata:
         from_sampling:
@@ -313,10 +334,13 @@ If you have constructed your :class:`~f3dasm.design.ExperimentData` object, you 
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData, Domain
+    >>> from f3dasm import ExperimentData
+    >>> from f3dasm.design import Domain
     >>> data = ExperimentData()
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
-    >>> data.add(input_data, output_data, domain, filename)
+    >>> domain = Domain()
+    >>> domain.add_float(name='x0', low=0., high=1.)
+    >>> domain.add_float(name='x1', low=0., high=1.)
+    >>> data.add(input_data=input_data)
 
 .. warning::
 
@@ -331,39 +355,43 @@ Exporting
 Storing the ExperimentData object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :class:`~f3dasm.design.ExperimentData` object can be exported to a file using the :meth:`~f3dasm.design.ExperimentData.store` method.
-This will create a series of files containing its attributes:
-
-- :code:`<filename>_domain.pkl`: The :class:`~f3dasm.design.Domain` object
-- :code:`<filename>_data.csv`: The :attr:`~f3dasm.design.ExperimentData.input_data` table
-- :code:`<filename>_output.csv`: The :attr:`~f3dasm.design.ExperimentData.output_data` table
-- :code:`<filename>_jobs.pkl`: The :attr:`~f3dasm.design.ExperimentData.jobs` object
-
-These files can be used to load the :class:`~f3dasm.design.ExperimentData` object again using the :meth:`~f3dasm.design.ExperimentData.from_file` method.
+The :class:`~f3dasm.design.ExperimentData` object can be exported to a collection of files using the :meth:`~f3dasm.design.ExperimentData.store` method.
 
 .. code-block:: python
 
-    >>> from f3dasm import ExperimentData
-    >>> data = ExperimentData.from_file("my_experiment")
-    >>> data.store("my_experiment")
+    >>> data.store("path/to/project_dir")
 
-This will result in the creation of the following files:
+Inside the project directory, a subfolder `experiment_data` will be created containing the following files:
+
+- :code:`domain.pkl`: The :class:`~f3dasm.design.Domain` object
+- :code:`input.csv`: The :attr:`~f3dasm.design.ExperimentData.input_data` table
+- :code:`output.csv`: The :attr:`~f3dasm.design.ExperimentData.output_data` table
+- :code:`jobs.pkl`: The :attr:`~f3dasm.design.ExperimentData.jobs` object
+
+These files are used to load the :class:`~f3dasm.design.ExperimentData` object again using the :meth:`~f3dasm.design.ExperimentData.from_file` method.
+
+.. code-block:: python
+
+    >>> data = ExperimentData.from_file("path/to/project_dir")
+
+
 
 .. code-block:: none
    :caption: Directory Structure
 
-   my_project/
-   ├── my_experiment_domain.pkl
-   ├── my_experiment_data.csv
-   ├── my_experiment_output.csv
-   └── my_experiment_jobs.pkl
+   project_dir/
+    └── experiment_data/
+            ├── domain.pkl
+            ├── input.csv
+            ├── output.csv
+            └── jobs.pkl
 
 .. _experimentdata-store-other:
 
 Storing to other datatypes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Alternatively, you can convert the input- and outputdata of your data-driven process to other well-knowndatatypes:
+Alternatively, you can convert the input- and outputdata of your data-driven process to other well-known datatypes:
 
 * :class:`~numpy.ndarray` (:meth:`~f3dasm.design.ExperimentData.to_numpy`); creates a tuple of two :class:`~numpy.ndarray` objects containing the input- and outputdata.
 * :class:`~xarray.Dataset` (:meth:`~f3dasm.design.ExperimentData.to_xarray`); creates a :class:`~xarray.Dataset` object containing the input- and outputdata.
