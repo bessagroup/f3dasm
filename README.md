@@ -7,6 +7,7 @@ f3dasm
 [![Python](https://img.shields.io/pypi/pyversions/f3dasm)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/f3dasm.svg)](https://pypi.org/project/f3dasm/)
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/bessagroup/f3dasm)
+[![Documentation Status](https://readthedocs.org/projects/f3dasm/badge/?version=latest)](https://f3dasm.readthedocs.io/en/latest/?badge=latest)
 
 [**Docs**](https://f3dasm.readthedocs.io/)
 | [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html)
