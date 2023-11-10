@@ -308,9 +308,10 @@ To create the :class:`~f3dasm.design.ExperimentData` object with the :meth:`~f3d
 
     experimentdata:
         from_sampling:
-            _target_: f3dasm.sampling.RandomUniform
+            domain: ${domain}
+            sampler: random
             seed: 1
-            number_of_samples: 3
+            n_samples: 3
 
 
 .. note:: 

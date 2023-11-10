@@ -260,7 +260,7 @@ class ExperimentData:
             return cls._from_file_attempt(filename_with_path)
 
     @classmethod
-    def from_sampling(cls, sampler: Sampler | str, domain: Domain,
+    def from_sampling(cls, sampler: Sampler | str, domain: Domain | DictConfig,
                       n_samples: int = 1,
                       seed: Optional[int] = None) -> ExperimentData:
         """Create an ExperimentData object from a sampler.
@@ -269,8 +269,9 @@ class ExperimentData:
         ----------
         sampler : Sampler
             Sampler object containing the sampling strategy.
-        domain : Domain
-            Domain object containing the domain of the experiment.
+        domain : Domain | DictConfig
+            Domain object containing the domain of the experiment or hydra
+            DictConfig object containing the configuration.
         n_samples : int, optional
             Number of samples, by default 1.
         seed : int, optional
@@ -292,7 +293,8 @@ class ExperimentData:
         Parameters
         ----------
         config : DictConfig
-            A DictConfig object containing the configuration.
+            A DictConfig object containing the configuration of the \
+            experiment data.
 
         Returns
         -------
@@ -300,17 +302,12 @@ class ExperimentData:
             ExperimentData object containing the loaded data.
         """
         # Option 1: From exisiting ExperimentData files
-        if 'from_file' in config.experimentdata:
-            return cls.from_file(project_dir=config.experimentdata.from_file)
+        if 'from_file' in config:
+            return cls.from_file(config.from_file)
 
         # Option 2: Sample from the domain
-        elif 'from_sampling' in config.experimentdata:
-            domain = Domain.from_yaml(config.domain)
-            return cls.from_sampling(
-                sampler=config.experimentdata.from_sampling.sampler,
-                domain=domain,
-                n_samples=config.experimentdata.from_sampling.n_samples,
-                seed=config.experimentdata.from_sampling.seed)
+        elif 'from_sampling' in config:
+            return cls.from_sampling(**config.from_sampling)
 
         else:
             return cls(**config)
@@ -1330,7 +1327,7 @@ def _data_factory(data: DataTypes) -> _Data:
             f"Path or str, not {type(data)}")
 
 
-def _domain_factory(domain: Domain | None,
+def _domain_factory(domain: Domain | DictConfig | None,
                     input_data: _Data, output_data: _Data) -> Domain:
     if isinstance(domain, Domain):
         domain._check_output(output_data.names)
@@ -1338,6 +1335,9 @@ def _domain_factory(domain: Domain | None,
 
     elif isinstance(domain, (Path, str)):
         return Domain.from_file(Path(domain))
+
+    elif isinstance(domain, DictConfig):
+        return Domain.from_yaml(domain)
 
     elif (input_data.is_empty() and output_data.is_empty() and domain is None):
         return Domain()
