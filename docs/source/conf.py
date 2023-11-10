@@ -106,7 +106,7 @@ intersphinx_mapping = {
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_theme_path
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
-    html_theme = 'default'
+    html_theme = 'shpinx_rtd_theme'
 else:
     # Source: https://sphinx-rtd-theme.readthedocs.io/en/stable/index.html
     # Requires installation of Python package 'sphinx_rtd_theme'
