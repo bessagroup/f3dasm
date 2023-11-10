@@ -32,7 +32,7 @@ class ExperimentSample(Protocol):
     def get(self, key: str) -> Any:
         ...
 
-    def store(object: Any, name: str, to_disk: bool) -> None:
+    def store(self, object: Any, name: str, to_disk: bool) -> None:
         ...
 
     @property

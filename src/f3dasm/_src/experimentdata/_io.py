@@ -28,6 +28,16 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 
+#                                                  Global folder and file names
+# =============================================================================
+
+EXPERIMENTDATA_SUBFOLDER = "experiment_data"
+
+LOCK_FILENAME = "lock"
+DOMAIN_FILENAME = "domain"
+INPUT_DATA_FILENAME = "input"
+OUTPUT_DATA_FILENAME = "output"
+JOBS_FILENAME = "jobs"
 
 #                                                               Storing methods
 # =============================================================================
