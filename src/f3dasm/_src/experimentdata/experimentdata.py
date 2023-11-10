@@ -445,7 +445,7 @@ class ExperimentData:
     # =========================================================================
 
     def store(self, project_dir: Optional[Path | str] = None):
-        """Store the ExperimentData to disk, with checking for a lock
+        """Write the ExperimentData to disk in the project directory.
 
         Parameters
         ----------
@@ -467,6 +467,12 @@ class ExperimentData:
         * the output data (`output.csv`)
         * the jobs (`jobs.pkl`)
         * the domain (`domain.pkl`)
+
+        To avoid the ExperimentData to be written simultaneously by multiple \
+        processes, a '.lock' file is automatically created \
+        in the project directory. Concurrent process can only sequentially \
+        access the lock file. This lock file is removed after the \
+        ExperimentData object is written to disk.
         """
         if project_dir is not None:
             self.set_project_dir(project_dir)
