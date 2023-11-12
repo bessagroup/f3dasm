@@ -6,7 +6,7 @@ from __future__ import annotations
 # Standard
 from abc import ABC, abstractmethod
 from copy import copy
-from typing import List
+from typing import List, Optional
 
 # Third-party
 import autograd.numpy as np
@@ -136,22 +136,25 @@ class FunctionAugmentor:
     """Combination of Augmentors that can change the input and
      output of an objective function
 
-    Args:
-        input_augmentors (List[Augmentor]): list of input augmentors
-        output_augmentors (List[Augmentor]): list of output augmentors
+    Parameters
+    ----------
+    input_augmentors : List[Augmentor]
+        list of input augmentors
+    outpu_augmentors : List[Augmentor]
+        list of output augmentors
     """
 
     def __init__(
-            self, input_augmentors: List[_Augmentor] = None,
-            output_augmentors: List[_Augmentor] = None):
+            self, input_augmentors: Optional[List[_Augmentor]] = None,
+            output_augmentors: Optional[List[_Augmentor]] = None):
         """Combination of augmentors that can change the input and output of
          an objective function
 
         Parameters
         ----------
-        input_augmentors, optional
+        input_augmentors : Optional[List[_Augmentor]]
             list of input augmentors, by default None
-        output_augmentors, optional
+        output_augmentors: Optional[List[_Augmentor]]
             list of output augmentors, by default None
         """
         self.input_augmentors = [] if \
@@ -262,10 +265,36 @@ class FunctionAugmentor:
 
 
 def _scale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
-    """Scale a vector x to a given scale"""
+    """Scale a vector x to a given scale
+
+    Parameters
+    ----------
+    x : np.ndarray
+        vector to be scaled
+    scale : np.ndarray
+        scale to be scaled towards
+
+    Returns
+    -------
+    np.ndarray
+        scaled vector
+    """
     return (scale[:, 1] - scale[:, 0]) * x + scale[:, 0]
 
 
 def _descale_vector(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
-    """Inverse of the _scale_vector() function"""
+    """Inverse of the _scale_vector() function
+
+    Parameters
+    ----------
+    x : np.ndarray
+        scaled vector
+    scale : np.ndarray
+        scale to be scaled towards
+
+    Returns
+    -------
+    np.ndarray
+        descaled vector
+    """
     return (x - scale[:, 0]) / (scale[:, 1] - scale[:, 0])

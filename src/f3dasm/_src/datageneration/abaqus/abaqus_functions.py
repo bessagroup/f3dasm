@@ -4,10 +4,10 @@ This file contains the functions that are used to run Abaqus simulations.
 Note
 ----
 I'm assuming that every process could have a different pre-processing,
- execution and post-processing function.
+execution and post-processing function.
 But they are used in that order and only once.
 If multiple e.g. pre_process steps need to be taken, then they should
- be combined in one function.
+be combined in one function.
 """
 
 #                                                                       Modules
@@ -41,14 +41,14 @@ def pre_process(
     ----------
     experiment_sample : ExperimentSample
         The design to run the data generator on. Will be handled by
-         the pipeline.
+        the pipeline.
     folder_path : str
         Path of the folder where the python script is located
     python_file : str
         Name of the python file to be executed
     function_name : str, optional
         Name of the function within the python file to be executed,
-         by default "main"
+        by default "main"
     name : str, optional
         Name of the job, by default "job"
     remove_temp_files : bool, optional
@@ -56,7 +56,7 @@ def pre_process(
     Note
     ----
     The python file should create an .inp input-file based on the
-     information of the experiment sample named <job_number>.inp.
+    information of the experiment sample named <job_number>.inp.
     """
 
     sim_info = kwargs
@@ -100,14 +100,14 @@ def post_process(
     ----------
     experiment_sample : ExperimentSample
         The design to run the data generator on.
-         Will be handled by the pipeline.
+        Will be handled by the pipeline.
     folder_path : str
         Path of the folder where the python script is located
     python_file : str
         Name of the python file to be executed
     function_name : str, optional
         Name of the function within the python file to be executed,
-         by default "main"
+        by default "main"
     name : str, optional
         Name of the job, by default "job"
     remove_temp_files : bool, optional
@@ -116,7 +116,7 @@ def post_process(
     Note
     ----
     The post-processing python file should write the results of your
-     simulation to a pickle file
+    simulation to a pickle file
     with the name: results.pkl. This file will be handled by the pipeline.
     """
 

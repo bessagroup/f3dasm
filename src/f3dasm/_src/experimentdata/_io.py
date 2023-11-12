@@ -42,59 +42,141 @@ JOBS_FILENAME = "jobs"
 #                                                               Storing methods
 # =============================================================================
 
+
 class _Store:
+    """Base class for storing and loading output data from disk"""
     suffix: int
 
     def __init__(self, object: Any, path: Path):
+        """
+        Protocol class for storing and loading output data from disk
+
+        Parameters
+        ----------
+        object : Any
+            object to store
+        path : Path
+            location to store the object to
+        """
         self.path = path
         self.object = object
 
     def store(self) -> None:
+        """
+        Protocol class for storing objects to disk
+
+        Raises
+        ------
+        NotImplementedError
+            Raises if the method is not implemented
+        """
         raise NotImplementedError()
 
     def load(self) -> Any:
+        """
+        Protocol class for loading objects to disk
+
+        Returns
+        -------
+        Any
+            The loaded object
+
+        Raises
+        ------
+        NotImplementedError
+            Raises if the method is not implemented
+        """
         raise NotImplementedError()
 
 
 class PickleStore(_Store):
+    """Class to store and load objects using the pickle protocol"""
     suffix: str = '.pkl'
 
     def store(self) -> None:
+        """
+        Store the object to disk using the pickle protocol
+        """
         with open(self.path.with_suffix(self.suffix), 'wb') as file:
             pickle.dump(self.object, file)
 
     def load(self) -> Any:
+        """
+        Load the object from disk using the pickle protocol
+
+        Returns
+        -------
+        Any
+            The loaded object
+
+        """
         with open(self.path.with_suffix(self.suffix), 'rb') as file:
             return pickle.load(file)
 
 
 class NumpyStore(_Store):
+    """Class to store and load objects using the numpy protocol"""
     suffix: int = '.npy'
 
     def store(self) -> None:
+        """
+        Store the object to disk using the numpy protocol
+        """
         np.save(file=self.path.with_suffix(self.suffix), arr=self.object)
 
     def load(self) -> np.ndarray:
+        """
+        Load the object from disk using the numpy protocol
+
+        Returns
+        -------
+        np.ndarray
+            The loaded object
+        """
         return np.load(file=self.path.with_suffix(self.suffix))
 
 
 class PandasStore(_Store):
+    """Class to store and load objects using the pandas protocol"""
     suffix: int = '.csv'
 
     def store(self) -> None:
+        """
+        Store the object to disk using the pandas protocol
+        """
         self.object.to_csv(self.path.with_suffix(self.suffix))
 
     def load(self) -> pd.DataFrame:
+        """
+        Load the object from disk using the pandas protocol
+
+        Returns
+        -------
+        pd.DataFrame
+            The loaded object
+        """
         return pd.read_csv(self.path.with_suffix(self.suffix))
 
 
 class XarrayStore(_Store):
+    """Class to store and load objects using the xarray protocol"""
     suffix: int = '.nc'
 
     def store(self) -> None:
+        """
+        Store the object to disk using the xarray protocol
+        """
         self.object.to_netcdf(self.path.with_suffix(self.suffix))
 
     def load(self) -> xr.DataArray | xr.Dataset:
+        """
+        Load the object from disk using the xarray protocol
+
+        Returns
+        -------
+        xr.DataArray | xr.Dataset
+            The loaded object
+        """
         return xr.open_dataset(self.path.with_suffix(self.suffix))
 
 
@@ -112,6 +194,35 @@ STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
 
 def load_object(path: Path, experimentdata_directory: Path,
                 store_method: Type[_Store] = PickleStore) -> Any:
+    """
+    Load an object from disk from a given path and storing method
+
+    Parameters
+    ----------
+    path : Path
+        path of the object to load
+    experimentdata_directory : Path
+        path of the f3dasm project directory
+    store_method : Type[_Store], optional
+        storage method protocol, by default PickleStore
+
+    Returns
+    -------
+    Any
+        the object loaded from disk
+
+    Raises
+    ------
+    ValueError
+        Raises if no matching store type is found
+
+    Note
+    ----
+    If no store method is provided, the function will try to find a matching
+    store type based on the suffix of the item's path. If no matching store
+    type is found, the function will raise a ValueError. By default, the
+    function will use the PickleStore protocol to load the object from disk.
+    """
 
     _path = experimentdata_directory / path
 
