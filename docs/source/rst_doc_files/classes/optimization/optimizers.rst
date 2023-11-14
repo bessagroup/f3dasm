@@ -32,8 +32,6 @@ Next, we have to create initial samples. We can use the  Latin-hypercube sampler
 
 .. code-block:: python
 
-    from f3dasm.sampling import LatinHypercube
-
     data.from_sampling(sampler='latin', domain=domain, n_samples=10, seed=42)
 
 We will use the ``"L-BFGS-B"`` optimizer to find the minimum. For built-in optimizer we can use the name of the optimizer:

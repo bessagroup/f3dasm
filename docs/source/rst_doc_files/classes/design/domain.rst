@@ -1,62 +1,7 @@
 Domain and parameters
 =====================
 
-This section will give you information on how to set up your search space with the :ref:`domain <domain>` class and the :ref:`parameter classes <parameters>`
-
-.. _parameters:
-
-Parameters
-----------
-
-Parameters are singular features of the input search space. They are used to define the search space of the design.
-
-.. image:: ../../../img/f3dasm-parameter.png
-   :width: 50%
-   :align: center
-   :alt: Parameters
-
-|
-
-There are four types of parameters that can be created: :class:`~f3dasm.design.ContinuousParameter`, :class:`~f3dasm.design.DiscreteParameter`, :class:`~f3dasm.design.CategoricalParameter` and :class:`~f3dasm.design.ConstantParameter`:
-
-Continuous Parameter
-^^^^^^^^^^^^^^^^^^^^
-
-* We can create **continous** parameters with a :attr:`~f3dasm.design.ContinuousParameter.lower_bound` and :attr:`~f3dasm.design.ContinuousParameter.upper_bound` with the :class:`~f3dasm.design.ContinuousParameter` class
-
-.. code-block:: python
-
-  x1 = f3dasm.ContinuousParameter(lower_bound=0.0, upper_bound=100.0)
-  x2 = f3dasm.ContinuousParameter(lower_bound=0.0, upper_bound=4.0)
-
-Discrete Parameter
-^^^^^^^^^^^^^^^^^^
-
-* We can create **discrete** parameters with a :attr:`~f3dasm.design.DiscreteParameter.lower_bound` and :attr:`~f3dasm.design.DiscreteParameter.upper_bound` with the :class:`~f3dasm.design.DiscreteParameter` class
-
-.. code-block:: python
-
-  x3 = f3dasm.DiscreteParameter(lower_bound=2, upper_bound=4)
-  x4 = f3dasm.DiscreteParameter(lower_bound=74, upper_bound=99)
-
-Categorical Parameter
-^^^^^^^^^^^^^^^^^^^^^
-
-* We can create **categorical** parameters with a list of items (:attr:`~f3dasm.design.CategoricalParameter.categories`) with the :class:`~f3dasm.design.CategoricalParameter` class
-
-.. code-block:: python
-
-  x5 = f3dasm.CategoricalParameter(categories=['test1','test2','test3','test4'])
-  x6 = f3dasm.CategoricalParameter(categories=[0.9, 0.2, 0.1, -2])
-
-Constant Parameter
-^^^^^^^^^^^^^^^^^^
-
-* We can create **constant** parameters with any value (:attr:`~f3dasm.design.ConstantParameter.value`) with the :class:`~f3dasm.design.ConstantParameter` class
-
-.. code-block:: python
-
-  x7 = f3dasm.ConstantParameter(value=0.9)
+This section will give you information on how to set up your search space with the :ref:`domain <domain>` class and the :ref:`parameters <parameters>`
 
 
 Domain
@@ -73,51 +18,111 @@ The :class:`~f3dasm.design.Domain` is a set of :class:`f3dasm.design.Parameter` 
 
 |
 
-Domain from a dictionary
-^^^^^^^^^^^^^^^^^^^^^^^^
 
-The domain can be constructed by initializing the :class:`~f3dasm.design.Domain` class and 
-providing an attribute (:attr:`~f3dasm.design.Domain.input_space`) containing string names as keys and parameters as values.
+To start, we instantiate an empty domain object:
 
 .. code-block:: python
 
-  from f3dasm import Domain, ContinuousParameter, DiscreteParameter, CategoricalParameter, ConstantParameter
+  from f3dasm import Domain
 
-  param_1 = f3dasm.ContinuousParameter(lower_bound=-1.0, upper_bound=1.0)
-  param_2 = f3dasm.DiscreteParameter(lower_bound=1, upper_bound=10)
-  param_3 = f3dasm.CategoricalParameter(categories=['red', 'blue', 'green', 'yellow', 'purple'])
-  param_4 = f3dasm.ConstantParameter(value='some_value')
+  domain = Domain()
 
-  domain = f3dasm.Domain(input_space={'param_1': param_1, 'param_2': param_2, 'param_3': param_3, 'param_4': param_4})
+
+Now we can gradually add some parameters!
+
+.. _parameters:
+
+Parameters
+----------
+
+Parameters are singular features of the input search space. They are used to define the search space of the design.
+
+.. image:: ../../../img/f3dasm-parameter.png
+   :width: 50%
+   :align: center
+   :alt: Parameters
+
+|
+
+There are four types of parameters that can be created: :ref:`float <continuous-parameter>`, :ref:`int <discrete-parameter>`, :ref:`categorical <categorical-parameter>` and :ref:`constant <constant-parameter>` parameters.
+
+.. _continuous-parameter:
+
+Floating point parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* We can create **continous** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_float` method:
+
+.. code-block:: python
+
+  domain.add_float(name='x1', low=0.0, high=100.0)
+  domain.add_float(name='x2', low=0.0, high=4.0)  
+
+.. _discrete-parameter:
+
+Discrete parameters
+^^^^^^^^^^^^^^^^^^^
+
+* We can create **discrete** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_int` method:
+
+.. code-block:: python
+
+  domain.add_int(name='x3', low=2, high=4)
+  domain.add_int(name='x4', low=74, high=99)  
+
+.. _categorical-parameter:
+
+Categorical parameters
+^^^^^^^^^^^^^^^^^^^^^^
+
+* We can create **categorical** parameters with a list of items (:code:`categories`) with the :meth:`~f3dasm.design.Domain.add_category` method:
+
+.. code-block:: python
+
+  domain.add_category(name='x5', categories=['test1','test2','test3','test4'])
+  domain.add_category(name='x6', categories=[0.9, 0.2, 0.1, -2])
+
+.. _constant-parameter:
+
+Constant parameters
+^^^^^^^^^^^^^^^^^^^
+
+* We can create **constant** parameters with any value (:code:`value`) with the :meth:`~f3dasm.design.Domain.add_constant` method:
+
+.. code-block:: python
+
+  domain.add_constant(name='x7', value=0.9)
 
 .. _domain-from-yaml:
 
 Domain from a `hydra <https://hydra.cc/>`_ configuration file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------
 
-If you are using `hydra <https://hydra.cc/>`_ to manage your configuration files, you can create a domain from a configuration file. Your config needs to have the following key:
+If you are using `hydra <https://hydra.cc/>`_ to manage your configuration files, you can create a domain from a configuration file. 
+Your config needs to have a key (e.g. :code:`domain`) that has a dictionary with the parameter names (e.g. :code:`param_1`) as keys 
+and a dictionary with the parameter type (:code:`type`) and the corresponding arguments as values:
 
 .. code-block:: yaml
    :caption: config.yaml
 
     domain:
         param_1:
-            _target_: f3dasm.ContinuousParameter
+            type: float
             lower_bound: -1.0
             upper_bound: 1.0
         param_2:
-            _target_: f3dasm.DiscreteParameter
+            type: int
             lower_bound: 1
             upper_bound: 10
         param_3:
-            _target_: f3dasm.CategoricalParameter
+            type: category
             categories: ['red', 'blue', 'green', 'yellow', 'purple']
         param_4:
-            _target_: f3dasm.ConstantParameter
+            type: constant
             value: some_value
 
   
-The same domain can now be created by calling the :func:`~f3dasm.design.Domain.from_yaml` method:
+The domain can now be created by calling the :func:`~f3dasm.design.Domain.from_yaml` method:
 
 .. code-block:: python
 

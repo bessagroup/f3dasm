@@ -27,14 +27,13 @@ __status__ = 'Stable'
 #
 
 DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
-DOMAIN_SUFFIX = "_domain"
-INPUT_DATA_SUFFIX = "_input"
-OUTPUT_DATA_SUFFIX = "_output"
-JOBS_SUFFIX = "_jobs"
+
+
 
 
 def number_of_updates(iterations: int, population: int):
-    """Calculate number of update steps to acquire the correct number of iterations
+    """Calculate number of update steps to acquire the
+     correct number of iterations
 
     Parameters
     ----------

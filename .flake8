@@ -27,10 +27,10 @@ extend-exclude =
 count = True
 
 # Set the maximum length that any line may be
-max-line-length = 119
+max-line-length = 79
 
 # Set the maximum length that a comment or docstring line may be
-max-doc-length = 119
+max-doc-length = 79
 
 # Set the number of spaces used for indentation
 indent-size = 4
@@ -56,3 +56,7 @@ extend-ignore = E226, E3
 # W504 : Line break after binary operator
 # W505 : Doc line too long (82 > 79 characters) 
 extend-select = E241, E242, E704, W504, W505
+
+# Ignore all errors F401 ('imported but unused') and E402 ('module level import
+# not at top of file') in __init__.py files
+per-file-ignores = __init__.py: F401, E402

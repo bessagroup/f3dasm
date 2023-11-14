@@ -177,7 +177,7 @@ main.py
 
 The `main.py` file is the main entry point of the project. It contains the :mod:`f3dasm` classes and acts on these interfaces.
 It imports :mod:`f3dasm` and the `my_function` from `my_script.py`. 
-In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from the :class:`~f3dasm.sampling.latinhypercube.LatinHypercube` sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.evaluate` method with the specified execution mode.
+In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from the Latin Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.evaluate` method with the specified execution mode.
 
 Additionally, the `main.py` file handles which node takes which role.
 

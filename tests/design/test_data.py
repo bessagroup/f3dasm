@@ -69,14 +69,17 @@ def test_data_get_inputdata_dict(sample_data: _Data):
 
 def test_data_set_data(sample_data: _Data):
     index = 0
-    sample_data.set_data(index, 15, 'output1')
-    assert sample_data.data.loc[index, 'output1'] == 15
+    sample_data.set_data(index=index, value=15,
+                         column='output1')
+    _column_index = sample_data.columns.iloc('output1')[0]
+    assert sample_data.data.loc[index, _column_index] == 15
 
 
 def test_data_to_numpy(sample_data: _Data):
     input_array = sample_data.to_numpy()
     assert isinstance(input_array, np.ndarray)
-    assert input_array.shape == (len(sample_data), len(sample_data.data.columns))
+    assert input_array.shape == (
+        len(sample_data), len(sample_data.data.columns))
 
 
 def test_data_n_best_samples(sample_data: _Data):

@@ -50,8 +50,8 @@ class NoOpenJobsError(Exception):
 class _JobQueue:
     def __init__(self, jobs: Optional[pd.Series] = None):
         """
-        A class that represents a dictionary of jobs that can be marked as 'open', 'in progress',
-        'finished', or 'error'.
+        A class that represents a dictionary of jobs that
+        can be marked as 'open', 'in progress', finished', or 'error'.
 
         Parameters
         ----------
@@ -78,7 +78,8 @@ class _JobQueue:
         """
         if isinstance(other, int):
             # make _JobQueue from the jobnumber
-            other = _JobQueue(pd.Series([Status.OPEN], index=[0], dtype='string'))
+            other = _JobQueue(
+                pd.Series([Status.OPEN], index=[0], dtype='string'))
 
         try:
             last_index = self.jobs.index[-1]
@@ -116,11 +117,12 @@ class _JobQueue:
     def indices(self) -> pd.Index:
         """The indices of the jobs."""
         return self.jobs.index
-    #                                                      Alternative Constructors
-    # =============================================================================
+    #                                                  Alternative Constructors
+    # =========================================================================
 
     @classmethod
-    def from_data(cls: Type[_JobQueue], data: _Data, value: str = Status.OPEN) -> _JobQueue:
+    def from_data(cls: Type[_JobQueue], data: _Data,
+                  value: str = Status.OPEN) -> _JobQueue:
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -128,7 +130,8 @@ class _JobQueue:
         data : Data
             Data object containing the data.
         value : str
-            The value to assign to the jobs. Can be 'open', 'in progress', 'finished', or 'error'.
+            The value to assign to the jobs. Can be 'open',
+            'in progress', 'finished', or 'error'.
 
         Returns
         -------
@@ -164,8 +167,8 @@ class _JobQueue:
         """Resets the job queue."""
         self.jobs = pd.Series(dtype='string')
 
-    #                                                                        Export
-    # =============================================================================
+    #                                                                    Export
+    # =========================================================================
 
     def store(self, filename: Path) -> None:
         """Stores the jobs in a pickle file.
@@ -185,8 +188,8 @@ class _JobQueue:
         name : str, optional
             Name of the column, by default "".
 
-        Notes
-        -----
+        Note
+        ----
         If the name is not specified, the column name will be an empty string
 
         Returns
@@ -196,8 +199,8 @@ class _JobQueue:
         """
         return self.jobs.to_frame("")
 
-    #                                                        Append and remove jobs
-    # =============================================================================
+    #                                                    Append and remove jobs
+    # =========================================================================
 
     def remove(self, indices: List[int]):
         """Removes a subset of the jobs.
@@ -225,12 +228,13 @@ class _JobQueue:
             self.jobs = pd.Series([status] * number_of_jobs, dtype='string')
             return
 
-        new_indices = pd.RangeIndex(start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
+        new_indices = pd.RangeIndex(
+            start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
 
-    #                                                                          Mark
-    # =============================================================================
+    #                                                                      Mark
+    # =========================================================================
 
     def mark(self, index: int | slice | Iterable[int], status: Status) -> None:
         """Marks a job with a certain status.
@@ -251,8 +255,8 @@ class _JobQueue:
     def mark_all_error_open(self) -> None:
         """Marks all jobs as 'open'."""
         self.jobs = self.jobs.replace(Status.ERROR, Status.OPEN)
-    #                                                                  Miscellanous
-    # =============================================================================
+    #                                                              Miscellanous
+    # =========================================================================
 
     def is_all_finished(self) -> bool:
         """Checks if all jobs are finished.

@@ -1,5 +1,6 @@
 """Classes that manage importing and exceptions of submodules with extension.
-This code was adapted from Optuna (https://github.com/optuna/optuna/blob/master/optuna/_imports.py)
+This code was adapted from Optuna
+ (https://github.com/optuna/optuna/blob/master/optuna/_imports.py)
 and modified to fit the specific case of f3dasm.
 """
 
@@ -24,7 +25,8 @@ class _DeferredImportExceptionContextManager:
     """Context manager to defer exceptions from imports.
 
     Catches :exc:`ImportError` and :exc:`SyntaxError`.
-    If any exception is caught, this class raises an :exc:`ImportError` when being checked.
+    If any exception is caught, this class raises an :exc:`ImportError`
+     when being checked.
 
     """
 
@@ -59,20 +61,25 @@ class _DeferredImportExceptionContextManager:
 
         Returns:
             :obj:`None` if nothing is deferred, otherwise :obj:`True`.
-            :obj:`True` will suppress any exceptions avoiding them from propagating.
+            :obj:`True` will suppress any exceptions avoiding them from
+             propagating.
 
         """
         if isinstance(exc_value, (ImportError, SyntaxError)):
             if isinstance(exc_value, ImportError):
                 message = (
-                    f"Tried to import '{exc_value.name}' but failed. Please make sure that you have "
-                    f"installed the extension '{self.extension_name}' correctly to use this feature. "
+                    f"Tried to import '{exc_value.name}' but failed. \
+                         Please make sure that you have "
+                    f"installed the extension '{self.extension_name}' \
+                        correctly to use this feature. "
                     f"Actual error: {exc_value}."
                 )
             elif isinstance(exc_value, SyntaxError):
                 message = (
-                    f"Tried to import a package but failed due to a syntax error in {exc_value.filename}. Please "
-                    f"make sure that the Python version is correct to use this feature. Actual "
+                    f"Tried to import a package but failed due to a syntax \
+                        error in {exc_value.filename}. Please "
+                    f"make sure that the Python version is correct to use \
+                         this feature. Actual "
                     f"error: {exc_value}."
                 )
             else:
@@ -104,8 +111,11 @@ class _DeferredImportExceptionContextManager:
             raise ImportError(message) from exc_value
 
 
-def try_import(extension_name: Optional[str] = None) -> _DeferredImportExceptionContextManager:
-    """Create a context manager that can wrap imports of optional packages to defer exceptions.
+def try_import(
+        extension_name: Optional[str] = None
+) -> _DeferredImportExceptionContextManager:
+    """Create a context manager that can wrap imports of optional packages
+     to defer exceptions.
 
     Args:
         Extension name for this particular context manager
@@ -114,4 +124,5 @@ def try_import(extension_name: Optional[str] = None) -> _DeferredImportException
         Deferred import context manager.
 
     """
-    return _DeferredImportExceptionContextManager(extension_name=extension_name)
+    return _DeferredImportExceptionContextManager(
+        extension_name=extension_name)

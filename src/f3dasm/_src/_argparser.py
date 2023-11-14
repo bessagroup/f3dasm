@@ -19,12 +19,14 @@ class ArgumentParser(argparse.ArgumentParser):
         raise RuntimeError(message)
 
 
-# if all(("ipykernel_launcher" not in sys.argv[0], os.environ.get("PYTEST_RUN") != "True")):
+# if all(("ipykernel_launcher" not in sys.argv[0],
+#  os.environ.get("PYTEST_RUN") != "True")):
 # Create an ArgumentParser object
 parser = ArgumentParser()
 
 # Option with ++ prefix
-parser.add_argument('--jobid', type=int, help='The PBS job ID for HPC', default=None)
+parser.add_argument('--jobid', type=int,
+                    help='The PBS job ID for HPC', default=None)
 
 # Parse the command-line arguments
 try:

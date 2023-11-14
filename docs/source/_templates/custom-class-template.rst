@@ -33,4 +33,4 @@
    {% endif %}
    {% endblock %}
 
-   .. rubric:: {{ _('Methods') }}
+   .. rubric:: {{ _('Public and private methods') }}

@@ -107,29 +107,26 @@ A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.Experiment
     >>> output = np.array(...) # your output data
     >>> experiment_sample.store('output_numpy', output, to_disk=True)
 
-:mod:`f3dasm` will automatically create a new directory for each output parameter and store the object with a generated filename referencing the :attr:`~f3dasm.design.ExperimentSample.job_number` of the design.
+:mod:`f3dasm` will automatically create a new directory in the project directory for each output parameter and store the object with a generated filename referencing the :attr:`~f3dasm.design.ExperimentSample.job_number` of the design.
 
 .. code-block:: none
    :caption: Directory Structure
 
-   my_project/
+   project_dir/
    ├── output_numpy/
    │   ├── 0.npy
    │   ├── 1.npy
    │   ├── 2.npy
    │   └── 3.npy
-   ├── my_experiment_domain.pkl
-   ├── my_experiment_data.csv
-   ├── my_experiment_output.csv
-   └── my_experiment_jobs.pkl
+   │
+   └── experiment_data/
+       ├── domain.pkl
+       ├── input.csv
+       ├── output.csv
+       └── jobs.pkl
 
-In the :attr:`~f3dasm.design.ExperimentData.output_data`, a reference to the stored object (e.g. :code:`my_project/output_1/0.npy`) will be automatically appended to the `path_<output parameter name>` parameter.
 
-.. code-block:: python
-
-    >>> experiment_sample['output_numpy']
-    'my_project/output_numpy/0.npy'
-
+In the output data of the :class:`~f3dasm.design.experimentdata.ExperimentData` object, a reference path (e.g. :code:`/output_numpy/0.npy`) to the stored object will be saved.
 
 
 :mod:`f3dasm` has built-in storing functions for numpy :class:`~numpy.ndarray`, pandas :class:`~pandas.DataFrame` and xarray :class:`~xarray.DataArray` and :class:`~xarray.Dataset`. 

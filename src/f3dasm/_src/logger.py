@@ -33,7 +33,8 @@ __status__ = 'Stable'
 logger = logging.getLogger("f3dasm")
 
 # Create a custom formatter for the "f3dasm" logger
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Create a custom handler for the "f3dasm" logger
 handler = logging.StreamHandler()
@@ -79,7 +80,9 @@ class DistributedFileHandler(FileHandler):
             except IOError as e:
                 # the file is locked by another process
                 if e.errno == errno.EAGAIN:
-                    logger.debug("The log file is currently locked by another process. Retrying in 1 second...")
+                    logger.debug(
+                        "The log file is currently locked by another process. \
+                             Retrying in 1 second...")
                     sleep(1)
                 else:
                     logger.info(f"An unexpected IOError occurred: {e}")
@@ -125,7 +128,9 @@ def _time_and_log(
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         start_time = perf_counter()
         value = func(*args, **kwargs)
-        logger.debug(f"Called {func.__name__} and time taken: {perf_counter() - start_time:.2f}s")
+        logger.debug(
+            f"Called {func.__name__} and time taken: \
+                {perf_counter() - start_time:.2f}s")
         return value
 
     return wrapper

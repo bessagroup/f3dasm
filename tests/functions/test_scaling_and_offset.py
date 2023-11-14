@@ -6,7 +6,7 @@ import pytest
 from f3dasm._src.datageneration.functions import (FUNCTIONS, Function,
                                                   get_function_classes)
 from f3dasm._src.datageneration.functions.function_factory import (
-    datagenerator_factory, is_dim_compatible)
+    _datagenerator_factory, is_dim_compatible)
 from f3dasm.design import make_nd_continuous_domain
 
 pytestmark = pytest.mark.smoke
@@ -33,19 +33,24 @@ def test_offset(function: Function, seed: int):
 def test_check_global_minimum(function: str):
 
     dim = 6
-    domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    domain = make_nd_continuous_domain(bounds=np.tile(
+        [-1.0, 1.0], (dim, 1)), dimensionality=dim)
     if not is_dim_compatible(function, domain):
         dim = 4
-        domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+        domain = make_nd_continuous_domain(bounds=np.tile(
+            [-1.0, 1.0], (dim, 1)), dimensionality=dim)
         if not is_dim_compatible(function, domain):
             dim = 3
-            domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+            domain = make_nd_continuous_domain(bounds=np.tile(
+                [-1.0, 1.0], (dim, 1)), dimensionality=dim)
             if not is_dim_compatible(function, domain):
                 dim = 2
-                domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+                domain = make_nd_continuous_domain(bounds=np.tile(
+                    [-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     seed = 42
-    func = datagenerator_factory(function, domain=domain, kwargs={'seed': seed})
+    func = _datagenerator_factory(
+        function, domain=domain, kwargs={'seed': seed})
     _ = func.get_global_minimum(dim)
 
 
@@ -54,25 +59,33 @@ def test_check_global_minimum(function: str):
 def test_scaling_1(function: str, scale_bounds_list: List[float]):
 
     dim = 6
-    domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    domain = make_nd_continuous_domain(bounds=np.tile(
+        [-1.0, 1.0], (dim, 1)), dimensionality=dim)
     if not is_dim_compatible(function, domain):
         dim = 4
-        domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+        domain = make_nd_continuous_domain(bounds=np.tile(
+            [-1.0, 1.0], (dim, 1)), dimensionality=dim)
         if not is_dim_compatible(function, domain):
             dim = 3
-            domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+            domain = make_nd_continuous_domain(bounds=np.tile(
+                [-1.0, 1.0], (dim, 1)), dimensionality=dim)
             if not is_dim_compatible(function, domain):
                 dim = 2
-                domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
+                domain = make_nd_continuous_domain(bounds=np.tile(
+                    [-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     seed = np.random.randint(low=0, high=1e5)
     scale_bounds = np.tile(scale_bounds_list, (dim, 1))
     # func: Function = function(seed=seed, scale_bounds=scale_bounds, dimensionality=dim)
-    domain = make_nd_continuous_domain(bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
-    func = datagenerator_factory(function, domain=domain, kwargs={'seed': seed, 'scale_bounds': scale_bounds})
-    x = np.random.uniform(low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
+    domain = make_nd_continuous_domain(bounds=np.tile(
+        [-1.0, 1.0], (dim, 1)), dimensionality=dim)
+    func = _datagenerator_factory(function, domain=domain, kwargs={
+                                  'seed': seed, 'scale_bounds': scale_bounds})
+    x = np.random.uniform(
+        low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
 
-    assert func._retrieve_original_input(func.augmentor.augment_input(x)) == pytest.approx(x)
+    assert func._retrieve_original_input(
+        func.augmentor.augment_input(x)) == pytest.approx(x)
 
 
 if __name__ == "__main__":  # pragma: no cover

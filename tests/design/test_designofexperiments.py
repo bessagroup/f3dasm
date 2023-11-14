@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design import (CategoricalParameter, ContinuousParameter,
-                           DiscreteParameter, Domain,
-                           make_nd_continuous_domain)
+from f3dasm.design import (Domain, _CategoricalParameter, _ContinuousParameter,
+                           _DiscreteParameter, make_nd_continuous_domain)
 
 pytestmark = pytest.mark.smoke
 
@@ -20,19 +19,19 @@ def test_correct_doe(doe):
 
 
 def test_get_continuous_parameters(doe: Domain):
-    design = {'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-              'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3)}
+    design = {'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+              'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3)}
     assert doe.get_continuous_parameters() == design
 
 
 def test_get_discrete_parameters(doe: Domain):
-    design = {'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-              'x5': DiscreteParameter(lower_bound=2, upper_bound=3)}
+    design = {'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
+              'x5': _DiscreteParameter(lower_bound=2, upper_bound=3)}
     assert doe.get_discrete_parameters() == design
 
 
 def test_get_categorical_parameters(doe: Domain):
-    assert doe.get_categorical_parameters() == {'x4': CategoricalParameter(
+    assert doe.get_categorical_parameters() == {'x4': _CategoricalParameter(
         categories=["test1", "test2", "test3"])}
 
 
@@ -51,8 +50,8 @@ def test_get_categorical_names(doe: Domain):
 def test_add_arbitrary_list_as_categorical_parameter():
     arbitrary_list_1 = [3.1416, "pi", 42]
     arbitrary_list_2 = np.linspace(start=142, stop=214, num=10)
-    designspace = {'x1': CategoricalParameter(categories=arbitrary_list_1),
-                   'x2': CategoricalParameter(categories=arbitrary_list_2)
+    designspace = {'x1': _CategoricalParameter(categories=arbitrary_list_1),
+                   'x2': _CategoricalParameter(categories=arbitrary_list_2)
                    }
 
     design = Domain(space=designspace)
@@ -62,41 +61,43 @@ def test_add_arbitrary_list_as_categorical_parameter():
 
 def test_add_input_space():
     designspace = {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
+        'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+        'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
+        'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
     }
 
     design = Domain(space=designspace)
-    design.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
-    design.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    design.add('x4', type='category',
+               categories=["test1", "test2", "test3"])
+    design.add('x5', type='int', low=2, high=3)
 
     assert design.space == {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-        'x4': CategoricalParameter(categories=["test1", "test2", "test3"]),
-        'x5': DiscreteParameter(lower_bound=2, upper_bound=3)
+        'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+        'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
+        'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
+        'x4': _CategoricalParameter(categories=["test1", "test2", "test3"]),
+        'x5': _DiscreteParameter(lower_bound=2, upper_bound=3)
     }
 
 
 def test_add_space():
     designspace = {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
+        'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+        'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
+        'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
     }
 
     domain = Domain(space=designspace)
-    domain.add('x4', CategoricalParameter(categories=["test1", "test2", "test3"]))
-    domain.add('x5', DiscreteParameter(lower_bound=2, upper_bound=3))
+    domain.add('x4', type='category',
+               categories=["test1", "test2", "test3"])
+    domain.add('x5', type='int', low=2, high=3)
 
     assert domain.space == {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x2': DiscreteParameter(lower_bound=5, upper_bound=80),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-        'x4': CategoricalParameter(categories=["test1", "test2", "test3"]),
-        'x5': DiscreteParameter(lower_bound=2, upper_bound=3),
+        'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+        'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
+        'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
+        'x4': _CategoricalParameter(categories=["test1", "test2", "test3"]),
+        'x5': _DiscreteParameter(lower_bound=2, upper_bound=3),
     }
 
 
@@ -110,8 +111,8 @@ def test_all_input_continuous_False(doe: Domain):
 
 def test_all_input_continuous_True():
     designspace = {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
+        'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
+        'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
     }
 
     doe = Domain(space=designspace)
@@ -142,10 +143,11 @@ def test_get_number_of_input_parameters(domain: Domain):
 
 
 def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
-    domain = Domain.from_dataframe(sample_dataframe)
-    ground_truth = Domain(space={'feature1': ContinuousParameter(lower_bound=1.0, upper_bound=3.0),
-                                 'feature2': DiscreteParameter(lower_bound=4, upper_bound=6),
-                                 'feature3': CategoricalParameter(['A', 'B', 'C'])})
+    domain = Domain.from_dataframe(
+        df_input=sample_dataframe, df_output=pd.DataFrame())
+    ground_truth = Domain(space={'feature1': _ContinuousParameter(lower_bound=1.0, upper_bound=3.0),
+                                 'feature2': _DiscreteParameter(lower_bound=4, upper_bound=6),
+                                 'feature3': _CategoricalParameter(['A', 'B', 'C'])})
     assert (domain.space == ground_truth.space)
 
 
@@ -153,9 +155,9 @@ def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
                                     np.array([[0., 1.], [0., 1.], [0., 1.]]), np.tile([0., 1.], (3, 1))])
 def test_make_nd_continuous_domain(bounds):
     domain = make_nd_continuous_domain(bounds=bounds, dimensionality=3)
-    ground_truth = Domain(space={'x0': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
-                                 'x1': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
-                                 'x2': ContinuousParameter(lower_bound=0.0, upper_bound=1.0)})
+    ground_truth = Domain(space={'x0': _ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+                                 'x1': _ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+                                 'x2': _ContinuousParameter(lower_bound=0.0, upper_bound=1.0)})
     assert (domain.space == ground_truth.space)
 
 

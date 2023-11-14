@@ -14,7 +14,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../src'))
-src_dir = [f.path for f in os.scandir(os.path.abspath('../../src/')) if f.is_dir()]
+src_dir = [f.path for f in os.scandir(
+    os.path.abspath('../../src/')) if f.is_dir()]
 for path in src_dir:
     sys.path.insert(0, path)
 
@@ -24,8 +25,8 @@ for path in src_dir:
 project = 'f3dasm'
 author = 'Martin van der Schelling'
 copyright = '2022, Martin van der Schelling'
-version = '1.4.4'
-release = '1.4.4'
+version = '1.4.5'
+release = '1.4.5'
 
 
 # -- General configuration ----------------------------------------------------
@@ -82,7 +83,7 @@ autoclass_content = 'both'
 # napoleon: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
-napoleon_include_private_with_doc = False
+napoleon_include_private_with_doc = True
 
 # autosummary: https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html#module-sphinx.ext.autosummary
 autosummary_generate = True

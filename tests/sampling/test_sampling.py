@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm.design import ContinuousParameter, Domain
+from f3dasm.design import Domain, _ContinuousParameter
 
 pytestmark = pytest.mark.smoke
 
@@ -12,7 +12,7 @@ def test_sampling_interface_not_implemented_error():
     seed = 42
 
     # Define the parameters
-    x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
+    x1 = _ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
     space = {'x1': x1}
 
     design = Domain(space)
@@ -35,22 +35,21 @@ def test_correct_sampling_ran(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='random', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
@@ -69,22 +68,21 @@ def test_correct_sampling_sobol(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='sobol', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
     assert df_ground_truth.equals(samples)
 
 
@@ -102,22 +100,21 @@ def test_correct_sampling_lhs(design3: Domain):
         ]
     )
 
-    columnnames = ["x1", "x2", "x3", "x4", "x5"]
-    df_ground_truth = pd.DataFrame(data=ground_truth_samples, columns=columnnames)
+    df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
         {
-            "x1": "float",
-            "x2": "int",
-            "x3": "float",
-            "x4": "category",
-            "x5": "float",
+            0: "float",
+            1: "int",
+            2: "float",
+            3: "category",
+            4: "float",
         }
     )
 
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='latin', n_samples=numsamples, seed=seed)
 
-    samples = samples.input_data.data.round(6)
+    samples = samples._input_data.data.round(6)
 
     assert df_ground_truth.equals(samples)
 
