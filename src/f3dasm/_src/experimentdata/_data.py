@@ -283,7 +283,7 @@ class _Data:
         Note
         ----
         This function is mainly used to show the combined ExperimentData
-         object in a Jupyter Notebook
+        object in a Jupyter Notebook
         """
         return pd.concat([jobs_df, self.to_dataframe(),
                           other.to_dataframe()],
@@ -296,6 +296,10 @@ class _Data:
         ----------
         filename : Path
             The filename to store the data to.
+
+        Note
+        ----
+        The data is stored as a csv file.
         """
         # TODO: The column information is not saved in the .csv!
         self.to_dataframe().to_csv(filename.with_suffix('.csv'))
