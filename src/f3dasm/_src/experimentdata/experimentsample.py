@@ -283,3 +283,22 @@ class ExperimentSample:
 
     def _store_to_experimentdata(self, object: Any, name: str) -> None:
         self._dict_output[name] = (object, False)
+
+
+def _experimentsample_factory(
+    experiment_sample: np.ndarray | ExperimentSample | Dict) \
+        -> ExperimentSample:
+    if isinstance(experiment_sample, np.ndarray):
+        return ExperimentSample.from_numpy(experiment_sample)
+
+    elif isinstance(experiment_sample, dict):
+        return ExperimentSample(dict_input=experiment_sample,
+                                dict_output={}, jobnumber=0)
+
+    elif isinstance(experiment_sample, ExperimentSample):
+        return experiment_sample
+
+    else:
+        raise TypeError(
+            f"The experiment_sample should be a numpy array"
+            f", dictionary or ExperimentSample, not {type(experiment_sample)}")

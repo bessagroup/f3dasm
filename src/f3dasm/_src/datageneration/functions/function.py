@@ -29,6 +29,7 @@ from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
 # Locals
+from ...experimentdata.experimentsample import _experimentsample_factory
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 
@@ -104,9 +105,10 @@ class Function(DataGenerator):
         return experiment_sample
 
     def _run(
-            self, experiment_sample: ExperimentSample,
+            self, experiment_sample: ExperimentSample | np.ndarray,
             **kwargs) -> ExperimentSample:
-        return self.execute(experiment_sample)
+        _experiment_sample = _experimentsample_factory(experiment_sample)
+        return self.execute(_experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented

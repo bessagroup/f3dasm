@@ -5,6 +5,9 @@ Interface class for data generators
 #                                                                       Modules
 # =============================================================================
 
+
+from __future__ import annotations
+
 # Standard
 import sys
 from abc import abstractmethod
@@ -16,6 +19,11 @@ if sys.version_info < (3, 8):  # NOQA
 else:
     from typing import Protocol
 
+# Third-party
+import numpy as np
+
+# Local
+from ..experimentdata.experimentsample import _experimentsample_factory
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -96,7 +104,7 @@ class DataGenerator:
 
     @time_and_log
     def _run(
-            self, experiment_sample: ExperimentSample,
+            self, experiment_sample: ExperimentSample | np.ndarray,
             **kwargs) -> ExperimentSample:
         """
         Run the data generator.
@@ -133,7 +141,8 @@ class DataGenerator:
             saved in the experiment_sample
         """
         # Cache the design
-        self.experiment_sample: ExperimentSample = experiment_sample
+        self.experiment_sample: ExperimentSample = _experimentsample_factory(
+            experiment_sample)
 
         self._pre_simulation()
 

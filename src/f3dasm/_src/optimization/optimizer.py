@@ -24,7 +24,6 @@ import pandas as pd
 # Locals
 from ..datageneration.datagenerator import DataGenerator
 from ..design.domain import Domain
-from ..experimentdata._data import _Data
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -38,8 +37,6 @@ __status__ = 'Stable'
 
 class ExperimentData(Protocol):
     domain: Domain
-    input_data: _Data
-    output_data: _Data
 
     @property
     def index(self, index) -> pd.Index:
@@ -52,9 +49,6 @@ class ExperimentData(Protocol):
         ...
 
     def to_numpy() -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def empty() -> None:
         ...
 
     def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
@@ -126,14 +120,8 @@ class Optimizer:
         self.__post_init__()
 
     def __post_init__(self):
-        self._check_imports()
         self.set_seed()
-        # self.init_data()
         self.set_algorithm()
-
-    @staticmethod
-    def _check_imports():
-        ...
 
     def set_algorithm(self):
         """Set the algorithm attribute to the algorithm of choice"""
