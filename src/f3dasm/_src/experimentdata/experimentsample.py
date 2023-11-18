@@ -288,6 +288,18 @@ class ExperimentSample:
 def _experimentsample_factory(
     experiment_sample: np.ndarray | ExperimentSample | Dict) \
         -> ExperimentSample:
+    """Factory function for the ExperimentSample class.
+
+    Parameters
+    ----------
+    experiment_sample : np.ndarray | ExperimentSample | Dict
+        The experiment sample to convert to an ExperimentSample.
+
+    Returns
+    -------
+    ExperimentSample
+        The converted experiment sample.
+    """
     if isinstance(experiment_sample, np.ndarray):
         return ExperimentSample.from_numpy(experiment_sample)
 
