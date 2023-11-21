@@ -60,11 +60,13 @@ class Domain:
 
     def __eq__(self, other: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
-        if not isinstance(other, Domain):
-            return False
 
-        # Compare the space dictionaries for equality
-        return self.space == other.space
+        if not isinstance(other, Domain):
+            return TypeError(f"Cannot compare Domain with \
+                {type(other.__name__)}")
+        return (
+            self.space == other.space and self.
+            output_space == other.output_space)
 
     def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
