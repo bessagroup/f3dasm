@@ -11,8 +11,6 @@ from typing import Optional
 # Third-party
 import numpy as np
 import pandas as pd
-from hydra.utils import instantiate
-from omegaconf import DictConfig
 from SALib.sample import latin, sobol_sequence
 
 # Locals
@@ -70,17 +68,6 @@ class Sampler:
         self.number_of_samples = number_of_samples
         if seed:
             np.random.seed(seed)
-
-    @classmethod
-    def from_yaml(
-            cls, domain_config: DictConfig,
-            sampler_config: DictConfig) -> Sampler:
-        """Create a sampler from a yaml configuration"""
-
-        args = {**sampler_config, 'domain': None}
-        sampler: Sampler = instantiate(args)
-        sampler.domain = Domain.from_yaml(domain_config)
-        return sampler
 
     def set_seed(self, seed: int):
         """Set the seed of the sampler
