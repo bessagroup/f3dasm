@@ -1,13 +1,20 @@
 """
 f3dasm - A package for data-driven design and analysis of structures
- and materials
+and materials
 
 This package provides tools for designing and optimizing materials, including
 functions for data analysis, design of experiments, machine learning,
- optimization, sampling, and simulation.
+optimization, sampling, and simulation.
 
-Usage:
-  import f3dasm
+Usage
+-----
+
+>>> import f3dasm
+
+Links
+-----
+
+- Documentation: https://f3dasm.readthedocs.io
 
 Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 """
@@ -41,8 +48,6 @@ __all__ = [
     'ExperimentSample',
     'DistributedFileHandler',
     'logger',
-    'run_on_experimentdata',
-    'run_operation_on_experiments',
     'OptimizationResult',
     'run_multiple_realizations',
     'run_optimization',
