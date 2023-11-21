@@ -65,8 +65,7 @@ class Domain:
             return TypeError(f"Cannot compare Domain with \
                 {type(other.__name__)}")
         return (
-            self.space == other.space and self.
-            output_space == other.output_space)
+            self.space == other.space)
 
     def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
