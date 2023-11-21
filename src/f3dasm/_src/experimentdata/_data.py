@@ -71,7 +71,8 @@ class _Data:
         """
         if isinstance(index, int):
             index = [index]
-        return _Data(self.data.loc[index].copy())
+        return _Data(data=self.data.loc[index].copy(),
+                     columns=self.columns)
 
     def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
         """Add two Data objects together.
