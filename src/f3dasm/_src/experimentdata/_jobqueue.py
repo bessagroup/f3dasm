@@ -146,7 +146,7 @@ class _JobQueue:
 
         Parameters
         ----------
-        filename : str
+        filename : Path | str
             Name of the file.
 
         Returns
@@ -155,13 +155,13 @@ class _JobQueue:
             JobQueue object containing the loaded data.
         """
         # Convert filename to Path
-        filename = Path(filename)
+        filename = Path(filename).with_suffix('.pkl')
 
         # Check if the file exists
-        if not filename.with_suffix('.pkl').exists():
+        if not filename.exists():
             raise FileNotFoundError(f"Jobfile {filename} does not exist.")
 
-        return cls(pd.read_pickle(filename.with_suffix('.pkl')))
+        return cls(pd.read_pickle(filename))
 
     def reset(self) -> None:
         """Resets the job queue."""
