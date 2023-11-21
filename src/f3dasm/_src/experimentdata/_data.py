@@ -385,12 +385,6 @@ class _Data:
         self.columns.add(name)
         self.data[new_columns_index] = np.nan
 
-    def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
-        # get the indices of the nan values
-        idx, _ = np.where(np.isnan(self.data))
-        self.data.loc[np.unique(idx)] = array
-        return np.unique(idx)
-
     def remove(self, indices: List[int]):
         self.data = self.data.drop(indices)
 

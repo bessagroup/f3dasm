@@ -174,17 +174,6 @@ def test_add_new_output_column(experimentdata: ExperimentData):
     experimentdata.add_output_parameter(name='test', is_disk=False)
     assert 'test' in experimentdata._output_data.names
 
-
-def test_fill_outputs(experimentdata_continuous: ExperimentData,
-                      numpy_output_array: np.ndarray, numpy_array: np.ndarray):
-    exp_data = ExperimentData(experimentdata_continuous.domain)
-    exp_data.add(domain=exp_data.domain, input_data=numpy_array,
-                 output_data=numpy_output_array)
-    experimentdata_continuous.fill_output(numpy_output_array)
-
-    assert exp_data == experimentdata_continuous
-
-
 def test_set_error(experimentdata_continuous: ExperimentData):
     experimentdata_continuous._set_error(3)
     assert experimentdata_continuous._jobs.jobs[3] == Status.ERROR

@@ -65,7 +65,9 @@ def experimentdata_expected() -> ExperimentData:
         bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
     data = ExperimentData.from_sampling(
         sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
-    data.fill_output(np.zeros((10, 1)))
+    for es, output in zip(data, np.zeros((10, 1))):
+        es.store(name='y', object=output)
+        data._set_experiment_sample(es)
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 

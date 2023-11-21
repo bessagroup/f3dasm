@@ -646,25 +646,25 @@ class ExperimentData:
         self._output_data.add_column(name)
         self.domain.add_output(name, is_disk)
 
-    def fill_output(self, output: np.ndarray, label: str = "y"):
-        """
-        Fill NaN values in the output data with the given array
+    # def fill_output(self, output: np.ndarray, label: str = "y"):
+    #     """
+    #     Fill NaN values in the output data with the given array
 
-        Parameters
-        ----------
-        output : np.ndarray
-            Output data to fill
-        label : str, optional
-            Label of the output column to add to, by default "y".
-        """
-        if label not in self._output_data.names:
-            self.add_output_parameter(label, is_disk=False)
+    #     Parameters
+    #     ----------
+    #     output : np.ndarray
+    #         Output data to fill
+    #     label : str, optional
+    #         Label of the output column to add to, by default "y".
+    #     """
+    #     if label not in self._output_data.names:
+    #         self.add_output_parameter(label, is_disk=False)
 
-        filled_indices: Iterable[int] = self._output_data.fill_numpy_arrays(
-            output)
+    #     filled_indices: Iterable[int] = self._output_data.fill_numpy_arrays(
+    #         output)
 
-        # Set the status of the filled indices to FINISHED
-        self._jobs.mark(filled_indices, Status.FINISHED)
+    #     # Set the status of the filled indices to FINISHED
+    #     self._jobs.mark(filled_indices, Status.FINISHED)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """

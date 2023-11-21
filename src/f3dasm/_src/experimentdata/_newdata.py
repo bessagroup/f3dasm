@@ -591,9 +591,6 @@ class _Data:
         for row in self.data:
             row.append(np.nan)
 
-    def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
-        ...
-
     def remove(self, indices: List[int] | int):
         """Removes rows from the data object.
 
