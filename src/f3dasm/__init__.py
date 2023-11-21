@@ -15,9 +15,8 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 #                                                                       Modules
 # =============================================================================
 
-from ._src import _imports as _imports
+from .__version__ import __version__
 from ._src._argparser import HPC_JOBID
-from ._src._imports import try_import
 from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
@@ -34,16 +33,10 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-__version__ = '1.4.5'
-
-
 # Log welcome message and the version of f3dasm
 logger.info(f"Imported f3dasm (version: {__version__})")
 
 __all__ = [
-    'datageneration',
-    'design',
-    'optimization',
     'ExperimentData',
     'ExperimentSample',
     'DistributedFileHandler',
@@ -54,7 +47,5 @@ __all__ = [
     'run_multiple_realizations',
     'run_optimization',
     'HPC_JOBID',
-    'try_import',
     'calculate_mean_std',
-    '_imports',
 ]
