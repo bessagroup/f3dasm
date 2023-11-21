@@ -15,7 +15,8 @@ _newdata.py and the module is not imported in the __init__.py file.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
+                    Union)
 
 import numpy as np
 import pandas as pd
@@ -55,7 +56,7 @@ class _Index:
     def __repr__(self) -> str:
         return self.indices.__repr__()
 
-    def iloc(self, index: int | Iterable[int]) -> int:
+    def iloc(self, index: int | Iterable[int]) -> List[int]:
 
         if isinstance(index, int):
             index = [index]
@@ -175,13 +176,11 @@ class _Data:
         _Data
             The experiment(s) at the given index
         """
-        if isinstance(index, int):
-            _index = self.index.iloc(index)[0]
-            return _Data(data=[self.data[_index]],
-                         columns=self.columns, index=_Index([_index]))
+        _index = self.index.iloc(index)
+        if self.is_empty():
+            return _Data(columns=self.columns, index=_Index(_index))
 
         else:
-            _index = self.index.iloc(index)
             return _Data(data=[self.data[i] for i in _index],
                          columns=self.columns, index=_Index(_index))
 
@@ -284,6 +283,22 @@ class _Data:
 
 #                                                      Alternative constructors
 # =============================================================================
+
+    @classmethod
+    def from_list(cls: Type[_Data], list: List[List[Any]]) -> _Data:
+        """Creates a data object from a list of lists.
+
+        Parameters
+        ----------
+        list : List[List[Any]]
+            The list of lists to create the data object from.
+
+        Returns
+        -------
+        _Data
+            The data object.
+        """
+        return _Data(data=list)
 
     @classmethod
     def from_indices(cls: Type[_Data], indices: pd.Index) -> _Data:
@@ -619,7 +634,14 @@ class _Data:
         -------
         Dict[str, Any]
             Dictionary with the data.
+
+        Note
+        ----
+        If the data is empty, an empty dictionary is returned.
         """
+        if self.is_empty():
+            return {}
+
         _index = self.index.iloc(index)[0]
         return {name: value for name, value in zip(self.names,
                                                    self.data[_index])}
@@ -664,16 +686,26 @@ class _Data:
         _index = self.index.iloc(index)[0]
         self.data[_index][_column_index] = value
 
-    def reset_index(self):
+    def reset_index(self, indices: Optional[Iterable[int]] = None):
         """Resets the index of the data object.
+
+        Parameters
+        ----------
+        indices : Optional[Iterable[int]], optional
+            The indices to reset the index to, by default None
 
         Note
         ----
-        This method resets the index of the data object. The index will be
+        This method resets the index of the data object.
+        
+        If no indices are provided, the index will be
         reset to range(len(data)). This means that the index will be
         [0, 1, 2, ..., len(data) - 1].
         """
-        self.index = _Index(range(len(self.data)))
+        if indices is None:
+            indices = range(len(self.data))
+
+        self.index = _Index(indices)
 
     def is_empty(self) -> bool:
         """Checks if the data object is empty.
@@ -718,3 +750,33 @@ class _Data:
 
         for old_name, new_name in zip(self.names, names):
             self.columns.rename(old_name, new_name)
+
+    def cast_types(self, domain: Domain):
+        pass
+
+def _data_factory(data: DataTypes) -> _Data:
+    if data is None:
+        return _Data()
+
+    elif isinstance(data, list):
+        return _Data.from_list(data)
+
+    elif isinstance(data, _Data):
+        return data
+
+    elif isinstance(data, pd.DataFrame):
+        return _Data.from_dataframe(data)
+
+    elif isinstance(data, (Path, str)):
+        return _Data.from_file(data)
+
+    elif isinstance(data, np.ndarray):
+        return _Data.from_numpy(data)
+
+    else:
+        raise TypeError(
+            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
+            f"Path or str, not {type(data)}")
+
+
+DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
