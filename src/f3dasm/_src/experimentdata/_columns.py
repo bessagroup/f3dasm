@@ -1,15 +1,15 @@
 """
 The _Columns class is used to order and track the parameter names of the data
 columns. This class is not intended to be used directly by the user.
- It is used by the _Data class to provide an interface to datatypes that do not
-  have a column structure, such as numpy arrays.
+It is used by the _Data class to provide an interface to datatypes that do not
+have a column structure, such as numpy arrays.
 
 Note
 ----
 
 For the default back-end of _Data, this class is obsolete since pandas
- DataFrames have a column structure. However, this class is intended to be a
- uniform interface to data that does not have a column structure.
+DataFrames have a column structure. However, this class is intended to be a
+uniform interface to data that does not have a column structure.
 """
 
 #                                                                       Modules
