@@ -9,7 +9,7 @@ Domain
 
 .. _domain:
 
-The :class:`~f3dasm.design.Domain` is a set of :class:`f3dasm.design.Parameter` instances that make up the feasible search space.
+The :class:`~f3dasm.design.Domain` is a set of parameter instances that make up the feasible search space.
 
 .. image:: ../../../img/f3dasm-domain.png
     :width: 100%
@@ -23,7 +23,7 @@ To start, we instantiate an empty domain object:
 
 .. code-block:: python
 
-  from f3dasm import Domain
+  from f3dasm.design import Domain
 
   domain = Domain()
 
@@ -108,12 +108,12 @@ and a dictionary with the parameter type (:code:`type`) and the corresponding ar
     domain:
         param_1:
             type: float
-            lower_bound: -1.0
-            upper_bound: 1.0
+            low: -1.0
+            high: 1.0
         param_2:
             type: int
-            lower_bound: 1
-            upper_bound: 10
+            low: 1
+            high: 10
         param_3:
             type: category
             categories: ['red', 'blue', 'green', 'yellow', 'purple']

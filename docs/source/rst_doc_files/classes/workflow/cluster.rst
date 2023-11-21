@@ -5,10 +5,8 @@ Your :mod:`f3dasm` workflow can be seemlessly translated to a high-performance c
 The advantage is that you can parallelize the total number of experiments among the nodes of the cluster.
 This is especially useful when you have a large number of experiments to run.
 
-Inside the execution of a design, you can parallelize across the cores of a node.
-
 .. note::
-    :code:`mode=cluster` and :code:`mode=parallel` simultaneous on the :meth:`~f3dasm.design.experimentdata.ExperimentData.evaluate` function cannot be used.
+    :code:`mode=cluster` and :code:`mode=parallel` simultaneous on the :meth:`~f3dasm.ExperimentData.evaluate` function cannot be used.
     In the case of extended paralellization on cores, you have to implement this in your own scripts!.
 
 Working with array-jobs
@@ -49,14 +47,14 @@ You can use the global variable :code:`f3dasm.HPC_JOBID` to get the :code:`${PBS
 Using the cluster mode on ExperimentData
 ----------------------------------------
 
-The :meth:`~f3dasm.design.experimentdata.ExperimentData.evaluate` method of the :class:`~f3dasm.design.experimentdata.ExperimentData` class has a parameter :code:`mode` that can be set to :code:`cluster`.
-What this does is that for all the methods that alter the data of the :class:`~f3dasm.design.experimentdata.ExperimentData`, the :class:`~f3dasm.design.experimentdata.ExperimentData` object will be retrieved from disk and after each operation be written to the disk again.
-During the operation, no other process can access the data of the :class:`~f3dasm.design.experimentdata.ExperimentData` object, as the file will be locked.
+The :meth:`~f3dasm.ExperimentData.ExperimentData.evaluate` method of the :class:`~f3dasm.ExperimentData` class has a parameter :code:`mode` that can be set to :code:`cluster`.
+What this does is that for all the methods that alter the data of the :class:`~f3dasm.ExperimentData`, the :class:`~f3dasm.ExperimentData` object will be retrieved from disk and after each operation be written to the disk again.
+During the operation, no other process can access the data of the :class:`~f3dasm.ExperimentData` object, as the file will be locked.
 
 .. note::
-    You will notice that a :code:`<filename>.lock` file will be created in the directory of the :class:`~f3dasm.design.experimentdata.ExperimentData` object. This file will disable concurent access to the data.
+    You will notice that a :code:`.lock` file will be created in the directory of the :class:`~f3dasm.ExperimentData` object. This file will disable concurent access to the data.
 
-The cluster mode enables you to use multiple nodes to each retrieve an open :class:`~f3dasm.design.experimentsample.ExperimentSample` from the :class:`~f3dasm.design.experimentdata.ExperimentData`, execute the data generation function, and write the data back to the disk.
+The cluster mode enables you to use multiple nodes to each retrieve an open :class:`~f3dasm.ExperimentSample` from the :class:`~f3dasm.ExperimentData`, execute the data generation function, and write the data back to the disk.
 Whenever a node is working executing a particular design, the job-value will be set to 'in progress', making sure that other processes are not repeating that experiment.
 
 .. image:: ../../../img/f3dasm-cluster.png
@@ -72,7 +70,7 @@ Example
 
 The following example is the same as in section :ref:`workflow`; only now we are omiting the optimization part and only parallelize the data generation:
 
-* Create a 20D continuous :class:`~f3dasm.design.domain.Domain`
+* Create a 20D continuous :class:`~f3dasm.design.Domain`
 * Sample from the domain using a the Latin-hypercube sampler
 * With multiple nodes; use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
 
@@ -88,7 +86,7 @@ We want to make sure that the sampling is done only once, and that the data gene
 Therefore we divide the different nodes into two categories:
 
 * The first node (:code:`f3dasm.HPC_JOBID == 0`) will be the **master** node, which will be responsible for creating the design-of-experiments and sampling
-* All the other nodes (:code:`f3dasm.HPC_JOBID > 0`) will be **process** nodes, which will retrieve the :class:`~f3dasm.design.experimentdata.ExperimentData` from disk and go straight to the data generation function.
+* All the other nodes (:code:`f3dasm.HPC_JOBID > 0`) will be **process** nodes, which will retrieve the :class:`~f3dasm.ExperimentData` from disk and go straight to the data generation function.
 
 .. image:: ../../../img/f3dasm-workflow-cluster-roles.png
    :width: 100%
@@ -127,44 +125,52 @@ The user-defined script is identical to the one in :ref:`my-script`. Only now we
 pbsjob.sh
 ^^^^^^^^^
 
-.. code-block:: bash
-   :caption: TORQUE Bash Script
+.. tabs::
 
-    #!/bin/bash
-    # Torque directives (#PBS) must always be at the start of a job script!
-    #PBS -N ExampleScript
-    #PBS -q mse
-    #PBS -l nodes=1:ppn=12,walltime=12:00:00
+    .. group-tab:: TORQUE
 
-    # Make sure I'm the only one that can read my output
-    umask 0077
+        .. code-block:: bash
 
+            #!/bin/bash
+            # Torque directives (#PBS) must always be at the start of a job script!
+            #PBS -N ExampleScript
+            #PBS -q mse
+            #PBS -l nodes=1:ppn=12,walltime=12:00:00
 
-    # The PBS_JOBID looks like 1234566[0].
-    # With the following line, we extract the PBS_ARRAYID, the part in the brackets []:
-    PBS_ARRAYID=$(echo "${PBS_JOBID}" | sed 's/\[[^][]*\]//g')
-
-    module load use.own
-    module load miniconda3
-    cd $PBS_O_WORKDIR
-
-    # Here is where the application is started on the node
-    # activating my conda environment:
-
-    source activate f3dasm_env
-
-    # limiting number of threads
-    OMP_NUM_THREADS=12
-    export OMP_NUM_THREADS=12
+            # Make sure I'm the only one that can read my output
+            umask 0077
 
 
-    # If the PBS_ARRAYID is not set, set it to None
-    if ! [ -n "${PBS_ARRAYID+1}" ]; then
-      PBS_ARRAYID=None
-    fi
+            # The PBS_JOBID looks like 1234566[0].
+            # With the following line, we extract the PBS_ARRAYID, the part in the brackets []:
+            PBS_ARRAYID=$(echo "${PBS_JOBID}" | sed 's/\[[^][]*\]//g')
 
-    # Executing my python program with the jobid flag
-    python main.py --jobid=${PBS_ARRAYID}
+            module load use.own
+            module load miniconda3
+            cd $PBS_O_WORKDIR
+
+            # Here is where the application is started on the node
+            # activating my conda environment:
+
+            source activate f3dasm_env
+
+            # limiting number of threads
+            OMP_NUM_THREADS=12
+            export OMP_NUM_THREADS=12
+
+
+            # If the PBS_ARRAYID is not set, set it to None
+            if ! [ -n "${PBS_ARRAYID+1}" ]; then
+            PBS_ARRAYID=None
+            fi
+
+            # Executing my python program with the jobid flag
+            python main.py --jobid=${PBS_ARRAYID}
+
+    .. group-tab:: SLURM
+
+        Slurm script
+
 
 A few things to note:
 
@@ -177,7 +183,7 @@ main.py
 
 The `main.py` file is the main entry point of the project. It contains the :mod:`f3dasm` classes and acts on these interfaces.
 It imports :mod:`f3dasm` and the `my_function` from `my_script.py`. 
-In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from the Latin Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.evaluate` method with the specified execution mode.
+In the main function, we create the :class:`~f3dasm.design.Domain`, sample from the Latin Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.ExperimentData.Experiment.evaluate` method with the specified execution mode.
 
 Additionally, the `main.py` file handles which node takes which role.
 
@@ -260,44 +266,51 @@ Because the `hydra`_  :code:`config.yaml` file is handling command line flags, y
 
 In your TORQUE script, you have to overwrite this value with the :code:`PBS_ARRAYID` variable:
 
-.. code-block:: bash
-   :caption: TORQUE Bash Script with `hydra`_ integration
+.. tabs::
 
-    #!/bin/bash
-    # Torque directives (#PBS) must always be at the start of a job script!
-    #PBS -N ExampleScript
-    #PBS -q mse
-    #PBS -l nodes=1:ppn=12,walltime=12:00:00
+    .. group-tab:: TORQUE
 
-    # Make sure I'm the only one that can read my output
-    umask 0077
+        .. code-block:: bash
 
+            #!/bin/bash
+            # Torque directives (#PBS) must always be at the start of a job script!
+            #PBS -N ExampleScript
+            #PBS -q mse
+            #PBS -l nodes=1:ppn=12,walltime=12:00:00
 
-    # The PBS_JOBID looks like 1234566[0].
-    # With the following line, we extract the PBS_ARRAYID, the part in the brackets []:
-    PBS_ARRAYID=$(echo "${PBS_JOBID}" | sed 's/\[[^][]*\]//g')
-
-    module load use.own
-    module load miniconda3
-    cd $PBS_O_WORKDIR
-
-    # Here is where the application is started on the node
-    # activating my conda environment:
-
-    source activate f3dasm_env
-
-    # limiting number of threads
-    OMP_NUM_THREADS=12
-    export OMP_NUM_THREADS=12
+            # Make sure I'm the only one that can read my output
+            umask 0077
 
 
-    # If the PBS_ARRAYID is not set, set it to None
-    if ! [ -n "${PBS_ARRAYID+1}" ]; then
-      PBS_ARRAYID=None
-    fi
+            # The PBS_JOBID looks like 1234566[0].
+            # With the following line, we extract the PBS_ARRAYID, the part in the brackets []:
+            PBS_ARRAYID=$(echo "${PBS_JOBID}" | sed 's/\[[^][]*\]//g')
 
-    # Executing my python program with the jobid flag
-    python main.py ++hpc.jobid=${PBS_ARRAYID}
+            module load use.own
+            module load miniconda3
+            cd $PBS_O_WORKDIR
+
+            # Here is where the application is started on the node
+            # activating my conda environment:
+
+            source activate f3dasm_env
+
+            # limiting number of threads
+            OMP_NUM_THREADS=12
+            export OMP_NUM_THREADS=12
+
+
+            # If the PBS_ARRAYID is not set, set it to None
+            if ! [ -n "${PBS_ARRAYID+1}" ]; then
+            PBS_ARRAYID=None
+            fi
+
+            # Executing my python program with the jobid flag
+            python main.py ++hpc.jobid=${PBS_ARRAYID}
+
+    .. group-tab:: SLURM
+
+        SLURM script
 
 In your `main.py` file, the :code:`hpc.jobid` keyword is now available from the `config.yaml` file:
 

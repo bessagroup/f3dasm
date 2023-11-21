@@ -204,7 +204,7 @@ The Python package includes extensive implementations for each of the provided f
 .. =============================================================== ===================================================================================
 .. Class                                                           Short description
 .. =============================================================== ===================================================================================
-.. :class:`~f3dasm.design.experimentdata.ExperimentData`           Datastructure denoting samples from a design-of-experiments                                     
+.. :class:`~f3dasm.ExperimentData`           Datastructure denoting samples from a design-of-experiments                                     
 .. :class:`~f3dasm.functions.function.Function`                    Class that represents an analytical function used for benchmarking
 .. :class:`~f3dasm.functions.adapters.augmentor.Augmentor`         Class that can be used to manipulate data for data-augmentation
 .. :class:`~f3dasm.optimization.optimizer.OptimizerParameters`     Class that represents the hyper-parameters for a particular optimizer
