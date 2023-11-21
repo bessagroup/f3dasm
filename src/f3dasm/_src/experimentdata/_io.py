@@ -293,3 +293,31 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
     # Store object
     storage.store()
     return storage.suffix
+
+
+def _project_dir_factory(project_dir: Path | str | None) -> Path:
+    """Creates a Path object for the project directory from a particular input
+
+    Parameters
+    ----------
+    project_dir : Path | str | None
+        path of the user-defined directory where to create the f3dasm project \
+        folder.
+
+    Returns
+    -------
+    Path
+        Path object
+    """
+    if isinstance(project_dir, Path):
+        return project_dir.absolute()
+
+    if project_dir is None:
+        return Path().cwd()
+
+    if isinstance(project_dir, str):
+        return Path(project_dir).absolute()
+
+    raise TypeError(
+        f"project_dir must be of type Path, str or None, \
+            not {type(project_dir).__name__}")

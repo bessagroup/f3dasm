@@ -801,3 +801,29 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
             lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)
+
+
+def _domain_factory(domain: Domain | DictConfig | None,
+                    input_data: pd.DataFrame,
+                    output_data: pd.DataFrame) -> Domain:
+    if isinstance(domain, Domain):
+        domain._check_output(output_data.columns)
+        return domain
+
+    elif isinstance(domain, (Path, str)):
+        return Domain.from_file(Path(domain))
+
+    elif isinstance(domain, DictConfig):
+        return Domain.from_yaml(domain)
+
+    elif (input_data.empty and output_data.empty and domain is None):
+        return Domain()
+
+    elif domain is None:
+        return Domain.from_dataframe(
+            input_data, output_data)
+
+    else:
+        raise TypeError(
+            f"Domain must be of type Domain, DictConfig "
+            f"or None, not {type(domain)}")

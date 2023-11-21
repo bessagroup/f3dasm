@@ -6,7 +6,8 @@ from __future__ import annotations
 # Standard
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
+                    Union)
 
 # Third-party
 import numpy as np
@@ -452,3 +453,28 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     _columns = {name: None for name in dictionary.keys()}
     df = pd.DataFrame(dictionary, index=[0]).copy()
     return _Data(data=df, columns=_Columns(_columns))
+
+
+def _data_factory(data: DataTypes) -> _Data:
+    if data is None:
+        return _Data()
+
+    elif isinstance(data, _Data):
+        return data
+
+    elif isinstance(data, pd.DataFrame):
+        return _Data.from_dataframe(data)
+
+    elif isinstance(data, (Path, str)):
+        return _Data.from_file(data)
+
+    elif isinstance(data, np.ndarray):
+        return _Data.from_numpy(data)
+
+    else:
+        raise TypeError(
+            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
+            f"Path or str, not {type(data)}")
+
+
+DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]

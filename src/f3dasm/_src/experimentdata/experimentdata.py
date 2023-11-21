@@ -34,18 +34,18 @@ from pathos.helpers import mp
 # Local
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
-from ..design.domain import Domain
+from ..design.domain import Domain, _domain_factory
 from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
-from ._data import _Data
+from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
-                  OUTPUT_DATA_FILENAME)
-from ._jobqueue import NoOpenJobsError, Status, _JobQueue
+                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
-from .utils import DataTypes, number_of_overiterations, number_of_updates
+from .utils import number_of_overiterations, number_of_updates
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -125,7 +125,8 @@ class ExperimentData:
             job_value = Status.FINISHED
 
         self.domain = _domain_factory(
-            domain, self._input_data, self._output_data)
+            domain, self._input_data.to_dataframe(),
+            self._output_data.to_dataframe())
 
         # Create empty input_data from domain if input_data is empty
         if self._input_data.is_empty():
@@ -1309,109 +1310,3 @@ class ExperimentData:
             Path to the project directory
         """
         self.project_dir = _project_dir_factory(project_dir)
-
-
-def _data_factory(data: DataTypes) -> _Data:
-    if data is None:
-        return _Data()
-
-    elif isinstance(data, _Data):
-        return data
-
-    elif isinstance(data, pd.DataFrame):
-        return _Data.from_dataframe(data)
-
-    elif isinstance(data, (Path, str)):
-        return _Data.from_file(data)
-
-    elif isinstance(data, np.ndarray):
-        return _Data.from_numpy(data)
-
-    else:
-        raise TypeError(
-            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
-            f"Path or str, not {type(data)}")
-
-
-def _domain_factory(domain: Domain | DictConfig | None,
-                    input_data: _Data, output_data: _Data) -> Domain:
-    if isinstance(domain, Domain):
-        domain._check_output(output_data.names)
-        return domain
-
-    elif isinstance(domain, (Path, str)):
-        return Domain.from_file(Path(domain))
-
-    elif isinstance(domain, DictConfig):
-        return Domain.from_yaml(domain)
-
-    elif (input_data.is_empty() and output_data.is_empty() and domain is None):
-        return Domain()
-
-    elif domain is None:
-        return Domain.from_dataframe(
-            input_data.to_dataframe(), output_data.to_dataframe())
-
-    else:
-        raise TypeError(
-            f"Domain must be of type Domain or None, not {type(domain)}")
-
-
-def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
-                  output_data: _Data, job_value: Status) -> _JobQueue:
-    """Creates a _JobQueue object from particular inpute
-
-    Parameters
-    ----------
-    jobs : Path | str | None
-        input data for the jobs
-    input_data : _Data
-        _Data object of input data to extract indices from, if necessary
-    output_data : _Data
-        _Data object of output data to extract indices from, if necessary
-    job_value : Status
-        initial value of all the jobs
-
-    Returns
-    -------
-    _JobQueue
-        JobQueue object
-    """
-    if isinstance(jobs, _JobQueue):
-        return jobs
-
-    if isinstance(jobs, (Path, str)):
-        return _JobQueue.from_file(Path(jobs))
-
-    if input_data.is_empty():
-        return _JobQueue.from_data(output_data, value=job_value)
-
-    return _JobQueue.from_data(input_data, value=job_value)
-
-
-def _project_dir_factory(project_dir: Path | str | None) -> Path:
-    """Creates a Path object for the project directory from a particular input
-
-    Parameters
-    ----------
-    project_dir : Path | str | None
-        path of the user-defined directory where to create the f3dasm project \
-        folder.
-
-    Returns
-    -------
-    Path
-        Path object
-    """
-    if isinstance(project_dir, Path):
-        return project_dir.absolute()
-
-    if project_dir is None:
-        return Path().cwd()
-
-    if isinstance(project_dir, str):
-        return Path(project_dir).absolute()
-
-    raise TypeError(
-        f"project_dir must be of type Path, str or None, \
-            not {type(project_dir).__name__}")
