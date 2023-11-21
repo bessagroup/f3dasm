@@ -8,17 +8,11 @@ Module for optimization
 from typing import List
 
 # Local
-# from .._imports import try_import
 from .cg import CG, CG_Parameters
 from .lbfgsb import LBFGSB, LBFGSB_Parameters
 from .neldermead import NelderMead, NelderMead_Parameters
 from .optimizer import Optimizer
 from .randomsearch import RandomSearch, RandomSearch_Parameters
-
-# # Try importing f3dasm_optimize package
-# with try_import('f3dasm_optimize') as _imports:
-#     import f3dasm_optimize
-
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,11 +40,6 @@ __all__ = [
     '_OPTIMIZERS',
     'find_optimizer',
 ]
-
-# # Add the optimizers from f3dasm_optimize if applicable
-# if _imports.is_successful():
-#     _OPTIMIZERS.extend(f3dasm_optimize.OPTIMIZERS)
-#     __all__.extend(f3dasm_optimize.__all__)
 
 
 def find_optimizer(query: str) -> Optimizer:
