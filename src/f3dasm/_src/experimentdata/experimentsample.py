@@ -141,8 +141,8 @@ class ExperimentSample:
         self._dict_output[key] = (value, False)
 
     def __repr__(self) -> str:
-        return f"ExperimentSample({self.job_number} : \
-             {self.input_data} - {self.output_data})"
+        return (f"ExperimentSample({self.job_number} :"
+                f"{self.input_data} - {self.output_data})")
 
     @property
     def input_data(self) -> Dict[str, Any]:

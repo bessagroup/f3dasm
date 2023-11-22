@@ -414,9 +414,23 @@ class _Data:
             self.data = self.data.astype(object)
             self.data.at[index, _column_index] = value
 
-    def reset_index(self) -> None:
-        """Reset the index of the data."""
-        self.data.reset_index(drop=True, inplace=True)
+    def reset_index(self, indices: Optional[Iterable[int]] = None) -> None:
+        """Reset the index of the data.
+
+        Parameters
+        ----------
+        indices : Optional[Iterable[int]], optional
+            The indices to reset, by default None
+
+        Note
+        ----
+        If indices is None, the entire index will be reset to a RangeIndex
+        with the same length as the data.
+        """
+        if indices is None:
+            self.data.reset_index(drop=True, inplace=True)
+        else:
+            self.data.index = indices
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
@@ -428,6 +442,24 @@ class _Data:
     def set_columnnames(self, names: Iterable[str]) -> None:
         for old_name, new_name in zip(self.names, names):
             self.columns.rename(old_name, new_name)
+
+    def cast_types(self, domain: Domain):
+        """Cast the types of the data to the types of the domain.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain with specific parameters to cast the types to.
+
+        Raises
+        ------
+        ValueError
+            If the types of the domain and the data do not match.
+        """
+        _dtypes = {index: parameter._type
+                   for index, (_, parameter) in enumerate(
+                       domain.space.items())}
+        self.data = self.data.astype(_dtypes)
 
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:

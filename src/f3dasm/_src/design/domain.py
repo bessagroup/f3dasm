@@ -365,6 +365,23 @@ class Domain:
         """
         self._add(name, _ConstantParameter(value))
 
+    def add_parameter(self, name: str):
+        """Add a new parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_parameter('param1')
+        >>> domain.space
+        {'param1': Parameter()}
+        """
+        self._add(name, _Parameter())
+
     def add(self, name: str,
             type: Literal['float', 'int', 'category', 'constant'],
             **kwargs):

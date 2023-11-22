@@ -610,10 +610,7 @@ class ExperimentData:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        _dtypes = {index: parameter._type
-                   for index, (_, parameter) in enumerate(
-                       self.domain.space.items())}
-        self._input_data.data = self._input_data.data.astype(_dtypes)
+        self._input_data.cast_types(self.domain)
 
     def add_input_parameter(
         self, name: str,
@@ -646,26 +643,6 @@ class ExperimentData:
         self._output_data.add_column(name)
         self.domain.add_output(name, is_disk)
 
-    # def fill_output(self, output: np.ndarray, label: str = "y"):
-    #     """
-    #     Fill NaN values in the output data with the given array
-
-    #     Parameters
-    #     ----------
-    #     output : np.ndarray
-    #         Output data to fill
-    #     label : str, optional
-    #         Label of the output column to add to, by default "y".
-    #     """
-    #     if label not in self._output_data.names:
-    #         self.add_output_parameter(label, is_disk=False)
-
-    #     filled_indices: Iterable[int] = self._output_data.fill_numpy_arrays(
-    #         output)
-
-    #     # Set the status of the filled indices to FINISHED
-    #     self._jobs.mark(filled_indices, Status.FINISHED)
-
     def remove_rows_bottom(self, number_of_rows: int):
         """
         Remove a number of rows from the end of the ExperimentData object.
@@ -691,7 +668,7 @@ class ExperimentData:
         Reset the index of the ExperimentData object.
         """
         self._input_data.reset_index()
-        self._output_data.reset_index()
+        self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
 #                                                                  ExperimentSample
