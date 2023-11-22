@@ -697,7 +697,7 @@ class _Data:
         Note
         ----
         This method resets the index of the data object.
-        
+
         If no indices are provided, the index will be
         reset to range(len(data)). This means that the index will be
         [0, 1, 2, ..., len(data) - 1].
@@ -753,6 +753,7 @@ class _Data:
 
     def cast_types(self, domain: Domain):
         pass
+
 
 def _data_factory(data: DataTypes) -> _Data:
     if data is None:
