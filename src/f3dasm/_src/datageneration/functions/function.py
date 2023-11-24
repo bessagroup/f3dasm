@@ -101,7 +101,7 @@ class Function(DataGenerator):
             if isinstance(x, ArrayBox):
                 x = x._value
 
-        experiment_sample["y"] = self(x).ravel().astype(np.float32)
+        experiment_sample["y"] = float(self(x).ravel().astype(np.float32))
         return experiment_sample
 
     def _run(
