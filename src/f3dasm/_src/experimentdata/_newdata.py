@@ -517,8 +517,8 @@ class _Data:
 
     def n_best_samples(self, nosamples: int,
                        column_name: List[str] | str) -> pd.DataFrame:
-        ...
-        # TODO: Implement this function
+        return self.to_dataframe().nsmallest(n=nosamples,
+                                             columns=column_name)
 
     def select_columns(self, columns: Iterable[str] | str) -> _Data:
         """Selects columns from the data.
@@ -603,8 +603,12 @@ class _Data:
         """
         self.columns.add(name)
 
-        for row in self.data:
-            row.append(np.nan)
+        if self.is_empty():
+            self.data = [[np.nan] for _ in self.indices]
+
+        else:
+            for row in self.data:
+                row.append(np.nan)
 
     def remove(self, indices: List[int] | int):
         """Removes rows from the data object.
