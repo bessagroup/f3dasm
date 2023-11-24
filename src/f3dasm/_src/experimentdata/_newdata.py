@@ -58,7 +58,7 @@ class _Index:
 
     def iloc(self, index: int | Iterable[int]) -> List[int]:
 
-        if isinstance(index, int):
+        if isinstance(index, int) or isinstance(index, np.int64):
             index = [index]
 
         _indices = []
@@ -162,13 +162,13 @@ class _Data:
             self.current_index += 1
             return current_value
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+    def __getitem__(self, index: int | Iterable[int]) -> _Data:
         """
         Get the experiment(s) at the given index
 
         Parameters
         ----------
-        index : int | slice | Iterable[int]
+        index : int | Iterable[int]
             The index of the experiment(s) to get
 
         Returns
@@ -184,7 +184,7 @@ class _Data:
             return _Data(data=[self.data[i] for i in _index],
                          columns=self.columns, index=_Index(_index))
 
-    def __add__(self, other: _Data) -> _Data:
+    def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
         """
         Add two data objects together
 
@@ -204,6 +204,10 @@ class _Data:
         * The indices of the second object are shifted by the number of
         experiments in the first object.
         """
+        # If other is a dictionary, convert it to a _Data object
+        if not isinstance(other, _Data):
+            other = _convert_dict_to_data(other)
+
         return _Data(data=self.data + other.data,
                      columns=self.columns,
                      index=self.index + other.index)
@@ -625,6 +629,17 @@ class _Data:
                      if self.index.iloc(i)[0] not in indices]
         self.index = _Index([i for i in self.indices if i not in indices])
 
+    def round(self, decimals: int):
+        """Rounds the data.
+
+        Parameters
+        ----------
+        decimals : int
+            The number of decimals to round to.
+        """
+        self.data = [[round(value, decimals) for value in row]
+                     for row in self.data]
+
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         """
         Get the data as a dictionary.
@@ -680,7 +695,8 @@ class _Data:
             raise IndexError(f'Index {index} not in data.')
 
         if column is None:
-            self.data[index] = value
+            _index = self.index.iloc(index)[0]
+            self.data[_index] = value
             return
 
         elif column not in self.names:
@@ -757,6 +773,24 @@ class _Data:
 
     def cast_types(self, domain: Domain):
         pass
+
+
+def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
+    """Converts a dictionary with scalar values to a data object.
+
+    Parameters
+    ----------
+    dict : Dict[str, Any]
+        The dictionary to convert. Note that the dictionary
+         should only have scalar values!
+
+    Returns
+    -------
+    _Data
+        The data object.
+    """
+    df = pd.DataFrame(dictionary, index=[0]).copy()
+    return _Data.from_dataframe(df)
 
 
 def _data_factory(data: DataTypes) -> _Data:

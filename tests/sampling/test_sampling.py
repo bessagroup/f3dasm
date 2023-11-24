@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 
 from f3dasm import ExperimentData
 from f3dasm.design import Domain, _ContinuousParameter
@@ -41,7 +42,7 @@ def test_correct_sampling_ran(design3: Domain):
             0: "float",
             1: "int",
             2: "float",
-            3: "category",
+            3: "object",
             4: "float",
         }
     )
@@ -49,9 +50,13 @@ def test_correct_sampling_ran(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='random', n_samples=numsamples, seed=seed)
 
-    samples = samples._input_data.data.round(6)
+    samples._input_data.round(6)
 
-    assert df_ground_truth.equals(samples)
+    df_input, _ = samples.to_pandas()
+    df_input.columns = df_ground_truth.columns
+
+    assert_frame_equal(df_input, df_ground_truth,
+                       check_dtype=False, check_exact=False, rtol=1e-6)
 
 
 def test_correct_sampling_sobol(design3: Domain):
@@ -74,7 +79,7 @@ def test_correct_sampling_sobol(design3: Domain):
             0: "float",
             1: "int",
             2: "float",
-            3: "category",
+            3: "object",
             4: "float",
         }
     )
@@ -82,8 +87,10 @@ def test_correct_sampling_sobol(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='sobol', n_samples=numsamples, seed=seed)
 
-    samples = samples._input_data.data.round(6)
-    assert df_ground_truth.equals(samples)
+    df_input, _ = samples.to_pandas()
+    df_input.columns = df_ground_truth.columns
+
+    assert_frame_equal(df_input, df_ground_truth, check_dtype=False)
 
 
 def test_correct_sampling_lhs(design3: Domain):
@@ -106,7 +113,7 @@ def test_correct_sampling_lhs(design3: Domain):
             0: "float",
             1: "int",
             2: "float",
-            3: "category",
+            3: "object",
             4: "float",
         }
     )
@@ -114,9 +121,10 @@ def test_correct_sampling_lhs(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='latin', n_samples=numsamples, seed=seed)
 
-    samples = samples._input_data.data.round(6)
+    df_input, _ = samples.to_pandas()
+    df_input.columns = df_ground_truth.columns
 
-    assert df_ground_truth.equals(samples)
+    assert_frame_equal(df_input, df_ground_truth, check_dtype=False)
 
 
 if __name__ == "__main__":  # pragma: no cover

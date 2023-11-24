@@ -58,12 +58,12 @@ class _Data:
             self.current_index += 1
             return current_value
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+    def __getitem__(self, index: int | Iterable[int]) -> _Data:
         """Get a subset of the data.
 
         Parameters
         ----------
-        index : int, slice, list
+        index : int, list
             The index of the data to get.
 
         Returns
@@ -346,6 +346,7 @@ class _Data:
             {column: self.columns.columns[column] for column in columns})
         return _Data(
             self.data[self.columns.iloc(columns)], columns=_selected_columns)
+
 #                                                        Append and remove data
 # =============================================================================
 
@@ -387,6 +388,9 @@ class _Data:
 
     def remove(self, indices: List[int]):
         self.data = self.data.drop(indices)
+
+    def round(self, decimals: int):
+        self.data = self.data.round(decimals=decimals)
 
 #                                                           Getters and setters
 # =============================================================================

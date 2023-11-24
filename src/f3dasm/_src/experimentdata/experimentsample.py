@@ -85,24 +85,60 @@ class ExperimentSample:
         If no domain is given, the default parameter names are used.
         These are x0, x1, x2, etc. for input and y for output.
         """
-        default_input_names = [f"x{i}" for i in range(len(input_array))]
-        default_output_name = "y"
-
         if domain is None:
-            dict_input = {
-                name: val for name, val
-                in zip(default_input_names, input_array)}
-            dict_output = {} if output_value is None else {
-                default_output_name: (output_value, False)}
+            dict_input, dict_output = cls._from_numpy_without_domain(
+                input_array=input_array, output_value=output_value)
+
         else:
-            dict_input = {name: val for name,
-                          val in zip(domain.names, input_array)}
-            dict_output = {} if output_value is None else {
-                name: (output_value, False) for
-                name in domain.output_space.keys()}
+            dict_input, dict_output = cls._from_numpy_with_domain(
+                input_array=input_array, domain=domain,
+                output_value=output_value)
 
         return cls(dict_input=dict_input,
                    dict_output=dict_output, jobnumber=jobnumber)
+
+    @classmethod
+    def _from_numpy_with_domain(
+            cls: Type[ExperimentSample],
+            input_array: np.ndarray,
+            domain: Domain,
+            output_value: Optional[float] = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+
+        dict_input = {name: val for name,
+                      val in zip(domain.names, input_array)}
+
+        if output_value is None:
+            dict_output = {name: (np.nan, False)
+                           for name in domain.output_space.keys()}
+        else:
+            dict_output = {
+                name: (output_value, False) for
+                name in domain.output_space.keys()}
+
+        return dict_input, dict_output
+
+    @classmethod
+    def _from_numpy_without_domain(
+            cls: Type[ExperimentSample],
+            input_array: np.ndarray,
+            output_value: Optional[float] = None
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+
+        default_input_names = [f"x{i}" for i in range(len(input_array))]
+        default_output_name = "y"
+
+        dict_input = {
+            name: val for name, val
+            in zip(default_input_names, input_array)}
+
+        if output_value is None:
+            dict_output = {name: (np.nan, False)
+                           for name in default_output_name}
+        else:
+            dict_output = {default_output_name: (output_value, False)}
+
+        return dict_input, dict_output
 
     def get(self, item: str,
             load_method: Optional[Type[_Store]] = None) -> Any:

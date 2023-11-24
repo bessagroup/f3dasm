@@ -167,7 +167,7 @@ class Sampler:
     def _sample_discrete(self, numsamples: int):
         """Sample the descrete parameters, default randomly uniform"""
         discrete = self.domain.get_discrete_parameters()
-        samples = np.empty(shape=(numsamples, len(discrete)))
+        samples = np.empty(shape=(numsamples, len(discrete)), dtype=np.int32)
         for dim, param in enumerate(discrete.values()):
             samples[:, dim] = np.random.choice(
                 range(param.lower_bound,

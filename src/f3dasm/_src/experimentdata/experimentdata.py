@@ -355,12 +355,12 @@ class ExperimentData:
     #                                                         Selecting subsets
     # =========================================================================
 
-    def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
+    def select(self, indices: int | Iterable[int]) -> ExperimentData:
         """Select a subset of the ExperimentData object
 
         Parameters
         ----------
-        indices : int | slice | Iterable[int]
+        indices : int | Iterable[int]
             The indices to select.
 
         Returns
@@ -656,7 +656,7 @@ class ExperimentData:
             return  # Don't do anything if 0 rows need to be removed
 
         # get the last indices from data.data
-        indices = self._input_data.data.index[-number_of_rows:]
+        indices = self.index[-number_of_rows:]
 
         # remove the indices rows_to_remove from data.data
         self._input_data.remove(indices)
@@ -794,7 +794,9 @@ class ExperimentData:
         """
         # self.jobs.mark_as_error(index)
         self._jobs.mark(index, status=Status.ERROR)
-        self._output_data.set_data(index, value='ERROR')
+        self._output_data.set_data(
+            index,
+            value=['ERROR' for _ in self._output_data.names])
 
     @_access_file
     def _write_error(self, index: int):

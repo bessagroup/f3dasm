@@ -41,22 +41,16 @@ def experimentdata(domain: Domain) -> ExperimentData:
     e_data = ExperimentData(domain)
     e_data.sample(sampler='random', n_samples=10, seed=SEED)
     return e_data
-    # sampler = RandomUniform(domain=domain, number_of_samples=10, seed=SEED)
-    # return ExperimentData.from_sampling(sampler)
 
 
 @pytest.fixture(scope="package")
 def experimentdata2(domain: Domain) -> ExperimentData:
     return ExperimentData.from_sampling(sampler='random', domain=domain, n_samples=10, seed=SEED)
-    # sampler = RandomUniform(domain=domain, number_of_samples=10, seed=SEED+1)
-    # return ExperimentData.from_sampling(sampler)
 
 
 @pytest.fixture(scope="package")
 def experimentdata_continuous(domain_continuous: Domain) -> ExperimentData:
     return ExperimentData.from_sampling(sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
-    # sampler = RandomUniform(domain=domain_continuous, number_of_samples=10, seed=SEED)
-    # return ExperimentData.from_sampling(sampler)
 
 
 @pytest.fixture(scope="package")
@@ -66,12 +60,15 @@ def experimentdata_expected() -> ExperimentData:
     data = ExperimentData.from_sampling(
         sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
     for es, output in zip(data, np.zeros((10, 1))):
-        es.store(name='y', object=output)
+        es.store(name='y', object=float(output))
         data._set_experiment_sample(es)
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 
-    data._input_data.data = data._input_data.data.round(6)
+    data._input_data.round(6)
+    # data._input_data.data = [[round(num, 6) if isinstance(
+    #     num, float) else num for num in sublist]
+    #     for sublist in data._input_data.data]
     return data
 
 
@@ -84,7 +81,10 @@ def experimentdata_expected_no_output() -> ExperimentData:
     data.add(input_data=np.array(
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
-    data._input_data.data = data._input_data.data.round(6)
+    data._input_data.round(6)
+    # data._input_data.data = [[round(num, 6) if isinstance(
+    #     num, float) else num for num in sublist]
+    #     for sublist in data._input_data.data]
     return data
 
 
@@ -125,27 +125,6 @@ def xarray_dataset(domain_continuous: Domain) -> xr.Dataset:
 def pandas_dataframe(domain_continuous: Domain) -> pd.DataFrame:
     np.random.seed(SEED)
     return pd.DataFrame(np.random.rand(10, len(domain_continuous)), columns=domain_continuous.names)
-
-# Define test data
-
-
-@pytest.fixture(scope="package")
-def config_yaml() -> OmegaConf:
-    # Define a sample configuration for testing
-    config_dict = {
-        "experimentdata": {
-            "from_sampling": {"_target_": "f3dasm.sampling.RandomUniform", "number_of_samples": 10, "seed": SEED},
-            "from_csv": {"input_filepath": "experimentdata_data.csv", "output_filepath": "experimentdata_output.csv"},
-            "from_file": {"filepath": "experimentdata"},
-            # Add other options as needed for testing
-        },
-        "domain": {
-            "input_space": {"x1": {"_target_": "f3dasm._ContinuousParameter", "lower": -5.12, "upper": 5.12},
-                            "x2": {"_target_": "f3dasm._DiscreteParameter", "lower": -3, "upper": 3},
-                            "x3": {"_target_": "f3dasm._CategoricalParameter", "categories": ["red", "green", "blue"]}}}
-    }
-
-    return OmegaConf.create(config_dict)
 
 
 @pytest.fixture(scope="package")

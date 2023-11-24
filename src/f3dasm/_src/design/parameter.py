@@ -200,7 +200,7 @@ class _CategoricalParameter(_Parameter):
     """
 
     categories: Sequence[CategoricalType]
-    _type: str = field(init=False, default="category")
+    _type: str = field(init=False, default="object")
 
     def __post_init__(self):
         self._check_duplicates()

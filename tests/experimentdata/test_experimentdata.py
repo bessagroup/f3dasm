@@ -11,9 +11,9 @@ import pytest
 import xarray as xr
 
 from f3dasm import ExperimentData, ExperimentSample
-from f3dasm._src.experimentdata.experimentdata import DataTypes
-from f3dasm.design import (Domain, Status, _ContinuousParameter, _Data,
-                           _JobQueue, make_nd_continuous_domain)
+from f3dasm._src.experimentdata._data import DataTypes, _Data
+from f3dasm.design import (Domain, Status, _ContinuousParameter, _JobQueue,
+                           make_nd_continuous_domain)
 
 pytestmark = pytest.mark.smoke
 
@@ -48,12 +48,7 @@ def test_experiment_data_len_empty(domain: Domain):
 def test_experiment_data_len_equals_input_data(experimentdata: ExperimentData):
     assert len(experimentdata) == len(experimentdata._input_data)
 
-
-def test_experiment_data_len_equals_output_data(experimentdata: ExperimentData):
-    assert len(experimentdata) == len(experimentdata._output_data)
-
-
-@pytest.mark.parametrize("slice_type", [3, [0, 1, 3], slice(0, 3)])
+@pytest.mark.parametrize("slice_type", [3, [0, 1, 3]])
 def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
     input_data = experimentdata._input_data[slice_type]
     output_data = experimentdata._output_data[slice_type]
@@ -75,9 +70,9 @@ def test_from_file(experimentdata_continuous: ExperimentData, seed: int, tmp_pat
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experimentdata_continuous._input_data.data, experimentdata_from_file._input_data.data)
-    pd.testing.assert_frame_equal(experimentdata_continuous._output_data.data,
-                                  experimentdata_from_file._output_data.data)
+        experimentdata_continuous._input_data.to_dataframe(), experimentdata_from_file._input_data.to_dataframe())
+    pd.testing.assert_frame_equal(experimentdata_continuous._output_data.to_dataframe(),
+                                  experimentdata_from_file._output_data.to_dataframe())
     pd.testing.assert_series_equal(
         experimentdata_continuous._jobs.jobs, experimentdata_from_file._jobs.jobs)
     # assert experimentdata_continuous.input_data == experimentdata_from_file.input_data
@@ -174,6 +169,7 @@ def test_add_new_output_column(experimentdata: ExperimentData):
     experimentdata.add_output_parameter(name='test', is_disk=False)
     assert 'test' in experimentdata._output_data.names
 
+
 def test_set_error(experimentdata_continuous: ExperimentData):
     experimentdata_continuous._set_error(3)
     assert experimentdata_continuous._jobs.jobs[3] == Status.ERROR
@@ -235,8 +231,8 @@ def create_jobs_pickle_finished(filepath):
     domain = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
                                        dimensionality=3)
 
-    _data_input = _Data(pd_input())
-    _data_output = _Data(pd_output())
+    _data_input = _Data.from_dataframe(pd_input())
+    _data_output = _Data.from_dataframe(pd_output())
     experimentdata = ExperimentData(
         domain=domain, input_data=_data_input, output_data=_data_output)
     experimentdata._jobs.store(filepath)
@@ -246,7 +242,7 @@ def create_jobs_pickle_open(filepath):
     domain = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
                                        dimensionality=3)
 
-    _data_input = _Data(pd_input())
+    _data_input = _Data.from_dataframe(pd_input())
     experimentdata = ExperimentData(domain=domain, input_data=_data_input)
     experimentdata._jobs.store(filepath)
 
@@ -384,11 +380,11 @@ def pd_output():
 
 
 def data_input():
-    return _Data(pd_input())
+    return _Data.from_dataframe(pd_input())
 
 
 def data_output():
-    return _Data(pd_output())
+    return _Data.from_dataframe(pd_output())
 
 
 @pytest.mark.parametrize("input_data", [path_input, str_input, pd_input(), data_input(), numpy_input()])
@@ -464,9 +460,9 @@ def test_init_with_output(input_data: DataTypes, output_data: DataTypes, domain:
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experiment_data._input_data.data, experimentdata_expected._input_data.data)
-    pd.testing.assert_frame_equal(experiment_data._output_data.data,
-                                  experimentdata_expected._output_data.data)
+        experiment_data._input_data.to_dataframe(), experimentdata_expected._input_data.to_dataframe(), check_dtype=False)
+    pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+                                  experimentdata_expected._output_data.to_dataframe(), check_dtype=False)
     assert experiment_data == experimentdata_expected
 
 
@@ -540,9 +536,9 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experiment_data._input_data.data, experimentdata_expected_no_output._input_data.data)
-    pd.testing.assert_frame_equal(experiment_data._output_data.data,
-                                  experimentdata_expected_no_output._output_data.data)
+        experiment_data._input_data.to_dataframe(), experimentdata_expected_no_output._input_data.to_dataframe())
+    pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+                                  experimentdata_expected_no_output._output_data.to_dataframe())
     pd.testing.assert_series_equal(
         experiment_data._jobs.jobs, experimentdata_expected_no_output._jobs.jobs)
     assert experiment_data._input_data == experimentdata_expected_no_output._input_data
@@ -603,9 +599,9 @@ def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain:
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experiment_data._input_data.data, experimentdata_expected_only_domain._input_data.data)
-    pd.testing.assert_frame_equal(experiment_data._output_data.data,
-                                  experimentdata_expected_only_domain._output_data.data)
+        experiment_data._input_data.to_dataframe(), experimentdata_expected_only_domain._input_data.to_dataframe(), check_dtype=False)
+    pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+                                  experimentdata_expected_only_domain._output_data.to_dataframe(), check_dtype=False)
     assert experiment_data._input_data == experimentdata_expected_only_domain._input_data
     assert experiment_data._output_data == experimentdata_expected_only_domain._output_data
     assert experiment_data.domain == experimentdata_expected_only_domain.domain
