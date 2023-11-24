@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
+from ...design.domain import Domain
 # Locals
 from ...experimentdata.experimentsample import _experimentsample_factory
 from ..datagenerator import DataGenerator
@@ -106,8 +107,9 @@ class Function(DataGenerator):
 
     def _run(
             self, experiment_sample: ExperimentSample | np.ndarray,
-            **kwargs) -> ExperimentSample:
-        _experiment_sample = _experimentsample_factory(experiment_sample)
+            domain: Optional[Domain] = None, **kwargs) -> ExperimentSample:
+        _experiment_sample = _experimentsample_factory(
+            experiment_sample=experiment_sample, domain=domain)
         return self.execute(_experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):

@@ -1223,7 +1223,8 @@ class ExperimentData:
 
             for repetition in range(iterations):
                 self._add_experiments(
-                    ExperimentSample.from_numpy(repeated_last_element))
+                    ExperimentSample.from_numpy(repeated_last_element,
+                                                domain=self.domain))
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:

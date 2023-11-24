@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional, Tuple, Type
 import autograd.numpy as np
 
 # Local
+from ..design.domain import Domain
 from ..logger import logger
 from ._io import _Store, load_object, save_object
 
@@ -59,7 +60,8 @@ class ExperimentSample:
     @classmethod
     def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
                    output_value: Optional[float] = None,
-                   jobnumber: int = 0) -> ExperimentSample:
+                   jobnumber: int = 0,
+                   domain: Optional[Domain] = None) -> ExperimentSample:
         """Create a ExperimentSample object from a numpy array.
 
         Parameters
@@ -68,23 +70,39 @@ class ExperimentSample:
             input 1D numpy array
         output_value : Optional[float], optional
             objective value, by default None
-
         jobnumber : int
             jobnumber of the design
+        domain : Optional[Domain], optional
+            domain of the design, by default None
 
         Returns
         -------
         ExperimentSample
             ExperimentSample object
-        """
-        dict_input = {f"x{i}": val for i, val in enumerate(input_array)}
-        if output_value is None:
-            dict_output = {}
-        else:
-            dict_output = {"y": (output_value, False)}
 
-        return cls(dict_input=dict_input, dict_output=dict_output,
-                   jobnumber=jobnumber)
+        Note
+        ----
+        If no domain is given, the default parameter names are used.
+        These are x0, x1, x2, etc. for input and y for output.
+        """
+        default_input_names = [f"x{i}" for i in range(len(input_array))]
+        default_output_name = "y"
+
+        if domain is None:
+            dict_input = {
+                name: val for name, val
+                in zip(default_input_names, input_array)}
+            dict_output = {} if output_value is None else {
+                default_output_name: (output_value, False)}
+        else:
+            dict_input = {name: val for name,
+                          val in zip(domain.names, input_array)}
+            dict_output = {} if output_value is None else {
+                name: (output_value, False) for
+                name in domain.output_space.keys()}
+
+        return cls(dict_input=dict_input,
+                   dict_output=dict_output, jobnumber=jobnumber)
 
     def get(self, item: str,
             load_method: Optional[Type[_Store]] = None) -> Any:
@@ -286,7 +304,8 @@ class ExperimentSample:
 
 
 def _experimentsample_factory(
-    experiment_sample: np.ndarray | ExperimentSample | Dict) \
+    experiment_sample: np.ndarray | ExperimentSample | Dict,
+    domain: Domain | None) \
         -> ExperimentSample:
     """Factory function for the ExperimentSample class.
 
@@ -294,6 +313,8 @@ def _experimentsample_factory(
     ----------
     experiment_sample : np.ndarray | ExperimentSample | Dict
         The experiment sample to convert to an ExperimentSample.
+    domain: Domain | None
+        The domain of the experiment sample.
 
     Returns
     -------
@@ -301,7 +322,7 @@ def _experimentsample_factory(
         The converted experiment sample.
     """
     if isinstance(experiment_sample, np.ndarray):
-        return ExperimentSample.from_numpy(experiment_sample)
+        return ExperimentSample.from_numpy(experiment_sample, domain)
 
     elif isinstance(experiment_sample, dict):
         return ExperimentSample(dict_input=experiment_sample,
