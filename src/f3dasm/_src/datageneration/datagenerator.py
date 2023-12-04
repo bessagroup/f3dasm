@@ -146,7 +146,7 @@ class DataGenerator:
         """
         # Cache the design
         self.experiment_sample: ExperimentSample = _experimentsample_factory(
-            experiment_sample)
+            experiment_sample=experiment_sample, domain=domain)
 
         self._pre_simulation()
 
