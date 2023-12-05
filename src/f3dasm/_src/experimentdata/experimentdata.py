@@ -125,8 +125,8 @@ class ExperimentData:
             job_value = Status.FINISHED
 
         self.domain = _domain_factory(
-            domain, self._input_data.to_dataframe(),
-            self._output_data.to_dataframe())
+            domain=domain, input_data=self._input_data.to_dataframe(),
+            output_data=self._output_data.to_dataframe())
 
         # Create empty input_data from domain if input_data is empty
         if self._input_data.is_empty():
@@ -138,6 +138,9 @@ class ExperimentData:
         # Check if the columns of input_data are in the domain
         if not self._input_data.has_columnnames(self.domain.names):
             self._input_data.set_columnnames(self.domain.names)
+
+        if not self._output_data.has_columnnames(self.domain.output_names):
+            self._output_data.set_columnnames(self.domain.output_names)
 
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
@@ -1220,13 +1223,19 @@ class ExperimentData:
         # n_data_before_iterate + iterations amount of elements!
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
-            repeated_last_element = self.get_n_best_output(
-                n_samples=1).to_numpy()[0].ravel()
+            repeated_x, repeated_y = self.get_n_best_output(
+                n_samples=1).to_numpy()
+            # repeated_last_element = self.get_n_best_output(
+            #     n_samples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
-                self._add_experiments(
-                    ExperimentSample.from_numpy(repeated_last_element,
-                                                domain=self.domain))
+                # self._add_experiments(
+                #     ExperimentSample.from_numpy(repeated_last_element,
+                #                                 domain=self.domain))
+
+                self.add(
+                    domain=self.domain, input_data=repeated_x,
+                    output_data=repeated_y)
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:

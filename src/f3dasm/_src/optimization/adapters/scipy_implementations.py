@@ -46,7 +46,8 @@ class _SciPyOptimizer(Optimizer):
         """
 
         def fun(x):
-            sample: ExperimentSample = data_generator._run(x)
+            sample: ExperimentSample = data_generator._run(
+                x, domain=self.domain)
             _, y = sample.to_numpy()
             return float(y)
 
@@ -63,3 +64,5 @@ class _SciPyOptimizer(Optimizer):
             bounds=self.domain.get_bounds(),
             tol=0.0,
         )
+
+        # self.data.evaluate(data_generator=data_generator)

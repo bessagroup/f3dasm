@@ -85,6 +85,11 @@ class Domain:
         return list(self.keys())
 
     @property
+    def output_names(self) -> List[str]:
+        """Return a list of the names of the output parameters"""
+        return list(self.output_space.keys())
+
+    @property
     def continuous(self) -> Domain:
         """Returns a Domain object containing only the continuous parameters"""
         return self._filter(_ContinuousParameter)
@@ -748,6 +753,7 @@ class Domain:
         """
         for output_name in names:
             if not self.is_in_output(output_name):
+                print(f"Output {output_name} not in domain. Adding it.")
                 self.add_output(output_name, to_disk=False)
 
     def is_in_output(self, output_name: str) -> bool:
@@ -824,7 +830,7 @@ def _domain_factory(domain: Domain | DictConfig | None,
                     input_data: pd.DataFrame,
                     output_data: pd.DataFrame) -> Domain:
     if isinstance(domain, Domain):
-        domain._check_output(output_data.columns)
+        # domain._check_output(output_data.columns)
         return domain
 
     elif isinstance(domain, (Path, str)):
