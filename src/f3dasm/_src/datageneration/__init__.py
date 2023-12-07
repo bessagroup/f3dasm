@@ -8,7 +8,6 @@ Module for data-generation
 from typing import List
 
 # Local
-from .._imports import try_import
 from .abaqus.abaqus_simulator import AbaqusSimulator
 from .datagenerator import DataGenerator
 from .functions import pybenchfunction
@@ -16,10 +15,6 @@ from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,
                                            Scale)
 from .functions.function import Function
 from .functions.pybenchfunction import *  # NOQA
-
-# Try importing f3dasm_optimize package
-with try_import('f3dasm_simulate') as _imports:
-    import f3dasm_simulate  # NOQA
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,6 +24,11 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+try:
+    import f3dasm_simulate  # NOQA
+except ImportError:
+    pass
 
 # List of available optimizers
 DATAGENERATORS: List[DataGenerator] = []
@@ -44,7 +44,3 @@ __all__ = [
     'AbaqusSimulator',
     *pybenchfunction.__all__
 ]
-
-# Add the optimizers from f3dasm_optimize if applicable
-if _imports.is_successful():
-    pass

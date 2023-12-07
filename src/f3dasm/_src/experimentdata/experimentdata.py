@@ -34,18 +34,18 @@ from pathos.helpers import mp
 # Local
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
-from ..design.domain import Domain
+from ..design.domain import Domain, _domain_factory
 from ..design.samplers import Sampler, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
-from ._data import _Data
+from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
-                  OUTPUT_DATA_FILENAME)
-from ._jobqueue import NoOpenJobsError, Status, _JobQueue
+                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
-from .utils import DataTypes, number_of_overiterations, number_of_updates
+from .utils import number_of_overiterations, number_of_updates
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -125,7 +125,8 @@ class ExperimentData:
             job_value = Status.FINISHED
 
         self.domain = _domain_factory(
-            domain, self._input_data, self._output_data)
+            domain=domain, input_data=self._input_data.to_dataframe(),
+            output_data=self._output_data.to_dataframe())
 
         # Create empty input_data from domain if input_data is empty
         if self._input_data.is_empty():
@@ -137,6 +138,9 @@ class ExperimentData:
         # Check if the columns of input_data are in the domain
         if not self._input_data.has_columnnames(self.domain.names):
             self._input_data.set_columnnames(self.domain.names)
+
+        if not self._output_data.has_columnnames(self.domain.output_names):
+            self._output_data.set_columnnames(self.domain.output_names)
 
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
@@ -354,12 +358,12 @@ class ExperimentData:
     #                                                         Selecting subsets
     # =========================================================================
 
-    def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
+    def select(self, indices: int | Iterable[int]) -> ExperimentData:
         """Select a subset of the ExperimentData object
 
         Parameters
         ----------
-        indices : int | slice | Iterable[int]
+        indices : int | Iterable[int]
             The indices to select.
 
         Returns
@@ -609,10 +613,7 @@ class ExperimentData:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        _dtypes = {index: parameter._type
-                   for index, (_, parameter) in enumerate(
-                       self.domain.space.items())}
-        self._input_data.data = self._input_data.data.astype(_dtypes)
+        self._input_data.cast_types(self.domain)
 
     def add_input_parameter(
         self, name: str,
@@ -645,26 +646,6 @@ class ExperimentData:
         self._output_data.add_column(name)
         self.domain.add_output(name, is_disk)
 
-    def fill_output(self, output: np.ndarray, label: str = "y"):
-        """
-        Fill NaN values in the output data with the given array
-
-        Parameters
-        ----------
-        output : np.ndarray
-            Output data to fill
-        label : str, optional
-            Label of the output column to add to, by default "y".
-        """
-        if label not in self._output_data.names:
-            self.add_output_parameter(label, is_disk=False)
-
-        filled_indices: Iterable[int] = self._output_data.fill_numpy_arrays(
-            output)
-
-        # Set the status of the filled indices to FINISHED
-        self._jobs.mark(filled_indices, Status.FINISHED)
-
     def remove_rows_bottom(self, number_of_rows: int):
         """
         Remove a number of rows from the end of the ExperimentData object.
@@ -678,7 +659,7 @@ class ExperimentData:
             return  # Don't do anything if 0 rows need to be removed
 
         # get the last indices from data.data
-        indices = self._input_data.data.index[-number_of_rows:]
+        indices = self.index[-number_of_rows:]
 
         # remove the indices rows_to_remove from data.data
         self._input_data.remove(indices)
@@ -690,7 +671,7 @@ class ExperimentData:
         Reset the index of the ExperimentData object.
         """
         self._input_data.reset_index()
-        self._output_data.reset_index()
+        self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
 #                                                                  ExperimentSample
@@ -816,7 +797,9 @@ class ExperimentData:
         """
         # self.jobs.mark_as_error(index)
         self._jobs.mark(index, status=Status.ERROR)
-        self._output_data.set_data(index, value='ERROR')
+        self._output_data.set_data(
+            index,
+            value=['ERROR' for _ in self._output_data.names])
 
     @_access_file
     def _write_error(self, index: int):
@@ -1240,12 +1223,19 @@ class ExperimentData:
         # n_data_before_iterate + iterations amount of elements!
         # If x_new is empty, repeat best x0 to fill up total iteration
         if len(self) == n_data_before_iterate:
-            repeated_last_element = self.get_n_best_output(
-                n_samples=1).to_numpy()[0].ravel()
+            repeated_x, repeated_y = self.get_n_best_output(
+                n_samples=1).to_numpy()
+            # repeated_last_element = self.get_n_best_output(
+            #     n_samples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
-                self._add_experiments(
-                    ExperimentSample.from_numpy(repeated_last_element))
+                # self._add_experiments(
+                #     ExperimentSample.from_numpy(repeated_last_element,
+                #                                 domain=self.domain))
+
+                self.add(
+                    domain=self.domain, input_data=repeated_x,
+                    output_data=repeated_y)
 
         # Repeat last iteration to fill up total iteration
         if len(self) < n_data_before_iterate + iterations:
@@ -1309,109 +1299,3 @@ class ExperimentData:
             Path to the project directory
         """
         self.project_dir = _project_dir_factory(project_dir)
-
-
-def _data_factory(data: DataTypes) -> _Data:
-    if data is None:
-        return _Data()
-
-    elif isinstance(data, _Data):
-        return data
-
-    elif isinstance(data, pd.DataFrame):
-        return _Data.from_dataframe(data)
-
-    elif isinstance(data, (Path, str)):
-        return _Data.from_file(data)
-
-    elif isinstance(data, np.ndarray):
-        return _Data.from_numpy(data)
-
-    else:
-        raise TypeError(
-            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
-            f"Path or str, not {type(data)}")
-
-
-def _domain_factory(domain: Domain | DictConfig | None,
-                    input_data: _Data, output_data: _Data) -> Domain:
-    if isinstance(domain, Domain):
-        domain._check_output(output_data.names)
-        return domain
-
-    elif isinstance(domain, (Path, str)):
-        return Domain.from_file(Path(domain))
-
-    elif isinstance(domain, DictConfig):
-        return Domain.from_yaml(domain)
-
-    elif (input_data.is_empty() and output_data.is_empty() and domain is None):
-        return Domain()
-
-    elif domain is None:
-        return Domain.from_dataframe(
-            input_data.to_dataframe(), output_data.to_dataframe())
-
-    else:
-        raise TypeError(
-            f"Domain must be of type Domain or None, not {type(domain)}")
-
-
-def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
-                  output_data: _Data, job_value: Status) -> _JobQueue:
-    """Creates a _JobQueue object from particular inpute
-
-    Parameters
-    ----------
-    jobs : Path | str | None
-        input data for the jobs
-    input_data : _Data
-        _Data object of input data to extract indices from, if necessary
-    output_data : _Data
-        _Data object of output data to extract indices from, if necessary
-    job_value : Status
-        initial value of all the jobs
-
-    Returns
-    -------
-    _JobQueue
-        JobQueue object
-    """
-    if isinstance(jobs, _JobQueue):
-        return jobs
-
-    if isinstance(jobs, (Path, str)):
-        return _JobQueue.from_file(Path(jobs))
-
-    if input_data.is_empty():
-        return _JobQueue.from_data(output_data, value=job_value)
-
-    return _JobQueue.from_data(input_data, value=job_value)
-
-
-def _project_dir_factory(project_dir: Path | str | None) -> Path:
-    """Creates a Path object for the project directory from a particular input
-
-    Parameters
-    ----------
-    project_dir : Path | str | None
-        path of the user-defined directory where to create the f3dasm project \
-        folder.
-
-    Returns
-    -------
-    Path
-        Path object
-    """
-    if isinstance(project_dir, Path):
-        return project_dir.absolute()
-
-    if project_dir is None:
-        return Path().cwd()
-
-    if isinstance(project_dir, str):
-        return Path(project_dir).absolute()
-
-    raise TypeError(
-        f"project_dir must be of type Path, str or None, \
-            not {type(project_dir).__name__}")

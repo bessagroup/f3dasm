@@ -60,11 +60,12 @@ class Domain:
 
     def __eq__(self, other: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
-        if not isinstance(other, Domain):
-            return False
 
-        # Compare the space dictionaries for equality
-        return self.space == other.space
+        if not isinstance(other, Domain):
+            return TypeError(f"Cannot compare Domain with \
+                {type(other.__name__)}")
+        return (
+            self.space == other.space)
 
     def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
@@ -82,6 +83,11 @@ class Domain:
     def names(self) -> List[str]:
         """Return a list of the names of the parameters"""
         return list(self.keys())
+
+    @property
+    def output_names(self) -> List[str]:
+        """Return a list of the names of the output parameters"""
+        return list(self.output_space.keys())
 
     @property
     def continuous(self) -> Domain:
@@ -363,6 +369,23 @@ class Domain:
         {'param1': ConstantParameter(value=0)}
         """
         self._add(name, _ConstantParameter(value))
+
+    def add_parameter(self, name: str):
+        """Add a new parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_parameter('param1')
+        >>> domain.space
+        {'param1': Parameter()}
+        """
+        self._add(name, _Parameter())
 
     def add(self, name: str,
             type: Literal['float', 'int', 'category', 'constant'],
@@ -730,6 +753,7 @@ class Domain:
         """
         for output_name in names:
             if not self.is_in_output(output_name):
+                print(f"Output {output_name} not in domain. Adding it.")
                 self.add_output(output_name, to_disk=False)
 
     def is_in_output(self, output_name: str) -> bool:
@@ -800,3 +824,29 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
             lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)
+
+
+def _domain_factory(domain: Domain | DictConfig | None,
+                    input_data: pd.DataFrame,
+                    output_data: pd.DataFrame) -> Domain:
+    if isinstance(domain, Domain):
+        # domain._check_output(output_data.columns)
+        return domain
+
+    elif isinstance(domain, (Path, str)):
+        return Domain.from_file(Path(domain))
+
+    elif isinstance(domain, DictConfig):
+        return Domain.from_yaml(domain)
+
+    elif (input_data.empty and output_data.empty and domain is None):
+        return Domain()
+
+    elif domain is None:
+        return Domain.from_dataframe(
+            input_data, output_data)
+
+    else:
+        raise TypeError(
+            f"Domain must be of type Domain, DictConfig "
+            f"or None, not {type(domain)}")

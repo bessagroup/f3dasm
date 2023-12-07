@@ -1,7 +1,7 @@
 Experiment Sample
 =================
 
-A :class:`~f3dasm.design.ExperimentSample` object contains a single realization of the design-of-experiment in :class:`~f3dasm.design.ExperimentData`.
+A :class:`~f3dasm.ExperimentSample` object contains a single realization of the design-of-experiment in :class:`~f3dasm.ExperimentData`.
 
 .. image:: ../../../img/f3dasm-design.png
     :alt: Design
@@ -11,12 +11,12 @@ A :class:`~f3dasm.design.ExperimentSample` object contains a single realization 
 |
 
 .. warning:: 
-    A :class:`~f3dasm.design.ExperimentSample` is not constructed manually, but created inside the :class:`~f3dasm.design.ExperimentData` when it is required by internal processes. 
-    The main use of the :class:`~f3dasm.design.ExperimentSample` is in the context of the :class:`~f3dasm.datageneration.DataGenerator` in order to extract design variables and store output variables. 
+    A :class:`~f3dasm.ExperimentSample` is not constructed manually, but created inside the :class:`~f3dasm.ExperimentData` when it is required by internal processes. 
+    The main use of the :class:`~f3dasm.ExperimentSample` is in the context of the :class:`~f3dasm.datageneration.DataGenerator` in order to extract design variables and store output variables. 
     Learn more about the :class:~`f3dasm.datageneration.DataGenerator` in the :ref:`Data Generation <data-generation>` section.
 
 
-For each of the experiments in the :class:`~f3dasm.design.ExperimentData`, an :class:`~f3dasm.design.ExperimentSample` object can be created.
+For each of the experiments in the :class:`~f3dasm.ExperimentData`, an :class:`~f3dasm.ExperimentSample` object can be created.
 This object contains:
 
 * the input parameters of the sample: :attr:`~f3dasm.design.ExperimentSample.input_data`
@@ -57,7 +57,7 @@ An KeyError will be raised if the key is not found.
 Manually iterating over ExperimentData
 ----------------------------------------
 
-The :class:`~f3dasm.design.ExperimentData` object can be manually iterated over to get :class:`~f3dasm.design.ExperimentSample` objects for each experiment:
+The :class:`~f3dasm.ExperimentData` object can be manually iterated over to get :class:`~f3dasm.ExperimentSample` objects for each experiment:
 
 .. code-block:: python
 
@@ -70,7 +70,7 @@ The :class:`~f3dasm.design.ExperimentData` object can be manually iterated over 
 Storing output parameters to the experiment sample
 --------------------------------------------------
 
-After running your simulation, you can store the result back into the :class:`~f3dasm.design.ExperimentSample` with the :meth:`f3dasm.design.ExperimentSample.store` method.
+After running your simulation, you can store the result back into the :class:`~f3dasm.ExperimentSample` with the :meth:`f3dasm.design.ExperimentSample.store` method.
 There are two ways of storing your output:
 
 * Singular values can be stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data`
@@ -79,8 +79,8 @@ There are two ways of storing your output:
 Single values
 ^^^^^^^^^^^^^
 
-Single values or small lists can be stored to the :class:`~f3dasm.design.ExperimentData` using the ``to_disk=False`` argument, with the name of the parameter as the key. 
-This will create a new output parameter if the parameter name is not found in :attr:`~f3dasm.design.ExperimentData.output_data` of the :class:`~f3dasm.design.ExperimentData` object:
+Single values or small lists can be stored to the :class:`~f3dasm.ExperimentData` using the ``to_disk=False`` argument, with the name of the parameter as the key. 
+This will create a new output parameter if the parameter name is not found in :attr:`~f3dasm.design.ExperimentData.output_data` of the :class:`~f3dasm.ExperimentData` object:
 This is especially useful if you want to get a quick overview of some loss or design metric of your sample. 
 
 .. code-block:: python
@@ -88,10 +88,10 @@ This is especially useful if you want to get a quick overview of some loss or de
     >>> experiment_sample.store('output_1', 0.123, to_disk=False)
     >>> experiment_sample('output_2', 'Hello world', to_disk=False)
 
-All built-in singular types are supported for storing to the :class:`~f3dasm.design.ExperimentData` this way. Array-like data such as numpy arrays and pandas dataframes are **not** supported and will raise an error.
+All built-in singular types are supported for storing to the :class:`~f3dasm.ExperimentData` this way. Array-like data such as numpy arrays and pandas dataframes are **not** supported and will raise an error.
 
 .. note:: 
-    Outputs stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data` will be stored within the :class:`~f3dasm.design.ExperimentData` object.
+    Outputs stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data` will be stored within the :class:`~f3dasm.ExperimentData` object.
     This means that the output will be loaded into memory everytime this object is accessed. For large outputs, it is recommended to store the output to disk. 
 
 .. _store-to-disk:
@@ -99,7 +99,7 @@ All built-in singular types are supported for storing to the :class:`~f3dasm.des
 Large objects and array-like data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to store large objects or array-like data, the :meth:`~f3dasm.design.ExperimentSample.store` method using the ``to_disk=True`` argument, can be used. 
+In order to store large objects or array-like data, the :meth:`~f3dasm.ExperimentSample.store` method using the ``to_disk=True`` argument, can be used. 
 A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.ExperimentData.output_data`.
 
 .. code-block:: python
@@ -126,7 +126,7 @@ A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.Experiment
        └── jobs.pkl
 
 
-In the output data of the :class:`~f3dasm.design.experimentdata.ExperimentData` object, a reference path (e.g. :code:`/output_numpy/0.npy`) to the stored object will be saved.
+In the output data of the :class:`~f3dasm.ExperimentData` object, a reference path (e.g. :code:`/output_numpy/0.npy`) to the stored object will be saved.
 
 
 :mod:`f3dasm` has built-in storing functions for numpy :class:`~numpy.ndarray`, pandas :class:`~pandas.DataFrame` and xarray :class:`~xarray.DataArray` and :class:`~xarray.Dataset`. 
@@ -154,7 +154,7 @@ You can take the following class for a :class:`~numpy.ndarray` object as an exam
             return np.load(file=self.path.with_suffix(self.suffix))
 
 
-After defining the storing function, it can be used as an additional argument in the :meth:`~f3dasm.design.ExperimentSample.store` method:
+After defining the storing function, it can be used as an additional argument in the :meth:`~f3dasm.ExperimentSample.store` method:
 
 .. code-block:: python
 
@@ -164,7 +164,7 @@ After defining the storing function, it can be used as an additional argument in
 Loading output parameters that are referenced
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When loading an output parameter that is referenced, the :class:`~f3dasm.design.ExperimentSample` will automatically load the object from disk and return it
+When loading an output parameter that is referenced, the :class:`~f3dasm.ExperimentSample` will automatically load the object from disk and return it
 when you are calling the :attr:`~f3dasm.design.ExperimentSample.get` method.
 
 .. note::
@@ -180,14 +180,14 @@ when you are calling the :attr:`~f3dasm.design.ExperimentSample.get` method.
 Exporting to other datatypes
 ----------------------------
 
-The :class:`~f3dasm.design.ExperimentSample` can be exported to a tuple of numpy :class:`~numpy.ndarray` from the ``input_data`` and ``output_data`` respectively using the :meth:`~f3dasm.design.ExperimentSample.to_numpy` method:
+The :class:`~f3dasm.ExperimentSample` can be exported to a tuple of numpy :class:`~numpy.ndarray` from the ``input_data`` and ``output_data`` respectively using the :meth:`~f3dasm.ExperimentSample.to_numpy` method:
 
 .. code-block:: python
 
     >>> experiment_sample.to_numpy()
     np.array([0.0249, 0.123, 0.456, 0.789]), np.array([0.003])
 
-The :class:`~f3dasm.design.ExperimentSample` can be exported to a dictionary :class:`~pandas.DataFrame` using the :meth:`~f3dasm.design.ExperimentSample.to_dict` method:
+The :class:`~f3dasm.ExperimentSample` can be exported to a dictionary :class:`~pandas.DataFrame` using the :meth:`~f3dasm.ExperimentSample.to_dict` method:
 
 .. code-block:: python
 
@@ -196,5 +196,5 @@ The :class:`~f3dasm.design.ExperimentSample` can be exported to a dictionary :cl
 
 .. note::
 
-    The :meth:`~f3dasm.design.ExperimentSample.to_dict` method will return a dictionary including the :attr:`~f3dasm.design.ExperimentSample.job_number` as the key.
+    The :meth:`~f3dasm.ExperimentSample.to_dict` method will return a dictionary including the :attr:`~f3dasm.design.ExperimentSample.job_number` as the key.
     Additionally, the ``output_data`` will also be loaded from disk if applicable.

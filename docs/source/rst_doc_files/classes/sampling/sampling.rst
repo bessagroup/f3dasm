@@ -31,7 +31,7 @@ The function should return the samples (``input_data``) in one of the following 
 Use the sampler in the data-driven process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use the sampler in the data-driven process, you should pass the function to the :class:`~f3dasm.design.ExperimentData` object as follows:
+To use the sampler in the data-driven process, you should pass the function to the :class:`~f3dasm.ExperimentData` object as follows:
 
 .. code-block:: python
 
@@ -48,7 +48,7 @@ To use the sampler in the data-driven process, you should pass the function to t
 
 .. note::
 
-   This method will throw an error if you do not have any prior ``input_data`` in the :class:`~f3dasm.design.ExperimentData` 
+   This method will throw an error if you do not have any prior ``input_data`` in the :class:`~f3dasm.ExperimentData` 
    object before sampling **and** you do not provide a :class:`~f3dasm.design.Domain` object in the initializer.
 
 Implemented samplers

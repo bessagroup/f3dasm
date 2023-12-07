@@ -20,7 +20,7 @@ In order to augment the benchmark functions, you can provide 4 keyword arguments
 * ``seed``: Seed for the random number generator for the ``noise`` and ``offset`` calculations.
 
 Benchmark functions can substitute the expensive simulation in the 
-:class:`~f3dasm.design.ExperimentData` object by providing the name of the function as the ``data_generator`` argument:
+:class:`~f3dasm.ExperimentData` object by providing the name of the function as the ``data_generator`` argument:
 
 .. code-block:: python
 

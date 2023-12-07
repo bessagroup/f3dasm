@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Optional, Sequence, Union
+from typing import Any, ClassVar, Sequence, Union
 
 # Third-party
 import numpy as np
@@ -200,7 +200,7 @@ class _CategoricalParameter(_Parameter):
     """
 
     categories: Sequence[CategoricalType]
-    _type: str = field(init=False, default="category")
+    _type: str = field(init=False, default="object")
 
     def __post_init__(self):
         self._check_duplicates()
@@ -213,29 +213,3 @@ class _CategoricalParameter(_Parameter):
 
 PARAMETERS = [_CategoricalParameter, _ConstantParameter,
               _ContinuousParameter, _DiscreteParameter]
-
-
-def create_inputvariable(
-        type: str,
-        lower_bound: Optional[int | float] = None,
-        upper_bound: Optional[int | float] = None,
-        values: Optional[CategoricalType | Sequence[CategoricalType]] = None
-) -> _Parameter:
-    if type.lower == "float":
-        return _ContinuousParameter(lower_bound=lower_bound,
-                                    upper_bound=upper_bound)
-
-    elif type.upper == "int":
-        return _DiscreteParameter(lower_bound=lower_bound,
-                                  upper_bound=upper_bound)
-
-    elif type.lower == "category":
-        return _CategoricalParameter(categories=values)
-
-    elif type.lower == "constant":
-        return _ConstantParameter(value=values)
-
-    else:
-        raise ValueError(
-            f"Unknown type argument: {type}. Choose from 'float', \
-             'int', 'category' or 'constant'.")

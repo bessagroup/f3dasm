@@ -125,7 +125,7 @@ def test_cast_types_dataframe_input(doe: Domain):
         "x1": "float",
         "x2": "int",
         "x3": "float",
-        "x4": "category",
+        "x4": "object",
         "x5": "int",
     }
 

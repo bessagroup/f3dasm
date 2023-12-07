@@ -146,7 +146,7 @@ class _JobQueue:
 
         Parameters
         ----------
-        filename : str
+        filename : Path | str
             Name of the file.
 
         Returns
@@ -155,13 +155,13 @@ class _JobQueue:
             JobQueue object containing the loaded data.
         """
         # Convert filename to Path
-        filename = Path(filename)
+        filename = Path(filename).with_suffix('.pkl')
 
         # Check if the file exists
-        if not filename.with_suffix('.pkl').exists():
+        if not filename.exists():
             raise FileNotFoundError(f"Jobfile {filename} does not exist.")
 
-        return cls(pd.read_pickle(filename.with_suffix('.pkl')))
+        return cls(pd.read_pickle(filename))
 
     def reset(self) -> None:
         """Resets the job queue."""
@@ -284,3 +284,35 @@ class _JobQueue:
     def reset_index(self) -> None:
         """Resets the index of the jobs."""
         self.jobs.reset_index(drop=True, inplace=True)
+
+
+def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
+                  output_data: _Data, job_value: Status) -> _JobQueue:
+    """Creates a _JobQueue object from particular inpute
+
+    Parameters
+    ----------
+    jobs : Path | str | None
+        input data for the jobs
+    input_data : _Data
+        _Data object of input data to extract indices from, if necessary
+    output_data : _Data
+        _Data object of output data to extract indices from, if necessary
+    job_value : Status
+        initial value of all the jobs
+
+    Returns
+    -------
+    _JobQueue
+        JobQueue object
+    """
+    if isinstance(jobs, _JobQueue):
+        return jobs
+
+    if isinstance(jobs, (Path, str)):
+        return _JobQueue.from_file(Path(jobs))
+
+    if input_data.is_empty():
+        return _JobQueue.from_data(output_data, value=job_value)
+
+    return _JobQueue.from_data(input_data, value=job_value)

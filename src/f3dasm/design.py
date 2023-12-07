@@ -1,3 +1,9 @@
+"""
+Module for design-of-experiments
+"""
+#                                                                       Modules
+# =============================================================================
+
 # Local
 from ._src.design.domain import Domain, make_nd_continuous_domain
 from ._src.design.parameter import (PARAMETERS, _CategoricalParameter,

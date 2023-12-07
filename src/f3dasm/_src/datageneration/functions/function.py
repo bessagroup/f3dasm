@@ -28,7 +28,9 @@ import matplotlib.pyplot as plt
 from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
+from ...design.domain import Domain
 # Locals
+from ...experimentdata.experimentsample import _experimentsample_factory
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 
@@ -100,13 +102,15 @@ class Function(DataGenerator):
             if isinstance(x, ArrayBox):
                 x = x._value
 
-        experiment_sample["y"] = self(x).ravel().astype(np.float32)
+        experiment_sample["y"] = float(self(x).ravel().astype(np.float32))
         return experiment_sample
 
     def _run(
-            self, experiment_sample: ExperimentSample,
-            **kwargs) -> ExperimentSample:
-        return self.execute(experiment_sample)
+            self, experiment_sample: ExperimentSample | np.ndarray,
+            domain: Optional[Domain] = None, **kwargs) -> ExperimentSample:
+        _experiment_sample = _experimentsample_factory(
+            experiment_sample=experiment_sample, domain=domain)
+        return self.execute(_experiment_sample)
 
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented

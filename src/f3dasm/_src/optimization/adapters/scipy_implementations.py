@@ -24,7 +24,8 @@ class _SciPyOptimizer(Optimizer):
     type: str = 'scipy'
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
-        self.data += ExperimentSample.from_numpy(xk)
+        self.data._add_experiments(
+            ExperimentSample.from_numpy(xk, domain=self.domain))
 
     def update_step(self):
         """Update step function"""
@@ -46,7 +47,7 @@ class _SciPyOptimizer(Optimizer):
 
         def fun(x):
             sample: ExperimentSample = data_generator._run(
-                ExperimentSample.from_numpy(x))
+                x, domain=self.domain)
             _, y = sample.to_numpy()
             return float(y)
 
@@ -58,11 +59,10 @@ class _SciPyOptimizer(Optimizer):
             # TODO: #89 Fix this with the newest gradient method!
             jac='3-point',
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
-
-            # x0=self.data.get_n_best_input_parameters_numpy(
-            #     nosamples=1).ravel(),
             callback=self._callback,
             options=self.hyperparameters.__dict__,
             bounds=self.domain.get_bounds(),
             tol=0.0,
         )
+
+        # self.data.evaluate(data_generator=data_generator)

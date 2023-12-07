@@ -7,17 +7,6 @@ Utility functions for the experimentdata module
 
 from __future__ import annotations
 
-# Standard
-from pathlib import Path
-from typing import Union
-
-# Third-party
-import numpy as np
-import pandas as pd
-
-# Local
-from ._data import _Data
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -25,10 +14,6 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
-
-DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]
-
-
 
 
 def number_of_updates(iterations: int, population: int):

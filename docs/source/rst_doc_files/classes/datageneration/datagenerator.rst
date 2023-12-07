@@ -4,10 +4,10 @@ Datagenerator
 =============
 
 The :class:`~f3dasm.datageneration.DataGenerator` class is the main class of the :mod:`~f3dasm.datageneration` module.
-It is used to generate :attr:`~f3dasm.design.ExperimentData.output_data` for the :class:`~f3dasm.design.ExperimentData` by taking a :class:`~f3dasm.design.ExperimentSample` object.
+It is used to generate :attr:`~f3dasm.ExperimentData.output_data` for the :class:`~f3dasm.ExperimentData` by taking a :class:`~f3dasm.ExperimentSample` object.
 
 The :class:`~f3dasm.datageneration.DataGenerator` can serve as the interface between the 
-:class:`~f3dasm.design.ExperimentData` object and any third-party simulation software.
+:class:`~f3dasm.ExperimentData` object and any third-party simulation software.
 
 .. image:: ../../../img/f3dasm-datageneration.png
     :width: 70%
@@ -17,12 +17,12 @@ The :class:`~f3dasm.datageneration.DataGenerator` can serve as the interface bet
 |
 
 Use the simulator in the data-driven process
-------------------------------------------
+--------------------------------------------
 
-In order to run your simulator on each of the :class:`~f3dasm.design.ExperimentSample` of your :class:`~f3dasm.design.ExperimentData`, you follow these steps:
+In order to run your simulator on each of the :class:`~f3dasm.ExperimentSample` of your :class:`~f3dasm.ExperimentData`, you follow these steps:
 In this case, we are utilizing a one of the :ref:`benchmark-functions` to mock a simulator.
 
-We provide the datagenerator to the :meth:`~f3dasm.design.ExperimentData.evaluate` function with the :class:`~f3dasm.datageneration.DataGenerator` object as an argument.
+We provide the datagenerator to the :meth:`~f3dasm.ExperimentData.evaluate` function with the :class:`~f3dasm.datageneration.DataGenerator` object as an argument.
 
     .. code-block:: python
 
@@ -30,14 +30,14 @@ We provide the datagenerator to the :meth:`~f3dasm.design.ExperimentData.evaluat
 
 .. note::
 
-    Any key-word arguments that need to be passed down to the :class:`~f3dasm.datageneration.DataGenerator` can be passed in the :code:`kwargs` argument of the :meth:`~f3dasm.design.ExperimentData.evaluate` function.
+    Any key-word arguments that need to be passed down to the :class:`~f3dasm.datageneration.DataGenerator` can be passed in the :code:`kwargs` argument of the :meth:`~f3dasm.ExperimentData.evaluate` function.
 
 
-There are three methods available of handeling the :class:`~f3dasm.design.ExperimentSample` objects:
+There are three methods available of handeling the :class:`~f3dasm.ExperimentSample` objects:
 
-* :code:`sequential`: regular for-loop over each of the :class:`~f3dasm.design.ExperimentSample` objects in order
-* :code:`parallel`: utilizing the multiprocessing capabilities (with the `pathos <https://pathos.readthedocs.io/en/latest/pathos.html>`_ multiprocessing library), each :class:`~f3dasm.design.ExperimentSample` object is run in a separate core
-* :code:`cluster`: utilizing the multiprocessing capabilities, each :class:`~f3dasm.design.ExperimentSample` object is run in a separate node. After completion of an sample, the node will automatically pick the next available sample. More information on this mode can be found in the :ref:`cluster-mode` section.
+* :code:`sequential`: regular for-loop over each of the :class:`~f3dasm.ExperimentSample` objects in order
+* :code:`parallel`: utilizing the multiprocessing capabilities (with the `pathos <https://pathos.readthedocs.io/en/latest/pathos.html>`_ multiprocessing library), each :class:`~f3dasm.ExperimentSample` object is run in a separate core
+* :code:`cluster`: utilizing the multiprocessing capabilities, each :class:`~f3dasm.ExperimentSample` object is run in a separate node. After completion of an sample, the node will automatically pick the next available sample. More information on this mode can be found in the :ref:`cluster-mode` section.
 
 
 Implement your simulator
@@ -65,16 +65,16 @@ Once you have created the  ``data_generator`` object, you can plug-in a pre-proc
 
 pre-processing
 ^^^^^^^^^^^^^^
-The preprocessing method is used to create a simulator input file from the information in the :class:`~f3dasm.design.ExperimentSample`.
+The preprocessing method is used to create a simulator input file from the information in the :class:`~f3dasm.ExperimentSample`.
 
 
 This method should adhere to a few things:
 
-* The first argument of the function needs to be ``experiment_sample`` of type :class:`~f3dasm.design.ExperimentSample`.
+* The first argument of the function needs to be ``experiment_sample`` of type :class:`~f3dasm.ExperimentSample`.
 * The method should return None.
 * The method should create the input file ready for the simulator to process with the job_number as name (``experiment_sample.job_number``) 
 
-You can retrieve the parameters of the :class:`~f3dasm.design.ExperimentSample` object by calling the :meth:`~f3dasm.design.ExperimentSample.get` method.
+You can retrieve the parameters of the :class:`~f3dasm.ExperimentSample` object by calling the :meth:`~f3dasm.ExperimentSample.get` method.
 
 You can add the ``pre-process-function`` to the :class:`~f3dasm.datageneration.DataGenerator` object by passing it through the :meth:`~f3dasm.datageneration.DataGenerator.add_pre_process` method:
 
@@ -90,13 +90,12 @@ You can add the ``pre-process-function`` to the :class:`~f3dasm.datageneration.D
 post-processing
 ^^^^^^^^^^^^^^^
 
-* :meth:`~f3dasm.datageneration.DataGenerator.execute` - The main functon call to run the simulation. Returns None.
 The post-processing method converts the output of the simulator to a ``results.pkl`` `pickle <https://docs.python.org/3/library/pickle.html>`_ file.
-This ``results.pkl`` is then loaded into the :class:`~f3dasm.design.ExperimentData` object.
+This ``results.pkl`` is then loaded into the :class:`~f3dasm.ExperimentData` object.
 
 This method should adhere to a few things:
 
-* The first argument of the function needs to be ``experiment_sample`` of type :class:`~f3dasm.design.ExperimentSample`.
+* The first argument of the function needs to be ``experiment_sample`` of type :class:`~f3dasm.ExperimentSample`.
 * The method should return None.
 * The method read the output of the simulator (it's name is ``experiment_sample.job_number``) and convert it to a ``results.pkl`` file.
 * This pickle file is stored in the current working directory.

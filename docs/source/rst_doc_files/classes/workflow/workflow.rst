@@ -13,7 +13,7 @@ Example with built-ins
 
 In the following examples, we will create a workflow for the following data-driven process:
 
-* Create a 20D continuous :class:`~f3dasm.design.domain.Domain`
+* Create a 20D continuous :class:`~f3dasm.design.Domain`
 * Sample from the domain using the built-in Latin-hypercube sampler
 * Use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
 * Optimize the data generation function using the built-in ``"LBFGSB"`` optimizer.
@@ -46,7 +46,7 @@ main.py
 ^^^^^^^
 
 The `main.py` file is the main entry point of the project. It contains the :mod:`f3dasm` classes and acts on these interfaces.
-In the main function, we create the :class:`~f3dasm.design.domain.Domain`, sample from it, evaluate the samples with the data generation function and optimize with the optimizer.
+In the main function, we create the :class:`~f3dasm.design.Domain`, sample from it, evaluate the samples with the data generation function and optimize with the optimizer.
 
 .. code-block:: python
    :caption: main.py
@@ -136,16 +136,18 @@ Adding your own simulator
 If you want to substitute the built-in data generation ``"Ackley"`` function with your own simulator, you can do so by adding it to ``my_script``:
 
 
-Now, the `my_script.py` file contains your own `MySimulator` class. You have to add the ``execute`` function so that it conforms with the :class:`~f3dasm.datageneration.datagenerator.DataGenerator` interface. 
+Now, the `my_script.py` file contains your own `MySimulator` class. You have to add the ``execute`` function so that it conforms with the :class:`~f3dasm.datageneration.DataGenerator` interface. 
 In addition, you should add a ``pre_process_function`` and a ``post_processing_function`` to the class. 
 
 .. note::
-    Learn more about complying to the :class:`~f3dasm.datageneration.datagenerator.DataGenerator` interface in the :ref:`data-generation` section.
+    Learn more about complying to the :class:`~f3dasm.datageneration.DataGenerator` interface in the :ref:`data-generation` section.
 
 .. code-block:: python
    :caption: my_script.py
 
     from f3dasm import ExperimentSample
+    from f3dasm.datageneration import DataGenerator
+
 
     class MySimulator(DataGenerator):
         def execute(self):
@@ -198,7 +200,8 @@ In order to add you own optimizer, you can add it to the `my_script.py` file:
 .. code-block:: python
    :caption: my_script.py
 
-    from f3dasm import Optimizer, DataGenerator
+    from f3dasm.optimization import Optimizer
+    from f3dasm.datagenerationr import DataGenerator
 
     class MyOptimizer(Optimizer):
         def update_step(self, data_generator: DataGenerator):

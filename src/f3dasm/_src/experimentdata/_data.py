@@ -6,7 +6,8 @@ from __future__ import annotations
 # Standard
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
+                    Union)
 
 # Third-party
 import numpy as np
@@ -57,12 +58,12 @@ class _Data:
             self.current_index += 1
             return current_value
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+    def __getitem__(self, index: int | Iterable[int]) -> _Data:
         """Get a subset of the data.
 
         Parameters
         ----------
-        index : int, slice, list
+        index : int, list
             The index of the data to get.
 
         Returns
@@ -71,7 +72,8 @@ class _Data:
         """
         if isinstance(index, int):
             index = [index]
-        return _Data(self.data.loc[index].copy())
+        return _Data(data=self.data.loc[index].copy(),
+                     columns=self.columns)
 
     def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
         """Add two Data objects together.
@@ -283,7 +285,7 @@ class _Data:
         Note
         ----
         This function is mainly used to show the combined ExperimentData
-         object in a Jupyter Notebook
+        object in a Jupyter Notebook
         """
         return pd.concat([jobs_df, self.to_dataframe(),
                           other.to_dataframe()],
@@ -296,6 +298,10 @@ class _Data:
         ----------
         filename : Path
             The filename to store the data to.
+
+        Note
+        ----
+        The data is stored as a csv file.
         """
         # TODO: The column information is not saved in the .csv!
         self.to_dataframe().to_csv(filename.with_suffix('.csv'))
@@ -340,6 +346,7 @@ class _Data:
             {column: self.columns.columns[column] for column in columns})
         return _Data(
             self.data[self.columns.iloc(columns)], columns=_selected_columns)
+
 #                                                        Append and remove data
 # =============================================================================
 
@@ -379,14 +386,11 @@ class _Data:
         self.columns.add(name)
         self.data[new_columns_index] = np.nan
 
-    def fill_numpy_arrays(self, array: np.ndarray) -> Iterable[int]:
-        # get the indices of the nan values
-        idx, _ = np.where(np.isnan(self.data))
-        self.data.loc[np.unique(idx)] = array
-        return np.unique(idx)
-
     def remove(self, indices: List[int]):
         self.data = self.data.drop(indices)
+
+    def round(self, decimals: int):
+        self.data = self.data.round(decimals=decimals)
 
 #                                                           Getters and setters
 # =============================================================================
@@ -414,9 +418,23 @@ class _Data:
             self.data = self.data.astype(object)
             self.data.at[index, _column_index] = value
 
-    def reset_index(self) -> None:
-        """Reset the index of the data."""
-        self.data.reset_index(drop=True, inplace=True)
+    def reset_index(self, indices: Optional[Iterable[int]] = None) -> None:
+        """Reset the index of the data.
+
+        Parameters
+        ----------
+        indices : Optional[Iterable[int]], optional
+            The indices to reset, by default None
+
+        Note
+        ----
+        If indices is None, the entire index will be reset to a RangeIndex
+        with the same length as the data.
+        """
+        if indices is None:
+            self.data.reset_index(drop=True, inplace=True)
+        else:
+            self.data.index = indices
 
     def is_empty(self) -> bool:
         """Check if the data is empty."""
@@ -428,6 +446,24 @@ class _Data:
     def set_columnnames(self, names: Iterable[str]) -> None:
         for old_name, new_name in zip(self.names, names):
             self.columns.rename(old_name, new_name)
+
+    def cast_types(self, domain: Domain):
+        """Cast the types of the data to the types of the domain.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain with specific parameters to cast the types to.
+
+        Raises
+        ------
+        ValueError
+            If the types of the domain and the data do not match.
+        """
+        _dtypes = {index: parameter._type
+                   for index, (_, parameter) in enumerate(
+                       domain.space.items())}
+        self.data = self.data.astype(_dtypes)
 
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
@@ -447,3 +483,28 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     _columns = {name: None for name in dictionary.keys()}
     df = pd.DataFrame(dictionary, index=[0]).copy()
     return _Data(data=df, columns=_Columns(_columns))
+
+
+def _data_factory(data: DataTypes) -> _Data:
+    if data is None:
+        return _Data()
+
+    elif isinstance(data, _Data):
+        return data
+
+    elif isinstance(data, pd.DataFrame):
+        return _Data.from_dataframe(data)
+
+    elif isinstance(data, (Path, str)):
+        return _Data.from_file(data)
+
+    elif isinstance(data, np.ndarray):
+        return _Data.from_numpy(data)
+
+    else:
+        raise TypeError(
+            f"Data must be of type _Data, pd.DataFrame, np.ndarray, "
+            f"Path or str, not {type(data)}")
+
+
+DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, _Data]

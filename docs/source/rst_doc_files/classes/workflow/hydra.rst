@@ -14,7 +14,7 @@ Example
 
 The following example is the same as in section :ref:`workflow`; we will create a workflow for the following data-driven process:
 
-* Create a 2D continuous :class:`~f3dasm.design.domain.Domain`
+* Create a 2D continuous :class:`~f3dasm.design.Domain`
 * Sample from the domain using a the Latin-hypercube sampler
 * Use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
 * Optimize the data generation function using the built-in ``"L-BFGS-B"`` optimizer.
@@ -60,10 +60,10 @@ You can create configurations for each of the :mod:`f3dasm` classes:
 ============================================================= ======================================================
 Class                                                         Section referencing how to create the `hydra`_ config            
 ============================================================= ======================================================
-:class:`~f3dasm.design.domain.Domain`                         :ref:`domain-from-yaml`         
-:class:`~f3dasm.design.experimentdata.ExperimentData`         :ref:`experimentdata-hydra`
-:class:`~f3dasm.optimization.optimizer.Optimizer`             to be implemented!
-:class:`~f3dasm.datageneration.datagenerator.DataGenerator`   to be implemented!
+:class:`~f3dasm.design.Domain`                                :ref:`domain-from-yaml`         
+:class:`~f3dasm.ExperimentData`                               :ref:`experimentdata-hydra`
+:class:`~f3dasm.optimization.Optimizer`                       to be implemented!
+:class:`~f3dasm.datageneration.DataGenerator`                 to be implemented!
 ============================================================= ======================================================
 
 
@@ -104,7 +104,7 @@ The `main.py` file is the main entry point of the project.
 
 * It imports the necessary modules (`f3dasm`, `hydra`) and the `my_function` from `my_script.py`. 
 * Inside `main.py` script defines a :code:`main` function decorated with :code:`@hydra.main`, which reads the configuration from :code:`config.yaml`. 
-* Within the :code:`main` function, we instantiate the :class:`~f3dasm.design.domain.Domain`, sample from the Lating Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.design.experimentdata.Experiment.run` method with the specified execution mode.
+* Within the :code:`main` function, we instantiate the :class:`~f3dasm.design.Domain`, sample from the Lating Hypercube sampler , and executes the data generation function (`my_function`) using the :meth:`~f3dasm.ExperimentData.Experiment.run` method with the specified execution mode.
 
 
 
