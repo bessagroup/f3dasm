@@ -377,6 +377,34 @@ class ExperimentData:
                               jobs=self._jobs[indices],
                               domain=self.domain, project_dir=self.project_dir)
 
+    def select_with_status(self, status: Literal['open', 'in progress',
+                                                 'finished', 'error']
+                           ) -> ExperimentData:
+        """Select a subset of the ExperimentData object with a given status
+
+        Parameters
+        ----------
+        status : Literal['open', 'in progress', 'finished', 'error']
+            The status to select.
+
+        Returns
+        -------
+        ExperimentData
+            The selected ExperimentData object with only the selected status.
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid status is specified
+        """
+        if status not in [s.value for s in Status]:
+            raise ValueError(f"Invalid status {status} given. "
+                             f"\nChoose from values: "
+                             f"{', '.join([s.value for s in Status])}")
+
+        _indices = self._jobs.select_all(status).indices
+        return self.select(_indices)
+
     def get_input_data(self,
                        parameter_names: Optional[str | Iterable[str]] = None
                        ) -> ExperimentData:
