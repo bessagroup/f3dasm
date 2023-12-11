@@ -82,7 +82,9 @@ def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, op
 @pytest.mark.parametrize("iterations", [10, 23, 66, 86])
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 @pytest.mark.parametrize("data_generator", ["sphere"])
-def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: str):
+@pytest.mark.parametrize("x0_selection", ["best", "new"])
+def test_optimizer_iterations(iterations: int, data_generator: str,
+                              optimizer: str, x0_selection: str):
     numsamples = 40  # initial samples
     seed = 42
 
@@ -111,12 +113,24 @@ def test_optimizer_iterations(iterations: int, data_generator: str, optimizer: s
     data.evaluate(data_generator, mode='sequential', kwargs={'seed': seed, 'noise': None,
                                                              'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
 
-    data.optimize(optimizer=optimizer, data_generator=data_generator,
-                  iterations=iterations, kwargs={'seed': seed, 'noise': None,
-                                                 'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
-                  hyperparameters={'seed': seed})
+    _optimizer = _optimizer_factory(optimizer, domain=domain)
 
-    assert len(data) == (iterations + numsamples)
+    if x0_selection == "new" and iterations < _optimizer.hyperparameters.population:
+        with pytest.raises(ValueError):
+            data.optimize(optimizer=optimizer, data_generator=data_generator,
+                          iterations=iterations, kwargs={'seed': seed, 'noise': None,
+                                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
+                          hyperparameters={'seed': seed},
+                          x0_selection=x0_selection)
+    else:
+
+        data.optimize(optimizer=optimizer, data_generator=data_generator,
+                      iterations=iterations, kwargs={'seed': seed, 'noise': None,
+                                                     'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
+                      hyperparameters={'seed': seed},
+                      x0_selection=x0_selection)
+
+        assert len(data) == (iterations + numsamples)
 
 
 if __name__ == "__main__":  # pragma: no cover

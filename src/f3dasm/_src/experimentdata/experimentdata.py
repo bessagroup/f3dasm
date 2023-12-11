@@ -1055,7 +1055,8 @@ class ExperimentData:
                  data_generator: DataGenerator | str,
                  iterations: int, kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None,
-                 x0_selection: str = 'best') -> None:
+                 x0_selection: str = 'best',
+                 sampler: Optional[Sampler | str] = 'random') -> None:
         """Optimize the experimentdata object
 
         Parameters
@@ -1074,6 +1075,8 @@ class ExperimentData:
             optimizer, by default None
         x0_selection : str, optional
             How to select the initial design, by default 'best'
+        sampler : Sampler | str
+            Sampler to use, by default 'random'
 
         Raises
         ------
@@ -1089,6 +1092,10 @@ class ExperimentData:
         * 'best': Select the best designs from the current experimentdata
         * 'random': Select random designs from the current experimentdata
         * 'last': Select the last designs from the current experimentdata
+        * 'new': Create new random designs from the current experimentdata
+
+        If the x0_selection is 'new', new designs are sampled with the
+        sampler provided.
 
         The number of designs selected is equal to the \
         population size of the optimizer
@@ -1101,15 +1108,25 @@ class ExperimentData:
             optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
+        if isinstance(sampler, str):
+            sampler: Sampler = _sampler_factory(sampler, self.domain)
+
         if optimizer.type == 'scipy':
             self._iterate_scipy(
-                optimizer, data_generator, iterations, kwargs, x0_selection)
+                optimizer=optimizer, data_generator=data_generator,
+                iterations=iterations, kwargs=kwargs,
+                x0_selection=x0_selection,
+                sampler=sampler)
         else:
             self._iterate(
-                optimizer, data_generator, iterations, kwargs, x0_selection)
+                optimizer=optimizer, data_generator=data_generator,
+                iterations=iterations, kwargs=kwargs,
+                x0_selection=x0_selection,
+                sampler=sampler)
 
     def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
-                 iterations: int, kwargs: dict, x0_selection: str):
+                 iterations: int, kwargs: dict, x0_selection: str,
+                 sampler: Sampler):
         """Internal represenation of the iteration process
 
         Parameters
@@ -1125,6 +1142,8 @@ class ExperimentData:
             the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
+        sampler: Sampler
+            If x0_selection = 'new', the sampler to use
 
         Raises
         ------
@@ -1138,10 +1157,33 @@ class ExperimentData:
         * 'best': Select the best designs from the current experimentdata
         * 'random': Select random designs from the current experimentdata
         * 'last': Select the last designs from the current experimentdata
+        * 'new': Create new random designs from the current experimentdata
 
-        The number of designs selected is equal to the \
+        If the x0_selection is 'new', new designs are sampled with the
+        sampler provided.
+
+        The number of designs selected is equal to the
         population size of the optimizer
         """
+
+        if x0_selection == 'new':
+
+            if iterations < optimizer.hyperparameters.population:
+                raise ValueError(
+                    f'For creating new samples, the total number of requested '
+                    f'iterations ({iterations}) cannot be '
+                    f'smaller than the population size '
+                    f'({optimizer.hyperparameters.population})')
+
+            self.sample(sampler=sampler,
+                        n_samples=optimizer.hyperparameters.population,
+                        seed=optimizer.seed)
+
+            self.evaluate(data_generator=data_generator, kwargs=kwargs)
+
+            x0_selection = 'last'
+            iterations -= optimizer.hyperparameters.population
+
         optimizer.set_x0(self, mode=x0_selection)
         optimizer._check_number_of_datapoints()
 
@@ -1175,7 +1217,7 @@ class ExperimentData:
     def _iterate_scipy(self, optimizer: Optimizer,
                        data_generator: DataGenerator,
                        iterations: int, kwargs: dict,
-                       x0_selection: str):
+                       x0_selection: str, sampler: Sampler):
         """Internal represenation of the iteration process for s
         cipy-optimize algorithms
 
@@ -1192,6 +1234,8 @@ class ExperimentData:
             to the DataGenerator, by default None
         x0_selection : str
             How to select the initial design
+        sampler: Sampler
+            If x0_selection = 'new', the sampler to use
 
         Raises
         ------
@@ -1205,13 +1249,33 @@ class ExperimentData:
         * 'best': Select the best designs from the current experimentdata
         * 'random': Select random designs from the current experimentdata
         * 'last': Select the last designs from the current experimentdata
+        * 'new': Create new random designs from the current experimentdata
 
-        The number of designs selected is equal to the \
+        If the x0_selection is 'new', new designs are sampled with the
+        sampler provided.
+
+        The number of designs selected is equal to the
         population size of the optimizer
         """
+        n_data_before_iterate = len(self)
+
+        if x0_selection == 'new':
+
+            if iterations < optimizer.hyperparameters.population:
+                raise ValueError(
+                    f'For creating new samples, the number of requested '
+                    f'iterations ({iterations}) cannot be'
+                    f'smaller than the population size '
+                    f'({optimizer.hyperparameters.population})')
+
+            self.sample(sampler='random',
+                        n_samples=optimizer.hyperparameters.population,
+                        seed=optimizer.seed)
+
+            self.evaluate(data_generator=data_generator, kwargs=kwargs)
+            x0_selection = 'last'
 
         optimizer.set_x0(self, mode=x0_selection)
-        n_data_before_iterate = len(self)
         optimizer._check_number_of_datapoints()
 
         optimizer.run_algorithm(iterations, data_generator)
@@ -1225,14 +1289,8 @@ class ExperimentData:
         if len(self) == n_data_before_iterate:
             repeated_x, repeated_y = self.get_n_best_output(
                 n_samples=1).to_numpy()
-            # repeated_last_element = self.get_n_best_output(
-            #     n_samples=1).to_numpy()[0].ravel()
 
             for repetition in range(iterations):
-                # self._add_experiments(
-                #     ExperimentSample.from_numpy(repeated_last_element,
-                #                                 domain=self.domain))
-
                 self.add(
                     domain=self.domain, input_data=repeated_x,
                     output_data=repeated_y)
