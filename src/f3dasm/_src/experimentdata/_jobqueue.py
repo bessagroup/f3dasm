@@ -167,6 +167,24 @@ class _JobQueue:
         """Resets the job queue."""
         self.jobs = pd.Series(dtype='string')
 
+    #                                                                    Select
+    # =========================================================================
+
+    def select_all(self, status: str) -> _JobQueue:
+        """Selects all jobs with a certain status.
+
+        Parameters
+        ----------
+        status : str
+            Status of the jobs to select
+
+        Returns
+        -------
+        JobQueue
+            JobQueue object containing the selected jobs.
+        """
+        return _JobQueue(self.jobs[self.jobs == status])
+
     #                                                                    Export
     # =========================================================================
 

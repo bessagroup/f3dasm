@@ -703,5 +703,29 @@ def test_iter_behaviour(experimentdata_continuous: ExperimentData):
         assert isinstance(i, ExperimentSample)
 
 
+def test_select_with_status_open(experimentdata: ExperimentData):
+    selected_data = experimentdata.select_with_status('open')
+    assert all(job == Status.OPEN for job in selected_data._jobs.jobs)
+
+
+def test_select_with_status_in_progress(experimentdata: ExperimentData):
+    selected_data = experimentdata.select_with_status('in progress')
+    assert all(job == Status.IN_PROGRESS for job in selected_data._jobs.jobs)
+
+
+def test_select_with_status_finished(experimentdata: ExperimentData):
+    selected_data = experimentdata.select_with_status('finished')
+    assert all(job == Status.FINISHED for job in selected_data._jobs.jobs)
+
+
+def test_select_with_status_error(experimentdata: ExperimentData):
+    selected_data = experimentdata.select_with_status('error')
+    assert all(job == Status.ERROR for job in selected_data._jobs.jobs)
+
+
+def test_select_with_status_invalid_status(experimentdata: ExperimentData):
+    with pytest.raises(ValueError):
+        _ = experimentdata.select_with_status('invalid_status')
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()
