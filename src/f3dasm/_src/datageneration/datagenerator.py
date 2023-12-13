@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 from abc import abstractmethod
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 if sys.version_info < (3, 8):  # NOQA
     from typing_extensions import Protocol  # NOQA
@@ -187,3 +187,69 @@ class DataGenerator:
             The keyword arguments to pass to the post-processing function
         """
         self.post_process = partial(func, **kwargs)
+
+
+def convert_function(f: Callable,
+                     input: List[str],
+                     output: Optional[List[str]] = None,
+                     kwargs: Optional[Dict[str, Any]] = None,
+                     to_disk: Optional[List[str]] = None) -> DataGenerator:
+    """
+    Converts a given function `f` into a `DataGenerator` object.
+
+    Parameters
+    ----------
+    f : Callable
+        The function to be converted.
+    input : List[str]
+        A list of argument names required by the function.
+    output : Optional[List[str]], optional
+        A list of names for the return values of the function.
+        Defaults to None.
+    kwargs : Optional[Dict[str, Any]], optional
+        Additional keyword arguments passed to the function. Defaults to None.
+    to_disk : Optional[List[str]], optional
+        The list of output names where the value needs to be stored on disk.
+        Defaults to None.
+
+    Returns
+    -------
+    DataGenerator
+        A converted `DataGenerator` object.
+
+    Notes
+    -----
+
+    The function `f` can have any number of arguments and any number of returns
+    as long as they are consistent with the `input` and `output` arguments that
+    are given to this function.
+    """
+
+    kwargs = kwargs if kwargs is not None else {}
+    to_disk = to_disk if to_disk is not None else []
+    output = output if output is not None else []
+
+    class TempDataGenerator(DataGenerator):
+        def execute(self, **_kwargs) -> None:
+            _input = {input_name: self.experiment_sample.get(input_name)
+                      for input_name in input}
+            _output = f(**_input, **kwargs)
+
+            # check if output is empty
+            if output is None:
+                return
+
+            if len(output) == 1:
+                _output = (_output,)
+
+            for name, value in zip(output, _output):
+                if name in to_disk:
+                    self.experiment_sample.store(name=name,
+                                                 object=value,
+                                                 to_disk=True)
+                else:
+                    self.experiment_sample.store(name=name,
+                                                 object=value,
+                                                 to_disk=False)
+
+    return TempDataGenerator()
