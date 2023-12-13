@@ -86,17 +86,17 @@ class Optimizer:
             Domain indicating the search-space of the optimization parameters
         seed : Optional[int], optional
             Seed of the random number generator for stochastic optimization
-             processes, by default None, set to random
+            processes, by default None, set to random
         name : Optional[str], optional
             Name of the optimization object, by default None,
-             it will use the name of the class
+            it will use the name of the class
 
 
         Note
         ----
 
         Any additional keyword arguments will be used to overwrite
-         the default hyperparameters of the optimizer.
+        the default hyperparameters of the optimizer.
         """
 
         # Check if **hyperparameters is empty
@@ -152,7 +152,7 @@ class Optimizer:
 
     def reset(self, data: ExperimentData):
         """Reset the optimizer to its initial state"""
-        self.data = data
+        self.set_data(data)
         self.__post_init__()
 
     def set_data(self, data: ExperimentData):
@@ -200,7 +200,7 @@ class Optimizer:
                 f'Unknown selection mode {mode}, use best, random or last')
 
         x0._reset_index()
-        self.data = x0
+        self.set_data(x0)
 
     def get_name(self) -> str:
         """Get the name of the optimizer
