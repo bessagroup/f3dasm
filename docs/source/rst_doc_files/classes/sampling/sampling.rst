@@ -21,9 +21,6 @@ The function should return the samples (``input_data``) in one of the following 
 * A :class:`~pandas.DataFrame` object
 * A :class:`~numpy.ndarray` object
 
-.. note::
-   
-   ...
 
 
 .. _implemented samplers:
@@ -36,7 +33,6 @@ To use the sampler in the data-driven process, you should pass the function to t
 .. code-block:: python
 
    from f3dasm.design import ExperimentData, Domain
-   from 
 
    domain = Domain(...)
    # Create the ExperimentData object
@@ -63,4 +59,5 @@ Name                     Method                                                 
 ``"random"``             Random Uniform sampling                                                `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
 ``"latin"``              Latin Hypercube sampling                                               `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
 ``"sobol"``              Sobol Sequence sampling                                                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
+``"grid"``               Grid Search sampling                                                   `itertools.product <https://docs.python.org/3/library/itertools.html#itertools.product>`_
 ======================== ====================================================================== ===========================================================================================================

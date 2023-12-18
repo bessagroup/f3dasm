@@ -277,8 +277,9 @@ class ExperimentData:
 
         Parameters
         ----------
-        sampler : Sampler
-            Sampler object containing the sampling strategy.
+        sampler : Sampler | str
+            Sampler object containing the sampling strategy or one of the
+            built-in sampler names.
         domain : Domain | DictConfig
             Domain object containing the domain of the experiment or hydra
             DictConfig object containing the configuration.
@@ -291,6 +292,17 @@ class ExperimentData:
         -------
         ExperimentData
             ExperimentData object containing the sampled data.
+
+        Note
+        ----
+
+        If a string is passed for the sampler argument, it should be one
+        of the built-in samplers:
+
+        * 'random' : Random sampling
+        * 'latin' : Latin Hypercube Sampling
+        * 'sobol' : Sobol Sequence Sampling
+        * 'grid' : Grid Search Sampling
         """
         experimentdata = cls(domain=domain)
         experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
@@ -1359,6 +1371,7 @@ class ExperimentData:
         * 'random' : Random sampling
         * 'latin' : Latin Hypercube Sampling
         * 'sobol' : Sobol Sequence Sampling
+        * 'grid' : Grid Search Sampling
 
         Raises
         ------
