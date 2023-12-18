@@ -653,7 +653,7 @@ class ExperimentData:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self._input_data.cast_types(self.domain)
+        # self._input_data.cast_types(self.domain)
 
     def add_input_parameter(
         self, name: str,
