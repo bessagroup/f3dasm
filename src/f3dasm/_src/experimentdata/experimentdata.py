@@ -655,6 +655,87 @@ class ExperimentData:
         # TODO: Breaks if values are NaN or infinite
         # self._input_data.cast_types(self.domain)
 
+    def overwrite(
+        self, indices: Iterable[int],
+            domain: Optional[Domain] = None,
+            input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None,
+            jobs: Optional[Path | str] = None,
+            add_if_not_exist: bool = False
+    ) -> None:
+        """Overwrite the ExperimentData object.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        domain : Optional[Domain], optional
+            Domain of the new object, by default None
+        input_data : Optional[DataTypes], optional
+            input parameters of the new object, by default None
+        output_data : Optional[DataTypes], optional
+            output parameters of the new object, by default None
+        jobs : Optional[Path  |  str], optional
+            jobs off the new object, by default None
+        add_if_not_exist : bool, optional
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object, by default False
+        """
+        self._overwrite(
+            indices=indices,
+            experiment_sample=ExperimentData(
+                domain=domain, input_data=input_data,
+                output_data=output_data,
+                jobs=jobs),
+            add_if_not_exist=add_if_not_exist)
+
+    def _overwrite(
+        self, indices: Iterable[int],
+            experiment_sample: ExperimentSample | ExperimentData,
+            add_if_not_exist: bool) -> None:
+        """
+        Overwrite the ExperimentData object at the given indices.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        experimentdata : ExperimentData | ExperimentSample
+            The new ExperimentData object to overwrite with.
+        add_if_not_exist : bool
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object.
+        """
+        if not all(pd.Index(indices).isin(self.index)):
+            if add_if_not_exist:
+                self._add_experiments(experiment_sample)
+                return
+            else:
+                raise ValueError(
+                    f"The given indices {indices} do not exist in the current "
+                    f"ExperimentData object. "
+                    f"If you want to add the new experiments, "
+                    f"set add_if_not_exist to True.")
+
+        self._input_data.overwrite(
+            indices=indices, other=experiment_sample._input_data)
+        self._output_data.overwrite(
+            indices=indices, other=experiment_sample._output_data)
+
+        # if isinstance(experiment_sample, ExperimentSample):
+        #     # Check if the output_data contains an output
+        #     if experiment_sample._output_data:
+        #         status = 'finished'
+        #     # If not, the status is open
+        #     else:
+        #         status = 'open'
+
+        # else:
+        #     status = None
+
+        self._jobs.overwrite(
+            indices=indices, other=experiment_sample._jobs)
+
     def add_input_parameter(
         self, name: str,
         type: Literal['float', 'int', 'category', 'constant'],
@@ -1146,14 +1227,17 @@ class ExperimentData:
         The number of designs selected is equal to the \
         population size of the optimizer
         """
+        # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
+        # Create the optimizer object if a string reference is passed
         if isinstance(optimizer, str):
             optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
+        # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
             sampler: Sampler = _sampler_factory(sampler, self.domain)
 

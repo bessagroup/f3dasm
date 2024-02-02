@@ -640,6 +640,13 @@ class _Data:
         self.data = [[round(value, decimals) for value in row]
                      for row in self.data]
 
+    def overwrite(self, data: _Data, indices: Iterable[int]):
+        # TODO: Implement this method!
+        ...
+
+#                                                           Getters and setters
+# =============================================================================
+
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         """
         Get the data as a dictionary.

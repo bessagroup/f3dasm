@@ -10,7 +10,7 @@ from __future__ import annotations
 
 # Standard
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Literal, Optional, Tuple, Type
 
 # Third-party
 import autograd.numpy as np
@@ -257,8 +257,24 @@ class ExperimentSample:
         """
         return self._jobnumber
 
+    @property
+    def jobs(self) -> Literal['finished', 'open']:
+        """Retrieve the job status.
+
+        Returns
+        -------
+        str
+            The job number of the design as a tuple.
+        """
+        # Check if the output contains values
+        if self._dict_output:
+            status = 'finished'
+        else:
+            status = 'open'
+
+        return status
+
     # Alias
-    jobs = job_number
     _jobs = jobs
 
 #                                                                        Export

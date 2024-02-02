@@ -63,7 +63,7 @@ class _JobQueue:
 
         self.jobs: pd.Series = jobs
 
-    def __add__(self, other: _JobQueue | int) -> _JobQueue:
+    def __add__(self, other: _JobQueue | str) -> _JobQueue:
         """Add two JobQueue objects together.
 
         Parameters
@@ -76,10 +76,10 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the added jobs.
         """
-        if isinstance(other, int):
+        if isinstance(other, str):
             # make _JobQueue from the jobnumber
             other = _JobQueue(
-                pd.Series([Status.OPEN], index=[0], dtype='string'))
+                pd.Series(other, index=[0], dtype='string'))
 
         try:
             last_index = self.jobs.index[-1]
@@ -250,6 +250,16 @@ class _JobQueue:
             start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
         jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
         self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
+
+    def overwrite(
+            self, indices: Iterable[int],
+            other: _JobQueue | str) -> None:
+
+        if isinstance(other, str):
+            other = _JobQueue(
+                pd.Series([other], index=[0], dtype='string'))
+
+        self.jobs.update(other.jobs.set_axis(indices))
 
     #                                                                      Mark
     # =========================================================================
