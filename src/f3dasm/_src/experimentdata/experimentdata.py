@@ -918,6 +918,12 @@ class ExperimentData:
         Mark all the experiments that have the status 'error' open
         """
         self._jobs.mark_all_error_open()
+
+    def mark_all_in_progress_open(self) -> None:
+        """
+        Mark all the experiments that have the status 'in progress' open
+        """
+        self._jobs.mark_all_in_progress_open()
     #                                                            Datageneration
     # =========================================================================
 
