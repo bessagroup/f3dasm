@@ -753,7 +753,6 @@ class Domain:
         """
         for output_name in names:
             if not self.is_in_output(output_name):
-                print(f"Output {output_name} not in domain. Adding it.")
                 self.add_output(output_name, to_disk=False)
 
     def is_in_output(self, output_name: str) -> bool:
