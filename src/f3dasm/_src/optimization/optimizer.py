@@ -159,7 +159,8 @@ class Optimizer:
         """Set the data attribute to the given data"""
         self.data = data
 
-    def set_x0(self, experiment_data: ExperimentData, mode: str):
+    def set_x0(self, experiment_data: ExperimentData,
+               mode: str | ExperimentData):
         """Set the initial population to the best n samples of the given data
 
         Parameters
@@ -181,7 +182,10 @@ class Optimizer:
             - random: select n random samples
             - last: select the last n samples
         """
-        if mode.lower() == 'best':
+        if isinstance(mode, ExperimentData):
+            x0 = mode
+
+        elif mode.lower() == 'best':
             x0 = experiment_data.get_n_best_output(
                 self.hyperparameters.population)
 
