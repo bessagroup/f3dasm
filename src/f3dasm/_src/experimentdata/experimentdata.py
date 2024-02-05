@@ -1182,7 +1182,8 @@ class ExperimentData:
                  x0_selection: Literal['best',
                                        'random', 'last', 'new'] = 'best',
                  sampler: Optional[Sampler | str] = 'random',
-                 overwrite: bool = False) -> None:
+                 overwrite: bool = False,
+                 callback: Optional[Callable] = None) -> None:
         """Optimize the experimentdata object
 
         Parameters
@@ -1206,6 +1207,9 @@ class ExperimentData:
         overwrite : bool
             If True, the optimizer will overwrite the current data,
             by default False
+        callback : Callable, optional
+            A callback function that is called after every iteration,
+            by default None
 
         Raises
         ------
@@ -1250,18 +1254,21 @@ class ExperimentData:
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
                 sampler=sampler,
-                overwrite=overwrite)
+                overwrite=overwrite,
+                callback=callback)
         else:
             self._iterate(
                 optimizer=optimizer, data_generator=data_generator,
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
                 sampler=sampler,
-                overwrite=overwrite)
+                overwrite=overwrite,
+                callback=callback)
 
     def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
                  iterations: int, kwargs: dict, x0_selection: str,
-                 sampler: Sampler, overwrite=False):
+                 sampler: Sampler, overwrite: bool = False,
+                 callback: Optional[Callable] = None):
         """Internal represenation of the iteration process
 
         Parameters
@@ -1282,6 +1289,9 @@ class ExperimentData:
         overwrite: bool
             If True, the optimizer will overwrite the current data,
             by default False
+        callback : Callable, optional
+            A callback function that is called after every iteration,
+            by default None
 
         Raises
         ------
@@ -1333,6 +1343,15 @@ class ExperimentData:
                 iterations,
                 population=optimizer.hyperparameters.population)):
             new_samples = optimizer.update_step(data_generator)
+
+            if callback is not None:
+                if isinstance(new_samples, tuple):
+                    _new_samples_experimentdata = ExperimentData(
+                        domain=self.domain,
+                        input_data=new_samples[0],
+                        output_data=new_samples[1])
+
+                callback(_new_samples_experimentdata)
 
             # If new_samples is a tuple of input_data and output_data
             if isinstance(new_samples, tuple):
