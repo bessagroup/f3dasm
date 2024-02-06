@@ -99,3 +99,26 @@ def test_compatible_columns_add():
     g = _Data(dg)
 
     _ = f + g
+
+
+def test_overwrite_data(sample_data: _Data):
+    overwrite_data = _Data(pd.DataFrame(
+        {'input1': [5, 6, 7], 'input2': [8, 9, 10]}))
+
+    sample_data.overwrite(other=overwrite_data, indices=[0, 1, 2])
+
+    pd.testing.assert_frame_equal(sample_data.data, overwrite_data.data,
+                                  check_dtype=False, atol=1e-6)
+
+
+def test_overwrite_data2(sample_data: _Data):
+    overwrite_data = _Data(pd.DataFrame(
+        {'input1': [5, 6, ], 'input2': [8, 9]}))
+
+    sample_data.overwrite(other=overwrite_data, indices=[1, 2])
+
+    ground_truth = _Data(pd.DataFrame(
+        {'input1': [1, 5, 6], 'input2': [4, 8, 9]}))
+
+    pd.testing.assert_frame_equal(sample_data.data, ground_truth.data,
+                                  check_dtype=False, atol=1e-6)

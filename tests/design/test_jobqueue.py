@@ -1,14 +1,17 @@
+from typing import Iterable
+
 import pandas as pd
 import pytest
 
-from f3dasm.design import NoOpenJobsError, _JobQueue, Status
+from f3dasm.design import NoOpenJobsError, Status, _JobQueue
 
 pytestmark = pytest.mark.smoke
 
 
 @pytest.fixture
 def sample_job_queue():
-    jobs = pd.Series(['open', 'open', 'in progress', 'finished'], dtype='string')
+    jobs = pd.Series(['open', 'open', 'in progress',
+                     'finished'], dtype='string')
     job_queue = _JobQueue(jobs)
 
     yield job_queue
@@ -29,16 +32,19 @@ def test_job_queue_initialization(sample_job_queue: _JobQueue):
 def test_job_queue_repr_html(sample_job_queue: _JobQueue):
     assert isinstance(sample_job_queue._repr_html_(), str)
 
+
 def test_job_queue_remove(sample_job_queue: _JobQueue):
     sample_job_queue.remove([1, 3])
-    expected_jobs = pd.Series(['open', 'in progress'], index=[0, 2], dtype='string')
+    expected_jobs = pd.Series(['open', 'in progress'], index=[
+                              0, 2], dtype='string')
     assert sample_job_queue.jobs.equals(expected_jobs)
 
 
 def test_job_queue_add():
     job_queue = _JobQueue()
     job_queue.add(5, 'open')
-    assert job_queue.jobs.equals(pd.Series(['open', 'open', 'open', 'open', 'open'], dtype='string'))
+    assert job_queue.jobs.equals(
+        pd.Series(['open', 'open', 'open', 'open', 'open'], dtype='string'))
 
 
 def test_job_queue_reset(sample_job_queue: _JobQueue):
@@ -53,7 +59,8 @@ def test_job_queue_get_open_job(sample_job_queue: _JobQueue):
 
 
 def test_job_queue_get_open_job_no_jobs():
-    jobs = pd.Series(['finished', 'finished', 'in progress', 'finished'], dtype='string')
+    jobs = pd.Series(['finished', 'finished', 'in progress',
+                     'finished'], dtype='string')
     job_queue = _JobQueue(jobs)
     with pytest.raises(NoOpenJobsError):
         job_queue.get_open_job()
@@ -79,7 +86,8 @@ def test_job_queue_mark_as_error(sample_job_queue: _JobQueue):
 
 def test_job_queue_mark_all_in_progress_open(sample_job_queue: _JobQueue):
     sample_job_queue.mark_all_in_progress_open()
-    assert sample_job_queue.jobs.equals(pd.Series(['open', 'open', 'open', 'finished'], dtype='string'))
+    assert sample_job_queue.jobs.equals(
+        pd.Series(['open', 'open', 'open', 'finished'], dtype='string'))
 
 
 def test_job_queue_is_all_finished(sample_job_queue: _JobQueue):
