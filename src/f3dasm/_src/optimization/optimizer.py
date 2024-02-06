@@ -159,6 +159,9 @@ class Optimizer:
         """Set the data attribute to the given data"""
         self.data = data
 
+    def add_experiments(self, experiments: ExperimentData):
+        ...
+
     def set_x0(self, experiment_data: ExperimentData,
                mode: str | ExperimentData):
         """Set the initial population to the best n samples of the given data
