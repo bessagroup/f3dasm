@@ -1183,7 +1183,8 @@ class ExperimentData:
 
     def optimize(self, optimizer: Optimizer | str,
                  data_generator: DataGenerator | str,
-                 iterations: int, kwargs: Optional[Dict[str, Any]] = None,
+                 iterations: int,
+                 kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None,
                  x0_selection: Literal['best', 'random',
                                        'last',
@@ -1195,54 +1196,52 @@ class ExperimentData:
 
         Parameters
         ----------
-        optimizer : Optimizer
-            Optimizer object to use
+        optimizer : Optimizer | str
+            Optimizer object
         data_generator : DataGenerator | str
-            Data generator object to use
+            DataGenerator object
         iterations : int
-            Number of iterations to run
+            number of iterations
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to \
-            the data generator, by default None
+            any additional keyword arguments that will be passed to
+            the DataGenerator
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the \
-            optimizer, by default None
-        x0_selection : str | ExperimentData, optional
-            How to select the initial design, by default 'best'
-        sampler : Sampler | str
-            Sampler to use, by default 'random'
-        overwrite : bool
-            If True, the optimizer will overwrite the current data,
-            by default False
+            any additional keyword arguments that will be passed to
+            the optimizer
+        x0_selection : str | ExperimentData
+            How to select the initial design. By default 'best'
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+        sampler: Sampler, optional
+            If x0_selection = 'new', the sampler to use. By default 'random'
+        overwrite: bool, optional
+            If True, the optimizer will overwrite the current data. By default
+            False
         callback : Callable, optional
-            A callback function that is called after every iteration,
-            by default None
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-        ValueError
-            Raised when invalid optimizer type is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        If an ExperimentData object is passed as x0_selection, the optimizer
-        will use the input_data and output_data from this object as initial
-        samples.
-
-        The number of designs selected is equal to the \
-        population size of the optimizer
         """
         # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
@@ -1294,38 +1293,39 @@ class ExperimentData:
             any additional keyword arguments that will be passed to
             the DataGenerator
         x0_selection : str | ExperimentData
-            How to select the initial design
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
         sampler: Sampler
             If x0_selection = 'new', the sampler to use
         overwrite: bool
             If True, the optimizer will overwrite the current data.
         callback : Callable
-            A callback function that is called after every iteration,
-            by default None
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        If an ExperimentData object is passed as x0_selection, the optimizer
-        will use the input_data and output_data from this object as initial
-        samples.
-
-        The number of designs selected is equal to the
-        population size of the optimizer
         """
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
@@ -1401,53 +1401,54 @@ class ExperimentData:
                        x0_selection: str | ExperimentData,
                        sampler: Sampler, overwrite: bool,
                        callback: Callable):
-        """Internal represenation of the iteration process for s
-        cipy-optimize algorithms
+        """Internal represenation of the iteration process for scipy-minimize
+        optimizers.
 
         Parameters
         ----------
-        optimizer : _Optimizer
+        optimizer : Optimizer
             Optimizer object
         data_generator : DataGenerator
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : dict, optional
-            any additional keyword arguments that will be passed
-            to the DataGenerator, by default None
-        x0_selection : str
-            How to select the initial design
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        x0_selection : str | ExperimentData
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
         sampler: Sampler
             If x0_selection = 'new', the sampler to use
         overwrite: bool
             If True, the optimizer will overwrite the current data.
         callback : Callable
-            A callback function that is called after every optimization run,
-            by default None
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        If an ExperimentData object is passed as x0_selection, the optimizer
-        will use the input_data and output_data from this object as initial
-        samples.
-
-        The number of designs selected is equal to the
-        population size of the optimizer
         """
         n_data_before_iterate = len(self)
 
@@ -1524,21 +1525,18 @@ class ExperimentData:
 
         Parameters
         ----------
-        sampler
+        sampler: Sampler | str
             Sampler callable or string of built-in sampler
+            If a string is passed, it should be one of the built-in samplers:
+
+            * 'random' : Random sampling
+            * 'latin' : Latin Hypercube Sampling
+            * 'sobol' : Sobol Sequence Sampling
+            * 'grid' : Grid Search Sampling
         n_samples : int, optional
             Number of samples to generate, by default 1
         seed : Optional[int], optional
             Seed to use for the sampler, by default None
-
-        Note
-        ----
-        If a string is passed, it should be one of the built-in samplers:
-
-        * 'random' : Random sampling
-        * 'latin' : Latin Hypercube Sampling
-        * 'sobol' : Sobol Sequence Sampling
-        * 'grid' : Grid Search Sampling
 
         Raises
         ------
