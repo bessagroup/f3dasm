@@ -236,7 +236,7 @@ class _Data:
         np.ndarray
             numpy array with the data.
         """
-        return self.data.to_numpy()
+        return self.data.to_numpy(dtype=np.float32)
 
     def to_xarray(self, label: str) -> xr.DataArray:
         """Export the _Data object to a xarray DataArray.
