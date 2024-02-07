@@ -35,7 +35,7 @@ from pathos.helpers import mp
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
-from ..design.samplers import Sampler, _sampler_factory
+from ..design.samplers import Sampler, SamplerNames, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
@@ -618,22 +618,28 @@ class ExperimentData:
         jobs : Optional[Path  |  str], optional
             jobs off the added object, by default None
         """
-        self._add_experiments(ExperimentData(
+        self.add_experiments(ExperimentData(
             domain=domain, input_data=input_data,
             output_data=output_data,
             jobs=jobs))
 
-    def _add_experiments(self,
-                         experiment_sample: ExperimentSample | ExperimentData
-                         ) -> None:
+    def add_experiments(self,
+                        experiment_sample: ExperimentSample | ExperimentData
+                        ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
-         attribute.
+        attribute.
 
         Parameters
         ----------
         experiment_sample : ExperimentSample or ExperimentData
             Experiment(s) to add.
+
+        Raises
+        ------
+        ValueError
+            If -after checked- the indices of the input and output data
+            objects are not equal.
         """
 
         if isinstance(experiment_sample, ExperimentData):
@@ -654,6 +660,84 @@ class ExperimentData:
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
         # self._input_data.cast_types(self.domain)
+
+    def overwrite(
+        self, indices: Iterable[int],
+            domain: Optional[Domain] = None,
+            input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None,
+            jobs: Optional[Path | str] = None,
+            add_if_not_exist: bool = False
+    ) -> None:
+        """Overwrite the ExperimentData object.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        domain : Optional[Domain], optional
+            Domain of the new object, by default None
+        input_data : Optional[DataTypes], optional
+            input parameters of the new object, by default None
+        output_data : Optional[DataTypes], optional
+            output parameters of the new object, by default None
+        jobs : Optional[Path  |  str], optional
+            jobs off the new object, by default None
+        add_if_not_exist : bool, optional
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object, by default False
+        """
+
+        # Be careful, if a job has output data and gets overwritten with a
+        # job that has no output data, the status is set to open. But the job
+        # will still have the output data!
+
+        # This is usually not a problem, because the output data will be
+        # immediately overwritten in optimization.
+
+        self._overwrite_experiments(
+            indices=indices,
+            experiment_sample=ExperimentData(
+                domain=domain, input_data=input_data,
+                output_data=output_data,
+                jobs=jobs),
+            add_if_not_exist=add_if_not_exist)
+
+    def _overwrite_experiments(
+        self, indices: Iterable[int],
+            experiment_sample: ExperimentSample | ExperimentData,
+            add_if_not_exist: bool) -> None:
+        """
+        Overwrite the ExperimentData object at the given indices.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        experimentdata : ExperimentData | ExperimentSample
+            The new ExperimentData object to overwrite with.
+        add_if_not_exist : bool
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object.
+        """
+        if not all(pd.Index(indices).isin(self.index)):
+            if add_if_not_exist:
+                self.add_experiments(experiment_sample)
+                return
+            else:
+                raise ValueError(
+                    f"The given indices {indices} do not exist in the current "
+                    f"ExperimentData object. "
+                    f"If you want to add the new experiments, "
+                    f"set add_if_not_exist to True.")
+
+        self._input_data.overwrite(
+            indices=indices, other=experiment_sample._input_data)
+        self._output_data.overwrite(
+            indices=indices, other=experiment_sample._output_data)
+
+        self._jobs.overwrite(
+            indices=indices, other=experiment_sample._jobs)
 
     def add_input_parameter(
         self, name: str,
@@ -1099,61 +1183,78 @@ class ExperimentData:
 
     def optimize(self, optimizer: Optimizer | str,
                  data_generator: DataGenerator | str,
-                 iterations: int, kwargs: Optional[Dict[str, Any]] = None,
+                 iterations: int,
+                 kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None,
-                 x0_selection: str = 'best',
-                 sampler: Optional[Sampler | str] = 'random') -> None:
+                 x0_selection: Literal['best', 'random',
+                                       'last',
+                                       'new'] | ExperimentData = 'best',
+                 sampler: Optional[Sampler | str] = 'random',
+                 overwrite: bool = False,
+                 callback: Optional[Callable] = None) -> None:
         """Optimize the experimentdata object
 
         Parameters
         ----------
-        optimizer : Optimizer
-            Optimizer object to use
+        optimizer : Optimizer | str
+            Optimizer object
         data_generator : DataGenerator | str
-            Data generator object to use
+            DataGenerator object
         iterations : int
-            Number of iterations to run
+            number of iterations
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to \
-            the data generator, by default None
+            any additional keyword arguments that will be passed to
+            the DataGenerator
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the \
-            optimizer, by default None
-        x0_selection : str, optional
-            How to select the initial design, by default 'best'
-        sampler : Sampler | str
-            Sampler to use, by default 'random'
+            any additional keyword arguments that will be passed to
+            the optimizer
+        x0_selection : str | ExperimentData
+            How to select the initial design. By default 'best'
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+        sampler: Sampler, optional
+            If x0_selection = 'new', the sampler to use. By default 'random'
+        overwrite: bool, optional
+            If True, the optimizer will overwrite the current data. By default
+            False
+        callback : Callable, optional
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-        ValueError
-            Raised when invalid optimizer type is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        The number of designs selected is equal to the \
-        population size of the optimizer
         """
+        # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
-                data_generator, self.domain, kwargs)
+                data_generator=data_generator,
+                domain=self.domain, kwargs=kwargs)
 
+        # Create the optimizer object if a string reference is passed
         if isinstance(optimizer, str):
             optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
+        # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
             sampler: Sampler = _sampler_factory(sampler, self.domain)
 
@@ -1162,17 +1263,22 @@ class ExperimentData:
                 optimizer=optimizer, data_generator=data_generator,
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
-                sampler=sampler)
+                sampler=sampler,
+                overwrite=overwrite,
+                callback=callback)
         else:
             self._iterate(
                 optimizer=optimizer, data_generator=data_generator,
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
-                sampler=sampler)
+                sampler=sampler,
+                overwrite=overwrite,
+                callback=callback)
 
     def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
-                 iterations: int, kwargs: dict, x0_selection: str,
-                 sampler: Sampler):
+                 iterations: int, kwargs: Dict[str, Any], x0_selection: str,
+                 sampler: Sampler, overwrite: bool,
+                 callback: Callable):
         """Internal represenation of the iteration process
 
         Parameters
@@ -1183,57 +1289,73 @@ class ExperimentData:
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : dict, optional
-            any additional keyword arguments that will be passed to \
-            the DataGenerator, by default None
-        x0_selection : str
-            How to select the initial design
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        x0_selection : str | ExperimentData
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
         sampler: Sampler
             If x0_selection = 'new', the sampler to use
+        overwrite: bool
+            If True, the optimizer will overwrite the current data.
+        callback : Callable
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        The number of designs selected is equal to the
-        population size of the optimizer
         """
+        if isinstance(x0_selection, str):
+            if x0_selection == 'new':
 
-        if x0_selection == 'new':
+                if iterations < optimizer.hyperparameters.population:
+                    raise ValueError(
+                        f'For creating new samples, the total number of '
+                        f'requested iterations ({iterations}) cannot be '
+                        f'smaller than the population size '
+                        f'({optimizer.hyperparameters.population})')
 
-            if iterations < optimizer.hyperparameters.population:
-                raise ValueError(
-                    f'For creating new samples, the total number of requested '
-                    f'iterations ({iterations}) cannot be '
-                    f'smaller than the population size '
-                    f'({optimizer.hyperparameters.population})')
+                self.sample(sampler=sampler,
+                            n_samples=optimizer.hyperparameters.population,
+                            seed=optimizer.seed)
 
-            self.sample(sampler=sampler,
-                        n_samples=optimizer.hyperparameters.population,
-                        seed=optimizer.seed)
+                self.evaluate(data_generator=data_generator, kwargs=kwargs)
 
-            self.evaluate(data_generator=data_generator, kwargs=kwargs)
-
-            x0_selection = 'last'
-            iterations -= optimizer.hyperparameters.population
+                x0_selection = 'last'
+                iterations -= optimizer.hyperparameters.population
 
         optimizer.set_x0(self, mode=x0_selection)
+
+        if callback:
+            callback(self)
+
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
+
+        last_index = self.index[-1] if not self.index.empty else 0
 
         for _ in range(number_of_updates(
                 iterations,
@@ -1242,20 +1364,33 @@ class ExperimentData:
 
             # If new_samples is a tuple of input_data and output_data
             if isinstance(new_samples, tuple):
-                self.add(domain=self.domain,
-                         input_data=new_samples[0], output_data=new_samples[1])
+                new_samples = ExperimentData(
+                    domain=self.domain,
+                    input_data=new_samples[0],
+                    output_data=new_samples[1],
+                )
+            # If applicable, evaluate the new designs:
+            new_samples.evaluate(
+                data_generator, mode='sequential', kwargs=kwargs)
+
+            if callback is not None:
+                callback(new_samples)
+
+            if overwrite:
+                _indices = new_samples.index + last_index + 1
+                self._overwrite_experiments(experiment_sample=new_samples,
+                                            indices=_indices,
+                                            add_if_not_exist=True)
 
             else:
-                self._add_experiments(new_samples)
-
-            # If applicable, evaluate the new designs:
-            self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+                self.add_experiments(new_samples)
 
             optimizer.set_data(self)
 
-        # Remove overiterations
-        self.remove_rows_bottom(number_of_overiterations(
-            iterations, population=optimizer.hyperparameters.population))
+        if not overwrite:
+            # Remove overiterations
+            self.remove_rows_bottom(number_of_overiterations(
+                iterations, population=optimizer.hyperparameters.population))
 
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
@@ -1263,93 +1398,120 @@ class ExperimentData:
     def _iterate_scipy(self, optimizer: Optimizer,
                        data_generator: DataGenerator,
                        iterations: int, kwargs: dict,
-                       x0_selection: str, sampler: Sampler):
-        """Internal represenation of the iteration process for s
-        cipy-optimize algorithms
+                       x0_selection: str | ExperimentData,
+                       sampler: Sampler, overwrite: bool,
+                       callback: Callable):
+        """Internal represenation of the iteration process for scipy-minimize
+        optimizers.
 
         Parameters
         ----------
-        optimizer : _Optimizer
+        optimizer : Optimizer
             Optimizer object
         data_generator : DataGenerator
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : dict, optional
-            any additional keyword arguments that will be passed \
-            to the DataGenerator, by default None
-        x0_selection : str
-            How to select the initial design
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        x0_selection : str | ExperimentData
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
         sampler: Sampler
             If x0_selection = 'new', the sampler to use
+        overwrite: bool
+            If True, the optimizer will overwrite the current data.
+        callback : Callable
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-        * 'new': Create new random designs from the current experimentdata
-
-        If the x0_selection is 'new', new designs are sampled with the
-        sampler provided.
-
-        The number of designs selected is equal to the
-        population size of the optimizer
         """
         n_data_before_iterate = len(self)
 
-        if x0_selection == 'new':
+        if isinstance(x0_selection, str):
+            if x0_selection == 'new':
 
-            if iterations < optimizer.hyperparameters.population:
-                raise ValueError(
-                    f'For creating new samples, the number of requested '
-                    f'iterations ({iterations}) cannot be'
-                    f'smaller than the population size '
-                    f'({optimizer.hyperparameters.population})')
+                if iterations < optimizer.hyperparameters.population:
+                    raise ValueError(
+                        f'For creating new samples, the number of requested '
+                        f'iterations ({iterations}) cannot be'
+                        f'smaller than the population size '
+                        f'({optimizer.hyperparameters.population})')
 
-            self.sample(sampler='random',
-                        n_samples=optimizer.hyperparameters.population,
-                        seed=optimizer.seed)
+                self.sample(sampler='random',
+                            n_samples=optimizer.hyperparameters.population,
+                            seed=optimizer.seed)
 
-            self.evaluate(data_generator=data_generator, kwargs=kwargs)
-            x0_selection = 'last'
+                self.evaluate(data_generator=data_generator, kwargs=kwargs)
+                x0_selection = 'last'
 
         optimizer.set_x0(self, mode=x0_selection)
         optimizer._check_number_of_datapoints()
 
+        if callback is not None:
+            callback(self)
+
         optimizer.run_algorithm(iterations, data_generator)
 
-        # Do not add the first element, as this is already in the sampled data
-        self._add_experiments(optimizer.data.select(optimizer.data.index[1:]))
+        new_samples: ExperimentData = optimizer.data.select(
+            optimizer.data.index[1:])
+        new_samples.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
-        # TODO: At the end, the data should have
-        # n_data_before_iterate + iterations amount of elements!
-        # If x_new is empty, repeat best x0 to fill up total iteration
-        if len(self) == n_data_before_iterate:
-            repeated_x, repeated_y = self.get_n_best_output(
-                n_samples=1).to_numpy()
+        if callback is not None:
+            callback(new_samples)
 
-            for repetition in range(iterations):
-                self.add(
-                    domain=self.domain, input_data=repeated_x,
-                    output_data=repeated_y)
+        if overwrite:
+            self.add_experiments(
+                optimizer.data.select([optimizer.data.index[-1]]))
 
-        # Repeat last iteration to fill up total iteration
-        if len(self) < n_data_before_iterate + iterations:
-            last_design = self.get_experiment_sample(len(self)-1)
+        elif not overwrite:
+            # Do not add the first element, as this is already
+            # in the sampled data
+            self.add_experiments(new_samples)
 
-            while len(self) < n_data_before_iterate + iterations:
-                self._add_experiments(last_design)
+            # TODO: At the end, the data should have
+            # n_data_before_iterate + iterations amount of elements!
+            # If x_new is empty, repeat best x0 to fill up total iteration
+            if len(self) == n_data_before_iterate:
+                repeated_sample = self.get_n_best_output(
+                    n_samples=1)
+
+                for repetition in range(iterations):
+                    self.add_experiments(repeated_sample)
+
+            # Repeat last iteration to fill up total iteration
+            if len(self) < n_data_before_iterate + iterations:
+                last_design = self.get_experiment_sample(len(self)-1)
+
+                while len(self) < n_data_before_iterate + iterations:
+                    self.add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
-        self.evaluate(data_generator, mode='sequential')
+        self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
@@ -1357,27 +1519,24 @@ class ExperimentData:
     #                                                                  Sampling
     # =========================================================================
 
-    def sample(self, sampler: Sampler | str, n_samples: int = 1,
+    def sample(self, sampler: Sampler | SamplerNames, n_samples: int = 1,
                seed: Optional[int] = None) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
         ----------
-        sampler : Sampler or str
+        sampler: Sampler | str
             Sampler callable or string of built-in sampler
+            If a string is passed, it should be one of the built-in samplers:
+
+            * 'random' : Random sampling
+            * 'latin' : Latin Hypercube Sampling
+            * 'sobol' : Sobol Sequence Sampling
+            * 'grid' : Grid Search Sampling
         n_samples : int, optional
             Number of samples to generate, by default 1
         seed : Optional[int], optional
             Seed to use for the sampler, by default None
-
-        Note
-        ----
-        If a string is passed, it should be one of the built-in samplers:
-
-        * 'random' : Random sampling
-        * 'latin' : Latin Hypercube Sampling
-        * 'sobol' : Sobol Sequence Sampling
-        * 'grid' : Grid Search Sampling
 
         Raises
         ------

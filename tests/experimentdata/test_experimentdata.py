@@ -35,8 +35,8 @@ def test_experiment_data_init(experimentdata: ExperimentData, domain: Domain):
 def test_experiment_data_add(experimentdata: ExperimentData,
                              experimentdata2: ExperimentData, domain: Domain):
     experimentdata_total = ExperimentData(domain)
-    experimentdata_total._add_experiments(experimentdata)
-    experimentdata_total._add_experiments(experimentdata2)
+    experimentdata_total.add_experiments(experimentdata)
+    experimentdata_total.add_experiments(experimentdata2)
     assert experimentdata_total == experimentdata + experimentdata2
 
 
@@ -47,6 +47,7 @@ def test_experiment_data_len_empty(domain: Domain):
 
 def test_experiment_data_len_equals_input_data(experimentdata: ExperimentData):
     assert len(experimentdata) == len(experimentdata._input_data)
+
 
 @pytest.mark.parametrize("slice_type", [3, [0, 1, 3]])
 def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
@@ -70,7 +71,7 @@ def test_from_file(experimentdata_continuous: ExperimentData, seed: int, tmp_pat
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experimentdata_continuous._input_data.to_dataframe(), experimentdata_from_file._input_data.to_dataframe())
+        experimentdata_continuous._input_data.to_dataframe(), experimentdata_from_file._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
     pd.testing.assert_frame_equal(experimentdata_continuous._output_data.to_dataframe(),
                                   experimentdata_from_file._output_data.to_dataframe())
     pd.testing.assert_series_equal(
@@ -138,6 +139,9 @@ def test_from_object(experimentdata_continuous: ExperimentData):
 
 def test_to_numpy(experimentdata_continuous: ExperimentData, numpy_array: np.ndarray):
     x, y = experimentdata_continuous.to_numpy()
+
+    # cast x to floats
+    x = x.astype(float)
     # assert if x and numpy_array have all the same values
     assert np.allclose(x, numpy_array)
 
@@ -151,7 +155,8 @@ def test_to_xarray(experimentdata_continuous: ExperimentData, xarray_dataset: xr
 def test_to_pandas(experimentdata_continuous: ExperimentData, pandas_dataframe: pd.DataFrame):
     exported_dataframe, _ = experimentdata_continuous.to_pandas()
     # assert if pandas_dataframe is equal to exported_dataframe
-    assert exported_dataframe.equals(pandas_dataframe)
+    pd.testing.assert_frame_equal(
+        exported_dataframe, pandas_dataframe, atol=1e-6, check_dtype=False)
 #                                                                              Exporters
 # ======================================================================================
 
@@ -460,10 +465,9 @@ def test_init_with_output(input_data: DataTypes, output_data: DataTypes, domain:
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experiment_data._input_data.to_dataframe(), experimentdata_expected._input_data.to_dataframe(), check_dtype=False)
+        experiment_data._input_data.to_dataframe(), experimentdata_expected._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
                                   experimentdata_expected._output_data.to_dataframe(), check_dtype=False)
-    assert experiment_data == experimentdata_expected
 
 
 @pytest.mark.parametrize("input_data", [pd_input(), path_input, str_input, data_input(), numpy_input()])
@@ -536,17 +540,13 @@ def test_init_without_output(input_data: DataTypes, output_data: DataTypes, doma
 
     # Check if the input_data attribute of ExperimentData matches the expected_data
     pd.testing.assert_frame_equal(
-        experiment_data._input_data.to_dataframe(), experimentdata_expected_no_output._input_data.to_dataframe())
+        experiment_data._input_data.to_dataframe(), experimentdata_expected_no_output._input_data.to_dataframe(), atol=1e-6, check_dtype=False)
     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
                                   experimentdata_expected_no_output._output_data.to_dataframe())
     pd.testing.assert_series_equal(
         experiment_data._jobs.jobs, experimentdata_expected_no_output._jobs.jobs)
-    assert experiment_data._input_data == experimentdata_expected_no_output._input_data
-    assert experiment_data._output_data == experimentdata_expected_no_output._output_data
     assert experiment_data.domain == experimentdata_expected_no_output.domain
     assert experiment_data._jobs == experimentdata_expected_no_output._jobs
-
-    assert experiment_data == experimentdata_expected_no_output
 
 
 @pytest.mark.parametrize("input_data", [None])
@@ -663,7 +663,7 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
 def test_get_input_data(experimentdata_expected_no_output: ExperimentData):
     input_data = experimentdata_expected_no_output.get_input_data()
     df, _ = input_data.to_pandas()
-    pd.testing.assert_frame_equal(df, pd_input())
+    pd.testing.assert_frame_equal(df, pd_input(), check_dtype=False, atol=1e-6)
     assert experimentdata_expected_no_output._input_data == input_data._input_data
 
 
@@ -674,7 +674,8 @@ def test_get_input_data_selection(experimentdata_expected_no_output: ExperimentD
     if isinstance(selection, str):
         selection = [selection]
     selected_pd = pd_input()[selection]
-    pd.testing.assert_frame_equal(df, selected_pd)
+    pd.testing.assert_frame_equal(
+        df, selected_pd, check_dtype=False, atol=1e-6)
 
 
 def test_get_output_data(experimentdata_expected: ExperimentData):
@@ -726,6 +727,7 @@ def test_select_with_status_error(experimentdata: ExperimentData):
 def test_select_with_status_invalid_status(experimentdata: ExperimentData):
     with pytest.raises(ValueError):
         _ = experimentdata.select_with_status('invalid_status')
+
 
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()

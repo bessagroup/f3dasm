@@ -24,7 +24,7 @@ class _SciPyOptimizer(Optimizer):
     type: str = 'scipy'
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
-        self.data._add_experiments(
+        self.data.add_experiments(
             ExperimentSample.from_numpy(xk, domain=self.domain))
 
     def update_step(self):

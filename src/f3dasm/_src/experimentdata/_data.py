@@ -236,7 +236,7 @@ class _Data:
         np.ndarray
             numpy array with the data.
         """
-        return self.data.to_numpy()
+        return self.data.to_numpy(dtype=np.float32)
 
     def to_xarray(self, label: str) -> xr.DataArray:
         """Export the _Data object to a xarray DataArray.
@@ -391,6 +391,16 @@ class _Data:
 
     def round(self, decimals: int):
         self.data = self.data.round(decimals=decimals)
+
+    def overwrite(self, indices: Iterable[int], other: _Data | Dict[str, Any]):
+        if isinstance(other, Dict):
+            other = _convert_dict_to_data(other)
+
+        for other_column in other.columns.names:
+            if other_column not in self.columns.names:
+                self.add_column(other_column)
+
+        self.data.update(other.data.set_index(pd.Index(indices)))
 
 #                                                           Getters and setters
 # =============================================================================

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 from itertools import product
-from typing import Optional
+from typing import Literal, Optional
 
 # Third-party
 import numpy as np
@@ -26,9 +26,11 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+SamplerNames = Literal['random', 'latin', 'sobol', 'grid']
 
 #                                                              Factory function
 # =============================================================================
+
 
 def _sampler_factory(sampler: str, domain: Domain) -> Sampler:
     if sampler.lower() == 'random':
