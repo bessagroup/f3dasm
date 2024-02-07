@@ -162,53 +162,6 @@ class Optimizer:
     def add_experiments(self, experiments: ExperimentData):
         ...
 
-    def set_x0(self, experiment_data: ExperimentData,
-               mode: str | ExperimentData):
-        """Set the initial population to the best n samples of the given data
-
-        Parameters
-        ----------
-        experiment_data : ExperimentData
-            Data to be used for the initial population
-        mode : str
-            Mode of selecting the initial population, by default 'best'
-
-        Raises
-        ------
-        ValueError
-            Raises when the mode is not recognized
-
-        Note
-        ----
-        The following modes are available:
-            - best: select the best n samples
-            - random: select n random samples
-            - last: select the last n samples
-        """
-        if isinstance(mode, ExperimentData):
-            x0 = mode
-
-        elif mode.lower() == 'best':
-            x0 = experiment_data.get_n_best_output(
-                self.hyperparameters.population)
-
-        elif mode.lower() == 'random':
-            x0 = experiment_data.select(
-                np.random.choice(
-                    experiment_data.index,
-                    self.hyperparameters.population, replace=False))
-
-        elif mode.lower() == 'last':
-            x0 = experiment_data.select(
-                experiment_data.index[-self.hyperparameters.population:])
-
-        else:
-            raise ValueError(
-                f'Unknown selection mode {mode}, use best, random or last')
-
-        x0._reset_index()
-        self.set_data(x0)
-
     def get_name(self) -> str:
         """Get the name of the optimizer
 

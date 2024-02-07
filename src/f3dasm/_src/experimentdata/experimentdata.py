@@ -1327,6 +1327,8 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
         """
+        last_index = self.index[-1] if not self.index.empty else -1
+
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
@@ -1337,25 +1339,39 @@ class ExperimentData:
                         f'smaller than the population size '
                         f'({optimizer.hyperparameters.population})')
 
-                self.sample(sampler=sampler,
-                            n_samples=optimizer.hyperparameters.population,
-                            seed=optimizer.seed)
+                init_samples = ExperimentData.from_sampling(
+                    domain=self.domain,
+                    sampler=sampler,
+                    n_samples=optimizer.hyperparameters.population,
+                    seed=optimizer.seed)
 
-                self.evaluate(data_generator=data_generator, kwargs=kwargs)
+                init_samples.evaluate(
+                    data_generator=data_generator, kwargs=kwargs,
+                    mode='sequential')
+
+                if callback is not None:
+                    callback(init_samples)
+
+                if overwrite:
+                    _indices = init_samples.index + last_index + 1
+                    self._overwrite_experiments(
+                        experiment_sample=init_samples,
+                        indices=_indices,
+                        add_if_not_exist=True)
+
+                else:
+                    self.add_experiments(init_samples)
 
                 x0_selection = 'last'
                 iterations -= optimizer.hyperparameters.population
 
-        optimizer.set_x0(self, mode=x0_selection)
-
-        if callback:
-            callback(self)
+        x0 = x0_factory(experiment_data=self, mode=x0_selection,
+                        n_samples=optimizer.hyperparameters.population)
+        optimizer.set_data(x0)
 
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
-
-        last_index = self.index[-1] if not self.index.empty else 0
 
         for _ in range(number_of_updates(
                 iterations,
@@ -1457,23 +1473,31 @@ class ExperimentData:
 
                 if iterations < optimizer.hyperparameters.population:
                     raise ValueError(
-                        f'For creating new samples, the number of requested '
-                        f'iterations ({iterations}) cannot be'
+                        f'For creating new samples, the total number of '
+                        f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
                         f'({optimizer.hyperparameters.population})')
 
-                self.sample(sampler='random',
-                            n_samples=optimizer.hyperparameters.population,
-                            seed=optimizer.seed)
+                init_samples = ExperimentData.from_sampling(
+                    domain=self.domain,
+                    sampler=sampler,
+                    n_samples=optimizer.hyperparameters.population,
+                    seed=optimizer.seed)
 
-                self.evaluate(data_generator=data_generator, kwargs=kwargs)
+                init_samples.evaluate(
+                    data_generator=data_generator, kwargs=kwargs,
+                    mode='sequential')
+
+                if callback is not None:
+                    callback(init_samples)
+
                 x0_selection = 'last'
 
-        optimizer.set_x0(self, mode=x0_selection)
-        optimizer._check_number_of_datapoints()
+        x0 = x0_factory(experiment_data=self, mode=x0_selection,
+                        n_samples=optimizer.hyperparameters.population)
+        optimizer.set_data(x0)
 
-        if callback is not None:
-            callback(self)
+        optimizer._check_number_of_datapoints()
 
         optimizer.run_algorithm(iterations, data_generator)
 
@@ -1563,3 +1587,50 @@ class ExperimentData:
             Path to the project directory
         """
         self.project_dir = _project_dir_factory(project_dir)
+
+
+def x0_factory(experiment_data: ExperimentData,
+               mode: str | ExperimentData, n_samples: int):
+    """Set the initial population to the best n samples of the given data
+
+    Parameters
+    ----------
+    experiment_data : ExperimentData
+        Data to be used for the initial population
+    mode : str
+        Mode of selecting the initial population, by default 'best'
+        The following modes are available:
+
+            - best: select the best n samples
+            - random: select n random samples
+            - last: select the last n samples
+    n_samples : int
+        Number of samples to select
+
+    Raises
+    ------
+    ValueError
+        Raises when the mode is not recognized
+    """
+    if isinstance(mode, ExperimentData):
+        x0 = mode
+
+    elif mode == 'best':
+        x0 = experiment_data.get_n_best_output(n_samples)
+
+    elif mode == 'random':
+        x0 = experiment_data.select(
+            np.random.choice(
+                experiment_data.index,
+                size=n_samples, replace=False))
+
+    elif mode == 'last':
+        x0 = experiment_data.select(
+            experiment_data.index[-n_samples:])
+
+    else:
+        raise ValueError(
+            f'Unknown selection mode {mode}, use best, random or last')
+
+    x0._reset_index()
+    return x0
