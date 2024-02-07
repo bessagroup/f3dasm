@@ -149,6 +149,9 @@ class ExperimentData:
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
+        if self._input_data.is_empty():
+            return len(self._output_data)
+
         return len(self._input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
@@ -235,6 +238,9 @@ class ExperimentData:
         pd.Index
             The job number of all the experiments in pandas Index format
         """
+        if self._input_data.is_empty():
+            return self._output_data.indices
+
         return self._input_data.indices
 
     #                                                  Alternative Constructors
@@ -795,7 +801,11 @@ class ExperimentData:
         Reset the index of the ExperimentData object.
         """
         self._input_data.reset_index()
-        self._output_data.reset_index(self._input_data.indices)
+
+        if self._input_data.is_empty():
+            self._output_data.reset_index()
+        else:
+            self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
 #                                                                  ExperimentSample
@@ -1466,6 +1476,7 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
         """
+        last_index = self.index[-1] if not self.index.empty else -1
         n_data_before_iterate = len(self)
 
         if isinstance(x0_selection, str):
@@ -1490,6 +1501,16 @@ class ExperimentData:
 
                 if callback is not None:
                     callback(init_samples)
+
+                if overwrite:
+                    _indices = init_samples.index + last_index + 1
+                    self._overwrite_experiments(
+                        experiment_sample=init_samples,
+                        indices=_indices,
+                        add_if_not_exist=True)
+
+                else:
+                    self.add_experiments(init_samples)
 
                 x0_selection = 'last'
 
