@@ -70,6 +70,10 @@ class _Data:
         -------
             A subset of the data.
         """
+        # If the object is empty, return itself
+        if self.is_empty():
+            return self
+
         if isinstance(index, int):
             index = [index]
         return _Data(data=self.data.loc[index].copy(),

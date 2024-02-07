@@ -1,6 +1,9 @@
 #                                                                       Modules
 # =============================================================================
 
+# Standard
+import warnings
+
 # Third-party core
 import autograd.numpy as np
 from scipy.optimize import minimize
@@ -18,6 +21,9 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+warnings.filterwarnings(
+    "ignore", message="^OptimizeWarning: Unknown solver options.*")
 
 
 class _SciPyOptimizer(Optimizer):
