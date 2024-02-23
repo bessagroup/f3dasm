@@ -1175,9 +1175,9 @@ class ExperimentData:
                 _experiment_sample = data_generator._run(
                     experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
-            except Exception as e:
-                error_msg = "Error in experiment_sample "
-                f"{experiment_sample._jobnumber}: {e}"
+            except Exception:
+                n = experiment_sample.job_number
+                error_msg = f"Error in experiment_sample {n}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._write_error(experiment_sample._jobnumber)
