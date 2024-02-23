@@ -73,6 +73,7 @@ class OptimizerParameters:
 
 class Optimizer:
     type: ClassVar[str] = 'any'
+    require_gradients: ClassVar[bool] = False
     hyperparameters: OptimizerParameters = OptimizerParameters()
 
     def __init__(

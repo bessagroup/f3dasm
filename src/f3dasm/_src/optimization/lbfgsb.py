@@ -33,7 +33,7 @@ class LBFGSB_Parameters(OptimizerParameters):
 
 class LBFGSB(_SciPyOptimizer):
     """L-BFGS-B"""
-
+    require_gradients: bool = True
     method: str = "L-BFGS-B"
     hyperparameters: LBFGSB_Parameters = LBFGSB_Parameters()
 
