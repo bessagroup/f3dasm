@@ -329,12 +329,17 @@ class ExperimentData:
         ExperimentData
             ExperimentData object containing the loaded data.
         """
+        # Option 0: Both existing and sampling
+        if 'from_file' in config and 'from_sampling' in config:
+            return cls.from_file(config.from_file) + cls.from_sampling(
+                **config.from_sampling)
+
         # Option 1: From exisiting ExperimentData files
         if 'from_file' in config:
             return cls.from_file(config.from_file)
 
         # Option 2: Sample from the domain
-        elif 'from_sampling' in config:
+        if 'from_sampling' in config:
             return cls.from_sampling(**config.from_sampling)
 
         else:
@@ -394,6 +399,25 @@ class ExperimentData:
                               output_data=self._output_data[indices],
                               jobs=self._jobs[indices],
                               domain=self.domain, project_dir=self.project_dir)
+
+    def drop_output(self, names: Iterable[str] | str) -> ExperimentData:
+        """Drop a column from the output data
+
+        Parameters
+        ----------
+        names : Iteraeble | str
+            The names of the columns to drop.
+
+        Returns
+        -------
+        ExperimentData
+            The ExperimentData object with the column dropped.
+        """
+        return ExperimentData(input_data=self._input_data,
+                              output_data=self._output_data.drop(names),
+                              jobs=self._jobs, domain=self.domain.drop_output(
+                                  names),
+                              project_dir=self.project_dir)
 
     def select_with_status(self, status: Literal['open', 'in progress',
                                                  'finished', 'error']
@@ -763,7 +787,8 @@ class ExperimentData:
         self._input_data.add_column(name)
         self.domain.add(name=name, type=type, **kwargs)
 
-    def add_output_parameter(self, name: str, is_disk: bool) -> None:
+    def add_output_parameter(
+            self, name: str, is_disk: bool, exist_ok: bool = False) -> None:
         """Add a new output column to the ExperimentData object.
 
         Parameters
@@ -772,9 +797,12 @@ class ExperimentData:
             name of the new output column
         is_disk
             Whether the output column will be stored on disk or not
+        exist_ok
+            If True, it will not raise an error if the output column already
+            exists, by default False
         """
-        self._output_data.add_column(name)
-        self.domain.add_output(name, is_disk)
+        self._output_data.add_column(name, exist_ok=exist_ok)
+        self.domain.add_output(name=name, to_disk=is_disk, exist_ok=exist_ok)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -1018,6 +1046,13 @@ class ExperimentData:
         Mark all the experiments that have the status 'in progress' open
         """
         self._jobs.mark_all_in_progress_open()
+
+    def mark_all_nan_open(self) -> None:
+        """
+        Mark all the experiments that have 'nan' in output open
+        """
+        indices = self._output_data.get_index_with_nan()
+        self.mark(indices=indices, status='open')
     #                                                            Datageneration
     # =========================================================================
 

@@ -351,6 +351,29 @@ class _Data:
         return _Data(
             self.data[self.columns.iloc(columns)], columns=_selected_columns)
 
+    def drop(self, columns: Iterable[str] | str) -> _Data:
+        """Drop the selected columns from the data.
+
+        Parameters
+        ----------
+        columns : Iterable[str] | str
+            The columns to drop.
+
+        Returns
+        -------
+        _Data
+            The data without the selected columns
+        """
+        if isinstance(columns, str):
+            columns = [columns]
+        _selected_columns = _Columns(
+            {
+                name: None for name in self.columns.columns
+                if name not in columns})
+        return _Data(
+            data=self.data.drop(columns=self.columns.iloc(columns)),
+            columns=_selected_columns)
+
 #                                                        Append and remove data
 # =============================================================================
 
@@ -381,7 +404,14 @@ class _Data:
             np.nan, index=new_indices, columns=self.data.columns)
         self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
-    def add_column(self, name: str):
+    def add_column(self, name: str, exist_ok: bool = False):
+        if name in self.columns.names:
+            if not exist_ok:
+                raise ValueError(
+                    f"Column {name} already exists in the data. "
+                    "Set exist_ok to True to allow skipping existing columns.")
+            return
+
         if self.data.columns.empty:
             new_columns_index = 0
         else:
@@ -453,6 +483,16 @@ class _Data:
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         return self.data.empty
+
+    def get_index_with_nan(self) -> pd.Index:
+        """Get the indices with NaN values.
+
+        Returns
+        -------
+        pd.Index
+            The indices with NaN values.
+        """
+        return self.indices[self.data.isna().any(axis=1)]
 
     def has_columnnames(self, names: Iterable[str]) -> bool:
         return set(names).issubset(self.names)

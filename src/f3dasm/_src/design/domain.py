@@ -428,7 +428,7 @@ class Domain:
                 f"Unknown type {type}!"
                 f"Possible types are: 'float', 'int', 'category', 'constant'.")
 
-    def add_output(self, name: str, to_disk: bool):
+    def add_output(self, name: str, to_disk: bool, exist_ok=False):
         """Add a new output parameter to the domain.
 
         Parameters
@@ -446,9 +446,11 @@ class Domain:
         {'param1': OutputParameter(to_disk=True)}
         """
         if name in self.output_space:
-            raise KeyError(
-                f"Parameter {name} already exists in the domain! \
-                     Choose a different name.")
+            if not exist_ok:
+                raise KeyError(
+                    f"Parameter {name} already exists in the domain! \
+                        Choose a different name.")
+            return
 
         self.output_space[name] = _OutputParameter(to_disk)
 #                                                                       Getters
@@ -723,6 +725,41 @@ class Domain:
             names = [names]
 
         return Domain(space={key: self.space[key] for key in names})
+
+    def drop_output(self, names: str | Iterable[str]) -> Domain:
+        """Drop a subset of output parameters from the domain.
+
+        Parameters
+        ----------
+
+        names : str or Iterable[str]
+            The names of the output parameters to drop.
+
+        Returns
+        -------
+        Domain
+            A new domain with the dropped output parameters.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.output_space = {
+        ...     'param1': _OutputParameter(to_disk=True),
+        ...     'param2': _OutputParameter(to_disk=True),
+        ...     'param3': _OutputParameter(to_disk=True)
+        ... }
+        >>> domain.drop_output(['param1', 'param3'])
+        Domain({'param2': _OutputParameter(to_disk=True)})
+        """
+
+        if isinstance(names, str):
+            names = [names]
+
+        return Domain(
+            space=self.space,
+            output_space={key: self.output_space[key]
+                          for key in self.output_space
+                          if key not in names})
 
 #                                                                 Miscellaneous
 # =============================================================================
