@@ -167,23 +167,19 @@ class ExperimentData:
             return self.get_experiment_sample(index)
 
     def __add__(self,
-                other: ExperimentData | ExperimentSample) -> ExperimentData:
+                __o: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
         # Check if the domains are the same
 
-        if not isinstance(other, (ExperimentData, ExperimentSample)):
+        if not isinstance(__o, (ExperimentData, ExperimentSample)):
             raise TypeError(
                 f"Can only add ExperimentData or "
-                f"ExperimentSample objects, not {type(other)}")
-
-        if isinstance(other, ExperimentData) and self.domain != other.domain:
-            raise ValueError(
-                "Cannot add ExperimentData objects with different domains")
+                f"ExperimentSample objects, not {type(__o)}")
 
         return ExperimentData(
-            input_data=self._input_data + other._input_data,
-            output_data=self._output_data + other._output_data,
-            jobs=self._jobs + other._jobs, domain=self.domain,
+            input_data=self._input_data + __o._input_data,
+            output_data=self._output_data + __o._output_data,
+            jobs=self._jobs + __o._jobs, domain=self.domain + __o.domain,
             project_dir=self.project_dir)
 
     def __eq__(self, __o: ExperimentData) -> bool:

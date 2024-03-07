@@ -58,14 +58,34 @@ class Domain:
         """The len() method returns the number of parameters"""
         return len(self.space)
 
-    def __eq__(self, other: Domain) -> bool:
+    def __eq__(self, __o: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
 
-        if not isinstance(other, Domain):
+        if not isinstance(__o, Domain):
             return TypeError(f"Cannot compare Domain with \
-                {type(other.__name__)}")
+                {type(__o.__name__)}")
         return (
-            self.space == other.space)
+            self.space == __o.space)
+
+    def __add__(self, __o: Domain) -> Domain:
+        if not isinstance(__o, Domain):
+            raise TypeError(f"Cannot add Domain with {type(__o.__name__)}")
+
+        combined_space = {}
+        # Merge values for keys that are present in both dictionaries
+        for key in self.space.keys():
+            if key in __o.space:
+                combined_space[key] = self.space[key] + __o.space[key]
+            else:
+                combined_space[key] = self.space[key]
+
+        # Add keys from dict2 that are not present in dict1
+        for key in __o.space.keys():
+            if key not in self.space:
+                combined_space[key] = __o.space[key]
+
+        return Domain(space=combined_space,
+                      output_space={**self.output_space, **__o.output_space})
 
     def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
