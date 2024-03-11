@@ -62,8 +62,7 @@ class _SciPyOptimizer(Optimizer):
         minimize(
             fun=fun,
             method=self.method,
-            # TODO: #89 Fix this with the newest gradient method!
-            jac='3-point',
+            jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
             options=self.hyperparameters.__dict__,
