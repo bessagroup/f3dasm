@@ -1069,7 +1069,9 @@ class ExperimentData:
     #                                                            Datageneration
     # =========================================================================
 
-    def evaluate(self, data_generator: DataGenerator, mode: str = 'sequential',
+    def evaluate(self, data_generator: DataGenerator,
+                 mode: Literal['sequential', 'parallel',
+                               'cluster', 'cluster_parallel'] = 'sequential',
                  kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirety of the experiments
 
@@ -1077,8 +1079,14 @@ class ExperimentData:
         ----------
         data_generator : DataGenerator
             data grenerator to use
-        mode, optional
-            operational mode, by default 'sequential'
+        mode : str, optional
+            operational mode, by default 'sequential'. Choose between:
+
+            * 'sequential' : Run the operation sequentially
+            * 'parallel' : Run the operation on multiple cores
+            * 'cluster' : Run the operation on the cluster
+            * 'cluster_parallel' : Run the operation on the cluster in parallel
+
         kwargs, optional
             Any keyword arguments that need to
             be supplied to the function, by default None
@@ -1179,19 +1187,32 @@ class ExperimentData:
             except NoOpenJobsError:
                 break
 
-        def f(options: Dict[str, Any]) -> Any:
-            logger.debug(
-                "Running experiment_sample"
-                f"{options['experiment_sample'].job_number}")
-            return data_generator._run(**options)
+        def f(options: Dict[str, Any]) -> Tuple[ExperimentSample, int]:
+            try:
+
+                logger.debug(
+                    f"Running experiment_sample "
+                    f"{options['experiment_sample'].job_number}")
+
+                return (data_generator._run(**options), 0)  # no *args!
+
+            except Exception as e:
+                error_msg = f"Error in experiment_sample \
+                     {options['experiment_sample'].job_number}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
+                return (options['experiment_sample'], 1)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
-            _experiment_samples: List[ExperimentSample] = pool.starmap(
-                f, options)
+            _experiment_samples: List[
+                Tuple[ExperimentSample, int]] = pool.starmap(f, options)
 
-        for _experiment_sample in _experiment_samples:
-            self._set_experiment_sample(_experiment_sample)
+        for _experiment_sample, exit_code in _experiment_samples:
+            if exit_code == 0:
+                self._set_experiment_sample(_experiment_sample)
+            else:
+                self._set_error(_experiment_sample.job_number)
 
     def _run_cluster(self, data_generator: DataGenerator, kwargs: dict):
         """Run the operation on the cluster
@@ -1274,8 +1295,8 @@ class ExperimentData:
 
             d = self.select([e.job_number for e in es_list])
 
-            d.evaluate(data_generator=data_generator, mode='parallel',
-                       kwargs=kwargs)
+            d._run_multiprocessing(
+                data_generator=data_generator, kwargs=kwargs)
 
             # TODO access resource first!
             self.overwrite_disk(

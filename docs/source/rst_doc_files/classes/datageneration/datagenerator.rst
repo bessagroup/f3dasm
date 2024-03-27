@@ -38,7 +38,7 @@ There are three methods available of handeling the :class:`~f3dasm.ExperimentSam
 * :code:`sequential`: regular for-loop over each of the :class:`~f3dasm.ExperimentSample` objects in order
 * :code:`parallel`: utilizing the multiprocessing capabilities (with the `pathos <https://pathos.readthedocs.io/en/latest/pathos.html>`_ multiprocessing library), each :class:`~f3dasm.ExperimentSample` object is run in a separate core
 * :code:`cluster`: utilizing the multiprocessing capabilities, each :class:`~f3dasm.ExperimentSample` object is run in a separate node. After completion of an sample, the node will automatically pick the next available sample. More information on this mode can be found in the :ref:`cluster-mode` section.
-
+* :code:`cluster_parallel`: Combination of the :code:`cluster` and :code:`parallel` mode. Each node will run multiple samples in parallel.
 
 Implement your simulator
 ^^^^^^^^^^^^^^^^^^^^^^^^
