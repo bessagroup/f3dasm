@@ -268,7 +268,7 @@ class _Data:
         """
         df = deepcopy(self.data)
         df.columns = self.names
-        return df
+        return df.astype(object)
 
     def combine_data_to_multiindex(self, other: _Data,
                                    jobs_df: pd.DataFrame) -> pd.DataFrame:

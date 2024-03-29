@@ -150,7 +150,8 @@ class Sampler:
         empty_frame = self.domain._create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
-        samples_frame = pd.DataFrame(data=samples, columns=columnnames)
+        samples_frame = pd.DataFrame(
+            data=samples, columns=columnnames, dtype=object)
         df = pd.concat([empty_frame, samples_frame], sort=True)
 
         return df
@@ -341,4 +342,4 @@ class GridSampler(Sampler):
             _iterdict[k] = range(v.lower_bound, v.upper_bound+1)
 
         return pd.DataFrame(list(product(*_iterdict.values())),
-                            columns=_iterdict)
+                            columns=_iterdict, dtype=object)
