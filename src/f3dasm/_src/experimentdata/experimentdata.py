@@ -30,7 +30,6 @@ import xarray as xr
 from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
-from pandas.errors import EmptyDataError
 from pathos.helpers import mp
 
 # Local
