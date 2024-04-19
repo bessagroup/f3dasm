@@ -14,6 +14,7 @@ import sys
 import traceback
 from functools import wraps
 from pathlib import Path
+from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
                     Tuple, Type)
 
@@ -29,6 +30,7 @@ import xarray as xr
 from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
+from pandas.errors import EmptyDataError
 from pathos.helpers import mp
 
 # Local
@@ -41,7 +43,7 @@ from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
@@ -215,17 +217,35 @@ class ExperimentData:
                 (self.
                  project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME)
                 .with_suffix('.lock'))
+
+            # If the lock has been acquired:
             with lock:
-                self = ExperimentData.from_file(self.project_dir)
-                value = operation(self, *args, **kwargs)
-                self.store()
+                tries = 0
+                while tries < MAX_TRIES:
+                    try:
+                        self = ExperimentData.from_file(self.project_dir)
+                        value = operation(self, *args, **kwargs)
+                        self.store()
+                        break
+
+                    # Racing conditions can occur when the file is empty
+                    # and the file is being read at the same time
+                    except pd.errors.EmptyDataError:
+                        tries += 1
+                        logger.debug((
+                            f"EmptyDataError occurred, retrying"
+                            f" {tries+1}/{MAX_TRIES}"))
+                        sleep(1)
+
+                    raise pd.errors.EmptyDataError()
+
             return value
 
         return wrapper_func
     #                                                                Properties
     # =========================================================================
 
-    @property
+    @ property
     def index(self) -> pd.Index:
         """Returns an iterable of the job number of the experiments
 
@@ -242,7 +262,7 @@ class ExperimentData:
     #                                                  Alternative Constructors
     # =========================================================================
 
-    @classmethod
+    @ classmethod
     def from_file(cls: Type[ExperimentData],
                   project_dir: Path | str) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
