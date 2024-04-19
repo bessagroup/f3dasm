@@ -6,8 +6,15 @@
 from __future__ import annotations
 
 # Standard
+import sys
 from itertools import product
-from typing import Literal, Optional
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Literal  # NOQA
+else:
+    from typing import Literal
+
+from typing import Optional
 
 # Third-party
 import numpy as np
