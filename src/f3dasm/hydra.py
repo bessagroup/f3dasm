@@ -1,17 +1,11 @@
 """
-L-BFGS-B optimizer
+Module for hydra utilities
 """
-
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-from dataclasses import dataclass
-from typing import List
-
-from .adapters.scipy_implementations import _SciPyOptimizer
-# Locals
-from .optimizer import OptimizerParameters
+# Local
+from ._src.hydra_utils import update_config_with_experiment_sample
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,20 +16,6 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-
-@dataclass
-class LBFGSB_Parameters(OptimizerParameters):
-    """Hyperparameters for LBFGSB optimizer"""
-
-    ftol: float = 0.0
-    gtol: float = 0.0
-
-
-class LBFGSB(_SciPyOptimizer):
-    """L-BFGS-B"""
-    require_gradients: bool = True
-    method: str = "L-BFGS-B"
-    hyperparameters: LBFGSB_Parameters = LBFGSB_Parameters()
-
-    def get_info(self) -> List[str]:
-        return ['Stable', 'First-Order', 'Single-Solution']
+__all__ = [
+    'update_config_with_experiment_sample',
+]

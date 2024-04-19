@@ -101,8 +101,8 @@ class Function(DataGenerator):
             x = x._value
             if isinstance(x, ArrayBox):
                 x = x._value
-
-        experiment_sample["y"] = float(self(x).ravel().astype(np.float32))
+        y = np.nan_to_num(self(x), nan=np.nan)
+        experiment_sample["y"] = float(y.ravel().astype(np.float64))
         return experiment_sample
 
     def _run(

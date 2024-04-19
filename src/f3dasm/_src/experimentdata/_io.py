@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Type
 
 # Third-party
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -38,6 +39,9 @@ DOMAIN_FILENAME = "domain"
 INPUT_DATA_FILENAME = "input"
 OUTPUT_DATA_FILENAME = "output"
 JOBS_FILENAME = "jobs"
+
+RESOLUTION_MATPLOTLIB_FIGURE = 300
+MAX_TRIES = 10
 
 #                                                               Storing methods
 # =============================================================================
@@ -116,7 +120,7 @@ class PickleStore(_Store):
 
 class NumpyStore(_Store):
     """Class to store and load objects using the numpy protocol"""
-    suffix: int = '.npy'
+    suffix: str = '.npy'
 
     def store(self) -> None:
         """
@@ -138,7 +142,7 @@ class NumpyStore(_Store):
 
 class PandasStore(_Store):
     """Class to store and load objects using the pandas protocol"""
-    suffix: int = '.csv'
+    suffix: str = '.csv'
 
     def store(self) -> None:
         """
@@ -160,7 +164,7 @@ class PandasStore(_Store):
 
 class XarrayStore(_Store):
     """Class to store and load objects using the xarray protocol"""
-    suffix: int = '.nc'
+    suffix: str = '.nc'
 
     def store(self) -> None:
         """
@@ -180,12 +184,52 @@ class XarrayStore(_Store):
         return xr.open_dataset(self.path.with_suffix(self.suffix))
 
 
+class FigureStore(_Store):
+    """Class to store and load objects using the matplotlib protocol"""
+    suffix: str = '.png'
+
+    def store(self) -> None:
+        """
+        Store the figure to disk as a png file
+
+        Notes
+        -----
+        - The figure is saved with a resolution of 300 dpi.
+        - The figure is saved with tight bounding boxes.
+        """
+        self.object.savefig(self.path.with_suffix(
+            self.suffix), dpi=RESOLUTION_MATPLOTLIB_FIGURE,
+            bbox_inches='tight')
+
+    def load(self) -> np.ndarray:
+        """
+        Load the image as an numpy array from disk
+        using the matplotlib `plt.imread` function.
+
+        Returns
+        -------
+        np.ndarray
+            The loaded image in the form of a numpy array
+
+        Notes
+        -----
+         The returned array has shape
+        - (M, N) for grayscale images.
+        - (M, N, 3) for RGB images.
+        - (M, N, 4) for RGBA images.
+
+        Images are returned as float arrays (0-1).
+        """
+        return plt.imread(self.path.with_suffix(self.suffix))
+
+
 STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
     np.ndarray: NumpyStore,
     pd.DataFrame: PandasStore,
     pd.Series: PandasStore,
     xr.DataArray: XarrayStore,
-    xr.Dataset: XarrayStore
+    xr.Dataset: XarrayStore,
+    plt.Figure: FigureStore,
 }
 
 #                                                  Loading and saving functions

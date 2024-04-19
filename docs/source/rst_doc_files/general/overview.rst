@@ -3,9 +3,9 @@
 Overview
 ========
 
-.. _design-of-experiments: https://bessagroup.github.io/f3dasm/classes/design/experimentdata.html
-.. _sampling: https://bessagroup.github.io/f3dasm/classes/sampling/sampling.html
-.. _optimizing: https://bessagroup.github.io/f3dasm/classes/optimization/optimizers.html
+.. _design-of-experiments: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/design/experimentdata.html
+.. _sampling: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/sampling/sampling.html
+.. _optimizing: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/optimization/optimizers.html
 .. _parallelizing: <URL for parallelizing>
 .. _TORQUE system: https://hpc-wiki.info/hpc/Torque
 

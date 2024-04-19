@@ -28,7 +28,7 @@ class CG_Parameters(OptimizerParameters):
 
 class CG(_SciPyOptimizer):
     """CG"""
-
+    require_gradients: bool = True
     method: str = "CG"
     hyperparameters: CG_Parameters = CG_Parameters()
 

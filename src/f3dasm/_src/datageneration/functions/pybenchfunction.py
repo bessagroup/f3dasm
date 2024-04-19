@@ -269,7 +269,7 @@ class Bartels(PyBenchFunction):
     continuous = True
     convex = False
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -660,7 +660,7 @@ class BukinN6(PyBenchFunction):
     continuous = True
     convex = True
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -737,7 +737,7 @@ class CrossInTray(PyBenchFunction):
     continuous = True
     convex = False
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -1249,7 +1249,7 @@ class HolderTable(PyBenchFunction):
     continuous = True
     convex = False
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -1650,7 +1650,7 @@ class Powell(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2116,7 +2116,7 @@ class Schwefel(PyBenchFunction):
     continuous = True
     convex = False
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -2155,7 +2155,7 @@ class Schwefel2_20(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2193,7 +2193,7 @@ class Schwefel2_21(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2231,7 +2231,7 @@ class Schwefel2_22(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2270,7 +2270,7 @@ class Schwefel2_23(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2490,7 +2490,7 @@ class Sphere(PyBenchFunction):
     continuous = True
     convex = True
     separable = True
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2750,7 +2750,7 @@ class XinSheYangN2(PyBenchFunction):
     continuous = False
     convex = False
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = True
     randomized_term = False
     parametric = False
@@ -2828,7 +2828,7 @@ class XinSheYangN4(PyBenchFunction):
     continuous = True
     convex = True
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False
@@ -2866,7 +2866,7 @@ class Zakharov(PyBenchFunction):
     continuous = True
     convex = False
     separable = False
-    differentiable = False
+    differentiable = True
     multimodal = False
     randomized_term = False
     parametric = False

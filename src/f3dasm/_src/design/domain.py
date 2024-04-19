@@ -58,14 +58,34 @@ class Domain:
         """The len() method returns the number of parameters"""
         return len(self.space)
 
-    def __eq__(self, other: Domain) -> bool:
+    def __eq__(self, __o: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
 
-        if not isinstance(other, Domain):
+        if not isinstance(__o, Domain):
             return TypeError(f"Cannot compare Domain with \
-                {type(other.__name__)}")
+                {type(__o.__name__)}")
         return (
-            self.space == other.space)
+            self.space == __o.space)
+
+    def __add__(self, __o: Domain) -> Domain:
+        if not isinstance(__o, Domain):
+            raise TypeError(f"Cannot add Domain with {type(__o.__name__)}")
+
+        combined_space = {}
+        # Merge values for keys that are present in both dictionaries
+        for key in self.space.keys():
+            if key in __o.space:
+                combined_space[key] = self.space[key] + __o.space[key]
+            else:
+                combined_space[key] = self.space[key]
+
+        # Add keys from dict2 that are not present in dict1
+        for key in __o.space.keys():
+            if key not in self.space:
+                combined_space[key] = __o.space[key]
+
+        return Domain(space=combined_space,
+                      output_space={**self.output_space, **__o.output_space})
 
     def items(self) -> Iterator[_Parameter]:
         """Return an iterator over the items of the parameters"""
@@ -428,7 +448,7 @@ class Domain:
                 f"Unknown type {type}!"
                 f"Possible types are: 'float', 'int', 'category', 'constant'.")
 
-    def add_output(self, name: str, to_disk: bool):
+    def add_output(self, name: str, to_disk: bool, exist_ok=False):
         """Add a new output parameter to the domain.
 
         Parameters
@@ -446,9 +466,11 @@ class Domain:
         {'param1': OutputParameter(to_disk=True)}
         """
         if name in self.output_space:
-            raise KeyError(
-                f"Parameter {name} already exists in the domain! \
-                     Choose a different name.")
+            if not exist_ok:
+                raise KeyError(
+                    f"Parameter {name} already exists in the domain! \
+                        Choose a different name.")
+            return
 
         self.output_space[name] = _OutputParameter(to_disk)
 #                                                                       Getters
@@ -724,6 +746,41 @@ class Domain:
 
         return Domain(space={key: self.space[key] for key in names})
 
+    def drop_output(self, names: str | Iterable[str]) -> Domain:
+        """Drop a subset of output parameters from the domain.
+
+        Parameters
+        ----------
+
+        names : str or Iterable[str]
+            The names of the output parameters to drop.
+
+        Returns
+        -------
+        Domain
+            A new domain with the dropped output parameters.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.output_space = {
+        ...     'param1': _OutputParameter(to_disk=True),
+        ...     'param2': _OutputParameter(to_disk=True),
+        ...     'param3': _OutputParameter(to_disk=True)
+        ... }
+        >>> domain.drop_output(['param1', 'param3'])
+        Domain({'param2': _OutputParameter(to_disk=True)})
+        """
+
+        if isinstance(names, str):
+            names = [names]
+
+        return Domain(
+            space=self.space,
+            output_space={key: self.output_space[key]
+                          for key in self.output_space
+                          if key not in names})
+
 #                                                                 Miscellaneous
 # =============================================================================
 
@@ -753,7 +810,6 @@ class Domain:
         """
         for output_name in names:
             if not self.is_in_output(output_name):
-                print(f"Output {output_name} not in domain. Adding it.")
                 self.add_output(output_name, to_disk=False)
 
     def is_in_output(self, output_name: str) -> bool:

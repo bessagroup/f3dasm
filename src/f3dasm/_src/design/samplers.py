@@ -6,6 +6,14 @@
 from __future__ import annotations
 
 # Standard
+import sys
+from itertools import product
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Literal  # NOQA
+else:
+    from typing import Literal
+
 from typing import Optional
 
 # Third-party
@@ -25,9 +33,11 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+SamplerNames = Literal['random', 'latin', 'sobol', 'grid']
 
 #                                                              Factory function
 # =============================================================================
+
 
 def _sampler_factory(sampler: str, domain: Domain) -> Sampler:
     if sampler.lower() == 'random':
@@ -38,6 +48,9 @@ def _sampler_factory(sampler: str, domain: Domain) -> Sampler:
 
     elif sampler.lower() == 'sobol':
         return SobolSequence(domain)
+
+    elif sampler.lower() == 'grid':
+        return GridSampler(domain)
 
     else:
         raise KeyError(f"Sampler {sampler} not found!"
@@ -144,7 +157,8 @@ class Sampler:
         empty_frame = self.domain._create_empty_dataframe()
 
         # Then, create a new frame from the samples and columnnames
-        samples_frame = pd.DataFrame(data=samples, columns=columnnames)
+        samples_frame = pd.DataFrame(
+            data=samples, columns=columnnames, dtype=object)
         df = pd.concat([empty_frame, samples_frame], sort=True)
 
         return df
@@ -283,3 +297,56 @@ class SobolSequence(Sampler):
         # stretch samples
         samples = self._stretch_samples(samples)
         return samples
+
+
+class GridSampler(Sampler):
+    """Sampling via Grid Sampling
+
+    All the combination of the discrete and categorical parameters are
+    sampled. The argument number_of_samples is ignored.
+    Notes
+    -----
+    This sampler is at the moment only applicable for
+    discrete and categorical parameters.
+
+    """
+
+    def get_samples(self, numsamples: Optional[int] = None) -> pd.DataFrame:
+        """Receive samples of the search space
+
+        Parameters
+        ----------
+        numsamples
+            number of samples
+
+        Returns
+        -------
+            Data objects with the samples
+        """
+
+        self.set_seed(self.seed)
+
+        # If numsamples is None, take the object attribute number_of_samples
+        if numsamples is None:
+            numsamples = self.number_of_samples
+
+        continuous = self.domain.get_continuous_parameters()
+
+        if continuous:
+            raise ValueError("Grid sampling is only possible for domains \
+                             strictly with only discrete and \
+                            categorical parameters")
+
+        discrete = self.domain.get_discrete_parameters()
+        categorical = self.domain.get_categorical_parameters()
+
+        _iterdict = {}
+
+        for k, v in categorical.items():
+            _iterdict[k] = v.categories
+
+        for k, v, in discrete.items():
+            _iterdict[k] = range(v.lower_bound, v.upper_bound+1)
+
+        return pd.DataFrame(list(product(*_iterdict.values())),
+                            columns=_iterdict, dtype=object)

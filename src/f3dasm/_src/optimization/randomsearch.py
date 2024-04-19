@@ -35,7 +35,7 @@ class RandomSearch_Parameters(OptimizerParameters):
 
 class RandomSearch(Optimizer):
     """Naive random search"""
-
+    require_gradients: bool = False
     hyperparameters: RandomSearch_Parameters = RandomSearch_Parameters()
 
     def set_seed(self):

@@ -116,7 +116,7 @@ An overview of the different levels of abstraction is given in \autoref{fig:f3da
 
 # Documentation and collaborative development
 
-To improve the usability of the `f3dasm` frame­work, thorough documentation has been included with the Sphinx package. Documentation for this package can be accessed on [the homepage](https://bessagroup.github.io/f3dasm/) and will be kept up to date with the latest release of the package.
+To improve the usability of the `f3dasm` frame­work, thorough documentation has been included with the Sphinx package. Documentation for this package can be accessed on [the homepage](https://f3dasm.readthedocs.io/en/latest/) and will be kept up to date with the latest release of the package.
 
 The `f3dasm` framework relies on the collaborative efforts of scientists and developers to expand its capabilities. Therefore, it is essential to have a well-defined software development process in place. This is achieved by maintaining strict branching policies, and incorporating comprehensive testing suites and automatic continuous integration with GitHub Workflows.
 
@@ -138,7 +138,7 @@ To maintain the integrity of the framework, various (automatic) validation proce
 
 # Availability
 
-`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://bessagroup.github.io/f3dasm/general/gettingstarted.html) documentation page. 
+`f3dasm` and its extensions are available as a `pip` package and is compatible with Python 3.8 to 3.10 and all major operating systems (Linux, MacOS and Windows). Detailed installation instructions can be found on the ['Getting Started'](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html) documentation page. 
 
 
 # Acknowledgements

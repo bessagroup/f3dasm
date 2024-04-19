@@ -70,6 +70,10 @@ class _Data:
         -------
             A subset of the data.
         """
+        # If the object is empty, return itself
+        if self.is_empty():
+            return self
+
         if isinstance(index, int):
             index = [index]
         return _Data(data=self.data.loc[index].copy(),
@@ -236,7 +240,7 @@ class _Data:
         np.ndarray
             numpy array with the data.
         """
-        return self.data.to_numpy()
+        return self.data.to_numpy(dtype=np.float32)
 
     def to_xarray(self, label: str) -> xr.DataArray:
         """Export the _Data object to a xarray DataArray.
@@ -264,7 +268,7 @@ class _Data:
         """
         df = deepcopy(self.data)
         df.columns = self.names
-        return df
+        return df.astype(object)
 
     def combine_data_to_multiindex(self, other: _Data,
                                    jobs_df: pd.DataFrame) -> pd.DataFrame:
@@ -347,6 +351,29 @@ class _Data:
         return _Data(
             self.data[self.columns.iloc(columns)], columns=_selected_columns)
 
+    def drop(self, columns: Iterable[str] | str) -> _Data:
+        """Drop the selected columns from the data.
+
+        Parameters
+        ----------
+        columns : Iterable[str] | str
+            The columns to drop.
+
+        Returns
+        -------
+        _Data
+            The data without the selected columns
+        """
+        if isinstance(columns, str):
+            columns = [columns]
+        _selected_columns = _Columns(
+            {
+                name: None for name in self.columns.columns
+                if name not in columns})
+        return _Data(
+            data=self.data.drop(columns=self.columns.iloc(columns)),
+            columns=_selected_columns)
+
 #                                                        Append and remove data
 # =============================================================================
 
@@ -377,7 +404,14 @@ class _Data:
             np.nan, index=new_indices, columns=self.data.columns)
         self.data = pd.concat([self.data, empty_data], ignore_index=False)
 
-    def add_column(self, name: str):
+    def add_column(self, name: str, exist_ok: bool = False):
+        if name in self.columns.names:
+            if not exist_ok:
+                raise ValueError(
+                    f"Column {name} already exists in the data. "
+                    "Set exist_ok to True to allow skipping existing columns.")
+            return
+
         if self.data.columns.empty:
             new_columns_index = 0
         else:
@@ -391,6 +425,16 @@ class _Data:
 
     def round(self, decimals: int):
         self.data = self.data.round(decimals=decimals)
+
+    def overwrite(self, indices: Iterable[int], other: _Data | Dict[str, Any]):
+        if isinstance(other, Dict):
+            other = _convert_dict_to_data(other)
+
+        for other_column in other.columns.names:
+            if other_column not in self.columns.names:
+                self.add_column(other_column)
+
+        self.data.update(other.data.set_index(pd.Index(indices)))
 
 #                                                           Getters and setters
 # =============================================================================
@@ -439,6 +483,16 @@ class _Data:
     def is_empty(self) -> bool:
         """Check if the data is empty."""
         return self.data.empty
+
+    def get_index_with_nan(self) -> pd.Index:
+        """Get the indices with NaN values.
+
+        Returns
+        -------
+        pd.Index
+            The indices with NaN values.
+        """
+        return self.indices[self.data.isna().any(axis=1)]
 
     def has_columnnames(self, names: Iterable[str]) -> bool:
         return set(names).issubset(self.names)

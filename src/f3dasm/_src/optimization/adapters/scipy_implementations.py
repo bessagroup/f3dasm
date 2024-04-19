@@ -1,6 +1,9 @@
 #                                                                       Modules
 # =============================================================================
 
+# Standard
+import warnings
+
 # Third-party core
 import autograd.numpy as np
 from scipy.optimize import minimize
@@ -19,12 +22,15 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+warnings.filterwarnings(
+    "ignore", message="^OptimizeWarning: Unknown solver options.*")
+
 
 class _SciPyOptimizer(Optimizer):
     type: str = 'scipy'
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
-        self.data._add_experiments(
+        self.data.add_experiments(
             ExperimentSample.from_numpy(xk, domain=self.domain))
 
     def update_step(self):
@@ -56,8 +62,7 @@ class _SciPyOptimizer(Optimizer):
         minimize(
             fun=fun,
             method=self.method,
-            # TODO: #89 Fix this with the newest gradient method!
-            jac='3-point',
+            jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
             options=self.hyperparameters.__dict__,

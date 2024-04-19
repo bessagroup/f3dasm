@@ -14,6 +14,7 @@ import sys
 import traceback
 from functools import wraps
 from pathlib import Path
+from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
                     Tuple, Type)
 
@@ -35,13 +36,13 @@ from pathos.helpers import mp
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
-from ..design.samplers import Sampler, _sampler_factory
+from ..design.samplers import Sampler, SamplerNames, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
@@ -149,6 +150,9 @@ class ExperimentData:
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
+        if self._input_data.is_empty():
+            return len(self._output_data)
+
         return len(self._input_data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
@@ -164,23 +168,19 @@ class ExperimentData:
             return self.get_experiment_sample(index)
 
     def __add__(self,
-                other: ExperimentData | ExperimentSample) -> ExperimentData:
+                __o: ExperimentData | ExperimentSample) -> ExperimentData:
         """The + operator combines two ExperimentData objects"""
         # Check if the domains are the same
 
-        if not isinstance(other, (ExperimentData, ExperimentSample)):
+        if not isinstance(__o, (ExperimentData, ExperimentSample)):
             raise TypeError(
                 f"Can only add ExperimentData or "
-                f"ExperimentSample objects, not {type(other)}")
-
-        if isinstance(other, ExperimentData) and self.domain != other.domain:
-            raise ValueError(
-                "Cannot add ExperimentData objects with different domains")
+                f"ExperimentSample objects, not {type(__o)}")
 
         return ExperimentData(
-            input_data=self._input_data + other._input_data,
-            output_data=self._output_data + other._output_data,
-            jobs=self._jobs + other._jobs, domain=self.domain,
+            input_data=self._input_data + __o._input_data,
+            output_data=self._output_data + __o._output_data,
+            jobs=self._jobs + __o._jobs, domain=self.domain + __o.domain,
             project_dir=self.project_dir)
 
     def __eq__(self, __o: ExperimentData) -> bool:
@@ -216,17 +216,35 @@ class ExperimentData:
                 (self.
                  project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME)
                 .with_suffix('.lock'))
+
+            # If the lock has been acquired:
             with lock:
-                self = ExperimentData.from_file(self.project_dir)
-                value = operation(self, *args, **kwargs)
-                self.store()
+                tries = 0
+                while tries < MAX_TRIES:
+                    try:
+                        self = ExperimentData.from_file(self.project_dir)
+                        value = operation(self, *args, **kwargs)
+                        self.store()
+                        break
+
+                    # Racing conditions can occur when the file is empty
+                    # and the file is being read at the same time
+                    except pd.errors.EmptyDataError:
+                        tries += 1
+                        logger.debug((
+                            f"EmptyDataError occurred, retrying"
+                            f" {tries+1}/{MAX_TRIES}"))
+                        sleep(1)
+
+                    raise pd.errors.EmptyDataError()
+
             return value
 
         return wrapper_func
     #                                                                Properties
     # =========================================================================
 
-    @property
+    @ property
     def index(self) -> pd.Index:
         """Returns an iterable of the job number of the experiments
 
@@ -235,12 +253,15 @@ class ExperimentData:
         pd.Index
             The job number of all the experiments in pandas Index format
         """
+        if self._input_data.is_empty():
+            return self._output_data.indices
+
         return self._input_data.indices
 
     #                                                  Alternative Constructors
     # =========================================================================
 
-    @classmethod
+    @ classmethod
     def from_file(cls: Type[ExperimentData],
                   project_dir: Path | str) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
@@ -277,8 +298,9 @@ class ExperimentData:
 
         Parameters
         ----------
-        sampler : Sampler
-            Sampler object containing the sampling strategy.
+        sampler : Sampler | str
+            Sampler object containing the sampling strategy or one of the
+            built-in sampler names.
         domain : Domain | DictConfig
             Domain object containing the domain of the experiment or hydra
             DictConfig object containing the configuration.
@@ -291,6 +313,17 @@ class ExperimentData:
         -------
         ExperimentData
             ExperimentData object containing the sampled data.
+
+        Note
+        ----
+
+        If a string is passed for the sampler argument, it should be one
+        of the built-in samplers:
+
+        * 'random' : Random sampling
+        * 'latin' : Latin Hypercube Sampling
+        * 'sobol' : Sobol Sequence Sampling
+        * 'grid' : Grid Search Sampling
         """
         experimentdata = cls(domain=domain)
         experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
@@ -311,12 +344,17 @@ class ExperimentData:
         ExperimentData
             ExperimentData object containing the loaded data.
         """
+        # Option 0: Both existing and sampling
+        if 'from_file' in config and 'from_sampling' in config:
+            return cls.from_file(config.from_file) + cls.from_sampling(
+                **config.from_sampling)
+
         # Option 1: From exisiting ExperimentData files
         if 'from_file' in config:
             return cls.from_file(config.from_file)
 
         # Option 2: Sample from the domain
-        elif 'from_sampling' in config:
+        if 'from_sampling' in config:
             return cls.from_sampling(**config.from_sampling)
 
         else:
@@ -376,6 +414,53 @@ class ExperimentData:
                               output_data=self._output_data[indices],
                               jobs=self._jobs[indices],
                               domain=self.domain, project_dir=self.project_dir)
+
+    def drop_output(self, names: Iterable[str] | str) -> ExperimentData:
+        """Drop a column from the output data
+
+        Parameters
+        ----------
+        names : Iteraeble | str
+            The names of the columns to drop.
+
+        Returns
+        -------
+        ExperimentData
+            The ExperimentData object with the column dropped.
+        """
+        return ExperimentData(input_data=self._input_data,
+                              output_data=self._output_data.drop(names),
+                              jobs=self._jobs, domain=self.domain.drop_output(
+                                  names),
+                              project_dir=self.project_dir)
+
+    def select_with_status(self, status: Literal['open', 'in progress',
+                                                 'finished', 'error']
+                           ) -> ExperimentData:
+        """Select a subset of the ExperimentData object with a given status
+
+        Parameters
+        ----------
+        status : Literal['open', 'in progress', 'finished', 'error']
+            The status to select.
+
+        Returns
+        -------
+        ExperimentData
+            The selected ExperimentData object with only the selected status.
+
+        Raises
+        ------
+        ValueError
+            Raised when invalid status is specified
+        """
+        if status not in [s.value for s in Status]:
+            raise ValueError(f"Invalid status {status} given. "
+                             f"\nChoose from values: "
+                             f"{', '.join([s.value for s in Status])}")
+
+        _indices = self._jobs.select_all(status).indices
+        return self.select(_indices)
 
     def get_input_data(self,
                        parameter_names: Optional[str | Iterable[str]] = None
@@ -578,26 +663,33 @@ class ExperimentData:
         jobs : Optional[Path  |  str], optional
             jobs off the added object, by default None
         """
-        self._add_experiments(ExperimentData(
+        self.add_experiments(ExperimentData(
             domain=domain, input_data=input_data,
             output_data=output_data,
             jobs=jobs))
 
-    def _add_experiments(self,
-                         experiment_sample: ExperimentSample | ExperimentData
-                         ) -> None:
+    def add_experiments(self,
+                        experiment_sample: ExperimentSample | ExperimentData
+                        ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
-         attribute.
+        attribute.
 
         Parameters
         ----------
         experiment_sample : ExperimentSample or ExperimentData
             Experiment(s) to add.
+
+        Raises
+        ------
+        ValueError
+            If -after checked- the indices of the input and output data
+            objects are not equal.
         """
 
         if isinstance(experiment_sample, ExperimentData):
             experiment_sample._reset_index()
+            self.domain += experiment_sample.domain
 
         self._input_data += experiment_sample._input_data
         self._output_data += experiment_sample._output_data
@@ -613,7 +705,101 @@ class ExperimentData:
 
         # Apparently you need to cast the types again
         # TODO: Breaks if values are NaN or infinite
-        self._input_data.cast_types(self.domain)
+        # self._input_data.cast_types(self.domain)
+
+    def overwrite(
+        self, indices: Iterable[int],
+            domain: Optional[Domain] = None,
+            input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None,
+            jobs: Optional[Path | str] = None,
+            add_if_not_exist: bool = False
+    ) -> None:
+        """Overwrite the ExperimentData object.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        domain : Optional[Domain], optional
+            Domain of the new object, by default None
+        input_data : Optional[DataTypes], optional
+            input parameters of the new object, by default None
+        output_data : Optional[DataTypes], optional
+            output parameters of the new object, by default None
+        jobs : Optional[Path  |  str], optional
+            jobs off the new object, by default None
+        add_if_not_exist : bool, optional
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object, by default False
+        """
+
+        # Be careful, if a job has output data and gets overwritten with a
+        # job that has no output data, the status is set to open. But the job
+        # will still have the output data!
+
+        # This is usually not a problem, because the output data will be
+        # immediately overwritten in optimization.
+
+        self._overwrite_experiments(
+            indices=indices,
+            experiment_sample=ExperimentData(
+                domain=domain, input_data=input_data,
+                output_data=output_data,
+                jobs=jobs),
+            add_if_not_exist=add_if_not_exist)
+
+    def _overwrite_experiments(
+        self, indices: Iterable[int],
+            experiment_sample: ExperimentSample | ExperimentData,
+            add_if_not_exist: bool) -> None:
+        """
+        Overwrite the ExperimentData object at the given indices.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices to overwrite.
+        experimentdata : ExperimentData | ExperimentSample
+            The new ExperimentData object to overwrite with.
+        add_if_not_exist : bool
+            If True, the new objects are added if the requested indices
+            do not exist in the current ExperimentData object.
+        """
+        if not all(pd.Index(indices).isin(self.index)):
+            if add_if_not_exist:
+                self.add_experiments(experiment_sample)
+                return
+            else:
+                raise ValueError(
+                    f"The given indices {indices} do not exist in the current "
+                    f"ExperimentData object. "
+                    f"If you want to add the new experiments, "
+                    f"set add_if_not_exist to True.")
+
+        self._input_data.overwrite(
+            indices=indices, other=experiment_sample._input_data)
+        self._output_data.overwrite(
+            indices=indices, other=experiment_sample._output_data)
+
+        self._jobs.overwrite(
+            indices=indices, other=experiment_sample._jobs)
+
+        if isinstance(experiment_sample, ExperimentData):
+            self.domain += experiment_sample.domain
+
+    @_access_file
+    def overwrite_disk(
+        self, indices: Iterable[int],
+            domain: Optional[Domain] = None,
+            input_data: Optional[DataTypes] = None,
+            output_data: Optional[DataTypes] = None,
+            jobs: Optional[Path | str] = None,
+            add_if_not_exist: bool = False
+    ) -> None:
+        self.overwrite(indices=indices, domain=domain, input_data=input_data,
+                       output_data=output_data, jobs=jobs,
+                       add_if_not_exist=add_if_not_exist)
 
     def add_input_parameter(
         self, name: str,
@@ -633,7 +819,8 @@ class ExperimentData:
         self._input_data.add_column(name)
         self.domain.add(name=name, type=type, **kwargs)
 
-    def add_output_parameter(self, name: str, is_disk: bool) -> None:
+    def add_output_parameter(
+            self, name: str, is_disk: bool, exist_ok: bool = False) -> None:
         """Add a new output column to the ExperimentData object.
 
         Parameters
@@ -642,9 +829,12 @@ class ExperimentData:
             name of the new output column
         is_disk
             Whether the output column will be stored on disk or not
+        exist_ok
+            If True, it will not raise an error if the output column already
+            exists, by default False
         """
-        self._output_data.add_column(name)
-        self.domain.add_output(name, is_disk)
+        self._output_data.add_column(name, exist_ok=exist_ok)
+        self.domain.add_output(name=name, to_disk=is_disk, exist_ok=exist_ok)
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -671,7 +861,11 @@ class ExperimentData:
         Reset the index of the ExperimentData object.
         """
         self._input_data.reset_index()
-        self._output_data.reset_index(self._input_data.indices)
+
+        if self._input_data.is_empty():
+            self._output_data.reset_index()
+        else:
+            self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
 #                                                                  ExperimentSample
@@ -878,10 +1072,25 @@ class ExperimentData:
         Mark all the experiments that have the status 'error' open
         """
         self._jobs.mark_all_error_open()
+
+    def mark_all_in_progress_open(self) -> None:
+        """
+        Mark all the experiments that have the status 'in progress' open
+        """
+        self._jobs.mark_all_in_progress_open()
+
+    def mark_all_nan_open(self) -> None:
+        """
+        Mark all the experiments that have 'nan' in output open
+        """
+        indices = self._output_data.get_index_with_nan()
+        self.mark(indices=indices, status='open')
     #                                                            Datageneration
     # =========================================================================
 
-    def evaluate(self, data_generator: DataGenerator, mode: str = 'sequential',
+    def evaluate(self, data_generator: DataGenerator,
+                 mode: Literal['sequential', 'parallel',
+                               'cluster', 'cluster_parallel'] = 'sequential',
                  kwargs: Optional[dict] = None) -> None:
         """Run any function over the entirety of the experiments
 
@@ -889,8 +1098,14 @@ class ExperimentData:
         ----------
         data_generator : DataGenerator
             data grenerator to use
-        mode, optional
-            operational mode, by default 'sequential'
+        mode : str, optional
+            operational mode, by default 'sequential'. Choose between:
+
+            * 'sequential' : Run the operation sequentially
+            * 'parallel' : Run the operation on multiple cores
+            * 'cluster' : Run the operation on the cluster
+            * 'cluster_parallel' : Run the operation on the cluster in parallel
+
         kwargs, optional
             Any keyword arguments that need to
             be supplied to the function, by default None
@@ -913,6 +1128,8 @@ class ExperimentData:
             return self._run_multiprocessing(data_generator, kwargs)
         elif mode.lower() == "cluster":
             return self._run_cluster(data_generator, kwargs)
+        elif mode.lower() == "cluster_parallel":
+            return self._run_cluster_parallel(data_generator, kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
@@ -989,19 +1206,32 @@ class ExperimentData:
             except NoOpenJobsError:
                 break
 
-        def f(options: Dict[str, Any]) -> Any:
-            logger.debug(
-                "Running experiment_sample"
-                f"{options['experiment_sample'].job_number}")
-            return data_generator._run(**options)
+        def f(options: Dict[str, Any]) -> Tuple[ExperimentSample, int]:
+            try:
+
+                logger.debug(
+                    f"Running experiment_sample "
+                    f"{options['experiment_sample'].job_number}")
+
+                return (data_generator._run(**options), 0)  # no *args!
+
+            except Exception as e:
+                error_msg = f"Error in experiment_sample \
+                     {options['experiment_sample'].job_number}: {e}"
+                error_traceback = traceback.format_exc()
+                logger.error(f"{error_msg}\n{error_traceback}")
+                return (options['experiment_sample'], 1)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
-            _experiment_samples: List[ExperimentSample] = pool.starmap(
-                f, options)
+            _experiment_samples: List[
+                Tuple[ExperimentSample, int]] = pool.starmap(f, options)
 
-        for _experiment_sample in _experiment_samples:
-            self._set_experiment_sample(_experiment_sample)
+        for _experiment_sample, exit_code in _experiment_samples:
+            if exit_code == 0:
+                self._set_experiment_sample(_experiment_sample)
+            else:
+                self._set_error(_experiment_sample.job_number)
 
     def _run_cluster(self, data_generator: DataGenerator, kwargs: dict):
         """Run the operation on the cluster
@@ -1035,13 +1265,66 @@ class ExperimentData:
                 _experiment_sample = data_generator._run(
                     experiment_sample, **kwargs)
                 self._write_experiment_sample(_experiment_sample)
-            except Exception as e:
-                error_msg = "Error in experiment_sample "
-                f"{experiment_sample._jobnumber}: {e}"
+            except Exception:
+                n = experiment_sample.job_number
+                error_msg = f"Error in experiment_sample {n}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._write_error(experiment_sample._jobnumber)
                 continue
+
+        self = self.from_file(self.project_dir)
+        # Remove the lockfile from disk
+        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+         ).with_suffix('.lock').unlink(missing_ok=True)
+
+    def _run_cluster_parallel(
+            self, data_generator: DataGenerator, kwargs: dict):
+        """Run the operation on the cluster and parallelize it over cores
+
+        Parameters
+        ----------
+        operation : ExperimentSampleCallable
+            function execution for every entry in the ExperimentData object
+        kwargs : dict
+            Any keyword arguments that need to be supplied to the function
+
+        Raises
+        ------
+        NoOpenJobsError
+            Raised when there are no open jobs left
+        """
+        # Retrieve the updated experimentdata object from disc
+        try:
+            self = self.from_file(self.project_dir)
+        except FileNotFoundError:  # If not found, store current
+            self.store()
+
+        no_jobs = False
+
+        while True:
+            es_list = []
+            for core in range(mp.cpu_count()):
+                try:
+                    es_list.append(self._get_open_job_data())
+                except NoOpenJobsError:
+                    logger.debug("No Open jobs left!")
+                    no_jobs = True
+                    break
+
+            d = self.select([e.job_number for e in es_list])
+
+            d._run_multiprocessing(
+                data_generator=data_generator, kwargs=kwargs)
+
+            # TODO access resource first!
+            self.overwrite_disk(
+                indices=d.index, input_data=d._input_data,
+                output_data=d._output_data, jobs=d._jobs,
+                domain=d.domain, add_if_not_exist=False)
+
+            if no_jobs:
+                break
 
         self = self.from_file(self.project_dir)
         # Remove the lockfile from disk
@@ -1053,63 +1336,102 @@ class ExperimentData:
 
     def optimize(self, optimizer: Optimizer | str,
                  data_generator: DataGenerator | str,
-                 iterations: int, kwargs: Optional[Dict[str, Any]] = None,
+                 iterations: int,
+                 kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None,
-                 x0_selection: str = 'best') -> None:
+                 x0_selection: Literal['best', 'random',
+                                       'last',
+                                       'new'] | ExperimentData = 'best',
+                 sampler: Optional[Sampler | str] = 'random',
+                 overwrite: bool = False,
+                 callback: Optional[Callable] = None) -> None:
         """Optimize the experimentdata object
 
         Parameters
         ----------
-        optimizer : Optimizer
-            Optimizer object to use
+        optimizer : Optimizer | str
+            Optimizer object
         data_generator : DataGenerator | str
-            Data generator object to use
+            DataGenerator object
         iterations : int
-            Number of iterations to run
+            number of iterations
         kwargs : Dict[str, Any], optional
-            Any additional keyword arguments that need to be supplied to \
-            the data generator, by default None
+            any additional keyword arguments that will be passed to
+            the DataGenerator
         hyperparameters : Dict[str, Any], optional
-            Any additional hyperparameters that need to be supplied to the \
-            optimizer, by default None
-        x0_selection : str, optional
-            How to select the initial design, by default 'best'
+            any additional keyword arguments that will be passed to
+            the optimizer
+        x0_selection : str | ExperimentData
+            How to select the initial design. By default 'best'
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+        sampler: Sampler, optional
+            If x0_selection = 'new', the sampler to use. By default 'random'
+        overwrite: bool, optional
+            If True, the optimizer will overwrite the current data. By default
+            False
+        callback : Callable, optional
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-        ValueError
-            Raised when invalid optimizer type is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-
-        The number of designs selected is equal to the \
-        population size of the optimizer
         """
+        # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
-                data_generator, self.domain, kwargs)
+                data_generator=data_generator,
+                domain=self.domain, kwargs=kwargs)
 
+        # Create the optimizer object if a string reference is passed
         if isinstance(optimizer, str):
             optimizer: Optimizer = _optimizer_factory(
                 optimizer, self.domain, hyperparameters)
 
+        # Create the sampler object if a string reference is passed
+        if isinstance(sampler, str):
+            sampler: Sampler = _sampler_factory(sampler, self.domain)
+
         if optimizer.type == 'scipy':
             self._iterate_scipy(
-                optimizer, data_generator, iterations, kwargs, x0_selection)
+                optimizer=optimizer, data_generator=data_generator,
+                iterations=iterations, kwargs=kwargs,
+                x0_selection=x0_selection,
+                sampler=sampler,
+                overwrite=overwrite,
+                callback=callback)
         else:
             self._iterate(
-                optimizer, data_generator, iterations, kwargs, x0_selection)
+                optimizer=optimizer, data_generator=data_generator,
+                iterations=iterations, kwargs=kwargs,
+                x0_selection=x0_selection,
+                sampler=sampler,
+                overwrite=overwrite,
+                callback=callback)
 
     def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
-                 iterations: int, kwargs: dict, x0_selection: str):
+                 iterations: int, kwargs: Dict[str, Any], x0_selection: str,
+                 sampler: Sampler, overwrite: bool,
+                 callback: Callable):
         """Internal represenation of the iteration process
 
         Parameters
@@ -1120,29 +1442,86 @@ class ExperimentData:
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : dict, optional
-            any additional keyword arguments that will be passed to \
-            the DataGenerator, by default None
-        x0_selection : str
-            How to select the initial design
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        x0_selection : str | ExperimentData
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
+        sampler: Sampler
+            If x0_selection = 'new', the sampler to use
+        overwrite: bool
+            If True, the optimizer will overwrite the current data.
+        callback : Callable
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-
-        The number of designs selected is equal to the \
-        population size of the optimizer
         """
-        optimizer.set_x0(self, mode=x0_selection)
+        last_index = self.index[-1] if not self.index.empty else -1
+
+        if isinstance(x0_selection, str):
+            if x0_selection == 'new':
+
+                if iterations < optimizer.hyperparameters.population:
+                    raise ValueError(
+                        f'For creating new samples, the total number of '
+                        f'requested iterations ({iterations}) cannot be '
+                        f'smaller than the population size '
+                        f'({optimizer.hyperparameters.population})')
+
+                init_samples = ExperimentData.from_sampling(
+                    domain=self.domain,
+                    sampler=sampler,
+                    n_samples=optimizer.hyperparameters.population,
+                    seed=optimizer.seed)
+
+                init_samples.evaluate(
+                    data_generator=data_generator, kwargs=kwargs,
+                    mode='sequential')
+
+                if callback is not None:
+                    callback(init_samples)
+
+                if overwrite:
+                    _indices = init_samples.index + last_index + 1
+                    self._overwrite_experiments(
+                        experiment_sample=init_samples,
+                        indices=_indices,
+                        add_if_not_exist=True)
+
+                else:
+                    self.add_experiments(init_samples)
+
+                x0_selection = 'last'
+                iterations -= optimizer.hyperparameters.population
+
+        x0 = x0_factory(experiment_data=self, mode=x0_selection,
+                        n_samples=optimizer.hyperparameters.population)
+        optimizer.set_data(x0)
+
         optimizer._check_number_of_datapoints()
 
         optimizer._construct_model(data_generator)
@@ -1154,20 +1533,33 @@ class ExperimentData:
 
             # If new_samples is a tuple of input_data and output_data
             if isinstance(new_samples, tuple):
-                self.add(domain=self.domain,
-                         input_data=new_samples[0], output_data=new_samples[1])
+                new_samples = ExperimentData(
+                    domain=self.domain,
+                    input_data=new_samples[0],
+                    output_data=new_samples[1],
+                )
+            # If applicable, evaluate the new designs:
+            new_samples.evaluate(
+                data_generator, mode='sequential', kwargs=kwargs)
+
+            if callback is not None:
+                callback(new_samples)
+
+            if overwrite:
+                _indices = new_samples.index + last_index + 1
+                self._overwrite_experiments(experiment_sample=new_samples,
+                                            indices=_indices,
+                                            add_if_not_exist=True)
 
             else:
-                self._add_experiments(new_samples)
-
-            # If applicable, evaluate the new designs:
-            self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+                self.add_experiments(new_samples)
 
             optimizer.set_data(self)
 
-        # Remove overiterations
-        self.remove_rows_bottom(number_of_overiterations(
-            iterations, population=optimizer.hyperparameters.population))
+        if not overwrite:
+            # Remove overiterations
+            self.remove_rows_bottom(number_of_overiterations(
+                iterations, population=optimizer.hyperparameters.population))
 
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
@@ -1175,77 +1567,139 @@ class ExperimentData:
     def _iterate_scipy(self, optimizer: Optimizer,
                        data_generator: DataGenerator,
                        iterations: int, kwargs: dict,
-                       x0_selection: str):
-        """Internal represenation of the iteration process for s
-        cipy-optimize algorithms
+                       x0_selection: str | ExperimentData,
+                       sampler: Sampler, overwrite: bool,
+                       callback: Callable):
+        """Internal represenation of the iteration process for scipy-minimize
+        optimizers.
 
         Parameters
         ----------
-        optimizer : _Optimizer
+        optimizer : Optimizer
             Optimizer object
         data_generator : DataGenerator
             DataGenerator object
         iterations : int
             number of iterations
-        kwargs : dict, optional
-            any additional keyword arguments that will be passed \
-            to the DataGenerator, by default None
-        x0_selection : str
-            How to select the initial design
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        x0_selection : str | ExperimentData
+            How to select the initial design.
+            The following x0_selections are available:
+
+            * 'best': Select the best designs from the current experimentdata
+            * 'random': Select random designs from the current experimentdata
+            * 'last': Select the last designs from the current experimentdata
+            * 'new': Create new random designs from the current experimentdata
+
+            If the x0_selection is 'new', new designs are sampled with the
+            sampler provided. The number of designs selected is equal to the
+            population size of the optimizer.
+
+            If an ExperimentData object is passed as x0_selection,
+            the optimizer will use the input_data and output_data from this
+            object as initial samples.
+
+        sampler: Sampler
+            If x0_selection = 'new', the sampler to use
+        overwrite: bool
+            If True, the optimizer will overwrite the current data.
+        callback : Callable
+            A callback function that is called after every iteration. It has
+            the following signature:
+
+                    ``callback(intermediate_result: ExperimentData)``
+
+            where the first argument is a parameter containing an
+            `ExperimentData` object with the current iterate(s).
 
         Raises
         ------
         ValueError
             Raised when invalid x0_selection is specified
-
-        Note
-        ----
-        The following x0_selections are available:
-
-        * 'best': Select the best designs from the current experimentdata
-        * 'random': Select random designs from the current experimentdata
-        * 'last': Select the last designs from the current experimentdata
-
-        The number of designs selected is equal to the \
-        population size of the optimizer
         """
-
-        optimizer.set_x0(self, mode=x0_selection)
+        last_index = self.index[-1] if not self.index.empty else -1
         n_data_before_iterate = len(self)
+
+        if isinstance(x0_selection, str):
+            if x0_selection == 'new':
+
+                if iterations < optimizer.hyperparameters.population:
+                    raise ValueError(
+                        f'For creating new samples, the total number of '
+                        f'requested iterations ({iterations}) cannot be '
+                        f'smaller than the population size '
+                        f'({optimizer.hyperparameters.population})')
+
+                init_samples = ExperimentData.from_sampling(
+                    domain=self.domain,
+                    sampler=sampler,
+                    n_samples=optimizer.hyperparameters.population,
+                    seed=optimizer.seed)
+
+                init_samples.evaluate(
+                    data_generator=data_generator, kwargs=kwargs,
+                    mode='sequential')
+
+                if callback is not None:
+                    callback(init_samples)
+
+                if overwrite:
+                    _indices = init_samples.index + last_index + 1
+                    self._overwrite_experiments(
+                        experiment_sample=init_samples,
+                        indices=_indices,
+                        add_if_not_exist=True)
+
+                else:
+                    self.add_experiments(init_samples)
+
+                x0_selection = 'last'
+
+        x0 = x0_factory(experiment_data=self, mode=x0_selection,
+                        n_samples=optimizer.hyperparameters.population)
+        optimizer.set_data(x0)
+
         optimizer._check_number_of_datapoints()
 
         optimizer.run_algorithm(iterations, data_generator)
 
-        # Do not add the first element, as this is already in the sampled data
-        self._add_experiments(optimizer.data.select(optimizer.data.index[1:]))
+        new_samples: ExperimentData = optimizer.data.select(
+            optimizer.data.index[1:])
+        new_samples.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
-        # TODO: At the end, the data should have
-        # n_data_before_iterate + iterations amount of elements!
-        # If x_new is empty, repeat best x0 to fill up total iteration
-        if len(self) == n_data_before_iterate:
-            repeated_x, repeated_y = self.get_n_best_output(
-                n_samples=1).to_numpy()
-            # repeated_last_element = self.get_n_best_output(
-            #     n_samples=1).to_numpy()[0].ravel()
+        if callback is not None:
+            callback(new_samples)
 
-            for repetition in range(iterations):
-                # self._add_experiments(
-                #     ExperimentSample.from_numpy(repeated_last_element,
-                #                                 domain=self.domain))
+        if overwrite:
+            self.add_experiments(
+                optimizer.data.select([optimizer.data.index[-1]]))
 
-                self.add(
-                    domain=self.domain, input_data=repeated_x,
-                    output_data=repeated_y)
+        elif not overwrite:
+            # Do not add the first element, as this is already
+            # in the sampled data
+            self.add_experiments(new_samples)
 
-        # Repeat last iteration to fill up total iteration
-        if len(self) < n_data_before_iterate + iterations:
-            last_design = self.get_experiment_sample(len(self)-1)
+            # TODO: At the end, the data should have
+            # n_data_before_iterate + iterations amount of elements!
+            # If x_new is empty, repeat best x0 to fill up total iteration
+            if len(self) == n_data_before_iterate:
+                repeated_sample = self.get_n_best_output(
+                    n_samples=1)
 
-            while len(self) < n_data_before_iterate + iterations:
-                self._add_experiments(last_design)
+                for repetition in range(iterations):
+                    self.add_experiments(repeated_sample)
+
+            # Repeat last iteration to fill up total iteration
+            if len(self) < n_data_before_iterate + iterations:
+                last_design = self.get_experiment_sample(len(self)-1)
+
+                while len(self) < n_data_before_iterate + iterations:
+                    self.add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
-        self.evaluate(data_generator, mode='sequential')
+        self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
@@ -1253,26 +1707,24 @@ class ExperimentData:
     #                                                                  Sampling
     # =========================================================================
 
-    def sample(self, sampler: Sampler | str, n_samples: int = 1,
+    def sample(self, sampler: Sampler | SamplerNames, n_samples: int = 1,
                seed: Optional[int] = None) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
         ----------
-        sampler : Sampler or str
+        sampler: Sampler | str
             Sampler callable or string of built-in sampler
+            If a string is passed, it should be one of the built-in samplers:
+
+            * 'random' : Random sampling
+            * 'latin' : Latin Hypercube Sampling
+            * 'sobol' : Sobol Sequence Sampling
+            * 'grid' : Grid Search Sampling
         n_samples : int, optional
             Number of samples to generate, by default 1
         seed : Optional[int], optional
             Seed to use for the sampler, by default None
-
-        Note
-        ----
-        If a string is passed, it should be one of the built-in samplers:
-
-        * 'random' : Random sampling
-        * 'latin' : Latin Hypercube Sampling
-        * 'sobol' : Sobol Sequence Sampling
 
         Raises
         ------
@@ -1299,3 +1751,50 @@ class ExperimentData:
             Path to the project directory
         """
         self.project_dir = _project_dir_factory(project_dir)
+
+
+def x0_factory(experiment_data: ExperimentData,
+               mode: str | ExperimentData, n_samples: int):
+    """Set the initial population to the best n samples of the given data
+
+    Parameters
+    ----------
+    experiment_data : ExperimentData
+        Data to be used for the initial population
+    mode : str
+        Mode of selecting the initial population, by default 'best'
+        The following modes are available:
+
+            - best: select the best n samples
+            - random: select n random samples
+            - last: select the last n samples
+    n_samples : int
+        Number of samples to select
+
+    Raises
+    ------
+    ValueError
+        Raises when the mode is not recognized
+    """
+    if isinstance(mode, ExperimentData):
+        x0 = mode
+
+    elif mode == 'best':
+        x0 = experiment_data.get_n_best_output(n_samples)
+
+    elif mode == 'random':
+        x0 = experiment_data.select(
+            np.random.choice(
+                experiment_data.index,
+                size=n_samples, replace=False))
+
+    elif mode == 'last':
+        x0 = experiment_data.select(
+            experiment_data.index[-n_samples:])
+
+    else:
+        raise ValueError(
+            f'Unknown selection mode {mode}, use best, random or last')
+
+    x0._reset_index()
+    return x0

@@ -33,7 +33,7 @@ class NelderMead_Parameters(OptimizerParameters):
 
 class NelderMead(_SciPyOptimizer):
     """Nelder-Mead"""
-
+    require_gradients: bool = False
     method: str = "Nelder-Mead"
     hyperparameters: NelderMead_Parameters = NelderMead_Parameters()
 

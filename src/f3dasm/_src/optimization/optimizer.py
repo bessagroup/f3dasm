@@ -73,6 +73,7 @@ class OptimizerParameters:
 
 class Optimizer:
     type: ClassVar[str] = 'any'
+    require_gradients: ClassVar[bool] = False
     hyperparameters: OptimizerParameters = OptimizerParameters()
 
     def __init__(
@@ -86,17 +87,17 @@ class Optimizer:
             Domain indicating the search-space of the optimization parameters
         seed : Optional[int], optional
             Seed of the random number generator for stochastic optimization
-             processes, by default None, set to random
+            processes, by default None, set to random
         name : Optional[str], optional
             Name of the optimization object, by default None,
-             it will use the name of the class
+            it will use the name of the class
 
 
         Note
         ----
 
         Any additional keyword arguments will be used to overwrite
-         the default hyperparameters of the optimizer.
+        the default hyperparameters of the optimizer.
         """
 
         # Check if **hyperparameters is empty
@@ -152,55 +153,15 @@ class Optimizer:
 
     def reset(self, data: ExperimentData):
         """Reset the optimizer to its initial state"""
-        self.data = data
+        self.set_data(data)
         self.__post_init__()
 
     def set_data(self, data: ExperimentData):
         """Set the data attribute to the given data"""
         self.data = data
 
-    def set_x0(self, experiment_data: ExperimentData, mode: str):
-        """Set the initial population to the best n samples of the given data
-
-        Parameters
-        ----------
-        experiment_data : ExperimentData
-            Data to be used for the initial population
-        mode : str
-            Mode of selecting the initial population, by default 'best'
-
-        Raises
-        ------
-        ValueError
-            Raises when the mode is not recognized
-
-        Note
-        ----
-        The following modes are available:
-            - best: select the best n samples
-            - random: select n random samples
-            - last: select the last n samples
-        """
-        if mode.lower() == 'best':
-            x0 = experiment_data.get_n_best_output(
-                self.hyperparameters.population)
-
-        elif mode.lower() == 'random':
-            x0 = experiment_data.select(
-                np.random.choice(
-                    experiment_data.index,
-                    self.hyperparameters.population, replace=False))
-
-        elif mode.lower() == 'last':
-            x0 = experiment_data.select(
-                experiment_data.index[-self.hyperparameters.population:])
-
-        else:
-            raise ValueError(
-                f'Unknown selection mode {mode}, use best, random or last')
-
-        x0._reset_index()
-        self.data = x0
+    def add_experiments(self, experiments: ExperimentData):
+        ...
 
     def get_name(self) -> str:
         """Get the name of the optimizer

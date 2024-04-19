@@ -9,7 +9,14 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 # Standard
+import sys
 from pathlib import Path
+
+if sys.version_info < (3, 8):  # NOQA
+    from typing_extensions import Literal  # NOQA
+else:
+    from typing import Literal
+
 from typing import Any, Dict, Optional, Tuple, Type
 
 # Third-party
@@ -195,7 +202,7 @@ class ExperimentSample:
         self._dict_output[key] = (value, False)
 
     def __repr__(self) -> str:
-        return (f"ExperimentSample({self.job_number} :"
+        return (f"ExperimentSample({self.job_number} ({self.jobs}) :"
                 f"{self.input_data} - {self.output_data})")
 
     @property
@@ -257,8 +264,26 @@ class ExperimentSample:
         """
         return self._jobnumber
 
+    @property
+    def jobs(self) -> Literal['finished', 'open']:
+        """Retrieve the job status.
+
+        Returns
+        -------
+        str
+            The job number of the design as a tuple.
+        """
+        # Check if the output contains values or not all nan
+        has_all_nan = np.all(np.isnan(list(self._output_data.values())))
+
+        if self._output_data and not has_all_nan:
+            status = 'finished'
+        else:
+            status = 'open'
+
+        return status
+
     # Alias
-    jobs = job_number
     _jobs = jobs
 
 #                                                                        Export

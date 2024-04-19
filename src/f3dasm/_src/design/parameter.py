@@ -66,6 +66,27 @@ class _ConstantParameter(_Parameter):
     def __post_init__(self):
         self._check_hashable()
 
+    def __add__(self, __o: _Parameter
+                ) -> _ConstantParameter | _CategoricalParameter:
+        if isinstance(__o, _ConstantParameter):
+            if self.value == __o.value:
+                return self
+            else:
+                return _CategoricalParameter(
+                    categories=[self.value, __o.value])
+
+        if isinstance(__o, _CategoricalParameter):
+            return self.to_categorical() + __o
+
+        if isinstance(__o, _DiscreteParameter):
+            return self.to_categorical() + __o
+
+        if isinstance(__o, _ContinuousParameter):
+            raise ValueError("Cannot add continuous parameter to constant!")
+
+    def to_categorical(self) -> _CategoricalParameter:
+        return _CategoricalParameter(categories=[self.value])
+
     def _check_hashable(self):
         """Check if the value is hashable."""
         try:
@@ -121,6 +142,31 @@ class _ContinuousParameter(_Parameter):
         self._check_types()
         self._check_range()
 
+    def __add__(self, __o: _Parameter) -> _ContinuousParameter:
+        if not isinstance(__o, _ContinuousParameter):
+            raise ValueError(
+                "Cannot add non-continuous parameter to continuous!")
+
+        if self.log != __o.log:
+            raise ValueError(
+                "Cannot add continuous parameters with different log scales!")
+
+        if self.lower_bound == __o.lower_bound \
+                and self.upper_bound == __o.upper_bound:
+            # If both lower and upper bounds are the same,
+            # return the first object
+            return self
+
+        if self.lower_bound > __o.upper_bound \
+                or __o.lower_bound > self.upper_bound:
+            # If the ranges do not coincide, raise ValueError
+            raise ValueError("Ranges do not coincide, cannot add")
+
+        # For other scenarios, join the ranges
+        return _ContinuousParameter(
+            lower_bound=min(self.lower_bound, __o.lower_bound),
+            upper_bound=max(self.upper_bound, __o.upper_bound))
+
     def _check_types(self):
         """Check if the boundaries are actually floats"""
         if isinstance(self.lower_bound, int):
@@ -169,6 +215,22 @@ class _DiscreteParameter(_Parameter):
         self._check_types()
         self._check_range()
 
+    def __add__(self, __o: _Parameter) -> _DiscreteParameter:
+        if isinstance(__o, _DiscreteParameter):
+            if self.lower_bound == __o.lower_bound and \
+                    self.upper_bound == __o.upper_bound and \
+                    self.step == __o.step:
+                return self
+
+        if isinstance(__o, _CategoricalParameter):
+            return __o + self
+
+        if isinstance(__o, _ConstantParameter):
+            return __o.to_categorical() + self
+
+        if isinstance(__o, _ContinuousParameter):
+            raise ValueError("Cannot add continuous parameter to discrete!")
+
     def _check_types(self):
         """Check if the boundaries are actually ints"""
         if not isinstance(self.lower_bound, int) or not isinstance(
@@ -204,6 +266,27 @@ class _CategoricalParameter(_Parameter):
 
     def __post_init__(self):
         self._check_duplicates()
+
+    def __add__(self, __o: _Parameter) -> _CategoricalParameter:
+        if isinstance(__o, _CategoricalParameter):
+            # join unique categories
+            joint_categories = list(set(self.categories + __o.categories))
+
+        if isinstance(__o, _ConstantParameter):
+            joint_categories = list(set(self.categories + [__o.value]))
+
+        if isinstance(__o, _DiscreteParameter):
+            roll_out_discrete = list(range(
+                __o.lower_bound, __o.upper_bound, __o.step))
+            joint_categories = list(set(self.categories + roll_out_discrete))
+
+        if isinstance(__o, _ContinuousParameter):
+            raise ValueError("Cannot add continuous parameter to categorical!")
+
+        return _CategoricalParameter(joint_categories)
+
+    def __eq__(self, __o: _CategoricalParameter) -> bool:
+        return set(self.categories) == set(__o.categories)
 
     def _check_duplicates(self):
         """Check if there are duplicates in the categories list"""

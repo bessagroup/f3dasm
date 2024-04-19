@@ -77,6 +77,10 @@ class Noise(_Augmentor):
 
         scale = abs(self.noise * yy)
 
+        if isinstance(input, float):
+            # convert to numpy float
+            input = np.float64(input)
+
         noise: np.ndarray = np.random.normal(
             loc=0.0, scale=scale, size=input.shape)
         y_noise = input + float(noise)

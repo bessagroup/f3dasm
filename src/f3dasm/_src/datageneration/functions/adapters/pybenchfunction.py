@@ -89,9 +89,15 @@ class PyBenchFunction(Function):
 
         unscaled_offset = np.atleast_1d(
             [
+                # np.random.uniform(
+                #     low=-abs(g[d] - self.scale_bounds[d, 0]),
+                #     high=abs(g[d] - self.scale_bounds[d, 1]))
+
+                # This is added so we only create offsets in one quadrant
+
                 np.random.uniform(
                     low=-abs(g[d] - self.scale_bounds[d, 0]),
-                    high=abs(g[d] - self.scale_bounds[d, 1]))
+                    high=0.0)
                 for d in range(self.dimensionality)
             ]
         )

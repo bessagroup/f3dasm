@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from f3dasm.design import (_CategoricalParameter, _ContinuousParameter,
-                           _DiscreteParameter)
+from f3dasm.design import (_CategoricalParameter, _ConstantParameter,
+                           _ContinuousParameter, _DiscreteParameter)
 
 pytestmark = pytest.mark.smoke
 
@@ -117,6 +117,64 @@ def test_duplicates_categories_categorical_space():
     categories = ["test1", "test2", "test1"]
     with pytest.raises(ValueError):
         _ = _CategoricalParameter(categories=categories)
+
+
+@pytest.mark.parametrize("args", [((0., 5.), (-1., 3.), (-1., 5.),),
+                                  ((0., 5.), (1., 3.), (0., 5.),),
+                                  ((-1., 3.), (0., 5.), (-1., 5.),),
+                                  ((0., 5.), (0., 5.), (0., 5.),)])
+def test_add_continuous(args):
+    a, b, expected = args
+    param_a = _ContinuousParameter(*a)
+    param_b = _ContinuousParameter(*b)
+
+    assert param_a + param_b == _ContinuousParameter(*expected)
+
+
+@pytest.mark.parametrize("args", [((0., 5.), (6., 10.)),])
+def test_faulty_continuous_ranges(args):
+    a, b = args
+    param_a = _ContinuousParameter(*a)
+    param_b = _ContinuousParameter(*b)
+    with pytest.raises(ValueError):
+        param_a + param_b
+
+
+def test_faulty_continous_log():
+    a = _ContinuousParameter(1., 5., log=True)
+    b = _ContinuousParameter(0., 5., log=False)
+    with pytest.raises(ValueError):
+        a + b
+
+
+@pytest.mark.parametrize("args", [(('test1', 'test2'), ('test3',), ('test1', 'test2', 'test3'),),
+                                  (('test1', 'test3'), ('test3',),
+                                   ('test1', 'test3'),)])
+def test_add_categorical(args):
+    a, b, expected = args
+    param_a = _CategoricalParameter(list(a))
+    param_b = _CategoricalParameter(list(b))
+
+    assert param_a + param_b == _CategoricalParameter(list(expected))
+
+
+@pytest.mark.parametrize(
+    "args",
+    [(_CategoricalParameter(['test1', 'test2']), _ConstantParameter('test3'), _CategoricalParameter(['test1', 'test2', 'test3']),),
+     (_CategoricalParameter(['test1', 'test2']), _DiscreteParameter(
+         1, 3), _CategoricalParameter(['test1', 'test2', 1, 2]),),
+     (_CategoricalParameter(['test1', 'test2']), _ConstantParameter(
+         'test1'), _CategoricalParameter(['test1', 'test2']),),
+     (_CategoricalParameter(['test1', 'test2']), _CategoricalParameter([
+         'test1']), _CategoricalParameter(['test1', 'test2']),),
+        (_ConstantParameter('test3'), _CategoricalParameter(
+            ['test1', 'test2']), _CategoricalParameter(['test1', 'test2', 'test3']))
+
+
+     ])
+def test_add_combination(args):
+    a, b, expected = args
+    assert a + b == expected
 
 
 if __name__ == "__main__":  # pragma: no cover
