@@ -14,7 +14,7 @@ if sys.version_info < (3, 8):  # NOQA
 else:
     from typing import Literal
 
-from typing import Optional
+from typing import Dict, Optional
 
 # Third-party
 import numpy as np
@@ -107,7 +107,8 @@ class Sampler:
         """
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def get_samples(self, numsamples: Optional[int] = None) -> pd.DataFrame:
+    def get_samples(
+            self, numsamples: Optional[int] = None, **kwargs) -> pd.DataFrame:
         """Receive samples of the search space
 
         Parameters
@@ -163,12 +164,12 @@ class Sampler:
 
         return df
 
-    def __call__(self, domain: Domain, n_samples: int, seed: int):
+    def __call__(self, domain: Domain, n_samples: int, seed: int, **kwargs):
         """Call the sampler"""
         self.domain = domain
         self.number_of_samples = n_samples
         self.seed = seed
-        return self.get_samples()
+        return self.get_samples(**kwargs)
 
     def _sample_constant(self, numsamples: int):
         constant = self.domain.get_constant_parameters()
@@ -311,17 +312,33 @@ class GridSampler(Sampler):
 
     """
 
-    def get_samples(self, numsamples: Optional[int] = None) -> pd.DataFrame:
+    def get_samples(
+            self,
+            numsamples: Optional[int] = None,
+            stepsize_continuous_parameters:
+            Optional[Dict[str, float] | float] = None,
+            **kwargs) -> pd.DataFrame:
         """Receive samples of the search space
 
         Parameters
         ----------
-        numsamples
+        numsamples : int
             number of samples
+        stepsize_continuous_parameters : Dict[str, float] | float, optional
+            stepsize for the continuous parameters, by default None.
+            If a float is given, all continuous parameters are sampled with
+            the same stepsize. If a dictionary is given, the stepsize for each
+            continuous parameter can be specified.
 
         Returns
         -------
             Data objects with the samples
+
+        Raises
+        ------
+        ValueError
+            If the stepsize_continuous_parameters is given as a dictionary
+            and not specified for all continuous parameters.
         """
 
         self.set_seed(self.seed)
@@ -332,10 +349,21 @@ class GridSampler(Sampler):
 
         continuous = self.domain.get_continuous_parameters()
 
-        if continuous:
-            raise ValueError("Grid sampling is only possible for domains \
-                             strictly with only discrete and \
-                            categorical parameters")
+        if isinstance(stepsize_continuous_parameters, float):
+            continuous = {key: continuous[key].to_discrete(
+                step=stepsize_continuous_parameters) for key in continuous}
+
+        elif isinstance(stepsize_continuous_parameters, dict):
+            continuous = {key: continuous[key].to_discrete(
+                step=value) for key,
+                value in stepsize_continuous_parameters.items()}
+
+            if len(continuous) != len(
+                    self.domain.get_continuous_parameters()):
+                raise ValueError(
+                    "If you specify the stepsize for continuous parameters, \
+                    the stepsize_continuous_parameters should \
+                    contain all continuous parameters")
 
         discrete = self.domain.get_discrete_parameters()
         categorical = self.domain.get_categorical_parameters()
@@ -346,7 +374,11 @@ class GridSampler(Sampler):
             _iterdict[k] = v.categories
 
         for k, v, in discrete.items():
-            _iterdict[k] = range(v.lower_bound, v.upper_bound+1)
+            _iterdict[k] = range(v.lower_bound, v.upper_bound+1, v.step)
+
+        for k, v, in continuous.items():
+            _iterdict[k] = np.arange(
+                start=v.lower_bound, stop=v.upper_bound, step=v.step)
 
         return pd.DataFrame(list(product(*_iterdict.values())),
                             columns=_iterdict, dtype=object)

@@ -190,6 +190,34 @@ class _ContinuousParameter(_Parameter):
                              f"(lower_bound={self.lower_bound}, \
                                  higher_bound={self.upper_bound}")
 
+    def to_discrete(self, step: int = 1) -> _DiscreteParameter:
+        """Convert the continuous parameter to a discrete parameter.
+
+        Parameters
+        ----------
+        step : int
+            The step size of the discrete search space, which defaults to 1.
+
+        Returns
+        -------
+        DiscreteParameter
+            The discrete parameter.
+
+        Raises
+        ------
+        ValueError
+            If the step size is less than or equal to 0.
+
+        """
+        if step <= 0:
+            raise ValueError("The step size must be larger than 0.")
+
+        return _DiscreteParameter(
+            lower_bound=int(self.lower_bound),
+            upper_bound=int(self.upper_bound),
+            step=step
+        )
+
 
 @dataclass
 class _DiscreteParameter(_Parameter):
@@ -251,7 +279,7 @@ class _DiscreteParameter(_Parameter):
             raise ValueError("step size must be larger than 0!")
 
 
-@dataclass
+@ dataclass
 class _CategoricalParameter(_Parameter):
     """Create a search space parameter that is categorical
 

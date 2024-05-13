@@ -177,5 +177,34 @@ def test_add_combination(args):
     assert a + b == expected
 
 
+def test_to_discrete():
+    a = _ContinuousParameter(0., 5.)
+    c = _DiscreteParameter(0, 5, 0.2)
+    b = a.to_discrete(0.2)
+    assert isinstance(b, _DiscreteParameter)
+    assert b.lower_bound == 0
+    assert b.upper_bound == 5
+    assert b.step == 0.2
+    assert b == c
+
+
+def test_to_discrete_negative_stepsize():
+    a = _ContinuousParameter(0., 5.)
+    with pytest.raises(ValueError):
+        a.to_discrete(-0.2)
+
+
+def test_default_stepsize_to_discrete():
+    default_stepsize = 1
+    a = _ContinuousParameter(0., 5.)
+    c = _DiscreteParameter(0, 5, default_stepsize)
+    b = a.to_discrete()
+    assert isinstance(b, _DiscreteParameter)
+    assert b.lower_bound == 0
+    assert b.upper_bound == 5
+    assert b.step == default_stepsize
+    assert b == c
+
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()

@@ -1708,7 +1708,7 @@ class ExperimentData:
     # =========================================================================
 
     def sample(self, sampler: Sampler | SamplerNames, n_samples: int = 1,
-               seed: Optional[int] = None) -> None:
+               seed: Optional[int] = None, **kwargs) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1726,6 +1726,17 @@ class ExperimentData:
         seed : Optional[int], optional
             Seed to use for the sampler, by default None
 
+        Note
+        ----
+        When using the 'grid' sampler, an optional argument
+        'stepsize_continuous_parameters' can be passed to specify the stepsize
+        to cast continuous parameters to discrete parameters.
+
+        - The stepsize should be a dictionary with the parameter names as keys\
+        and the stepsize as values.
+        - Alternatively, a single stepsize can be passed for all continuous\
+        parameters.
+
         Raises
         ------
         ValueError
@@ -1736,7 +1747,7 @@ class ExperimentData:
             sampler = _sampler_factory(sampler, self.domain)
 
         sample_data: DataTypes = sampler(
-            domain=self.domain, n_samples=n_samples, seed=seed)
+            domain=self.domain, n_samples=n_samples, seed=seed, **kwargs)
         self.add(input_data=sample_data, domain=self.domain)
 
     #                                                         Project directory
