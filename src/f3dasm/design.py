@@ -9,7 +9,6 @@ from ._src.design.domain import Domain, make_nd_continuous_domain
 from ._src.design.parameter import (PARAMETERS, _CategoricalParameter,
                                     _ConstantParameter, _ContinuousParameter,
                                     _DiscreteParameter, _Parameter)
-from ._src.design.samplers import Sampler, SamplerNames
 from ._src.experimentdata._data import _Data
 from ._src.experimentdata._jobqueue import NoOpenJobsError, Status, _JobQueue
 
@@ -35,6 +34,4 @@ __all__ = [
     'Status',
     '_Data',
     '_JobQueue',
-    'Sampler',
-    'SamplerNames',
 ]

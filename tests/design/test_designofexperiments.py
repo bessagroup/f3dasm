@@ -21,30 +21,30 @@ def test_correct_doe(doe):
 def test_get_continuous_parameters(doe: Domain):
     design = {'x1': _ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
               'x3': _ContinuousParameter(lower_bound=10.0, upper_bound=380.3)}
-    assert doe.get_continuous_parameters() == design
+    assert doe.continuous.space == design
 
 
 def test_get_discrete_parameters(doe: Domain):
     design = {'x2': _DiscreteParameter(lower_bound=5, upper_bound=80),
               'x5': _DiscreteParameter(lower_bound=2, upper_bound=3)}
-    assert doe.get_discrete_parameters() == design
+    assert doe.discrete.space == design
 
 
 def test_get_categorical_parameters(doe: Domain):
-    assert doe.get_categorical_parameters() == {'x4': _CategoricalParameter(
+    assert doe.categorical.space == {'x4': _CategoricalParameter(
         categories=["test1", "test2", "test3"])}
 
 
 def test_get_continuous_names(doe: Domain):
-    assert doe.get_continuous_names() == ["x1", "x3"]
+    assert doe.continuous.names == ["x1", "x3"]
 
 
 def test_get_discrete_names(doe: Domain):
-    assert doe.get_discrete_names() == ["x2", "x5"]
+    assert doe.discrete.names == ["x2", "x5"]
 
 
 def test_get_categorical_names(doe: Domain):
-    assert doe.get_categorical_names() == ["x4"]
+    assert doe.categorical.names == ["x4"]
 
 
 def test_add_arbitrary_list_as_categorical_parameter():

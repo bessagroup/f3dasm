@@ -36,7 +36,6 @@ from pathos.helpers import mp
 from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
-from ..design.samplers import Sampler, SamplerNames, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
@@ -46,6 +45,7 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
+from .samplers import Sampler, SamplerNames, _sampler_factory
 from .utils import number_of_overiterations, number_of_updates
 
 #                                                          Authorship & Credits
@@ -293,7 +293,8 @@ class ExperimentData:
     @classmethod
     def from_sampling(cls, sampler: Sampler | str, domain: Domain | DictConfig,
                       n_samples: int = 1,
-                      seed: Optional[int] = None) -> ExperimentData:
+                      seed: Optional[int] = None,
+                      **kwargs) -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -324,9 +325,12 @@ class ExperimentData:
         * 'latin' : Latin Hypercube Sampling
         * 'sobol' : Sobol Sequence Sampling
         * 'grid' : Grid Search Sampling
+
+        Any additional keyword arguments are passed to the sampler.
         """
         experimentdata = cls(domain=domain)
-        experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
+        experimentdata.sample(
+            sampler=sampler, n_samples=n_samples, seed=seed, **kwargs)
         return experimentdata
 
     @classmethod

@@ -162,7 +162,7 @@ class _Data:
 
         # Set the categories tot the categorical parameters
         for index, (name, categorical_input) in enumerate(
-                domain.get_categorical_parameters().items()):
+                domain.categorical.space.items()):
             df[index] = pd.Categorical(
                 df[index], categories=categorical_input.categories)
 
