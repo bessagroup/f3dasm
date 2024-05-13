@@ -4,10 +4,8 @@
 =======================
 
 
-The :mod:`f3dasm.datageneration` module is designed to be easily extended by third-party libraries.
-In order to not bloat the main :mod:`f3dasm` package, these extensions are provided as separate package: `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_.
-
-More ports to optimization algorithms are available in the `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_ package, which can be installed via pip:
+The :mod:`f3dasm.optimization` module is designed to be easily extended by third-party libraries.
+These extensions are provided as separate package: `f3dasm_optimize <https://github.com/bessagroup/f3dasm_optimize>`_, which can be installed via pip:
 
 .. code-block:: bash
 

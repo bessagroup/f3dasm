@@ -19,7 +19,7 @@ The :class:`~f3dasm.design.Domain` is a set of parameter instances that make up 
 |
 
 
-To start, we instantiate an empty domain object:
+To start, we create an empty domain object:
 
 .. code-block:: python
 
@@ -28,7 +28,7 @@ To start, we instantiate an empty domain object:
   domain = Domain()
 
 
-Now we can gradually add some parameters!
+Now we can add some parameters!
 
 .. _parameters:
 
@@ -51,31 +51,35 @@ There are four types of parameters that can be created: :ref:`float <continuous-
 Floating point parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* We can create **continous** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_float` method:
+* We can create **continous** parameters with a lower bound (:code:`low`) and upper bound (:code:`high`) with the :meth:`~f3dasm.design.Domain.add_float` method:
 
 .. code-block:: python
 
   domain.add_float(name='x1', low=0.0, high=100.0)
   domain.add_float(name='x2', low=0.0, high=4.0)  
 
+An optional argument :code:`log` can be set to :code:`True` to create a log-scaled parameter:
+
 .. _discrete-parameter:
 
 Discrete parameters
 ^^^^^^^^^^^^^^^^^^^
 
-* We can create **discrete** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_int` method:
+* We can create **discrete** parameters with a lower bound (:code:`low`) and upper bound (:code:`high`) with the :meth:`~f3dasm.design.Domain.add_int` method:
 
 .. code-block:: python
 
   domain.add_int(name='x3', low=2, high=4)
   domain.add_int(name='x4', low=74, high=99)  
 
+An optional argument :code:`step` can be set to an integer value to define the step size between the lower and upper bound. By default the step size is 1.
+
 .. _categorical-parameter:
 
 Categorical parameters
 ^^^^^^^^^^^^^^^^^^^^^^
 
-* We can create **categorical** parameters with a list of items (:code:`categories`) with the :meth:`~f3dasm.design.Domain.add_category` method:
+* We can create **categorical** parameters with a list of values (:code:`categories`) with the :meth:`~f3dasm.design.Domain.add_category` method:
 
 .. code-block:: python
 
@@ -139,6 +143,8 @@ We can make easily make a :math:`n`-dimensional continous domain with the helper
 We have to specify the boundaries (``bounds``) for each of the dimensions with a list of lists or numpy :class:`~numpy.ndarray`:
 
 .. code-block:: python
-
+  
+  from f3dasm.design import make_nd_continuous_domain
+  import numpy as np
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  domain = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+  domain = make_nd_continuous_domain(bounds=bounds, dimensionality=2)

@@ -12,8 +12,8 @@ f3dasm
    :hidden:
    :glob:
        
-   rst_doc_files/general/gettingstarted
    rst_doc_files/general/overview
+   rst_doc_files/general/gettingstarted
 
 .. toctree::
    :maxdepth: 2
@@ -41,7 +41,7 @@ f3dasm
 
    rst_doc_files/classes/datageneration/datagenerator
    rst_doc_files/classes/datageneration/functions
-   rst_doc_files/classes/datageneration/f3dasm-simulate
+   .. rst_doc_files/classes/datageneration/f3dasm-simulate
 
 
 .. toctree::

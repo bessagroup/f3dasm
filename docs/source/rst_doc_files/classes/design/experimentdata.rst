@@ -4,7 +4,7 @@ Experiment Data
 The :class:`~f3dasm.ExperimentData` object is the main object used to store implementations of a design-of-experiments, 
 keep track of results, perform optimization and extract data for machine learning purposes.
 
-All other processses of f3dasm use this object to manipulate and access data about your experiments.
+All other processses of :mod:`f3dasm` use this object to manipulate and access data about your experiments.
 
 The :class:`~f3dasm.ExperimentData` object consists of the following attributes:
 
@@ -42,7 +42,8 @@ You can construct a :class:`~f3dasm.ExperimentData` object by providing it :ref:
 .. code-block:: python
 
     >>> from f3dasm import ExperimentData
-    >>> data = ExperimentData(domain, input_data, output_data)
+    >>> data = ExperimentData(
+        domain=domain, input_data=input_data, output_data=output_data)
 
 
 The following sections will explain how to construct a :class:`~f3dasm.ExperimentData` object from your own data.
@@ -62,7 +63,7 @@ Learn more about the :class:`~f3dasm.design.Domain` object in the :ref:`domain <
     >>> domain = Domain()
     >>> domain.add_float('x0', 0., 1.)
     >>> domain.add_float('x1', 0., 1.)
-    >>> data = ExperimentData(domain)
+    >>> data = ExperimentData(domain=domain)
 
 .. warning ::
 
@@ -89,9 +90,9 @@ Several datatypes are supported for the ``input_data`` argument:
 
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
-    >>> df = pd.DataFrame(...) # your data in a pandas DataFrame
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_dataframe(df, domain)
+    >>> domain.add_float('x0', 0., 1.)
+    >>> domain.add_float('x1', 0., 1.)
+    >>> data = ExperimentData(domain=domain, input_data=df)
 
 * A two-dimensional :class:`~numpy.ndarray` object with shape (<number of experiments>, <number of input dimensions>)
 
@@ -100,9 +101,10 @@ Several datatypes are supported for the ``input_data`` argument:
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
     >>> import numpy as np
-    >>> input_data = np.array([[0.1, 0.2], [0.3, 0.4]])
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_array(input_data, domain)
+    >>> input_array = np.array([[0.1, 0.2], [0.3, 0.4]])
+    >>> domain.add_float('x0', 0., 1.)
+    >>> domain.add_float('x1', 0., 1.)
+    >>> data = ExperimentData(domain=domain, input_data=input_array)
 
 .. note::
 
@@ -116,8 +118,9 @@ Several datatypes are supported for the ``input_data`` argument:
 
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData.from_csv("my_experiment_data.csv", domain)
+    >>> domain.add_float('x0', 0., 1.)
+    >>> domain.add_float('x1', 0., 1.)  
+    >>> data = ExperimentData(domain=doman, input_data="my_experiment_data.csv")
 
 .. _output-data-format:
 
@@ -135,24 +138,27 @@ Several datatypes are supported for the ``output_data`` argument:
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
     >>> df = pd.DataFrame(...) # your data in a pandas DataFrame
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData(input_data=df, domain=domain)
+    >>> domain.add_output('x0')
+    >>> domain.add_output('x1')
+    >>> data = ExperimentData(domain=domain, output_data=df)
 
 * A two-dimensional :class:`~numpy.ndarray` object with shape (<number of experiments>, <number of output dimensions>)
 
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
     >>> import numpy as np
-    >>> input_array = np.array([[0.1, 0.2], [0.3, 0.4]])
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData(input_data=input_array, domain=domain)
+    >>> output_array = np.array([[0.1, 0.2], [0.3, 0.4]])
+    >>> domain.add_output('x0')
+    >>> domain.add_output('x1')   
+    >>> data = ExperimentData(domain=domain, output_array=output_array)
 
 * A string or path to a ``.csv`` file containing the output data. The ``.csv`` file should contain a header row with the names of the output variables and the first column should be indices for the experiments.
 
     >>> from f3dasm import ExperimentData
     >>> from f3dasm.design import Domain
-    >>> domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)})    
-    >>> data = ExperimentData(input_data="my_experiment_data.csv", domain=domain)
+    >>> domain.add_output('x0')
+    >>> domain.add_output('x1') 
+    >>> data = ExperimentData(domain=domain, output_data="my_experiment_data.csv")
 
 If you don't have output data yet, you can also construct an :class:`~f3dasm.ExperimentData` object without providing output data.
 
@@ -163,7 +169,8 @@ project directory
 ^^^^^^^^^^^^^^^^^
 
 The ``project_dir`` argument is used to :ref:`store the ExperimentData to disk <experimentdata-store>`
-You can provide a string or a path to a directory. If the directory does not exist, it will be created.
+You can provide a string or a path to a directory. This can either be a relative or absolute path.
+If the directory does not exist, it will be created.
 
 .. code-block:: python
 
@@ -177,7 +184,6 @@ You can also set the project directoy manually after creation with the :meth:`~f
 .. code-block:: python
 
     >>> from f3dasm import ExperimentData
-    >>> from f3dasm.design import Domain
     >>> data = ExperimentData()
     >>> data.set_project_dir("folder/to/my_project_directory")
 
@@ -197,39 +203,32 @@ classmethod with the path of project directory:
 
 .. _experimentdata-sampling:
 
-ExperimentData from a sampling
-------------------------------
+ExperimentData from sampling
+----------------------------
 
 You can directly construct an :class:`~f3dasm.ExperimentData` object from a sampling strategy by using the :meth:`~f3dasm.ExperimentData.from_sampling` method.
 You have to provide the following arguments:
 
-* A sampling function. To learn more about integrating your sampling function, please refer to :ref:`this <integrating-sampling>` section.
+* A sampling function. To learn more about integrating your sampling function, please refer to the :ref:`this <integrating-samplers>` section.
 * A :class:`~f3dasm.design.Domain` object describing the input variables of the sampling function.
 * The number of samples to generate.
 * An optional seed for the random number generator.
 
 .. code-block:: python
 
-    from f3dasm import ExperimentData, Domain, ContinuousParameter
+    from f3dasm import ExperimentData, Domain
 
     def your_sampling_function(domain, n_samples, seed):
         # your sampling function
         # ...
         return samples
 
-    domain = Domain({'x0': ContinuousParameter(0., 1.)}, 'x1': ContinuousParameter(0., 1.)}
-    sampler = RandomUniform(domain, 10)
+    domain = Domain()
+    domain.add_float('x0', 0., 1.)
+    domain.add_float('x1', 0., 1.)  
     data = ExperimentData.from_sampling(sampler=your_sampling_function, domain=domain, n_samples=10, seed=42)
 
-You can use the built-in samplers from the sampling module by providing one of the following strings as the ``sampler`` argument:
-
-======================== ====================================================================== ===========================================================================================================
-Name                     Method                                                                 Reference
-======================== ====================================================================== ===========================================================================================================
-``"random"``             Random Uniform sampling                                                `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
-``"latin"``              Latin Hypercube sampling                                               `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
-``"sobol"``              Sobol Sequence sampling                                                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
-======================== ====================================================================== ===========================================================================================================
+You can use :ref:`built-in samplers <implemented samplers>` by providing one of the following strings as the ``sampler`` argument:
 
 .. code-block:: python
 
@@ -269,7 +268,7 @@ You can create an experimentdata :class:`~f3dasm.ExperimentData` object in the s
     experimentdata:
         input_data: path/to/input_data.csv
         output_data:
-        domain:  ${domain}
+        domain: ${domain}
 
 .. note:: 
 
@@ -285,11 +284,8 @@ Inside your python script, you can then create the :class:`~f3dasm.ExperimentDat
 
     >>> @hydra.main(config_path="conf", config_name="config")
     >>> def my_app(config):
-    >>>     data = ExperimentData.from_yaml(config)
+    >>>     data = ExperimentData.from_yaml(config.experimentdata)
 
-.. note:: 
-
-    Make sure to pass the full :code:`config` to the :meth:`~f3dasm.ExperimentData.from_yaml` constructor!
 
 To create the :class:`~f3dasm.ExperimentData` object with the :meth:`~f3dasm.ExperimentData.from_sampling` method, you can use the following configuration:
 
@@ -316,7 +312,7 @@ To create the :class:`~f3dasm.ExperimentData` object with the :meth:`~f3dasm.Exp
 
 .. note:: 
 
-    The :class:`~f3dasm.sampling.Sampler` object will be constructed using the :class:`~f3dasm.design.Domain` object from the config file. Make sure you have the :code:`domain` key in your :code:`config.yaml`!
+    Make sure you have the :code:`domain` key in your :code:`config.yaml`!
     To see how to configure the :class:`~f3dasm.design.Domain` object with hydra, see  :ref:`this <domain-from-yaml>` section.
 
 
@@ -357,12 +353,13 @@ Storing the ExperimentData object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :class:`~f3dasm.ExperimentData` object can be exported to a collection of files using the :meth:`~f3dasm.ExperimentData.store` method.
+You can provide a path to a directory where the files will be stored, or if not provided, the files will be stored in the directory provided in the :attr:`~f3dasm.design.ExperimentData.project_dir` attribute:
 
 .. code-block:: python
 
     >>> data.store("path/to/project_dir")
 
-Inside the project directory, a subfolder `experiment_data` will be created containing the following files:
+Inside the project directory, a subfolder `experiment_data` will be created with the following files:
 
 - :code:`domain.pkl`: The :class:`~f3dasm.design.Domain` object
 - :code:`input.csv`: The :attr:`~f3dasm.design.ExperimentData.input_data` table
