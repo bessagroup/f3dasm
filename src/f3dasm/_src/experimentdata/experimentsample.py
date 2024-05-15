@@ -25,7 +25,7 @@ import autograd.numpy as np
 # Local
 from ..design.domain import Domain
 from ..logger import logger
-from ._io import _Store, load_object, save_object
+from ._io import StoreProtocol, load_object, save_object
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -148,7 +148,7 @@ class ExperimentSample:
         return dict_input, dict_output
 
     def get(self, item: str,
-            load_method: Optional[Type[_Store]] = None) -> Any:
+            load_method: Optional[Type[StoreProtocol]] = None) -> Any:
         """Retrieve a sample parameter by its name.
 
         Parameters
@@ -312,7 +312,7 @@ class ExperimentSample:
                 'job_number': self.job_number}
 
     def store(self, name: str, object: Any, to_disk: bool = False,
-              store_method: Optional[Type[_Store]] = None) -> None:
+              store_method: Optional[Type[StoreProtocol]] = None) -> None:
         """Store an object to disk.
 
         Parameters
@@ -340,8 +340,9 @@ class ExperimentSample:
         else:
             self._store_to_experimentdata(object=object, name=name)
 
-    def _store_to_disk(self, object: Any, name: str,
-                       store_method: Optional[Type[_Store]] = None) -> None:
+    def _store_to_disk(
+        self, object: Any, name: str,
+            store_method: Optional[Type[StoreProtocol]] = None) -> None:
         file_path = Path(name) / str(self.job_number)
 
         # Check if the file_dir exists
