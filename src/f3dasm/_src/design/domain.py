@@ -14,7 +14,8 @@ import pickle
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Sequence, Type
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Sequence,
+                    Type)
 
 if sys.version_info < (3, 8):  # NOQA
     from typing_extensions import Literal  # NOQA
@@ -602,16 +603,18 @@ class Domain:
 
 
 def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
-                              dimensionality: int) -> Domain:
+                              dimensionality: Optional[int] = None) -> Domain:
     """Create a continuous domain.
 
     Parameters
     ----------
     bounds : numpy.ndarray
-        A 2D numpy array of shape (dimensionality, 2) specifying the lower \
+        A 2D numpy array of shape (dimensionality, 2) specifying the lower
         and upper bounds of every dimension.
     dimensionality : int
-        The number of dimensions.
+        The number of dimensions, optional. If not given, it is inferred
+        from the shape of the bounds. Argument is still present for legacy
+        reasons.
 
     Returns
     -------
@@ -638,6 +641,8 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
 
     # bounds is a list of lists, convert to numpy array:
     bounds = np.array(bounds)
+
+    dimensionality = bounds.shape[0]
 
     for dim in range(dimensionality):
         space[f"x{dim}"] = _ContinuousParameter(
