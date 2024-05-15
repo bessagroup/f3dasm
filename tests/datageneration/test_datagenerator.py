@@ -10,7 +10,7 @@ pytestmark = pytest.mark.smoke
 
 def test_convert_function(
         experiment_data: ExperimentData, function_1: Callable):
-    data_generator = convert_function(f=function_1, input=['x'], output=[
+    data_generator = convert_function(f=function_1, output=[
                                       'y0', 'y1'], kwargs={'s': 103})
 
     assert isinstance(data_generator, DataGenerator)
@@ -20,7 +20,7 @@ def test_convert_function(
 
 def test_convert_function2(
         experiment_data: ExperimentData, function_2: Callable):
-    data_generator = convert_function(f=function_2, input=['x'], output=[
+    data_generator = convert_function(f=function_2, output=[
                                       'y0', 'y1'])
 
     assert isinstance(data_generator, DataGenerator)

@@ -7,6 +7,8 @@
 import os
 import sys
 
+from sphinx_gallery.sorting import FileNameSortKey
+
 # -- Search path for extensions and modules -----------------------------------
 # If extensions or Python modules are in a different directory than this file,
 # then add these directories to sys.path so that Sphinx can search for them
@@ -52,6 +54,8 @@ sphinx_gallery_conf = {
     'reference_url': {'sphinx_gallery': None, },
     'backreferences_dir': 'gen_modules/backreferences',
     'doc_module': ('f3dasm',),
+    "filename_pattern": r"/*\.py",
+    "within_subsection_order": FileNameSortKey,
 }
 
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-source_suffix

@@ -168,6 +168,16 @@ class CarStoppingDistance(DataGenerator):
 
 
 car_stopping_distance = CarStoppingDistance(mu_z=1.5, sigma_z=0.5)
-experiment_data_class.evaluate(data_generator=car_stopping_distance)
+experiment_data_class.evaluate(
+    data_generator=car_stopping_distance, mode='sequential')
 
 print(experiment_data_class)
+
+###############################################################################
+#
+# There are three methods available of evaluating the experiments:
+#
+# * :code:`sequential`: regular for-loop over each of the experiments in order
+# * :code:`parallel`: utilizing the multiprocessing capabilities (with the `pathos <https://pathos.readthedocs.io/en/latest/pathos.html>`_ multiprocessing library), each experiment is run in a separate core
+# * :code:`cluster`: each experiment is run in a seperate node. This is especially useful on a high-performance computation cluster where you have multiple worker nodes and a commonly accessible resource folder. After completion of an experiment, the node will automatically pick the next available open experiment.
+# * :code:`cluster_parallel`: Combination of the :code:`cluster` and :code:`parallel` mode. Each node will run multiple samples in parallel.

@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.467** total execution time for 8 files **from all galleries**:
+**00:00.762** total execution time for 10 files **from all galleries**:
 
 .. container::
 
@@ -32,27 +32,33 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_datageneration_plot_own_datagenerator.py` (``../../examples/datageneration/plot_own_datagenerator.py``)
-     - 00:00.467
+   * - :ref:`sphx_glr_auto_examples_006_hydra_001_hydra_usage.py` (``../../examples/006_hydra/001_hydra_usage.py``)
+     - 00:00.762
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_datageneration_plot_builtin_benchmarkfunctions.py` (``../../examples/datageneration/plot_builtin_benchmarkfunctions.py``)
+   * - :ref:`sphx_glr_auto_examples_001_domain_001_domain_creation.py` (``../../examples/001_domain/001_domain_creation.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_domain_plot_builtin_sampler.py` (``../../examples/domain/plot_builtin_sampler.py``)
+   * - :ref:`sphx_glr_auto_examples_001_domain_002_own_sampler.py` (``../../examples/001_domain/002_own_sampler.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_domain_plot_domain_creation.py` (``../../examples/domain/plot_domain_creation.py``)
+   * - :ref:`sphx_glr_auto_examples_001_domain_003_builtin_sampler.py` (``../../examples/001_domain/003_builtin_sampler.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_domain_plot_own_sampler.py` (``../../examples/domain/plot_own_sampler.py``)
+   * - :ref:`sphx_glr_auto_examples_002_experimentdata_001_experimentdata.py` (``../../examples/002_experimentdata/001_experimentdata.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata.py` (``../../examples/experimentdata/plot_experimentdata.py``)
+   * - :ref:`sphx_glr_auto_examples_002_experimentdata_002_experimentdata_storing.py` (``../../examples/002_experimentdata/002_experimentdata_storing.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata_storing.py` (``../../examples/experimentdata/plot_experimentdata_storing.py``)
+   * - :ref:`sphx_glr_auto_examples_003_datageneration_001_own_datagenerator.py` (``../../examples/003_datageneration/001_own_datagenerator.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_hydra_plot_hydra_usage.py` (``../../examples/hydra/plot_hydra_usage.py``)
+   * - :ref:`sphx_glr_auto_examples_003_datageneration_002_builtin_benchmarkfunctions.py` (``../../examples/003_datageneration/002_builtin_benchmarkfunctions.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_003_datageneration_003_storing.py` (``../../examples/003_datageneration/003_storing.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_004_optimization_001_builtin_optimizers.py` (``../../examples/004_optimization/001_builtin_optimizers.py``)
      - 00:00.000
      - 0.0

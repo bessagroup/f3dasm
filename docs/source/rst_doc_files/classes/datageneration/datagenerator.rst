@@ -33,7 +33,7 @@ We provide the datagenerator to the :meth:`~f3dasm.ExperimentData.evaluate` func
     Any key-word arguments that need to be passed down to the :class:`~f3dasm.datageneration.DataGenerator` can be passed in the :code:`kwargs` argument of the :meth:`~f3dasm.ExperimentData.evaluate` function.
 
 
-There are three methods available of handeling the :class:`~f3dasm.ExperimentSample` objects:
+There are three methods available of handling the :class:`~f3dasm.ExperimentSample` objects:
 
 * :code:`sequential`: regular for-loop over each of the :class:`~f3dasm.ExperimentSample` objects in order
 * :code:`parallel`: utilizing the multiprocessing capabilities (with the `pathos <https://pathos.readthedocs.io/en/latest/pathos.html>`_ multiprocessing library), each :class:`~f3dasm.ExperimentSample` object is run in a separate core
