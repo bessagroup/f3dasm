@@ -9,6 +9,7 @@ Interface class for data generators
 from __future__ import annotations
 
 # Standard
+import inspect
 import sys
 from abc import abstractmethod
 from functools import partial
@@ -190,7 +191,6 @@ class DataGenerator:
 
 
 def convert_function(f: Callable,
-                     input: List[str],
                      output: Optional[List[str]] = None,
                      kwargs: Optional[Dict[str, Any]] = None,
                      to_disk: Optional[List[str]] = None) -> DataGenerator:
@@ -201,8 +201,6 @@ def convert_function(f: Callable,
     ----------
     f : Callable
         The function to be converted.
-    input : List[str]
-        A list of argument names required by the function.
     output : Optional[List[str]], optional
         A list of names for the return values of the function.
         Defaults to None.
@@ -224,7 +222,8 @@ def convert_function(f: Callable,
     as long as they are consistent with the `input` and `output` arguments that
     are given to this function.
     """
-
+    signature = inspect.signature(f)
+    input = list(signature.parameters)
     kwargs = kwargs if kwargs is not None else {}
     to_disk = to_disk if to_disk is not None else []
     output = output if output is not None else []

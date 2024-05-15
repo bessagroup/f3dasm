@@ -9,8 +9,9 @@ The ExperimentData object is the main object used to store implementations
 
 from __future__ import annotations
 
-import sys
+import inspect
 # Standard
+import sys
 import traceback
 from functools import wraps
 from pathlib import Path
@@ -33,7 +34,7 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
-from ..datageneration.datagenerator import DataGenerator
+from ..datageneration.datagenerator import DataGenerator, convert_function
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
 from ..logger import logger
@@ -1095,13 +1096,14 @@ class ExperimentData:
     def evaluate(self, data_generator: DataGenerator,
                  mode: Literal['sequential', 'parallel',
                                'cluster', 'cluster_parallel'] = 'sequential',
-                 kwargs: Optional[dict] = None) -> None:
+                 kwargs: Optional[dict] = None,
+                 output_names: Optional[List[str]] = None) -> None:
         """Run any function over the entirety of the experiments
 
         Parameters
         ----------
         data_generator : DataGenerator
-            data grenerator to use
+            data generator to use
         mode : str, optional
             operational mode, by default 'sequential'. Choose between:
 
@@ -1113,6 +1115,10 @@ class ExperimentData:
         kwargs, optional
             Any keyword arguments that need to
             be supplied to the function, by default None
+        output_names : List[str], optional
+            If you provide a function as data generator, you have to provide
+            the names of all the output parameters that are in the return
+            statement, in order of appearance.
 
         Raises
         ------
@@ -1122,7 +1128,16 @@ class ExperimentData:
         if kwargs is None:
             kwargs = {}
 
-        if isinstance(data_generator, str):
+        if inspect.isfunction(data_generator):
+            if output_names is None:
+                raise TypeError(
+                    ("If you provide a function as data generator, you have to"
+                     "provide the names of the return arguments with the"
+                     "output_names attribute."))
+            data_generator = convert_function(
+                f=data_generator, output=output_names)
+
+        elif isinstance(data_generator, str):
             data_generator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 

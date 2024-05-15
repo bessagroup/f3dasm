@@ -100,3 +100,39 @@ print(experimentdata)
 #
 #     When the output to an ExperimentData object is provided, the job will be set to finished,
 #     as the output data is considerd the result of the experiment.
+#
+# Adding data after constructing
+# ------------------------------
+#
+# If you have constructed your :class:`~f3dasm.ExperimentData` object,
+# you can add ``input_data``, ``output_data``, a ``domain`` or the ``project_dir`` using the :meth:`~f3dasm.ExperimentData.add` method:
+
+new_data = pd.DataFrame({
+    'x0': [1.5, 1.7],
+    'x1': [1.3, 1.9]
+})
+experimentdata.add(input_data=new_data, domain=domain)
+print(experimentdata)
+
+###############################################################################
+# Exporting the data to various formats
+# -------------------------------------
+#
+# You can convert the input- and outputdata of your data-driven process to other well-known datatypes:
+#
+# * :meth:`~f3dasm.ExperimentData.to_numpy`; creates a tuple of two :class:`~numpy.ndarray` objects containing the input- and outputdata.
+
+arr_input, arr_output = experimentdata.to_numpy()
+print(arr_input)
+
+###############################################################################
+# * :meth:`~f3dasm.ExperimentData.to_xarray`; creates a :class:`~xarray.Dataset` object containing the input- and outputdata.
+
+ds = experimentdata.to_xarray()
+print(ds)
+
+###############################################################################
+# * :meth:`~f3dasm.ExperimentData.to_pandas`; creates a tuple of two :class:`~pd.DataFrame` object containing the input- and outputdata.
+
+df_input, df_output = experimentdata.to_pandas()
+print(df_input)

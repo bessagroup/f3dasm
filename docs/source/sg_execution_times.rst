@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:01.116** total execution time for 6 files **from all galleries**:
+**00:00.467** total execution time for 8 files **from all galleries**:
 
 .. container::
 
@@ -32,21 +32,27 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_hydra_plot_hydra_usage.py` (``../../examples/hydra/plot_hydra_usage.py``)
-     - 00:00.873
+   * - :ref:`sphx_glr_auto_examples_datageneration_plot_own_datagenerator.py` (``../../examples/datageneration/plot_own_datagenerator.py``)
+     - 00:00.467
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_datageneration_plot_builtin_benchmarkfunctions.py` (``../../examples/datageneration/plot_builtin_benchmarkfunctions.py``)
+     - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_domain_plot_builtin_sampler.py` (``../../examples/domain/plot_builtin_sampler.py``)
-     - 00:00.171
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata.py` (``../../examples/experimentdata/plot_experimentdata.py``)
-     - 00:00.032
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_domain_plot_own_sampler.py` (``../../examples/domain/plot_own_sampler.py``)
-     - 00:00.021
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata_storing.py` (``../../examples/experimentdata/plot_experimentdata_storing.py``)
-     - 00:00.015
+     - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_domain_plot_domain_creation.py` (``../../examples/domain/plot_domain_creation.py``)
-     - 00:00.004
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_domain_plot_own_sampler.py` (``../../examples/domain/plot_own_sampler.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata.py` (``../../examples/experimentdata/plot_experimentdata.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata_storing.py` (``../../examples/experimentdata/plot_experimentdata_storing.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_hydra_plot_hydra_usage.py` (``../../examples/hydra/plot_hydra_usage.py``)
+     - 00:00.000
      - 0.0

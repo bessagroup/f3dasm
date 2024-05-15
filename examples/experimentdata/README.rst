@@ -1,4 +1,5 @@
 ExperimentData
 --------------
 
-Below is a gallery of examples
+Examples that use the :class:`~f3dasm.ExperimentData` object to control
+the data-driven process.

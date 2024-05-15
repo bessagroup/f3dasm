@@ -1,4 +1,4 @@
 Integration with hydra
 ----------------------
 
-Below is a gallery of examples
+Examples that integrate the :mod:`f3dasm` package with the configuration manager `hydra <https://hydra.cc/>`_

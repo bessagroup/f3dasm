@@ -1,4 +1,4 @@
-Domain
-------
+Design of Experiments
+---------------------
 
-Below is a gallery of examples
+Examples that use the :mod:`f3dasm.design` module to create a design of experiments
