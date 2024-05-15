@@ -115,14 +115,14 @@ def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
     return samples
 
 
-def sample_constant(domain: Domain, numsamples: int):
+def sample_constant(domain: Domain, n_samples: int):
     """Sample the constant parameters
 
     Parameters
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
 
     Returns
@@ -131,11 +131,11 @@ def sample_constant(domain: Domain, numsamples: int):
         samples
     """
     samples = np.array([param.value for param in domain.space.values()])
-    return np.tile(samples, (numsamples, 1))
+    return np.tile(samples, (n_samples, 1))
 
 
 def sample_np_random_choice(
-        domain: Domain, numsamples: int,
+        domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs):
     """Sample with np random choice
 
@@ -143,7 +143,7 @@ def sample_np_random_choice(
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
     seed : Optional[int], optional
         random seed, by default None
@@ -154,16 +154,16 @@ def sample_np_random_choice(
         samples
     """
     rng = np.random.default_rng(seed)
-    samples = np.empty(shape=(numsamples, len(domain)), dtype=object)
+    samples = np.empty(shape=(n_samples, len(domain)), dtype=object)
     for dim, param in enumerate(domain.space.values()):
         samples[:, dim] = rng.choice(
-            param.categories, size=numsamples)
+            param.categories, size=n_samples)
 
     return samples
 
 
 def sample_np_random_choice_range(
-        domain: Domain, numsamples: int,
+        domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs):
     """Samples with np random choice with a range of values
 
@@ -171,7 +171,7 @@ def sample_np_random_choice_range(
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
     seed : Optional[int], optional
         random seed, by default None
@@ -181,20 +181,20 @@ def sample_np_random_choice_range(
     np.ndarray
         samples
     """
-    samples = np.empty(shape=(numsamples, len(domain)), dtype=np.int32)
+    samples = np.empty(shape=(n_samples, len(domain)), dtype=np.int32)
     rng = np.random.default_rng(seed)
     for dim, param in enumerate(domain.space.values()):
         samples[:, dim] = rng.choice(
             range(param.lower_bound,
                   param.upper_bound + 1, param.step),
-            size=numsamples,
+            size=n_samples,
         )
 
     return samples
 
 
 def sample_np_random_uniform(
-        domain: Domain, numsamples: int,
+        domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs) -> np.ndarray:
     """Sample with numpy random uniform
 
@@ -202,7 +202,7 @@ def sample_np_random_uniform(
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
     seed : Optional[int], optional
         random seed, by default None
@@ -213,7 +213,7 @@ def sample_np_random_uniform(
         samples
     """
     rng = np.random.default_rng(seed)
-    samples = rng.uniform(low=0.0, high=1.0, size=(numsamples, len(domain)))
+    samples = rng.uniform(low=0.0, high=1.0, size=(n_samples, len(domain)))
 
     # stretch samples
     samples = _stretch_samples(domain, samples)
@@ -221,7 +221,7 @@ def sample_np_random_uniform(
 
 
 def sample_latin_hypercube(
-        domain: Domain, numsamples: int,
+        domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs) -> np.ndarray:
     """Sample with Latin Hypercube sampling
 
@@ -229,7 +229,7 @@ def sample_latin_hypercube(
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
     seed : Optional[int], optional
         random seed, by default None
@@ -246,19 +246,19 @@ def sample_latin_hypercube(
                    for s in domain.space.values()],
     }
 
-    samples = salib_latin.sample(problem, N=numsamples, seed=seed)
+    samples = salib_latin.sample(problem, N=n_samples, seed=seed)
     return samples
 
 
 def sample_sobol_sequence(
-        domain: Domain, numsamples: int, **kwargs) -> np.ndarray:
+        domain: Domain, n_samples: int, **kwargs) -> np.ndarray:
     """Sample with Sobol sequence sampling
 
     Parameters
     ----------
     domain : Domain
         domain object
-    numsamples : int
+    n_samples : int
         number of samples
 
     Returns
@@ -266,7 +266,7 @@ def sample_sobol_sequence(
     np.ndarray
         samples
     """
-    samples = sobol_sequence.sample(numsamples, len(domain))
+    samples = sobol_sequence.sample(n_samples, len(domain))
 
     # stretch samples
     samples = _stretch_samples(domain, samples)
@@ -298,15 +298,15 @@ def randomuniform(
         input data.
     """
     _continuous = sample_np_random_uniform(
-        domain=domain.continuous, numsamples=n_samples,
+        domain=domain.continuous, n_samples=n_samples,
         seed=seed)
 
     _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, numsamples=n_samples,
+        domain=domain.discrete, n_samples=n_samples,
         seed=seed)
 
     _categorical = sample_np_random_choice(
-        domain=domain.categorical, numsamples=n_samples,
+        domain=domain.categorical, n_samples=n_samples,
         seed=seed)
 
     _constant = sample_constant(domain.constant, n_samples)
@@ -329,7 +329,7 @@ def grid(
 
     Parameters
     ----------
-    numsamples : int
+    n_samples : int
         number of samples
     stepsize_continuous_parameters : Dict[str, float] | float, optional
         stepsize for the continuous parameters, by default None.
@@ -410,15 +410,15 @@ def sobol(domain: Domain, n_samples: int, seed: int, **kwargs) -> DataTypes:
         input data.
     """
     _continuous = sample_sobol_sequence(
-        domain=domain.continuous, numsamples=n_samples)
+        domain=domain.continuous, n_samples=n_samples)
 
     _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, numsamples=n_samples, seed=seed)
+        domain=domain.discrete, n_samples=n_samples, seed=seed)
 
     _categorical = sample_np_random_choice(
-        domain=domain.categorical, numsamples=n_samples, seed=seed)
+        domain=domain.categorical, n_samples=n_samples, seed=seed)
 
-    _constant = sample_constant(domain=domain.constant, numsamples=n_samples)
+    _constant = sample_constant(domain=domain.constant, n_samples=n_samples)
 
     df = pd.concat(
         [pd.DataFrame(_continuous, columns=domain.continuous.names),
@@ -451,15 +451,15 @@ def latin(domain: Domain, n_samples: int, seed: int, **kwargs) -> DataTypes:
         input data.
     """
     _continuous = sample_latin_hypercube(
-        domain=domain.continuous, numsamples=n_samples, seed=seed)
+        domain=domain.continuous, n_samples=n_samples, seed=seed)
 
     _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, numsamples=n_samples, seed=seed)
+        domain=domain.discrete, n_samples=n_samples, seed=seed)
 
     _categorical = sample_np_random_choice(
-        domain=domain.categorical, numsamples=n_samples, seed=seed)
+        domain=domain.categorical, n_samples=n_samples, seed=seed)
 
-    _constant = sample_constant(domain=domain.constant, numsamples=n_samples)
+    _constant = sample_constant(domain=domain.constant, n_samples=n_samples)
 
     df = pd.concat(
         [pd.DataFrame(_continuous, columns=domain.continuous.names),
