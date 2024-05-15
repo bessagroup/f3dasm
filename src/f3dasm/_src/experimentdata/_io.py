@@ -47,7 +47,7 @@ MAX_TRIES = 10
 # =============================================================================
 
 
-class _Store:
+class StoreProtocol:
     """Base class for storing and loading output data from disk"""
     suffix: int
 
@@ -93,7 +93,7 @@ class _Store:
         raise NotImplementedError()
 
 
-class PickleStore(_Store):
+class PickleStore(StoreProtocol):
     """Class to store and load objects using the pickle protocol"""
     suffix: str = '.pkl'
 
@@ -118,7 +118,7 @@ class PickleStore(_Store):
             return pickle.load(file)
 
 
-class NumpyStore(_Store):
+class NumpyStore(StoreProtocol):
     """Class to store and load objects using the numpy protocol"""
     suffix: str = '.npy'
 
@@ -140,7 +140,7 @@ class NumpyStore(_Store):
         return np.load(file=self.path.with_suffix(self.suffix))
 
 
-class PandasStore(_Store):
+class PandasStore(StoreProtocol):
     """Class to store and load objects using the pandas protocol"""
     suffix: str = '.csv'
 
@@ -162,7 +162,7 @@ class PandasStore(_Store):
         return pd.read_csv(self.path.with_suffix(self.suffix))
 
 
-class XarrayStore(_Store):
+class XarrayStore(StoreProtocol):
     """Class to store and load objects using the xarray protocol"""
     suffix: str = '.nc'
 
@@ -184,7 +184,7 @@ class XarrayStore(_Store):
         return xr.open_dataset(self.path.with_suffix(self.suffix))
 
 
-class FigureStore(_Store):
+class FigureStore(StoreProtocol):
     """Class to store and load objects using the matplotlib protocol"""
     suffix: str = '.png'
 
@@ -223,7 +223,7 @@ class FigureStore(_Store):
         return plt.imread(self.path.with_suffix(self.suffix))
 
 
-STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
+STORE_TYPE_MAPPING: Mapping[Type, StoreProtocol] = {
     np.ndarray: NumpyStore,
     pd.DataFrame: PandasStore,
     pd.Series: PandasStore,
@@ -237,7 +237,7 @@ STORE_TYPE_MAPPING: Mapping[Type, _Store] = {
 
 
 def load_object(path: Path, experimentdata_directory: Path,
-                store_method: Type[_Store] = PickleStore) -> Any:
+                store_method: Type[StoreProtocol] = PickleStore) -> Any:
     """
     Load an object from disk from a given path and storing method
 
@@ -281,7 +281,7 @@ def load_object(path: Path, experimentdata_directory: Path,
 
     # Use a generator expression to find the first matching store type,
     #  or None if no match is found
-    matched_store_type: _Store = next(
+    matched_store_type: StoreProtocol = next(
         (store_type for store_type in STORE_TYPE_MAPPING.values() if
          store_type.suffix == item_suffix), PickleStore)
 
@@ -294,7 +294,7 @@ def load_object(path: Path, experimentdata_directory: Path,
 
 
 def save_object(object: Any, path: Path, experimentdata_directory: Path,
-                store_method: Optional[Type[_Store]] = None) -> str:
+                store_method: Optional[Type[StoreProtocol]] = None) -> str:
     """Function to save the object to path,
      with the appropriate storing method.
 
@@ -328,12 +328,12 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
     object_type = type(object)
 
     if object_type not in STORE_TYPE_MAPPING:
-        storage: _Store = PickleStore(object, _path)
+        storage: StoreProtocol = PickleStore(object, _path)
         logger.debug(f"Object type {object_type} is not natively supported. "
                      f"The default pickle storage method will be used.")
 
     else:
-        storage: _Store = STORE_TYPE_MAPPING[object_type](object, _path)
+        storage: StoreProtocol = STORE_TYPE_MAPPING[object_type](object, _path)
     # Store object
     storage.store()
     return storage.suffix
