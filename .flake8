@@ -19,6 +19,7 @@ extend-exclude =
 	tests
 	.git
 	studies
+	examples
 
 # <<< UPDATE ACCORDING WITH YOUR PYTHON PROJECT
 

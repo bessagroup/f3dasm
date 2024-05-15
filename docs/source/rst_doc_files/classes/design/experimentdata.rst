@@ -179,7 +179,7 @@ If the directory does not exist, it will be created.
     >>> project_dir = "folder/to/my_project_directory"
     >>> data = ExperimentData(project_dir=project_dir)
 
-You can also set the project directoy manually after creation with the :meth:`~f3dasm.ExperimentData.set_project_dir` method"
+You can also set the project directory manually after creation with the :meth:`~f3dasm.ExperimentData.set_project_dir` method"
 
 .. code-block:: python
 
@@ -394,3 +394,7 @@ Alternatively, you can convert the input- and outputdata of your data-driven pro
 * :class:`~numpy.ndarray` (:meth:`~f3dasm.ExperimentData.to_numpy`); creates a tuple of two :class:`~numpy.ndarray` objects containing the input- and outputdata.
 * :class:`~xarray.Dataset` (:meth:`~f3dasm.ExperimentData.to_xarray`); creates a :class:`~xarray.Dataset` object containing the input- and outputdata.
 * :class:`~pd.DataFrame` (:meth:`~f3dasm.ExperimentData.to_pandas`); creates a tuple of two :class:`~pd.DataFrame` object containing the input- and outputdata.
+
+.. minigallery:: f3dasm.ExperimentData
+    :add-heading: Examples using the `ExperimentData` object
+    :heading-level: -

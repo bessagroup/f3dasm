@@ -67,6 +67,8 @@ The :class:`~f3dasm.ExperimentData` object can be manually iterated over to get 
     ExperimentSample(1 : {'x0': 0.7203461491873061, 'x1': 0.7320604457665572, 'x2': 0.2524387342272223} - {})
     ExperimentSample(2 : {'x0': 0.35449352388104904, 'x1': 0.11413412225748525, 'x2': 0.1467895592274866} - {})
 
+.. _storing-output-experiment-sample:
+
 Storing output parameters to the experiment sample
 --------------------------------------------------
 

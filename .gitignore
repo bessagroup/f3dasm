@@ -127,3 +127,7 @@ notebooks/tutorials/Data/
 !tests/*/*.obj
 
 *.lock
+
+# Exclude sphinx gallery files
+docs/source/auto_examples/
+docs/source/gen_modules/

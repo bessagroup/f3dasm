@@ -32,10 +32,10 @@ Now we can add some parameters!
 
 .. _parameters:
 
-Parameters
-----------
+Input parameters
+----------------
 
-Parameters are singular features of the input search space. They are used to define the search space of the design.
+Input parameters are singular features of the input search space. They are used to define the search space of the design.
 
 .. image:: ../../../img/f3dasm-parameter.png
    :width: 50%
@@ -99,6 +99,21 @@ Constant parameters
 
 .. _domain-from-yaml:
 
+Output parameters
+-----------------
+
+Output parameters are the results of evaluating the input design with a data generation model.
+Output parameters can hold any type of data, e.g. a scalar value, a vector, a matrix, etc.
+Normally, you would not need to define output parameters, as they are created automatically when you store a variable to the :class:`~f3dasm.ExperimentData` object.
+
+.. code-block:: python
+
+  domain.add_output(name='y', to_disk=False)
+
+The :code:`to_disk` argument can be set to :code:`True` to store the output parameter on disk. A reference to the file is stored in the :class:`~f3dasm.ExperimentData` object.
+This is useful when the output data is very large, or when the output data is an array-like object.
+More information on storing output can be found in :ref:`this section <storing-output-experiment-sample>`
+
 Domain from a `hydra <https://hydra.cc/>`_ configuration file
 -------------------------------------------------------------
 
@@ -136,7 +151,7 @@ The domain can now be created by calling the :func:`~f3dasm.design.Domain.from_y
     def my_app(cfg):
       domain = Domain.from_yaml(cfg.domain)
 
-Helper function for single-objective, n-dimensional continuous Domains
+Helper function for single-objective, n-dimensional continuous domains
 ----------------------------------------------------------------------
  
 We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.make_nd_continuous_domain`. 
@@ -148,3 +163,8 @@ We have to specify the boundaries (``bounds``) for each of the dimensions with a
   import numpy as np
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
   domain = make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+
+
+.. minigallery:: f3dasm.design.Domain
+    :add-heading: Examples using the `Domain` object
+    :heading-level: -

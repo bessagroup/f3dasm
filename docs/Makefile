@@ -44,7 +44,7 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
-
+	-rm -rf $(SOURCEDIR)/auto_examples/*
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(SOURCEDIR) $(BUILDDIR)/html 
 	@echo

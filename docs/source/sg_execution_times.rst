@@ -1,0 +1,52 @@
+
+:orphan:
+
+.. _sphx_glr_sg_execution_times:
+
+
+Computation times
+=================
+**00:01.116** total execution time for 6 files **from all galleries**:
+
+.. container::
+
+  .. raw:: html
+
+    <style scoped>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready( function () {
+        $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+    } );
+    </script>
+
+  .. list-table::
+   :header-rows: 1
+   :class: table table-striped sg-datatable
+
+   * - Example
+     - Time
+     - Mem (MB)
+   * - :ref:`sphx_glr_auto_examples_hydra_plot_hydra_usage.py` (``../../examples/hydra/plot_hydra_usage.py``)
+     - 00:00.873
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_domain_plot_builtin_sampler.py` (``../../examples/domain/plot_builtin_sampler.py``)
+     - 00:00.171
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata.py` (``../../examples/experimentdata/plot_experimentdata.py``)
+     - 00:00.032
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_domain_plot_own_sampler.py` (``../../examples/domain/plot_own_sampler.py``)
+     - 00:00.021
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_experimentdata_plot_experimentdata_storing.py` (``../../examples/experimentdata/plot_experimentdata_storing.py``)
+     - 00:00.015
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_domain_plot_domain_creation.py` (``../../examples/domain/plot_domain_creation.py``)
+     - 00:00.004
+     - 0.0

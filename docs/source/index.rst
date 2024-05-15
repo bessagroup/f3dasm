@@ -31,6 +31,7 @@ f3dasm
    :glob:
 
    rst_doc_files/classes/design/experimentdata
+   auto_examples/plot_experimentdata_storing
    rst_doc_files/classes/design/experimentsample
 
 .. toctree::
@@ -78,5 +79,6 @@ f3dasm
 
    rst_doc_files/reference/index.rst
    Code <_autosummary/f3dasm>
+   auto_examples/index.rst
 
 .. include:: readme.rst

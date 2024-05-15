@@ -43,7 +43,16 @@ extensions = ['sphinx.ext.duration',
               'sphinx.ext.intersphinx',
               'sphinx.ext.viewcode',
               'sphinx_autodoc_typehints',
-              'sphinx_tabs.tabs']
+              'sphinx_tabs.tabs',
+              'sphinx_gallery.gen_gallery',]
+
+sphinx_gallery_conf = {
+    'examples_dirs': ['../../examples'],   # path to your example scripts
+    'gallery_dirs': ['auto_examples'],
+    'reference_url': {'sphinx_gallery': None, },
+    'backreferences_dir': 'gen_modules/backreferences',
+    'doc_module': ('f3dasm',),
+}
 
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-source_suffix
 source_suffix = {'.rst': 'restructuredtext', }
