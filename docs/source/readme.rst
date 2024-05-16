@@ -27,13 +27,14 @@ Some of the key features of are:
 
     - The framework is integrated with `hydra <https://hydra.cc/>`_ configuration manager, to easily manage and run experiments.
 
-.. include:: auto_examples/001_domain/index.rst
 
-.. include:: auto_examples/002_experimentdata/index.rst
+.. .. include:: auto_examples/001_domain/index.rst
 
-.. include:: auto_examples/003_datageneration/index.rst
+.. .. include:: auto_examples/002_experimentdata/index.rst
 
-.. include:: auto_examples/004_optimization/index.rst
+.. .. include:: auto_examples/003_datageneration/index.rst
+
+.. .. include:: auto_examples/004_optimization/index.rst
 
 Getting started
 ---------------

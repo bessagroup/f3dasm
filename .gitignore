@@ -131,3 +131,4 @@ notebooks/tutorials/Data/
 # Exclude sphinx gallery files
 docs/source/auto_examples/
 docs/source/gen_modules/
+docs/source/sg_execution_times.rst
