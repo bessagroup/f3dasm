@@ -13,12 +13,38 @@ f3dasm
 | [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html)
 | [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
-| [**Practical sessions**](https://github.com/mpvanderschelling/f3dasm_teach)
 
 ## Summary
 
-Welcome to `f3dasm`, a Python package for data-driven design and analysis of structures and materials.
+Welcome to `f3dasm`, a **f**ramework for **d**ata-**d**riven **d**esign and **a**nalysis of **s**tructures and **m**aterials.
 
+`f3dasm` introduces a general and user-friendly data-driven Python package for researchers and practitioners working on design and analysis of materials and structures. Some of the key features include:
+
+-  **Modular design** 
+    - The framework introduces flexible interfaces, allowing users to easily integrate their own models and algorithms.
+
+- **Automatic data management**
+    -  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
+
+- **Easy parallelization**
+    - The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
+
+- **Built-in defaults**
+    - The framework includes a collection of benchmark functions, optimization algorithms and sampling strategies to get you started right away!
+
+- **Hydra integration**
+    - The framework is supports the [hydra](https://hydra.cc/) configuration manager, to easily manage and run experiments.
+
+## Getting started
+
+The best way to get started is to follow the [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html).
+
+## Illustrative benchmarks
+
+This package includes a collection of illustrative benchmark studies that demonstrate the capabilities of the framework. These studies are available in the `/studies` folder, and include the following studies:
+
+- Benchmarking optimization algorithms against well-known benchmark functions
+- 'Fragile Becomes Supercompressible' ([Bessa et al. (2019)](https://onlinelibrary.wiley.com/doi/full/10.1002/adma.201904845))
 
 ## Authorship
 
@@ -26,9 +52,7 @@ Welcome to `f3dasm`, a Python package for data-driven design and analysis of str
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
 
-## Getting started
 
-The best way to get started is to follow the [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html).
 
 ## Referencing
 
@@ -48,7 +72,7 @@ If you find any **issues, bugs or problems** with this template, please use the 
 
 ## License
 
-Copyright 2023, Martin van der Schelling
+Copyright 2024, Martin van der Schelling
 
 All rights reserved.
 

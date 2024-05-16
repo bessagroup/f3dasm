@@ -1,4 +1,4 @@
-Optimization
-------------
+Optimizing your design
+^^^^^^^^^^^^^^^^^^^^^^
 
-Examples that use the :mod:`f3dasm.optimization` module.
+Optimize your design with your optimization algorithm or use the built-in optimizers.

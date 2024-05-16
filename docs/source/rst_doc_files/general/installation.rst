@@ -1,10 +1,9 @@
 .. _installation-instructions:
 
-===============
-Getting Started
-===============
+Installation instructions
+=========================
 
-There are different ways to install f3dasm:
+There are different ways to install :mod:`f3dasm`:
 
   * :ref:`Install the latest official release <install_official_release>`. This
     is the best approach for most users that want to use the f3dasm package.
@@ -18,7 +17,7 @@ There are different ways to install f3dasm:
 .. _install_official_release:
 
 Installing the latest release
-=============================
+-----------------------------
 
 :mod:`f3dasm` is purely Python code and compatible with: 
 
@@ -101,7 +100,7 @@ This will show the installed version of f3dasm.
 .. _install_from_source:
 
 Installing from source
-======================
+----------------------
 
 - The Python PyPI package (:code:`pip install f3dasm`) contains the code that is
   used when installing the package as a **user**. It contains only the :code:`main` branch version.

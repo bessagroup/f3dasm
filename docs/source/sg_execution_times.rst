@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.762** total execution time for 10 files **from all galleries**:
+**00:00.004** total execution time for 12 files **from all galleries**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_006_hydra_001_hydra_usage.py` (``../../examples/006_hydra/001_hydra_usage.py``)
-     - 00:00.762
-     - 0.0
    * - :ref:`sphx_glr_auto_examples_001_domain_001_domain_creation.py` (``../../examples/001_domain/001_domain_creation.py``)
-     - 00:00.000
+     - 00:00.004
      - 0.0
    * - :ref:`sphx_glr_auto_examples_001_domain_002_own_sampler.py` (``../../examples/001_domain/002_own_sampler.py``)
      - 00:00.000
@@ -60,5 +57,14 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_004_optimization_001_builtin_optimizers.py` (``../../examples/004_optimization/001_builtin_optimizers.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_005_workflow_001_cluster_computing.py` (``../../examples/005_workflow/001_cluster_computing.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_006_hydra_001_hydra_usage.py` (``../../examples/006_hydra/001_hydra_usage.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_006_hydra_002_cluster_hydra.py` (``../../examples/006_hydra/002_cluster_hydra.py``)
      - 00:00.000
      - 0.0

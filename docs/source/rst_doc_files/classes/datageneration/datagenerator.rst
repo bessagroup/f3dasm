@@ -105,3 +105,5 @@ You can add the ``post-process-function`` to the :class:`~f3dasm.datageneration.
 .. code-block:: python
 
     experimentdata.add_post_process(pre_process_function)
+
+.. include:: ../../../auto_examples/003_datageneration/index.rst

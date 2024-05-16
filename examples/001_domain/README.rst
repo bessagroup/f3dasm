@@ -1,4 +1,4 @@
-Design of Experiments
----------------------
+Design-of-experiments
+^^^^^^^^^^^^^^^^^^^^^
 
-Examples that use the :mod:`f3dasm.design` module to create a design of experiments
+The submodule :mod:`f3dasm.design` contains the  :class:`~f3dasm.design.Domain` object that makes up your feasible search space.

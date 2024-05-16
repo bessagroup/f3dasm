@@ -1,4 +1,9 @@
-Examples
-========
+.. _examples:
 
-Below is a gallery of examples that use various part of the :mod:`f3dasm` package
+Tutorials
+=========
+
+.. toctree::
+   :hidden:
+
+Below is a gallery of tutorials that use various part of the :mod:`f3dasm` package

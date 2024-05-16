@@ -395,6 +395,7 @@ Alternatively, you can convert the input- and outputdata of your data-driven pro
 * :class:`~xarray.Dataset` (:meth:`~f3dasm.ExperimentData.to_xarray`); creates a :class:`~xarray.Dataset` object containing the input- and outputdata.
 * :class:`~pd.DataFrame` (:meth:`~f3dasm.ExperimentData.to_pandas`); creates a tuple of two :class:`~pd.DataFrame` object containing the input- and outputdata.
 
-.. minigallery:: f3dasm.ExperimentData
-    :add-heading: Examples using the `ExperimentData` object
-    :heading-level: -
+.. .. minigallery:: f3dasm.ExperimentData
+..     :add-heading: Examples using the `ExperimentData` object
+..     :heading-level: -
+

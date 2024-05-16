@@ -16,6 +16,14 @@ from f3dasm.design import Domain
 
 ###############################################################################
 #
+# Car stopping distance problem
+# -----------------------------
+#
+# .. image:: ../../img/reaction-braking-stopping.png
+#    :width: 70%
+#    :align: center
+#    :alt: Workflow
+#
 # Car stopping distance :math:`y` as a function of its velocity :math:`x` before it starts braking:
 #
 # .. math::
@@ -89,6 +97,9 @@ def y(x):
 
 
 ###############################################################################
+# Implementing the data generator
+# -------------------------------
+#
 # Implementing this relationship in :mod:`f3dasm` can be done in two ways:
 #
 #
@@ -96,7 +107,7 @@ def y(x):
 # 2. Providing an object from a custom class that inherits from the :class:`~f3dasm.datageneration.DataGenerator` class.
 #
 # Using a function directly
-# -------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We can use the function :func:`y(x)` directly as the data generator. We will demonstrate this in the following example code:
 #
@@ -139,7 +150,7 @@ print(experiment_data)
 ###############################################################################
 #
 # Using the DataGenerator class
-# -----------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We can also implement the data generator as a class that inherits from the :class:`~f3dasm.datageneration.DataGenerator` class.
 # This allows for more flexibility and control over the data generation process.

@@ -165,6 +165,7 @@ We have to specify the boundaries (``bounds``) for each of the dimensions with a
   domain = make_nd_continuous_domain(bounds=bounds, dimensionality=2)
 
 
-.. minigallery:: f3dasm.design.Domain
-    :add-heading: Examples using the `Domain` object
-    :heading-level: -
+.. .. minigallery:: f3dasm.design.Domain
+..     :add-heading: Examples using the `Domain` object
+..     :heading-level: -
+
