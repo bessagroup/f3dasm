@@ -6,17 +6,8 @@ This package provides tools for designing and optimizing materials, including
 functions for data analysis, design of experiments, machine learning,
 optimization, sampling, and simulation.
 
-Usage
------
-
->>> import f3dasm
-
-Links
------
-
 - Documentation: https://f3dasm.readthedocs.io
-
-Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
+- Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 """
 
 #                                                                       Modules
@@ -24,6 +15,7 @@ Author: Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)
 
 from .__version__ import __version__
 from ._src._argparser import HPC_JOBID
+from ._src.experimentdata._io import StoreProtocol
 from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
@@ -53,4 +45,5 @@ __all__ = [
     'run_optimization',
     'HPC_JOBID',
     'calculate_mean_std',
+    'StoreProtocol',
 ]

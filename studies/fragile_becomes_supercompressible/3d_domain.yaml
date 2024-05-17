@@ -1,0 +1,28 @@
+domain:
+  young_modulus:
+    type: constant
+    value: 3500.0
+  n_longerons:
+    type: constant
+    value: 3
+  bottom_diameter:
+    type: constant
+    value: 100.0
+  ratio_top_diameter:
+    type: float
+    low: 0.0
+    high: 0.8
+  ratio_pitch:
+    type: float
+    low: 0.25
+    high: 1.50
+  ratio_d:
+    type: float
+    low: 0.004
+    high: 0.073
+  ratio_shear_modulus:
+    type: constant
+    value: 0.3677
+  circular:
+    type: constant
+    value: true

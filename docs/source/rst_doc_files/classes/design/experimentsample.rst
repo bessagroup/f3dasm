@@ -13,20 +13,20 @@ A :class:`~f3dasm.ExperimentSample` object contains a single realization of the 
 .. warning:: 
     A :class:`~f3dasm.ExperimentSample` is not constructed manually, but created inside the :class:`~f3dasm.ExperimentData` when it is required by internal processes. 
     The main use of the :class:`~f3dasm.ExperimentSample` is in the context of the :class:`~f3dasm.datageneration.DataGenerator` in order to extract design variables and store output variables. 
-    Learn more about the :class:~`f3dasm.datageneration.DataGenerator` in the :ref:`Data Generation <data-generation>` section.
+    Learn more about the :class:`~f3dasm.datageneration.DataGenerator` in the :ref:`Data Generation <data-generation>` section.
 
 
 For each of the experiments in the :class:`~f3dasm.ExperimentData`, an :class:`~f3dasm.ExperimentSample` object can be created.
-This object contains:
+This object contains the following attributes:
 
-* the input parameters of the sample: :attr:`~f3dasm.design.ExperimentSample.input_data`
+* the input parameters of the experiment, :attr:`~f3dasm.design.ExperimentSample.input_data`, as a dictionary
 
 .. code-block:: python
 
     >>> experiment_sample.input_data
     {'param_1': 0.0249, 'param_2': 0.034, 'param_3': 0.1}
 
-* the output parameters of the sample: :attr:`~f3dasm.design.ExperimentSample.output_data`
+* the output parameters of the experiment, :attr:`~f3dasm.design.ExperimentSample.output_data`, as a dictionary
 
 .. code-block:: python
 
@@ -36,18 +36,18 @@ This object contains:
 
 .. note::
 
-    If you have `stored your output to disk <store-to-disk>`, the :attr:`~f3dasm.design.ExperimentSample.output_data` will contain a reference to the stored output instead of the actual output.
+    If you have :ref:`stored your output to disk <store-to-disk>`, the :attr:`~f3dasm.design.ExperimentSample.output_data` will contain a reference to the stored output instead of the actual output.
     If you want to load the objects from disk, use the :attr:`~f3dasm.design.ExperimentSample.output_data_loaded` attribute.
 
-* the index number of the experiment: :attr:`~f3dasm.design.ExperimentSample.job_number`
+* the index number of the experiment: :attr:`~f3dasm.design.ExperimentSample.job_number`, as an integer
 
 .. code-block:: python
 
     >>> experiment_sample.job_number
     0
 
-Input parameters of an experiment sample can be accessed using the :attr:`~f3dasm.design.ExperimentSample.get` attribute, with the name of the parameter as the key.
-An KeyError will be raised if the key is not found.
+Input and output parameters of an experiment sample can be accessed using the :attr:`~f3dasm.design.ExperimentSample.get` attribute, with the name of the parameter as the key.
+An error will be raised if the key is not found.
 
 .. code-block:: python
 
@@ -67,10 +67,12 @@ The :class:`~f3dasm.ExperimentData` object can be manually iterated over to get 
     ExperimentSample(1 : {'x0': 0.7203461491873061, 'x1': 0.7320604457665572, 'x2': 0.2524387342272223} - {})
     ExperimentSample(2 : {'x0': 0.35449352388104904, 'x1': 0.11413412225748525, 'x2': 0.1467895592274866} - {})
 
+.. _storing-output-experiment-sample:
+
 Storing output parameters to the experiment sample
 --------------------------------------------------
 
-After running your simulation, you can store the result back into the :class:`~f3dasm.ExperimentSample` with the :meth:`f3dasm.design.ExperimentSample.store` method.
+After running your simulation, you can store the result back into the :class:`~f3dasm.ExperimentSample` with the :meth:`~f3dasm.design.ExperimentSample.store` method.
 There are two ways of storing your output:
 
 * Singular values can be stored directly to the :attr:`~f3dasm.design.ExperimentData.output_data`
@@ -129,7 +131,7 @@ A reference (:code:`Path`) will be saved to the :attr:`~f3dasm.design.Experiment
 In the output data of the :class:`~f3dasm.ExperimentData` object, a reference path (e.g. :code:`/output_numpy/0.npy`) to the stored object will be saved.
 
 
-:mod:`f3dasm` has built-in storing functions for numpy :class:`~numpy.ndarray`, pandas :class:`~pandas.DataFrame` and xarray :class:`~xarray.DataArray` and :class:`~xarray.Dataset`. 
+:mod:`f3dasm` has built-in storing functions for numpy :class:`~numpy.ndarray`, pandas :class:`~pandas.DataFrame` and xarray :class:`~xarray.DataArray` and :class:`~xarray.Dataset` objects. 
 For any other type of object, the object will be stored in the `pickle <https://docs.python.org/3/library/pickle.html>`_ format
 
 

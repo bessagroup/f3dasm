@@ -7,6 +7,8 @@
 import os
 import sys
 
+from sphinx_gallery.sorting import FileNameSortKey
+
 # -- Search path for extensions and modules -----------------------------------
 # If extensions or Python modules are in a different directory than this file,
 # then add these directories to sys.path so that Sphinx can search for them
@@ -24,9 +26,9 @@ for path in src_dir:
 
 project = 'f3dasm'
 author = 'Martin van der Schelling'
-copyright = '2022, Martin van der Schelling'
-version = '1.4.71'
-release = '1.4.71'
+copyright = '2024, Martin van der Schelling'
+version = '1.4.8'
+release = '1.4.8'
 
 
 # -- General configuration ----------------------------------------------------
@@ -43,7 +45,18 @@ extensions = ['sphinx.ext.duration',
               'sphinx.ext.intersphinx',
               'sphinx.ext.viewcode',
               'sphinx_autodoc_typehints',
-              'sphinx_tabs.tabs']
+              'sphinx_tabs.tabs',
+              'sphinx_gallery.gen_gallery',]
+
+sphinx_gallery_conf = {
+    'examples_dirs': ['../../examples'],   # path to your example scripts
+    'gallery_dirs': ['auto_examples'],
+    'reference_url': {'sphinx_gallery': None, },
+    'backreferences_dir': 'gen_modules/backreferences',
+    'doc_module': ('f3dasm',),
+    "filename_pattern": r"/*\.py",
+    "within_subsection_order": FileNameSortKey,
+}
 
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-source_suffix
 source_suffix = {'.rst': 'restructuredtext', }

@@ -19,7 +19,7 @@ The :class:`~f3dasm.design.Domain` is a set of parameter instances that make up 
 |
 
 
-To start, we instantiate an empty domain object:
+To start, we create an empty domain object:
 
 .. code-block:: python
 
@@ -28,14 +28,14 @@ To start, we instantiate an empty domain object:
   domain = Domain()
 
 
-Now we can gradually add some parameters!
+Now we can add some parameters!
 
 .. _parameters:
 
-Parameters
-----------
+Input parameters
+----------------
 
-Parameters are singular features of the input search space. They are used to define the search space of the design.
+Input parameters are singular features of the input search space. They are used to define the search space of the design.
 
 .. image:: ../../../img/f3dasm-parameter.png
    :width: 50%
@@ -51,31 +51,35 @@ There are four types of parameters that can be created: :ref:`float <continuous-
 Floating point parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* We can create **continous** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_float` method:
+* We can create **continous** parameters with a lower bound (:code:`low`) and upper bound (:code:`high`) with the :meth:`~f3dasm.design.Domain.add_float` method:
 
 .. code-block:: python
 
   domain.add_float(name='x1', low=0.0, high=100.0)
   domain.add_float(name='x2', low=0.0, high=4.0)  
 
+An optional argument :code:`log` can be set to :code:`True` to create a log-scaled parameter:
+
 .. _discrete-parameter:
 
 Discrete parameters
 ^^^^^^^^^^^^^^^^^^^
 
-* We can create **discrete** parameters with a :code:`low` and :code:`high` boundary with the :meth:`~f3dasm.design.Domain.add_int` method:
+* We can create **discrete** parameters with a lower bound (:code:`low`) and upper bound (:code:`high`) with the :meth:`~f3dasm.design.Domain.add_int` method:
 
 .. code-block:: python
 
   domain.add_int(name='x3', low=2, high=4)
   domain.add_int(name='x4', low=74, high=99)  
 
+An optional argument :code:`step` can be set to an integer value to define the step size between the lower and upper bound. By default the step size is 1.
+
 .. _categorical-parameter:
 
 Categorical parameters
 ^^^^^^^^^^^^^^^^^^^^^^
 
-* We can create **categorical** parameters with a list of items (:code:`categories`) with the :meth:`~f3dasm.design.Domain.add_category` method:
+* We can create **categorical** parameters with a list of values (:code:`categories`) with the :meth:`~f3dasm.design.Domain.add_category` method:
 
 .. code-block:: python
 
@@ -94,6 +98,21 @@ Constant parameters
   domain.add_constant(name='x7', value=0.9)
 
 .. _domain-from-yaml:
+
+Output parameters
+-----------------
+
+Output parameters are the results of evaluating the input design with a data generation model.
+Output parameters can hold any type of data, e.g. a scalar value, a vector, a matrix, etc.
+Normally, you would not need to define output parameters, as they are created automatically when you store a variable to the :class:`~f3dasm.ExperimentData` object.
+
+.. code-block:: python
+
+  domain.add_output(name='y', to_disk=False)
+
+The :code:`to_disk` argument can be set to :code:`True` to store the output parameter on disk. A reference to the file is stored in the :class:`~f3dasm.ExperimentData` object.
+This is useful when the output data is very large, or when the output data is an array-like object.
+More information on storing output can be found in :ref:`this section <storing-output-experiment-sample>`
 
 Domain from a `hydra <https://hydra.cc/>`_ configuration file
 -------------------------------------------------------------
@@ -132,13 +151,21 @@ The domain can now be created by calling the :func:`~f3dasm.design.Domain.from_y
     def my_app(cfg):
       domain = Domain.from_yaml(cfg.domain)
 
-Helper function for single-objective, n-dimensional continuous Domains
+Helper function for single-objective, n-dimensional continuous domains
 ----------------------------------------------------------------------
  
 We can make easily make a :math:`n`-dimensional continous domain with the helper function :func:`~f3dasm.design.make_nd_continuous_domain`. 
 We have to specify the boundaries (``bounds``) for each of the dimensions with a list of lists or numpy :class:`~numpy.ndarray`:
 
 .. code-block:: python
-
+  
+  from f3dasm.design import make_nd_continuous_domain
+  import numpy as np
   bounds = np.array([[-1.0, 1.0], [-1.0, 1.0]])
-  domain = f3dasm.make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+  domain = make_nd_continuous_domain(bounds=bounds, dimensionality=2)
+
+
+.. .. minigallery:: f3dasm.design.Domain
+..     :add-heading: Examples using the `Domain` object
+..     :heading-level: -
+

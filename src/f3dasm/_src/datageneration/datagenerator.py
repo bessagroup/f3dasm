@@ -9,22 +9,19 @@ Interface class for data generators
 from __future__ import annotations
 
 # Standard
-import sys
+import inspect
 from abc import abstractmethod
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Protocol  # NOQA
-else:
-    from typing import Protocol
 
 # Third-party
 import numpy as np
 
 # Local
 from ..design.domain import Domain
-from ..experimentdata.experimentsample import _experimentsample_factory
+# from ..experimentdata._io import StoreProtocol
+from ..experimentdata.experimentsample import (ExperimentSample,
+                                               _experimentsample_factory)
 from ..logger import time_and_log
 
 #                                                          Authorship & Credits
@@ -35,18 +32,6 @@ __status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
-
-
-class ExperimentSample(Protocol):
-    def get(self, key: str) -> Any:
-        ...
-
-    def store(self, object: Any, name: str, to_disk: bool) -> None:
-        ...
-
-    @property
-    def job_number(self) -> int:
-        ...
 
 
 class DataGenerator:
@@ -190,7 +175,6 @@ class DataGenerator:
 
 
 def convert_function(f: Callable,
-                     input: List[str],
                      output: Optional[List[str]] = None,
                      kwargs: Optional[Dict[str, Any]] = None,
                      to_disk: Optional[List[str]] = None) -> DataGenerator:
@@ -201,8 +185,6 @@ def convert_function(f: Callable,
     ----------
     f : Callable
         The function to be converted.
-    input : List[str]
-        A list of argument names required by the function.
     output : Optional[List[str]], optional
         A list of names for the return values of the function.
         Defaults to None.
@@ -224,7 +206,8 @@ def convert_function(f: Callable,
     as long as they are consistent with the `input` and `output` arguments that
     are given to this function.
     """
-
+    signature = inspect.signature(f)
+    input = list(signature.parameters)
     kwargs = kwargs if kwargs is not None else {}
     to_disk = to_disk if to_disk is not None else []
     output = output if output is not None else []
@@ -232,7 +215,7 @@ def convert_function(f: Callable,
     class TempDataGenerator(DataGenerator):
         def execute(self, **_kwargs) -> None:
             _input = {input_name: self.experiment_sample.get(input_name)
-                      for input_name in input}
+                      for input_name in input if input_name not in kwargs}
             _output = f(**_input, **kwargs)
 
             # check if output is empty

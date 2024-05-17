@@ -9,8 +9,9 @@ The ExperimentData object is the main object used to store implementations
 
 from __future__ import annotations
 
-import sys
+import inspect
 # Standard
+import sys
 import traceback
 from functools import wraps
 from pathlib import Path
@@ -33,10 +34,9 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
-from ..datageneration.datagenerator import DataGenerator
+from ..datageneration.datagenerator import DataGenerator, convert_function
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
-from ..design.samplers import Sampler, SamplerNames, _sampler_factory
 from ..logger import logger
 from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
@@ -46,6 +46,7 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
+from .samplers import Sampler, SamplerNames, _sampler_factory
 from .utils import number_of_overiterations, number_of_updates
 
 #                                                          Authorship & Credits
@@ -293,7 +294,8 @@ class ExperimentData:
     @classmethod
     def from_sampling(cls, sampler: Sampler | str, domain: Domain | DictConfig,
                       n_samples: int = 1,
-                      seed: Optional[int] = None) -> ExperimentData:
+                      seed: Optional[int] = None,
+                      **kwargs) -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
         Parameters
@@ -324,9 +326,12 @@ class ExperimentData:
         * 'latin' : Latin Hypercube Sampling
         * 'sobol' : Sobol Sequence Sampling
         * 'grid' : Grid Search Sampling
+
+        Any additional keyword arguments are passed to the sampler.
         """
         experimentdata = cls(domain=domain)
-        experimentdata.sample(sampler=sampler, n_samples=n_samples, seed=seed)
+        experimentdata.sample(
+            sampler=sampler, n_samples=n_samples, seed=seed, **kwargs)
         return experimentdata
 
     @classmethod
@@ -868,6 +873,25 @@ class ExperimentData:
             self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
+    def join(self, other: ExperimentData) -> ExperimentData:
+        """Join two ExperimentData objects.
+
+        Parameters
+        ----------
+        other : ExperimentData
+            The other ExperimentData object to join with.
+
+        Returns
+        -------
+        ExperimentData
+            The joined ExperimentData object.
+        """
+        return ExperimentData(
+            input_data=self._input_data.join(other._input_data),
+            output_data=self._output_data.join(other._output_data),
+            jobs=self._jobs,
+            domain=self.domain + other.domain,
+            project_dir=self.project_dir)
 #                                                                  ExperimentSample
     # =============================================================================
 
@@ -1091,13 +1115,14 @@ class ExperimentData:
     def evaluate(self, data_generator: DataGenerator,
                  mode: Literal['sequential', 'parallel',
                                'cluster', 'cluster_parallel'] = 'sequential',
-                 kwargs: Optional[dict] = None) -> None:
+                 kwargs: Optional[dict] = None,
+                 output_names: Optional[List[str]] = None) -> None:
         """Run any function over the entirety of the experiments
 
         Parameters
         ----------
         data_generator : DataGenerator
-            data grenerator to use
+            data generator to use
         mode : str, optional
             operational mode, by default 'sequential'. Choose between:
 
@@ -1109,6 +1134,10 @@ class ExperimentData:
         kwargs, optional
             Any keyword arguments that need to
             be supplied to the function, by default None
+        output_names : List[str], optional
+            If you provide a function as data generator, you have to provide
+            the names of all the output parameters that are in the return
+            statement, in order of appearance.
 
         Raises
         ------
@@ -1118,7 +1147,16 @@ class ExperimentData:
         if kwargs is None:
             kwargs = {}
 
-        if isinstance(data_generator, str):
+        if inspect.isfunction(data_generator):
+            if output_names is None:
+                raise TypeError(
+                    ("If you provide a function as data generator, you have to"
+                     "provide the names of the return arguments with the"
+                     "output_names attribute."))
+            data_generator = convert_function(
+                f=data_generator, output=output_names)
+
+        elif isinstance(data_generator, str):
             data_generator = _datagenerator_factory(
                 data_generator, self.domain, kwargs)
 
@@ -1708,7 +1746,7 @@ class ExperimentData:
     # =========================================================================
 
     def sample(self, sampler: Sampler | SamplerNames, n_samples: int = 1,
-               seed: Optional[int] = None) -> None:
+               seed: Optional[int] = None, **kwargs) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1726,6 +1764,17 @@ class ExperimentData:
         seed : Optional[int], optional
             Seed to use for the sampler, by default None
 
+        Note
+        ----
+        When using the 'grid' sampler, an optional argument
+        'stepsize_continuous_parameters' can be passed to specify the stepsize
+        to cast continuous parameters to discrete parameters.
+
+        - The stepsize should be a dictionary with the parameter names as keys\
+        and the stepsize as values.
+        - Alternatively, a single stepsize can be passed for all continuous\
+        parameters.
+
         Raises
         ------
         ValueError
@@ -1736,7 +1785,7 @@ class ExperimentData:
             sampler = _sampler_factory(sampler, self.domain)
 
         sample_data: DataTypes = sampler(
-            domain=self.domain, n_samples=n_samples, seed=seed)
+            domain=self.domain, n_samples=n_samples, seed=seed, **kwargs)
         self.add(input_data=sample_data, domain=self.domain)
 
     #                                                         Project directory

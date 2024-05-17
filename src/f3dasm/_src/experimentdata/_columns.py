@@ -55,6 +55,21 @@ class _Columns:
         """Representation of the _Columns object."""
         return self.columns.keys().__repr__()
 
+    def __add__(self, __o: _Columns) -> _Columns:
+        """Add two _Columns objects.
+
+        Parameters
+        ----------
+        __o: _Columns
+            _Columns object to add
+
+        Returns
+        -------
+        _Columns
+            _Columns object with the columns of both _Columns objects
+        """
+        return _Columns({**self.columns, **__o.columns})
+
     @property
     def names(self) -> List[str]:
         """List of the names of the columns.

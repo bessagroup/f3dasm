@@ -97,8 +97,8 @@ def experimentdata_expected_only_domain() -> ExperimentData:
 
 @pytest.fixture(scope="package")
 def numpy_array(domain_continuous: Domain) -> np.ndarray:
-    np.random.seed(SEED)
-    return np.random.rand(10, len(domain_continuous))
+    rng = np.random.default_rng(SEED)
+    return rng.random((10, len(domain_continuous)))
 
 
 @pytest.fixture(scope="package")
@@ -108,8 +108,9 @@ def numpy_output_array(domain_continuous: Domain) -> np.ndarray:
 
 @pytest.fixture(scope="package")
 def xarray_dataset(domain_continuous: Domain) -> xr.Dataset:
-    np.random.seed(SEED)
-    input_data = np.random.rand(10, len(domain_continuous))
+    rng = np.random.default_rng(SEED)
+    # np.random.seed(SEED)
+    input_data = rng.random((10, len(domain_continuous)))
     input_names = domain_continuous.names
 
     output_data = pd.DataFrame()
@@ -123,8 +124,9 @@ def xarray_dataset(domain_continuous: Domain) -> xr.Dataset:
 
 @pytest.fixture(scope="package")
 def pandas_dataframe(domain_continuous: Domain) -> pd.DataFrame:
-    np.random.seed(SEED)
-    return pd.DataFrame(np.random.rand(10, len(domain_continuous)), columns=domain_continuous.names)
+    # np.random.seed(SEED)
+    rng = np.random.default_rng(SEED)
+    return pd.DataFrame(rng.random((10, len(domain_continuous))), columns=domain_continuous.names)
 
 
 @pytest.fixture(scope="package")

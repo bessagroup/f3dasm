@@ -1,0 +1,15 @@
+domain:
+  param_1:
+    type: float
+    low: -1.0
+    high: 1.0
+  param_2:
+    type: int
+    low: 1
+    high: 10
+  param_3:
+    type: category
+    categories: ['red', 'blue', 'green', 'yellow', 'purple']
+  param_4:
+    type: constant
+    value: some_value

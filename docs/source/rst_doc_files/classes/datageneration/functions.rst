@@ -35,6 +35,8 @@ Benchmark functions can substitute the expensive simulation in the
    experiment_data.evaluate('Ackley', kwargs={'noise': 0.1, 'scale_bounds': [[0., 1.], [-1., 1.]], 'offset': True, 'seed': 42})
 
 
+.. _implemented-benchmark-functions:
+
 Implemented benchmark functions
 -------------------------------
 
