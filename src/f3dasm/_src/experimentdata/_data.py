@@ -436,6 +436,22 @@ class _Data:
 
         self.data.update(other.data.set_index(pd.Index(indices)))
 
+    def join(self, __o: _Data) -> _Data:
+        """Join two Data objects together.
+
+        Parameters
+        ----------
+        __o : Data
+            The Data object to join.
+
+        Returns
+        -------
+            The joined Data object.
+        """
+        return _Data(
+            pd.concat([self.data, __o.data], axis=1, ignore_index=True),
+            columns=self.columns + __o.columns)
+
 #                                                           Getters and setters
 # =============================================================================
 

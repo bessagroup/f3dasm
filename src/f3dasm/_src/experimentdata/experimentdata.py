@@ -873,6 +873,25 @@ class ExperimentData:
             self._output_data.reset_index(self._input_data.indices)
         self._jobs.reset_index()
 
+    def join(self, other: ExperimentData) -> ExperimentData:
+        """Join two ExperimentData objects.
+
+        Parameters
+        ----------
+        other : ExperimentData
+            The other ExperimentData object to join with.
+
+        Returns
+        -------
+        ExperimentData
+            The joined ExperimentData object.
+        """
+        return ExperimentData(
+            input_data=self._input_data.join(other._input_data),
+            output_data=self._output_data.join(other._output_data),
+            jobs=self._jobs,
+            domain=self.domain + other.domain,
+            project_dir=self.project_dir)
 #                                                                  ExperimentSample
     # =============================================================================
 
