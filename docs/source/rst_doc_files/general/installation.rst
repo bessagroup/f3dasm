@@ -21,7 +21,7 @@ Installing the latest release
 
 :mod:`f3dasm` is purely Python code and compatible with: 
 
-1. Python 3.7 or higher.
+1. Python 3.8 or higher.
 2. the three major operations system (Linux, MacOS, Ubuntu). 
 3. the `pip <https://pypi.org/>`_ package manager system.
 
