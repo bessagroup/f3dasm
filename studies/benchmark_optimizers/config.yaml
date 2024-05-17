@@ -1,0 +1,117 @@
+domain:
+  function_name:
+    type: category
+    categories: ['Ackley',
+      'Ackley N. 2',
+      'Ackley N. 3',
+      'Ackley N. 4',
+      'Adjiman',
+      'Bartels',
+      'Beale',
+      'Bird',
+      'Bohachevsky N. 1',
+      'Bohachevsky N. 2',
+      'Bohachevsky N. 3',
+      'Booth',
+      'Branin',
+      'Brent',
+      'Brown',
+      'Bukin N. 6',
+      'Colville',
+      'Cross-in-Tray',
+      'De Jong N. 5',
+      'Deckkers-Aarts',
+      'Dixon Price',
+      'Drop-Wave',
+      'Easom',
+      'Egg Crate',
+      'Egg Holder',
+      'Exponential',
+      'Goldstein-Price',
+      'Griewank',
+      'Happy Cat',
+      'Himmelblau',
+      'Holder-Table',
+      'Keane',
+      'Langermann',
+      'Leon',
+      'Levy',
+      'Levy N. 13',
+      'Matyas',
+      'McCormick',
+      'Michalewicz',
+      'Periodic',
+      'Powell',
+      'Qing',
+      'Quartic',
+      'Rastrigin',
+      'Ridge',
+      'Rosenbrock',
+      'Rotated Hyper-Ellipsoid',
+      'Salomon',
+      'Schaffel N. 1',
+      'Schaffel N. 2',
+      'Schaffel N. 3',
+      'Schaffel N. 4',
+      'Schwefel',
+      'Schwefel 2.20',
+      'Schwefel 2.21',
+      'Schwefel 2.22',
+      'Schwefel 2.23',
+      'Shekel',
+      'Shubert',
+      'Shubert N. 3',
+      'Shubert N. 4',
+      'Sphere',
+      'Styblinski Tang',
+      'Sum Squares',
+      'Thevenot',
+      'Three-Hump',
+      'Trid',
+      'Wolfe',
+      'Xin She Yang',
+      'Xin She Yang N.2',
+      'Xin She Yang N.3',
+      'Xin-She Yang N.4',
+      'Zakharov']
+  dimensionality:
+    type: category
+    categories: [2, 10, 20, 50, 100]
+  noise:
+    type: category
+    categories: [0.0, 0.1]
+  seed:
+    type: int
+    low: 0
+    high: 1000000
+  budget:
+    type: constant
+    value: 200
+
+experimentdata:
+  # from_file: /home/martin/Documents/GitHub/L2CO/experiments/create_trainingdata_two_optimizers/outputs/2024-03-06/16-11-02
+  from_sampling:
+    seed: 2036
+    n_samples: 20
+    domain: ${domain}
+
+mode: cluster
+
+optimization:
+  lower_bound: 0.0
+  upper_bound: 1.0
+  sampler_name: "latin"
+  number_of_samples: 30
+  realizations: 3
+  optimizers:
+    - name: CMAES
+    - name: PSO
+    - name: Adam
+      hyperparameters:
+        learning_rate: 0.04
+    - name: LBFGSB
+
+hpc:
+  jobid: -1
+
+log_level: 20
