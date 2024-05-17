@@ -1,0 +1,45 @@
+domain:
+  young_modulus:
+    type: constant
+    value: 3500.0
+  n_longerons:
+    type: constant
+    value: 3
+  bottom_diameter:
+    type: constant
+    value: 100.0
+  ratio_top_diameter:
+    type: float
+    low: 0.0
+    high: 0.8
+  ratio_pitch:
+    type: float
+    low: 0.25
+    high: 1.50
+  ratio_shear_modulus:
+    type: float
+    low: 0.035
+    high: 0.45
+  ratio_area:
+    type: float
+    low: 0.0000117
+    high: 0.0041
+  ratio_Ixx:
+    type: float
+    low: 0.00000000001128
+    high: 0.0000014
+  ratio_Iyy:
+    type: float
+    low: 0.00000000001128
+    high: 0.0000014
+  ratio_J:
+    type: float
+    low: 0.00000000001353
+    high: 0.00000777
+  circular:
+    type: constant
+    value: false
+  imperfection:
+    type: float
+    low: 0.0
+    high: 1.0
