@@ -8,14 +8,8 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-import sys
 from dataclasses import dataclass
-from typing import ClassVar, Iterable, List, Optional, Tuple
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Protocol  # NOQA
-else:
-    from typing import Protocol
+from typing import ClassVar, Iterable, List, Optional, Protocol, Tuple
 
 # Third-party core
 import numpy as np

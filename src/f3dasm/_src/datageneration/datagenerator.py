@@ -19,10 +19,8 @@ import numpy as np
 
 # Local
 from ..design.domain import Domain
-# from ..experimentdata._io import StoreProtocol
 from ..experimentdata.experimentsample import (ExperimentSample,
                                                _experimentsample_factory)
-from ..logger import time_and_log
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -88,7 +86,6 @@ class DataGenerator:
         """
         ...
 
-    @time_and_log
     def _run(
             self, experiment_sample: ExperimentSample | np.ndarray,
             domain: Optional[Domain] = None,

@@ -9,15 +9,8 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 # Standard
-import sys
 from pathlib import Path
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Literal  # NOQA
-else:
-    from typing import Literal
-
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Literal, Optional, Tuple, Type
 
 # Third-party
 import autograd.numpy as np

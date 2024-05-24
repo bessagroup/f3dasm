@@ -13,13 +13,7 @@ functions. It can be called with an input vector to evaluate the
 from __future__ import annotations
 
 # Standard
-import sys
-from typing import Optional, Tuple
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Protocol  # NOQA
-else:
-    from typing import Protocol
+from typing import Optional, Protocol, Tuple
 
 # Third-party core
 import autograd.numpy as np

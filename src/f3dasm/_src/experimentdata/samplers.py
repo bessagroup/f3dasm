@@ -6,15 +6,8 @@
 from __future__ import annotations
 
 # Standard
-import sys
 from itertools import product
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Literal, Protocol  # NOQA
-else:
-    from typing import Literal, Protocol
-
-from typing import Dict, Optional
+from typing import Dict, Literal, Optional, Protocol
 
 # Third-party
 import numpy as np

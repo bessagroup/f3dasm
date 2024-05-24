@@ -1,5 +1,5 @@
 """
-Random Search optimizer
+Optimizers based from the numpy library
 """
 
 #                                                                       Modules

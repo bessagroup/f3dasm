@@ -8,11 +8,9 @@ Module for optimization
 from typing import List
 
 # Local
-from .cg import CG, CG_Parameters
-from .lbfgsb import LBFGSB, LBFGSB_Parameters
-from .neldermead import NelderMead, NelderMead_Parameters
+from .numpy_implementations import RandomSearch
 from .optimizer import Optimizer
-from .randomsearch import RandomSearch, RandomSearch_Parameters
+from .scipy_implementations import CG, LBFGSB, NelderMead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -29,14 +27,10 @@ _OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
 
 __all__ = [
     'CG',
-    'CG_Parameters',
     'LBFGSB',
-    'LBFGSB_Parameters',
     'NelderMead',
-    'NelderMead_Parameters',
     'Optimizer',
     'RandomSearch',
-    'RandomSearch_Parameters',
     '_OPTIMIZERS',
     'find_optimizer',
 ]

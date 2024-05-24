@@ -4,7 +4,7 @@ Module for data-generation
 #                                                                       Modules
 # =============================================================================
 
-from .._src.datageneration.datagenerator import DataGenerator, convert_function
+from .._src.datageneration.datagenerator import DataGenerator
 
 #                                                          Authorship & Credits
 # =============================================================================

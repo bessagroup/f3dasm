@@ -1,15 +1,15 @@
-
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from omegaconf import OmegaConf
 
 from f3dasm import ExperimentData
-from f3dasm.design import (Domain, _CategoricalParameter, _ContinuousParameter,
-                           _DiscreteParameter, make_nd_continuous_domain)
+from f3dasm._src.design.parameter import (_CategoricalParameter,
+                                          _ContinuousParameter,
+                                          _DiscreteParameter)
+from f3dasm.design import Domain, make_nd_continuous_domain
 
 SEED = 42
 

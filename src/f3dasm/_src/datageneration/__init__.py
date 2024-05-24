@@ -8,7 +8,6 @@ Module for data-generation
 from typing import List
 
 # Local
-from .abaqus.abaqus_simulator import AbaqusSimulator
 from .datagenerator import DataGenerator
 from .functions import pybenchfunction
 from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,
@@ -41,6 +40,5 @@ __all__ = [
     'Offset',
     'Scale',
     'DATAGENERATORS',
-    'AbaqusSimulator',
     *pybenchfunction.__all__
 ]

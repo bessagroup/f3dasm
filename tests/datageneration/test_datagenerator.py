@@ -3,7 +3,8 @@ from typing import Callable
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm.datageneration import DataGenerator, convert_function
+from f3dasm._src.datageneration.datagenerator import convert_function
+from f3dasm.datageneration import DataGenerator
 
 pytestmark = pytest.mark.smoke
 

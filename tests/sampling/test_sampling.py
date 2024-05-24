@@ -4,7 +4,8 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from f3dasm import ExperimentData
-from f3dasm.design import Domain, _ContinuousParameter
+from f3dasm._src.design.parameter import _ContinuousParameter
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm.design import Domain, _Data
+from f3dasm._src.experimentdata._data import _Data
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

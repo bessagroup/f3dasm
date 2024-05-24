@@ -1,9 +1,8 @@
-from typing import Iterable
-
 import pandas as pd
 import pytest
 
-from f3dasm.design import NoOpenJobsError, Status, _JobQueue
+from f3dasm._src.experimentdata._jobqueue import _JobQueue
+from f3dasm.design import NoOpenJobsError, Status
 
 pytestmark = pytest.mark.smoke
 
