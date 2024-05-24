@@ -9,6 +9,7 @@ Optimizers based from the scipy.optimize library
 from typing import List
 
 # Locals
+from ..design.domain import Domain
 from .adapters.scipy_implementations import _SciPyOptimizer
 
 #                                                          Authorship & Credits
@@ -20,45 +21,52 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-CG_DEFAULTS = {'gtol': 0.0}
-
 
 class CG(_SciPyOptimizer):
     """CG"""
     require_gradients: bool = True
-    method: str = "CG"
-    default_hyperparameters = CG_DEFAULTS
 
-    def get_info(self) -> List[str]:
+    def __init__(self, domain: Domain, gtol: float = 0.0, **kwargs):
+        super().__init__(
+            domain=domain, method='CG', gtol=gtol)
+        self.gtol = gtol
+
+    def _get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']
 
 # =============================================================================
-
-
-LBFGSB_DEFAULTS = {'ftol': 0.0, 'gtol': 0.0}
 
 
 class LBFGSB(_SciPyOptimizer):
     """L-BFGS-B"""
     require_gradients: bool = True
-    method: str = "L-BFGS-B"
-    default_hyperparameters = LBFGSB_DEFAULTS
 
-    def get_info(self) -> List[str]:
+    def __init__(self, domain: Domain,
+                 ftol: float = 0.0, gtol: float = 0.0, **kwargs):
+        super().__init__(
+            domain=domain, method='L-BFGS-B', ftol=ftol, gtol=gtol)
+        self.ftol = ftol
+        self.gtol = gtol
+
+    def _get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']
 
 # =============================================================================
 
 
-NelderMead_DEFAULTS = {'xatol': 0.0, 'fatol': 0.0,
-                       'adaptive': False}
-
-
 class NelderMead(_SciPyOptimizer):
     """Nelder-Mead"""
     require_gradients: bool = False
-    method: str = "Nelder-Mead"
-    default_hyperparameters = NelderMead_DEFAULTS
 
-    def get_info(self) -> List[str]:
+    def __init__(self, domain: Domain,
+                 xatol: float = 0.0, fatol: float = 0.0,
+                 adaptive: bool = False, **kwargs):
+        super().__init__(
+            domain=domain, method='Nelder-Mead', xatol=xatol, fatol=fatol,
+            adaptive=adaptive)
+        self.xatol = xatol
+        self.fatol = fatol
+        self.adaptive = adaptive
+
+    def _get_info(self) -> List[str]:
         return ['Fast', 'Global', 'First-Order', 'Single-Solution']

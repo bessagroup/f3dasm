@@ -19,7 +19,7 @@ from f3dasm.optimization import OPTIMIZERS, Optimizer
 @pytest.mark.parametrize("optimizer", OPTIMIZERS)
 def test_get_info(data: ExperimentData, optimizer: str):
     opt: Optimizer = _optimizer_factory(optimizer, data.domain)
-    characteristics = opt.get_info()
+    characteristics = opt._get_info()
     assert isinstance(characteristics, List)
 
 
@@ -115,7 +115,7 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
 
     _optimizer = _optimizer_factory(optimizer, domain=domain)
 
-    if x0_selection == "new" and iterations < _optimizer.hyperparameters['population']:
+    if x0_selection == "new" and iterations < _optimizer._population:
         with pytest.raises(ValueError):
             data.optimize(optimizer=optimizer, data_generator=data_generator,
                           iterations=iterations, kwargs={'seed': seed, 'noise': None,

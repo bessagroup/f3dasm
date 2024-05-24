@@ -68,7 +68,7 @@ class OptimizationResult:
                 function (seed={self.func.seed}, "
              f"dim={len(self.data[0].domain)}, "
              f"noise={self.func.noise}) "
-             f"with {self.optimizer.get_name()} optimizer for "
+             f"with {self.optimizer.__class__.__name__} optimizer for "
              f"{len(self.data)} realizations ({self.opt_time:.3f} s).")
         )
 
@@ -142,8 +142,6 @@ def run_optimization(
     # Set function seed
     optimizer = _optimizer_factory(
         optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
-
-    optimizer.set_seed()
 
     # Sample
     data = ExperimentData.from_sampling(

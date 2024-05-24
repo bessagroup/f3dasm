@@ -6,13 +6,14 @@ Optimizers based from the numpy library
 # =============================================================================
 
 # Standard
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # Third-party core
 import numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
+from ..design.domain import Domain
 from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
@@ -29,7 +30,12 @@ class RandomSearch(Optimizer):
     """Naive random search"""
     require_gradients: bool = False
 
-    def set_algorithm(self):
+    def __init__(self, domain: Domain, seed: Optional[int] = None, **kwargs):
+        self.domain = domain
+        self.seed = seed
+        self._set_algorithm()
+
+    def _set_algorithm(self):
         self.algorithm = np.random.default_rng(self.seed)
 
     def update_step(
@@ -47,5 +53,5 @@ class RandomSearch(Optimizer):
         # return the data
         return x_new, None
 
-    def get_info(self) -> List[str]:
+    def _get_info(self) -> List[str]:
         return ['Fast', 'Single-Solution']
