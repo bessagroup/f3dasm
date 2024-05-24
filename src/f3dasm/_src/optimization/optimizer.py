@@ -8,7 +8,6 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-from dataclasses import dataclass
 from typing import (Any, ClassVar, Dict, Iterable, List, Optional, Protocol,
                     Tuple)
 
