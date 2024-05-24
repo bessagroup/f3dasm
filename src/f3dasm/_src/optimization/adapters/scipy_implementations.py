@@ -57,7 +57,7 @@ class _SciPyOptimizer(Optimizer):
             _, y = sample.to_numpy()
             return float(y)
 
-        self.hyperparameters.maxiter = iterations
+        self.hyperparameters['maxiter'] = iterations
 
         minimize(
             fun=fun,
@@ -65,7 +65,7 @@ class _SciPyOptimizer(Optimizer):
             jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
-            options=self.hyperparameters.__dict__,
+            options=self.hyperparameters,
             bounds=self.domain.get_bounds(),
             tol=0.0,
         )

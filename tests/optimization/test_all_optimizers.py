@@ -115,7 +115,7 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
 
     _optimizer = _optimizer_factory(optimizer, domain=domain)
 
-    if x0_selection == "new" and iterations < _optimizer.hyperparameters.population:
+    if x0_selection == "new" and iterations < _optimizer.hyperparameters['population']:
         with pytest.raises(ValueError):
             data.optimize(optimizer=optimizer, data_generator=data_generator,
                           iterations=iterations, kwargs={'seed': seed, 'noise': None,

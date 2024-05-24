@@ -5,7 +5,7 @@ Module for optimization
 # =============================================================================
 
 # Local
-from ._src.optimization.optimizer import Optimizer, OptimizerParameters
+from ._src.optimization.optimizer import Optimizer
 from ._src.optimization.optimizer_factory import OPTIMIZERS
 
 #                                                          Authorship & Credits
@@ -19,6 +19,5 @@ __status__ = 'Stable'
 
 __all__ = [
     'Optimizer',
-    'OptimizerParameters',
     'OPTIMIZERS',
 ]

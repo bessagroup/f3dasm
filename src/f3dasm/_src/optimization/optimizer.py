@@ -9,7 +9,8 @@ from __future__ import annotations
 
 # Standard
 from dataclasses import dataclass
-from typing import ClassVar, Iterable, List, Optional, Protocol, Tuple
+from typing import (Any, ClassVar, Dict, Iterable, List, Optional, Protocol,
+                    Tuple)
 
 # Third-party core
 import numpy as np
@@ -48,27 +49,13 @@ class ExperimentData(Protocol):
     def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
         ...
 
-
-@dataclass
-class OptimizerParameters:
-    """Interface of a continuous benchmark function
-
-    Parameters
-    ----------
-    population : int
-        population of the optimizer update step
-    force_bounds : bool
-        force the optimizer to not exceed the boundaries of the domain
-    """
-
-    population: int = 1
-    force_bounds: bool = True
+# =============================================================================
 
 
 class Optimizer:
     type: ClassVar[str] = 'any'
     require_gradients: ClassVar[bool] = False
-    hyperparameters: OptimizerParameters = OptimizerParameters()
+    default_hyperparameters: Dict[str, Any] = None
 
     def __init__(
             self, domain: Domain, seed: Optional[int] = None,
@@ -98,8 +85,17 @@ class Optimizer:
         if not hyperparameters:
             hyperparameters = {}
 
+        # Set the default hyperparameters to an empty dictionary if not set
+        if not self.default_hyperparameters:
+            self.default_hyperparameters = {}
+
         # Overwrite the default hyperparameters with the given hyperparameters
-        self.hyperparameters.__init__(**hyperparameters)
+        self.hyperparameters = self.default_hyperparameters.copy()
+        self.hyperparameters.update(hyperparameters)
+
+        # Set the default population to 1
+        if 'population' not in self.hyperparameters:
+            self.hyperparameters['population'] = 1
 
         # Set the name of the optimizer to the class name if no name is given
         if name is None:
@@ -134,10 +130,10 @@ class Optimizer:
         ValueError
             Raises then the number of datapoints is insufficient
         """
-        if len(self.data) < self.hyperparameters.population:
+        if len(self.data) < self.hyperparameters['population']:
             raise ValueError(
                 f'There are {len(self.data)} datapoints available, \
-                     need {self.hyperparameters.population} for initial \
+                     need {self.hyperparameters["population"]} for initial \
                          population!'
             )
 
@@ -153,9 +149,6 @@ class Optimizer:
     def set_data(self, data: ExperimentData):
         """Set the data attribute to the given data"""
         self.data = data
-
-    def add_experiments(self, experiments: ExperimentData):
-        ...
 
     def get_name(self) -> str:
         """Get the name of the optimizer

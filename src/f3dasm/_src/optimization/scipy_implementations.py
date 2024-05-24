@@ -6,12 +6,10 @@ Optimizers based from the scipy.optimize library
 # =============================================================================
 
 # Standard
-from dataclasses import dataclass
 from typing import List
 
 # Locals
 from .adapters.scipy_implementations import _SciPyOptimizer
-from .optimizer import OptimizerParameters
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,19 +20,14 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-
-@dataclass
-class CG_Parameters(OptimizerParameters):
-    """CG Parameters"""
-
-    gtol: float = 0.0
+CG_DEFAULTS = {'gtol': 0.0}
 
 
 class CG(_SciPyOptimizer):
     """CG"""
     require_gradients: bool = True
     method: str = "CG"
-    hyperparameters: CG_Parameters = CG_Parameters()
+    default_hyperparameters = CG_DEFAULTS
 
     def get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']
@@ -42,19 +35,14 @@ class CG(_SciPyOptimizer):
 # =============================================================================
 
 
-@dataclass
-class LBFGSB_Parameters(OptimizerParameters):
-    """Hyperparameters for LBFGSB optimizer"""
-
-    ftol: float = 0.0
-    gtol: float = 0.0
+LBFGSB_DEFAULTS = {'ftol': 0.0, 'gtol': 0.0}
 
 
 class LBFGSB(_SciPyOptimizer):
     """L-BFGS-B"""
     require_gradients: bool = True
     method: str = "L-BFGS-B"
-    hyperparameters: LBFGSB_Parameters = LBFGSB_Parameters()
+    default_hyperparameters = LBFGSB_DEFAULTS
 
     def get_info(self) -> List[str]:
         return ['Stable', 'First-Order', 'Single-Solution']
@@ -62,20 +50,15 @@ class LBFGSB(_SciPyOptimizer):
 # =============================================================================
 
 
-@dataclass
-class NelderMead_Parameters(OptimizerParameters):
-    """Hyperparameters for NelderMead optimizer"""
-
-    xatol: float = 0.0
-    fatol: float = 0.0
-    adaptive: bool = False
+NelderMead_DEFAULTS = {'xatol': 0.0, 'fatol': 0.0,
+                       'adaptive': False}
 
 
 class NelderMead(_SciPyOptimizer):
     """Nelder-Mead"""
     require_gradients: bool = False
     method: str = "Nelder-Mead"
-    hyperparameters: NelderMead_Parameters = NelderMead_Parameters()
+    default_hyperparameters = NelderMead_DEFAULTS
 
     def get_info(self) -> List[str]:
         return ['Fast', 'Global', 'First-Order', 'Single-Solution']

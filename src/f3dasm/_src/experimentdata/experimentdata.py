@@ -1517,17 +1517,17 @@ class ExperimentData:
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
-                if iterations < optimizer.hyperparameters.population:
+                if iterations < optimizer.hyperparameters["population"]:
                     raise ValueError(
                         f'For creating new samples, the total number of '
                         f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
-                        f'({optimizer.hyperparameters.population})')
+                        f'({optimizer.hyperparameters["population"]})')
 
                 init_samples = ExperimentData.from_sampling(
                     domain=self.domain,
                     sampler=sampler,
-                    n_samples=optimizer.hyperparameters.population,
+                    n_samples=optimizer.hyperparameters["population"],
                     seed=optimizer.seed)
 
                 init_samples.evaluate(
@@ -1548,10 +1548,10 @@ class ExperimentData:
                     self.add_experiments(init_samples)
 
                 x0_selection = 'last'
-                iterations -= optimizer.hyperparameters.population
+                iterations -= optimizer.hyperparameters["population"]
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer.hyperparameters.population)
+                        n_samples=optimizer.hyperparameters["population"])
         optimizer.set_data(x0)
 
         optimizer._check_number_of_datapoints()
@@ -1560,7 +1560,7 @@ class ExperimentData:
 
         for _ in range(number_of_updates(
                 iterations,
-                population=optimizer.hyperparameters.population)):
+                population=optimizer.hyperparameters["population"])):
             new_samples = optimizer.update_step(data_generator)
 
             # If new_samples is a tuple of input_data and output_data
@@ -1591,7 +1591,8 @@ class ExperimentData:
         if not overwrite:
             # Remove overiterations
             self.remove_rows_bottom(number_of_overiterations(
-                iterations, population=optimizer.hyperparameters.population))
+                iterations,
+                population=optimizer.hyperparameters["population"]))
 
         # Reset the optimizer
         optimizer.reset(ExperimentData(domain=self.domain))
@@ -1657,17 +1658,17 @@ class ExperimentData:
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
-                if iterations < optimizer.hyperparameters.population:
+                if iterations < optimizer.hyperparameters["population"]:
                     raise ValueError(
                         f'For creating new samples, the total number of '
                         f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
-                        f'({optimizer.hyperparameters.population})')
+                        f'({optimizer.hyperparameters["population"]})')
 
                 init_samples = ExperimentData.from_sampling(
                     domain=self.domain,
                     sampler=sampler,
-                    n_samples=optimizer.hyperparameters.population,
+                    n_samples=optimizer.hyperparameters["population"],
                     seed=optimizer.seed)
 
                 init_samples.evaluate(
@@ -1690,7 +1691,7 @@ class ExperimentData:
                 x0_selection = 'last'
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer.hyperparameters.population)
+                        n_samples=optimizer.hyperparameters["population"])
         optimizer.set_data(x0)
 
         optimizer._check_number_of_datapoints()
