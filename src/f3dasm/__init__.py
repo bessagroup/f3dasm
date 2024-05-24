@@ -20,10 +20,6 @@ from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
 
-# from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
-#                                     run_multiple_realizations,
-#                                     run_optimization)
-
 #                                                        Authorship and Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
