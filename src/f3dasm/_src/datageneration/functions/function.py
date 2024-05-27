@@ -287,9 +287,9 @@ class Function(DataGenerator):
                 rstride=1,
                 cstride=1,
                 edgecolor="none",
-                alpha=0.8,
+                alpha=0.9,
                 cmap="viridis",
-                norm=mcol.LogNorm(),  # mcol.LogNorm()
+                # norm=mcol.LogNorm(),  # mcol.LogNorm()
                 zorder=1,
             )
             ax.set_zlabel("$f(X)$", fontsize=16)
