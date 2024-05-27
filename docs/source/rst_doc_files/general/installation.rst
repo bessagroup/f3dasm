@@ -1,7 +1,7 @@
 .. _installation-instructions:
 
-Installation instructions
-=========================
+Installation
+============
 
 There are different ways to install :mod:`f3dasm`:
 
@@ -22,7 +22,7 @@ Installing the latest release
 :mod:`f3dasm` is purely Python code and compatible with: 
 
 1. Python 3.8 or higher.
-2. the three major operations system (Linux, MacOS, Ubuntu). 
+2. the three major operations system (Windows, MacOS, Linux). 
 3. the `pip <https://pypi.org/>`_ package manager system.
 
 ----
@@ -116,7 +116,7 @@ Building from source is required to work on a contribution (bug fix, new feature
 
 1. Use `Git <https://git-scm.com/>`_ to check out the latest source from the
    `f3dasm repository <https://github.com/bessagroup/f3dasm>`_ on
-   Github.:
+   Github:
 
    .. code-block:: console
 
