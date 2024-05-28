@@ -42,7 +42,7 @@ Constructing a large material response database poses practical challenges, such
 In this work we introduce an interface for researchers and practitioners working on the design and analysis of materials and structures. The package is called [`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design \& Analysis of Structures and Materials). This work generalizes the original closed-source framework proposed by the Bessa and co-workers [@Bessa2017], making it more flexible and adaptable to different applications, namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
 
 - **Design of experiments**, in which input variables describing the microstructure, properties and external conditions of the system are determined and sampled;
-- **Data generation**, typically through computational analyses, resulting in the creation of a material response database;
+- **Data generation**, typically through computational analyses, resulting in the creation of a material response database [@Ferreira2023];
 - **Machine learning**, in which a surrogate model is trained to fit experimental findings;
 - **Optimization**, where we try to iteratively improve the design.
 
@@ -60,6 +60,3 @@ In a similar scope, it is worth mentioning the projects [simmate](https://github
 We would express our gratitude to Jiaxiang Yi for his contributions to writing an interface with the ABAQUS simulation software.
 
 # References
-
-
-<!-- is a toolbox that provides workflows and database management for materials science . [strucscan](https://github.com/ICAMS/strucscan) provides a lightweight Python-based framework for high-throughput material simulation with the VASP software package [@Pietka2022]. However, it should be noted that both frameworks focus on the generation and retrieval of materials properties and do not include machine learning or optimization interfaces.  -->
