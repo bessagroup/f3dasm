@@ -49,11 +49,11 @@ Computational framework
 
 - Automatic data management
 
-    -  the framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
+    -  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
 
 - :doc:`Easy parallelization <auto_examples/005_workflow/001_cluster_computing>`
 
-    - the framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
+    - The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
 
 - :doc:`Built-in defaults <rst_doc_files/defaults>`
 

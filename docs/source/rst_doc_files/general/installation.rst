@@ -125,7 +125,7 @@ Building from source is required to work on a contribution (bug fix, new feature
 
 
 2. Install a recent version of Python (3.7, 3.8, 3.9 or 3.10)
-   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_. or `Mamba <https://github.com/conda-forge/miniforge#install>`_.
+   for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_ or `Mamba <https://github.com/conda-forge/miniforge#install>`_.
    If you installed Python with conda, we recommend to create a dedicated
    conda environment with all the build dependencies of f3dasm:
 
