@@ -7,13 +7,13 @@ tags:
   - framework
   - machine learning
 authors:
-  - name: Martin van der Schelling
+  - name: M. P. van der Schelling
     orcid: 0000-0003-3602-0452
     affiliation: 1
-  - name: Bernardo P. Ferreira
+  - name: B.P. Ferreira
     orcid: 0000-0001-5956-3877
     affiliation: 2
-  - name: Miguel A. Bessa
+  - name: M. A. Bessa
     corresponding: true
     orcid: 0000-0002-6216-0355
     affiliation: 2
@@ -57,6 +57,6 @@ In a similar scope, it is worth mentioning the projects [simmate](https://github
 
 # Acknowledgements
 
-We would express our gratitude to Jiaxiang Yi for his contributions to writing an interface with the ABAQUS simulation software.
+We would express our gratitude to Jiaxiang Yi for his contributions to writing an interface with the ABAQUS simulation software and to Deepesh Toshniwal for providing valuable feedback.
 
 # References
