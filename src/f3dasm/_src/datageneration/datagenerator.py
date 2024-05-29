@@ -11,7 +11,6 @@ from __future__ import annotations
 # Standard
 import inspect
 from abc import abstractmethod
-from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 # Third-party
@@ -19,10 +18,8 @@ import numpy as np
 
 # Local
 from ..design.domain import Domain
-# from ..experimentdata._io import StoreProtocol
 from ..experimentdata.experimentsample import (ExperimentSample,
                                                _experimentsample_factory)
-from ..logger import time_and_log
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -36,23 +33,6 @@ __status__ = "Alpha"
 
 class DataGenerator:
     """Base class for a data generator"""
-
-    def pre_process(
-            self, experiment_sample: ExperimentSample, **kwargs) -> None:
-        """Interface function that handles the pre-processing of
-         the data generator
-
-        Note
-        ----
-        If not implemented the function will be skipped.
-
-        The experiment_sample is cached inside the data generator. This \
-        allows the user to access the experiment_sample in the pre_process, \
-        execute and post_process functions as a class variable called \
-        self.experiment_sample.
-        """
-        ...
-
     @abstractmethod
     def execute(self, **kwargs) -> None:
         """Interface function that handles the execution of the data generator
@@ -64,52 +44,23 @@ class DataGenerator:
 
         Note
         ----
-        The experiment_sample is cached inside the data generator. This \
-        allows the user to access the experiment_sample in \
-        the pre_process, execute and post_process functions as a class \
-        variable called self.experiment_sample.
-        """
-
-        ...
-
-    def post_process(
-            self, experiment_sample: ExperimentSample, **kwargs) -> None:
-        """Interface function that handles the post-processing \
-        of the data generator
-
-        Note
-        ----
-        If not implemented the function will be skipped.
-
-        The experiment_sample is cached inside the data generator. This \
-        allows the user to access the experiment_sample in the \
-        pre_process, execute and post_process functions as a class variable \
-        called self.experiment_sample.
+        The experiment_sample is cached inside the data generator. This
+        allows the user to access the experiment_sample in
+        the execute and function as a class variable called
+        self.experiment_sample.
         """
         ...
 
-    @time_and_log
     def _run(
             self, experiment_sample: ExperimentSample | np.ndarray,
             domain: Optional[Domain] = None,
             **kwargs) -> ExperimentSample:
         """
         Run the data generator.
-        This function chains the following methods together
 
-        * pre_process(); to combine the experiment_sample and the parameters \
-        of the data generator to an input file that can be used to run the \
-        data generator.
-
-        * execute(); to run the data generator and generate the response of \
-        the experiment
-
-        * post_process(); to process the response of the experiment and store \
-        it back in the experiment_sample
-
-        The function also caches the experiment_sample in the data generator. \
-        This allows the user to access the experiment_sample in the \
-        pre_process, execute and post_process functions as a class variable \
+        The function also caches the experiment_sample in the data generator.
+        This allows the user to access the experiment_sample in the
+        execute function as a class variable
         called self.experiment_sample.
 
         Parameters
@@ -133,45 +84,9 @@ class DataGenerator:
         self.experiment_sample: ExperimentSample = _experimentsample_factory(
             experiment_sample=experiment_sample, domain=domain)
 
-        self._pre_simulation()
-
-        self.pre_process(self.experiment_sample, **kwargs)
         self.execute(**kwargs)
-        self.post_process(self.experiment_sample, **kwargs)
-
-        self._post_simulation()
 
         return self.experiment_sample
-
-    def _pre_simulation(self) -> None:
-        ...
-
-    def _post_simulation(self) -> None:
-        ...
-
-    def add_pre_process(self, func: Callable, **kwargs):
-        """Add a pre-processing function to the data generator
-
-        Parameters
-        ----------
-        func : Callable
-            The function to add to the pre-processing
-        kwargs : dict
-            The keyword arguments to pass to the pre-processing function
-        """
-        self.pre_process = partial(func, **kwargs)
-
-    def add_post_process(self, func: Callable, **kwargs):
-        """Add a post-processing function to the data generator
-
-        Parameters
-        ----------
-        func : Callable
-            The function to add to the post-processing
-        kwargs : dict
-            The keyword arguments to pass to the post-processing function
-        """
-        self.post_process = partial(func, **kwargs)
 
 
 def convert_function(f: Callable,

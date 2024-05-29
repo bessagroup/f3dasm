@@ -4,8 +4,10 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
+# Standard
 from typing import Any, Dict, Optional
 
+# Local
 from ..design.domain import Domain
 from . import _OPTIMIZERS
 from .optimizer import Optimizer

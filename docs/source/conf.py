@@ -27,8 +27,8 @@ for path in src_dir:
 project = 'f3dasm'
 author = 'Martin van der Schelling'
 copyright = '2024, Martin van der Schelling'
-version = '1.4.8'
-release = '1.4.8'
+version = '1.5.0'
+release = '1.5.0'
 
 
 # -- General configuration ----------------------------------------------------
@@ -138,4 +138,4 @@ html_static_path = ['_static', ]
 html_css_files = ['readthedocs-custom.css', 'theme_overrides.css', ]
 
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_show_sourcelink
-html_show_sourcelink = True
+html_show_sourcelink = False

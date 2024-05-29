@@ -1,8 +1,10 @@
 import pandas as pd
 import pytest
 
-from f3dasm.design import (Domain, _CategoricalParameter, _ContinuousParameter,
-                           _DiscreteParameter)
+from f3dasm._src.design.parameter import (_CategoricalParameter,
+                                          _ContinuousParameter,
+                                          _DiscreteParameter)
+from f3dasm.design import Domain
 
 
 @pytest.fixture(scope="package")

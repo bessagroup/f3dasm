@@ -16,10 +16,6 @@ if os.name == 'nt':
 else:
     import fcntl
 
-from functools import partial, wraps
-from time import perf_counter
-from typing import Any, Callable
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -119,21 +115,3 @@ def _unlock_file(file):
         msvcrt.locking(file.fileno(), msvcrt.LK_UNLCK, 1)
     else:  # for Unix
         fcntl.flock(file, fcntl.LOCK_UN)
-
-
-def _time_and_log(
-    func: Callable, logger=logging.Logger
-) -> Callable:
-    @wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        start_time = perf_counter()
-        value = func(*args, **kwargs)
-        logger.debug(
-            f"Called {func.__name__} and time taken: \
-                {perf_counter() - start_time:.2f}s")
-        return value
-
-    return wrapper
-
-
-time_and_log = partial(_time_and_log, logger=logger)

@@ -6,8 +6,10 @@ from hypothesis import given, settings
 from hypothesis.strategies import (SearchStrategy, composite, floats, integers,
                                    text)
 
-from f3dasm.design import (Domain, _CategoricalParameter, _ContinuousParameter,
-                           _DiscreteParameter, _Parameter)
+from f3dasm._src.design.parameter import (_CategoricalParameter,
+                                          _ContinuousParameter,
+                                          _DiscreteParameter, _Parameter)
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

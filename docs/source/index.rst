@@ -6,17 +6,41 @@
 f3dasm
 ======
 
+
 .. toctree::
-   :maxdepth: 1
+   :name: gettingstartedtoc
+   :caption: Getting started
+   :maxdepth: 3
    :hidden:
-       
+   :includehidden:
+
    rst_doc_files/general/overview
    rst_doc_files/general/installation
-   rst_doc_files/defaults
+   rst_doc_files/general/benchmark
+
+.. toctree::
+   :name: functionalitiestoc
+   :caption: Functionalities
+   :maxdepth: 3
+   :hidden:
+   :includehidden:
+
    auto_examples/index
+   rst_doc_files/defaults
+
+.. toctree::
+   :name: apitoc
+   :caption: API
+   :hidden:
+
+   rst_doc_files/reference/index.rst
    API reference <_autosummary/f3dasm>
 
 .. toctree::
+   :name: licensetoc
+   :caption: License
    :hidden:
+
+   license.rst
 
 .. include:: readme.rst

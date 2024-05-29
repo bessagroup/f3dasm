@@ -1,7 +1,8 @@
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm.design import Domain, _ContinuousParameter
+from f3dasm._src.design.parameter import _ContinuousParameter
+from f3dasm.design import Domain
 
 
 @pytest.fixture(scope="package")

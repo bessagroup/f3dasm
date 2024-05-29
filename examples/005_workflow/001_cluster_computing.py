@@ -23,11 +23,11 @@ from f3dasm import HPC_JOBID, ExperimentData
 from f3dasm.design import make_nd_continuous_domain
 
 ###############################################################################
-# The following example is the same as in section :ref:`workflow`; only now we are omiting the optimization part and only parallelize the data generation:
+# We will create the following data-driven process:
 #
 # * Create a 20D continuous :class:`~f3dasm.design.Domain`
 # * Sample from the domain using a the Latin-hypercube sampler
-# * With multiple nodes; use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
+# * With multiple nodes; use a data generation function, which will be the ``"Ackley"`` function a from the benchmark functions
 #
 #
 # .. image:: ../../img/f3dasm-workflow-example-cluster.png

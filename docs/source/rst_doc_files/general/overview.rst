@@ -3,71 +3,72 @@
 Overview
 ========
 
-.. _design-of-experiments: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/design/experimentdata.html
-.. _sampling: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/sampling/sampling.html
-.. _optimizing: https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/optimization/optimizers.html
-.. _parallelizing: <URL for parallelizing>
-.. _TORQUE system: https://hpc-wiki.info/hpc/Torque
+A quick overview of the f3dasm package.
 
-Summary
-^^^^^^^
+----
 
-The process of structural and materials design involves a continuous search for the most efficient design based on specific criteria. 
-The different boundary conditions applied to the material or structure can result in vastly different optimal compositions. 
-In particular, the design of materials is faced with a high-dimensional solution space due to the overwhelming number of potential combinations that can create distinct materials. 
-Unfortunately, this extensive design space poses a significant challenge to accelerate the optimization process. 
-The immense number of possibilities makes it impractical to conduct experimental investigations of each concept. 
-As a result, data-driven computational analyses have been a method of interest for efficiently traversing these design spaces.
+Conceptual framework
+--------------------
 
-Most applied fields such as Mechanical Engineering have remained conservative when it comes to openly sharing databases and software.
-This is in sharp contrast to the Computer Science community, especially within the sub-field of machine learning. 
-Understandably, the entry barrier is higher for researchers and practitioners from applied fields that are not specialized in software development. 
-In this work we developed a general and user-friendly data-driven package for researchers and practitioners working on design and analysis of materials and structures. 
-The package is called :mod:`f3dasm` (framework for data-driven design & analysis of structures and materials) and it aims at democratizing the data-driven process and making it easier to replicate research articles in this field, as well as sharing new work with the community. 
-This work generalizes the original closed-source framework proposed by the senior author and his co-workers [1]_, making it more flexible and adaptable to different applications, allowing to integrate different choices of software packages needed in the different steps of the data-driven process: (1) design of experiments; (2) data generation; (3) machine learning; and (4) optimization.
+``f3dasm`` is a Python project that provides a general and user-friendly data-driven framework for researchers and practitioners working on the design and analysis of materials and structures. 
+The package aims to streamline the data-driven process and make it easier to replicate research articles in this field, as well as share new work with the community. 
 
-Statement of need
-^^^^^^^^^^^^^^^^^
+In the last decades, advancements in computational resources have accelerated novel inverse design approaches for structures and materials. 
+In particular data-driven methods leveraging machine learning techniques play a major role in shaping our design processes today.
 
-The effectiveness of the first published version of :mod:`f3dasm` framework has been demonstrated in various computational mechanics and materials studies, 
-such as the design of a super-compressible meta-material [2]_ and a spiderweb nano-mechanical resonator inspired 
-by nature and guided by machine learning [3]_. 
+Constructing a large material response database poses practical challenges, such as proper data management, efficient parallel computing and integration with third-party software. 
+Because most applied fields remain conservative when it comes to openly sharing databases and software, a lot of research time is instead being allocated to implement common procedures that would be otherwise readily available. 
+This lack of shared practices also leads to compatibility issues for benchmarking and replication of results by violating the FAIR principles.
 
-The :mod:`f3dasm` framework is aimed at researchers who seek to develop such data-driven methods for structural & material modeling by incorporating modern machine learning tools. The framework integrates the following fields:
+In this work we introduce an interface for researchers and practitioners working on design and analysis of materials and structures. 
+The package is called ``f3dasm`` (Framework for Data-driven Design \& Analysis of Structures and Materials).
+This work generalizes the original closed-source framework proposed by the Bessa and co-workers [1]_, making it more flexible and adaptable to different applications, 
+namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
 
-- Design of experiments, in which input variables describing the microstructure, structure, properties and external conditions of the system to be evaluated are determined and sampled;
-- Data generation, typically through computational analysis, resulting in the creation of a material response database;
-- Machine learning, in which a surrogate model is trained to fit experimental findings;
-- Optimization, where we try to iteratively improve the model to obtain a superior design.
+- **Design of experiments**, in which input variables describing the microstructure, properties and external conditions of the system are determined and sampled.
+- **Data generation**, typically through computational analyses, resulting in the creation of a material response database.
+- **Machine learning**, in which a surrogate model is trained to fit experimental findings.
+- **Optimization**, where we try to iteratively improve the design
 
-:mod:`f3dasm` is designed as a *modular* framework, consisting of both core and extended features, allowing user-specific instantiations of one or more steps from the above list.
+.. image:: ../../img/data-driven-process.png
+    :align: center
+    :width: 100%
 
-The *core* functionality of the framework comprises the following features:
+|
 
-- provide a way to parametrize experiments with the design-of-experiments functionalities;
-- enabling experiment exploration by means of sampling and design optimization;
-- provide the user tools for parallelizing their program and ordering their data;
-- Allowing users to deploy experiments on high-performance computer systems (TORQUE Resource Manager).
+----
 
-The *extensions* can be installed on the fly and contain the following features:
+Computational framework
+-----------------------
 
-- provide various implementations to accommodate common data-driven workflows;
-- adapter classes that link popular machine learning libraries to be used as implementations in :mod:`f3dasm`.
+``f3dasm`` is an `open-source Python package <https://pypi.org/project/f3dasm/>`_ compatible with Python 3.8 or later. Some of the key features are:
 
-The Python package includes extensive implementations for each of the provided fields and are organized in an object-oriented way.
+-  Modular design 
+
+    - The framework introduces flexible interfaces, allowing users to easily integrate their own models and algorithms.
+
+- Automatic data management
+
+    -  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
+
+- :doc:`Easy parallelization <../../auto_examples/005_workflow/001_cluster_computing>`
+
+    - The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
+
+- :doc:`Built-in defaults <../defaults>`
+
+    - The framework includes a collection of :ref:`benchmark functions <implemented-benchmark-functions>`, :ref:`optimization algorithms <implemented optimizers>` and :ref:`sampling strategies <implemented samplers>` to get you started right away!
+
+- :doc:`Hydra integration <../../auto_examples/006_hydra/001_hydra_usage>`
+
+    - The framework is integrated with `hydra <https://hydra.cc/>`_ configuration manager, to easily manage and run experiments.
+
+Comprehensive `online documentation <https://f3dasm.readthedocs.io/en/latest/>`_ is also available to assist users and developers of the framework.
+
 
 .. [1] Bessa, M. A., Bostanabad, R., Liu, Z., Hu, A., Apley, D. W., Brinson, C., Chen, W., & Liu, W. K. (2017). 
         *A framework for data-driven analysis of materials under uncertainty: Countering the curse of dimensionality. 
         Computer Methods in Applied Mechanics and Engineering*, 320, 633-667.
-
-.. [2] Bessa, M. A., Glowacki, P., & Houlder, M. (2019). 
-        *Bayesian machine learning in metamaterial design: 
-        Fragile becomes supercompressible*. Advanced Materials, 31(48), 1904845.
-
-.. [3] Shin, D., Cupertino, A., de Jong, M. H., Steeneken, P. G., Bessa, M. A., & Norte, R. A. (2022). 
-        *Spiderweb nanomechanical resonators via bayesian optimization: inspired by nature and guided by machine learning*. Advanced Materials, 34(3), 2106248.
-
-
 
 
 
@@ -215,4 +216,3 @@ The Python package includes extensive implementations for each of the provided f
 .. References
 .. ----------
 
-.. .. bibliography::

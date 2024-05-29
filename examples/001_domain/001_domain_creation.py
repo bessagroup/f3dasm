@@ -2,7 +2,7 @@
 Introduction to domain and parameters
 =====================================
 
-This section will give you information on how to set up your search space with the :ref:`domain <domain>` class and the :ref:`parameters <parameters>`
+This section will give you information on how to set up your search space with the :class:`~f3dasm.design.Domain` class and the paramaters
 The :class:`~f3dasm.design.Domain` is a set of parameter instances that make up the feasible search space.
 """
 ###############################################################################
@@ -21,25 +21,25 @@ domain = Domain()
 # Now we well add some input parameters:
 # There are four types of parameters that can be created:
 #
-# - :ref:`floating point <continuous-parameter>` parameters
+# - floating point parameters
 
 domain.add_float(name='x1', low=0.0, high=100.0)
 domain.add_float(name='x2', low=0.0, high=4.0)
 
 ###############################################################################
-# - :ref:`discrete integer pramaters <discrete-parameter>`
+# - discrete integer parameters
 
 domain.add_int(name='x3', low=2, high=4)
 domain.add_int(name='x4', low=74, high=99)
 
 ###############################################################################
-# - :ref:`categorical parameters <categorical-parameter>`
+# - categorical parameters
 
 domain.add_category(name='x5', categories=['test1', 'test2', 'test3', 'test4'])
 domain.add_category(name='x6', categories=[0.9, 0.2, 0.1, -2])
 
 ###############################################################################
-# - :ref:`constant parameters<constant-parameter>`
+# - constant parameters
 
 domain.add_constant(name='x7', value=0.9)
 
@@ -61,7 +61,6 @@ domain.add_output(name='y', to_disk=False)
 ###############################################################################
 # The :code:`to_disk` argument can be set to :code:`True` to store the output parameter on disk. A reference to the file is stored in the :class:`~f3dasm.ExperimentData` object.
 # This is useful when the output data is very large, or when the output data is an array-like object.
-# More information on storing output can be found in :ref:`this section <storing-output-experiment-sample>`
 
 ###############################################################################
 # Filtering the domain

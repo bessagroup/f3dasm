@@ -11,9 +11,10 @@ import pytest
 import xarray as xr
 
 from f3dasm import ExperimentData, ExperimentSample
+from f3dasm._src.design.parameter import _ContinuousParameter
 from f3dasm._src.experimentdata._data import DataTypes, _Data
-from f3dasm.design import (Domain, Status, _ContinuousParameter, _JobQueue,
-                           make_nd_continuous_domain)
+from f3dasm._src.experimentdata._jobqueue import _JobQueue
+from f3dasm.design import Domain, Status, make_nd_continuous_domain
 
 pytestmark = pytest.mark.smoke
 

@@ -13,13 +13,7 @@ functions. It can be called with an input vector to evaluate the
 from __future__ import annotations
 
 # Standard
-import sys
-from typing import Optional, Tuple
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Protocol  # NOQA
-else:
-    from typing import Protocol
+from typing import Optional, Protocol, Tuple
 
 # Third-party core
 import autograd.numpy as np
@@ -293,9 +287,9 @@ class Function(DataGenerator):
                 rstride=1,
                 cstride=1,
                 edgecolor="none",
-                alpha=0.8,
+                alpha=0.9,
                 cmap="viridis",
-                norm=mcol.LogNorm(),  # mcol.LogNorm()
+                # norm=mcol.LogNorm(),  # mcol.LogNorm()
                 zorder=1,
             )
             ax.set_zlabel("$f(X)$", fontsize=16)

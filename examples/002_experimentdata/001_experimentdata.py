@@ -9,17 +9,17 @@ All other processses of :mod:`f3dasm` use this object to manipulate and access d
 
 The :class:`~f3dasm.ExperimentData` object consists of the following attributes:
 
-- :ref:`domain <domain-format>`: The feasible :class:`~f3dasm.design.Domain` of the Experiment. Used for sampling and optimization.
-- :ref:`input_data <input-data-format>`: Tabular data containing the input variables of the experiments as column and the experiments as rows.
-- :ref:`output_data <output-data-format>`: Tabular data containing the tracked outputs of the experiments.
-- :ref:`project_dir <filename-format>`: A user-defined project directory where all files related to your data-driven process will be stored. 
+- domain: The feasible :class:`~f3dasm.design.Domain` of the Experiment. Used for sampling and optimization.
+- input_data: Tabular data containing the input variables of the experiments as column and the experiments as rows.
+- output_data: Tabular data containing the tracked outputs of the experiments.
+- project_dir: A user-defined project directory where all files related to your data-driven process will be stored. 
 """
 
 ###############################################################################
 # The :class:`~f3dasm.ExperimentData` object can be constructed in several ways:
 #
-# You can construct a :class:`~f3dasm.ExperimentData` object by providing it :ref:`input_data <input-data-format>`,
-# :ref:`output_data <output-data-format>`, a :ref:`domain <domain-format>` object and a :ref:`project_dir <filename-format>`.
+# You can construct a :class:`~f3dasm.ExperimentData` object by providing it input data,
+# output data, a :class:`~f3dasm.design.Domain` object and a project directory.
 
 import numpy as np
 import pandas as pd

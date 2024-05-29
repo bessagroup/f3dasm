@@ -1,7 +1,9 @@
 import pytest
 
-from f3dasm.design import (_CategoricalParameter, _DiscreteParameter, Domain,
-                           _ContinuousParameter)
+from f3dasm._src.design.parameter import (_CategoricalParameter,
+                                          _ContinuousParameter,
+                                          _DiscreteParameter)
+from f3dasm.design import Domain
 
 
 @pytest.fixture(scope="package")

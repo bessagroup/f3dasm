@@ -10,6 +10,7 @@ from scipy.optimize import minimize
 
 # Locals
 from ...datageneration.datagenerator import DataGenerator
+from ...design.domain import Domain
 from ...experimentdata.experimentsample import ExperimentSample
 from ..optimizer import Optimizer
 
@@ -28,6 +29,11 @@ warnings.filterwarnings(
 
 class _SciPyOptimizer(Optimizer):
     type: str = 'scipy'
+
+    def __init__(self, domain: Domain, method: str, **hyperparameters):
+        self.domain = domain
+        self.method = method
+        self.options = {**hyperparameters}
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.data.add_experiments(
@@ -57,7 +63,7 @@ class _SciPyOptimizer(Optimizer):
             _, y = sample.to_numpy()
             return float(y)
 
-        self.hyperparameters.maxiter = iterations
+        self.options['maxiter'] = iterations
 
         minimize(
             fun=fun,
@@ -65,9 +71,7 @@ class _SciPyOptimizer(Optimizer):
             jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
-            options=self.hyperparameters.__dict__,
+            options=self.options,
             bounds=self.domain.get_bounds(),
             tol=0.0,
         )
-
-        # self.data.evaluate(data_generator=data_generator)

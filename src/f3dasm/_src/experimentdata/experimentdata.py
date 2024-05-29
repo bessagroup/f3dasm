@@ -9,20 +9,15 @@ The ExperimentData object is the main object used to store implementations
 
 from __future__ import annotations
 
-import inspect
 # Standard
-import sys
+import inspect
 import traceback
+from copy import copy
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,
-                    Tuple, Type)
-
-if sys.version_info < (3, 8):  # NOQA
-    from typing_extensions import Literal  # NOQA
-else:
-    from typing import Literal
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
+                    Optional, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -1440,18 +1435,21 @@ class ExperimentData:
                 data_generator=data_generator,
                 domain=self.domain, kwargs=kwargs)
 
+        # Create a copy of the optimizer object
+        _optimizer = copy(optimizer)
+
         # Create the optimizer object if a string reference is passed
-        if isinstance(optimizer, str):
-            optimizer: Optimizer = _optimizer_factory(
-                optimizer, self.domain, hyperparameters)
+        if isinstance(_optimizer, str):
+            _optimizer: Optimizer = _optimizer_factory(
+                _optimizer, self.domain, hyperparameters)
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
             sampler: Sampler = _sampler_factory(sampler, self.domain)
 
-        if optimizer.type == 'scipy':
+        if _optimizer.type == 'scipy':
             self._iterate_scipy(
-                optimizer=optimizer, data_generator=data_generator,
+                optimizer=_optimizer, data_generator=data_generator,
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
                 sampler=sampler,
@@ -1459,7 +1457,7 @@ class ExperimentData:
                 callback=callback)
         else:
             self._iterate(
-                optimizer=optimizer, data_generator=data_generator,
+                optimizer=_optimizer, data_generator=data_generator,
                 iterations=iterations, kwargs=kwargs,
                 x0_selection=x0_selection,
                 sampler=sampler,
@@ -1523,18 +1521,18 @@ class ExperimentData:
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
-                if iterations < optimizer.hyperparameters.population:
+                if iterations < optimizer._population:
                     raise ValueError(
                         f'For creating new samples, the total number of '
                         f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
-                        f'({optimizer.hyperparameters.population})')
+                        f'({optimizer._population})')
 
                 init_samples = ExperimentData.from_sampling(
                     domain=self.domain,
                     sampler=sampler,
-                    n_samples=optimizer.hyperparameters.population,
-                    seed=optimizer.seed)
+                    n_samples=optimizer._population,
+                    seed=optimizer._seed)
 
                 init_samples.evaluate(
                     data_generator=data_generator, kwargs=kwargs,
@@ -1554,11 +1552,11 @@ class ExperimentData:
                     self.add_experiments(init_samples)
 
                 x0_selection = 'last'
-                iterations -= optimizer.hyperparameters.population
+                iterations -= optimizer._population
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer.hyperparameters.population)
-        optimizer.set_data(x0)
+                        n_samples=optimizer._population)
+        optimizer._set_data(x0)
 
         optimizer._check_number_of_datapoints()
 
@@ -1566,7 +1564,7 @@ class ExperimentData:
 
         for _ in range(number_of_updates(
                 iterations,
-                population=optimizer.hyperparameters.population)):
+                population=optimizer._population)):
             new_samples = optimizer.update_step(data_generator)
 
             # If new_samples is a tuple of input_data and output_data
@@ -1592,15 +1590,16 @@ class ExperimentData:
             else:
                 self.add_experiments(new_samples)
 
-            optimizer.set_data(self)
+            optimizer._set_data(self)
 
         if not overwrite:
             # Remove overiterations
             self.remove_rows_bottom(number_of_overiterations(
-                iterations, population=optimizer.hyperparameters.population))
+                iterations,
+                population=optimizer._population))
 
         # Reset the optimizer
-        optimizer.reset(ExperimentData(domain=self.domain))
+        # optimizer.reset(ExperimentData(domain=self.domain))
 
     def _iterate_scipy(self, optimizer: Optimizer,
                        data_generator: DataGenerator,
@@ -1663,18 +1662,18 @@ class ExperimentData:
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
-                if iterations < optimizer.hyperparameters.population:
+                if iterations < optimizer._population:
                     raise ValueError(
                         f'For creating new samples, the total number of '
                         f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
-                        f'({optimizer.hyperparameters.population})')
+                        f'({optimizer._population})')
 
                 init_samples = ExperimentData.from_sampling(
                     domain=self.domain,
                     sampler=sampler,
-                    n_samples=optimizer.hyperparameters.population,
-                    seed=optimizer.seed)
+                    n_samples=optimizer._population,
+                    seed=optimizer._seed)
 
                 init_samples.evaluate(
                     data_generator=data_generator, kwargs=kwargs,
@@ -1696,8 +1695,8 @@ class ExperimentData:
                 x0_selection = 'last'
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer.hyperparameters.population)
-        optimizer.set_data(x0)
+                        n_samples=optimizer._population)
+        optimizer._set_data(x0)
 
         optimizer._check_number_of_datapoints()
 
@@ -1740,7 +1739,7 @@ class ExperimentData:
         self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
 
         # Reset the optimizer
-        optimizer.reset(ExperimentData(domain=self.domain))
+        # optimizer.reset(ExperimentData(domain=self.domain))
 
     #                                                                  Sampling
     # =========================================================================

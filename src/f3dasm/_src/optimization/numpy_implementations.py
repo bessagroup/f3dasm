@@ -1,20 +1,20 @@
 """
-Random Search optimizer
+Optimizers based from the numpy library
 """
 
 #                                                                       Modules
 # =============================================================================
 
 # Standard
-from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # Third-party core
-import autograd.numpy as np
+import numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from .optimizer import Optimizer, OptimizerParameters
+from ..design.domain import Domain
+from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,27 +26,24 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-@dataclass
-class RandomSearch_Parameters(OptimizerParameters):
-    """Hyperparameters for RandomSearch optimizer"""
-
-    pass
-
-
 class RandomSearch(Optimizer):
     """Naive random search"""
     require_gradients: bool = False
-    hyperparameters: RandomSearch_Parameters = RandomSearch_Parameters()
 
-    def set_seed(self):
-        np.random.seed(self.seed)
+    def __init__(self, domain: Domain, seed: Optional[int] = None, **kwargs):
+        self.domain = domain
+        self.seed = seed
+        self._set_algorithm()
+
+    def _set_algorithm(self):
+        self.algorithm = np.random.default_rng(self.seed)
 
     def update_step(
             self, data_generator: DataGenerator
     ) -> Tuple[np.ndarray, np.ndarray]:
         x_new = np.atleast_2d(
             [
-                np.random.uniform(
+                self.algorithm.uniform(
                     low=self.domain.get_bounds()[d, 0],
                     high=self.domain.get_bounds()[d, 1])
                 for d in range(len(self.domain))
@@ -56,5 +53,5 @@ class RandomSearch(Optimizer):
         # return the data
         return x_new, None
 
-    def get_info(self) -> List[str]:
+    def _get_info(self) -> List[str]:
         return ['Fast', 'Single-Solution']

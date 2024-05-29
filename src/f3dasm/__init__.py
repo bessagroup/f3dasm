@@ -19,9 +19,6 @@ from ._src.experimentdata._io import StoreProtocol
 from ._src.experimentdata.experimentdata import ExperimentData
 from ._src.experimentdata.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
-from ._src.run_optimization import (OptimizationResult, calculate_mean_std,
-                                    run_multiple_realizations,
-                                    run_optimization)
 
 #                                                        Authorship and Credits
 # =============================================================================
@@ -40,10 +37,5 @@ __all__ = [
     'ExperimentSample',
     'DistributedFileHandler',
     'logger',
-    'OptimizationResult',
-    'run_multiple_realizations',
-    'run_optimization',
     'HPC_JOBID',
-    'calculate_mean_std',
-    'StoreProtocol',
 ]
