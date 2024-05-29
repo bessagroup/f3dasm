@@ -16,6 +16,7 @@ f3dasm
 
    rst_doc_files/general/overview
    rst_doc_files/general/installation
+   rst_doc_files/general/benchmark
 
 .. toctree::
    :name: functionalitiestoc
