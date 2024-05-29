@@ -56,7 +56,7 @@ class Optimizer:
 
     '''
     def update_step(self, data_generator: DataGenerator)
-     -> Tuple[np.ndarray, np.ndarray]:
+    -> Tuple[np.ndarray, np.ndarray]:
     '''
 
     The method should return a tuple containing the new samples and the

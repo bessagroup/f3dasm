@@ -6,11 +6,11 @@ Using hydra on the high-performance cluster computer
 """
 ###############################################################################
 #
-# The following example is the same as in section :ref:`workflow`; we will create a workflow for the following data-driven process:
+# The following example is the same as in workflow section; we will create a workflow for the following data-driven process:
 #
 # * Create a 2D continuous :class:`~f3dasm.design.Domain`
 # * Sample from the domain using a the Latin-hypercube sampler
-# * Use a data generation function, which will be the ``"Ackley"`` function a from the :ref:`benchmark-functions`
+# * Use a data generation function, which will be the ``"Ackley"`` function a from the benchmark functions
 #
 # .. image:: ../../img/f3dasm-workflow-example-cluster.png
 #    :width: 70%

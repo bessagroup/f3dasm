@@ -10,7 +10,7 @@ how to load the stored data using the :meth:`~f3dasm.ExperimentData.from_file` m
 # project directory
 # ^^^^^^^^^^^^^^^^^
 #
-# The ``project_dir`` argument is used to :ref:`store the ExperimentData to disk <experimentdata-store>`
+# The ``project_dir`` argument is used to store the ExperimentData to disk
 # You can provide a string or a path to a directory. This can either be a relative or absolute path.
 # If the directory does not exist, it will be created.
 

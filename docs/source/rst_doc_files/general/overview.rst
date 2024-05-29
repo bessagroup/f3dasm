@@ -51,15 +51,15 @@ Computational framework
 
     -  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
 
-- :doc:`Easy parallelization <auto_examples/005_workflow/001_cluster_computing>`
+- :doc:`Easy parallelization <../../auto_examples/005_workflow/001_cluster_computing>`
 
     - The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
 
-- :doc:`Built-in defaults <rst_doc_files/defaults>`
+- :doc:`Built-in defaults <../defaults>`
 
     - The framework includes a collection of :ref:`benchmark functions <implemented-benchmark-functions>`, :ref:`optimization algorithms <implemented optimizers>` and :ref:`sampling strategies <implemented samplers>` to get you started right away!
 
-- :doc:`Hydra integration <auto_examples/006_hydra/001_hydra_usage>`
+- :doc:`Hydra integration <../../auto_examples/006_hydra/001_hydra_usage>`
 
     - The framework is integrated with `hydra <https://hydra.cc/>`_ configuration manager, to easily manage and run experiments.
 
