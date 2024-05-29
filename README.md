@@ -1,6 +1,7 @@
 f3dasm
 ------
-*Framework for data-driven design \& analysis of structures and materials*
+
+<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/pr/1.5/paper/f3dasm_logo_long.png" width="800"/></div>
 
 ***
 
@@ -41,7 +42,7 @@ The best way to get started is to follow the [installation instructions](https:/
 
 ## Illustrative benchmarks
 
-This package includes a collection of illustrative benchmark studies that demonstrate the capabilities of the framework. These studies are available in the `/studies` folder, and include the following studies:
+This package includes a collection of illustrative benchmark studies that demonstrate the capabilities of the framework. These studies are available in the `/studies/` folder, and include the following studies:
 
 - Benchmarking optimization algorithms against well-known benchmark functions
 - 'Fragile Becomes Supercompressible' ([Bessa et al. (2019)](https://onlinelibrary.wiley.com/doi/full/10.1002/adma.201904845))
@@ -51,20 +52,6 @@ This package includes a collection of illustrative benchmark studies that demons
 * Current created and developer: [M.P. van der Schelling](https://github.com/mpvanderschelling/) (M.P.vanderSchelling@tudelft.nl)
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
-
-
-
-## Referencing
-
-If you use or edit our work, please cite at least one of the appropriate references:
-
-[1] Bessa, M. A., Bostanabad, R., Liu, Z., Hu, A., Apley, D. W., Brinson, C., Chen, W., & Liu, W. K. (2017). A framework for data-driven analysis of materials under uncertainty: Countering the curse of dimensionality. Computer Methods in Applied Mechanics and Engineering, 320, 633-667.
-
-[2] Bessa, M. A., & Pellegrino, S. (2018). Design of ultra-thin shell structures in the stochastic post-buckling range using Bayesian machine learning and optimization. International Journal of Solids and Structures, 139, 174-188.
-
-[3] Bessa, M. A., Glowacki, P., & Houlder, M. (2019). Bayesian machine learning in metamaterial design: fragile becomes super-compressible. Advanced Materials, 31(48), 1904845.
-
-[4] Mojtaba, M., Bostanabad, R., Chen, W., Ehmann, K., Cao, J., & Bessa, M. A. (2019). Deep learning predicts path-dependent plasticity. Proceedings of the National Academy of Sciences, 116(52), 26414-26420.
 
 ## Community Support
 
