@@ -1,7 +1,7 @@
 f3dasm
 ------
 
-<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/pr/1.5/paper/f3dasm_logo_long.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/main/paper/f3dasm_logo_long.png" width="800"/></div>
 
 ***
 
@@ -38,7 +38,9 @@ Welcome to `f3dasm`, a **f**ramework for **d**ata-**d**riven **d**esign and **a*
 
 ## Getting started
 
-The best way to get started is to follow the [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html).
+* Read the [overview](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) section, containing a brief introduction to the framework and a statement of need.
+* Follow the [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) to get going!
+* Check out the [Tutorials](https://f3dasm.readthedocs.io/en/latest/auto_examples/index.html) section, containing a collection of examples to get you familiar with the framework.
 
 ## Illustrative benchmarks
 
