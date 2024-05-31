@@ -11,7 +11,7 @@ f3dasm
 [![Documentation Status](https://readthedocs.org/projects/f3dasm/badge/?version=latest)](https://f3dasm.readthedocs.io/en/latest/?badge=latest)
 
 [**Docs**](https://f3dasm.readthedocs.io/)
-| [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/gettingstarted.html)
+| [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html)
 | [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 
@@ -40,7 +40,7 @@ Welcome to `f3dasm`, a **f**ramework for **d**ata-**d**riven **d**esign and **a*
 
 * Read the [overview](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) section, containing a brief introduction to the framework and a statement of need.
 * Follow the [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) to get going!
-* Check out the [Tutorials](https://f3dasm.readthedocs.io/en/latest/auto_examples/index.html) section, containing a collection of examples to get you familiar with the framework.
+* Check out the [tutorials](https://f3dasm.readthedocs.io/en/latest/auto_examples/index.html) section, containing a collection of examples to get you familiar with the framework.
 
 ## Illustrative benchmarks
 

@@ -1,5 +1,5 @@
 ---
-title: 'f3dasm: Framework for Data-Driven Design & Analysis of Structures & Materials'
+title: 'f3dasm: Framework for Data-Driven Design and Analysis of Structures and Materials'
 tags:
   - Python
   - data-driven
@@ -10,7 +10,7 @@ authors:
   - name: M. P. van der Schelling
     orcid: 0000-0003-3602-0452
     affiliation: 1
-  - name: B.P. Ferreira
+  - name: B. P. Ferreira
     orcid: 0000-0001-5956-3877
     affiliation: 2
   - name: M. A. Bessa
@@ -29,7 +29,7 @@ bibliography: paper.bib
 
 # Summary
 
-[`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design and Analysis of Structures \& Materials) is a Python project that provides a general and user-friendly data-driven framework for researchers and practitioners working on the design and analysis of materials and structures. The package aims to streamline the data-driven process and make it easier to replicate research articles in this field, as well as share new work with the community. 
+[`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design and Analysis of Structures and Materials) is a Python project that provides a general and user-friendly data-driven framework for researchers and practitioners working on the design and analysis of materials and structures. The package aims to streamline the data-driven process and make it easier to replicate research articles in this field, as well as share new work with the community. 
 
 ![Logo of [`f3dasm`](https://github.com/bessagroup/f3dasm). \label{fig:f3dasm_logo}](f3dasm_logo_long.png)
 
@@ -39,7 +39,7 @@ In the last decades, advancements in computational resources have accelerated no
 
 Constructing a large material response database poses practical challenges, such as proper data management, efficient parallel computing, and integration with third-party software. Because most applied fields remain conservative when it comes to openly sharing databases and software, a lot of research time is instead being allocated to implement common procedures that would be otherwise readily available. This lack of shared practices also leads to compatibility issues for benchmarking and replication of results by violating the FAIR principles.
 
-In this work we introduce an interface for researchers and practitioners working on the design and analysis of materials and structures. The package is called [`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design \& Analysis of Structures and Materials). This work generalizes the original closed-source framework proposed by the Bessa and co-workers [@Bessa2017], making it more flexible and adaptable to different applications, namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
+In this work we introduce an interface for researchers and practitioners working on the design and analysis of materials and structures. The package is called [`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design and Analysis of Structures and Materials). This work generalizes the original closed-source framework proposed by the Bessa and co-workers [@Bessa2017], making it more flexible and adaptable to different applications, namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
 
 - **Design of experiments**, in which input variables describing the microstructure, properties and external conditions of the system are determined and sampled;
 - **Data generation**, typically through computational analyses, resulting in the creation of a material response database [@Ferreira2023];
