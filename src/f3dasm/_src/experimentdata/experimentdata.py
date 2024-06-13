@@ -1106,7 +1106,7 @@ class ExperimentData:
     #                                                            Datageneration
     # =========================================================================
 
-    def evaluate(self, data_generator: DataGenerator,
+    def evaluate(self, data_generator: DataGenerator | Callable,
                  mode: Literal['sequential', 'parallel',
                                'cluster', 'cluster_parallel'] = 'sequential',
                  kwargs: Optional[dict] = None,
@@ -1116,7 +1116,9 @@ class ExperimentData:
         Parameters
         ----------
         data_generator : DataGenerator
-            data generator to use
+            Data generator to use. If a function is provided, it will be converted to
+            a data generator and its signature should match the experimental data input
+            names.
         mode : str, optional
             operational mode, by default 'sequential'. Choose between:
 
