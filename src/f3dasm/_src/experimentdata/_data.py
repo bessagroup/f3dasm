@@ -209,6 +209,7 @@ class _Data:
         _columns = {name: None for name in dataframe.columns.to_list()}
         return cls(dataframe, columns=_Columns(_columns))
 
+    # NOT USED
     def reset(self, domain: Optional[Domain] = None):
         """Resets the data to the initial state.
 
