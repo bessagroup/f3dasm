@@ -209,27 +209,6 @@ class _Data:
         _columns = {name: None for name in dataframe.columns.to_list()}
         return cls(dataframe, columns=_Columns(_columns))
 
-    # NOT USED
-    def reset(self, domain: Optional[Domain] = None):
-        """Resets the data to the initial state.
-
-        Parameters
-        ----------
-        domain : Domain, optional
-            The domain of the experiment.
-
-        Note
-        ----
-        If the domain is None, the data will be reset to an empty dataframe.
-        """
-
-        if domain is None:
-            self.data = pd.DataFrame()
-            self.columns = _Columns()
-        else:
-            self.data = self.from_domain(domain).data
-            self.columns = self.from_domain(domain).columns
-
 #                                                                        Export
 # =============================================================================
 
@@ -270,31 +249,6 @@ class _Data:
         df = deepcopy(self.data)
         df.columns = self.names
         return df.astype(object)
-
-    def combine_data_to_multiindex(self, other: _Data,
-                                   jobs_df: pd.DataFrame) -> pd.DataFrame:
-        """Combine the data to a multiindex dataframe.
-
-        Parameters
-        ----------
-        other : _Data
-            The other data to combine.
-        jobs : pd.DataFrame
-            The jobs dataframe.
-
-        Returns
-        -------
-        pd.DataFrame
-            The combined dataframe.
-
-        Note
-        ----
-        This function is mainly used to show the combined ExperimentData
-        object in a Jupyter Notebook
-        """
-        return pd.concat([jobs_df, self.to_dataframe(),
-                          other.to_dataframe()],
-                         axis=1, keys=['jobs', 'input', 'output'])
 
     def store(self, filename: Path) -> None:
         """Stores the data to a file.
@@ -352,6 +306,7 @@ class _Data:
         return _Data(
             self.data[self.columns.iloc(columns)], columns=_selected_columns)
 
+    # TODO: Can we get rid of this method ?
     def drop(self, columns: Iterable[str] | str) -> _Data:
         """Drop the selected columns from the data.
 
@@ -378,33 +333,6 @@ class _Data:
 #                                                        Append and remove data
 # =============================================================================
 
-    def add(self, data: pd.DataFrame):
-        try:
-            last_index = self.data.index[-1]
-        except IndexError:  # Empty dataframe
-            self.data = data
-            return
-
-        new_indices = pd.RangeIndex(
-            start=last_index + 1, stop=last_index + len(data) + 1, step=1)
-
-        # set the indices of the data to new_indices
-        data.index = new_indices
-
-        self.data = pd.concat([self.data, data], ignore_index=False)
-
-    def add_empty_rows(self, number_of_rows: int):
-        if self.data.index.empty:
-            last_index = -1
-        else:
-            last_index = self.data.index[-1]
-
-        new_indices = pd.RangeIndex(
-            start=last_index + 1, stop=last_index + number_of_rows + 1, step=1)
-        empty_data = pd.DataFrame(
-            np.nan, index=new_indices, columns=self.data.columns)
-        self.data = pd.concat([self.data, empty_data], ignore_index=False)
-
     def add_column(self, name: str, exist_ok: bool = False):
         if name in self.columns.names:
             if not exist_ok:
@@ -424,9 +352,6 @@ class _Data:
     def remove(self, indices: List[int]):
         self.data = self.data.drop(indices)
 
-    def round(self, decimals: int):
-        self.data = self.data.round(decimals=decimals)
-
     def overwrite(self, indices: Iterable[int], other: _Data | Dict[str, Any]):
         if isinstance(other, Dict):
             other = _convert_dict_to_data(other)
@@ -437,6 +362,7 @@ class _Data:
 
         self.data.update(other.data.set_index(pd.Index(indices)))
 
+    # TODO: Rename this method, it is not clear what it does
     def join(self, __o: _Data) -> _Data:
         """Join two Data objects together.
 
@@ -456,6 +382,7 @@ class _Data:
 #                                                           Getters and setters
 # =============================================================================
 
+    # TODO: Rename this method ? It is not clear what it does
     def get_data_dict(self, index: int) -> Dict[str, Any]:
         return self.to_dataframe().loc[index].to_dict()
 
@@ -517,24 +444,6 @@ class _Data:
     def set_columnnames(self, names: Iterable[str]) -> None:
         for old_name, new_name in zip(self.names, names):
             self.columns.rename(old_name, new_name)
-
-    def cast_types(self, domain: Domain):
-        """Cast the types of the data to the types of the domain.
-
-        Parameters
-        ----------
-        domain : Domain
-            The domain with specific parameters to cast the types to.
-
-        Raises
-        ------
-        ValueError
-            If the types of the domain and the data do not match.
-        """
-        _dtypes = {index: parameter._type
-                   for index, (_, parameter) in enumerate(
-                       domain.space.items())}
-        self.data = self.data.astype(_dtypes)
 
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:

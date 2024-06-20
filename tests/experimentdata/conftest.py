@@ -65,7 +65,8 @@ def experimentdata_expected() -> ExperimentData:
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 
-    data._input_data.round(6)
+    # data._input_data.round(6)
+    data._input_data.data = data._input_data.data.round(6)
     # data._input_data.data = [[round(num, 6) if isinstance(
     #     num, float) else num for num in sublist]
     #     for sublist in data._input_data.data]
@@ -81,7 +82,7 @@ def experimentdata_expected_no_output() -> ExperimentData:
     data.add(input_data=np.array(
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
-    data._input_data.round(6)
+    data._input_data.data = data._input_data.data.round(6)
     # data._input_data.data = [[round(num, 6) if isinstance(
     #     num, float) else num for num in sublist]
     #     for sublist in data._input_data.data]

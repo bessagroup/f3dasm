@@ -186,12 +186,10 @@ class ExperimentData:
                     self.domain == __o.domain])
 
     def _repr_html_(self) -> str:
-        return self._input_data.combine_data_to_multiindex(
-            self._output_data, self._jobs.to_dataframe())._repr_html_()
+        return combine_data_to_multiindex(self)._repr_html_()
 
     def __repr__(self) -> str:
-        return self._input_data.combine_data_to_multiindex(
-            self._output_data, self._jobs.to_dataframe()).__repr__()
+        return combine_data_to_multiindex(self).__repr__()
 
     def _access_file(operation: Callable) -> Callable:
         """Wrapper for accessing a single resource with a file lock
@@ -1846,3 +1844,29 @@ def x0_factory(experiment_data: ExperimentData,
 
     x0._reset_index()
     return x0
+
+
+def combine_data_to_multiindex(
+        experiment_data: ExperimentData) -> pd.DataFrame:
+    """Combine the data to a multiindex dataframe.
+
+    Parameters
+    ----------
+    experiment_data: ExperimentData
+        The ExperimentData object to combine
+
+    Returns
+    -------
+    pd.DataFrame
+        The combined dataframe.
+
+    Note
+    ----
+    This function is mainly used to show the combined ExperimentData
+    object in a Jupyter Notebook
+    """
+    return pd.concat(
+        [experiment_data._jobs.to_dataframe(),
+         experiment_data._input_data.to_dataframe(),
+         experiment_data._output_data.to_dataframe()],
+        axis=1, keys=['jobs', 'input', 'output'])

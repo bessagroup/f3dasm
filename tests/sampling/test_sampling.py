@@ -49,7 +49,7 @@ def test_correct_sampling_ran(design3: Domain):
     samples = ExperimentData(domain=design3)
     samples.sample(sampler='random', n_samples=numsamples, seed=seed)
 
-    samples._input_data.round(6)
+    samples._input_data.data = samples._input_data.data.round(6)
 
     df_input, _ = samples.to_pandas()
     df_input.columns = df_ground_truth.columns

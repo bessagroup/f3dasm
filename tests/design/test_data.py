@@ -34,25 +34,10 @@ def test_data_from_design(domain: Domain):
     assert isinstance(data.data, pd.DataFrame)
 
 
-def test_data_reset(sample_data: _Data):
-    # Assuming you have a Domain object named "domain"
-    design = Domain()
-    sample_data.reset(design)
-    assert isinstance(sample_data.data, pd.DataFrame)
-    assert len(sample_data) == 0
-
-
 def test_data_remove(sample_data: _Data):
     indices = [0, 2]
     sample_data.remove(indices)
     assert len(sample_data) == 1
-
-
-def test_data_add_numpy_arrays(sample_data: _Data):
-    input_array = np.array([[1, 4], [2, 5]])
-    df = pd.DataFrame(input_array, columns=sample_data.names)
-    sample_data.add(df)
-    assert len(sample_data) == 5
 
 
 def test_data_get_data(sample_data: _Data):
