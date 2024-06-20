@@ -18,7 +18,7 @@ uniform interface to data that does not have a column structure.
 from __future__ import annotations
 
 # Standard
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -123,3 +123,10 @@ class _Columns:
             name of the column to replace with
         """
         self.columns[new_name] = self.columns.pop(old_name)
+
+    def set_columnnames(self, names: Iterable[str]) -> None:
+        for old_name, new_name in zip(self.names, names):
+            self.rename(old_name, new_name)
+
+    def has_columnnames(self, names: Iterable[str]) -> None:
+        return set(names).issubset(self.names)

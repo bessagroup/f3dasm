@@ -133,16 +133,17 @@ class ExperimentData:
             jobs, self._input_data, self._output_data, job_value)
 
         # Check if the columns of input_data are in the domain
-        if not self._input_data.has_columnnames(self.domain.names):
-            self._input_data.set_columnnames(self.domain.names)
+        if not self._input_data.columns.has_columnnames(self.domain.names):
+            self._input_data.columns.set_columnnames(self.domain.names)
 
-        if not self._output_data.has_columnnames(self.domain.output_names):
-            self._output_data.set_columnnames(self.domain.output_names)
+        if not self._output_data.columns.has_columnnames(
+                self.domain.output_names):
+            self._output_data.columns.set_columnnames(self.domain.output_names)
 
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
         if self._output_data.names == [0]:
-            self._output_data.set_columnnames(['y'])
+            self._output_data.columns.set_columnnames(['y'])
 
     def __len__(self):
         """The len() method returns the number of datapoints"""

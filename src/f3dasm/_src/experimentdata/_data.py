@@ -438,13 +438,6 @@ class _Data:
         """
         return self.indices[self.data.isna().any(axis=1)]
 
-    def has_columnnames(self, names: Iterable[str]) -> bool:
-        return set(names).issubset(self.names)
-
-    def set_columnnames(self, names: Iterable[str]) -> None:
-        for old_name, new_name in zip(self.names, names):
-            self.columns.rename(old_name, new_name)
-
 
 def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     """Converts a dictionary with scalar values to a data object.
