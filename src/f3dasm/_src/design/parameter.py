@@ -279,7 +279,7 @@ class _DiscreteParameter(_Parameter):
             raise ValueError("step size must be larger than 0!")
 
 
-@ dataclass
+@dataclass
 class _CategoricalParameter(_Parameter):
     """Create a search space parameter that is categorical
 

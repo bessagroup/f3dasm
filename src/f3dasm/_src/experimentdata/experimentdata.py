@@ -240,7 +240,7 @@ class ExperimentData:
     #                                                                Properties
     # =========================================================================
 
-    @ property
+    @property
     def index(self) -> pd.Index:
         """Returns an iterable of the job number of the experiments
 
@@ -257,7 +257,7 @@ class ExperimentData:
     #                                                  Alternative Constructors
     # =========================================================================
 
-    @ classmethod
+    @classmethod
     def from_file(cls: Type[ExperimentData],
                   project_dir: Path | str) -> ExperimentData:
         """Create an ExperimentData object from .csv and .json files.
