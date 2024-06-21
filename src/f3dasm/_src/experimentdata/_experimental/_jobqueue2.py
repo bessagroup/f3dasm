@@ -4,15 +4,16 @@
 from __future__ import annotations
 
 # Standard
+from copy import deepcopy
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, List, Optional, Type
+from typing import Iterable, List, Type
 
 # Third-party
 import pandas as pd
 
 # Local
-from ._data import _Data
+from ._newdata2 import _Data
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,68 +47,43 @@ class NoOpenJobsError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+# =============================================================================
 
-class _JobQueue:
-    def __init__(self, jobs: Optional[pd.Series] = None):
-        """
-        A class that represents a dictionary of jobs that
-        can be marked as 'open', 'in progress', finished', or 'error'.
 
-        Parameters
-        ----------
-        filename : str
-            The name of the file that the jobs will be saved in.
-        """
-        if jobs is None:
-            jobs = pd.Series(dtype='string')
+class Index:
+    def __init__(self, jobs: pd.Series | None | str = None):
+        if isinstance(jobs, str):
+            self.jobs = pd.Series(jobs, index=[0], dtype='string')
 
-        self.jobs: pd.Series = jobs
+        elif jobs is None:
+            self.jobs = pd.Series(dtype='string')
 
-    def __add__(self, other: _JobQueue | str) -> _JobQueue:
-        """Add two JobQueue objects together.
+        else:
+            self.jobs = jobs
 
-        Parameters
-        ----------
-        other : JobQueue
-            JobQueue object to add.
+    def __len__(self) -> int:
+        return len(self.jobs)
 
-        Returns
-        -------
-        JobQueue
-            JobQueue object containing the added jobs.
-        """
-        if isinstance(other, str):
-            # make _JobQueue from the jobnumber
-            other = _JobQueue(
-                pd.Series(other, index=[0], dtype='string'))
+    def __add__(self, __o: Index | str) -> Index:
+        if isinstance(__o, str):
+            __o = Index(__o)
 
-        try:
-            last_index = self.jobs.index[-1]
-        except IndexError:  # Empty Series
-            return _JobQueue(other.jobs)
+        if self.jobs.empty:
+            return __o
 
         # Make a copy of other.jobs and modify its index
-        other_jobs_copy = other.jobs.copy()
-        other_jobs_copy.index = other_jobs_copy.index + last_index + 1
-        return _JobQueue(pd.concat([self.jobs, other_jobs_copy]))
+        other_jobs_copy = deepcopy(__o)
+        other_jobs_copy.jobs.index = range(
+            len(other_jobs_copy)) + self.jobs.index[-1] + 1
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _JobQueue:
-        """Get a subset of the data.
+        return Index(pd.concat([self.jobs, other_jobs_copy.jobs]))
 
-        Parameters
-        ----------
-        index : int, slice, list
-            The index of the data to get.
+    def __getitem__(self, indices: int | slice | Iterable[int]) -> Index:
+        if isinstance(indices, int):
+            indices = [indices]
+        return Index(self.jobs[indices].copy())
 
-        Returns
-        -------
-            A subset of the data.
-        """
-        if isinstance(index, int):
-            index = [index]
-        return _JobQueue(self.jobs[index].copy())
-
-    def __eq__(self, __o: _JobQueue) -> bool:
+    def __eq__(self, __o: Index) -> bool:
         return self.jobs.equals(__o.jobs)
 
     def _repr_html_(self) -> str:
@@ -117,12 +93,16 @@ class _JobQueue:
     def indices(self) -> pd.Index:
         """The indices of the jobs."""
         return self.jobs.index
+
+    def iloc(self, indices: Iterable[int]) -> Iterable[int]:
+        return self.indices.get_indexer(indices)
+
     #                                                  Alternative Constructors
     # =========================================================================
 
     @classmethod
-    def from_data(cls: Type[_JobQueue], data: _Data,
-                  value: str = Status.OPEN) -> _JobQueue:
+    def from_data(cls: Type[Index], data: _Data,
+                  value: str = Status.OPEN) -> Index:
         """Create a JobQueue object from a Data object.
 
         Parameters
@@ -141,7 +121,7 @@ class _JobQueue:
         return cls(pd.Series([value] * len(data), dtype='string'))
 
     @classmethod
-    def from_file(cls: Type[_JobQueue], filename: Path | str) -> _JobQueue:
+    def from_file(cls: Type[Index], filename: Path | str) -> Index:
         """Create a JobQueue object from a pickle file.
 
         Parameters
@@ -155,23 +135,22 @@ class _JobQueue:
             JobQueue object containing the loaded data.
         """
         # Convert filename to Path
-        filename = Path(filename).with_suffix('.pkl')
+        if Path(filename).with_suffix('.csv').exists():
+            return cls(
+                pd.read_csv(Path(filename).with_suffix('.csv'),
+                            index_col=0)['0'])
 
-        # Check if the file exists
-        if not filename.exists():
+        elif Path(filename).with_suffix('.pkl').exists():
+            return cls(
+                pd.read_pickle(Path(filename).with_suffix('.pkl')))
+
+        else:
             raise FileNotFoundError(f"Jobfile {filename} does not exist.")
-
-        return cls(pd.read_pickle(filename))
-
-    # TODO: This function is not used!
-    def reset(self) -> None:
-        """Resets the job queue."""
-        self.jobs = pd.Series(dtype='string')
 
     #                                                                    Select
     # =========================================================================
 
-    def select_all(self, status: str) -> _JobQueue:
+    def select_all(self, status: str) -> Index:
         """Selects all jobs with a certain status.
 
         Parameters
@@ -184,7 +163,7 @@ class _JobQueue:
         JobQueue
             JobQueue object containing the selected jobs.
         """
-        return _JobQueue(self.jobs[self.jobs == status])
+        return Index(self.jobs[self.jobs == status])
 
     #                                                                    Export
     # =========================================================================
@@ -197,7 +176,7 @@ class _JobQueue:
         filename : Path
             Path of the file.
         """
-        self.jobs.to_pickle(filename.with_suffix('.pkl'))
+        self.jobs.to_csv(filename.with_suffix('.csv'))
 
     def to_dataframe(self, name: str = "") -> pd.DataFrame:
         """Converts the job queue to a DataFrame.
@@ -231,34 +210,12 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
-    # TODO: Remove this method as it is not used!
-    def add(self, number_of_jobs: int = 1, status: str = Status.OPEN):
-        """Adds a number of jobs to the job queue.
-
-        Parameters
-        ----------
-        number_of_jobs : int, optional
-            Number of jobs to add, by default 1
-        status : str, optional
-            Status of the jobs, by default 'open'.
-        """
-        try:
-            last_index = self.jobs.index[-1]
-        except IndexError:  # Empty Series
-            self.jobs = pd.Series([status] * number_of_jobs, dtype='string')
-            return
-
-        new_indices = pd.RangeIndex(
-            start=last_index + 1, stop=last_index + number_of_jobs + 1, step=1)
-        jobs_to_add = pd.Series(status, index=new_indices, dtype='string')
-        self.jobs = pd.concat([self.jobs, jobs_to_add], ignore_index=False)
-
     def overwrite(
             self, indices: Iterable[int],
-            other: _JobQueue | str) -> None:
+            other: Index | str) -> None:
 
         if isinstance(other, str):
-            other = _JobQueue(
+            other = Index(
                 pd.Series([other], index=[0], dtype='string'))
 
         self.jobs.update(other.jobs.set_axis(indices))
@@ -316,9 +273,9 @@ class _JobQueue:
         self.jobs.reset_index(drop=True, inplace=True)
 
 
-def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
-                  output_data: _Data, job_value: Status) -> _JobQueue:
-    """Creates a _JobQueue object from particular inpute
+def _jobs_factory(jobs: Path | str | Index | None, input_data: _Data,
+                  output_data: _Data, job_value: Status) -> Index:
+    """Creates a Index object from particular inpute
 
     Parameters
     ----------
@@ -333,16 +290,16 @@ def _jobs_factory(jobs: Path | str | _JobQueue | None, input_data: _Data,
 
     Returns
     -------
-    _JobQueue
+    Index
         JobQueue object
     """
-    if isinstance(jobs, _JobQueue):
+    if isinstance(jobs, Index):
         return jobs
 
     if isinstance(jobs, (Path, str)):
-        return _JobQueue.from_file(Path(jobs))
+        return Index.from_file(Path(jobs))
 
     if input_data.is_empty():
-        return _JobQueue.from_data(output_data, value=job_value)
+        return Index.from_data(output_data, value=job_value)
 
-    return _JobQueue.from_data(input_data, value=job_value)
+    return Index.from_data(input_data, value=job_value)
