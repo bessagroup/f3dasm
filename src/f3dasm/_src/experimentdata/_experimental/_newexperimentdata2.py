@@ -132,14 +132,6 @@ class ExperimentData:
         self._jobs = _jobs_factory(
             jobs, self._input_data, self._output_data, job_value)
 
-        # # Check if the columns of input_data are in the domain
-        # if not self._input_data.columns.has_columnnames(self.domain.names):
-        #     self._input_data.columns.set_columnnames(self.domain.names)
-
-        # if not self._output_data.columns.has_columnnames(
-        #         self.domain.output_names):
-        #     self._output_data.columns.set_columnnames(self.domain.output_names)
-
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
         # TODO: Fix this for newdata2
@@ -252,11 +244,6 @@ class ExperimentData:
             The job number of all the experiments in pandas Index format
         """
         return self._jobs.indices
-
-        # if self._input_data.is_empty():
-        #     return self._output_data.indices
-
-        # return self._input_data.indices
 
     #                                                  Alternative Constructors
     # =========================================================================
