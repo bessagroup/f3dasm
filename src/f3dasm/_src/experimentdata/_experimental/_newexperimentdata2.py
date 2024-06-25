@@ -142,11 +142,6 @@ class ExperimentData:
         """The len() method returns the number of datapoints"""
         return len(self._jobs)
 
-        # if self._input_data.is_empty():
-        #     return len(self._output_data)
-
-        # return len(self._input_data)
-
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
         return self
