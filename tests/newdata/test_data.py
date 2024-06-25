@@ -1,5 +1,4 @@
-from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -173,6 +172,14 @@ def test_select_columns_single():
     selected_data = data.select_columns("a")
     expected_data = {0: {"a": 1}, 1: {"a": 4}}
     assert selected_data.data == expected_data
+
+
+def test_rename_columns():
+    input_data = {0: {"a": 1, "b": 2, "c": 3}, 1: {"a": 4, "b": 5, "c": 6}}
+    data = _Data(input_data)
+    data.rename_columns({"a": "x", "b": "y"})
+    expected_data = {0: {"x": 1, "y": 2, "c": 3}, 1: {"x": 4, "y": 5, "c": 6}}
+    assert data.data == expected_data
 
 
 def test_drop():

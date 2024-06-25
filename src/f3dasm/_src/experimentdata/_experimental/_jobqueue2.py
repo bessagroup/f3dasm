@@ -73,8 +73,8 @@ class Index:
 
         # Make a copy of other.jobs and modify its index
         other_jobs_copy = deepcopy(__o)
-        other_jobs_copy.jobs.index = range(
-            len(other_jobs_copy)) + self.jobs.index[-1] + 1
+        other_jobs_copy.jobs.index = pd.Index(range(
+            len(other_jobs_copy))) + self.jobs.index[-1] + 1
 
         return Index(pd.concat([self.jobs, other_jobs_copy.jobs]))
 

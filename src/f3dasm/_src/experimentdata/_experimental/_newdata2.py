@@ -148,8 +148,9 @@ class _Data:
 #                                                                    Properties
 # =============================================================================
 
+
     @property
-    def indices(self) -> List[int]:
+    def indices(self) -> pd.Index:
         """
         Get the indices of the data.
 
@@ -158,7 +159,7 @@ class _Data:
         List[int]
             The list of indices.
         """
-        return list(self.data.keys())
+        return pd.Index(list(self.data.keys()))
 
     @property
     def names(self) -> List[str]:
@@ -187,8 +188,9 @@ class _Data:
 #                                                                Initialization
 # =============================================================================
 
+
     @classmethod
-    def from_indices(cls, rows: Iterable[int]) -> _Data:
+    def from_indices(cls, rows: Iterable[int] | pd.Index) -> _Data:
         """
         Create a _Data object from a list of indices.
 
@@ -426,7 +428,7 @@ class _Data:
         df = self.to_dataframe()
         return df.nsmallest(n=nosamples, columns=key)
 
-    def add_column(self, key: str):
+    def add_column(self, key: str, exist_ok: bool = True):
         """
         Add a new column to the data with missing values.
 
@@ -436,7 +438,22 @@ class _Data:
             The key for the new column.
         """
         for row in self.data:
+            if not exist_ok and key in self.data[row]:
+                raise KeyError(f"Key '{key}' already exists in the data.")
             self.data[row][key] = MISSING_VALUE
+
+    def rename_columns(self, mapping: Dict[str, str]):
+        """
+        Rename columns in the data.
+
+        Parameters
+        ----------
+        mapping : Dict[str, str]
+            The mapping of old to new column names.
+        """
+        for row in self.data:
+            for old_key, new_key in mapping.items():
+                self.data[row][new_key] = self.data[row].pop(old_key)
 
     def remove(self, rows: Iterable[int]):
         """
@@ -513,7 +530,8 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
 # =============================================================================
 
 
-def _data_factory(data: DataTypes) -> _Data:
+def _data_factory(data: DataTypes,
+                  keys: Optional[Iterable[str]] = None) -> _Data:
     if data is None:
         return _Data()
 
@@ -527,7 +545,7 @@ def _data_factory(data: DataTypes) -> _Data:
         return _Data.from_file(Path(data))
 
     elif isinstance(data, np.ndarray):
-        return _Data.from_numpy(data)
+        return _Data.from_numpy(data, keys=keys)
 
     else:
         raise TypeError(

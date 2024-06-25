@@ -110,8 +110,12 @@ class ExperimentData:
 
         self.project_dir = _project_dir_factory(project_dir)
 
-        self._input_data = _data_factory(input_data)
-        self._output_data = _data_factory(output_data)
+        if isinstance(input_data, np.ndarray) and isinstance(domain, Domain):
+            self._input_data = _data_factory(input_data, domain.names)
+            self._output_data = _data_factory(output_data, domain.output_names)
+        else:
+            self._input_data = _data_factory(input_data)
+            self._output_data = _data_factory(output_data)
 
         # Create empty output_data from indices if output_data is empty
         if self._output_data.is_empty():
@@ -134,9 +138,8 @@ class ExperimentData:
 
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
-        # TODO: Fix this for newdata2
         if self._output_data.names == [0]:
-            self._output_data.columns.set_columnnames(['y'])
+            self._output_data.rename_columns({0: 'y'})
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
@@ -944,7 +947,7 @@ class ExperimentData:
 
             self._output_data.set_data(
                 row=experiment_sample.job_number, value=value,
-                column=column)
+                key=column)
 
         self._jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
@@ -997,11 +1000,10 @@ class ExperimentData:
         index
             index of the experiment_sample to mark as error
         """
-        # self.jobs.mark_as_error(index)
         self._jobs.mark(index, status=Status.ERROR)
-        self._output_data.set_data(
-            index,
-            value=['ERROR' for _ in self._output_data.names])
+        for column in self._output_data.names:
+            self._output_data.set_data(
+                index, value='ERROR', key=column)
 
     @_access_file
     def _write_error(self, index: int):
