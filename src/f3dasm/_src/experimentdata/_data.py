@@ -186,7 +186,8 @@ class _Data:
         return cls(df, columns=_Columns(_columns))
 
     @classmethod
-    def from_numpy(cls: Type[_Data], array: np.ndarray) -> _Data:
+    def from_numpy(cls: Type[_Data],
+                   array: np.ndarray, keys: Iterable[str]) -> _Data:
         """Loads the data from a numpy array.
 
         Parameters
@@ -458,7 +459,8 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     return _Data(data=df, columns=_Columns(_columns))
 
 
-def _data_factory(data: DataTypes) -> _Data:
+def _data_factory(data: DataTypes,
+                  keys: Optional[Iterable[str]] = None) -> _Data:
     if data is None:
         return _Data()
 
@@ -469,10 +471,10 @@ def _data_factory(data: DataTypes) -> _Data:
         return _Data.from_dataframe(data)
 
     elif isinstance(data, (Path, str)):
-        return _Data.from_file(data)
+        return _Data.from_file(Path(data))
 
     elif isinstance(data, np.ndarray):
-        return _Data.from_numpy(data)
+        return _Data.from_numpy(data, keys=keys)
 
     else:
         raise TypeError(

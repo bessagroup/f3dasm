@@ -110,8 +110,20 @@ class ExperimentData:
 
         self.project_dir = _project_dir_factory(project_dir)
 
-        self._input_data = _data_factory(input_data)
-        self._output_data = _data_factory(output_data)
+        # DOMAIN
+        if domain is None:
+            self.domain = Domain.from_data(
+                input_data=_data_factory(input_data),
+                output_data=_data_factory(output_data))
+
+        else:
+            self.domain = _domain_factory(domain=domain)
+
+        # INPUT AND OUTPUT DATAA
+        self._input_data = _data_factory(
+            data=input_data, keys=self.domain.names)
+        self._output_data = _data_factory(
+            data=output_data, keys=self.domain.output_names)
 
         # Create empty output_data from indices if output_data is empty
         if self._output_data.is_empty():
@@ -121,9 +133,9 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        self.domain = _domain_factory(
-            domain=domain, input_data=self._input_data.to_dataframe(),
-            output_data=self._output_data.to_dataframe())
+        # self.domain = _domain_factory(
+        #     domain=domain, input_data=self._input_data.to_dataframe(),
+        #     output_data=self._output_data.to_dataframe())
 
         # Create empty input_data from domain if input_data is empty
         if self._input_data.is_empty():

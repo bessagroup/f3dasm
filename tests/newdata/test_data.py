@@ -115,7 +115,7 @@ def test_len():
 
 def test_indices():
     data = _Data({0: {"a": 1}, 1: {"a": 2}})
-    assert data.indices == [0, 1]
+    assert data.indices.equals(pd.Index([0, 1]))
 
 
 def test_names():

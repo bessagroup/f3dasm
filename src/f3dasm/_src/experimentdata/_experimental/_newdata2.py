@@ -221,7 +221,8 @@ class _Data:
         _Data
             The created _Data object.
         """
-        ...
+        df = pd.read_csv(filename.with_suffix('.csv'), header=0, index_col=0)
+        return cls.from_dataframe(df)
 
     @classmethod
     def from_numpy(cls: Type[_Data], array: np.ndarray,
@@ -322,7 +323,7 @@ class _Data:
         filename : Path
             The file to store the data in.
         """
-        ...
+        self.to_dataframe().to_csv(filename.with_suffix('.csv'))
 
     def get_data_dict(self, row: int) -> Dict[str, Any]:
         """
