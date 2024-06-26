@@ -412,7 +412,7 @@ class ExperimentData:
                 sleep(1)
                 continue
 
-        raise ReadingEmptyPandasDataFrameError(f"Reading empty dataframes")
+        raise ReadingEmptyPandasDataFrameError("Reading empty dataframes")
 
     #                                                         Selecting subsets
     # =========================================================================
