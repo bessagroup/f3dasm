@@ -266,6 +266,9 @@ class _Data:
         # TODO: The column information is not saved in the .csv!
         self.to_dataframe().to_csv(filename.with_suffix('.tmp'))
 
+        # remove the old file if it exists
+        filename.with_suffix('.csv').unlink(missing_ok=True)
+
         # rename the file to the correct extension
         filename.with_suffix('.tmp').rename(filename.with_suffix('.csv'))
 

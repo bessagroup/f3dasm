@@ -199,6 +199,9 @@ class _JobQueue:
         """
         self.jobs.to_pickle(filename.with_suffix('.tmp'))
 
+        # remove old file if it exists
+        filename.with_suffix('.pkl').unlink(missing_ok=True)
+
         # rename the file to the correct extension
         filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
 

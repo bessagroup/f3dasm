@@ -279,6 +279,9 @@ class Domain:
         with open(filename.with_suffix('.tmp'), 'wb') as f:
             pickle.dump(self, f)
 
+        # remove old file if it exists
+        filename.with_suffix('.pkl').unlink(missing_ok=True)
+
         # rename the file to the correct extension
         filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
 
