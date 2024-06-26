@@ -51,6 +51,10 @@ MAX_TRIES = 10
 class TemporaryFilesNotCleared(Exception):
     pass
 
+
+class ReadingEmptyPandasDataFrameError(Exception):
+    pass
+
 #                                                               Storing methods
 # =============================================================================
 

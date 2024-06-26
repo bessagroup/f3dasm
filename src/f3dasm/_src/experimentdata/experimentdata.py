@@ -38,8 +38,8 @@ from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory,
-                  check_for_temporary_files)
+                  OUTPUT_DATA_FILENAME, ReadingEmptyPandasDataFrameError,
+                  _project_dir_factory, check_for_temporary_files)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
 from .samplers import Sampler, SamplerNames, _sampler_factory
@@ -398,15 +398,21 @@ class ExperimentData:
         # check if there is any .tmp file in the subdirectory
         check_for_temporary_files(subdirectory)
 
-        try:
-            return cls(domain=subdirectory / DOMAIN_FILENAME,
-                       input_data=subdirectory / INPUT_DATA_FILENAME,
-                       output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                       jobs=subdirectory / JOBS_FILENAME,
-                       project_dir=project_dir)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Cannot find the files from {subdirectory}.")
+        for attempt in range(MAX_TRIES):
+            try:
+                return cls(domain=subdirectory / DOMAIN_FILENAME,
+                           input_data=subdirectory / INPUT_DATA_FILENAME,
+                           output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                           jobs=subdirectory / JOBS_FILENAME,
+                           project_dir=project_dir)
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    f"Cannot find the files from {subdirectory}.")
+            except pd.errors.EmptyDataError:
+                sleep(1)
+                continue
+
+        raise ReadingEmptyPandasDataFrameError(f"Reading empty dataframes")
 
     #                                                         Selecting subsets
     # =========================================================================
