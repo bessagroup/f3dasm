@@ -1296,10 +1296,13 @@ class ExperimentData:
         NoOpenJobsError
             Raised when there are no open jobs left
         """
-        # Retrieve the updated experimentdata object from disc
-        try:
-            self = self.from_file(self.project_dir)
-        except FileNotFoundError:  # If not found, store current
+        # # Retrieve the updated experimentdata object from disc
+        # try:
+        #     self = self.from_file(self.project_dir)
+        # except FileNotFoundError:  # If not found, store current
+        #     self.store()
+
+        if not (self.project_dir / EXPERIMENTDATA_SUBFOLDER).exists():
             self.store()
 
         while True:
