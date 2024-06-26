@@ -268,7 +268,7 @@ class Domain:
 #                                                                        Export
 # =============================================================================
 
-    def store(self, filename: Path) -> None:
+    def store(self, filename: Path, create_tmp: bool = False) -> None:
         """Stores the Domain in a pickle file.
 
         Parameters
@@ -276,14 +276,18 @@ class Domain:
         filename : str
             Name of the file.
         """
-        with open(filename.with_suffix('.tmp'), 'wb') as f:
-            pickle.dump(self, f)
+        if create_tmp:
+            with open(filename.with_suffix('.tmp'), 'wb') as f:
+                pickle.dump(self, f)
 
-        # remove old file if it exists
-        filename.with_suffix('.pkl').unlink(missing_ok=True)
+            # remove old file if it exists
+            filename.with_suffix('.pkl').unlink(missing_ok=True)
 
-        # rename the file to the correct extension
-        filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+            # rename the file to the correct extension
+            filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+        else:
+            with open(filename.with_suffix('.pkl'), 'wb') as f:
+                pickle.dump(self, f)
 
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""

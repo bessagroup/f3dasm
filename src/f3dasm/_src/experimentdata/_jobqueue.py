@@ -189,7 +189,7 @@ class _JobQueue:
     #                                                                    Export
     # =========================================================================
 
-    def store(self, filename: Path) -> None:
+    def store(self, filename: Path, create_tmp: bool = False) -> None:
         """Stores the jobs in a pickle file.
 
         Parameters
@@ -197,13 +197,16 @@ class _JobQueue:
         filename : Path
             Path of the file.
         """
-        self.jobs.to_pickle(filename.with_suffix('.tmp'))
+        if create_tmp:
+            self.jobs.to_pickle(filename.with_suffix('.tmp'))
 
-        # remove old file if it exists
-        filename.with_suffix('.pkl').unlink(missing_ok=True)
+            # remove old file if it exists
+            filename.with_suffix('.pkl').unlink(missing_ok=True)
 
-        # rename the file to the correct extension
-        filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+            # rename the file to the correct extension
+            filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+        else:
+            self.jobs.to_pickle(filename.with_suffix('.pkl'))
 
     def to_dataframe(self, name: str = "") -> pd.DataFrame:
         """Converts the job queue to a DataFrame.

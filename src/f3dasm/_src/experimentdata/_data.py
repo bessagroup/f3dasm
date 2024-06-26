@@ -251,7 +251,7 @@ class _Data:
         df.columns = self.names
         return df.astype(object)
 
-    def store(self, filename: Path) -> None:
+    def store(self, filename: Path, create_tmp: bool = False) -> None:
         """Stores the data to a file.
 
         Parameters
@@ -263,14 +263,19 @@ class _Data:
         ----
         The data is stored as a csv file.
         """
-        # TODO: The column information is not saved in the .csv!
-        self.to_dataframe().to_csv(filename.with_suffix('.tmp'))
 
-        # remove the old file if it exists
-        filename.with_suffix('.csv').unlink(missing_ok=True)
+        if create_tmp:
+            self.to_dataframe().to_csv(filename.with_suffix('.tmp'))
 
-        # rename the file to the correct extension
-        filename.with_suffix('.tmp').rename(filename.with_suffix('.csv'))
+            # remove the old file if it exists
+            filename.with_suffix('.csv').unlink(missing_ok=True)
+
+            # rename the file to the correct extension
+            filename.with_suffix('.tmp').rename(filename.with_suffix('.csv'))
+
+        else:
+            # TODO: The column information is not saved in the .csv!
+            self.to_dataframe().to_csv(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int,
                        column_name: List[str] | str) -> pd.DataFrame:

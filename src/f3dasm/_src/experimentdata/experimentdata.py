@@ -551,7 +551,8 @@ class ExperimentData:
     #                                                                    Export
     # =========================================================================
 
-    def store(self, project_dir: Optional[Path | str] = None):
+    def store(self, project_dir: Optional[Path | str] = None,
+              create_tmp: bool = False):
         """Write the ExperimentData to disk in the project directory.
 
         Parameters
@@ -589,10 +590,18 @@ class ExperimentData:
         # Create the subdirectory if it does not exist
         subdirectory.mkdir(parents=True, exist_ok=True)
 
-        self._input_data.store(subdirectory / Path(INPUT_DATA_FILENAME))
-        self._output_data.store(subdirectory / Path(OUTPUT_DATA_FILENAME))
-        self._jobs.store(subdirectory / Path(JOBS_FILENAME))
-        self.domain.store(subdirectory / Path(DOMAIN_FILENAME))
+        self._input_data.store(
+            filename=subdirectory / Path(INPUT_DATA_FILENAME),
+            create_tmp=create_tmp)
+        self._output_data.store(
+            filename=subdirectory / Path(OUTPUT_DATA_FILENAME),
+            create_tmp=create_tmp)
+        self._jobs.store(
+            filename=subdirectory / Path(JOBS_FILENAME),
+            create_tmp=create_tmp)
+        self.domain.store(
+            filename=subdirectory / Path(DOMAIN_FILENAME),
+            create_tmp=create_tmp)
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
