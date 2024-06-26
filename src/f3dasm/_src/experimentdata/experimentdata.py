@@ -38,7 +38,8 @@ from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+                  OUTPUT_DATA_FILENAME, _project_dir_factory,
+                  check_for_temporary_files)
 from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
 from .experimentsample import ExperimentSample
 from .samplers import Sampler, SamplerNames, _sampler_factory
@@ -393,6 +394,9 @@ class ExperimentData:
             If the files cannot be found.
         """
         subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
+
+        # check if there is any .tmp file in the subdirectory
+        check_for_temporary_files(subdirectory)
 
         try:
             return cls(domain=subdirectory / DOMAIN_FILENAME,

@@ -276,8 +276,11 @@ class Domain:
         filename : str
             Name of the file.
         """
-        with open(filename.with_suffix('.pkl'), 'wb') as f:
+        with open(filename.with_suffix('.tmp'), 'wb') as f:
             pickle.dump(self, f)
+
+        # rename the file to the correct extension
+        filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
 
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""

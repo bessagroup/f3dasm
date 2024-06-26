@@ -197,7 +197,10 @@ class _JobQueue:
         filename : Path
             Path of the file.
         """
-        self.jobs.to_pickle(filename.with_suffix('.pkl'))
+        self.jobs.to_pickle(filename.with_suffix('.tmp'))
+
+        # rename the file to the correct extension
+        filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
 
     def to_dataframe(self, name: str = "") -> pd.DataFrame:
         """Converts the job queue to a DataFrame.

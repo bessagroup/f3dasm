@@ -264,7 +264,10 @@ class _Data:
         The data is stored as a csv file.
         """
         # TODO: The column information is not saved in the .csv!
-        self.to_dataframe().to_csv(filename.with_suffix('.csv'))
+        self.to_dataframe().to_csv(filename.with_suffix('.tmp'))
+
+        # rename the file to the correct extension
+        filename.with_suffix('.tmp').rename(filename.with_suffix('.csv'))
 
     def n_best_samples(self, nosamples: int,
                        column_name: List[str] | str) -> pd.DataFrame:
