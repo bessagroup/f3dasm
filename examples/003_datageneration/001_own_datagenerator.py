@@ -114,7 +114,9 @@ def y(x):
 #
 # In order to create an :class:`~f3dasm.ExperimentData` object, we have to first create a domain
 domain = Domain()
-domain.add_float('x', low=0., high=100.)
+domain.add_float(name='x', low=0., high=100.)
+
+# Note that the number of input variable ant its name match the function :func:`y(x)`.
 
 ###############################################################################
 # For demonstration purposes, we will generate a dataset of stopping distances for velocities between 3 and 83 m/s.
