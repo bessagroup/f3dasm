@@ -56,6 +56,7 @@ sphinx_gallery_conf = {
     'doc_module': ('f3dasm',),
     "filename_pattern": r"/*\.py",
     "within_subsection_order": FileNameSortKey,
+    "nested_sections": False,
 }
 
 # Source: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-source_suffix
