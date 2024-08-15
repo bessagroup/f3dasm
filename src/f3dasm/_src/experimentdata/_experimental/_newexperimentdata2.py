@@ -29,21 +29,20 @@ from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
-from ..datageneration.datagenerator import DataGenerator, convert_function
-from ..datageneration.functions.function_factory import _datagenerator_factory
-from ..design.domain import Domain, _domain_factory
-from ..logger import logger
-from ..optimization import Optimizer
-from ..optimization.optimizer_factory import _optimizer_factory
-from ._data import DataTypes, _Data, _data_factory
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, ReadingEmptyPandasDataFrameError,
-                  _project_dir_factory, check_for_temporary_files)
-from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
-from .experimentsample import ExperimentSample
-from .samplers import Sampler, SamplerNames, _sampler_factory
-from .utils import number_of_overiterations, number_of_updates
+from ...datageneration.datagenerator import DataGenerator, convert_function
+from ...datageneration.functions.function_factory import _datagenerator_factory
+from ...design.domain import Domain, _domain_factory
+from ...logger import logger
+from ...optimization import Optimizer
+from ...optimization.optimizer_factory import _optimizer_factory
+from .._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
+                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
+                   MAX_TRIES, OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ..experimentsample import ExperimentSample
+from ..samplers import Sampler, SamplerNames, _sampler_factory
+from ..utils import number_of_overiterations, number_of_updates
+from ._jobqueue2 import NoOpenJobsError, Status, _jobs_factory
+from ._newdata2 import DataTypes, _Data, _data_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -134,36 +133,21 @@ class ExperimentData:
         else:
             job_value = Status.FINISHED
 
-        # self.domain = _domain_factory(
-        #     domain=domain, input_data=self._input_data.to_dataframe(),
-        #     output_data=self._output_data.to_dataframe())
-
         # Create empty input_data from domain if input_data is empty
         if self._input_data.is_empty():
-            self._input_data = _Data.from_domain(self.domain)
+            self._input_data = _Data()
 
         self._jobs = _jobs_factory(
             jobs, self._input_data, self._output_data, job_value)
 
-        # Check if the columns of input_data are in the domain
-        if not self._input_data.columns.has_columnnames(self.domain.names):
-            self._input_data.columns.set_columnnames(self.domain.names)
-
-        if not self._output_data.columns.has_columnnames(
-                self.domain.output_names):
-            self._output_data.columns.set_columnnames(self.domain.output_names)
-
         # For backwards compatibility; if the output_data has
         #  only one column, rename it to 'y'
         if self._output_data.names == [0]:
-            self._output_data.columns.set_columnnames(['y'])
+            self._output_data.rename_columns({0: 'y'})
 
     def __len__(self):
         """The len() method returns the number of datapoints"""
-        if self._input_data.is_empty():
-            return len(self._output_data)
-
-        return len(self._input_data)
+        return len(self._jobs)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
         self.current_index = 0
@@ -261,10 +245,7 @@ class ExperimentData:
         pd.Index
             The job number of all the experiments in pandas Index format
         """
-        if self._input_data.is_empty():
-            return self._output_data.indices
-
-        return self._input_data.indices
+        return self._jobs.indices
 
     #                                                  Alternative Constructors
     # =========================================================================
@@ -395,29 +376,20 @@ class ExperimentData:
         """
         subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
-        # check if there is any .tmp file in the subdirectory
-        check_for_temporary_files(subdirectory)
-
-        for attempt in range(MAX_TRIES):
-            try:
-                return cls(domain=subdirectory / DOMAIN_FILENAME,
-                           input_data=subdirectory / INPUT_DATA_FILENAME,
-                           output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                           jobs=subdirectory / JOBS_FILENAME,
-                           project_dir=project_dir)
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    f"Cannot find the files from {subdirectory}.")
-            except pd.errors.EmptyDataError:
-                sleep(1)
-                continue
-
-        raise ReadingEmptyPandasDataFrameError("Reading empty dataframes")
+        try:
+            return cls(domain=subdirectory / DOMAIN_FILENAME,
+                       input_data=subdirectory / INPUT_DATA_FILENAME,
+                       output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                       jobs=subdirectory / JOBS_FILENAME,
+                       project_dir=project_dir)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Cannot find the files from {subdirectory}.")
 
     #                                                         Selecting subsets
     # =========================================================================
 
-    def select(self, indices: int | Iterable[int]) -> ExperimentData:
+    def select(self, job_ids: int | Iterable[int]) -> ExperimentData:
         """Select a subset of the ExperimentData object
 
         Parameters
@@ -430,10 +402,13 @@ class ExperimentData:
         ExperimentData
             The selected ExperimentData object with only the selected indices.
         """
+        indices = self._jobs.iloc(job_ids)
+        # TODO: It could be that the indices are not in the input_data
+        # and output_data, because they are not defined
 
         return ExperimentData(input_data=self._input_data[indices],
                               output_data=self._output_data[indices],
-                              jobs=self._jobs[indices],
+                              jobs=self._jobs[job_ids],
                               domain=self.domain, project_dir=self.project_dir)
 
     def drop_output(self, names: Iterable[str] | str) -> ExperimentData:
@@ -557,8 +532,7 @@ class ExperimentData:
     #                                                                    Export
     # =========================================================================
 
-    def store(self, project_dir: Optional[Path | str] = None,
-              create_tmp: bool = False):
+    def store(self, project_dir: Optional[Path | str] = None):
         """Write the ExperimentData to disk in the project directory.
 
         Parameters
@@ -596,18 +570,10 @@ class ExperimentData:
         # Create the subdirectory if it does not exist
         subdirectory.mkdir(parents=True, exist_ok=True)
 
-        self._input_data.store(
-            filename=subdirectory / Path(INPUT_DATA_FILENAME),
-            create_tmp=create_tmp)
-        self._output_data.store(
-            filename=subdirectory / Path(OUTPUT_DATA_FILENAME),
-            create_tmp=create_tmp)
-        self._jobs.store(
-            filename=subdirectory / Path(JOBS_FILENAME),
-            create_tmp=create_tmp)
-        self.domain.store(
-            filename=subdirectory / Path(DOMAIN_FILENAME),
-            create_tmp=create_tmp)
+        self._input_data.store(subdirectory / Path(INPUT_DATA_FILENAME))
+        self._output_data.store(subdirectory / Path(OUTPUT_DATA_FILENAME))
+        self._jobs.store(subdirectory / Path(JOBS_FILENAME))
+        self.domain.store(subdirectory / Path(DOMAIN_FILENAME))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -808,9 +774,9 @@ class ExperimentData:
                     f"set add_if_not_exist to True.")
 
         self._input_data.overwrite(
-            indices=indices, other=experiment_sample._input_data)
+            rows=indices, other=experiment_sample._input_data)
         self._output_data.overwrite(
-            indices=indices, other=experiment_sample._output_data)
+            rows=indices, other=experiment_sample._output_data)
 
         self._jobs.overwrite(
             indices=indices, other=experiment_sample._jobs)
@@ -984,8 +950,8 @@ class ExperimentData:
                 self.domain.add_output(column, to_disk=is_disk)
 
             self._output_data.set_data(
-                index=experiment_sample.job_number, value=value,
-                column=column)
+                row=experiment_sample.job_number, value=value,
+                key=column)
 
         self._jobs.mark(experiment_sample._jobnumber, status=Status.FINISHED)
 
@@ -1038,11 +1004,10 @@ class ExperimentData:
         index
             index of the experiment_sample to mark as error
         """
-        # self.jobs.mark_as_error(index)
         self._jobs.mark(index, status=Status.ERROR)
-        self._output_data.set_data(
-            index,
-            value=['ERROR' for _ in self._output_data.names])
+        for column in self._output_data.names:
+            self._output_data.set_data(
+                index, value='ERROR', key=column)
 
     @_access_file
     def _write_error(self, index: int):
@@ -1311,13 +1276,10 @@ class ExperimentData:
         NoOpenJobsError
             Raised when there are no open jobs left
         """
-        # # Retrieve the updated experimentdata object from disc
-        # try:
-        #     self = self.from_file(self.project_dir)
-        # except FileNotFoundError:  # If not found, store current
-        #     self.store()
-
-        if not (self.project_dir / EXPERIMENTDATA_SUBFOLDER).exists():
+        # Retrieve the updated experimentdata object from disc
+        try:
+            self = self.from_file(self.project_dir)
+        except FileNotFoundError:  # If not found, store current
             self.store()
 
         while True:

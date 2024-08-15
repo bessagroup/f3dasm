@@ -11,6 +11,7 @@ from __future__ import annotations
 # Standard
 import pickle
 from pathlib import Path
+from time import sleep
 from typing import Any, Mapping, Optional, Type
 
 # Third-party
@@ -42,6 +43,17 @@ JOBS_FILENAME = "jobs"
 
 RESOLUTION_MATPLOTLIB_FIGURE = 300
 MAX_TRIES = 10
+
+#                                                                    Exceptions
+# =============================================================================
+
+
+class TemporaryFilesNotCleared(Exception):
+    pass
+
+
+class ReadingEmptyPandasDataFrameError(Exception):
+    pass
 
 #                                                               Storing methods
 # =============================================================================
@@ -365,3 +377,37 @@ def _project_dir_factory(project_dir: Path | str | None) -> Path:
     raise TypeError(
         f"project_dir must be of type Path, str or None, \
             not {type(project_dir).__name__}")
+
+
+def check_for_temporary_files(directory: Path, delay: float = 0.3):
+    """
+    Check if there are any .tmp files in the subdirectory.
+
+    Parameters
+    ----------
+    subdirectory : Path
+        subdirectory to check for temporary files
+    delay : float, optional
+        delay between checks, by default 0.3
+
+    Raises
+    ------
+    TemporaryFilesNotCleared
+        Raises if temporary files are found after the maximum number of tries
+    """
+    for attempt in range(MAX_TRIES):
+        if not any(directory.glob('*.tmp')):
+            logger.debug((
+                f"No temporary files found in {directory} after "
+                f"{attempt + 1} tries.")
+            )
+            break
+        logger.debug((
+            f"Temporary files found in {directory} after {attempt + 1} "
+            f"tries. Waiting {delay} seconds before checking again.")
+        )
+        sleep(delay)
+    else:
+        raise TemporaryFilesNotCleared((
+            f"Temporary files found in {directory} after {MAX_TRIES} tries."
+        ))

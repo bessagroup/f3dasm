@@ -5,10 +5,11 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from f3dasm import ExperimentData
 from f3dasm._src.design.parameter import (_CategoricalParameter,
                                           _ContinuousParameter,
                                           _DiscreteParameter)
+from f3dasm._src.experimentdata._experimental._newexperimentdata2 import \
+    ExperimentData
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 SEED = 42
@@ -63,13 +64,9 @@ def experimentdata_expected() -> ExperimentData:
         es.store(name='y', object=float(output))
         data._set_experiment_sample(es)
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-             output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
+             output_data=np.array([[0.0], [0.0]]), domain=data.domain)
 
-    # data._input_data.round(6)
-    data._input_data.data = data._input_data.data.round(6)
-    # data._input_data.data = [[round(num, 6) if isinstance(
-    #     num, float) else num for num in sublist]
-    #     for sublist in data._input_data.data]
+    # data._input_data.data = data._input_data.data.round(6)
     return data
 
 
@@ -82,10 +79,8 @@ def experimentdata_expected_no_output() -> ExperimentData:
     data.add(input_data=np.array(
         [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]), domain=domain_continuous)
 
-    data._input_data.data = data._input_data.data.round(6)
-    # data._input_data.data = [[round(num, 6) if isinstance(
-    #     num, float) else num for num in sublist]
-    #     for sublist in data._input_data.data]
+    # data._input_data.data = data._input_data.data.round(6)
+
     return data
 
 

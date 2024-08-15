@@ -1,40 +1,31 @@
 import numpy as np
 import pytest
 
-from f3dasm._src.experimentdata._columns import _Columns
-from f3dasm._src.experimentdata._newdata import _Index
+from f3dasm._src.experimentdata._experimental._newdata2 import _Data
 from f3dasm.design import Domain
 
 
 @pytest.fixture(scope="package")
 def list_1():
-    return [[np.array([0.3, 5.0, 0.34]), 'd', 3], [np.array(
-        [0.23, 5.0, 0.0]), 'f', 4], [np.array([0.3, 5.0, 0.2]), 'c', 0]]
-
-
-@pytest.fixture(scope="package")
-def columns_1():
-    return _Columns({'a': None, 'b': None, 'c': None})
-
-
-@pytest.fixture(scope="package")
-def indices_1():
-    return _Index([3, 5, 6])
+    return {0: {'a': np.array([0.3, 5.0, 0.34]), 'b': 'd', 'c': 3},
+            1: {'a': np.array([0.23, 5.0, 0.0]), 'b': 'f', 'c': 4},
+            2: {'a': np.array([0.3, 5.0, 0.2]), 'b': 'c', 'c': 0}
+            }
 
 
 @pytest.fixture(scope="package")
 def list_2():
-    return [[np.array([0.3, 0.2])], [np.array([0.4, 0.3])], [np.array([0.0, 1.0])]]
-
-
-@pytest.fixture(scope="package")
-def columns_2():
-    return _Columns({'a': None})
+    return {0: {'a': np.array([0.3, 0.2])},
+            1: {'a': np.array([0.4, 0.3]), 'b': np.array([0.0, 1.0])}
+            }
 
 
 @pytest.fixture(scope="package")
 def list_3():
-    return [[np.array([1.1, 0.2])], [np.array([8.9, 0.3])], [np.array([0.0, 0.87])]]
+    return {0: {'a': np.array([1.1, 0.2])},
+            1: {'a': np.array([8.9, 0.3])},
+            2: {'a': np.array([0.0, 0.87])}
+            }
 
 
 @pytest.fixture(scope="package")

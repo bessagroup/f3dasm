@@ -14,7 +14,7 @@ import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (Any, Dict, Iterable, Iterator, List, Literal, Optional,
-                    Sequence, Type)
+                    Protocol, Sequence, Type)
 
 # Third-party core
 import numpy as np
@@ -33,6 +33,13 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+
+class _Data(Protocol):
+    def to_dataframe(self) -> pd.DataFrame:
+        ...
+
 # =============================================================================
 
 
@@ -238,10 +245,30 @@ class Domain:
 
         return cls(space=input_space, output_space=output_space)
 
+    @classmethod
+    def from_data(cls: Type[Domain],
+                  input_data: _Data, output_data: _Data) -> Domain:
+        """Initializes a Domain from input and output data.
+
+        Parameters
+        ----------
+        input_data : _Data
+            Input data.
+        output_data : _Data
+            Output data.
+
+        Returns
+        -------
+        Domain
+            Domain object
+        """
+        return cls.from_dataframe(
+            input_data.to_dataframe(), output_data.to_dataframe())
+
 #                                                                        Export
 # =============================================================================
 
-    def store(self, filename: Path) -> None:
+    def store(self, filename: Path, create_tmp: bool = False) -> None:
         """Stores the Domain in a pickle file.
 
         Parameters
@@ -249,8 +276,18 @@ class Domain:
         filename : str
             Name of the file.
         """
-        with open(filename.with_suffix('.pkl'), 'wb') as f:
-            pickle.dump(self, f)
+        if create_tmp:
+            with open(filename.with_suffix('.tmp'), 'wb') as f:
+                pickle.dump(self, f)
+
+            # remove old file if it exists
+            filename.with_suffix('.pkl').unlink(missing_ok=True)
+
+            # rename the file to the correct extension
+            filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+        else:
+            with open(filename.with_suffix('.pkl'), 'wb') as f:
+                pickle.dump(self, f)
 
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
@@ -645,9 +682,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     return Domain(space)
 
 
-def _domain_factory(domain: Domain | DictConfig | None,
-                    input_data: pd.DataFrame,
-                    output_data: pd.DataFrame) -> Domain:
+def _domain_factory(domain: Domain | DictConfig | str | Path) -> Domain:
     if isinstance(domain, Domain):
         return domain
 
@@ -657,14 +692,14 @@ def _domain_factory(domain: Domain | DictConfig | None,
     elif isinstance(domain, DictConfig):
         return Domain.from_yaml(domain)
 
-    elif (input_data.empty and output_data.empty and domain is None):
-        return Domain()
+    # elif (input_data.empty and output_data.empty and domain is None):
+    #     return Domain()
 
-    elif domain is None:
-        return Domain.from_dataframe(
-            input_data, output_data)
+    # elif domain is None:
+    #     return Domain.from_dataframe(
+    #         input_data, output_data)
 
     else:
         raise TypeError(
-            f"Domain must be of type Domain, DictConfig "
-            f"or None, not {type(domain)}")
+            f"Domain must be of type Domain, DictConfig, str or Path, "
+            f"not {type(domain)}")

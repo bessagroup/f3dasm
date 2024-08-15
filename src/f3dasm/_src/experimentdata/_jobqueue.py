@@ -91,7 +91,7 @@ class _JobQueue:
         other_jobs_copy.index = other_jobs_copy.index + last_index + 1
         return _JobQueue(pd.concat([self.jobs, other_jobs_copy]))
 
-    def __getitem__(self, index: int | slice | Iterable[int]) -> _Data:
+    def __getitem__(self, index: int | slice | Iterable[int]) -> _JobQueue:
         """Get a subset of the data.
 
         Parameters
@@ -163,6 +163,7 @@ class _JobQueue:
 
         return cls(pd.read_pickle(filename))
 
+    # TODO: This function is not used!
     def reset(self) -> None:
         """Resets the job queue."""
         self.jobs = pd.Series(dtype='string')
@@ -188,7 +189,7 @@ class _JobQueue:
     #                                                                    Export
     # =========================================================================
 
-    def store(self, filename: Path) -> None:
+    def store(self, filename: Path, create_tmp: bool = False) -> None:
         """Stores the jobs in a pickle file.
 
         Parameters
@@ -196,7 +197,16 @@ class _JobQueue:
         filename : Path
             Path of the file.
         """
-        self.jobs.to_pickle(filename.with_suffix('.pkl'))
+        if create_tmp:
+            self.jobs.to_pickle(filename.with_suffix('.tmp'))
+
+            # remove old file if it exists
+            filename.with_suffix('.pkl').unlink(missing_ok=True)
+
+            # rename the file to the correct extension
+            filename.with_suffix('.tmp').rename(filename.with_suffix('.pkl'))
+        else:
+            self.jobs.to_pickle(filename.with_suffix('.pkl'))
 
     def to_dataframe(self, name: str = "") -> pd.DataFrame:
         """Converts the job queue to a DataFrame.
@@ -230,6 +240,7 @@ class _JobQueue:
         """
         self.jobs = self.jobs.drop(indices)
 
+    # TODO: Remove this method as it is not used!
     def add(self, number_of_jobs: int = 1, status: str = Status.OPEN):
         """Adds a number of jobs to the job queue.
 
