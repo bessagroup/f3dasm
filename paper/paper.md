@@ -39,12 +39,12 @@ In the last decades, advancements in computational resources have accelerated no
 
 Constructing a large material response database poses practical challenges, such as proper data management, efficient parallel computing, and integration with third-party software. Because most applied fields remain conservative when it comes to openly sharing databases and software, a lot of research time is instead being allocated to implement common procedures that would be otherwise readily available. This lack of shared practices also leads to compatibility issues for benchmarking and replication of results by violating the FAIR principles.
 
-In this work we introduce an interface for researchers and practitioners working on the design and analysis of materials and structures. The package is called [`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design and Analysis of Structures and Materials). This work generalizes the original closed-source framework proposed by the Bessa and co-workers [@Bessa2017], making it more flexible and adaptable to different applications, namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
+In this work we introduce an interface for researchers and practitioners working on the design and analysis of materials and structures. The package is called [`f3dasm`](https://github.com/bessagroup/f3dasm) (Framework for Data-driven Design and Analysis of Structures and Materials). This work generalizes the original closed-source framework proposed by Bessa and co-workers [@Bessa2017], making it more flexible and adaptable to different applications, namely by allowing the integration of different choices of software packages needed in the different steps of the data-driven process:
 
-- **Design of experiments**, in which input variables describing the microstructure, properties and external conditions of the system are determined and sampled;
-- **Data generation**, typically through computational analyses, resulting in the creation of a material response database [@Ferreira2023];
-- **Machine learning**, in which a surrogate model is trained to fit experimental findings;
-- **Optimization**, where we try to iteratively improve the design.
+- **design of experiments**, in which input variables describing the microstructure, properties and external conditions of the system are determined and sampled;
+- **data generation**, typically through computational analyses, resulting in the creation of a material response database [@Ferreira2023];
+- **machine learning**, in which a surrogate model is trained to fit experimental findings;
+- **optimization**, where we try to iteratively improve the design.
 
 \autoref{fig:data-driven-process} provides an illustration of the stages in the data-driven process. 
 
