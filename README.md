@@ -1,7 +1,7 @@
 f3dasm
 ------
 
-<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/main/logo.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/blob/main/logo.png" width="800"/></div>
 
 ***
 
