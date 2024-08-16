@@ -1,0 +1,46 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Schelling
+  given-names: M. P.
+  name-particle: van der
+  orcid: "https://orcid.org/0000-0003-3602-0452"
+- family-names: Ferreira
+  given-names: B. P.
+  orcid: "https://orcid.org/0000-0001-5956-3877"
+- family-names: Bessa
+  given-names: M. A.
+  orcid: "https://orcid.org/0000-0002-6216-0355"
+contact:
+- family-names: Bessa
+  given-names: M. A.
+  orcid: "https://orcid.org/0000-0002-6216-0355"
+doi: 10.5281/zenodo.13227915
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Schelling
+    given-names: M. P.
+    name-particle: van der
+    orcid: "https://orcid.org/0000-0003-3602-0452"
+  - family-names: Ferreira
+    given-names: B. P.
+    orcid: "https://orcid.org/0000-0001-5956-3877"
+  - family-names: Bessa
+    given-names: M. A.
+    orcid: "https://orcid.org/0000-0002-6216-0355"
+  date-published: 2024-08-16
+  doi: 10.21105/joss.06912
+  issn: 2475-9066
+  issue: 100
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6912
+  title: "f3dasm: Framework for Data-Driven Design and Analysis of
+    Structures and Materials"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06912"
+  volume: 9
+title: "f3dasm: Framework for Data-Driven Design and Analysis of
+  Structures and Materials"

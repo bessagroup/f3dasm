@@ -5,19 +5,19 @@ f3dasm
 
 ***
 
+[![DOI](https://joss.theoj.org/papers/b0a25f75a32ae95a0a75bf3118952a5d/status.svg)](https://joss.theoj.org/papers/b0a25f75a32ae95a0a75bf3118952a5d)
 [![Python](https://img.shields.io/pypi/pyversions/f3dasm)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/f3dasm.svg)](https://pypi.org/project/f3dasm/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/f3dasm.svg)](https://anaconda.org/conda-forge/f3dasm)
 [![GitHub license](https://img.shields.io/badge/license-BSD-blue)](https://github.com/bessagroup/f3dasm)
 [![Documentation Status](https://readthedocs.org/projects/f3dasm/badge/?version=latest)](https://f3dasm.readthedocs.io/en/latest/?badge=latest)
-<!-- [![DOI](https://joss.theoj.org/papers/10.21105/joss.05594/status.svg)](https://doi.org/10.21105/joss.05594) -->
 
 [**Docs**](https://f3dasm.readthedocs.io/)
 | [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html)
 | [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 | [**Conda**](https://anaconda.org/conda-forge/f3dasm)
-<!-- | [**Paper**](https://doi.org/10.21105/joss.05594) -->
+| [**Paper**](https://doi.org/10.21105/joss.06912)
 
 ## Summary
 
@@ -74,23 +74,23 @@ Current creator and developer: M.P. van der Schelling<sup>[1](#f1)</sup>
 
 <sup id="f1"> 1 </sup>Doctoral Researcher in Materials Science and Engineering, Delft University of Technology: [ORCID](https://orcid.org/0000-0003-3602-0452), [Website](https://github.com/mpvanderschelling/)
 
-<!-- If you use `f3dasm` in your research or in a scientific publication, it is appreciated that you cite the paper below:
+If you use `f3dasm` in your research or in a scientific publication, it is appreciated that you cite the paper below:
 
-**Journal of Open Source Software** ([paper](https://doi.org/10.21105/joss.05594)):
+**Journal of Open Source Software** ([paper](https://doi.org/10.21105/joss.06912)):
 ```
-@article{Ferreira2023,
-  title = {CRATE: A Python package to perform fast material simulations},
-  author = {Bernardo P. Ferreira and F. M. Andrade Pires and Miguel A. Bessa}
-  doi = {10.21105/joss.05594},
-  url = {https://doi.org/10.21105/joss.05594},
-  year = {2023},
+@article{vanderSchelling2024,
+  title = {f3dasm: Framework for Data-Driven Design and Analysis of Structures and Materials},
+  author = {M. P. van der Schelling and B. P. Ferreira and M. A. Bessa},
+  doi = {10.21105/joss.06912},
+  url = {https://doi.org/10.21105/joss.06912},
+  year = {2024},
   publisher = {The Open Journal},
-  volume = {8},
-  number = {87},
-  pages = {5594},
+  volume = {9},
+  number = {100},
+  pages = {6912},
   journal = {Journal of Open Source Software}
 }
-``` -->
+```
 
 The Bessa research group at TU Delft is small... At the moment, we have limited availability to help future users/developers adapting the code to new problems, but we will do our best to help!
 
