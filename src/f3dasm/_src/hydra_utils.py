@@ -24,7 +24,8 @@ __status__ = 'Alpha'
 
 
 def update_config_with_experiment_sample(
-        config: OmegaConf, experiment_sample: ExperimentSample) -> OmegaConf:
+        config: OmegaConf, experiment_sample: ExperimentSample,
+        force_add: bool = False) -> OmegaConf:
     """
     Update the config with the values from the experiment sample
 
@@ -34,6 +35,10 @@ def update_config_with_experiment_sample(
         The configuration to update
     experiment_sample : ExperimentSample
         The experiment sample to update the configuration with
+    force_add : bool, optional
+        If True, the function will add keys that are not present in the
+        configuration. If False, the function will ignore keys that are not
+        present in the configuration. Default is False.
 
     Returns
     -------
@@ -55,7 +60,7 @@ def update_config_with_experiment_sample(
     cfg = deepcopy(config)
     for key, value in experiment_sample.to_dict().items():
         try:
-            OmegaConf.update(cfg, key, value)
+            OmegaConf.update(cfg, key, value, force_add=force_add)
         except AttributeError:
             continue
 
