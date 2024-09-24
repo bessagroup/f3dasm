@@ -108,7 +108,12 @@ class _Data:
             [self.data, other_data_copy]), columns=self.columns)
 
     def __eq__(self, __o: _Data) -> bool:
-        return self.data.equals(__o.data)
+        try:
+            pd.testing.assert_frame_equal(self.data, __o.data)
+        except AssertionError:
+            return False
+
+        return True
 
     def _repr_html_(self) -> str:
         return self.to_dataframe()._repr_html_()
