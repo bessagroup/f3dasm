@@ -377,7 +377,8 @@ def _experimentsample_factory(
         The converted experiment sample.
     """
     if isinstance(experiment_sample, np.ndarray):
-        return ExperimentSample.from_numpy(experiment_sample, domain)
+        return ExperimentSample.from_numpy(input_array=experiment_sample,
+                                           domain=domain)
 
     elif isinstance(experiment_sample, dict):
         return ExperimentSample(dict_input=experiment_sample,
