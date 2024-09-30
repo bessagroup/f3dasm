@@ -65,6 +65,9 @@ class _SciPyOptimizer(Optimizer):
 
         self.options['maxiter'] = iterations
 
+        if not hasattr(data_generator, 'dfdx'):
+            data_generator.dfdx = None
+
         minimize(
             fun=fun,
             method=self.method,
