@@ -26,10 +26,10 @@ imperfection:
       high: 1.0
 
 scripts:
-  lin_buckle_pre: /home/martin/Documents/GitHub/f3dasm/studies/fragile_becomes_supercompressible/scripts/supercompressible_lin_buckle.py
-  lin_buckle_post:  /home/martin/Documents/GitHub/f3dasm/studies/fragile_becomes_supercompressible/scripts/supercompressible_lin_buckle_pp.py
-  riks_pre: /home/martin/Documents/GitHub/f3dasm/studies/fragile_becomes_supercompressible/scripts/supercompressible_riks.py
-  riks_post: /home/martin/Documents/GitHub/f3dasm/studies/fragile_becomes_supercompressible/scripts/supercompressible_riks_pp.py
+  lin_buckle_pre: ${hydra:runtime.cwd}/scripts/supercompressible_lin_buckle.py
+  lin_buckle_post:  ${hydra:runtime.cwd}/scripts/supercompressible_lin_buckle_pp.py
+  riks_pre: ${hydra:runtime.cwd}/scripts/supercompressible_riks.py
+  riks_post: ${hydra:runtime.cwd}/scripts/supercompressible_riks_pp.py
 
 
 log_level: 20
