@@ -489,7 +489,7 @@ class ExperimentData:
         if parameter_names is None:
             return ExperimentData(input_data=self._input_data,
                                   jobs=self._jobs,
-                                  domain=self.domain,
+                                  domain=self.domain.select(self.domain.names),
                                   project_dir=self.project_dir)
         else:
             return ExperimentData(input_data=self._input_data.select_columns(

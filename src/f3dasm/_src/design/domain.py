@@ -411,7 +411,8 @@ class Domain:
                 f"Unknown type {type}!"
                 f"Possible types are: 'float', 'int', 'category', 'constant'.")
 
-    def add_output(self, name: str, to_disk: bool, exist_ok=False):
+    def add_output(self, name: str, to_disk: bool = False,
+                   exist_ok: bool = False):
         """Add a new output parameter to the domain.
 
         Parameters
@@ -419,7 +420,10 @@ class Domain:
         name : str
             Name of the output parameter.
         to_disk : bool
-            Whether to store the output parameter on disk.
+            Whether to store the output parameter on disk, by default False.
+        exist_ok: bool
+            Whether to raise an error if the output parameter already exists,
+            by default False.
 
         Example
         -------
