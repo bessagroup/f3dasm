@@ -70,9 +70,7 @@ class Function(DataGenerator):
         seed
             seed for the random number generator
         """
-        if seed is None:
-            return
-        np.random.seed(seed)
+        self.rng = np.random.default_rng(seed)
 
     def __call__(self, input_x: np.ndarray) -> np.ndarray:
         x = input_x

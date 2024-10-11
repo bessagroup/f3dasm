@@ -77,7 +77,7 @@ class PyBenchFunction(Function):
         if self.noise is None:
             return
 
-        n = Noise(noise=self.noise)
+        n = Noise(noise=self.noise, rng=self.rng)
         self.augmentor.add_output_augmentor(n)
 
     def _configure_offset(self):
@@ -89,13 +89,8 @@ class PyBenchFunction(Function):
 
         unscaled_offset = np.atleast_1d(
             [
-                # np.random.uniform(
-                #     low=-abs(g[d] - self.scale_bounds[d, 0]),
-                #     high=abs(g[d] - self.scale_bounds[d, 1]))
-
                 # This is added so we only create offsets in one quadrant
-
-                np.random.uniform(
+                self.rng.uniform(
                     low=-abs(g[d] - self.scale_bounds[d, 0]),
                     high=0.0)
                 for d in range(self.dimensionality)

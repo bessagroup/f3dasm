@@ -1760,7 +1760,7 @@ class Quartic(PyBenchFunction):
 
     def evaluate(self, X):
         d = X.shape[0]
-        res = np.sum(np.arange(1, d + 1) * X**4)  # + np.random.random()
+        res = np.sum(np.arange(1, d + 1) * X**4)
         return res
 
 

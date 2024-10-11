@@ -57,7 +57,7 @@ class _Augmentor(ABC):
 
 
 class Noise(_Augmentor):
-    def __init__(self, noise: float):
+    def __init__(self, noise: float, rng: np.random.Generator):
         """Augmentor class to add noise to a function output
 
         Parameters
@@ -66,6 +66,7 @@ class Noise(_Augmentor):
             standard deviation of Gaussian noise (mean is zero)
         """
         self.noise = noise
+        self.rng = rng
 
     def augment(self, input: np.ndarray) -> np.ndarray:
         if hasattr(input, "_value"):
@@ -81,7 +82,7 @@ class Noise(_Augmentor):
             # convert to numpy float
             input = np.float64(input)
 
-        noise: np.ndarray = np.random.normal(
+        noise: np.ndarray = self.rng.normal(
             loc=0.0, scale=scale, size=input.shape)
         y_noise = input + float(noise)
         return y_noise
