@@ -382,21 +382,6 @@ class _Data:
 #                                                        Append and remove data
 # =============================================================================
 
-    def add(self, data: pd.DataFrame):
-        try:
-            last_index = self.data.index[-1]
-        except IndexError:  # Empty dataframe
-            self.data = data
-            return
-
-        new_indices = pd.RangeIndex(
-            start=last_index + 1, stop=last_index + len(data) + 1, step=1)
-
-        # set the indices of the data to new_indices
-        data.index = new_indices
-
-        self.data = pd.concat([self.data, data], ignore_index=False)
-
     def add_empty_rows(self, number_of_rows: int):
         if self.data.index.empty:
             last_index = -1

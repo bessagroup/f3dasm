@@ -48,13 +48,6 @@ def test_data_remove(sample_data: _Data):
     assert len(sample_data) == 1
 
 
-def test_data_add_numpy_arrays(sample_data: _Data):
-    input_array = np.array([[1, 4], [2, 5]])
-    df = pd.DataFrame(input_array, columns=sample_data.names)
-    sample_data.add(df)
-    assert len(sample_data) == 5
-
-
 def test_data_get_data(sample_data: _Data):
     input_data = sample_data.data
     assert isinstance(input_data, pd.DataFrame)

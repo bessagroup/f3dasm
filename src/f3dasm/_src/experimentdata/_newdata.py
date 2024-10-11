@@ -14,15 +14,15 @@ _newdata.py and the module is not imported in the __init__.py file.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Dict, Iterable, Iterator, List, Optional, Tuple, Type,
-                    Union)
+from typing import (Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple,
+                    Type, Union)
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-from f3dasm._src.experimentdata._columns import _Columns
 from f3dasm.design import Domain
 
 #                                                          Authorship & Credits
@@ -30,131 +30,37 @@ from f3dasm.design import Domain
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
+
+
 # =============================================================================
 #
 # =============================================================================
 
 
-DataType = List[List[Any]]
-
-
-class _Index:
-    def __init__(self, indices: Optional[Iterable[int]] = None):
-        if indices is None:
-            indices = []
-
-        self.indices: pd.Index = pd.Index(indices)
-
-    def __add__(self, other: _Index) -> _Index:
-
-        if self.is_empty():
-            return _Index(other.indices.copy())
-
-        return _Index(
-            self.indices.append(other.indices + self.indices[-1] + 1))
-
-    def __repr__(self) -> str:
-        return self.indices.__repr__()
-
-    def iloc(self, index: int | Iterable[int]) -> List[int]:
-
-        if isinstance(index, int) or isinstance(index, np.int64):
-            index = [index]
-
-        _indices = []
-        for n in index:
-            _indices.append(self.indices.get_loc(n))
-        return _indices
-
-    def is_empty(self) -> bool:
-        return self.indices.empty
+def dict_to_defaultdict(d: Dict[Any, Any] | Any) -> defaultdict:
+    if isinstance(d, dict):
+        return defaultdict(dict, {k: dict_to_defaultdict(v)
+                                  for k, v in d.items()})
+    else:
+        # If it's not a dict, just return the value as is
+        return d
 
 
 class _Data:
-    def __init__(self, data: Optional[DataType] = None,
-                 columns: Optional[_Columns] = None,
-                 index: Optional[_Index] = None):
-        """
-        Class for capturing input or output data in a tabular format
-
-        Parameters
-        ----------
-        data : Optional[DataType], optional
-            Data in tabular format, by default None
-        columns : Optional[_Columns], optional
-            _Columns object representing the names of the parameters,
-            by default None
-        index : Optional[_Index], optional
-            _Index object representing the indices of the experiments,
-            by default
-
-        Note
-        ----
-
-        * The data is stored as a list of lists, where each list represents
-        a row in the table.
-        * The columns are stored as a dict with the
-        column names as keys and None as values.
-        * The index is stored as a list of integers in a pd.Index object.
-
-        If no column names are given, the are by default number starting from
-        zero. If no index is given, the indices are by default numbers starting
-        from zero.
-        """
+    def __init__(self, data: Optional[dict] = None):
         if data is None:
-            data = []
+            data = defaultdict(dict)
 
-        if columns is None:
-            try:
-                columns = _Columns(
-                    {col: None for col, _ in enumerate(data[0])})
-            except IndexError:
-                columns = _Columns()
-
-        if index is None:
-            index = _Index(range(len(data)))
-
-        self.columns = columns
-        self.data = data
-        self.index = index
+        self.data = dict_to_defaultdict(data)
 
     def __len__(self) -> int:
-        """
-        Calculate the number of rows in the data.
-
-        Returns
-        -------
-        int
-            the number of experiments
-        """
         return len(self.data)
 
     def __iter__(self) -> Iterator[Tuple[Dict[str, Any]]]:
-        """
-        Iterator for the experiments in the data object
-
-        Yields
-        ------
-        Iterator[Tuple[Dict[str, Any]]]
-            Iterator object
-        """
         self.current_index = 0
         return self
 
     def __next__(self):
-        """
-        Get the next experiment in the data object
-
-        Returns
-        -------
-        Tuple[Dict[str, Any]]
-            The next experiment
-
-        Raises
-        ------
-        StopIteration
-            If the last experiment has been reached
-        """
         if self.current_index >= len(self):
             raise StopIteration
         else:
@@ -163,96 +69,30 @@ class _Data:
             return current_value
 
     def __getitem__(self, index: int | Iterable[int]) -> _Data:
-        """
-        Get the experiment(s) at the given index
-
-        Parameters
-        ----------
-        index : int | Iterable[int]
-            The index of the experiment(s) to get
-
-        Returns
-        -------
-        _Data
-            The experiment(s) at the given index
-        """
-        _index = self.index.iloc(index)
-        if self.is_empty():
-            return _Data(columns=self.columns, index=_Index(_index))
-
-        else:
-            return _Data(data=[self.data[i] for i in _index],
-                         columns=self.columns, index=_Index(_index))
+        if isinstance(index, int):
+            index = [index]
+        return _Data({i: self.data[i] for i in index})
 
     def __add__(self, other: _Data | Dict[str, Any]) -> _Data:
-        """
-        Add two data objects together
+        # Find the last key in my_dict
+        last_key = max(self.data.keys()) if self.data else -1
 
-        Parameters
-        ----------
-        other : _Data
-            The data object to add
+        # Update keys of other dict
+        other_updated_data = {
+            last_key + 1 + k: v for k, v in other.data.items()}
 
-        Returns
-        -------
-        _Data
-            The combined data object
-
-        Note
-        ----
-        * The columns of the two data objects must be the same.
-        * The indices of the second object are shifted by the number of
-        experiments in the first object.
-        """
-        # If other is a dictionary, convert it to a _Data object
-        if not isinstance(other, _Data):
-            other = _convert_dict_to_data(other)
-
-        return _Data(data=self.data + other.data,
-                     columns=self.columns,
-                     index=self.index + other.index)
+        return _Data(
+            {k: v for d in (self.data, other_updated_data)
+             for k, v in d.items()})
 
     def __eq__(self, __o: _Data) -> bool:
-        """
-        Check if two data objects are equal
-
-        Parameters
-        ----------
-        __o : _Data
-            The data object to compare with
-
-        Returns
-        -------
-        bool
-            True if the data objects are equal, False otherwise
-
-        Note
-        ----
-        The data objects will first be converted to a pandas DataFrame and
-        then compared.
-        """
-        return self.to_dataframe().equals(__o.to_dataframe())
+        return self.data == __o.data
 
     def _repr_html_(self) -> str:
-        """
-        HTML representation of the data object
-
-        Returns
-        -------
-        str
-            HTML representation of the data object
-
-        Note
-        ----
-        This method is used by Jupyter Notebook to display the data object.
-        """
-        return self.to_dataframe()._repr_html_()
-
-#                                                                    Properties
-# =============================================================================
+        return self.data.__repr__()
 
     @property
-    def names(self) -> List[str]:
+    def names(self) -> Set[str]:
         """
         Names of the columns of the data
 
@@ -266,10 +106,11 @@ class _Data:
         This is a shortcut for self.columns.names, accessing the private
         object.
         """
-        return self.columns.names
+        return {key for inner_dict in self.data.values()
+                for key in inner_dict.keys()}
 
     @property
-    def indices(self) -> pd.Index:
+    def indices(self) -> List[int]:
         """
         Indices of the experiments in the data
 
@@ -283,184 +124,48 @@ class _Data:
         This is a shortcut for self.index.indices, accessing the private
         object.
         """
-        return self.index.indices
-
-#                                                      Alternative constructors
-# =============================================================================
+        return list(self.data.keys())
 
     @classmethod
     def from_list(cls: Type[_Data], list: List[List[Any]]) -> _Data:
-        """Creates a data object from a list of lists.
+        return _Data(
+            {i: {k: v for k, v in enumerate(row)}
+             for i, row in enumerate(list)})
 
-        Parameters
-        ----------
-        list : List[List[Any]]
-            The list of lists to create the data object from.
-
-        Returns
-        -------
-        _Data
-            The data object.
-        """
-        return _Data(data=list)
-
+    # Is this necessary?
     @classmethod
     def from_indices(cls: Type[_Data], indices: pd.Index) -> _Data:
-        """Creates a data object from a pd.Index object.
+        return _Data()
 
-        Parameters
-        ----------
-        indices : pd.Index
-            The indices of the experiments.
-
-        Returns
-        -------
-        _Data
-            The data object.
-
-        Note
-        ----
-        The returned object will have no columns and the indices will be
-        the given indices. The data will be an empty list.
-        """
-        return _Data(index=_Index(indices))
-
+    # Is this necessary?
     @classmethod
     def from_domain(cls: Type[_Data], domain: Domain) -> _Data:
-        """Creates a data object from a domain.
-
-        Parameters
-        ----------
-        domain : Domain
-            The domain to create the data object from.
-
-        Returns
-        -------
-        _Data
-            The data object.
-
-        Note
-        ----
-        * The returned object will have no data and empty indices.
-        * The columns will be the names of the provided domain.
-        """
-        _columns = {name: None for name in domain.names}
-        return _Data(columns=_Columns(_columns))
+        return _Data()
 
     @classmethod
     def from_file(cls: Type[_Data], filename: Path | str) -> _Data:
-        # TODO: Fix this method for _newdata
-        """Loads the data from a file.
-
-        Parameters
-        ----------
-        filename : Path
-            The filename to load the data from.
-
-        Returns
-        -------
-        _Data
-            The loaded data object.
-        """
-        file = Path(filename).with_suffix('.csv')
-        df = pd.read_csv(file, header=0, index_col=0)
-        return cls.from_dataframe(df)
+        ...
 
     @classmethod
     def from_numpy(cls: Type[_Data], array: np.ndarray) -> _Data:
-        """Loads the data from a numpy array.
-
-        Parameters
-        ----------
-        array : np.ndarray
-            The array to load the data from.
-
-        Returns
-        -------
-        _Data
-            The data object.
-
-        Note
-        ----
-        The returned _Data object will have the default column names and
-        indices.
-        """
-        return cls.from_dataframe(pd.DataFrame(array))
+        return _Data.from_list(array.tolist())
 
     @classmethod
     def from_dataframe(cls: Type[_Data], df: pd.DataFrame) -> _Data:
-        """Loads the data from a pandas dataframe.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            The dataframe to load the data from.
-
-        Returns
-        -------
-        _Data
-            The data object.
-
-        Note
-        ----
-        The returned _Data object will have the column names of the dataframe
-        and the indices of the dataframe.
-        """
-        _columns = {name: None for name in df.columns.to_list()}
-        return _Data(data=df.to_numpy().tolist(),
-                     columns=_Columns(_columns),
-                     index=_Index(df.index))
+        return _Data(df.to_dict())
 
     def reset(self, domain: Optional[Domain] = None):
-        """Resets the data object.
-
-        Parameters
-        ----------
-        domain : Optional[Domain], optional
-            The domain to reset the data object to, by default None
-
-        Note
-        ----
-        * If domain is None, the data object will be reset to an empty data
-        object.
-        * If a domain is provided, the data object will be reset to a data
-        object with the given domain and no data.
-        """
-        if domain is None:
-            self.data = []
-            self.columns = _Columns()
-
-        else:
-            _reset_data = self.from_domain(domain)
-            self.data = _reset_data.data
-            self.columns = _reset_data.columns
-
-        self.index = _Index()
-
-#                                                                        Export
-# =============================================================================
+        self.data = defaultdict(dict)
 
     def to_numpy(self) -> np.ndarray:
-        """
-        Convert the data to a numpy array
-
-        Returns
-        -------
-        np.ndarray
-            The data as a numpy array
-
-        Note
-        ----
-        This method converts the data to a pandas DataFrame and then to a
-        numpy array.
-        """
         return self.to_dataframe().to_numpy()
 
     def to_xarray(self, label: str) -> Any:
         # TODO: THIS WILL NOT WORK IF DATA IS INHOMOGENEOUS!
-        return xr.DataArray(self.to_dataframe(), dims=['iterations', label],
-                            coords={'iterations': self.indices,
-                                    label: self.names})
+        df = self.to_dataframe()
+        return xr.DataArray(df, dims=['iterations', label],
+                            coords={'iterations': df.index,
+                                    label: df.columns})
 
     def to_dataframe(self) -> pd.DataFrame:
         """
@@ -476,7 +181,7 @@ class _Data:
         The resulting dataframe has the indices as rows and the columns as
         column names.
         """
-        return pd.DataFrame(self.data, columns=self.names, index=self.indices)
+        return pd.DataFrame(self.data, columns=self.indices).T
 
     def combine_data_to_multiindex(self, other: _Data,
                                    jobs_df: pd.DataFrame) -> pd.DataFrame:
@@ -544,75 +249,23 @@ class _Data:
         if isinstance(columns, str):
             columns = [columns]
 
-        _selected_columns = _Columns(
-            {column: None for column in columns})
-
         return _Data(
-            data=self.to_dataframe()[columns].values.tolist(),
-            columns=_selected_columns, index=self.index)
+            {i: {k: v for k, v in inner_dict.items()
+                 if k in columns}
+             for i, inner_dict in self.data.items()})
 
 #                                                        Append and remove data
 # =============================================================================
 
     def add(self, data: pd.DataFrame):
-        """Adds data to the data object.
+        ...
 
-        Parameters
-        ----------
-        data : pd.DataFrame
-            The data to add.
-
-        Note
-        ----
-        This method adds the dataframe in-place to the currentdata object.
-        The data is added to the end of the data object.
-
-        The + operator will do the same thing but return a new data object.s
-        """
-        _other = _Data.from_dataframe(data)
-
-        self.data += _other.data
-        self.index += _other.index
-
+    # This is not necessary with defaultdict
     def add_empty_rows(self, number_of_rows: int):
-        """Adds empty rows to the data object.
-
-        Parameters
-        ----------
-        number_of_rows : int
-            The number of rows to add.
-
-        Note
-        ----
-        This method adds empty rows to the data object. The value of these
-        empty rows is np.nan. The columns are not changed.
-
-        The rows are added to the end of the data object.
-        """
-        self.data += [[np.nan for _ in self.names]
-                      for _ in range(number_of_rows)]
-        self.index += _Index(range(number_of_rows))
+        ...
 
     def add_column(self, name: str):
-        """Adds a column to the data object.
-
-        Parameters
-        ----------
-        name : str
-            The name of the column to add.
-
-        Note
-        ----
-        The values in the rows of this new column will be set to np.nan.
-        """
-        self.columns.add(name)
-
-        if self.is_empty():
-            self.data = [[np.nan] for _ in self.indices]
-
-        else:
-            for row in self.data:
-                row.append(np.nan)
+        ...
 
     def remove(self, indices: List[int] | int):
         """Removes rows from the data object.
@@ -625,93 +278,26 @@ class _Data:
         if isinstance(indices, int):
             indices = [indices]
 
-        self.data = [row for i, row in enumerate(self.data)
-                     if self.index.iloc(i)[0] not in indices]
-        self.index = _Index([i for i in self.indices if i not in indices])
+        for index in indices:
+            del self.data[index]
 
     def round(self, decimals: int):
-        """Rounds the data.
-
-        Parameters
-        ----------
-        decimals : int
-            The number of decimals to round to.
-        """
-        self.data = [[round(value, decimals) for value in row]
-                     for row in self.data]
+        ...
 
     def overwrite(self, data: _Data, indices: Iterable[int]):
         # TODO: Implement this method!
         ...
 
+
 #                                                           Getters and setters
 # =============================================================================
 
+
     def get_data_dict(self, index: int) -> Dict[str, Any]:
-        """
-        Get the data as a dictionary.
-
-        Parameters
-        ----------
-        index : int
-            Index of the data to get.
-
-        Returns
-        -------
-        Dict[str, Any]
-            Dictionary with the data.
-
-        Note
-        ----
-        If the data is empty, an empty dictionary is returned.
-        """
-        if self.is_empty():
-            return {}
-
-        _index = self.index.iloc(index)[0]
-        return {name: value for name, value in zip(self.names,
-                                                   self.data[_index])}
+        return dict(self.data[index])
 
     def set_data(self, index: int, value: Any, column: Optional[str] = None):
-        """
-        Set the data at the given index.
-
-        Parameters
-        ----------
-        index : int
-            Index of the data to set.
-        value : Any
-            Value to set.
-        column : Optional[str], optional
-            Column to set, by default None
-
-        Raises
-        ------
-        IndexError
-            If the index is not in the data.
-
-        Note
-        ----
-        * If the column is not in the data, it will be added.
-        * If the column is None, the value will be set to the whole row. Make
-        sure that you provide a list with the same length as the number of
-        columns in the data.
-
-        """
-        if index not in self.indices:
-            raise IndexError(f'Index {index} not in data.')
-
-        if column is None:
-            _index = self.index.iloc(index)[0]
-            self.data[_index] = value
-            return
-
-        elif column not in self.names:
-            self.add_column(column)
-
-        _column_index = self.columns.iloc(column)[0]
-        _index = self.index.iloc(index)[0]
-        self.data[_index][_column_index] = value
+        self.data[index][column] = value
 
     def reset_index(self, indices: Optional[Iterable[int]] = None):
         """Resets the index of the data object.
@@ -732,7 +318,9 @@ class _Data:
         if indices is None:
             indices = range(len(self.data))
 
-        self.index = _Index(indices)
+        self.data = {
+            new_index: self.data[old_index]
+            for new_index, old_index in zip(indices, self.data.keys())}
 
     def is_empty(self) -> bool:
         """Checks if the data object is empty.
@@ -742,7 +330,7 @@ class _Data:
         bool
             True if the data object is empty, False otherwise.
         """
-        return len(self.data) == 0
+        return not self.data
 
     def has_columnnames(self, names: Iterable[str]) -> bool:
         """Checks if the data object has the given column names.
@@ -774,9 +362,7 @@ class _Data:
         The number of names should be equal to the number of columns in the
         data object.
         """
-
-        for old_name, new_name in zip(self.names, names):
-            self.columns.rename(old_name, new_name)
+        ...
 
     def cast_types(self, domain: Domain):
         pass
@@ -796,8 +382,7 @@ def _convert_dict_to_data(dictionary: Dict[str, Any]) -> _Data:
     _Data
         The data object.
     """
-    df = pd.DataFrame(dictionary, index=[0]).copy()
-    return _Data.from_dataframe(df)
+    return _Data({0: dictionary})
 
 
 def _data_factory(data: DataTypes) -> _Data:
