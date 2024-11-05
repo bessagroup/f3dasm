@@ -318,22 +318,26 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
         Raises if the object type is not supported,
          and you haven't provided a custom store method.
     """
+    # Combine the path with the experimentdata directory
     _path = experimentdata_directory / path
 
+    # Check if a custom store method is provided
     if store_method is not None:
         storage = store_method(object, _path)
-        return
 
-    # Check if object type is supported
-    object_type = type(object)
-
-    if object_type not in STORE_TYPE_MAPPING:
-        storage: StoreProtocol = PickleStore(object, _path)
-        logger.debug(f"Object type {object_type} is not natively supported. "
-                     f"The default pickle storage method will be used.")
-
+    # If no store method is provided, try to find a matching store type
     else:
-        storage: StoreProtocol = STORE_TYPE_MAPPING[object_type](object, _path)
+        # Check if object type is supported
+        object_type = type(object)
+
+        if object_type not in STORE_TYPE_MAPPING:
+            storage: StoreProtocol = PickleStore(object, _path)
+            logger.debug(f"Object type {object_type} is not natively supported. "
+                         f"The default pickle storage method will be used.")
+
+        else:
+            storage: StoreProtocol = STORE_TYPE_MAPPING[object_type](
+                object, _path)
     # Store object
     storage.store()
     return storage.suffix
