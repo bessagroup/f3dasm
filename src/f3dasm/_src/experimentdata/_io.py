@@ -332,8 +332,9 @@ def save_object(object: Any, path: Path, experimentdata_directory: Path,
 
         if object_type not in STORE_TYPE_MAPPING:
             storage: StoreProtocol = PickleStore(object, _path)
-            logger.debug(f"Object type {object_type} is not natively supported. "
-                         f"The default pickle storage method will be used.")
+            logger.debug(
+                f"Object type {object_type} is not natively supported. "
+                f"The default pickle storage method will be used.")
 
         else:
             storage: StoreProtocol = STORE_TYPE_MAPPING[object_type](
