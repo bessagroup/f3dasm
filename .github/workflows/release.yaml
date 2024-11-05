@@ -47,7 +47,7 @@ jobs:
       - name: Fetch information from PyPI
         run: |
           response=$(curl -s https://pypi.org/pypi/${{ env.PACKAGE_NAME }}/json || echo "{}")
-          latest_previous_version=$(echo $response | grep -oP '"releases":\{"\K[^"]+' | sort -rV | head -n 1)
+          latest_previous_version=$(echo $response | awk '/"releases":/ {flag=1} flag' | grep -oP '"\d+\.\d+(\.\d+)*"' | tr -d '"' | sort -rV | head -n 1)
           if [ -z "$latest_previous_version" ]; then
             echo "Package not found on PyPI."
             latest_previous_version="0.0.0"
