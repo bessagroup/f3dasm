@@ -152,14 +152,14 @@ Implemented optimizers
 The following implementations of optimizers can found under the :mod:`f3dasm.optimization` module: 
 These are ported from `scipy-optimize <https://docs.scipy.org/doc/scipy/reference/optimize.html>`_
 
-======================== ========================================================================= ===============================================================================================
-Name                     Key-word                                                                  Reference
-======================== ========================================================================= ===============================================================================================
-Conjugate Gradient       ``"CG"``                                                                  `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
-L-BFGS-B                 ``"LBFGSB"``                                                              `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
-Nelder Mead              ``"NelderMead"``                                                          `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
-Random search            ``"RandomSearch"``                                                        `numpy <https://numpy.org/doc/>`_
-======================== ========================================================================= ===============================================================================================
+======================== ========================================================================= ============================================== ===========================================================================================================
+Name                     Key-word                                                                  Function                                        Reference
+======================== ========================================================================= ============================================== ===========================================================================================================
+Conjugate Gradient       ``"cg"``                                                                  :func:`~f3dasm.optimization.cg`                `scipy.minimize CG <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html>`_
+L-BFGS-B                 ``"lbfgsb"``                                                              :func:`~f3dasm.optimization.lbfgsb`            `scipy.minimize L-BFGS-B <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_
+Nelder Mead              ``"nelder_mead"``                                                         :func:`~f3dasm.optimization.nelder_mead`       `scipy.minimize NelderMead <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html>`_
+Random search            ``"random_search"``                                                       :func:`~f3dasm.optimization.random_search`     `numpy <https://numpy.org/doc/>`_
+======================== ========================================================================= ============================================== ===========================================================================================================
 
 .. _f3dasm-optimize:
 

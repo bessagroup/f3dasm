@@ -19,20 +19,21 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-# class CG(_SciPyOptimizer):
-#     """CG"""
-#     require_gradients: bool = True
-
-#     def __init__(self, domain: Domain, gtol: float = 0.0, **kwargs):
-#         super().__init__(
-#             domain=domain, method='CG', gtol=gtol)
-#         self.gtol = gtol
-
-#     def _get_info(self) -> List[str]:
-#         return ['Stable', 'First-Order', 'Single-Solution']
-
-
 def cg(gtol: float = 0.0, **kwargs) -> OptimizerTuple:
+    """
+    Conjugate Gradient optimizer
+    Adapted from scipy.optimize.minimize
+
+    Parameters
+    ----------
+    gtol : float, optional
+        Gradient norm tolerance, by default 0.0
+
+    Returns
+    -------
+    OptimizerTuple
+        Optimizer tuple
+    """
     return OptimizerTuple(
         base_class=_SciPyOptimizer,
         algorithm='CG',
@@ -43,6 +44,22 @@ def cg(gtol: float = 0.0, **kwargs) -> OptimizerTuple:
 
 
 def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> OptimizerTuple:
+    """
+    L-BFGS-B optimizer
+    Adapted from scipy.optimize.minimize
+
+    Parameters
+    ----------
+    ftol : float, optional
+        Function value tolerance, by default 0.0
+    gtol : float, optional
+        Gradient norm tolerance, by default 0.0
+
+    Returns
+    -------
+    OptimizerTuple
+        Optimizer tuple
+    """
     return OptimizerTuple(
         base_class=_SciPyOptimizer,
         algorithm='L-BFGS-B',
@@ -54,6 +71,24 @@ def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> OptimizerTuple:
 
 def nelder_mead(xatol: float = 0.0, fatol: float = 0.0,
                 adaptive: bool = False, **kwargs) -> OptimizerTuple:
+    """
+    Nelder-Mead optimizer
+    Adapted from scipy.optimize.minimize
+
+    Parameters
+    ----------
+    xatol : float, optional
+        Absolute error in xopt between iterations, by default 0.0
+    fatol : float, optional
+        Absolute error in fun(xopt) between iterations, by default 0.0
+    adaptive : bool, optional
+        Adapt the algorithm, by default False
+
+    Returns
+    -------
+    OptimizerTuple
+        Optimizer tuple
+    """
     return OptimizerTuple(
         base_class=_SciPyOptimizer,
         algorithm='Nelder-Mead',

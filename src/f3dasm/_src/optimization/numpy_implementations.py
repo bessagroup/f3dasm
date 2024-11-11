@@ -49,6 +49,19 @@ class RandomSearch(Optimizer):
 
 
 def random_search(seed: Optional[int] = None, **kwargs) -> OptimizerTuple:
+    """
+    Random search optimizer
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed, by default None
+
+    Returns
+    -------
+    OptimizerTuple
+        Optimizer tuple
+    """
     return OptimizerTuple(
         base_class=RandomSearch,
         algorithm=None,

@@ -5,6 +5,7 @@ Module for optimization
 # =============================================================================
 
 # Local
+from ._src.optimization import cg, lbfgsb, nelder_mead, random_search
 from ._src.optimization.optimizer import Optimizer
 from ._src.optimization.optimizer_factory import OPTIMIZERS
 
@@ -20,4 +21,8 @@ __status__ = 'Stable'
 __all__ = [
     'Optimizer',
     'OPTIMIZERS',
+    'cg',
+    'lbfgsb',
+    'nelder_mead',
+    'random_search'
 ]
