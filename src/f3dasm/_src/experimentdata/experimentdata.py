@@ -1367,7 +1367,7 @@ class ExperimentData:
     #                                                              Optimization
     # =========================================================================
 
-    def optimize(self, optimizer: Optimizer | str,
+    def optimize(self, optimizer: Optimizer | str | Callable,
                  data_generator: DataGenerator | str,
                  iterations: int,
                  kwargs: Optional[Dict[str, Any]] = None,
@@ -1382,7 +1382,7 @@ class ExperimentData:
 
         Parameters
         ----------
-        optimizer : Optimizer | str
+        optimizer : Optimizer | str | Callable
             Optimizer object
         data_generator : DataGenerator | str
             DataGenerator object
@@ -1441,7 +1441,9 @@ class ExperimentData:
         # Create the optimizer object if a string reference is passed
         if isinstance(_optimizer, str):
             _optimizer: Optimizer = _optimizer_factory(
-                _optimizer, self.domain, hyperparameters)
+                optimizer=_optimizer, domain=self.domain,
+                data_generator=data_generator,
+                hyperparameters=hyperparameters)
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
@@ -1560,12 +1562,12 @@ class ExperimentData:
 
         optimizer._check_number_of_datapoints()
 
-        optimizer._construct_model(data_generator)
+        optimizer.init()
 
         for _ in range(number_of_updates(
                 iterations,
                 population=optimizer._population)):
-            new_samples = optimizer.update_step(data_generator)
+            new_samples = optimizer.update_step()
 
             # If new_samples is a tuple of input_data and output_data
             if isinstance(new_samples, tuple):

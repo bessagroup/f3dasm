@@ -6,15 +6,14 @@ Optimizers based from the numpy library
 # =============================================================================
 
 # Standard
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 # Third-party core
 import numpy as np
 
 # Locals
-from ..datageneration.datagenerator import DataGenerator
 from ..design.domain import Domain
-from .optimizer import Optimizer
+from .optimizer import Optimizer, OptimizerTuple
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,14 +32,9 @@ class RandomSearch(Optimizer):
     def __init__(self, domain: Domain, seed: Optional[int] = None, **kwargs):
         self.domain = domain
         self.seed = seed
-        self._set_algorithm()
-
-    def _set_algorithm(self):
         self.algorithm = np.random.default_rng(self.seed)
 
-    def update_step(
-            self, data_generator: DataGenerator
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def update_step(self) -> Tuple[np.ndarray, np.ndarray]:
         x_new = np.atleast_2d(
             [
                 self.algorithm.uniform(
@@ -53,5 +47,10 @@ class RandomSearch(Optimizer):
         # return the data
         return x_new, None
 
-    def _get_info(self) -> List[str]:
-        return ['Fast', 'Single-Solution']
+
+def random_search(seed: Optional[int] = None, **kwargs) -> OptimizerTuple:
+    return OptimizerTuple(
+        base_class=RandomSearch,
+        algorithm=None,
+        hyperparameters={'seed': seed}
+    )

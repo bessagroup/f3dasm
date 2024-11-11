@@ -8,7 +8,8 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-from typing import ClassVar, Iterable, List, Protocol, Tuple
+from typing import (Callable, ClassVar, Iterable, List, NamedTuple, Protocol,
+                    Tuple, Type)
 
 # Third-party core
 import numpy as np
@@ -16,6 +17,7 @@ import pandas as pd
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
+from ..design.domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -120,14 +122,9 @@ class Optimizer:
 #                                                                Public Methods
 # =============================================================================
 
-    def update_step(self, data_generator: DataGenerator) -> ExperimentData:
+    def update_step(self) -> ExperimentData:
         """Update step of the optimizer. Needs to be implemented
          by the child class
-
-        Parameters
-        ----------
-        data_generator : DataGenerator
-            data generator object to calculate the objective value
 
         Returns
         -------
@@ -156,23 +153,6 @@ class Optimizer:
         Method that can be implemented to set the optimization algorithm.
         Whenever the reset method is called, this method will be called to
         reset the algorithm to its initial state."""
-        ...
-
-    def _construct_model(self, data_generator: DataGenerator):
-        """
-        Method that is called before the optimization starts. This method can
-        be used to construct a model based on the available data or a specific
-        data generator.
-
-        Parameters
-        ----------
-        data_generator : DataGenerator
-            DataGenerator object
-
-        Note
-        ----
-        When this method is not implemented, the method will do nothing.
-        """
         ...
 
     def _check_number_of_datapoints(self):
@@ -212,7 +192,7 @@ class Optimizer:
         - The algorithm is set to its initial state (self._set_algorithm)
         """
         self._set_data(data)
-        self._set_algorithm()
+        self.init()
 
     def _set_data(self, data: ExperimentData):
         """Set the data attribute to the given data
@@ -233,3 +213,17 @@ class Optimizer:
             List of characteristics of the optimizer
         """
         return []
+
+    def init(self):
+        ...
+
+
+class OptimizerTuple(NamedTuple):
+    base_class: Type[Optimizer]
+    algorithm: Callable
+    hyperparameters: dict
+
+    def init(self, domain: Domain, data_generator: DataGenerator) -> Optimizer:
+        return self.base_class(
+            domain=domain, data_generator=data_generator,
+            algorithm=self.algorithm, **self.hyperparameters)

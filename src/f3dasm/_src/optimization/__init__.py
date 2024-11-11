@@ -5,12 +5,12 @@ Module for optimization
 # =============================================================================
 
 # Standard
-from typing import List
+from typing import Callable, List
 
 # Local
-from .numpy_implementations import RandomSearch
+from .numpy_implementations import random_search
 from .optimizer import Optimizer
-from .scipy_implementations import CG, LBFGSB, NelderMead
+from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,21 +22,21 @@ __status__ = 'Stable'
 # =============================================================================
 
 # List of available optimizers
-_OPTIMIZERS: List[Optimizer] = [RandomSearch, CG, LBFGSB, NelderMead]
+_OPTIMIZERS: List[Callable] = [
+    cg, lbfgsb, nelder_mead, random_search]
 
 
 __all__ = [
-    'CG',
-    'LBFGSB',
-    'NelderMead',
-    'Optimizer',
-    'RandomSearch',
-    '_OPTIMIZERS',
     'find_optimizer',
+    'random_search',
+    'cg',
+    'lbfgsb',
+    'nelder_mead',
+    'Optimizer',
 ]
 
 
-def find_optimizer(query: str) -> Optimizer:
+def find_optimizer(query: str) -> Callable:
     """Find a optimizer from the f3dasm.optimizer submodule
 
     Parameters

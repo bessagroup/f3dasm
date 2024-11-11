@@ -48,8 +48,6 @@ class OptimizationResult:
             total optimization time
         """
         self.data = data
-        self.optimizer = _optimizer_factory(
-            optimizer=optimizer, domain=self.data[0].domain)
         self.data_generator = data_generator
         self.kwargs = kwargs,
         self.number_of_samples = number_of_samples
@@ -59,6 +57,9 @@ class OptimizationResult:
         self.func = _datagenerator_factory(
             data_generator=self.data_generator,
             domain=self.data[0].domain, kwargs=kwargs)
+        self.optimizer = _optimizer_factory(
+            optimizer=optimizer, domain=self.data[0].domain,
+            data_generator=self.func)
         self._log()
 
     def _log(self):
@@ -140,8 +141,12 @@ def run_optimization(
         hyperparameters = {}
 
     # Set function seed
+    data_generator = _datagenerator_factory(
+        data_generator=data_generator, domain=domain, kwargs=kwargs)
+
     optimizer = _optimizer_factory(
-        optimizer=optimizer, domain=domain, hyperparameters=hyperparameters)
+        optimizer=optimizer, domain=domain, data_generator=data_generator,
+        hyperparameters=hyperparameters)
 
     # Sample
     data = ExperimentData.from_sampling(

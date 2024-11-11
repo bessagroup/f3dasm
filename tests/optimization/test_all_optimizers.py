@@ -6,21 +6,13 @@ import numpy as np
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm._src.datageneration.functions.function_factory import \
-    is_dim_compatible
+from f3dasm._src.datageneration.functions.function_factory import (
+    _datagenerator_factory, is_dim_compatible)
 from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
 from f3dasm.optimization import OPTIMIZERS, Optimizer
-
-
-@pytest.mark.smoke
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
-def test_get_info(data: ExperimentData, optimizer: str):
-    opt: Optimizer = _optimizer_factory(optimizer, data.domain)
-    characteristics = opt._get_info()
-    assert isinstance(characteristics, List)
 
 
 @pytest.mark.parametrize("seed", [42])
@@ -113,7 +105,10 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
     data.evaluate(data_generator, mode='sequential', kwargs={'seed': seed, 'noise': None,
                                                              'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
 
-    _optimizer = _optimizer_factory(optimizer, domain=domain)
+    _data_generator = _datagenerator_factory(data_generator, domain=domain)
+
+    _optimizer = _optimizer_factory(
+        optimizer, domain=domain, data_generator=_data_generator)
 
     if x0_selection == "new" and iterations < _optimizer._population:
         with pytest.raises(ValueError):

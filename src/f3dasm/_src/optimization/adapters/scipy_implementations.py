@@ -28,11 +28,14 @@ warnings.filterwarnings(
 
 
 class _SciPyOptimizer(Optimizer):
+    require_gradients: bool = False
     type: str = 'scipy'
 
-    def __init__(self, domain: Domain, method: str, **hyperparameters):
+    def __init__(self, domain: Domain, data_generator: DataGenerator,
+                 algorithm: str, **hyperparameters):
         self.domain = domain
-        self.method = method
+        self.data_generator = data_generator
+        self.algorithm = algorithm
         self.options = {**hyperparameters}
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
@@ -63,14 +66,14 @@ class _SciPyOptimizer(Optimizer):
             _, y = sample.to_numpy()
             return float(y)
 
-        self.options['maxiter'] = iterations
-
         if not hasattr(data_generator, 'dfdx'):
             data_generator.dfdx = None
 
+        self.options['maxiter'] = iterations
+
         minimize(
             fun=fun,
-            method=self.method,
+            method=self.algorithm,
             jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
