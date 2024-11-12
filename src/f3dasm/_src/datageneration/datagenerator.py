@@ -11,7 +11,7 @@ from __future__ import annotations
 # Standard
 import inspect
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Type
 
 # Third-party
 import numpy as np
@@ -151,3 +151,13 @@ def convert_function(f: Callable,
                                                  to_disk=False)
 
     return TempDataGenerator()
+
+# =============================================================================
+
+
+class BuiltinDataGenerator(NamedTuple):
+    base_class: Type[DataGenerator]
+    options: dict
+
+    def init(self, domain: Domain) -> DataGenerator:
+        return self.base_class(domain=domain, **self.options)

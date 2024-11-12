@@ -8,6 +8,7 @@ from typing import Optional
 import autograd.numpy as np
 
 # Locals
+from ....design.domain import Domain
 from ..function import Function
 from .augmentor import Noise, Offset, Scale
 
@@ -24,7 +25,7 @@ __status__ = 'Stable'
 class PyBenchFunction(Function):
     def __init__(
             self,
-            dimensionality: int,
+            domain: Domain,
             scale_bounds: Optional[np.ndarray] = None,
             noise: Optional[float] = None,
             offset: bool = True,
@@ -36,8 +37,8 @@ class PyBenchFunction(Function):
 
         Parameters
         ----------
-        dimensionality
-            number of dimensions
+        domain : Domain
+            domain of the function
         scale_bounds, optional
             array containing the lower and upper bound of the scaling
              factor of the input data, by default None
@@ -50,7 +51,7 @@ class PyBenchFunction(Function):
             seed for the random number generator, by default None
         """
         super().__init__(seed=seed)
-        self.dimensionality = dimensionality
+        self.dimensionality = len(domain)
         self.scale_bounds = scale_bounds
         self.noise = noise
         self.offset = offset

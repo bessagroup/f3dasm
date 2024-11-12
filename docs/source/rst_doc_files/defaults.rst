@@ -33,116 +33,116 @@ The following implementations of benchmark functions can instantiated with the n
 Convex functions
 ^^^^^^^^^^^^^^^^
 
-======================== ====================================================== ===========================
-Name                      Docs of the Python class                              Data-generator argument
-======================== ====================================================== ===========================
-Ackley N. 2              :class:`~f3dasm.datageneration.AckleyN2`               ``"Ackley N. 2"``
-Bohachevsky N. 1         :class:`~f3dasm.datageneration.BohachevskyN1`          ``"Bohachevsky N. 1"``
-Booth                    :class:`~f3dasm.datageneration.Booth`                  ``"Booth"``
-Brent                    :class:`~f3dasm.datageneration.Brent`                  ``"Brent"``
-Brown                    :class:`~f3dasm.datageneration.Brown`                  ``"Brown"``
-Bukin N. 6               :class:`~f3dasm.datageneration.BukinN6`                ``"Bukin N. 6"``
-Dixon Price              :class:`~f3dasm.datageneration.DixonPrice`             ``"Dixon Price"``
-Exponential              :class:`~f3dasm.datageneration.Exponential`            ``"Exponential"``
-Matyas                   :class:`~f3dasm.datageneration.Matyas`                 ``"Matyas"``
-McCormick                :class:`~f3dasm.datageneration.McCormick`              ``"McCormick"``
-Perm 0, d, beta          :class:`~f3dasm.datageneration.PermZeroDBeta`          ``"Perm 0, d, beta"``
-Powell                   :class:`~f3dasm.datageneration.Powell`                 ``"Powell"``
-Rotated Hyper-Ellipsoid  :class:`~f3dasm.datageneration.RotatedHyperEllipsoid`  ``"Rotated Hyper-Ellipsoid"``
-Schwefel 2.20            :class:`~f3dasm.datageneration.Schwefel2_20`           ``"Schwefel 2.20"``
-Schwefel 2.21            :class:`~f3dasm.datageneration.Schwefel2_21`           ``"Schwefel 2.21"``
-Schwefel 2.22            :class:`~f3dasm.datageneration.Schwefel2_22`           ``"Schwefel 2.22"``
-Schwefel 2.23            :class:`~f3dasm.datageneration.Schwefel2_23`           ``"Schwefel 2.23"``
-Sphere                   :class:`~f3dasm.datageneration.Sphere`                 ``"Sphere"``
-Sum Squares              :class:`~f3dasm.datageneration.SumSquares`             ``"Sum Squares"``
-Thevenot                 :class:`~f3dasm.datageneration.Thevenot`               ``"Thevenot"``
-Trid                     :class:`~f3dasm.datageneration.Trid`                   ``"Trid"``
-Xin She Yang N.3         :class:`~f3dasm.datageneration.XinSheYangN3`           ``"Xin She Yang N.3"``
-Xin-She Yang N.4         :class:`~f3dasm.datageneration.XinSheYangN4`           ``"Xin-She Yang N.4"``
-======================== ====================================================== ===========================
+======================== ====================================================== ===============================================================
+Name                     Key-word                                               Function
+======================== ====================================================== ===============================================================
+Ackley N. 2              ``"Ackley N. 2"``                                      :func:`~f3dasm.datageneration.functions.ackleyn2`
+Bohachevsky N. 1         ``"Bohachevsky N. 1"``                                 :func:`~f3dasm.datageneration.functions.bohachevskyn1`
+Booth                    ``"Booth"``                                            :func:`~f3dasm.datageneration.functions.booth`
+Brent                    ``"Brent"``                                            :func:`~f3dasm.datageneration.functions.brent`
+Brown                    ``"Brown"``                                            :func:`~f3dasm.datageneration.functions.brown`
+Bukin N. 6               ``"Bukin N. 6"``                                       :func:`~f3dasm.datageneration.functions.bukinn6`
+Dixon Price              ``"Dixon Price"``                                      :func:`~f3dasm.datageneration.functions.dixonprice`
+Exponential              ``"Exponential"``                                      :func:`~f3dasm.datageneration.functions.exponential`
+Matyas                   ``"Matyas"``                                           :func:`~f3dasm.datageneration.functions.matyas`
+McCormick                ``"McCormick"``                                        :func:`~f3dasm.datageneration.functions.mccormick`
+Powell                   ``"Powell"``                                           :func:`~f3dasm.datageneration.functions.powell`
+Rotated Hyper-Ellipsoid  ``"Rotated Hyper-Ellipsoid"``                          :func:`~f3dasm.datageneration.functions.rotatedhyperellipsoid`
+Schwefel 2.20            ``"Schwefel 2.20"``                                    :func:`~f3dasm.datageneration.functions.schwefel2_20`
+Schwefel 2.21            ``"Schwefel 2.21"``                                    :func:`~f3dasm.datageneration.functions.schwefel2_21`
+Schwefel 2.22            ``"Schwefel 2.22"``                                    :func:`~f3dasm.datageneration.functions.schwefel2_22`
+Schwefel 2.23            ``"Schwefel 2.23"``                                    :func:`~f3dasm.datageneration.functions.schwefel2_23`
+Sphere                   ``"Sphere"``                                           :func:`~f3dasm.datageneration.functions.sphere`
+Sum Squares              ``"Sum Squares"``                                      :func:`~f3dasm.datageneration.functions.sumsquares`
+Thevenot                 ``"Thevenot"``                                         :func:`~f3dasm.datageneration.functions.thevenot`
+Trid                     ``"Trid"``                                             :func:`~f3dasm.datageneration.functions.trid`
+Xin She Yang N.3         ``"Xin She Yang N.3"``                                 :func:`~f3dasm.datageneration.functions.xin_she_yang_3`
+Xin-She Yang N.4         ``"Xin-She Yang N.4"``                                 :func:`~f3dasm.datageneration.functions.xin_she_yang_4`
+======================== ====================================================== ===============================================================
+
 
 
 
 Seperable functions
 ^^^^^^^^^^^^^^^^^^^
 
-======================== ============================================== ============================
-Name                     Docs of the Python class                       Data-generator argument
-======================== ============================================== ============================
-Ackley                   :class:`~f3dasm.datageneration.Ackley`         ``"Ackley"``
-Bohachevsky N. 1         :class:`~f3dasm.datageneration.BohachevskyN1`  ``"Bohachevsky N. 1"``
-Easom                    :class:`~f3dasm.datageneration.Easom`          ``"Easom"``
-Egg Crate                :class:`~f3dasm.datageneration.EggCrate`       ``"Egg Crate"``
-Exponential              :class:`~f3dasm.datageneration.Exponential`    ``"Exponential"``
-Griewank                 :class:`~f3dasm.datageneration.Griewank`       ``"Griewank"``
-Michalewicz              :class:`~f3dasm.datageneration.Michalewicz`    ``"Michalewicz"``
-Powell                   :class:`~f3dasm.datageneration.Powell`         ``"Powell"``
-Qing                     :class:`~f3dasm.datageneration.Qing`           ``"Qing"``
-Quartic                  :class:`~f3dasm.datageneration.Quartic`        ``"Quartic"``
-Rastrigin                :class:`~f3dasm.datageneration.Rastrigin`      ``"Rastrigin"``
-Schwefel                 :class:`~f3dasm.datageneration.Schwefel`       ``"Schwefel"``
-Schwefel 2.20            :class:`~f3dasm.datageneration.Schwefel2_20`   ``"Schwefel 2.20"``
-Schwefel 2.21            :class:`~f3dasm.datageneration.Schwefel2_21`   ``"Schwefel 2.21"``
-Schwefel 2.22            :class:`~f3dasm.datageneration.Schwefel2_22`   ``"Schwefel 2.22"``
-Schwefel 2.23            :class:`~f3dasm.datageneration.Schwefel2_23`   ``"Schwefel 2.23"``
-Sphere                   :class:`~f3dasm.datageneration.Sphere`         ``"Sphere"``
-Styblinski Tank          :class:`~f3dasm.datageneration.StyblinskiTank` ``"Styblinski Tank"``
-Sum Squares              :class:`~f3dasm.datageneration.SumSquares`     ``"Sum Squares"``
-Thevenot                 :class:`~f3dasm.datageneration.Thevenot`       ``"Thevenot"``
-Xin She Yang             :class:`~f3dasm.datageneration.XinSheYang`     ``"Xin She Yang"``
-======================== ============================================== ============================
+======================== ============================================== ==========================================================
+Name                     Key-word                                       Function
+======================== ============================================== ==========================================================
+Ackley                   ``"Ackley"``                                   :func:`~f3dasm.datageneration.functions.ackley`
+Bohachevsky N. 1         ``"Bohachevsky N. 1"``                         :func:`~f3dasm.datageneration.functions.bohachevskyn1`
+Easom                    ``"Easom"``                                    :func:`~f3dasm.datageneration.functions.easom`
+Egg Crate                ``"Egg Crate"``                                :func:`~f3dasm.datageneration.functions.eggcrate`
+Exponential              ``"Exponential"``                              :func:`~f3dasm.datageneration.functions.exponential`
+Griewank                 ``"Griewank"``                                 :func:`~f3dasm.datageneration.functions.griewank`
+Michalewicz              ``"Michalewicz"``                              :func:`~f3dasm.datageneration.functions.michalewicz`
+Powell                   ``"Powell"``                                   :func:`~f3dasm.datageneration.functions.powell`
+Qing                     ``"Qing"``                                     :func:`~f3dasm.datageneration.functions.qing`
+Quartic                  ``"Quartic"``                                  :func:`~f3dasm.datageneration.functions.quartic`
+Rastrigin                ``"Rastrigin"``                                :func:`~f3dasm.datageneration.functions.rastrigin`
+Schwefel                 ``"Schwefel"``                                 :func:`~f3dasm.datageneration.functions.schwefel`
+Schwefel 2.20            ``"Schwefel 2.20"``                            :func:`~f3dasm.datageneration.functions.schwefel2_20`
+Schwefel 2.21            ``"Schwefel 2.21"``                            :func:`~f3dasm.datageneration.functions.schwefel2_21`
+Schwefel 2.22            ``"Schwefel 2.22"``                            :func:`~f3dasm.datageneration.functions.schwefel2_22`
+Schwefel 2.23            ``"Schwefel 2.23"``                            :func:`~f3dasm.datageneration.functions.schwefel2_23`
+Sphere                   ``"Sphere"``                                   :func:`~f3dasm.datageneration.functions.sphere`
+Styblinski Tank          ``"Styblinski Tank"``                          :func:`~f3dasm.datageneration.functions.styblinskitang`
+Sum Squares              ``"Sum Squares"``                              :func:`~f3dasm.datageneration.functions.sumsquares`
+Thevenot                 ``"Thevenot"``                                 :func:`~f3dasm.datageneration.functions.thevenot`
+Xin She Yang             ``"Xin She Yang"``                             :func:`~f3dasm.datageneration.functions.xin_she_yang`
+======================== ============================================== ==========================================================
 
 Multimodal functions
 ^^^^^^^^^^^^^^^^^^^^
 
-======================== ================================================ ==========================
-Name                     Docs of the Python class                         Data-generator argument
-======================== ================================================ ==========================
-Ackley                   :class:`~f3dasm.datageneration.Ackley`           ``"Ackley"``
-Ackley N. 3              :class:`~f3dasm.datageneration.AckleyN3`         ``"Ackley N. 3"``
-Ackley N. 4              :class:`~f3dasm.datageneration.AckleyN4`         ``"Ackley N. 4"``
-Adjiman                  :class:`~f3dasm.datageneration.Adjiman`          ``"Adjiman"``
-Bartels                  :class:`~f3dasm.datageneration.Bartels`          ``"Bartels"``
-Beale                    :class:`~f3dasm.datageneration.Beale`            ``"Beale"``
-Bird                     :class:`~f3dasm.datageneration.Bird`             ``"Bird"``
-Bohachevsky N. 2         :class:`~f3dasm.datageneration.BohachevskyN2`    ``"Bohachevsky N. 2"``
-Bohachevsky N. 3         :class:`~f3dasm.datageneration.BohachevskyN3`    ``"Bohachevsky N. 3"``
-Branin                   :class:`~f3dasm.datageneration.Branin`           ``"Branin"``
-Bukin N. 6               :class:`~f3dasm.datageneration.BukinN6`          ``"Bukin N. 6"``
-Colville                 :class:`~f3dasm.datageneration.Colville`         ``"Colville"``
-Cross-in-Tray            :class:`~f3dasm.datageneration.CrossInTray`      ``"Cross-in-Tray"``
-De Jong N. 5             :class:`~f3dasm.datageneration.DeJongN5`         ``"De Jong N. 5"``
-Deckkers-Aarts           :class:`~f3dasm.datageneration.DeckkersAarts`    ``"Deckkers-Aarts"``
-Easom                    :class:`~f3dasm.datageneration.Easom`            ``"Easom"``
-Egg Crate                :class:`~f3dasm.datageneration.EggCrate`         ``"Egg Crate"``
-Egg Holder               :class:`~f3dasm.datageneration.EggHolder`        ``"Egg Holder"``
-Goldstein-Price          :class:`~f3dasm.datageneration.GoldsteinPrice`   ``"Goldstein-Price"``
-Happy Cat                :class:`~f3dasm.datageneration.HappyCat`         ``"Happy Cat"``
-Himmelblau               :class:`~f3dasm.datageneration.Himmelblau`       ``"Himmelblau"``
-Holder-Table             :class:`~f3dasm.datageneration.HolderTable`      ``"Holder-Table"``
-Keane                    :class:`~f3dasm.datageneration.Keane`            ``"Keane"``
-Langermann               :class:`~f3dasm.datageneration.Langermann`       ``"Langermann"``
-Levy                     :class:`~f3dasm.datageneration.Levy`             ``"Levy"``
-Levy N. 13               :class:`~f3dasm.datageneration.LevyN13`          ``"Levy N. 13"``
-McCormick                :class:`~f3dasm.datageneration.McCormick`        ``"McCormick"``
-Michalewicz              :class:`~f3dasm.datageneration.Michalewicz`      ``"Michalewicz"``
-Periodic                 :class:`~f3dasm.datageneration.Periodic`         ``"Periodic"``
-Perm d, beta             :class:`~f3dasm.datageneration.PermDBeta`        ``"Perm d, beta"``
-Qing                     :class:`~f3dasm.datageneration.Qing`             ``"Qing"``
-Quartic                  :class:`~f3dasm.datageneration.Quartic`          ``"Quartic"``
-Rastrigin                :class:`~f3dasm.datageneration.Rastrigin`        ``"Rastrigin"``
-Rosenbrock               :class:`~f3dasm.datageneration.Rosenbrock`       ``"Rosenbrock"``
-Salomon                  :class:`~f3dasm.datageneration.Salomon`          ``"Salomon"``
-Schwefel                 :class:`~f3dasm.datageneration.Schwefel`         ``"Schwefel"``
-Shekel                   :class:`~f3dasm.datageneration.Shekel`           ``"Shekel"``
-Shubert                  :class:`~f3dasm.datageneration.Shubert`          ``"Shubert"``
-Shubert N. 3             :class:`~f3dasm.datageneration.ShubertN3`        ``"Shubert N. 3"``
-Shubert N. 4             :class:`~f3dasm.datageneration.ShubertN4`        ``"Shubert N. 4"``
-Styblinski Tank          :class:`~f3dasm.datageneration.StyblinskiTank`   ``"Styblinski Tank"``
-Thevenot                 :class:`~f3dasm.datageneration.Thevenot`         ``"Thevenot"``
-Xin She Yang             :class:`~f3dasm.datageneration.XinSheYang`       ``"Xin She Yang"``
-Xin She Yang N.2         :class:`~f3dasm.datageneration.XinSheYangN2`     ``"Xin She Yang N.2"``
-======================== ================================================ ==========================
+======================== ================================================ ===========================================================
+Name                     Key-word                                         Function
+======================== ================================================ ===========================================================
+Ackley                   ``"Ackley"``                                     :func:`~f3dasm.datageneration.functions.ackley`
+Ackley N. 3              ``"Ackley N. 3"``                                :func:`~f3dasm.datageneration.functions.ackleyn3`
+Ackley N. 4              ``"Ackley N. 4"``                                :func:`~f3dasm.datageneration.functions.ackleyn4`
+Adjiman                  ``"Adjiman"``                                    :func:`~f3dasm.datageneration.functions.adjiman`
+Bartels                  ``"Bartels"``                                    :func:`~f3dasm.datageneration.functions.bartels`
+Beale                    ``"Beale"``                                      :func:`~f3dasm.datageneration.functions.beale`
+Bird                     ``"Bird"``                                       :func:`~f3dasm.datageneration.functions.bird`
+Bohachevsky N. 2         ``"Bohachevsky N. 2"``                           :func:`~f3dasm.datageneration.functions.bohachevskyn2`
+Bohachevsky N. 3         ``"Bohachevsky N. 3"``                           :func:`~f3dasm.datageneration.functions.bohachevskyn3`
+Branin                   ``"Branin"``                                     :func:`~f3dasm.datageneration.functions.branin`
+Bukin N. 6               ``"Bukin N. 6"``                                 :func:`~f3dasm.datageneration.functions.bukinn6`
+Colville                 ``"Colville"``                                   :func:`~f3dasm.datageneration.functions.colville`
+Cross-in-Tray            ``"Cross-in-Tray"``                              :func:`~f3dasm.datageneration.functions.crossintray`
+De Jong N. 5             ``"De Jong N. 5"``                               :func:`~f3dasm.datageneration.functions.dejongn5`
+Deckkers-Aarts           ``"Deckkers-Aarts"``                             :func:`~f3dasm.datageneration.functions.deckkersaarts`
+Easom                    ``"Easom"``                                      :func:`~f3dasm.datageneration.functions.easom`
+Egg Crate                ``"Egg Crate"``                                  :func:`~f3dasm.datageneration.functions.eggcrate`
+Egg Holder               ``"Egg Holder"``                                 :func:`~f3dasm.datageneration.functions.eggholder`
+Goldstein-Price          ``"Goldstein-Price"``                            :func:`~f3dasm.datageneration.functions.goldsteinprice`
+Happy Cat                ``"Happy Cat"``                                  :func:`~f3dasm.datageneration.functions.happycat`
+Himmelblau               ``"Himmelblau"``                                 :func:`~f3dasm.datageneration.functions.himmelblau`
+Holder-Table             ``"Holder-Table"``                               :func:`~f3dasm.datageneration.functions.holdertable`
+Keane                    ``"Keane"``                                      :func:`~f3dasm.datageneration.functions.keane`
+Langermann               ``"Langermann"``                                 :func:`~f3dasm.datageneration.functions.langermann`
+Levy                     ``"Levy"``                                       :func:`~f3dasm.datageneration.functions.levy`
+Levy N. 13               ``"Levy N. 13"``                                 :func:`~f3dasm.datageneration.functions.levyn13`
+McCormick                ``"McCormick"``                                  :func:`~f3dasm.datageneration.functions.mccormick`
+Michalewicz              ``"Michalewicz"``                                :func:`~f3dasm.datageneration.functions.michalewicz`
+Periodic                 ``"Periodic"``                                   :func:`~f3dasm.datageneration.functions.periodic`
+Qing                     ``"Qing"``                                       :func:`~f3dasm.datageneration.functions.qing`
+Quartic                  ``"Quartic"``                                    :func:`~f3dasm.datageneration.functions.quartic`
+Rastrigin                ``"Rastrigin"``                                  :func:`~f3dasm.datageneration.functions.rastrigin`
+Rosenbrock               ``"Rosenbrock"``                                 :func:`~f3dasm.datageneration.functions.rosenbrock`
+Salomon                  ``"Salomon"``                                    :func:`~f3dasm.datageneration.functions.salomon`
+Schwefel                 ``"Schwefel"``                                   :func:`~f3dasm.datageneration.functions.schwefel`
+Shekel                   ``"Shekel"``                                     :func:`~f3dasm.datageneration.functions.shekel`
+Shubert                  ``"Shubert"``                                    :func:`~f3dasm.datageneration.functions.shubert`
+Shubert N. 3             ``"Shubert N. 3"``                               :func:`~f3dasm.datageneration.functions.shubertn3`
+Shubert N. 4             ``"Shubert N. 4"``                               :func:`~f3dasm.datageneration.functions.shubertn4`
+Styblinski Tank          ``"Styblinski Tank"``                            :func:`~f3dasm.datageneration.functions.styblinskitang`
+Thevenot                 ``"Thevenot"``                                   :func:`~f3dasm.datageneration.functions.thevenot`
+Xin She Yang             ``"Xin She Yang"``                               :func:`~f3dasm.datageneration.functions.xin_she_yang`
+Xin She Yang N.2         ``"Xin She Yang N.2"``                           :func:`~f3dasm.datageneration.functions.xin_she_yang_2`
+======================== ================================================ ===========================================================
+
 
 .. _implemented optimizers:
 

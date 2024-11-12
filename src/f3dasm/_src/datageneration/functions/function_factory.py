@@ -27,14 +27,8 @@ FUNCTION_MAPPING: Dict[str, DataGenerator] = {
 
 
 def _datagenerator_factory(
-        data_generator: str, domain: Domain | int,
+        data_generator: str, domain: Domain,
         kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
-
-    if isinstance(domain, int):
-        dim = domain
-
-    else:
-        dim = len(domain)
 
     if kwargs is None:
         kwargs = {}
@@ -43,7 +37,7 @@ def _datagenerator_factory(
         ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
     if filtered_name in FUNCTION_MAPPING:
-        return FUNCTION_MAPPING[filtered_name](dimensionality=dim, **kwargs)
+        return FUNCTION_MAPPING[filtered_name](domain=domain, **kwargs)
 
     else:
         raise KeyError(f"Unknown data generator: {data_generator}")

@@ -17,16 +17,16 @@ pytestmark = pytest.mark.smoke
 def test_offset(function: Function, seed: int):
 
     dim = 2
-    bounds = np.tile([0.0, 1.0], (dim, 1))
+    domain = make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (dim, 1)))
     func: Function = function(
+        domain=domain,
         seed=seed,
-        dimensionality=dim,
-        scale_bounds=bounds,
+        scale_bounds=domain.get_bounds(),
     )
 
     xmin = func._get_global_minimum_for_offset_calculation()
 
-    assert func.check_if_within_bounds(xmin, bounds=bounds)
+    assert func.check_if_within_bounds(xmin, bounds=domain.get_bounds())
 
 
 @pytest.mark.parametrize("function", FUNCTIONS)
