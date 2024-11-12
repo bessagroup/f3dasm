@@ -5,6 +5,7 @@ source = src
 omit =
     tests/*
     **/__init__.py
+    src/f3dasm/_src/experimentdata/_newdata.py
 
 [report]
 # Regexes for lines to exclude from consideration

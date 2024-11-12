@@ -278,7 +278,12 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
     else:
         PARALLELIZATION = True
 
-    if optimizer in ['EvoSaxCMAES', 'EvoSaxSimAnneal', 'EvoSaxPSO', 'EvoSaxDE']:
+    data_generator_ = _datagenerator_factory(
+        data_generator=data_generator, domain=domain, kwargs=kwargs)
+    optimizer_ = _optimizer_factory(optimizer=optimizer, domain=domain,
+                                    data_generator=data_generator_)
+
+    if optimizer_.type == 'evosax':
         PARALLELIZATION = False
 
     _ = run_multiple_realizations(
