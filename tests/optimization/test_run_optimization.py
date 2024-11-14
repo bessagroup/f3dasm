@@ -56,7 +56,7 @@ class OptimizationResult:
 
         self.func = _datagenerator_factory(
             data_generator=self.data_generator,
-            domain=self.data[0].domain, kwargs=kwargs)
+            domain=self.data[0].domain, **kwargs)
         self.optimizer = _optimizer_factory(
             optimizer=optimizer, domain=self.data[0].domain,
             data_generator=self.func)
@@ -142,7 +142,7 @@ def run_optimization(
 
     # Set function seed
     data_generator = _datagenerator_factory(
-        data_generator=data_generator, domain=domain, kwargs=kwargs)
+        data_generator=data_generator, domain=domain, **kwargs)
 
     optimizer = _optimizer_factory(
         optimizer=optimizer, domain=domain, data_generator=data_generator,
@@ -152,7 +152,7 @@ def run_optimization(
     data = ExperimentData.from_sampling(
         sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
 
-    data.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+    data.evaluate(data_generator, mode='sequential', **kwargs)
     data.optimize(optimizer=optimizer, data_generator=data_generator,
                   iterations=iterations, kwargs=kwargs,
                   hyperparameters=hyperparameters)
@@ -279,7 +279,7 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
         PARALLELIZATION = True
 
     data_generator_ = _datagenerator_factory(
-        data_generator=data_generator, domain=domain, kwargs=kwargs)
+        data_generator=data_generator, domain=domain, **kwargs)
     optimizer_ = _optimizer_factory(optimizer=optimizer, domain=domain,
                                     data_generator=data_generator_)
 

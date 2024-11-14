@@ -654,11 +654,15 @@ def test_evaluate_mode(mode: str, experimentdata_continuous: ExperimentData, tmp
 
     if mode == "typo":
         with pytest.raises(ValueError):
-            experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
-                                               "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
+            experimentdata_continuous.evaluate(
+                data_generator="ackley", mode=mode,
+                scale_bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
+                seed=SEED)
     else:
-        experimentdata_continuous.evaluate("ackley", mode=mode, kwargs={
-            "scale_bounds": np.array([[0., 1.], [0., 1.], [0., 1.]]), 'seed': SEED})
+        experimentdata_continuous.evaluate(
+            data_generator="ackley", mode=mode,
+            scale_bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
+            seed=SEED)
 
 
 def test_get_input_data(experimentdata_expected_no_output: ExperimentData):

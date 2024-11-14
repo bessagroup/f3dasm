@@ -50,7 +50,7 @@ def test_check_global_minimum(function: str):
 
     seed = 42
     func = _datagenerator_factory(
-        function, domain=domain, kwargs={'seed': seed})
+        function, domain=domain, seed=seed)
     _ = func.get_global_minimum(dim)
 
 
@@ -79,8 +79,8 @@ def test_scaling_1(function: str, scale_bounds_list: List[float]):
     # func: Function = function(seed=seed, scale_bounds=scale_bounds, dimensionality=dim)
     domain = make_nd_continuous_domain(bounds=np.tile(
         [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-    func = _datagenerator_factory(function, domain=domain, kwargs={
-                                  'seed': seed, 'scale_bounds': scale_bounds})
+    func = _datagenerator_factory(
+        function, domain=domain, seed=seed, scale_bounds=scale_bounds)
     x = np.random.uniform(
         low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
 

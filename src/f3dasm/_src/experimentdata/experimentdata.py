@@ -1110,8 +1110,8 @@ class ExperimentData:
     def evaluate(self, data_generator: DataGenerator,
                  mode: Literal['sequential', 'parallel',
                                'cluster', 'cluster_parallel'] = 'sequential',
-                 kwargs: Optional[dict] = None,
-                 output_names: Optional[List[str]] = None) -> None:
+                 output_names: Optional[List[str]] = None,
+                 **kwargs) -> None:
         """Run any function over the entirety of the experiments
 
         Parameters
@@ -1126,9 +1126,6 @@ class ExperimentData:
             * 'cluster' : Run the operation on the cluster
             * 'cluster_parallel' : Run the operation on the cluster in parallel
 
-        kwargs, optional
-            Any keyword arguments that need to
-            be supplied to the function, by default None
         output_names : List[str], optional
             If you provide a function as data generator, you have to provide
             the names of all the output parameters that are in the return
@@ -1138,9 +1135,13 @@ class ExperimentData:
         ------
         ValueError
             Raised when invalid parallelization mode is specified
+
+        Notes
+        -----
+        Any additional keyword arguments are passed to the data generator.
         """
-        if kwargs is None:
-            kwargs = {}
+        # if kwargs is None:
+        #     kwargs = {}
 
         if inspect.isfunction(data_generator):
             if output_names is None:
@@ -1149,24 +1150,27 @@ class ExperimentData:
                      "provide the names of the return arguments with the"
                      "output_names attribute."))
             data_generator = convert_function(
-                f=data_generator, output=output_names)
+                f=data_generator, output=output_names, kwargs=kwargs)
 
         elif isinstance(data_generator, str):
             data_generator = _datagenerator_factory(
-                data_generator, self.domain, kwargs)
+                data_generator=data_generator, domain=self.domain, **kwargs)
 
         if mode.lower() == "sequential":
-            return self._run_sequential(data_generator, kwargs)
+            return self._run_sequential(
+                data_generator=data_generator, **kwargs)
         elif mode.lower() == "parallel":
-            return self._run_multiprocessing(data_generator, kwargs)
+            return self._run_multiprocessing(
+                data_generator=data_generator, **kwargs)
         elif mode.lower() == "cluster":
-            return self._run_cluster(data_generator, kwargs)
+            return self._run_cluster(data_generator=data_generator, **kwargs)
         elif mode.lower() == "cluster_parallel":
-            return self._run_cluster_parallel(data_generator, kwargs)
+            return self._run_cluster_parallel(
+                data_generator=data_generator, **kwargs)
         else:
             raise ValueError("Invalid parallelization mode specified.")
 
-    def _run_sequential(self, data_generator: DataGenerator, kwargs: dict):
+    def _run_sequential(self, data_generator: DataGenerator, **kwargs):
         """Run the operation sequentially
 
         Parameters
@@ -1213,8 +1217,7 @@ class ExperimentData:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self._set_error(experiment_sample._jobnumber)
 
-    def _run_multiprocessing(self, data_generator: DataGenerator,
-                             kwargs: dict):
+    def _run_multiprocessing(self, data_generator: DataGenerator, **kwargs):
         """Run the operation on multiple cores
 
         Parameters
@@ -1266,7 +1269,7 @@ class ExperimentData:
             else:
                 self._set_error(_experiment_sample.job_number)
 
-    def _run_cluster(self, data_generator: DataGenerator, kwargs: dict):
+    def _run_cluster(self, data_generator: DataGenerator, **kwargs):
         """Run the operation on the cluster
 
         Parameters
@@ -1312,7 +1315,7 @@ class ExperimentData:
          ).with_suffix('.lock').unlink(missing_ok=True)
 
     def _run_cluster_parallel(
-            self, data_generator: DataGenerator, kwargs: dict):
+            self, data_generator: DataGenerator, **kwargs):
         """Run the operation on the cluster and parallelize it over cores
 
         Parameters
@@ -1348,7 +1351,7 @@ class ExperimentData:
             d = self.select([e.job_number for e in es_list])
 
             d._run_multiprocessing(
-                data_generator=data_generator, kwargs=kwargs)
+                data_generator=data_generator, **kwargs)
 
             # TODO access resource first!
             self.overwrite_disk(
@@ -1433,7 +1436,7 @@ class ExperimentData:
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
                 data_generator=data_generator,
-                domain=self.domain, kwargs=kwargs)
+                domain=self.domain, **kwargs)
 
         # Create a copy of the optimizer object
         _optimizer = copy(optimizer)
@@ -1537,8 +1540,8 @@ class ExperimentData:
                     seed=optimizer._seed)
 
                 init_samples.evaluate(
-                    data_generator=data_generator, kwargs=kwargs,
-                    mode='sequential')
+                    data_generator=data_generator, mode='sequential',
+                    **kwargs)
 
                 if callback is not None:
                     callback(init_samples)
@@ -1578,7 +1581,7 @@ class ExperimentData:
                 )
             # If applicable, evaluate the new designs:
             new_samples.evaluate(
-                data_generator, mode='sequential', kwargs=kwargs)
+                data_generator, mode='sequential', **kwargs)
 
             if callback is not None:
                 callback(new_samples)
@@ -1678,8 +1681,8 @@ class ExperimentData:
                     seed=optimizer._seed)
 
                 init_samples.evaluate(
-                    data_generator=data_generator, kwargs=kwargs,
-                    mode='sequential')
+                    data_generator=data_generator,
+                    mode='sequential', **kwargs)
 
                 if callback is not None:
                     callback(init_samples)
@@ -1706,7 +1709,7 @@ class ExperimentData:
 
         new_samples: ExperimentData = optimizer.data.select(
             optimizer.data.index[1:])
-        new_samples.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+        new_samples.evaluate(data_generator, mode='sequential', **kwargs)
 
         if callback is not None:
             callback(new_samples)
@@ -1738,7 +1741,7 @@ class ExperimentData:
                     self.add_experiments(last_design)
 
         # Evaluate the function on the extra iterations
-        self.evaluate(data_generator, mode='sequential', kwargs=kwargs)
+        self.evaluate(data_generator, mode='sequential', **kwargs)
 
         # Reset the optimizer
         # optimizer.reset(ExperimentData(domain=self.domain))

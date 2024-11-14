@@ -44,10 +44,10 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
     data2 = ExperimentData.from_sampling(
         sampler='random', domain=domain, n_samples=30, seed=seed)
 
-    data1.evaluate(data_generator, kwargs={'noise': None, 'seed': seed,
-                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
-    data2.evaluate(data_generator, kwargs={'noise': None, 'seed': seed,
-                   'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))})
+    data1.evaluate(data_generator=data_generator, noise=None, seed=seed,
+                   scale_bounds=np.tile([-1.0, 1.0], (dim, 1)))
+    data2.evaluate(data_generator=data_generator, noise=None, seed=seed,
+                   scale_bounds=np.tile([-1.0, 1.0], (dim, 1)))
 
     data1.optimize(optimizer=optimizer, data_generator=data_generator,
                    iterations=i, kwargs={'noise': None, 'seed': seed,
@@ -61,20 +61,20 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
     assert (data1 == data2)
 
 
-@pytest.mark.smoke
-@pytest.mark.parametrize("seed", [42])
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
+@ pytest.mark.smoke
+@ pytest.mark.parametrize("seed", [42])
+@ pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@ pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
 def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: str):
     test_all_optimizers_and_functions(seed, data_generator, optimizer)
 
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
-@pytest.mark.smoke
-@pytest.mark.parametrize("iterations", [10, 23, 66, 86])
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
-@pytest.mark.parametrize("data_generator", ["sphere"])
-@pytest.mark.parametrize("x0_selection", ["best", "new"])
+@ pytest.mark.smoke
+@ pytest.mark.parametrize("iterations", [10, 23, 66, 86])
+@ pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@ pytest.mark.parametrize("data_generator", ["sphere"])
+@ pytest.mark.parametrize("x0_selection", ["best", "new"])
 def test_optimizer_iterations(iterations: int, data_generator: str,
                               optimizer: str, x0_selection: str):
     numsamples = 40  # initial samples
@@ -102,21 +102,25 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
     # func = data_generator(noise=None, seed=seed, scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), dimensionality=dim)
 
     # Evaluate the initial samples
-    data.evaluate(data_generator, mode='sequential', kwargs={'seed': seed, 'noise': None,
-                                                             'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), })
+    data.evaluate(data_generator, mode='sequential', seed=seed, noise=None,
+                  scale_bounds=np.tile([-1.0, 1.0], (dim, 1)))
 
-    _data_generator = _datagenerator_factory(data_generator, domain=domain)
+    _data_generator = _datagenerator_factory(
+        data_generator=data_generator, domain=domain,
+        scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), seed=seed)
 
     _optimizer = _optimizer_factory(
         optimizer, domain=domain, data_generator=_data_generator)
 
     if x0_selection == "new" and iterations < _optimizer._population:
         with pytest.raises(ValueError):
-            data.optimize(optimizer=optimizer, data_generator=data_generator,
-                          iterations=iterations, kwargs={'seed': seed, 'noise': None,
-                                                         'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
-                          hyperparameters={'seed': seed},
-                          x0_selection=x0_selection)
+            data.optimize(
+                optimizer=optimizer, data_generator=data_generator,
+                iterations=iterations,
+                kwargs={'seed': seed, 'noise': None,
+                        'scale_bounds': np.tile([-1.0, 1.0], (dim, 1)), },
+                hyperparameters={'seed': seed},
+                x0_selection=x0_selection)
     else:
 
         data.optimize(optimizer=optimizer, data_generator=data_generator,

@@ -6,7 +6,7 @@ Module for the data generator factory.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Dict
 
 from ...design.domain import Domain
 from ..datagenerator import DataGenerator
@@ -27,11 +27,10 @@ FUNCTION_MAPPING: Dict[str, DataGenerator] = {
 
 
 def _datagenerator_factory(
-        data_generator: str, domain: Domain,
-        kwargs: Optional[Dict[str, Any]] = None) -> DataGenerator:
+        data_generator: str, domain: Domain, **kwargs) -> DataGenerator:
 
-    if kwargs is None:
-        kwargs = {}
+    # if kwargs is None:
+    #     kwargs = {}
 
     filtered_name = data_generator.lower().replace(
         ' ', '').replace('-', '').replace('_', '').replace('.', '')
