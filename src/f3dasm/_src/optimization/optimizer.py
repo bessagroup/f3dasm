@@ -227,3 +227,10 @@ class OptimizerTuple(NamedTuple):
         return self.base_class(
             domain=domain, data_generator=data_generator,
             algorithm=self.algorithm, **self.hyperparameters)
+
+    @property
+    def population(self):
+        if 'population' in self.hyperparameters:
+            return self.hyperparameters['population']
+        else:
+            return 1
