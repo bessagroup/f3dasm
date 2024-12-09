@@ -57,9 +57,7 @@ class OptimizationResult:
         self.func = _datagenerator_factory(
             data_generator=self.data_generator,
             domain=self.data[0].domain, **kwargs)
-        self.optimizer = _optimizer_factory(
-            optimizer=optimizer, domain=self.data[0].domain,
-            data_generator=self.func)
+        self.optimizer = _optimizer_factory(optimizer=optimizer)
         self._log()
 
     def _log(self):
@@ -144,9 +142,7 @@ def run_optimization(
     data_generator = _datagenerator_factory(
         data_generator=data_generator, domain=domain, **kwargs)
 
-    optimizer = _optimizer_factory(
-        optimizer=optimizer, domain=domain, data_generator=data_generator,
-        hyperparameters=hyperparameters)
+    optimizer = _optimizer_factory(optimizer=optimizer, **hyperparameters)
 
     # Sample
     data = ExperimentData.from_sampling(
@@ -280,8 +276,7 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
 
     data_generator_ = _datagenerator_factory(
         data_generator=data_generator, domain=domain, **kwargs)
-    optimizer_ = _optimizer_factory(optimizer=optimizer, domain=domain,
-                                    data_generator=data_generator_)
+    optimizer_ = _optimizer_factory(optimizer=optimizer)
 
     if optimizer_.type == 'evosax':
         PARALLELIZATION = False

@@ -109,8 +109,7 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
         data_generator=data_generator, domain=domain,
         scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), seed=seed)
 
-    _optimizer = _optimizer_factory(
-        optimizer, domain=domain, data_generator=_data_generator)
+    _optimizer = _optimizer_factory(optimizer)
 
     if x0_selection == "new" and iterations < _optimizer._population:
         with pytest.raises(ValueError):

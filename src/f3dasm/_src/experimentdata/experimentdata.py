@@ -1441,12 +1441,13 @@ class ExperimentData:
         # Create a copy of the optimizer object
         _optimizer = copy(optimizer)
 
+        if hyperparameters is None:
+            hyperparameters = {}
+
         # Create the optimizer object if a string reference is passed
         if isinstance(_optimizer, str):
             _optimizer: Optimizer = _optimizer_factory(
-                optimizer=_optimizer, domain=self.domain,
-                data_generator=data_generator,
-                hyperparameters=hyperparameters)
+                optimizer=_optimizer, **hyperparameters)
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
@@ -1564,7 +1565,12 @@ class ExperimentData:
 
         optimizer.init(data=x0, data_generator=data_generator)
 
-        optimizer._check_number_of_datapoints()
+        if len(optimizer.data) < optimizer._population:
+            raise ValueError(
+                f'There are {len(optimizer.data)} datapoints available, \
+                        need {optimizer._population} for initial \
+                            population!'
+            )
 
         for _ in range(number_of_updates(
                 iterations,
@@ -1594,7 +1600,8 @@ class ExperimentData:
             else:
                 self.add_experiments(new_samples)
 
-            optimizer._set_data(data=self)
+            # optimizer._set_data(data=self)
+            optimizer.data = self
 
         if not overwrite:
             # Remove overiterations
@@ -1703,7 +1710,12 @@ class ExperimentData:
 
         optimizer.init(data=x0, data_generator=data_generator)
 
-        optimizer._check_number_of_datapoints()
+        if len(optimizer.data) < optimizer._population:
+            raise ValueError(
+                f'There are {len(optimizer.data)} datapoints available, \
+                        need {optimizer._population} for initial \
+                            population!'
+            )
 
         optimizer.run_algorithm(iterations)
 

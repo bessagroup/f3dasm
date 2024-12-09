@@ -4,12 +4,12 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import Any, Dict, Optional
+from typing import Dict
 
 # Local
-from ..datageneration import DataGenerator
-from ..design.domain import Domain
 from . import _OPTIMIZERS
 from .optimizer import Optimizer
 
@@ -38,9 +38,8 @@ OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
 OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
 
 
-def _optimizer_factory(
-        optimizer: str, domain: Domain, data_generator: DataGenerator,
-        hyperparameters: Optional[Dict[str, Any]] = None) -> Optimizer:
+def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
+                       ) -> Optimizer:
     """Factory function for optimizers
 
     Parameters
@@ -48,12 +47,6 @@ def _optimizer_factory(
 
     optimizer : str
         Name of the optimizer to use
-    domain : Domain
-        Domain of the design space
-    data_generator : DataGenerator
-        Data generator instance
-    hyperparameters : dict, optional
-        Hyperparameters for the optimizer
 
     Returns
     -------
@@ -67,10 +60,6 @@ def _optimizer_factory(
     KeyError
         If the optimizer is not found
     """
-
-    if hyperparameters is None:
-        hyperparameters = {}
-
     if isinstance(optimizer, Optimizer):
         return optimizer
 
@@ -82,10 +71,6 @@ def _optimizer_factory(
         if filtered_name in OPTIMIZER_MAPPING:
             return OPTIMIZER_MAPPING[filtered_name](
                 **hyperparameters)
-
-    # # check if optimizer is a function
-    # elif callable(optimizer):
-    #     return optimizer.init(domain=domain, data_generator=data_generator)
 
     else:
         raise KeyError(f"Unknown optimizer: {optimizer}")

@@ -8,7 +8,7 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-from typing import ClassVar, Iterable, List, Protocol, Tuple
+from typing import ClassVar, Iterable, Protocol, Tuple
 
 # Third-party core
 import numpy as np
@@ -156,43 +156,3 @@ class Optimizer:
         """
         raise NotImplementedError(
             "You should implement this method for your optimizer!")
-
-#                                                               Private Methods
-# =============================================================================
-
-    def _check_number_of_datapoints(self):
-        """
-        Check if the number of datapoints is sufficient for the
-        initial population
-
-        Raises
-        ------
-        ValueError
-            Raises when the number of datapoints is insufficient
-        """
-        if len(self.data) < self._population:
-            raise ValueError(
-                f'There are {len(self.data)} datapoints available, \
-                     need {self._population} for initial \
-                         population!'
-            )
-
-    def _set_data(self, data: ExperimentData):
-        """Set the data attribute to the given data
-
-        Parameters
-        ----------
-        data : ExperimentData
-            Data to set the optimizer to its initial state
-        """
-        self.data = data
-
-    def _get_info(self) -> List[str]:
-        """Give a list of characteristic features of this optimizer
-
-        Returns
-        -------
-        List[str]
-            List of characteristics of the optimizer
-        """
-        return []
