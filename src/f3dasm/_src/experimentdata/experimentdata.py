@@ -288,8 +288,6 @@ class ExperimentData:
 
     @classmethod
     def from_sampling(cls, sampler: Sampler | str, domain: Domain | DictConfig,
-                      n_samples: int = 1,
-                      seed: Optional[int] = None,
                       **kwargs) -> ExperimentData:
         """Create an ExperimentData object from a sampler.
 
@@ -326,7 +324,7 @@ class ExperimentData:
         """
         experimentdata = cls(domain=domain)
         experimentdata.sample(
-            sampler=sampler, n_samples=n_samples, seed=seed, **kwargs)
+            sampler=sampler, **kwargs)
         return experimentdata
 
     @classmethod
@@ -1451,7 +1449,7 @@ class ExperimentData:
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
-            sampler: Sampler = _sampler_factory(sampler, self.domain)
+            sampler: Sampler = _sampler_factory(sampler=sampler)
 
         if _optimizer.type == 'scipy':
             self._iterate_scipy(
@@ -1761,8 +1759,7 @@ class ExperimentData:
     #                                                                  Sampling
     # =========================================================================
 
-    def sample(self, sampler: Sampler | SamplerNames, n_samples: int = 1,
-               seed: Optional[int] = None, **kwargs) -> None:
+    def sample(self, sampler: Sampler | SamplerNames, **kwargs) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1775,10 +1772,6 @@ class ExperimentData:
             * 'latin' : Latin Hypercube Sampling
             * 'sobol' : Sobol Sequence Sampling
             * 'grid' : Grid Search Sampling
-        n_samples : int, optional
-            Number of samples to generate, by default 1
-        seed : Optional[int], optional
-            Seed to use for the sampler, by default None
 
         Note
         ----
@@ -1797,11 +1790,16 @@ class ExperimentData:
             Raised when invalid sampler type is specified
         """
 
-        if isinstance(sampler, str):
-            sampler = _sampler_factory(sampler, self.domain)
+        # Creation
+        sampler = _sampler_factory(sampler, **kwargs)
 
-        sample_data: DataTypes = sampler(
-            domain=self.domain, n_samples=n_samples, seed=seed, **kwargs)
+        # Initialization
+        sampler.init(domain=self.domain)
+
+        # Sampling
+        sample_data: DataTypes = sampler.sample(**kwargs)
+
+        # Adding samples to the ExperimentData object
         self.add(input_data=sample_data, domain=self.domain)
 
     #                                                         Project directory

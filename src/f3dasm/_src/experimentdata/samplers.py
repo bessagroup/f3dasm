@@ -6,8 +6,9 @@
 from __future__ import annotations
 
 # Standard
+from abc import abstractmethod
 from itertools import product
-from typing import Dict, Literal, Optional, Protocol
+from typing import Dict, Literal, Optional
 
 # Third-party
 import numpy as np
@@ -28,56 +29,18 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-SamplerNames = Literal['random', 'latin', 'sobol', 'grid']
 
+class Sampler:
+    def init(self, domain: Domain):
+        self.domain = domain
 
-class Sampler(Protocol):
-    """
-    Interface class for samplers
-    """
-    def __call__(domain: Domain, **kwargs) -> DataTypes:
+    @abstractmethod
+    def sample(self, **kwargs) -> DataTypes:
         ...
-
-#                                                              Factory function
-# =============================================================================
-
-
-def _sampler_factory(sampler: str, domain: Domain) -> Sampler:
-    """
-    Factory function for samplers
-
-    Parameters
-    ----------
-    sampler : str
-        name of the sampler
-    domain : Domain
-        domain object
-
-    Returns
-    -------
-    Sampler
-        sampler object
-    """
-    if sampler.lower() == 'random':
-        return randomuniform
-
-    elif sampler.lower() == 'latin':
-        return latin
-
-    elif sampler.lower() == 'sobol':
-        return sobol
-
-    elif sampler.lower() == 'grid':
-        return grid
-
-    else:
-        raise KeyError(f"Sampler {sampler} not found!"
-                       f"Available built-in samplers are: 'random',"
-                       f"'latin' and 'sobol'")
-
 
 #                                                             Utility functions
 # =============================================================================
+
 
 def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
     """Stretch samples to their boundaries
@@ -239,7 +202,7 @@ def sample_latin_hypercube(
                    for s in domain.space.values()],
     }
 
-    samples = salib_latin.sample(problem, N=n_samples, seed=seed)
+    samples = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
     return samples
 
 
@@ -259,7 +222,7 @@ def sample_sobol_sequence(
     np.ndarray
         samples
     """
-    samples = sobol_sequence.sample(n_samples, len(domain))
+    samples = sobol_sequence.sample(N=n_samples, D=len(domain))
 
     # stretch samples
     samples = _stretch_samples(domain, samples)
@@ -269,197 +232,215 @@ def sample_sobol_sequence(
 #                                                             Built-in samplers
 # =============================================================================
 
+class RandomUniform(Sampler):
+    def __init__(self, seed: Optional[int], **parameters):
+        self.seed = seed
+        self.parameters = parameters
 
-def randomuniform(
-        domain: Domain, n_samples: int, seed: int, **kwargs) -> DataTypes:
+    def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        _continuous = sample_np_random_uniform(
+            domain=self.domain.continuous, n_samples=n_samples,
+            seed=self.seed)
+
+        _discrete = sample_np_random_choice_range(
+            domain=self.domain.discrete, n_samples=n_samples,
+            seed=self.seed)
+
+        _categorical = sample_np_random_choice(
+            domain=self.domain.categorical, n_samples=n_samples,
+            seed=self.seed)
+
+        _constant = sample_constant(self.domain.constant, n_samples)
+
+        df = pd.concat(
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+             pd.DataFrame(
+                _categorical, columns=self.domain.categorical.names),
+             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+            axis=1
+        )[self.domain.names]
+
+        return df
+
+
+def random(seed: Optional[int] = None, **kwargs) -> Sampler:
+    return RandomUniform(seed=seed, **kwargs)
+
+
+# =============================================================================
+
+class Grid(Sampler):
+    def __init__(self, **parameters):
+        self.parameters = parameters
+
+    def sample(self,
+               stepsize_continuous_parameters:
+               Optional[Dict[str, float] | float],
+               **kwargs) -> pd.DataFrame:
+        continuous = self.domain.continuous
+
+        if not continuous.space:
+            discrete_space = continuous.space
+
+        elif isinstance(stepsize_continuous_parameters, (float, int)):
+            discrete_space = {name: param.to_discrete(
+                step=stepsize_continuous_parameters)
+                for name, param in continuous.space.items()}
+
+        elif isinstance(stepsize_continuous_parameters, dict):
+            discrete_space = {key: continuous.space[key].to_discrete(
+                step=value) for key,
+                value in stepsize_continuous_parameters.items()}
+
+            if len(discrete_space) != len(self.domain.continuous):
+                raise ValueError(
+                    "If you specify the stepsize for continuous parameters, \
+                    the stepsize_continuous_parameters should \
+                    contain all continuous parameters")
+
+        continuous_to_discrete = Domain(discrete_space)
+
+        _iterdict = {}
+
+        for k, v in self.domain.categorical.space.items():
+            _iterdict[k] = v.categories
+
+        for k, v, in self.domain.discrete.space.items():
+            _iterdict[k] = range(v.lower_bound, v.upper_bound+1, v.step)
+
+        for k, v, in continuous_to_discrete.space.items():
+            _iterdict[k] = np.arange(
+                start=v.lower_bound, stop=v.upper_bound, step=v.step)
+
+        df = pd.DataFrame(list(product(*_iterdict.values())),
+                          columns=_iterdict, dtype=object)[self.domain.names]
+
+        return df
+
+
+def grid(**kwargs) -> Sampler:
+    return Grid(**kwargs)
+
+# =============================================================================
+
+
+class Sobol(Sampler):
+    def __init__(self, n_samples, seed: Optional[int], **parameters):
+        self.seed = seed
+        self.parameters = parameters
+
+    def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        _continuous = sample_sobol_sequence(
+            domain=self.domain.continuous, n_samples=n_samples)
+
+        _discrete = sample_np_random_choice_range(
+            domain=self.domain.discrete, n_samples=n_samples,
+            seed=self.seed)
+
+        _categorical = sample_np_random_choice(
+            domain=self.domain.categorical, n_samples=n_samples,
+            seed=self.seed)
+
+        _constant = sample_constant(
+            domain=self.domain.constant, n_samples=n_samples)
+
+        df = pd.concat(
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+             pd.DataFrame(
+                _categorical, columns=self.domain.categorical.names),
+             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+            axis=1
+        )[self.domain.names]
+
+        return df
+
+
+def sobol(seed: Optional[int] = None, **kwargs) -> Sampler:
+    return Sobol(seed=seed, **kwargs)
+
+
+# =============================================================================
+
+class Latin(Sampler):
+    def __init__(self, seed: Optional[int], **parameters):
+        self.seed = seed
+        self.parameters = parameters
+
+    def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        _continuous = sample_latin_hypercube(
+            domain=self.domain.continuous, n_samples=n_samples,
+            seed=self.seed)
+
+        _discrete = sample_np_random_choice_range(
+            domain=self.domain.discrete, n_samples=n_samples,
+            seed=self.seed)
+
+        _categorical = sample_np_random_choice(
+            domain=self.domain.categorical, n_samples=n_samples,
+            seed=self.seed)
+
+        _constant = sample_constant(
+            domain=self.domain.constant, n_samples=n_samples)
+
+        df = pd.concat(
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+             pd.DataFrame(
+                _categorical, columns=self.domain.categorical.names),
+             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+            axis=1
+        )[self.domain.names]
+
+        return df
+
+
+def latin(seed: Optional[int] = None, **kwargs) -> Sampler:
+    return Latin(seed=seed, **kwargs)
+
+# =============================================================================
+
+
+_SAMPLERS = [random, latin, sobol, grid]
+
+SAMPLER_MAPPING: Dict[str, Sampler] = {
+    sampler.__name__.lower(): sampler for sampler in _SAMPLERS}
+
+#                                                              Factory function
+# =============================================================================
+
+
+def _sampler_factory(sampler: str | Sampler, **parameters) -> Sampler:
     """
-    Random uniform sampling
+    Factory function for samplers
 
     Parameters
     ----------
-    domain : Domain
-        domain object
-    n_samples : int
-        number of samples
-    seed : int
-        random seed for reproducibility
+    sampler : str | Sampler
+        name of the sampler
 
     Returns
     -------
-    DataTypes
-        input samples in one of the supported data types for the ExperimentData
-        input data.
+    Sampler
+        sampler object
     """
-    _continuous = sample_np_random_uniform(
-        domain=domain.continuous, n_samples=n_samples,
-        seed=seed)
 
-    _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, n_samples=n_samples,
-        seed=seed)
+    if isinstance(sampler, Sampler):
+        return sampler
 
-    _categorical = sample_np_random_choice(
-        domain=domain.categorical, n_samples=n_samples,
-        seed=seed)
+    elif isinstance(sampler, str):
+        filtered_name = sampler.lower().replace(
+            ' ', '').replace('-', '').replace('_', '')
 
-    _constant = sample_constant(domain.constant, n_samples)
+        if filtered_name in SAMPLER_MAPPING:
+            return SAMPLER_MAPPING[filtered_name](**parameters)
 
-    df = pd.concat(
-        [pd.DataFrame(_continuous, columns=domain.continuous.names),
-         pd.DataFrame(_discrete, columns=domain.discrete.names),
-         pd.DataFrame(
-            _categorical, columns=domain.categorical.names),
-         pd.DataFrame(_constant, columns=domain.constant.names)], axis=1
-    )[domain.names]
+        else:
+            raise KeyError(f"Unknown sampler name: {sampler}")
 
-    return df
+    else:
+        raise TypeError(f"Unknown sampler type: {type(sampler)}")
 
 
-def grid(
-    domain: Domain, stepsize_continuous_parameters:
-        Optional[Dict[str, float] | float] = None, **kwargs) -> DataTypes:
-    """Receive samples of the search space
-
-    Parameters
-    ----------
-    n_samples : int
-        number of samples
-    stepsize_continuous_parameters : Dict[str, float] | float, optional
-        stepsize for the continuous parameters, by default None.
-        If a float is given, all continuous parameters are sampled with
-        the same stepsize. If a dictionary is given, the stepsize for each
-        continuous parameter can be specified.
-
-    Returns
-    -------
-    DataTypes
-        input samples in one of the supported data types for the ExperimentData
-        input data.
-
-    Raises
-    ------
-    ValueError
-        If the stepsize_continuous_parameters is given as a dictionary
-        and not specified for all continuous parameters.
-    """
-    continuous = domain.continuous
-
-    if not continuous.space:
-        discrete_space = continuous.space
-
-    elif isinstance(stepsize_continuous_parameters, (float, int)):
-        discrete_space = {name: param.to_discrete(
-            step=stepsize_continuous_parameters)
-            for name, param in continuous.space.items()}
-
-    elif isinstance(stepsize_continuous_parameters, dict):
-        discrete_space = {key: continuous.space[key].to_discrete(
-            step=value) for key,
-            value in stepsize_continuous_parameters.items()}
-
-        if len(discrete_space) != len(domain.continuous):
-            raise ValueError(
-                "If you specify the stepsize for continuous parameters, \
-                the stepsize_continuous_parameters should \
-                contain all continuous parameters")
-
-    continuous_to_discrete = Domain(discrete_space)
-
-    _iterdict = {}
-
-    for k, v in domain.categorical.space.items():
-        _iterdict[k] = v.categories
-
-    for k, v, in domain.discrete.space.items():
-        _iterdict[k] = range(v.lower_bound, v.upper_bound+1, v.step)
-
-    for k, v, in continuous_to_discrete.space.items():
-        _iterdict[k] = np.arange(
-            start=v.lower_bound, stop=v.upper_bound, step=v.step)
-
-    df = pd.DataFrame(list(product(*_iterdict.values())),
-                      columns=_iterdict, dtype=object)[domain.names]
-
-    return df
-
-
-def sobol(domain: Domain, n_samples: int, seed: int, **kwargs) -> DataTypes:
-    """
-    Sobol sequence sampling
-
-    Parameters
-    ----------
-    domain : Domain
-        domain object
-    n_samples : int
-        number of samples
-    seed : int
-        random seed for reproducibility
-
-    Returns
-    -------
-    DataTypes
-        input samples in one of the supported data types for the ExperimentData
-        input data.
-    """
-    _continuous = sample_sobol_sequence(
-        domain=domain.continuous, n_samples=n_samples)
-
-    _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, n_samples=n_samples, seed=seed)
-
-    _categorical = sample_np_random_choice(
-        domain=domain.categorical, n_samples=n_samples, seed=seed)
-
-    _constant = sample_constant(domain=domain.constant, n_samples=n_samples)
-
-    df = pd.concat(
-        [pd.DataFrame(_continuous, columns=domain.continuous.names),
-         pd.DataFrame(_discrete, columns=domain.discrete.names),
-         pd.DataFrame(
-            _categorical, columns=domain.categorical.names),
-         pd.DataFrame(_constant, columns=domain.constant.names)], axis=1
-    )[domain.names]
-
-    return df
-
-
-def latin(domain: Domain, n_samples: int, seed: int, **kwargs) -> DataTypes:
-    """
-    Latin Hypercube sampling
-
-    Parameters
-    ----------
-    domain : Domain
-        domain object
-    n_samples : int
-        number of samples
-    seed : int
-        random seed for reproducibility
-
-    Returns
-    -------
-    DataTypes
-        input samples in one of the supported data types for the ExperimentData
-        input data.
-    """
-    _continuous = sample_latin_hypercube(
-        domain=domain.continuous, n_samples=n_samples, seed=seed)
-
-    _discrete = sample_np_random_choice_range(
-        domain=domain.discrete, n_samples=n_samples, seed=seed)
-
-    _categorical = sample_np_random_choice(
-        domain=domain.categorical, n_samples=n_samples, seed=seed)
-
-    _constant = sample_constant(domain=domain.constant, n_samples=n_samples)
-
-    df = pd.concat(
-        [pd.DataFrame(_continuous, columns=domain.continuous.names),
-         pd.DataFrame(_discrete, columns=domain.discrete.names),
-         pd.DataFrame(
-            _categorical, columns=domain.categorical.names),
-         pd.DataFrame(_constant, columns=domain.constant.names)], axis=1
-    )[domain.names]
-
-    return df
+SamplerNames = Literal['random', 'latin', 'sobol', 'grid']
