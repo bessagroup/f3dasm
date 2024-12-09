@@ -1561,11 +1561,10 @@ class ExperimentData:
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=optimizer._population)
-        optimizer._set_data(x0)
+
+        optimizer.init(data=x0, data_generator=data_generator)
 
         optimizer._check_number_of_datapoints()
-
-        optimizer.init()
 
         for _ in range(number_of_updates(
                 iterations,
@@ -1595,7 +1594,7 @@ class ExperimentData:
             else:
                 self.add_experiments(new_samples)
 
-            optimizer._set_data(self)
+            optimizer._set_data(data=self)
 
         if not overwrite:
             # Remove overiterations
@@ -1701,11 +1700,12 @@ class ExperimentData:
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=optimizer._population)
-        optimizer._set_data(x0)
+
+        optimizer.init(data=x0, data_generator=data_generator)
 
         optimizer._check_number_of_datapoints()
 
-        optimizer.run_algorithm(iterations, data_generator)
+        optimizer.run_algorithm(iterations)
 
         new_samples: ExperimentData = optimizer.data.select(
             optimizer.data.index[1:])

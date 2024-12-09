@@ -8,8 +8,7 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-from typing import (Callable, ClassVar, Iterable, List, NamedTuple, Protocol,
-                    Tuple, Type)
+from typing import ClassVar, Iterable, List, Protocol, Tuple
 
 # Third-party core
 import numpy as np
@@ -17,7 +16,6 @@ import pandas as pd
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from ..design.domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -57,7 +55,7 @@ class Optimizer:
     The update_step method should have the following signature:
 
     '''
-    def update_step(self, data_generator: DataGenerator)
+    def update_step(self)
     -> Tuple[np.ndarray, np.ndarray]:
     '''
 
@@ -143,17 +141,24 @@ class Optimizer:
         f3dasm.ExperimentData object.
         """
         raise NotImplementedError(
-            "You should implement an update step for your algorithm!")
+            "You should implement an update step for your optimizer!")
+
+    def init(self, data: ExperimentData, data_generator: DataGenerator):
+        """
+        Initialize the optimizer with the given data and data generator
+
+        Parameters
+        ----------
+        data : ExperimentData
+            Data to initialize the optimizer
+        data_generator : DataGenerator
+            Data generator to calculate the objective value
+        """
+        raise NotImplementedError(
+            "You should implement this method for your optimizer!")
 
 #                                                               Private Methods
 # =============================================================================
-
-    def _set_algorithm(self):
-        """
-        Method that can be implemented to set the optimization algorithm.
-        Whenever the reset method is called, this method will be called to
-        reset the algorithm to its initial state."""
-        ...
 
     def _check_number_of_datapoints(self):
         """
@@ -171,28 +176,6 @@ class Optimizer:
                      need {self._population} for initial \
                          population!'
             )
-
-    def _reset(self, data: ExperimentData):
-        """Reset the optimizer to its initial state
-
-        Parameters
-        ----------
-        data : ExperimentData
-            Data to set the optimizer to its initial state
-
-        Note
-        ----
-        This method should be called whenever the optimizer is reset
-        to its initial state. This can be done when the optimizer is
-        re-initialized or when the optimizer is re-used for a new
-        optimization problem.
-
-        The following steps are taken when the reset method is called:
-        - The data attribute is set to the given data (self._set_data)
-        - The algorithm is set to its initial state (self._set_algorithm)
-        """
-        self._set_data(data)
-        self.init()
 
     def _set_data(self, data: ExperimentData):
         """Set the data attribute to the given data
@@ -213,24 +196,3 @@ class Optimizer:
             List of characteristics of the optimizer
         """
         return []
-
-    def init(self):
-        ...
-
-
-class OptimizerTuple(NamedTuple):
-    base_class: Type[Optimizer]
-    algorithm: Callable
-    hyperparameters: dict
-
-    def init(self, domain: Domain, data_generator: DataGenerator) -> Optimizer:
-        return self.base_class(
-            domain=domain, data_generator=data_generator,
-            algorithm=self.algorithm, **self.hyperparameters)
-
-    @property
-    def population(self):
-        if 'population' in self.hyperparameters:
-            return self.hyperparameters['population']
-        else:
-            return 1

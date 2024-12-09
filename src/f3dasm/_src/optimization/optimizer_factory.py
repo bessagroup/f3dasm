@@ -5,13 +5,13 @@ Module for the data generator factory.
 # =============================================================================
 
 # Standard
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 # Local
 from ..datageneration import DataGenerator
 from ..design.domain import Domain
 from . import _OPTIMIZERS
-from .optimizer import Optimizer, OptimizerTuple
+from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -30,7 +30,7 @@ except ImportError:
     pass
 
 
-OPTIMIZER_MAPPING: Dict[str, Type[OptimizerTuple]] = {
+OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
     opt.__name__.lower().replace(' ', '').replace('-', '').replace(
         '_', ''): opt for opt in _OPTIMIZERS}
 
@@ -81,12 +81,11 @@ def _optimizer_factory(
 
         if filtered_name in OPTIMIZER_MAPPING:
             return OPTIMIZER_MAPPING[filtered_name](
-                **hyperparameters).init(
-                domain=domain, data_generator=data_generator)
+                **hyperparameters)
 
-    # check if optimizer is a function
-    elif callable(optimizer):
-        return optimizer.init(domain=domain, data_generator=data_generator)
+    # # check if optimizer is a function
+    # elif callable(optimizer):
+    #     return optimizer.init(domain=domain, data_generator=data_generator)
 
     else:
         raise KeyError(f"Unknown optimizer: {optimizer}")

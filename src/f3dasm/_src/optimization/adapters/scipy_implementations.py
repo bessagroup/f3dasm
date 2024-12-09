@@ -3,6 +3,7 @@
 
 # Standard
 import warnings
+from typing import Protocol
 
 # Third-party core
 import autograd.numpy as np
@@ -10,7 +11,6 @@ from scipy.optimize import minimize
 
 # Locals
 from ...datageneration.datagenerator import DataGenerator
-from ...design.domain import Domain
 from ...experimentdata.experimentsample import ExperimentSample
 from ..optimizer import Optimizer
 
@@ -27,20 +27,26 @@ warnings.filterwarnings(
     "ignore", message="^OptimizeWarning: Unknown solver options.*")
 
 
-class _SciPyOptimizer(Optimizer):
+class ExperimentData(Protocol):
+    ...
+
+
+class ScipyOptimizer(Optimizer):
     require_gradients: bool = False
     type: str = 'scipy'
 
-    def __init__(self, domain: Domain, data_generator: DataGenerator,
-                 algorithm: str, **hyperparameters):
-        self.domain = domain
+    def __init__(self, algorithm_cls, **hyperparameters):
+        self.algorithm_cls = algorithm_cls
+        self.hyperparameters = hyperparameters
+
+    def init(self, data: ExperimentData, data_generator: DataGenerator):
+        self.data = data
+        self.algorithm = self.algorithm_cls
         self.data_generator = data_generator
-        self.algorithm = algorithm
-        self.options = {**hyperparameters}
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.data.add_experiments(
-            ExperimentSample.from_numpy(xk, domain=self.domain))
+            ExperimentSample.from_numpy(xk, domain=self.data.domain))
 
     def update_step(self):
         """Update step function"""
@@ -49,35 +55,33 @@ class _SciPyOptimizer(Optimizer):
                  Multiple iterations are directly called \
                     througout scipy.minimize.')
 
-    def run_algorithm(self, iterations: int, data_generator: DataGenerator):
+    def run_algorithm(self, iterations: int):
         """Run the algorithm for a number of iterations
 
         Parameters
         ----------
         iterations
             number of iterations
-        function
-            function to be evaluated
         """
 
         def fun(x):
-            sample: ExperimentSample = data_generator._run(
-                x, domain=self.domain)
+            sample: ExperimentSample = self.data_generator._run(
+                x, domain=self.data.domain)
             _, y = sample.to_numpy()
             return float(y)
 
-        if not hasattr(data_generator, 'dfdx'):
-            data_generator.dfdx = None
+        if not hasattr(self.data_generator, 'dfdx'):
+            self.data_generator.dfdx = None
 
-        self.options['maxiter'] = iterations
+        self.hyperparameters['maxiter'] = iterations
 
         minimize(
             fun=fun,
             method=self.algorithm,
-            jac=data_generator.dfdx,
+            jac=self.data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
-            options=self.options,
-            bounds=self.domain.get_bounds(),
+            options=self.hyperparameters,
+            bounds=self.data.domain.get_bounds(),
             tol=0.0,
         )

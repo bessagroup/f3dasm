@@ -6,8 +6,8 @@ Optimizers based from the scipy.optimize library
 # =============================================================================
 
 # Locals
-from .adapters.scipy_implementations import _SciPyOptimizer
-from .optimizer import OptimizerTuple
+from .adapters.scipy_implementations import ScipyOptimizer
+from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,7 +19,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-def cg(gtol: float = 0.0, **kwargs) -> OptimizerTuple:
+def cg(gtol: float = 0.0, **kwargs) -> Optimizer:
     """
     Conjugate Gradient optimizer
     Adapted from scipy.optimize.minimize
@@ -31,19 +31,19 @@ def cg(gtol: float = 0.0, **kwargs) -> OptimizerTuple:
 
     Returns
     -------
-    OptimizerTuple
-        Optimizer tuple
+    Optimizer
+        Optimizer
     """
-    return OptimizerTuple(
-        base_class=_SciPyOptimizer,
-        algorithm='CG',
-        hyperparameters={'gtol': gtol, **kwargs}
+    return ScipyOptimizer(
+        algorithm_cls='CG',
+        gtol=gtol,
+        **kwargs
     )
 
 # =============================================================================
 
 
-def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> OptimizerTuple:
+def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> Optimizer:
     """
     L-BFGS-B optimizer
     Adapted from scipy.optimize.minimize
@@ -57,20 +57,21 @@ def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> OptimizerTuple:
 
     Returns
     -------
-    OptimizerTuple
-        Optimizer tuple
+    Optimizer
+        Optimizer
     """
-    return OptimizerTuple(
-        base_class=_SciPyOptimizer,
-        algorithm='L-BFGS-B',
-        hyperparameters={'ftol': ftol, 'gtol': gtol, **kwargs}
+    return ScipyOptimizer(
+        algorithm_cls='L-BFGS-B',
+        ftol=ftol,
+        gtol=gtol,
+        **kwargs
     )
 
 # =============================================================================
 
 
 def nelder_mead(xatol: float = 0.0, fatol: float = 0.0,
-                adaptive: bool = False, **kwargs) -> OptimizerTuple:
+                adaptive: bool = False, **kwargs) -> Optimizer:
     """
     Nelder-Mead optimizer
     Adapted from scipy.optimize.minimize
@@ -86,12 +87,13 @@ def nelder_mead(xatol: float = 0.0, fatol: float = 0.0,
 
     Returns
     -------
-    OptimizerTuple
-        Optimizer tuple
+    Optimizer
+        Optimizer
     """
-    return OptimizerTuple(
-        base_class=_SciPyOptimizer,
-        algorithm='Nelder-Mead',
-        hyperparameters={
-            'xatol': xatol, 'fatol': fatol, 'adaptive': adaptive, **kwargs}
+    return ScipyOptimizer(
+        algorithm_cls='Nelder-Mead',
+        xatol=xatol,
+        fatol=fatol,
+        adaptive=adaptive,
+        **kwargs
     )

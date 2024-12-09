@@ -6,14 +6,14 @@ Optimizers based from the numpy library
 # =============================================================================
 
 # Standard
-from typing import Optional, Tuple
+from typing import Optional, Protocol, Tuple
 
 # Third-party core
 import numpy as np
 
 # Locals
-from ..design.domain import Domain
-from .optimizer import Optimizer, OptimizerTuple
+from ..datageneration.datagenerator import DataGenerator
+from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -25,22 +25,30 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class RandomSearch(Optimizer):
-    """Naive random search"""
+class ExperimentData(Protocol):
+    ...
+
+
+class NumpyOptimizer(Optimizer):
+    """Numpy optimizer class"""
     require_gradients: bool = False
 
-    def __init__(self, domain: Domain, seed: Optional[int] = None, **kwargs):
-        self.domain = domain
+    def __init__(self, seed: Optional[int], **hyperparameters):
         self.seed = seed
+        self.hyperparameters = hyperparameters
+
+    def init(self, data: ExperimentData, data_generator: DataGenerator):
+        self.data_generator = data_generator
+        self.data = data
         self.algorithm = np.random.default_rng(self.seed)
 
     def update_step(self) -> Tuple[np.ndarray, np.ndarray]:
         x_new = np.atleast_2d(
             [
                 self.algorithm.uniform(
-                    low=self.domain.get_bounds()[d, 0],
-                    high=self.domain.get_bounds()[d, 1])
-                for d in range(len(self.domain))
+                    low=self.data.domain.get_bounds()[d, 0],
+                    high=self.data.domain.get_bounds()[d, 1])
+                for d in range(len(self.data.domain))
             ]
         )
 
@@ -48,7 +56,7 @@ class RandomSearch(Optimizer):
         return x_new, None
 
 
-def random_search(seed: Optional[int] = None, **kwargs) -> OptimizerTuple:
+def random_search(seed: Optional[int] = None, **kwargs) -> Optimizer:
     """
     Random search optimizer
 
@@ -59,11 +67,10 @@ def random_search(seed: Optional[int] = None, **kwargs) -> OptimizerTuple:
 
     Returns
     -------
-    OptimizerTuple
-        Optimizer tuple
+    Optimizer
+        Optimizer object.
     """
-    return OptimizerTuple(
-        base_class=RandomSearch,
-        algorithm=None,
-        hyperparameters={'seed': seed}
+    return NumpyOptimizer(
+        seed=seed,
+        **kwargs
     )
