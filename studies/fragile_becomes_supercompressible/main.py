@@ -27,11 +27,11 @@ from typing import Optional
 import hydra
 import numpy as np
 import pandas as pd
+from abaqus2py import F3DASMAbaqusSimulator
+
 from f3dasm import ExperimentData
 from f3dasm import logger as f3dasm_logger
-from f3dasm.design import Domain
-
-from abaqus2py import F3DASMAbaqusSimulator
+from f3dasm.design import Domain, Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,32 +46,41 @@ __status__ = 'Stable'
 #                                                         Custom sampler method
 # =============================================================================
 
-def log_normal_sampler(domain: Domain, n_samples: int,
-                       mean: float, sigma: float, seed: Optional[int] = None):
-    """Sampler function for lognormal distribution
 
-    Parameters
-    ----------
-    domain
-        Domain object
-    n_samples
-        Number of samples to generate
-    mean
-        Mean of the lognormal distribution
-    sigma
-        Standard deviation of the lognormal distribution
-    seed
-        Seed for the random number generator
+class LogNormalSampler(Sampler):
+    def __init__(self, mean: float, sigma: float, seed: Optional[int] = None):
+        """Sampler function for lognormal distribution
 
-    Returns
-    -------
-    DataFrame
-        pandas DataFrame with the samples
-    """
-    rng = np.random.default_rng(seed)
-    sampled_imperfections = rng.lognormal(
-        mean=mean, sigma=sigma, size=n_samples)
-    return pd.DataFrame(sampled_imperfections, columns=domain.names)
+        Parameters
+        ----------
+        mean
+            Mean of the lognormal distribution
+        sigma
+            Standard deviation of the lognormal distribution
+        seed
+            Seed for the random number generator
+        """
+        self.mean = mean
+        self.sigma = sigma
+        self.seed = seed
+
+    def sample(self, n_samples: int):
+        """Sampler function for lognormal distribution
+
+        Parameters
+        ----------
+        n_samples
+            Number of samples to generator
+
+        Returns
+        -------
+        DataFrame
+            pandas DataFrame with the samples
+        """
+        rng = np.random.default_rng(self.seed)
+        sampled_imperfections = rng.lognormal(
+            mean=self.mean, sigma=self.sigma, size=n_samples)
+        return pd.DataFrame(sampled_imperfections, columns=self.domain.names)
 
 # =============================================================================
 
@@ -81,14 +90,16 @@ def pre_processing(config):
 
     if 'from_sampling' in config.imperfection:
         domain_imperfections = Domain.from_yaml(config.imperfection.domain)
+        log_normal_sampler = LogNormalSampler(
+            mean=config.imperfection.mean,
+            sigma=config.imperfection.sigma,
+            seed=config.experimentdata.from_sampling.seed)
 
         imperfections = ExperimentData.from_sampling(
             sampler=log_normal_sampler,
             domain=domain_imperfections,
             n_samples=config.experimentdata.from_sampling.n_samples,
-            mean=config.imperfection.mean,
-            sigma=config.imperfection.sigma,
-            seed=config.experimentdata.from_sampling.seed)
+        )
 
         experimentdata = experimentdata.join(imperfections)
 

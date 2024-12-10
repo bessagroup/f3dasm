@@ -32,7 +32,7 @@ import xarray as xr
 from f3dasm import ExperimentData
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
-from f3dasm.design import Domain, make_nd_continuous_domain
+from f3dasm.design import Domain, Sampler, make_nd_continuous_domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -47,27 +47,31 @@ __status__ = 'Stable'
 #                                                         Custom sampler method
 # =============================================================================
 
-def sample_if_compatible_function(
-        domain: Domain, n_samples: int, seed: int) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    samples = []
+class CustomSampler(Sampler):
+    def __init__(self, seed: int):
+        self.seed = seed
 
-    for i in range(n_samples):
-        dim = rng.choice(domain.space['dimensionality'].categories)
+    def sample(self, n_samples: int) -> pd.DataFrame:
+        rng = np.random.default_rng(self.seed)
+        samples = []
 
-        available_functions = list(set(get_functions(d=int(dim))) & set(
-            domain.space['function_name'].categories))
-        function_name = rng.choice(available_functions)
+        for i in range(n_samples):
+            dim = rng.choice(self.domain.space['dimensionality'].categories)
 
-        noise = rng.choice(domain.space['noise'].categories)
-        seed = rng.integers(
-            low=domain.space['seed'].lower_bound,
-            high=domain.space['seed'].upper_bound)
-        budget = domain.space['budget'].value
+            available_functions = list(set(get_functions(d=int(dim))) & set(
+                self.domain.space['function_name'].categories))
+            function_name = rng.choice(available_functions)
 
-        samples.append([function_name, dim, noise, seed, budget])
+            noise = rng.choice(self.domain.space['noise'].categories)
+            seed = rng.integers(
+                low=self.domain.space['seed'].lower_bound,
+                high=self.domain.space['seed'].upper_bound)
+            budget = self.domain.space['budget'].value
 
-    return pd.DataFrame(samples, columns=domain.names)[domain.names]
+            samples.append([function_name, dim, noise, seed, budget])
+
+        return pd.DataFrame(
+            samples, columns=self.domain.names)[self.domain.names]
 
 #                                                          Custom datagenerator
 # =============================================================================
@@ -103,9 +107,8 @@ class BenchmarkOptimizer(DataGenerator):
 
             data.evaluate(
                 data_generator=function_name,
-                kwargs={'scale_bounds': domain.get_bounds(), 'offset': True,
-                        'noise': noise, 'seed': seed},
-                mode='sequential')
+                scale_bounds=domain.get_bounds(), offset=True, noise=noise,
+                seed=seed, mode='sequential')
 
             data.optimize(
                 optimizer=optimizer['name'], data_generator=function_name,
@@ -133,12 +136,15 @@ class BenchmarkOptimizer(DataGenerator):
 
 def pre_processing(config):
 
+    custom_sampler = CustomSampler(
+        seed=config.experimentdata.from_sampling.seed)
+
     if 'from_sampling' in config.experimentdata:
         experimentdata = ExperimentData.from_sampling(
-            sampler=sample_if_compatible_function,
+            sampler=custom_sampler,
             domain=Domain.from_yaml(config.domain),
             n_samples=config.experimentdata.from_sampling.n_samples,
-            seed=config.experimentdata.from_sampling.seed)
+        )
 
     else:
         experimentdata = ExperimentData.from_yaml(config.experimentdata)
