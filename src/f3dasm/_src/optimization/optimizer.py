@@ -154,5 +154,5 @@ class Optimizer:
         data_generator : DataGenerator
             Data generator to calculate the objective value
         """
-        raise NotImplementedError(
-            "You should implement this method for your optimizer!")
+        self.data = data
+        self.data_generator = data_generator
