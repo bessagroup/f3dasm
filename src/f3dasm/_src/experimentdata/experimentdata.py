@@ -1138,9 +1138,6 @@ class ExperimentData:
         -----
         Any additional keyword arguments are passed to the data generator.
         """
-        # if kwargs is None:
-        #     kwargs = {}
-
         if inspect.isfunction(data_generator):
             if output_names is None:
                 raise TypeError(
@@ -1152,21 +1149,24 @@ class ExperimentData:
 
         elif isinstance(data_generator, str):
             data_generator = _datagenerator_factory(
-                data_generator=data_generator, domain=self.domain, **kwargs)
+                data_generator=data_generator, **kwargs)
 
-        if mode.lower() == "sequential":
-            return self._run_sequential(
-                data_generator=data_generator, **kwargs)
-        elif mode.lower() == "parallel":
-            return self._run_multiprocessing(
-                data_generator=data_generator, **kwargs)
-        elif mode.lower() == "cluster":
-            return self._run_cluster(data_generator=data_generator, **kwargs)
-        elif mode.lower() == "cluster_parallel":
-            return self._run_cluster_parallel(
-                data_generator=data_generator, **kwargs)
-        else:
-            raise ValueError("Invalid parallelization mode specified.")
+        data_generator.init(data=self)
+        self = data_generator.call(mode=mode, **kwargs)
+
+        # if mode.lower() == "sequential":
+        #     return self._run_sequential(
+        #         data_generator=data_generator, **kwargs)
+        # elif mode.lower() == "parallel":
+        #     return self._run_multiprocessing(
+        #         data_generator=data_generator, **kwargs)
+        # elif mode.lower() == "cluster":
+        #     return self._run_cluster(data_generator=data_generator, **kwargs)
+        # elif mode.lower() == "cluster_parallel":
+        #     return self._run_cluster_parallel(
+        #         data_generator=data_generator, **kwargs)
+        # else:
+        #     raise ValueError("Invalid parallelization mode specified.")
 
     def _run_sequential(self, data_generator: DataGenerator, **kwargs):
         """Run the operation sequentially
@@ -1433,8 +1433,7 @@ class ExperimentData:
         # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
-                data_generator=data_generator,
-                domain=self.domain, **kwargs)
+                data_generator=data_generator, **kwargs)
 
         # Create a copy of the optimizer object
         _optimizer = copy(optimizer)
@@ -1561,6 +1560,7 @@ class ExperimentData:
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=optimizer._population)
 
+        data_generator.init(data=x0)
         optimizer.init(data=x0, data_generator=data_generator)
 
         if len(optimizer.data) < optimizer._population:
@@ -1706,6 +1706,7 @@ class ExperimentData:
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=optimizer._population)
 
+        data_generator.init(data=x0)
         optimizer.init(data=x0, data_generator=data_generator)
 
         if len(optimizer.data) < optimizer._population:

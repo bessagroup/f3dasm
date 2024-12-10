@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import pytest
 
+from f3dasm import ExperimentData
 from f3dasm._src.datageneration.functions import (FUNCTIONS, Function,
                                                   get_function_classes)
 from f3dasm._src.datageneration.functions.function_factory import (
@@ -19,10 +20,11 @@ def test_offset(function: Function, seed: int):
     dim = 2
     domain = make_nd_continuous_domain(bounds=np.tile([0.0, 1.0], (dim, 1)))
     func: Function = function(
-        domain=domain,
         seed=seed,
         scale_bounds=domain.get_bounds(),
     )
+
+    func.init(data=ExperimentData(domain=domain))
 
     xmin = func._get_global_minimum_for_offset_calculation()
 
@@ -50,7 +52,8 @@ def test_check_global_minimum(function: str):
 
     seed = 42
     func = _datagenerator_factory(
-        function, domain=domain, seed=seed)
+        data_generator=function, seed=seed)
+    func.init(data=ExperimentData(domain=domain))
     _ = func.get_global_minimum(dim)
 
 
@@ -80,7 +83,8 @@ def test_scaling_1(function: str, scale_bounds_list: List[float]):
     domain = make_nd_continuous_domain(bounds=np.tile(
         [-1.0, 1.0], (dim, 1)), dimensionality=dim)
     func = _datagenerator_factory(
-        function, domain=domain, seed=seed, scale_bounds=scale_bounds)
+        data_generator=function, seed=seed, scale_bounds=scale_bounds)
+    func.init(data=ExperimentData(domain=domain))
     x = np.random.uniform(
         low=scale_bounds[0, 0], high=scale_bounds[0, 1], size=(1, func.dimensionality))
 

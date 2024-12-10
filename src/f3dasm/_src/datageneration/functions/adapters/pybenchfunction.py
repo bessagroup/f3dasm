@@ -2,7 +2,7 @@
 # =============================================================================
 
 # Standard
-from typing import Optional
+from typing import Optional, Protocol
 
 # Third-party
 import autograd.numpy as np
@@ -22,10 +22,15 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class ExperimentData(Protocol):
+    @property
+    def domain(self) -> Domain:
+        ...
+
+
 class PyBenchFunction(Function):
     def __init__(
             self,
-            domain: Domain,
             scale_bounds: Optional[np.ndarray] = None,
             noise: Optional[float] = None,
             offset: bool = True,
@@ -37,8 +42,6 @@ class PyBenchFunction(Function):
 
         Parameters
         ----------
-        domain : Domain
-            domain of the function
         scale_bounds, optional
             array containing the lower and upper bound of the scaling
              factor of the input data, by default None
@@ -51,14 +54,13 @@ class PyBenchFunction(Function):
             seed for the random number generator, by default None
         """
         super().__init__(seed=seed)
-        self.dimensionality = len(domain)
         self.scale_bounds = scale_bounds
         self.noise = noise
         self.offset = offset
 
-        self.__post_init__()
-
-    def __post_init__(self):
+    def init(self, data: ExperimentData):
+        self.data = data
+        self.dimensionality = len(data.domain)
         self._set_parameters()
 
         self._configure_scale_bounds()

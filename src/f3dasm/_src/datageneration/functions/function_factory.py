@@ -26,22 +26,18 @@ FUNCTION_MAPPING: Dict[str, DataGenerator] = {
         '_', '').replace('.', ''): f for f in _FUNCTIONS}
 
 
-def _datagenerator_factory(
-        data_generator: str, domain: Domain, **kwargs) -> DataGenerator:
-
-    # if kwargs is None:
-    #     kwargs = {}
+def _datagenerator_factory(data_generator: str, **kwargs) -> DataGenerator:
 
     filtered_name = data_generator.lower().replace(
         ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
     if filtered_name in FUNCTION_MAPPING:
-        return FUNCTION_MAPPING[filtered_name](domain=domain, **kwargs)
+        return FUNCTION_MAPPING[filtered_name](**kwargs)
 
     else:
         raise KeyError(f"Unknown data generator: {data_generator}")
 
 
 def is_dim_compatible(data_generator: str, domain: Domain) -> bool:
-    func = _datagenerator_factory(data_generator, domain)
+    func = _datagenerator_factory(data_generator)
     return func.is_dim_compatible(len(domain))

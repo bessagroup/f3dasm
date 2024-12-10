@@ -106,7 +106,7 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
                   scale_bounds=np.tile([-1.0, 1.0], (dim, 1)))
 
     _data_generator = _datagenerator_factory(
-        data_generator=data_generator, domain=domain,
+        data_generator=data_generator,
         scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), seed=seed)
 
     _optimizer = _optimizer_factory(optimizer)
