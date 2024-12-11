@@ -10,14 +10,12 @@ The ExperimentData object is the main object used to store implementations
 from __future__ import annotations
 
 # Standard
-import inspect
-import traceback
 from copy import copy
 from functools import wraps
 from pathlib import Path
 from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Tuple, Type)
+                    Optional, Protocol, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -26,23 +24,21 @@ import xarray as xr
 from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
-from pathos.helpers import mp
 
 # Local
-from ..datageneration.datagenerator import DataGenerator, convert_function
+# from ..datageneration.datagenerator import DataGenerator
 from ..datageneration.functions.function_factory import _datagenerator_factory
 from ..design.domain import Domain, _domain_factory
 from ..logger import logger
-from ..optimization import Optimizer
+# from ..optimization import Optimizer
 from ..optimization.optimizer_factory import _optimizer_factory
 from ._data import DataTypes, _Data, _data_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
-from ._jobqueue import NoOpenJobsError, Status, _jobs_factory
+from ._jobqueue import Status, _jobs_factory
 from .experimentsample import ExperimentSample
-from .samplers import Sampler, SamplerNames, _sampler_factory
-from .utils import number_of_overiterations, number_of_updates
+from .samplers import SamplerNames, _sampler_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -1138,232 +1134,16 @@ class ExperimentData:
         -----
         Any additional keyword arguments are passed to the data generator.
         """
-        if inspect.isfunction(data_generator):
-            if output_names is None:
-                raise TypeError(
-                    ("If you provide a function as data generator, you have to"
-                     "provide the names of the return arguments with the"
-                     "output_names attribute."))
-            data_generator = convert_function(
-                f=data_generator, output=output_names, kwargs=kwargs)
 
-        elif isinstance(data_generator, str):
-            data_generator = _datagenerator_factory(
-                data_generator=data_generator, **kwargs)
+        # Create
+        data_generator = _datagenerator_factory(
+            data_generator=data_generator, output_names=output_names, **kwargs)
 
+        # Initialize
         data_generator.init(data=self)
+
+        # Call
         self = data_generator.call(mode=mode, **kwargs)
-
-        # if mode.lower() == "sequential":
-        #     return self._run_sequential(
-        #         data_generator=data_generator, **kwargs)
-        # elif mode.lower() == "parallel":
-        #     return self._run_multiprocessing(
-        #         data_generator=data_generator, **kwargs)
-        # elif mode.lower() == "cluster":
-        #     return self._run_cluster(data_generator=data_generator, **kwargs)
-        # elif mode.lower() == "cluster_parallel":
-        #     return self._run_cluster_parallel(
-        #         data_generator=data_generator, **kwargs)
-        # else:
-        #     raise ValueError("Invalid parallelization mode specified.")
-
-    def _run_sequential(self, data_generator: DataGenerator, **kwargs):
-        """Run the operation sequentially
-
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
-
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        while True:
-            try:
-                experiment_sample = self._access_open_job_data()
-                logger.debug(
-                    f"Accessed experiment_sample \
-                         {experiment_sample._jobnumber}")
-            except NoOpenJobsError:
-                logger.debug("No Open Jobs left")
-                break
-
-            try:
-
-                # If kwargs is empty dict
-                if not kwargs:
-                    logger.debug(
-                        f"Running experiment_sample "
-                        f"{experiment_sample._jobnumber}")
-                else:
-                    logger.debug(
-                        f"Running experiment_sample "
-                        f"{experiment_sample._jobnumber} with kwargs {kwargs}")
-
-                _experiment_sample = data_generator._run(
-                    experiment_sample, **kwargs)  # no *args!
-                self._set_experiment_sample(_experiment_sample)
-            except Exception as e:
-                error_msg = f"Error in experiment_sample \
-                     {experiment_sample._jobnumber}: {e}"
-                error_traceback = traceback.format_exc()
-                logger.error(f"{error_msg}\n{error_traceback}")
-                self._set_error(experiment_sample._jobnumber)
-
-    def _run_multiprocessing(self, data_generator: DataGenerator, **kwargs):
-        """Run the operation on multiple cores
-
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
-
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Get all the jobs
-        options = []
-        while True:
-            try:
-                experiment_sample = self._access_open_job_data()
-                options.append(
-                    ({'experiment_sample': experiment_sample, **kwargs},))
-            except NoOpenJobsError:
-                break
-
-        def f(options: Dict[str, Any]) -> Tuple[ExperimentSample, int]:
-            try:
-
-                logger.debug(
-                    f"Running experiment_sample "
-                    f"{options['experiment_sample'].job_number}")
-
-                return (data_generator._run(**options), 0)  # no *args!
-
-            except Exception as e:
-                error_msg = f"Error in experiment_sample \
-                     {options['experiment_sample'].job_number}: {e}"
-                error_traceback = traceback.format_exc()
-                logger.error(f"{error_msg}\n{error_traceback}")
-                return (options['experiment_sample'], 1)
-
-        with mp.Pool() as pool:
-            # maybe implement pool.starmap_async ?
-            _experiment_samples: List[
-                Tuple[ExperimentSample, int]] = pool.starmap(f, options)
-
-        for _experiment_sample, exit_code in _experiment_samples:
-            if exit_code == 0:
-                self._set_experiment_sample(_experiment_sample)
-            else:
-                self._set_error(_experiment_sample.job_number)
-
-    def _run_cluster(self, data_generator: DataGenerator, **kwargs):
-        """Run the operation on the cluster
-
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
-
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Retrieve the updated experimentdata object from disc
-        try:
-            self = self.from_file(self.project_dir)
-        except FileNotFoundError:  # If not found, store current
-            self.store()
-
-        while True:
-            try:
-                experiment_sample = self._get_open_job_data()
-            except NoOpenJobsError:
-                logger.debug("No Open jobs left!")
-                break
-
-            try:
-                _experiment_sample = data_generator._run(
-                    experiment_sample, **kwargs)
-                self._write_experiment_sample(_experiment_sample)
-            except Exception:
-                n = experiment_sample.job_number
-                error_msg = f"Error in experiment_sample {n}: "
-                error_traceback = traceback.format_exc()
-                logger.error(f"{error_msg}\n{error_traceback}")
-                self._write_error(experiment_sample._jobnumber)
-                continue
-
-        self = self.from_file(self.project_dir)
-        # Remove the lockfile from disk
-        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
-
-    def _run_cluster_parallel(
-            self, data_generator: DataGenerator, **kwargs):
-        """Run the operation on the cluster and parallelize it over cores
-
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
-
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Retrieve the updated experimentdata object from disc
-        try:
-            self = self.from_file(self.project_dir)
-        except FileNotFoundError:  # If not found, store current
-            self.store()
-
-        no_jobs = False
-
-        while True:
-            es_list = []
-            for core in range(mp.cpu_count()):
-                try:
-                    es_list.append(self._get_open_job_data())
-                except NoOpenJobsError:
-                    logger.debug("No Open jobs left!")
-                    no_jobs = True
-                    break
-
-            d = self.select([e.job_number for e in es_list])
-
-            d._run_multiprocessing(
-                data_generator=data_generator, **kwargs)
-
-            # TODO access resource first!
-            self.overwrite_disk(
-                indices=d.index, input_data=d._input_data,
-                output_data=d._output_data, jobs=d._jobs,
-                domain=d.domain, add_if_not_exist=False)
-
-            if no_jobs:
-                break
-
-        self = self.from_file(self.project_dir)
-        # Remove the lockfile from disk
-        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
 
     #                                                              Optimization
     # =========================================================================
@@ -1430,95 +1210,29 @@ class ExperimentData:
         ValueError
             Raised when invalid x0_selection is specified
         """
+        if kwargs is None:
+            kwargs = {}
+
         # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
             data_generator: DataGenerator = _datagenerator_factory(
                 data_generator=data_generator, **kwargs)
 
-        # Create a copy of the optimizer object
-        _optimizer = copy(optimizer)
+        # # Create a copy of the optimizer object
+        # _optimizer = copy(optimizer)
 
         if hyperparameters is None:
             hyperparameters = {}
 
         # Create the optimizer object if a string reference is passed
-        if isinstance(_optimizer, str):
-            _optimizer: Optimizer = _optimizer_factory(
-                optimizer=_optimizer, **hyperparameters)
+        if isinstance(optimizer, str):
+            optimizer: Optimizer = _optimizer_factory(
+                optimizer=optimizer, **hyperparameters)
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
             sampler: Sampler = _sampler_factory(sampler=sampler)
 
-        if _optimizer.type == 'scipy':
-            self._iterate_scipy(
-                optimizer=_optimizer, data_generator=data_generator,
-                iterations=iterations, kwargs=kwargs,
-                x0_selection=x0_selection,
-                sampler=sampler,
-                overwrite=overwrite,
-                callback=callback)
-        else:
-            self._iterate(
-                optimizer=_optimizer, data_generator=data_generator,
-                iterations=iterations, kwargs=kwargs,
-                x0_selection=x0_selection,
-                sampler=sampler,
-                overwrite=overwrite,
-                callback=callback)
-
-    def _iterate(self, optimizer: Optimizer, data_generator: DataGenerator,
-                 iterations: int, kwargs: Dict[str, Any], x0_selection: str,
-                 sampler: Sampler, overwrite: bool,
-                 callback: Callable):
-        """Internal represenation of the iteration process
-
-        Parameters
-        ----------
-        optimizer : Optimizer
-            Optimizer object
-        data_generator : DataGenerator
-            DataGenerator object
-        iterations : int
-            number of iterations
-        kwargs : Dict[str, Any]
-            any additional keyword arguments that will be passed to
-            the DataGenerator
-        x0_selection : str | ExperimentData
-            How to select the initial design.
-            The following x0_selections are available:
-
-            * 'best': Select the best designs from the current experimentdata
-            * 'random': Select random designs from the current experimentdata
-            * 'last': Select the last designs from the current experimentdata
-            * 'new': Create new random designs from the current experimentdata
-
-            If the x0_selection is 'new', new designs are sampled with the
-            sampler provided. The number of designs selected is equal to the
-            population size of the optimizer.
-
-            If an ExperimentData object is passed as x0_selection,
-            the optimizer will use the input_data and output_data from this
-            object as initial samples.
-
-        sampler: Sampler
-            If x0_selection = 'new', the sampler to use
-        overwrite: bool
-            If True, the optimizer will overwrite the current data.
-        callback : Callable
-            A callback function that is called after every iteration. It has
-            the following signature:
-
-                    ``callback(intermediate_result: ExperimentData)``
-
-            where the first argument is a parameter containing an
-            `ExperimentData` object with the current iterate(s).
-
-        Raises
-        ------
-        ValueError
-            Raised when invalid x0_selection is specified
-        """
         last_index = self.index[-1] if not self.index.empty else -1
 
         if isinstance(x0_selection, str):
@@ -1531,11 +1245,12 @@ class ExperimentData:
                         f'smaller than the population size '
                         f'({optimizer._population})')
 
-                init_samples = ExperimentData.from_sampling(
-                    domain=self.domain,
-                    sampler=sampler,
-                    n_samples=optimizer._population,
-                    seed=optimizer._seed)
+                init_samples = ExperimentData(domain=self.domain)
+                init_samples.remove_rows_bottom(len(init_samples))
+
+                init_samples.sample(sampler=sampler,
+                                    n_samples=optimizer._population,
+                                    seed=optimizer._seed)
 
                 init_samples.evaluate(
                     data_generator=data_generator, mode='sequential',
@@ -1560,202 +1275,18 @@ class ExperimentData:
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=optimizer._population)
 
-        data_generator.init(data=x0)
+        x0.evaluate(data_generator=data_generator, mode='sequential',
+                    **kwargs)
+
         optimizer.init(data=x0, data_generator=data_generator)
-
-        if len(optimizer.data) < optimizer._population:
-            raise ValueError(
-                f'There are {len(optimizer.data)} datapoints available, \
-                        need {optimizer._population} for initial \
-                            population!'
-            )
-
-        for _ in range(number_of_updates(
-                iterations,
-                population=optimizer._population)):
-            new_samples = optimizer.update_step()
-
-            # If new_samples is a tuple of input_data and output_data
-            if isinstance(new_samples, tuple):
-                new_samples = ExperimentData(
-                    domain=self.domain,
-                    input_data=new_samples[0],
-                    output_data=new_samples[1],
-                )
-            # If applicable, evaluate the new designs:
-            new_samples.evaluate(
-                data_generator, mode='sequential', **kwargs)
-
-            if callback is not None:
-                callback(new_samples)
-
-            if overwrite:
-                _indices = new_samples.index + last_index + 1
-                self._overwrite_experiments(experiment_sample=new_samples,
-                                            indices=_indices,
-                                            add_if_not_exist=True)
-
-            else:
-                self.add_experiments(new_samples)
-
-            # optimizer._set_data(data=self)
-            optimizer.data = self
-
-        if not overwrite:
-            # Remove overiterations
-            self.remove_rows_bottom(number_of_overiterations(
-                iterations,
-                population=optimizer._population))
-
-        # Reset the optimizer
-        # optimizer.reset(ExperimentData(domain=self.domain))
-
-    def _iterate_scipy(self, optimizer: Optimizer,
-                       data_generator: DataGenerator,
-                       iterations: int, kwargs: dict,
-                       x0_selection: str | ExperimentData,
-                       sampler: Sampler, overwrite: bool,
-                       callback: Callable):
-        """Internal represenation of the iteration process for scipy-minimize
-        optimizers.
-
-        Parameters
-        ----------
-        optimizer : Optimizer
-            Optimizer object
-        data_generator : DataGenerator
-            DataGenerator object
-        iterations : int
-            number of iterations
-        kwargs : Dict[str, Any]
-            any additional keyword arguments that will be passed to
-            the DataGenerator
-        x0_selection : str | ExperimentData
-            How to select the initial design.
-            The following x0_selections are available:
-
-            * 'best': Select the best designs from the current experimentdata
-            * 'random': Select random designs from the current experimentdata
-            * 'last': Select the last designs from the current experimentdata
-            * 'new': Create new random designs from the current experimentdata
-
-            If the x0_selection is 'new', new designs are sampled with the
-            sampler provided. The number of designs selected is equal to the
-            population size of the optimizer.
-
-            If an ExperimentData object is passed as x0_selection,
-            the optimizer will use the input_data and output_data from this
-            object as initial samples.
-
-        sampler: Sampler
-            If x0_selection = 'new', the sampler to use
-        overwrite: bool
-            If True, the optimizer will overwrite the current data.
-        callback : Callable
-            A callback function that is called after every iteration. It has
-            the following signature:
-
-                    ``callback(intermediate_result: ExperimentData)``
-
-            where the first argument is a parameter containing an
-            `ExperimentData` object with the current iterate(s).
-
-        Raises
-        ------
-        ValueError
-            Raised when invalid x0_selection is specified
-        """
-        last_index = self.index[-1] if not self.index.empty else -1
-        n_data_before_iterate = len(self)
-
-        if isinstance(x0_selection, str):
-            if x0_selection == 'new':
-
-                if iterations < optimizer._population:
-                    raise ValueError(
-                        f'For creating new samples, the total number of '
-                        f'requested iterations ({iterations}) cannot be '
-                        f'smaller than the population size '
-                        f'({optimizer._population})')
-
-                init_samples = ExperimentData.from_sampling(
-                    domain=self.domain,
-                    sampler=sampler,
-                    n_samples=optimizer._population,
-                    seed=optimizer._seed)
-
-                init_samples.evaluate(
-                    data_generator=data_generator,
-                    mode='sequential', **kwargs)
-
-                if callback is not None:
-                    callback(init_samples)
-
-                if overwrite:
-                    _indices = init_samples.index + last_index + 1
-                    self._overwrite_experiments(
-                        experiment_sample=init_samples,
-                        indices=_indices,
-                        add_if_not_exist=True)
-
-                else:
-                    self.add_experiments(init_samples)
-
-                x0_selection = 'last'
-
-        x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer._population)
-
-        data_generator.init(data=x0)
-        optimizer.init(data=x0, data_generator=data_generator)
-
-        if len(optimizer.data) < optimizer._population:
-            raise ValueError(
-                f'There are {len(optimizer.data)} datapoints available, \
-                        need {optimizer._population} for initial \
-                            population!'
-            )
-
-        optimizer.run_algorithm(iterations)
-
-        new_samples: ExperimentData = optimizer.data.select(
-            optimizer.data.index[1:])
-        new_samples.evaluate(data_generator, mode='sequential', **kwargs)
-
-        if callback is not None:
-            callback(new_samples)
-
-        if overwrite:
-            self.add_experiments(
-                optimizer.data.select([optimizer.data.index[-1]]))
-
-        elif not overwrite:
-            # Do not add the first element, as this is already
-            # in the sampled data
-            self.add_experiments(new_samples)
-
-            # TODO: At the end, the data should have
-            # n_data_before_iterate + iterations amount of elements!
-            # If x_new is empty, repeat best x0 to fill up total iteration
-            if len(self) == n_data_before_iterate:
-                repeated_sample = self.get_n_best_output(
-                    n_samples=1)
-
-                for repetition in range(iterations):
-                    self.add_experiments(repeated_sample)
-
-            # Repeat last iteration to fill up total iteration
-            if len(self) < n_data_before_iterate + iterations:
-                last_design = self.get_experiment_sample(len(self)-1)
-
-                while len(self) < n_data_before_iterate + iterations:
-                    self.add_experiments(last_design)
-
-        # Evaluate the function on the extra iterations
-        self.evaluate(data_generator, mode='sequential', **kwargs)
-
-        # Reset the optimizer
-        # optimizer.reset(ExperimentData(domain=self.domain))
+        self.add_experiments(optimizer.call(iterations=iterations,
+                                            kwargs=kwargs,
+                                            x0_selection=x0_selection,
+                                            sampler=sampler,
+                                            overwrite=overwrite,
+                                            callback=callback,
+                                            last_index=last_index)
+                             )
 
     #                                                                  Sampling
     # =========================================================================
@@ -1815,6 +1346,51 @@ class ExperimentData:
             Path to the project directory
         """
         self.project_dir = _project_dir_factory(project_dir)
+
+#                                                                     Protocols
+# =============================================================================
+
+
+class Optimizer(Protocol):
+    def init(self, data: ExperimentData,
+             data_generator: DataGenerator) -> None:
+        """Initialize the optimizer object
+
+        Parameters
+        ----------
+        data : ExperimentData
+            Data to be used for the optimization
+        data_generator : DataGenerator
+            DataGenerator object
+        """
+        ...
+
+    def call(self, **kwargs) -> ExperimentData:
+        ...
+
+    @property
+    def _population(self) -> int:
+        ...
+
+    @property
+    def _seed(self) -> int:
+        ...
+
+
+class Sampler(Protocol):
+    def init(self, data: ExperimentData) -> None:
+        ...
+
+    def sample(self, **kwargs) -> DataTypes:
+        ...
+
+
+class DataGenerator(Protocol):
+    def init(self, data: ExperimentData) -> None:
+        ...
+
+    def call(self, mode: str, **kwargs) -> ExperimentData:
+        ...
 
 
 def x0_factory(experiment_data: ExperimentData,
