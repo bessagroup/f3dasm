@@ -46,6 +46,10 @@ class DataGenerator(Protocol):
 
 class ExperimentData(Protocol):
 
+    def __init__(self, domain: Domain, input_data: np.ndarray,
+                 output_data: np.ndarray):
+        ...
+
     @property
     def domain(self) -> Domain:
         ...
@@ -290,7 +294,6 @@ class Optimizer:
             new_samples = self.update_step()
 
             # If new_samples is a tuple of input_data and output_data
-            # TODO: This doesn't work with a Protocol
             if isinstance(new_samples, tuple):
                 new_samples = type(self.data)(
                     domain=self.data.domain,
