@@ -10,7 +10,6 @@ The ExperimentData object is the main object used to store implementations
 from __future__ import annotations
 
 # Standard
-from copy import copy
 from functools import wraps
 from pathlib import Path
 from time import sleep
