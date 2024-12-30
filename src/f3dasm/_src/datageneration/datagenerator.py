@@ -22,9 +22,6 @@ from pathos.helpers import mp
 # Local
 from ..design.domain import Domain
 from ..experimentdata._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME
-from ..experimentdata._jobqueue import NoOpenJobsError
-from ..experimentdata.experimentsample import (ExperimentSample,
-                                               _experimentsample_factory)
 from ..logger import logger
 
 #                                                          Authorship & Credits
@@ -37,13 +34,17 @@ __status__ = "Alpha"
 # =============================================================================
 
 
+class ExperimentSample(Protocol):
+    ...
+
+
 class ExperimentData(Protocol):
 
     @property
     def project_dir(self) -> str:
         ...
 
-    def _access_open_job_data(self) -> ExperimentSample:
+    def _access_open_job_data(self) -> Tuple[int, ExperimentSample]:
         ...
 
     def _set_experiment_sample(self,
@@ -132,12 +133,12 @@ class DataGenerator:
             Raised when there are no open jobs left
         """
         while True:
-            try:
-                experiment_sample = self.data._access_open_job_data()
-                logger.debug(
-                    f"Accessed experiment_sample \
-                         {experiment_sample._jobnumber}")
-            except NoOpenJobsError:
+
+            job_number, experiment_sample = self.data._access_open_job_data()
+            logger.debug(
+                f"Accessed experiment_sample \
+                        {job_number}")
+            if job_number is None:
                 logger.debug("No Open Jobs left")
                 break
 
@@ -147,21 +148,24 @@ class DataGenerator:
                 if not kwargs:
                     logger.debug(
                         f"Running experiment_sample "
-                        f"{experiment_sample._jobnumber}")
+                        f"{job_number}")
                 else:
                     logger.debug(
                         f"Running experiment_sample "
-                        f"{experiment_sample._jobnumber} with kwargs {kwargs}")
+                        f"{job_number} with kwargs {kwargs}")
 
                 _experiment_sample = self._run(
                     experiment_sample, **kwargs)  # no *args!
-                self.data._set_experiment_sample(_experiment_sample)
+                self.data._set_experiment_sample(
+                    experiment_sample=_experiment_sample,
+                    id=job_number)
             except Exception as e:
                 error_msg = f"Error in experiment_sample \
-                     {experiment_sample._jobnumber}: {e}"
+                     {job_number}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.data._set_error(experiment_sample._jobnumber)
+                # self.data._set_error(experiment_sample._jobnumber)
+                self.data.mark(indices=job_number, status='error')
 
     def _evaluate_multiprocessing(self, **kwargs):
         """Run the operation on multiple cores
@@ -181,11 +185,11 @@ class DataGenerator:
         # Get all the jobs
         options = []
         while True:
-            try:
-                experiment_sample = self.data._access_open_job_data()
-                options.append(
-                    ({'experiment_sample': experiment_sample, **kwargs},))
-            except NoOpenJobsError:
+            job_number, experiment_sample = self.data._access_open_job_data()
+            options.append(
+                ({'experiment_sample': experiment_sample, **kwargs},))
+
+            if job_number is None:
                 break
 
         def f(options: Dict[str, Any]) -> Tuple[ExperimentSample, int]:
@@ -237,9 +241,9 @@ class DataGenerator:
             self.data.store()
 
         while True:
-            try:
-                experiment_sample = self.data._get_open_job_data()
-            except NoOpenJobsError:
+
+            job_number, experiment_sample = self.data._get_open_job_data()
+            if job_number is None:
                 logger.debug("No Open jobs left!")
                 break
 
@@ -248,8 +252,8 @@ class DataGenerator:
                     experiment_sample, **kwargs)
                 self.data._write_experiment_sample(_experiment_sample)
             except Exception:
-                n = experiment_sample.job_number
-                error_msg = f"Error in experiment_sample {n}: "
+                # n = experiment_sample.job_number
+                error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.data._write_error(experiment_sample._jobnumber)
@@ -287,12 +291,14 @@ class DataGenerator:
         while True:
             es_list = []
             for core in range(mp.cpu_count()):
-                try:
-                    es_list.append(self._get_open_job_data())
-                except NoOpenJobsError:
+                job_number, experiment_sample = self._get_open_job_data()
+
+                if job_number is None:
                     logger.debug("No Open jobs left!")
                     no_jobs = True
                     break
+
+                es_list.append(self._get_open_job_data())
 
             d = self.select([e.job_number for e in es_list])
 
@@ -362,10 +368,14 @@ class DataGenerator:
             saved in the experiment_sample
         """
         # Cache the design
-        self.experiment_sample: ExperimentSample = _experimentsample_factory(
-            experiment_sample=experiment_sample, domain=domain)
+        # self.experiment_sample: ExperimentSample = _experimentsample_factory(
+        #     experiment_sample=experiment_sample, domain=domain)
+
+        self.experiment_sample = experiment_sample
 
         self.execute(**kwargs)
+
+        self.experiment_sample.mark('finished')
 
         return self.experiment_sample
 
@@ -410,7 +420,7 @@ def convert_function(f: Callable,
 
     class TempDataGenerator(DataGenerator):
         def execute(self, **_kwargs) -> None:
-            _input = {input_name: self.experiment_sample.get(input_name)
+            _input = {input_name: self.experiment_sample.input_data[input_name]
                       for input_name in input if input_name not in kwargs}
             _output = f(**_input, **kwargs)
 

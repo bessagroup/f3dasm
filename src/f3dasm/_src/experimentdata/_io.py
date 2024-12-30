@@ -11,7 +11,7 @@ from __future__ import annotations
 # Standard
 import pickle
 from pathlib import Path
-from typing import Any, Mapping, Optional, Type
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -45,6 +45,34 @@ MAX_TRIES = 10
 
 #                                                               Storing methods
 # =============================================================================
+
+
+def convert_refs_to_objects(
+    data: Dict[str, Any],
+        reference_keys: Dict[str, Tuple[Callable, Callable]]
+) -> Dict[str, Any]:
+    # Create new empty dictionary
+    converted_data = dict()
+
+    # Go over every item in the dict
+    for key, value in data.items():
+
+        # If the key is referenced
+        if key in reference_keys:
+
+            # Extract the load function
+            load_func, _ = reference_keys[key]
+
+            # Set the value of the converted_data to the output of the load
+            # function
+            converted_data[key] = load_func(value)
+
+        # If key is not a reference
+        else:
+
+            # Load the data normally
+            converted_data[key] = value
+    return converted_data
 
 
 class StoreProtocol:

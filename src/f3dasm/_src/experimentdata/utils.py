@@ -7,6 +7,10 @@ Utility functions for the experimentdata module
 
 from __future__ import annotations
 
+# Standard
+import warnings
+from functools import wraps
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -53,3 +57,27 @@ def number_of_overiterations(iterations: int, population: int) -> int:
         return overiterations
     else:
         return population - overiterations
+
+
+def deprecated(version: str = "", message: str = ""):
+    """
+    A decorator to mark functions as deprecated.
+    It will display a warning when the function is used.
+
+    Args:
+        version (str): Optional version when the method will be removed.
+        message (str): Additional message to display in the warning.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            warning_msg = f"{func.__name__}() is deprecated"
+            if version:
+                warning_msg += f" and will be removed in version {version}"
+            if message:
+                warning_msg += f". {message}"
+            warnings.warn(
+                warning_msg, category=DeprecationWarning, stacklevel=2)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator

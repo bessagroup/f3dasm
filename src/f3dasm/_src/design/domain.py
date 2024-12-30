@@ -649,24 +649,22 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     return Domain(space)
 
 
-def _domain_factory(domain: Domain | DictConfig | None,
-                    input_data: pd.DataFrame,
-                    output_data: pd.DataFrame) -> Domain:
+def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
+    # If domain is already a Domain object, return it
     if isinstance(domain, Domain):
         return domain
 
+    # If domain is not given, return an empty Domain object
+    elif domain is None:
+        return Domain()
+
+    # If domain is a path, load the domain from the file
     elif isinstance(domain, (Path, str)):
         return Domain.from_file(Path(domain))
 
+    # If the domain is a hydra DictConfig, convert it to a Domain object
     elif isinstance(domain, DictConfig):
         return Domain.from_yaml(domain)
-
-    elif (input_data.empty and output_data.empty and domain is None):
-        return Domain()
-
-    elif domain is None:
-        return Domain.from_dataframe(
-            input_data, output_data)
 
     else:
         raise TypeError(
