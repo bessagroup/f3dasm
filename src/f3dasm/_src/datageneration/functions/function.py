@@ -86,23 +86,16 @@ class Function(DataGenerator):
 
         return np.array(y).reshape(-1, 1)
 
-    def execute(self, experiment_sample: ExperimentSample) -> ExperimentSample:
-        x, _ = experiment_sample.to_numpy()
+    def execute(self, **kwargs) -> None:
+        x, _ = self.experiment_sample.to_numpy()
 
         if isinstance(x, ArrayBox):
             x = x._value
             if isinstance(x, ArrayBox):
                 x = x._value
         y = np.nan_to_num(self(x), nan=np.nan)
-        experiment_sample["y"] = float(y.ravel().astype(np.float64))
-        return experiment_sample
-
-    def _run(
-            self, experiment_sample: ExperimentSample | np.ndarray,
-            domain: Optional[Domain] = None, **kwargs) -> ExperimentSample:
-        _experiment_sample = _experimentsample_factory(
-            experiment_sample=experiment_sample, domain=domain)
-        return self.execute(_experiment_sample)
+        self.experiment_sample.store(
+            name="y", object=float(y.ravel().astype(np.float64)))
 
     def _retrieve_original_input(self, x: np.ndarray):
         """Retrieve the original input vector if the input is augmented

@@ -57,7 +57,7 @@ def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
     np.ndarray
         stretched samples
     """
-    for dim, param in enumerate(domain.space.values()):
+    for dim, param in enumerate(domain.input_space.values()):
         samples[:, dim] = (
             samples[:, dim] * (
                 param.upper_bound - param.lower_bound
@@ -86,7 +86,7 @@ def sample_constant(domain: Domain, n_samples: int):
     np.ndarray
         samples
     """
-    samples = np.array([param.value for param in domain.space.values()])
+    samples = np.array([param.value for param in domain.input_space.values()])
     return np.tile(samples, (n_samples, 1))
 
 
@@ -111,7 +111,7 @@ def sample_np_random_choice(
     """
     rng = np.random.default_rng(seed)
     samples = np.empty(shape=(n_samples, len(domain)), dtype=object)
-    for dim, param in enumerate(domain.space.values()):
+    for dim, param in enumerate(domain.input_space.values()):
         samples[:, dim] = rng.choice(
             param.categories, size=n_samples)
 
@@ -139,7 +139,7 @@ def sample_np_random_choice_range(
     """
     samples = np.empty(shape=(n_samples, len(domain)), dtype=np.int32)
     rng = np.random.default_rng(seed)
-    for dim, param in enumerate(domain.space.values()):
+    for dim, param in enumerate(domain.input_space.values()):
         samples[:, dim] = rng.choice(
             range(param.lower_bound,
                   param.upper_bound + 1, param.step),
@@ -199,7 +199,7 @@ def sample_latin_hypercube(
         "num_vars": len(domain),
         "names": domain.names,
         "bounds": [[s.lower_bound, s.upper_bound]
-                   for s in domain.space.values()],
+                   for s in domain.input_space.values()],
     }
 
     samples = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
@@ -280,16 +280,16 @@ class Grid(Sampler):
                **kwargs) -> pd.DataFrame:
         continuous = self.domain.continuous
 
-        if not continuous.space:
-            discrete_space = continuous.space
+        if not continuous.input_space:
+            discrete_space = continuous.input_space
 
         elif isinstance(stepsize_continuous_parameters, (float, int)):
             discrete_space = {name: param.to_discrete(
                 step=stepsize_continuous_parameters)
-                for name, param in continuous.space.items()}
+                for name, param in continuous.input_space.items()}
 
         elif isinstance(stepsize_continuous_parameters, dict):
-            discrete_space = {key: continuous.space[key].to_discrete(
+            discrete_space = {key: continuous.input_space[key].to_discrete(
                 step=value) for key,
                 value in stepsize_continuous_parameters.items()}
 
@@ -303,13 +303,13 @@ class Grid(Sampler):
 
         _iterdict = {}
 
-        for k, v in self.domain.categorical.space.items():
+        for k, v in self.domain.categorical.input_space.items():
             _iterdict[k] = v.categories
 
-        for k, v, in self.domain.discrete.space.items():
+        for k, v, in self.domain.discrete.input_space.items():
             _iterdict[k] = range(v.lower_bound, v.upper_bound+1, v.step)
 
-        for k, v, in continuous_to_discrete.space.items():
+        for k, v, in continuous_to_discrete.input_space.items():
             _iterdict[k] = np.arange(
                 start=v.lower_bound, stop=v.upper_bound, step=v.step)
 

@@ -83,7 +83,7 @@ class ExperimentSample:
                    output_value: Optional[float] = None,
                    jobnumber: int = 0,
                    domain: Optional[Domain] = None) -> ExperimentSample:
-        ...
+        print('Catched!')
 
     #                                                                   Getters
     # =========================================================================
@@ -126,10 +126,12 @@ class ExperimentSample:
                 }
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
-        ...
+        return (np.array(list(self.input_data.values())),
+                np.array(list(self.output_data.values()))
+                )
 
     def to_dict(self) -> Dict[str, Any]:
-        ...
+        return {**self.input_data, **self.output_data}
 
     #                                                                   Storing
     # =========================================================================
@@ -157,6 +159,7 @@ class ExperimentSample:
 
     def clean_registered_keys(self):
         self.registered_keys = {}
+
     # def _store_to_disk(
     #     self, object: Any, name: str,
     #         store_method: Optional[Type[StoreProtocol]] = None) -> None:

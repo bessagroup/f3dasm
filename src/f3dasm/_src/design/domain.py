@@ -11,7 +11,6 @@ from __future__ import annotations
 # Standard
 import math
 import pickle
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (Any, Dict, Iterable, Iterator, List, Literal, Optional,
                     Sequence, Type)
@@ -22,9 +21,9 @@ import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 
 # Local
-from .parameter import (CategoricalType, _CategoricalParameter,
-                        _ConstantParameter, _ContinuousParameter,
-                        _DiscreteParameter, _OutputParameter, _Parameter)
+from .parameter import (CategoricalParameter, CategoricalType,
+                        ConstantParameter, ContinuousParameter,
+                        DiscreteParameter, Parameter)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -36,22 +35,25 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-@dataclass
 class Domain:
     """Main class for defining the domain of the design of experiments.
 
     Parameters
     ----------
-    space : Dict[str, Parameter], optional
-        Dict of input parameters, by default an empty dict
+    input_space : Dict[str, Parameter], optional
+        Dict of input parameters, by default None
+    output_space : Dict[str, Parameter], optional
+        Dict of output parameters, by default None
     """
 
-    space: Dict[str, _Parameter] = field(default_factory=dict)
-    output_space: Dict[str, _OutputParameter] = field(default_factory=dict)
+    def __init__(self, input_space: Dict[str, Parameter] = None,
+                 output_space: Dict[str, Parameter] = None):
+        self.input_space = input_space if input_space is not None else {}
+        self.output_space = output_space if output_space is not None else {}
 
     def __len__(self) -> int:
         """The len() method returns the number of parameters"""
-        return len(self.space)
+        return len(self.input_space)
 
     def __eq__(self, __o: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
@@ -60,7 +62,21 @@ class Domain:
             return TypeError(f"Cannot compare Domain with \
                 {type(__o.__name__)}")
         return (
-            self.space == __o.space)
+            self.input_space == __o.input_space)
+
+    def __str__(self):
+        input_space_str = ", ".join(
+            f"{k}: {v}" for k, v in self.input_space.items())
+        output_space_str = ", ".join(
+            f"{k}: {v}" for k, v in self.output_space.items())
+        return (f"Domain(\n"
+                f"  Input Space: {{ {input_space_str} }}\n"
+                f"  Output Space: {{ {output_space_str} }}\n)")
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}("
+                f"input_space={repr(self.input_space)}, "
+                f"output_space={repr(self.output_space)})")
 
     def __add__(self, __o: Domain) -> Domain:
         if not isinstance(__o, Domain):
@@ -68,36 +84,33 @@ class Domain:
 
         combined_space = {}
         # Merge values for keys that are present in both dictionaries
-        for key in self.space.keys():
-            if key in __o.space:
-                combined_space[key] = self.space[key] + __o.space[key]
+        for key in self.input_space.keys():
+            if key in __o.input_space:
+                combined_space[key] = self.input_space[key] + \
+                    __o.input_space[key]
             else:
-                combined_space[key] = self.space[key]
+                combined_space[key] = self.input_space[key]
 
         # Add keys from dict2 that are not present in dict1
-        for key in __o.space.keys():
-            if key not in self.space:
-                combined_space[key] = __o.space[key]
+        for key in __o.input_space.keys():
+            if key not in self.input_space:
+                combined_space[key] = __o.input_space[key]
 
-        return Domain(space=combined_space,
+        return Domain(input_space=combined_space,
                       output_space={**self.output_space, **__o.output_space})
 
-    def items(self) -> Iterator[_Parameter]:
+    def items(self) -> Iterator[Parameter]:
         """Return an iterator over the items of the parameters"""
-        return self.space.items()
+        return self.input_space.items()
 
-    def values(self) -> Iterator[_Parameter]:
+    def values(self) -> Iterator[Parameter]:
         """Return an iterator over the values of the parameters"""
-        return self.space.values()
-
-    def keys(self) -> Iterator[str]:
-        """Return an iterator over the keys of the parameters"""
-        return self.space.keys()
+        return self.input_space.values()
 
     @property
     def names(self) -> List[str]:
         """Return a list of the names of the parameters"""
-        return list(self.keys())
+        return list(self.input_space.keys())
 
     @property
     def output_names(self) -> List[str]:
@@ -107,23 +120,23 @@ class Domain:
     @property
     def continuous(self) -> Domain:
         """Returns a Domain object containing only the continuous parameters"""
-        return self._filter(_ContinuousParameter)
+        return self._filter(ContinuousParameter)
 
     @property
     def discrete(self) -> Domain:
         """Returns a Domain object containing only the discrete parameters"""
-        return self._filter(_DiscreteParameter)
+        return self._filter(DiscreteParameter)
 
     @property
     def categorical(self) -> Domain:
         """Returns a Domain object containing only
          the categorical parameters"""
-        return self._filter(_CategoricalParameter)
+        return self._filter(CategoricalParameter)
 
     @property
     def constant(self) -> Domain:
         """Returns a Domain object containing only the constant parameters"""
-        return self._filter(_ConstantParameter)
+        return self._filter(ConstantParameter)
 #                                                      Alternative constructors
 # =============================================================================
 
@@ -212,29 +225,29 @@ class Domain:
         for name, type in df_input.dtypes.items():
             if type == 'float64':
                 if float(df_input[name].min()) == float(df_input[name].max()):
-                    input_space[name] = _ConstantParameter(
+                    input_space[name] = ConstantParameter(
                         value=float(df_input[name].min()))
                     continue
 
-                input_space[name] = _ContinuousParameter(lower_bound=float(
+                input_space[name] = ContinuousParameter(lower_bound=float(
                     df_input[name].min()),
                     upper_bound=float(df_input[name].max()))
             elif type == 'int64':
                 if int(df_input[name].min()) == int(df_input[name].max()):
-                    input_space[name] = _ConstantParameter(
+                    input_space[name] = ConstantParameter(
                         value=int(df_input[name].min()))
                     continue
 
-                input_space[name] = _DiscreteParameter(lower_bound=int(
+                input_space[name] = DiscreteParameter(lower_bound=int(
                     df_input[name].min()),
                     upper_bound=int(df_input[name].max()))
             else:
-                input_space[name] = _CategoricalParameter(
+                input_space[name] = CategoricalParameter(
                     df_input[name].unique().tolist())
 
         output_space = {}
         for name in df_output.columns:
-            output_space[name] = _OutputParameter(to_disk=False)
+            output_space[name] = Parameter(to_disk=False)
 
         return cls(space=input_space, output_space=output_space)
 
@@ -255,19 +268,19 @@ class Domain:
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
         return {name: parameter._type for
-                name, parameter in self.space.items()}
+                name, parameter in self.input_space.items()}
 
 #                                                  Append and remove parameters
 # =============================================================================
 
-    def _add(self, name: str, parameter: _Parameter):
+    def _add(self, name: str, parameter: Parameter):
         # Check if parameter is already in the domain
-        if name in self.space:
+        if name in self.input_space:
             raise KeyError(
                 f"Parameter {name} already exists in the domain! \
                      Choose a different name.")
 
-        self.space[name] = parameter
+        self.input_space[name] = parameter
 
     def add_int(self, name: str, low: int, high: int, step: int = 1):
         """Add a new discrete input parameter to the domain.
@@ -297,7 +310,7 @@ class Domain:
         """
         if low == high:
             self.add_constant(name, low)
-        self._add(name, _DiscreteParameter(low, high, step))
+        self._add(name, DiscreteParameter(low, high, step))
 
     def add_float(self, name: str, low: float = -np.inf, high: float = np.inf,
                   log: bool = False):
@@ -330,7 +343,7 @@ class Domain:
         if math.isclose(low, high):
             self.add_constant(name, low)
         else:
-            self._add(name, _ContinuousParameter(low, high, log))
+            self._add(name, ContinuousParameter(low, high, log))
 
     def add_category(self, name: str, categories: Sequence[CategoricalType]):
         """Add a new categorical input parameter to the domain.
@@ -349,7 +362,7 @@ class Domain:
         >>> domain.space
         {'param1': CategoricalParameter(categories=[0, 1, 2])}
         """
-        self._add(name, _CategoricalParameter(categories))
+        self._add(name, CategoricalParameter(categories))
 
     def add_constant(self, name: str, value: Any):
         """Add a new constant input parameter to the domain.
@@ -368,7 +381,7 @@ class Domain:
         >>> domain.space
         {'param1': ConstantParameter(value=0)}
         """
-        self._add(name, _ConstantParameter(value))
+        self._add(name, ConstantParameter(value))
 
     def add(self, name: str,
             type: Literal['float', 'int', 'category', 'constant'],
@@ -439,7 +452,7 @@ class Domain:
                         Choose a different name.")
             return
 
-        self.output_space[name] = _OutputParameter(to_disk)
+        self.output_space[name] = Parameter(to_disk)
 #                                                                       Getters
 # =============================================================================
 
@@ -467,10 +480,10 @@ class Domain:
         """
         return np.array(
             [[parameter.lower_bound, parameter.upper_bound]
-                for _, parameter in self.continuous.space.items()]
+                for _, parameter in self.continuous.input_space.items()]
         )
 
-    def _filter(self, type: Type[_Parameter]) -> Domain:
+    def _filter(self, type: Type[Parameter]) -> Domain:
         """Filter the parameters of the domain by type
 
         Parameters
@@ -497,8 +510,9 @@ class Domain:
 
         """
         return Domain(
-            space={name: parameter for name, parameter in self.space.items()
-                   if isinstance(parameter, type)}
+            input_space={
+                name: parameter for name, parameter in self.input_space.items()
+                if isinstance(parameter, type)}
         )
 
     def select(self, names: str | Iterable[str]) -> Domain:
@@ -531,7 +545,8 @@ class Domain:
         if isinstance(names, str):
             names = [names]
 
-        return Domain(space={key: self.space[key] for key in names})
+        return Domain(
+            input_space={key: self.input_space[key] for key in names})
 
     def drop_output(self, names: str | Iterable[str]) -> Domain:
         """Drop a subset of output parameters from the domain.
@@ -563,7 +578,7 @@ class Domain:
             names = [names]
 
         return Domain(
-            space=self.space,
+            input_space=self.input_space,
             output_space={key: self.output_space[key]
                           for key in self.output_space
                           if key not in names})
@@ -573,7 +588,7 @@ class Domain:
 
     def _all_input_continuous(self) -> bool:
         """Check if all input parameters are continuous"""
-        return len(self) == len(self._filter(_ContinuousParameter))
+        return len(self) == len(self._filter(ContinuousParameter))
 
     def is_in_output(self, output_name: str) -> bool:
         """Check if output is in the domain
@@ -643,7 +658,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     dimensionality = bounds.shape[0]
 
     for dim in range(dimensionality):
-        space[f"x{dim}"] = _ContinuousParameter(
+        space[f"x{dim}"] = ContinuousParameter(
             lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
     return Domain(space)

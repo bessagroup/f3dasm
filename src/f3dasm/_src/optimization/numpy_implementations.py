@@ -6,14 +6,14 @@ Optimizers based from the numpy library
 # =============================================================================
 
 # Standard
-from typing import Optional, Protocol, Tuple
+from typing import Optional, Tuple
 
 # Third-party core
 import numpy as np
 
 # Locals
 from ..datageneration.datagenerator import DataGenerator
-from .optimizer import Optimizer
+from .optimizer import ExperimentData, Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -23,10 +23,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class ExperimentData(Protocol):
-    ...
 
 
 class NumpyOptimizer(Optimizer):

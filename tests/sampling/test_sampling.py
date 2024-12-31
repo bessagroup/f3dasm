@@ -4,7 +4,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 from f3dasm import ExperimentData
-from f3dasm._src.design.parameter import _ContinuousParameter
+from f3dasm._src.design.parameter import ContinuousParameter
 from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
@@ -14,7 +14,7 @@ def test_sampling_interface_not_implemented_error():
     seed = 42
 
     # Define the parameters
-    x1 = _ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
+    x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
     space = {'x1': x1}
 
     design = Domain(space)

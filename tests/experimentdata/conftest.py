@@ -6,9 +6,9 @@ import pytest
 import xarray as xr
 
 from f3dasm import ExperimentData
-from f3dasm._src.design.parameter import (_CategoricalParameter,
-                                          _ContinuousParameter,
-                                          _DiscreteParameter)
+from f3dasm._src.design.parameter import (CategoricalParameter,
+                                          ContinuousParameter,
+                                          DiscreteParameter)
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 SEED = 42
@@ -23,12 +23,12 @@ def seed() -> int:
 def domain() -> Domain:
 
     space = {
-        'x1': _ContinuousParameter(-5.12, 5.12),
-        'x2': _DiscreteParameter(-3, 3),
-        'x3': _CategoricalParameter(["red", "green", "blue"])
+        'x1': ContinuousParameter(-5.12, 5.12),
+        'x2': DiscreteParameter(-3, 3),
+        'x3': CategoricalParameter(["red", "green", "blue"])
     }
 
-    return Domain(space=space)
+    return Domain(input_space=space)
 
 
 @pytest.fixture(scope="package")
@@ -130,5 +130,5 @@ def pandas_dataframe(domain_continuous: Domain) -> pd.DataFrame:
 
 
 @pytest.fixture(scope="package")
-def continuous_parameter() -> _ContinuousParameter:
-    return _ContinuousParameter(lower_bound=0., upper_bound=1.)
+def continuous_parameter() -> ContinuousParameter:
+    return ContinuousParameter(lower_bound=0., upper_bound=1.)

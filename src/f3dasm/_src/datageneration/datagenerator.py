@@ -12,8 +12,9 @@ from __future__ import annotations
 import inspect
 import traceback
 from abc import abstractmethod
-from typing import (Any, Callable, Dict, List, NamedTuple, Optional, Protocol,
-                    Tuple, Type)
+from pathlib import Path
+from typing import (Any, Callable, Dict, Iterable, List, Literal, NamedTuple,
+                    Optional, Protocol, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -35,13 +36,23 @@ __status__ = "Alpha"
 
 
 class ExperimentSample(Protocol):
-    ...
+    def mark(self,
+             status: Literal['open', 'in_progress', 'finished', 'error']):
+        ...
+
+    @property
+    def input_data(self) -> Dict[str, Any]:
+        ...
+
+    @property
+    def output_data(self) -> Dict[str, Any]:
+        ...
 
 
 class ExperimentData(Protocol):
 
     @property
-    def project_dir(self) -> str:
+    def project_dir(self) -> Path:
         ...
 
     def _access_open_job_data(self) -> Tuple[int, ExperimentSample]:
@@ -77,6 +88,10 @@ class ExperimentData(Protocol):
             self, indices: List[int], input_data: np.ndarray,
             output_data: np.ndarray, jobs: np.ndarray, domain: Domain,
             add_if_not_exist: bool) -> None:
+        ...
+
+    def mark(self, indices: int | Iterable[int],
+             status: Literal['open', 'in_progress', 'finished', 'error']):
         ...
 
 
@@ -164,7 +179,6 @@ class DataGenerator:
                      {job_number}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                # self.data._set_error(experiment_sample._jobnumber)
                 self.data.mark(indices=job_number, status='error')
 
     def _evaluate_multiprocessing(self, **kwargs):
@@ -187,37 +201,42 @@ class DataGenerator:
         while True:
             job_number, experiment_sample = self.data._access_open_job_data()
             options.append(
-                ({'experiment_sample': experiment_sample, **kwargs},))
+                ({'experiment_sample': experiment_sample,
+                  '_job_number': job_number, **kwargs},))
 
             if job_number is None:
                 break
 
-        def f(options: Dict[str, Any]) -> Tuple[ExperimentSample, int]:
+        def f(options: Dict[str, Any]) -> Tuple[int, ExperimentSample, int]:
             try:
 
                 logger.debug(
                     f"Running experiment_sample "
-                    f"{options['experiment_sample'].job_number}")
+                    f"{options['_job_number']}")
 
-                return (self._run(**options), 0)  # no *args!
+                # no *args!
+                return (options['_job_number'], self._run(**options), 0)
 
             except Exception as e:
                 error_msg = f"Error in experiment_sample \
-                     {options['experiment_sample'].job_number}: {e}"
+                     {options['_job_number']}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                return (options['experiment_sample'], 1)
+                return (options['_job_number'],
+                        options['experiment_sample'], 1)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
             _experiment_samples: List[
-                Tuple[ExperimentSample, int]] = pool.starmap(f, options)
+                Tuple[int, ExperimentSample, int]] = pool.starmap(f, options)
 
-        for _experiment_sample, exit_code in _experiment_samples:
+        for job_number, _experiment_sample, exit_code in _experiment_samples:
             if exit_code == 0:
-                self.data._set_experiment_sample(_experiment_sample)
+                self.data._set_experiment_sample(
+                    experiment_sample=_experiment_sample,
+                    id=job_number)
             else:
-                self.data._set_error(_experiment_sample.job_number)
+                self.data.mark(indices=job_number, status='error')
 
     def _evaluate_cluster(self, data_generator: DataGenerator, **kwargs):
         """Run the operation on the cluster
@@ -256,7 +275,7 @@ class DataGenerator:
                 error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.data._write_error(experiment_sample._jobnumber)
+                self.data._write_error(job_number)
                 continue
 
         self.data = self.data.from_file(self.data.project_dir)
@@ -282,7 +301,7 @@ class DataGenerator:
         """
         # Retrieve the updated experimentdata object from disc
         try:
-            self = self.data.from_file(self.data.project_dir)
+            self.data = self.data.from_file(self.data.project_dir)
         except FileNotFoundError:  # If not found, store current
             self.data.store()
 
@@ -291,17 +310,18 @@ class DataGenerator:
         while True:
             es_list = []
             for core in range(mp.cpu_count()):
-                job_number, experiment_sample = self._get_open_job_data()
+                job_number, experiment_sample = self.data._get_open_job_data()
 
                 if job_number is None:
                     logger.debug("No Open jobs left!")
                     no_jobs = True
                     break
 
-                es_list.append(self._get_open_job_data())
+                es_list.append((job_number, self.data._get_open_job_data()))
 
-            d = self.select([e.job_number for e in es_list])
+            d = self.data.select([e[0] for e in es_list])
 
+            # TODO: fix this; probably not working!
             self._evaluate_multiprocessing(**kwargs)
 
             # TODO access resource first!
@@ -313,7 +333,7 @@ class DataGenerator:
             if no_jobs:
                 break
 
-        self.data = self.from_file(self.data.project_dir)
+        self.data = self.data.from_file(self.data.project_dir)
         # Remove the lockfile from disk
         (self.data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
          ).with_suffix('.lock').unlink(missing_ok=True)
@@ -420,7 +440,8 @@ def convert_function(f: Callable,
 
     class TempDataGenerator(DataGenerator):
         def execute(self, **_kwargs) -> None:
-            _input = {input_name: self.experiment_sample.input_data[input_name]
+            _input = {input_name:
+                      self.experiment_sample.input_data.get(input_name)
                       for input_name in input if input_name not in kwargs}
             _output = f(**_input, **kwargs)
 

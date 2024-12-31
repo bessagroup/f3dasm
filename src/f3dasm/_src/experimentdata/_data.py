@@ -161,13 +161,13 @@ class _Data:
             _description_
         """
         _dtypes = {index: parameter._type for index,
-                   (_, parameter) in enumerate(domain.space.items())}
+                   (_, parameter) in enumerate(domain.input_space.items())}
 
         df = pd.DataFrame(columns=range(len(domain))).astype(_dtypes)
 
         # Set the categories tot the categorical parameters
         for index, (name, categorical_input) in enumerate(
-                domain.categorical.space.items()):
+                domain.categorical.input_space.items()):
             df[index] = pd.Categorical(
                 df[index], categories=categorical_input.categories)
 
@@ -522,7 +522,7 @@ class _Data:
         """
         _dtypes = {index: parameter._type
                    for index, (_, parameter) in enumerate(
-                       domain.space.items())}
+                       domain.input_space.items())}
         self.data = self.data.astype(_dtypes)
 
 

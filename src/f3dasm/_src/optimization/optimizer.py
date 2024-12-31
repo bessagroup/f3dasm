@@ -16,8 +16,6 @@ import numpy as np
 import pandas as pd
 
 # Locals
-# from ..datageneration.datagenerator import DataGenerator
-# from ..experimentdata.experimentdata import ExperimentData
 from ..experimentdata.utils import number_of_overiterations, number_of_updates
 
 #                                                          Authorship & Credits
@@ -27,6 +25,9 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+#                                                                     Protocols
 # =============================================================================
 
 
@@ -42,6 +43,16 @@ class Domain(Protocol):
 class DataGenerator(Protocol):
     def dfdx(self, x: np.ndarray) -> np.ndarray:
         ...
+
+    def _run(
+            self, experiment_sample: ExperimentSample | np.ndarray,
+            domain: Optional[Domain] = None,
+            **kwargs) -> ExperimentSample:
+        ...
+
+
+class ExperimentSample(Protocol):
+    ...
 
 
 class ExperimentData(Protocol):
@@ -79,7 +90,7 @@ class ExperimentData(Protocol):
     def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
         ...
 
-    def get_experiment_sample(self, index: int) -> ExperimentData:
+    def get_experiment_sample(self, id: int) -> ExperimentData:
         ...
 
     def remove_rows_bottom(self, n_rows: int):
@@ -90,9 +101,6 @@ class ExperimentData(Protocol):
 
     def _overwrite_experiments(self, experiment_sample: ExperimentData,
                                indices: pd.Index, add_if_not_exist: bool):
-        ...
-
-    def _reset_index(self):
         ...
 
 

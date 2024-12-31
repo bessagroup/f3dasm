@@ -46,11 +46,11 @@ def grid(
     continuous = domain.continuous
 
     # If therei s no continuos space, we can return an empty dictionary
-    if not continuous.space:
+    if not continuous.input_space:
         discrete_space = {}
 
     else:
-        discrete_space = {key: continuous.space[key].to_discrete(
+        discrete_space = {key: continuous.input_space[key].to_discrete(
             step=value) for key,
             value in stepsize_continuous_parameters.items()}
 
@@ -59,16 +59,16 @@ def grid(
     _iterdict = {}
 
     # For all the categorical parameters, we will iterate over the categories
-    for k, v in domain.categorical.space.items():
+    for k, v in domain.categorical.input_space.items():
         _iterdict[k] = v.categories
 
     # For all the discrete parameters, we will iterate over the range of values
-    for k, v, in domain.discrete.space.items():
+    for k, v, in domain.discrete.input_space.items():
         _iterdict[k] = range(v.lower_bound, v.upper_bound+1, v.step)
 
     # For all the continuous parameters, we will iterate over the range of values
     # based on the stepsize provided
-    for k, v, in continuous_to_discrete.space.items():
+    for k, v, in continuous_to_discrete.input_space.items():
         _iterdict[k] = np.arange(
             start=v.lower_bound, stop=v.upper_bound, step=v.step)
 

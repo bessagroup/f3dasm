@@ -583,10 +583,8 @@ class ExperimentData:
         """
         ...
 
-    # Not used
-    @deprecated(version="2.0.0")
     def add_experiments(self,
-                        experiment_sample: ExperimentSample | ExperimentData
+                        data: ExperimentSample | ExperimentData
                         ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
@@ -603,6 +601,17 @@ class ExperimentData:
             If -after checked- the indices of the input and output data
             objects are not equal.
         """
+        if isinstance(data, ExperimentSample):
+            self._add_experiment_sample(data)
+
+        elif isinstance(data, ExperimentData):
+            self._add(data)
+
+        else:
+            raise ValueError((
+                f"The input to this function should be an ExperimentSample or "
+                f"ExperimentData object, not {type(data)} ")
+            )
         ...
 
     # Not used
@@ -779,6 +788,10 @@ class ExperimentData:
         self.data.update(other_updated_data)
         self.domain += copy_other.domain
 
+    def _add_experiment_sample(self, experiment_sample: ExperimentSample):
+        last_key = max(self.index) if self else -1
+        self.data[last_key + 1] = experiment_sample
+
     def _overwrite(self, experiment_data: ExperimentData,
                    indices: Iterable[int],
                    add_if_not_exist: bool = False):
@@ -847,6 +860,7 @@ class ExperimentData:
         # TODO: Is this the best way to do this? Cant we do this with
         # The key-value pairs and the Domain only ?
         # Check the keys that are registered and add them to the output data
+        # TODO: Fix that the to_disk parameter is also retrieved
         for name, to_disk in experiment_sample.registered_keys.items():
             self.domain.add_output(name=name, to_disk=to_disk, exist_ok=True)
 
@@ -895,7 +909,6 @@ class ExperimentData:
                 es.mark('in_progress')
                 return id, es
 
-        # raise NoOpenJobsError("No open jobs found.")
         return None, ExperimentSample()
 
     #                                                                      Jobs
@@ -920,13 +933,13 @@ class ExperimentData:
         indices : Iterable[int]
             indices of the jobs to mark
         status : Literal['open', 'in progress', 'finished', 'error']
-            status to mark the jobs with: choose between: 'open', \
+            status to mark the jobs with: choose between: 'open',
             'in progress', 'finished' or 'error'
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress', \
+            If the given status is not any of 'open', 'in progress',
             'finished' or 'error'
         """
         if isinstance(indices, int):
@@ -1175,8 +1188,7 @@ class ExperimentData:
     #                                                                  Sampling
     # =========================================================================
 
-    def sample(self, sampler: Sampler | SamplerNames,
-               seed: Optional[int] = None, **kwargs) -> None:
+    def sample(self, sampler: Sampler | SamplerNames, **kwargs) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1444,7 +1456,7 @@ def _dict_factory(data: Optional[DataTypes]) -> List[Dict[str, Any]]:
 
     # If the data is a pandas DataFrame, convert it to a list of dictionaries
     elif isinstance(data, pd.DataFrame):
-        return [d.to_dict() for _, d in data.iterrows()]
+        return [row._asdict() for row in data.itertuples(index=False)]
 
     # TODO: Add support for str argument
 
