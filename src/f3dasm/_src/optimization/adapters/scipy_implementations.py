@@ -12,8 +12,10 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
+from ...datageneration import DataGenerator
 from ...experimentdata.experimentsample import ExperimentSample
-from ..optimizer import DataGenerator, ExperimentData, Optimizer
+from .._protocol import ExperimentData
+from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================

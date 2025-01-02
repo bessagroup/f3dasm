@@ -12,8 +12,9 @@ from typing import Optional, Tuple
 import numpy as np
 
 # Locals
-from ..datageneration.datagenerator import DataGenerator
-from .optimizer import ExperimentData, Optimizer
+from ...datageneration import DataGenerator
+from ._protocol import ExperimentData
+from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
