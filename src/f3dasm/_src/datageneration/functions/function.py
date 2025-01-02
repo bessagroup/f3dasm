@@ -22,9 +22,7 @@ import matplotlib.pyplot as plt
 from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
-from ...design.domain import Domain
 # Locals
-from ...experimentdata.experimentsample import _experimentsample_factory
 from ..datagenerator import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 

@@ -160,6 +160,12 @@ class ExperimentSample:
     def clean_registered_keys(self):
         self.registered_keys = {}
 
+    #                                                                Job status
+    # =========================================================================
+
+    def is_status(self, status: str) -> bool:
+        return self.job_status == _Jobs[status.upper()]
+
     # def _store_to_disk(
     #     self, object: Any, name: str,
     #         store_method: Optional[Type[StoreProtocol]] = None) -> None:
@@ -185,36 +191,36 @@ class ExperimentSample:
     #     self.output_data[name] = object
 
 
-def _experimentsample_factory(
-    experiment_sample: np.ndarray | ExperimentSample | Dict,
-    domain: Domain | None) \
-        -> ExperimentSample:
-    """Factory function for the ExperimentSample class.
+# def _experimentsample_factory(
+#     experiment_sample: np.ndarray | ExperimentSample | Dict,
+#     domain: Domain | None) \
+#         -> ExperimentSample:
+#     """Factory function for the ExperimentSample class.
 
-    Parameters
-    ----------
-    experiment_sample : np.ndarray | ExperimentSample | Dict
-        The experiment sample to convert to an ExperimentSample.
-    domain: Domain | None
-        The domain of the experiment sample.
+#     Parameters
+#     ----------
+#     experiment_sample : np.ndarray | ExperimentSample | Dict
+#         The experiment sample to convert to an ExperimentSample.
+#     domain: Domain | None
+#         The domain of the experiment sample.
 
-    Returns
-    -------
-    ExperimentSample
-        The converted experiment sample.
-    """
-    if isinstance(experiment_sample, np.ndarray):
-        return ExperimentSample.from_numpy(input_array=experiment_sample,
-                                           domain=domain)
+#     Returns
+#     -------
+#     ExperimentSample
+#         The converted experiment sample.
+#     """
+#     if isinstance(experiment_sample, np.ndarray):
+#         return ExperimentSample.from_numpy(input_array=experiment_sample,
+#                                            domain=domain)
 
-    elif isinstance(experiment_sample, dict):
-        return ExperimentSample(dict_input=experiment_sample,
-                                dict_output={}, jobnumber=0)
+#     elif isinstance(experiment_sample, dict):
+#         return ExperimentSample(dict_input=experiment_sample,
+#                                 dict_output={}, jobnumber=0)
 
-    elif isinstance(experiment_sample, ExperimentSample):
-        return experiment_sample
+#     elif isinstance(experiment_sample, ExperimentSample):
+#         return experiment_sample
 
-    else:
-        raise TypeError(
-            f"The experiment_sample should be a numpy array"
-            f", dictionary or ExperimentSample, not {type(experiment_sample)}")
+#     else:
+#         raise TypeError(
+#             f"The experiment_sample should be a numpy array"
+#           f", dictionary or ExperimentSample, not {type(experiment_sample)}")

@@ -10,6 +10,12 @@ from __future__ import annotations
 # Standard
 import warnings
 from functools import wraps
+from pathlib import Path
+from typing import List, Union
+
+# Third-party
+import numpy as np
+import pandas as pd
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -18,6 +24,12 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+
+# =============================================================================
+
+DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, List]
+
+# =============================================================================
 
 
 def number_of_updates(iterations: int, population: int):

@@ -8,15 +8,11 @@ Module containing the interface class Optimizer
 from __future__ import annotations
 
 # Standard
-from typing import (Any, Callable, ClassVar, Dict, Iterable, List, Literal,
-                    Optional, Protocol, Tuple)
-
-# Third-party core
-import numpy as np
-import pandas as pd
+from typing import Any, Callable, ClassVar, Dict, Literal, Optional
 
 # Locals
 from ..experimentdata.utils import number_of_overiterations, number_of_updates
+from ._protocol import DataGenerator, ExperimentData, Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,82 +22,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-#                                                                     Protocols
-# =============================================================================
-
-
-class Sampler(Protocol):
-    ...
-
-
-class Domain(Protocol):
-    def get_bounds(self) -> np.ndarray:
-        ...
-
-
-class DataGenerator(Protocol):
-    def dfdx(self, x: np.ndarray) -> np.ndarray:
-        ...
-
-    def _run(
-            self, experiment_sample: ExperimentSample | np.ndarray,
-            domain: Optional[Domain] = None,
-            **kwargs) -> ExperimentSample:
-        ...
-
-
-class ExperimentSample(Protocol):
-    ...
-
-
-class ExperimentData(Protocol):
-
-    def __init__(self, domain: Domain, input_data: np.ndarray,
-                 output_data: np.ndarray):
-        ...
-
-    @property
-    def domain(self) -> Domain:
-        ...
-
-    @classmethod
-    def from_sampling(cls, domain: Domain, sampler: Sampler,
-                      n_samples: int, seed: int) -> ExperimentData:
-        ...
-
-    def sample(self, sampler: Sampler, **kwargs):
-        ...
-
-    def evaluate(self, data_generator: DataGenerator, mode:
-                 str, output_names: Optional[List[str]] = None, **kwargs):
-        ...
-
-    @property
-    def index(self) -> pd.Index:
-        ...
-
-    def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        ...
-
-    def to_numpy() -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
-        ...
-
-    def get_experiment_sample(self, id: int) -> ExperimentData:
-        ...
-
-    def remove_rows_bottom(self, n_rows: int):
-        ...
-
-    def add_experiments(self, experiment_sample: ExperimentData):
-        ...
-
-    def _overwrite_experiments(self, experiment_sample: ExperimentData,
-                               indices: pd.Index, add_if_not_exist: bool):
-        ...
 
 
 # =============================================================================

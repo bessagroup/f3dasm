@@ -1,30 +1,37 @@
 """
-Module for the data generator factory.
+Factory method for creating DataGenerator objects from strings, functions, or
+DataGenerator objects.
 """
+
 #                                                                       Modules
 # =============================================================================
 
+
 from __future__ import annotations
 
+# Standard
 import inspect
 from typing import Callable, Dict, List, Optional
 
-from ...design.domain import Domain
-from ..datagenerator import DataGenerator, convert_function
-from . import _FUNCTIONS
+# Local
+from .datagenerator import DataGenerator, convert_function
+from .functions import _DATAGENERATORS
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
 
-FUNCTION_MAPPING: Dict[str, DataGenerator] = {
+
+DATAGENERATOR_MAPPING: Dict[str, DataGenerator] = {
     f.name.lower().replace(' ', '').replace('-', '').replace(
-        '_', '').replace('.', ''): f for f in _FUNCTIONS}
+        '_', '').replace('.', ''): f for f in _DATAGENERATORS}
+
+# =============================================================================
 
 
 def _datagenerator_factory(
@@ -51,8 +58,8 @@ def _datagenerator_factory(
         filtered_name = data_generator.lower().replace(
             ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
-        if filtered_name in FUNCTION_MAPPING:
-            return FUNCTION_MAPPING[filtered_name](**kwargs)
+        if filtered_name in DATAGENERATOR_MAPPING:
+            return DATAGENERATOR_MAPPING[filtered_name](**kwargs)
 
         else:
             raise KeyError(f"Unknown data generator name: {data_generator}")
@@ -61,7 +68,4 @@ def _datagenerator_factory(
     else:
         raise TypeError(f"Unknown data generator type: {type(data_generator)}")
 
-
-def is_dim_compatible(data_generator: str, domain: Domain) -> bool:
-    func = _datagenerator_factory(data_generator)
-    return func.is_dim_compatible(len(domain))
+# =============================================================================

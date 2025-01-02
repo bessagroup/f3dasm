@@ -9,11 +9,7 @@ from typing import List
 
 # Local
 from .datagenerator import DataGenerator
-from .functions import pybenchfunction
-from .functions.adapters.augmentor import (FunctionAugmentor, Noise, Offset,
-                                           Scale)
-from .functions.function import Function
-from .functions.pybenchfunction import *  # NOQA
+from .datagenerator_factory import _datagenerator_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -24,21 +20,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-try:
-    import f3dasm_simulate  # NOQA
-except ImportError:
-    pass
-
-# List of available optimizers
-DATAGENERATORS: List[DataGenerator] = []
-
 __all__ = [
     'DataGenerator',
-    'Function',
-    'FunctionAugmentor',
-    'Noise',
-    'Offset',
-    'Scale',
-    'DATAGENERATORS',
-    *pybenchfunction.__all__
+    '_datagenerator_factory'
 ]

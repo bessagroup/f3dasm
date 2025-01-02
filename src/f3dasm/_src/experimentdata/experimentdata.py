@@ -17,7 +17,7 @@ from itertools import zip_longest
 from pathlib import Path
 from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Protocol, Tuple, Type, Union)
+                    Optional, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -28,18 +28,16 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ..datageneration.functions.function_factory import _datagenerator_factory
-from ..design.domain import Domain
-from ..design.domain import _domain_factory as domain_factory
+from ..datageneration import DataGenerator, _datagenerator_factory
+from ..design import Domain, _domain_factory
 from ..logger import logger
-from ..optimization.optimizer_factory import _optimizer_factory
+from ..optimization import Optimizer, _optimizer_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
-from ._jobqueue import _Jobs
 from .experimentsample import ExperimentSample
-from .samplers import SamplerNames, _sampler_factory
-from .utils import deprecated
+from .samplers import Sampler, _sampler_factory
+from .utils import DataTypes, deprecated
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -48,10 +46,6 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
-# =============================================================================
-
-DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, List]
-
 # =============================================================================
 
 
@@ -101,7 +95,7 @@ class ExperimentData:
         """
 
         _project_dir = _project_dir_factory(project_dir)
-        _domain = domain_factory(domain)
+        _domain = _domain_factory(domain)
 
         # If input_data is a numpy array, create pd.Dataframe to include column
         # names from the domain
@@ -386,7 +380,7 @@ class ExperimentData:
         ValueError
             Raised when invalid status is specified
         """
-        idx = [i for i, es in self if es.job_status == _Jobs[status.upper()]]
+        idx = [i for i, es in self if es.is_status(status)]
         return self[idx]
 
     # Do you need to use this?
@@ -905,7 +899,7 @@ class ExperimentData:
 
     def get_open_job(self) -> Tuple[int, ExperimentSample]:
         for id, es in self:
-            if es.job_status == _Jobs.OPEN:
+            if es.is_status('open'):
                 es.mark('in_progress')
                 return id, es
 
@@ -922,7 +916,7 @@ class ExperimentData:
         bool
             True if all jobs are finished, False otherwise
         """
-        return all(es.job_status == _Jobs.FINISHED for _, es in self)
+        return all(es.is_status('finished') for _, es in self)
 
     def mark(self, indices: int | Iterable[int],
              status: Literal['open', 'in_progress', 'finished', 'error']):
@@ -1188,7 +1182,7 @@ class ExperimentData:
     #                                                                  Sampling
     # =========================================================================
 
-    def sample(self, sampler: Sampler | SamplerNames, **kwargs) -> None:
+    def sample(self, sampler: Sampler | str, **kwargs) -> None:
         """Sample data from the domain providing the sampler strategy
 
         Parameters
@@ -1245,50 +1239,19 @@ class ExperimentData:
         """
         self.project_dir = _project_dir_factory(project_dir)
 
-#                                                                     Protocols
-# =============================================================================
-
-
-class Optimizer(Protocol):
-    def init(self, data: ExperimentData,
-             data_generator: DataGenerator) -> None:
-        """Initialize the optimizer object
-
-        Parameters
-        ----------
-        data : ExperimentData
-            Data to be used for the optimization
-        data_generator : DataGenerator
-            DataGenerator object
+    def remove_lockfile(self):
         """
-        ...
+        Remove the lock file from the project directory
 
-    def call(self, **kwargs) -> ExperimentData:
-        ...
-
-    @property
-    def _population(self) -> int:
-        ...
-
-    @property
-    def _seed(self) -> int:
-        ...
-
-
-class Sampler(Protocol):
-    def init(self, data: ExperimentData) -> None:
-        ...
-
-    def sample(self, **kwargs) -> DataTypes:
-        ...
-
-
-class DataGenerator(Protocol):
-    def init(self, data: ExperimentData) -> None:
-        ...
-
-    def call(self, mode: str, **kwargs) -> ExperimentData:
-        ...
+        Note
+        ----
+        The lock file is automatically created when the ExperimentData object
+        is written to disk. Concurrent processes can only sequentially access
+        the lock file. This lock file is removed after the ExperimentData
+        object is written to disk.
+        """
+        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+         ).with_suffix('.lock').unlink(missing_ok=True)
 
 
 # =============================================================================

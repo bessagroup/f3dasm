@@ -6,7 +6,7 @@ import pytest
 from f3dasm import ExperimentData
 from f3dasm._src.datageneration.functions import (FUNCTIONS, Function,
                                                   get_function_classes)
-from f3dasm._src.datageneration.functions.function_factory import (
+from f3dasm._src.datageneration.functions.datagenerator_factory import (
     _datagenerator_factory, is_dim_compatible)
 from f3dasm.design import make_nd_continuous_domain
 

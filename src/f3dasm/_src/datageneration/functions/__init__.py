@@ -115,7 +115,7 @@ def get_functions(
     return [function_class.name for function_class in function_classes]
 
 
-_FUNCTIONS = get_function_classes()
+_DATAGENERATORS = get_function_classes()
 _FUNCTIONS_2D = get_function_classes(d=2)
 _FUNCTIONS_7D = get_function_classes(d=7)
 
@@ -136,6 +136,7 @@ def find_function(query: str) -> Function:
     """
     try:
         return list(
-            filter(lambda function: function.__name__ == query, _FUNCTIONS))[0]
+            filter(lambda function: function.__name__ == query,
+                   _DATAGENERATORS))[0]
     except IndexError:
         return ValueError(f'Function {query} not found!')

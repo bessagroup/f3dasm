@@ -650,7 +650,7 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     >>> dimensionality = 2
     >>> domain = make_nd_continuous_domain(bounds, dimensionality)
     """
-    space = {}
+    input_space = {}
 
     # bounds is a list of lists, convert to numpy array:
     bounds = np.array(bounds)
@@ -658,10 +658,10 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
     dimensionality = bounds.shape[0]
 
     for dim in range(dimensionality):
-        space[f"x{dim}"] = ContinuousParameter(
+        input_space[f"x{dim}"] = ContinuousParameter(
             lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
 
-    return Domain(space)
+    return Domain(input_space=input_space)
 
 
 def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:

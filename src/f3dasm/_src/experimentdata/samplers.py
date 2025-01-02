@@ -18,7 +18,7 @@ from SALib.sample import sobol_sequence
 
 # Locals
 from ..design.domain import Domain
-from ._data import DataTypes
+from .utils import DataTypes
 
 #                                                          Authorship & Credits
 # =============================================================================

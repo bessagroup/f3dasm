@@ -22,7 +22,6 @@ from pathos.helpers import mp
 
 # Local
 from ..design.domain import Domain
-from ..experimentdata._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME
 from ..logger import logger
 
 #                                                          Authorship & Credits
@@ -93,6 +92,12 @@ class ExperimentData(Protocol):
     def mark(self, indices: int | Iterable[int],
              status: Literal['open', 'in_progress', 'finished', 'error']):
         ...
+
+    def remove_lockfile(self) -> None:
+        ...
+
+
+# =============================================================================
 
 
 class DataGenerator:
@@ -279,9 +284,9 @@ class DataGenerator:
                 continue
 
         self.data = self.data.from_file(self.data.project_dir)
+
         # Remove the lockfile from disk
-        (self.data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
+        self.data.remove_lockfile()
 
     def _evaluate_cluster_parallel(
             self, data_generator: DataGenerator, **kwargs):
@@ -335,8 +340,7 @@ class DataGenerator:
 
         self.data = self.data.from_file(self.data.project_dir)
         # Remove the lockfile from disk
-        (self.data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
+        self.data.remove_lockfile()
 
     # =========================================================================
 

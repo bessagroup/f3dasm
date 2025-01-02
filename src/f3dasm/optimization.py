@@ -7,7 +7,7 @@ Module for optimization
 # Local
 from ._src.optimization import cg, lbfgsb, nelder_mead, random_search
 from ._src.optimization.optimizer import Optimizer
-from ._src.optimization.optimizer_factory import OPTIMIZERS
+from ._src.optimization.optimizer_factory import available_optimizers
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -20,7 +20,7 @@ __status__ = 'Stable'
 
 __all__ = [
     'Optimizer',
-    'OPTIMIZERS',
+    'available_optimizers',
     'cg',
     'lbfgsb',
     'nelder_mead',

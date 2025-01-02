@@ -7,11 +7,12 @@ Module for the data generator factory.
 from __future__ import annotations
 
 # Standard
-from typing import Dict
+from typing import Callable, Dict, List
 
 # Local
-from . import _OPTIMIZERS
+from .numpy_implementations import random_search
 from .optimizer import Optimizer
+from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,20 +23,28 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# Try importing f3dasm_optimize package
-try:
-    import f3dasm_optimize  # NOQA
-    _OPTIMIZERS.extend(f3dasm_optimize._OPTIMIZERS)
-except ImportError:
-    pass
+
+def available_optimizers():
+    return list(get_optimizer_mapping().keys())
 
 
-OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
-    opt.__name__.lower().replace(' ', '').replace('-', '').replace(
-        '_', ''): opt for opt in _OPTIMIZERS}
+def get_optimizer_mapping() -> Dict[str, Optimizer]:
+    # List of available optimizers
+    _OPTIMIZERS: List[Callable] = [
+        cg, lbfgsb, nelder_mead, random_search]
 
+    # Try importing f3dasm_optimize package
+    try:
+        from f3dasm_optimize import optimizers_extension  # NOQA
+        _OPTIMIZERS.extend(optimizers_extension())
+    except ImportError:
+        pass
 
-OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
+    OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
+        opt.__name__.lower().replace(' ', '').replace('-', '').replace(
+            '_', ''): opt for opt in _OPTIMIZERS}
+
+    return OPTIMIZER_MAPPING
 
 
 def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
@@ -67,6 +76,8 @@ def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
 
         filtered_name = optimizer.lower().replace(
             ' ', '').replace('-', '').replace('_', '')
+
+        OPTIMIZER_MAPPING = get_optimizer_mapping()
 
         if filtered_name in OPTIMIZER_MAPPING:
             return OPTIMIZER_MAPPING[filtered_name](

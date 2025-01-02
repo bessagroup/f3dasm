@@ -7,10 +7,13 @@ Module for optimization
 # Standard
 from typing import Callable, List
 
-# Local
 from .numpy_implementations import random_search
 from .optimizer import Optimizer
+from .optimizer_factory import _optimizer_factory, available_optimizers
 from .scipy_implementations import cg, lbfgsb, nelder_mead
+
+# Local
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,35 +24,16 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# List of available optimizers
-_OPTIMIZERS: List[Callable] = [
-    cg, lbfgsb, nelder_mead, random_search]
+
+# =============================================================================
 
 
 __all__ = [
-    'find_optimizer',
-    'random_search',
+    'Optimizer',
+    '_optimizer_factory',
     'cg',
     'lbfgsb',
     'nelder_mead',
-    'Optimizer',
+    'random_search',
+    'available_optimizers',
 ]
-
-
-def find_optimizer(query: str) -> Callable:
-    """Find a optimizer from the f3dasm.optimizer submodule
-
-    Parameters
-    ----------
-    query
-        string representation of the requested optimizer
-
-    Returns
-    -------
-        class of the requested optimizer
-    """
-    try:
-        return list(filter(
-            lambda optimizer: optimizer.__name__ == query, _OPTIMIZERS))[0]
-    except IndexError:
-        return ValueError(f'Optimizer {query} not found!')
