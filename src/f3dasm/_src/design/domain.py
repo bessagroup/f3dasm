@@ -12,8 +12,7 @@ from __future__ import annotations
 import math
 import pickle
 from pathlib import Path
-from typing import (Any, Dict, Iterable, Iterator, List, Literal, Optional,
-                    Sequence, Type)
+from typing import Any, Dict, List, Literal, Optional, Sequence, Type
 
 # Third-party core
 import numpy as np
@@ -99,16 +98,8 @@ class Domain:
         return Domain(input_space=combined_space,
                       output_space={**self.output_space, **__o.output_space})
 
-    def items(self) -> Iterator[Parameter]:
-        """Return an iterator over the items of the parameters"""
-        return self.input_space.items()
-
-    def values(self) -> Iterator[Parameter]:
-        """Return an iterator over the values of the parameters"""
-        return self.input_space.values()
-
     @property
-    def names(self) -> List[str]:
+    def input_names(self) -> List[str]:
         """Return a list of the names of the parameters"""
         return list(self.input_space.keys())
 
@@ -265,6 +256,7 @@ class Domain:
         with open(filename.with_suffix('.pkl'), 'wb') as f:
             pickle.dump(self, f)
 
+    # Not used
     def _cast_types_dataframe(self) -> dict:
         """Make a dictionary that provides the datatype of each parameter"""
         return {name: parameter._type for
@@ -515,104 +507,8 @@ class Domain:
                 if isinstance(parameter, type)}
         )
 
-    def select(self, names: str | Iterable[str]) -> Domain:
-        """Select a subset of parameters from the domain.
-
-        Parameters
-        ----------
-
-        names : str or Iterable[str]
-            The names of the parameters to select.
-
-        Returns
-        -------
-        Domain
-            A new domain with the selected parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.space = {
-        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': _DiscreteParameter(lower_bound=0, upper_bound=8),
-        ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
-        ... }
-        >>> domain.select(['param1', 'param3'])
-        Domain({'param1': _ContinuousParameter(lower_bound=0, upper_bound=1),
-                'param3': CategoricalParameter(categories=['cat1', 'cat2'])})
-        """
-
-        if isinstance(names, str):
-            names = [names]
-
-        return Domain(
-            input_space={key: self.input_space[key] for key in names})
-
-    def drop_output(self, names: str | Iterable[str]) -> Domain:
-        """Drop a subset of output parameters from the domain.
-
-        Parameters
-        ----------
-
-        names : str or Iterable[str]
-            The names of the output parameters to drop.
-
-        Returns
-        -------
-        Domain
-            A new domain with the dropped output parameters.
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.output_space = {
-        ...     'param1': _OutputParameter(to_disk=True),
-        ...     'param2': _OutputParameter(to_disk=True),
-        ...     'param3': _OutputParameter(to_disk=True)
-        ... }
-        >>> domain.drop_output(['param1', 'param3'])
-        Domain({'param2': _OutputParameter(to_disk=True)})
-        """
-
-        if isinstance(names, str):
-            names = [names]
-
-        return Domain(
-            input_space=self.input_space,
-            output_space={key: self.output_space[key]
-                          for key in self.output_space
-                          if key not in names})
-
 #                                                                 Miscellaneous
 # =============================================================================
-
-    def _all_input_continuous(self) -> bool:
-        """Check if all input parameters are continuous"""
-        return len(self) == len(self._filter(ContinuousParameter))
-
-    def is_in_output(self, output_name: str) -> bool:
-        """Check if output is in the domain
-
-        Parameters
-        ----------
-        output_name : str
-            Name of the output
-
-        Returns
-        -------
-        bool
-            True if output is in the domain, False otherwise
-
-        Example
-        -------
-        >>> domain = Domain()
-        >>> domain.add_output('output1')
-        >>> domain.is_in_output('output1')
-        True
-        >>> domain.is_in_output('output2')
-        False
-        """
-        return output_name in self.output_space
 
 
 def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],

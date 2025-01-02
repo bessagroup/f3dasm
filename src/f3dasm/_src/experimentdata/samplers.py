@@ -197,7 +197,7 @@ def sample_latin_hypercube(
     """
     problem = {
         "num_vars": len(domain),
-        "names": domain.names,
+        "names": domain.input_names,
         "bounds": [[s.lower_bound, s.upper_bound]
                    for s in domain.input_space.values()],
     }
@@ -253,13 +253,13 @@ class RandomUniform(Sampler):
         _constant = sample_constant(self.domain.constant, n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
-             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
-                _categorical, columns=self.domain.categorical.names),
-             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+                _categorical, columns=self.domain.categorical.input_names),
+             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
             axis=1
-        )[self.domain.names]
+        )[self.domain.input_names]
 
         return df
 
@@ -314,7 +314,8 @@ class Grid(Sampler):
                 start=v.lower_bound, stop=v.upper_bound, step=v.step)
 
         df = pd.DataFrame(list(product(*_iterdict.values())),
-                          columns=_iterdict, dtype=object)[self.domain.names]
+                          columns=_iterdict, dtype=object
+                          )[self.domain.input_names]
 
         return df
 
@@ -346,13 +347,13 @@ class Sobol(Sampler):
             domain=self.domain.constant, n_samples=n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
-             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
-                _categorical, columns=self.domain.categorical.names),
-             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+                _categorical, columns=self.domain.categorical.input_names),
+             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
             axis=1
-        )[self.domain.names]
+        )[self.domain.input_names]
 
         return df
 
@@ -385,13 +386,13 @@ class Latin(Sampler):
             domain=self.domain.constant, n_samples=n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.names),
-             pd.DataFrame(_discrete, columns=self.domain.discrete.names),
+            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+             pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
-                _categorical, columns=self.domain.categorical.names),
-             pd.DataFrame(_constant, columns=self.domain.constant.names)],
+                _categorical, columns=self.domain.categorical.input_names),
+             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
             axis=1
-        )[self.domain.names]
+        )[self.domain.input_names]
 
         return df
 

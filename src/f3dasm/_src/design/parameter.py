@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 # Standard
-from typing import Any, ClassVar, Iterable, Union
+from pathlib import Path
+from typing import Any, ClassVar, Iterable, Optional, Union
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,12 +23,62 @@ CategoricalType = Union[None, int, float, str]
 # =============================================================================
 
 
+class StoreProtocol:
+    """Base class for storing and loading output data from disk"""
+    suffix: int
+
+    def __init__(self, object: Any, path: Path):
+        """
+        Protocol class for storing and loading output data from disk
+
+        Parameters
+        ----------
+        object : Any
+            object to store
+        path : Path
+            location to store the object to
+        """
+        self.path = path
+        self.object = object
+
+    def store(self) -> None:
+        """
+        Protocol class for storing objects to disk
+
+        Raises
+        ------
+        NotImplementedError
+            Raises if the method is not implemented
+        """
+        raise NotImplementedError()
+
+    def load(self) -> Any:
+        """
+        Protocol class for loading objects to disk
+
+        Returns
+        -------
+        Any
+            The loaded object
+
+        Raises
+        ------
+        NotImplementedError
+            Raises if the method is not implemented
+        """
+        raise NotImplementedError()
+
+# =============================================================================
+
+
 class Parameter:
     """Interface class of a search space parameter."""
     _type: ClassVar[str] = "object"
 
-    def __init__(self, to_disk: bool = False):
+    def __init__(self, to_disk: bool = False,
+                 store_protocol: Optional[StoreProtocol] = None):
         self.to_disk = to_disk
+        self.store_protocol = store_protocol
 
     def __str__(self):
         return f"Parameter(type={self._type}, to_disk={self.to_disk})"

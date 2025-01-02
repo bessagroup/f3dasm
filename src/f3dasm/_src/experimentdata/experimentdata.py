@@ -102,7 +102,7 @@ class ExperimentData:
         if isinstance(input_data, np.ndarray):
             input_data = convert_numpy_to_dataframe_with_domain(
                 array=input_data,
-                names=_domain.names)
+                names=_domain.input_names)
 
         # Same with output data
         if isinstance(output_data, np.ndarray):
@@ -111,12 +111,16 @@ class ExperimentData:
                 names=_domain.output_names)
 
         _data = data_factory(
-            input_data=input_data, output_data=output_data)
+            input_data=input_data, output_data=output_data,
+            domain=_domain)
 
         # If the domain is None, try to infer it from the input_data and output
         # data
         if not _domain and _data:
-            _domain = infer_domain_from_data(_data)
+            _data = data_factory(
+                input_data=input_data, output_data=output_data,
+                domain=infer_domain_from_data(_data)
+            )
 
         # if jobs is not None, overwrite the job status
         if jobs is not None:
@@ -1427,7 +1431,8 @@ def _dict_factory(data: Optional[DataTypes]) -> List[Dict[str, Any]]:
 
 
 def data_factory(input_data: Optional[DataTypes],
-                 output_data: Optional[DataTypes]
+                 output_data: Optional[DataTypes],
+                 domain: Domain,
                  ) -> Dict[int, ExperimentSample]:
     """
     Convert the input and output data to a defaultdictionary
@@ -1437,9 +1442,11 @@ def data_factory(input_data: Optional[DataTypes],
     ----------
     input_data : Optional[DataTypes]
         The input data to be converted
-
     output_data : Optional[DataTypes]
         The output data to be converted
+    domain : Domain
+        The domain of the data
+
 
     Returns
     -------
@@ -1453,7 +1460,8 @@ def data_factory(input_data: Optional[DataTypes],
 
     # Combine the two lists into a dictionary of ExperimentSamples
     data = {index: ExperimentSample(input_data=input_data,
-                                    output_data=output_data)
+                                    output_data=output_data,
+                                    domain=domain)
             for index, (input_data, output_data) in enumerate(
                 zip_longest(_input_data, _output_data))}
 

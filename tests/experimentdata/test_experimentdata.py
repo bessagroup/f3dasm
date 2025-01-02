@@ -167,12 +167,12 @@ def test_add_new_input_column(experimentdata: ExperimentData,
               'high': continuous_parameter.upper_bound}
     experimentdata.add_input_parameter(
         name='test', type='float', **kwargs)
-    assert 'test' in experimentdata._input_data.names
+    assert 'test' in experimentdata._input_data.input_names
 
 
 def test_add_new_output_column(experimentdata: ExperimentData):
     experimentdata.add_output_parameter(name='test', is_disk=False)
-    assert 'test' in experimentdata._output_data.names
+    assert 'test' in experimentdata._output_data.input_names
 
 
 def test_set_error(experimentdata_continuous: ExperimentData):

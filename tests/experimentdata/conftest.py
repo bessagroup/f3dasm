@@ -111,7 +111,7 @@ def xarray_dataset(domain_continuous: Domain) -> xr.Dataset:
     rng = np.random.default_rng(SEED)
     # np.random.seed(SEED)
     input_data = rng.random((10, len(domain_continuous)))
-    input_names = domain_continuous.names
+    input_names = domain_continuous.input_names
 
     output_data = pd.DataFrame()
     output_names = output_data.columns.to_list()
@@ -126,7 +126,8 @@ def xarray_dataset(domain_continuous: Domain) -> xr.Dataset:
 def pandas_dataframe(domain_continuous: Domain) -> pd.DataFrame:
     # np.random.seed(SEED)
     rng = np.random.default_rng(SEED)
-    return pd.DataFrame(rng.random((10, len(domain_continuous))), columns=domain_continuous.names)
+    return pd.DataFrame(rng.random((10, len(domain_continuous))),
+                        columns=domain_continuous.input_names)
 
 
 @pytest.fixture(scope="package")

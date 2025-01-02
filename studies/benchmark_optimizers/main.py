@@ -72,7 +72,7 @@ class CustomSampler(Sampler):
             samples.append([function_name, dim, noise, seed, budget])
 
         return pd.DataFrame(
-            samples, columns=self.domain.names)[self.domain.names]
+            samples, columns=self.domain.input_names)[self.domain.input_names]
 
 #                                                          Custom datagenerator
 # =============================================================================

@@ -20,6 +20,7 @@ import pandas as pd
 import xarray as xr
 
 # Local
+from ..design.parameter import StoreProtocol
 from ..logger import logger
 
 #                                                          Authorship & Credits
@@ -73,52 +74,6 @@ def convert_refs_to_objects(
             # Load the data normally
             converted_data[key] = value
     return converted_data
-
-
-class StoreProtocol:
-    """Base class for storing and loading output data from disk"""
-    suffix: int
-
-    def __init__(self, object: Any, path: Path):
-        """
-        Protocol class for storing and loading output data from disk
-
-        Parameters
-        ----------
-        object : Any
-            object to store
-        path : Path
-            location to store the object to
-        """
-        self.path = path
-        self.object = object
-
-    def store(self) -> None:
-        """
-        Protocol class for storing objects to disk
-
-        Raises
-        ------
-        NotImplementedError
-            Raises if the method is not implemented
-        """
-        raise NotImplementedError()
-
-    def load(self) -> Any:
-        """
-        Protocol class for loading objects to disk
-
-        Returns
-        -------
-        Any
-            The loaded object
-
-        Raises
-        ------
-        NotImplementedError
-            Raises if the method is not implemented
-        """
-        raise NotImplementedError()
 
 
 class PickleStore(StoreProtocol):
