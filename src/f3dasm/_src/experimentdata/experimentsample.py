@@ -9,6 +9,7 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 # Standard
+from enum import Enum
 from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 
 # Third-party
@@ -17,7 +18,6 @@ import autograd.numpy as np
 # Local
 from ..design.domain import Domain
 from ._io import StoreProtocol, convert_refs_to_objects
-from ._jobqueue import _Jobs
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -27,10 +27,17 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class JobStatus(Enum):
+    OPEN = 0
+    IN_PROGRESS = 1
+    FINISHED = 2
+    ERROR = 3
+
+
 class ExperimentSample:
     def __init__(self, input_data: Optional[Dict[str, Any]] = None,
                  output_data: Optional[Dict[str, Any]] = None,
-                 job_status: Optional[_Jobs] = None):
+                 job_status: Optional[JobStatus] = None):
         """Single realization of a design of experiments.
 
         Parameters
@@ -53,9 +60,9 @@ class ExperimentSample:
 
         if job_status is None:
             if output_data:
-                job_status = _Jobs.FINISHED
+                job_status = JobStatus.FINISHED
             else:
-                job_status = _Jobs.OPEN
+                job_status = JobStatus.OPEN
 
         self.input_data = input_data
         self.output_data = output_data
@@ -111,10 +118,10 @@ class ExperimentSample:
     def mark(self,
              status: Literal['open', 'in_progress', 'finished', 'error']):
         # Check if the status is valid
-        if status.upper() not in _Jobs.__members__:
+        if status.upper() not in JobStatus.__members__:
             raise ValueError(f"Status {status} not valid.")
 
-        self.job_status = _Jobs[status.upper()]
+        self.job_status = JobStatus[status.upper()]
 
     #                                                                 Exporting
     # =========================================================================
@@ -164,7 +171,7 @@ class ExperimentSample:
     # =========================================================================
 
     def is_status(self, status: str) -> bool:
-        return self.job_status == _Jobs[status.upper()]
+        return self.job_status == JobStatus[status.upper()]
 
     # def _store_to_disk(
     #     self, object: Any, name: str,
@@ -189,38 +196,3 @@ class ExperimentSample:
 
     # def _store_to_experimentdata(self, object: Any, name: str) -> None:
     #     self.output_data[name] = object
-
-
-# def _experimentsample_factory(
-#     experiment_sample: np.ndarray | ExperimentSample | Dict,
-#     domain: Domain | None) \
-#         -> ExperimentSample:
-#     """Factory function for the ExperimentSample class.
-
-#     Parameters
-#     ----------
-#     experiment_sample : np.ndarray | ExperimentSample | Dict
-#         The experiment sample to convert to an ExperimentSample.
-#     domain: Domain | None
-#         The domain of the experiment sample.
-
-#     Returns
-#     -------
-#     ExperimentSample
-#         The converted experiment sample.
-#     """
-#     if isinstance(experiment_sample, np.ndarray):
-#         return ExperimentSample.from_numpy(input_array=experiment_sample,
-#                                            domain=domain)
-
-#     elif isinstance(experiment_sample, dict):
-#         return ExperimentSample(dict_input=experiment_sample,
-#                                 dict_output={}, jobnumber=0)
-
-#     elif isinstance(experiment_sample, ExperimentSample):
-#         return experiment_sample
-
-#     else:
-#         raise TypeError(
-#             f"The experiment_sample should be a numpy array"
-#           f", dictionary or ExperimentSample, not {type(experiment_sample)}")
