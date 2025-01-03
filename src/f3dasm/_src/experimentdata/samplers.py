@@ -253,11 +253,13 @@ class RandomUniform(Sampler):
         _constant = sample_constant(self.domain.constant, n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+            [pd.DataFrame(_continuous,
+                          columns=self.domain.continuous.input_names),
              pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
                 _categorical, columns=self.domain.categorical.input_names),
-             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
+             pd.DataFrame(_constant,
+                          columns=self.domain.constant.input_names)],
             axis=1
         )[self.domain.input_names]
 
@@ -347,11 +349,13 @@ class Sobol(Sampler):
             domain=self.domain.constant, n_samples=n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+            [pd.DataFrame(_continuous,
+                          columns=self.domain.continuous.input_names),
              pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
                 _categorical, columns=self.domain.categorical.input_names),
-             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
+             pd.DataFrame(_constant,
+                          columns=self.domain.constant.input_names)],
             axis=1
         )[self.domain.input_names]
 
@@ -386,11 +390,13 @@ class Latin(Sampler):
             domain=self.domain.constant, n_samples=n_samples)
 
         df = pd.concat(
-            [pd.DataFrame(_continuous, columns=self.domain.continuous.input_names),
+            [pd.DataFrame(_continuous,
+                          columns=self.domain.continuous.input_names),
              pd.DataFrame(_discrete, columns=self.domain.discrete.input_names),
              pd.DataFrame(
                 _categorical, columns=self.domain.categorical.input_names),
-             pd.DataFrame(_constant, columns=self.domain.constant.input_names)],
+             pd.DataFrame(_constant,
+                          columns=self.domain.constant.input_names)],
             axis=1
         )[self.domain.input_names]
 

@@ -44,14 +44,6 @@ def test_same_lower_and_upper_bound_continuous_space():
             lower_bound=lower_bound, upper_bound=upper_bound)
 
 
-def test_invalid_types_string_continuous_space():
-    lower_bound = "1"  # string
-    upper_bound = 1.5
-    with pytest.raises(TypeError):
-        _ = ContinuousParameter(
-            lower_bound=lower_bound, upper_bound=upper_bound)
-
-
 # Discrete space tests
 
 
@@ -77,28 +69,21 @@ def test_same_lower_and_upper_bound_discrete_space():
                               upper_bound=upper_bound)
 
 
-def test_invalid_types_arg1_float_discrete_space():
+def test_integer_types_arg1_float_discrete_space():
     lower_bound = 1  # float
-    upper_bound = 1.5
-    with pytest.raises(TypeError):
-        _ = DiscreteParameter(lower_bound=lower_bound,
-                              upper_bound=upper_bound)
+    upper_bound = 2.5
+    parameter = DiscreteParameter(lower_bound=lower_bound,
+                                  upper_bound=upper_bound)
+
+    assert isinstance(parameter.lower_bound, int)
 
 
-def test_invalid_types_arg2_float_discrete_space():
+def test_float_types_arg2_float_discrete_space():
     lower_bound = 1
     upper_bound = 2.0  # float
-    with pytest.raises(TypeError):
-        _ = DiscreteParameter(lower_bound=lower_bound,
-                              upper_bound=upper_bound)
-
-
-def test_invalid_types_string_discrete_space():
-    lower_bound = "1"  # string
-    upper_bound = 1
-    with pytest.raises(TypeError):
-        _ = DiscreteParameter(lower_bound=lower_bound,
-                              upper_bound=upper_bound)
+    parameter = DiscreteParameter(lower_bound=lower_bound,
+                                  upper_bound=upper_bound)
+    assert isinstance(parameter.upper_bound, int)
 
 
 # Categorical space tests

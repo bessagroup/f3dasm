@@ -34,7 +34,7 @@ from ..logger import logger
 from ..optimization import Optimizer, _optimizer_factory
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+                  OUTPUT_DATA_FILENAME, _project_dir_factory, store_to_disk)
 from .experimentsample import ExperimentSample
 from .samplers import Sampler, _sampler_factory
 from .utils import DataTypes, deprecated
@@ -54,7 +54,7 @@ class ExperimentData:
                  domain: Optional[Domain] = None,
                  input_data: Optional[DataTypes] = None,
                  output_data: Optional[DataTypes] = None,
-                 jobs: Optional[Path | str] = None,
+                 jobs: Optional[pd.Series] = None,
                  project_dir: Optional[Path] = None):
         """
         Initializes an instance of ExperimentData.
@@ -67,10 +67,10 @@ class ExperimentData:
             The input data of the experiment, by default None
         output_data : DataTypes, optional
             The output data of the experiment, by default None
-        jobs : Path | str, optional
-            The path to the jobs file, by default None
+        jobs : pandas.Series, optional
+            The status of all the jobs, by default None
         project_dir : Path | str, optional
-            A user-defined directory where the f3dasm project folder will be \
+            A user-defined directory where the f3dasm project folder will be
             created, by default the current working directory.
 
         Note
@@ -82,7 +82,7 @@ class ExperimentData:
         * pandas Dataframe
         * path to a csv file
 
-        If no domain object is provided, the domain is inferred from the \
+        If no domain object is provided, the domain is inferred from the
         input_data.
 
         If the provided project_dir does not exist, it will be created.
@@ -112,19 +112,17 @@ class ExperimentData:
 
         _data = data_factory(
             input_data=input_data, output_data=output_data,
-            domain=_domain)
+            domain=_domain, jobs=jobs,
+            project_dir=_project_dir)
 
         # If the domain is None, try to infer it from the input_data and output
         # data
         if not _domain and _data:
             _data = data_factory(
                 input_data=input_data, output_data=output_data,
-                domain=infer_domain_from_data(_data)
+                domain=infer_domain_from_data(_data), jobs=jobs,
+                project_dir=_project_dir
             )
-
-        # if jobs is not None, overwrite the job status
-        if jobs is not None:
-            ...
 
         self.data = _data
         self.domain = _domain
@@ -219,6 +217,10 @@ class ExperimentData:
             The job number of all the experiments in pandas Index format
         """
         return pd.Index(self.data.keys())
+
+    @property
+    def jobs(self) -> pd.Series:
+        return pd.Series({id: es.job_status.name for id, es in self})
 
     #                                                  Alternative constructors
     # =========================================================================
@@ -477,7 +479,22 @@ class ExperimentData:
         access the lock file. This lock file is removed after the
         ExperimentData object is written to disk.
         """
-        ...
+        if project_dir is not None:
+            self.set_project_dir(project_dir)
+
+        subdirectory = self.project_dir / EXPERIMENTDATA_SUBFOLDER
+
+        # Create the experimentdata subfolder if it does not exist
+        subdirectory.mkdir(parents=True, exist_ok=True)
+
+        df_input, df_output = self.to_pandas(keep_references=True)
+
+        df_input.to_csv(
+            (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'))
+        df_output.to_csv(
+            (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'))
+        self.domain.store(subdirectory / DOMAIN_FILENAME)
+        self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -490,23 +507,40 @@ class ExperimentData:
             the first one for input columns,
             and the second for output columns.
         """
-        df_input, df_output = self.to_pandas()
+        df_input, df_output = self.to_pandas(keep_references=False)
         return df_input.to_numpy(), df_output.to_numpy()
 
-    def to_pandas(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def to_pandas(self, keep_references: bool = False
+                  ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Convert the ExperimentData object to a pandas DataFrame.
 
+        Parameters
+        ----------
+        keep_references : bool, optional
+            If True, the references to the output data are kept.
+            The default behaviour is False, for which the output data is
+            loaded from disk
         Returns
         -------
         tuple
             A tuple containing two pandas DataFrames,
             the first one for input columns, and the second for output
         """
-        return (
-            pd.DataFrame([es.input_data for _, es in self], index=self.index),
-            pd.DataFrame([es.output_data for _, es in self], index=self.index)
-        )
+        if keep_references:
+            return (
+                pd.DataFrame([es._input_data for _, es in self],
+                             index=self.index),
+                pd.DataFrame([es._output_data for _, es in self],
+                             index=self.index)
+            )
+        else:
+            return (
+                pd.DataFrame([es.input_data for _, es in self],
+                             index=self.index),
+                pd.DataFrame([es.output_data for _, es in self],
+                             index=self.index)
+            )
 
     def to_xarray(self) -> xr.Dataset:
         """
@@ -843,28 +877,42 @@ class ExperimentData:
         """
         return [self.data[i] for i in indices]
 
-    def _set_experiment_sample(
+    def store_experimentsample(
             self, experiment_sample: ExperimentSample, id: int):
         """
-        Sets the ExperimentSample at the given index.
+        Store an ExperimentSample object in the ExperimentData object.
 
         Parameters
         ----------
         experiment_sample : ExperimentSample
-            The ExperimentSample to set.
+            The ExperimentSample object to store.
+        id : int
+            The index of the ExperimentSample object.
         """
+        self.domain += experiment_sample.domain
+
+        for name, value in experiment_sample._output_data.items():
+
+            # # If the output parameter is not in the domain, add it
+            # if name not in self.domain.output_names:
+            #     self.domain.add_output(name=name, to_disk=True)
+
+            parameter = self.domain.output_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir, object=value, name=name,
+                    id=id, store_function=parameter.store_function)
+
+                experiment_sample._output_data[name] = Path(storage_location)
+
+        # Set the experiment sample in the ExperimentData object
         self.data[id] = experiment_sample
 
-        # TODO: Is this the best way to do this? Cant we do this with
-        # The key-value pairs and the Domain only ?
-        # Check the keys that are registered and add them to the output data
-        # TODO: Fix that the to_disk parameter is also retrieved
-        for name, to_disk in experiment_sample.registered_keys.items():
-            self.domain.add_output(name=name, to_disk=to_disk, exist_ok=True)
-
-        experiment_sample.clean_registered_keys()
-
     # Used in parallel mode
+
     @deprecated(version="2.0.0")
     def _write_experiment_sample(self,
                                  experiment_sample: ExperimentSample) -> None:
@@ -899,7 +947,7 @@ class ExperimentData:
         ExperimentSample
             The ExperimentSample object of the first available open job.
         """
-        ...
+        return self.get_open_job()
 
     def get_open_job(self) -> Tuple[int, ExperimentSample]:
         for id, es in self:
@@ -1329,10 +1377,25 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
     try:
-        return ExperimentData(domain=subdirectory / DOMAIN_FILENAME,
-                              input_data=subdirectory / INPUT_DATA_FILENAME,
-                              output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                              jobs=subdirectory / JOBS_FILENAME,
+
+        input_data = pd.read_csv(
+            (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'),
+            header=0, index_col=0)
+
+        output_data = pd.read_csv(
+            (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'),
+            header=0, index_col=0)
+
+        jobs: pd.Series = pd.read_csv(
+            (subdirectory / JOBS_FILENAME).with_suffix('.csv'),
+            header=0, index_col=0).squeeze()
+
+        domain = Domain.from_file(subdirectory / DOMAIN_FILENAME)
+
+        return ExperimentData(domain=domain,
+                              input_data=input_data,
+                              output_data=output_data,
+                              jobs=jobs,
                               project_dir=project_dir)
     except FileNotFoundError:
         raise FileNotFoundError(
@@ -1433,6 +1496,8 @@ def _dict_factory(data: Optional[DataTypes]) -> List[Dict[str, Any]]:
 def data_factory(input_data: Optional[DataTypes],
                  output_data: Optional[DataTypes],
                  domain: Domain,
+                 jobs: Optional[pd.Series],
+                 project_dir: Path,
                  ) -> Dict[int, ExperimentSample]:
     """
     Convert the input and output data to a defaultdictionary
@@ -1446,6 +1511,10 @@ def data_factory(input_data: Optional[DataTypes],
         The output data to be converted
     domain : Domain
         The domain of the data
+    jobs : pd.Series
+        The status of all the jobs
+    project_dir : Path
+        The project directory of the data
 
 
     Returns
@@ -1458,11 +1527,16 @@ def data_factory(input_data: Optional[DataTypes],
     _input_data: List[Dict[str, Any]] = _dict_factory(input_data)
     _output_data: List[Dict[str, Any]] = _dict_factory(output_data)
 
+    if jobs is None:
+        jobs = pd.Series()
+
     # Combine the two lists into a dictionary of ExperimentSamples
     data = {index: ExperimentSample(input_data=input_data,
                                     output_data=output_data,
-                                    domain=domain)
-            for index, (input_data, output_data) in enumerate(
-                zip_longest(_input_data, _output_data))}
+                                    domain=domain,
+                                    job_status=job_status,
+                                    project_dir=project_dir)
+            for index, (input_data, output_data, job_status) in enumerate(
+                zip_longest(_input_data, _output_data, jobs))}
 
     return defaultdict(ExperimentSample, data)

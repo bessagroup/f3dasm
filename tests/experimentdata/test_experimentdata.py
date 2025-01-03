@@ -12,7 +12,7 @@ import xarray as xr
 
 from f3dasm import ExperimentData, ExperimentSample
 from f3dasm._src.design.parameter import ContinuousParameter
-from f3dasm._src.experimentdata._data import DataTypes, _Data
+# from f3dasm._src.experimentdata._data import DataTypes, _Data
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 pytestmark = pytest.mark.smoke
@@ -46,12 +46,12 @@ def test_experiment_data_len_empty(domain: Domain):
 
 
 def test_experiment_data_len_equals_input_data(experimentdata: ExperimentData):
-    assert len(experimentdata) == len(experimentdata._input_data)
+    assert len(experimentdata) == len(experimentdata.data)
 
 
 @pytest.mark.parametrize("slice_type", [3, [0, 1, 3]])
 def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
-    input_data = experimentdata._input_data[slice_type]
+    input_data = experimentdata[slice_type]
     output_data = experimentdata._output_data[slice_type]
     jobs = experimentdata._jobs[slice_type]
     constructed_experimentdata = ExperimentData(

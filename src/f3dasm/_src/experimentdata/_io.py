@@ -11,7 +11,7 @@ from __future__ import annotations
 # Standard
 import pickle
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple, Type
+from typing import Any, Mapping, Optional, Type
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from ..design.parameter import StoreProtocol
+from ..design.parameter import LoadFunction, StoreFunction
 from ..logger import logger
 
 #                                                          Authorship & Credits
@@ -48,283 +48,84 @@ MAX_TRIES = 10
 # =============================================================================
 
 
-def convert_refs_to_objects(
-    data: Dict[str, Any],
-        reference_keys: Dict[str, Tuple[Callable, Callable]]
-) -> Dict[str, Any]:
-    # Create new empty dictionary
-    converted_data = dict()
+def pickle_store(object: Any, path: str) -> str:
+    _path = Path(path).with_suffix('.pkl')
+    with open(_path, 'wb') as file:
+        pickle.dump(object, file)
 
-    # Go over every item in the dict
-    for key, value in data.items():
-
-        # If the key is referenced
-        if key in reference_keys:
-
-            # Extract the load function
-            load_func, _ = reference_keys[key]
-
-            # Set the value of the converted_data to the output of the load
-            # function
-            converted_data[key] = load_func(value)
-
-        # If key is not a reference
-        else:
-
-            # Load the data normally
-            converted_data[key] = value
-    return converted_data
+    return str(_path)
 
 
-class PickleStore(StoreProtocol):
-    """Class to store and load objects using the pickle protocol"""
-    suffix: str = '.pkl'
-
-    def store(self) -> None:
-        """
-        Store the object to disk using the pickle protocol
-        """
-        with open(self.path.with_suffix(self.suffix), 'wb') as file:
-            pickle.dump(self.object, file)
-
-    def load(self) -> Any:
-        """
-        Load the object from disk using the pickle protocol
-
-        Returns
-        -------
-        Any
-            The loaded object
-
-        """
-        with open(self.path.with_suffix(self.suffix), 'rb') as file:
-            return pickle.load(file)
+def pickle_load(path: str) -> Any:
+    _path = Path(path).with_suffix('.pkl')
+    with open(_path, 'rb') as file:
+        return pickle.load(file)
 
 
-class NumpyStore(StoreProtocol):
-    """Class to store and load objects using the numpy protocol"""
-    suffix: str = '.npy'
-
-    def store(self) -> None:
-        """
-        Store the object to disk using the numpy protocol
-        """
-        np.save(file=self.path.with_suffix(self.suffix), arr=self.object)
-
-    def load(self) -> np.ndarray:
-        """
-        Load the object from disk using the numpy protocol
-
-        Returns
-        -------
-        np.ndarray
-            The loaded object
-        """
-        return np.load(file=self.path.with_suffix(self.suffix))
+def numpy_store(object: np.ndarray, path: str) -> str:
+    _path = Path(path).with_suffix('.npy')
+    np.save(file=_path, arr=object)
+    return str(_path)
 
 
-class PandasStore(StoreProtocol):
-    """Class to store and load objects using the pandas protocol"""
-    suffix: str = '.csv'
-
-    def store(self) -> None:
-        """
-        Store the object to disk using the pandas protocol
-        """
-        self.object.to_csv(self.path.with_suffix(self.suffix))
-
-    def load(self) -> pd.DataFrame:
-        """
-        Load the object from disk using the pandas protocol
-
-        Returns
-        -------
-        pd.DataFrame
-            The loaded object
-        """
-        return pd.read_csv(self.path.with_suffix(self.suffix))
+def numpy_load(path: str) -> np.ndarray:
+    _path = Path(path).with_suffix('.npy')
+    return np.load(file=_path)
 
 
-class XarrayStore(StoreProtocol):
-    """Class to store and load objects using the xarray protocol"""
-    suffix: str = '.nc'
-
-    def store(self) -> None:
-        """
-        Store the object to disk using the xarray protocol
-        """
-        self.object.to_netcdf(self.path.with_suffix(self.suffix))
-
-    def load(self) -> xr.DataArray | xr.Dataset:
-        """
-        Load the object from disk using the xarray protocol
-
-        Returns
-        -------
-        xr.DataArray | xr.Dataset
-            The loaded object
-        """
-        return xr.open_dataset(self.path.with_suffix(self.suffix))
+def pandas_store(object: pd.DataFrame, path: str) -> str:
+    _path = Path(path).with_suffix('.csv')
+    object.to_csv(_path)
+    return str(_path)
 
 
-class FigureStore(StoreProtocol):
-    """Class to store and load objects using the matplotlib protocol"""
-    suffix: str = '.png'
-
-    def store(self) -> None:
-        """
-        Store the figure to disk as a png file
-
-        Notes
-        -----
-        - The figure is saved with a resolution of 300 dpi.
-        - The figure is saved with tight bounding boxes.
-        """
-        self.object.savefig(self.path.with_suffix(
-            self.suffix), dpi=RESOLUTION_MATPLOTLIB_FIGURE,
-            bbox_inches='tight')
-
-    def load(self) -> np.ndarray:
-        """
-        Load the image as an numpy array from disk
-        using the matplotlib `plt.imread` function.
-
-        Returns
-        -------
-        np.ndarray
-            The loaded image in the form of a numpy array
-
-        Notes
-        -----
-         The returned array has shape
-        - (M, N) for grayscale images.
-        - (M, N, 3) for RGB images.
-        - (M, N, 4) for RGBA images.
-
-        Images are returned as float arrays (0-1).
-        """
-        return plt.imread(self.path.with_suffix(self.suffix))
+def pandas_load(path: str) -> pd.DataFrame:
+    _path = Path(path).with_suffix('.csv')
+    return pd.read_csv(_path)
 
 
-STORE_TYPE_MAPPING: Mapping[Type, StoreProtocol] = {
-    np.ndarray: NumpyStore,
-    pd.DataFrame: PandasStore,
-    pd.Series: PandasStore,
-    xr.DataArray: XarrayStore,
-    xr.Dataset: XarrayStore,
-    plt.Figure: FigureStore,
+def xarray_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
+    _path = Path(path).with_suffix('.nc')
+    object.to_netcdf(_path)
+    return str(_path)
+
+
+def xarray_load(path: str) -> xr.DataArray | xr.Dataset:
+    # TODO: open_dataset and open_dataarray?
+    _path = Path(path).with_suffix('.nc')
+    return xr.open_dataset(_path)
+
+
+def figure_store(object: plt.Figure, path: str) -> str:
+    _path = Path(path).with_suffix('.png')
+    object.savefig(_path, dpi=RESOLUTION_MATPLOTLIB_FIGURE,
+                   bbox_inches='tight')
+    return str(_path)
+
+
+def figure_load(path: str) -> np.ndarray:
+    _path = Path(path).with_suffix('.png')
+    return plt.imread(_path)
+
+
+STORE_FUNCTION_MAPPING: Mapping[Type, StoreFunction] = {
+    np.ndarray: numpy_store,
+    pd.DataFrame: pandas_store,
+    pd.Series: pandas_store,
+    xr.DataArray: xarray_store,
+    xr.Dataset: xarray_store,
+    plt.Figure: figure_store,
+}
+
+LOAD_FUNCTION_MAPPING: Mapping[str, StoreFunction] = {
+    '.npy': numpy_load,
+    '.csv': pandas_load,
+    '.nc': xarray_load,
+    '.png': figure_load,
 }
 
 #                                                  Loading and saving functions
 # =============================================================================
-
-
-def load_object(path: Path, experimentdata_directory: Path,
-                store_method: Type[StoreProtocol] = PickleStore) -> Any:
-    """
-    Load an object from disk from a given path and storing method
-
-    Parameters
-    ----------
-    path : Path
-        path of the object to load
-    experimentdata_directory : Path
-        path of the f3dasm project directory
-    store_method : Type[_Store], optional
-        storage method protocol, by default PickleStore
-
-    Returns
-    -------
-    Any
-        the object loaded from disk
-
-    Raises
-    ------
-    ValueError
-        Raises if no matching store type is found
-
-    Note
-    ----
-    If no store method is provided, the function will try to find a matching
-    store type based on the suffix of the item's path. If no matching store
-    type is found, the function will raise a ValueError. By default, the
-    function will use the PickleStore protocol to load the object from disk.
-    """
-
-    _path = experimentdata_directory / path
-
-    if store_method is not None:
-        return store_method(None, _path).load()
-
-    if not _path.exists():
-        return None
-
-    # Extract the suffix from the item's path
-    item_suffix = _path.suffix
-
-    # Use a generator expression to find the first matching store type,
-    #  or None if no match is found
-    matched_store_type: StoreProtocol = next(
-        (store_type for store_type in STORE_TYPE_MAPPING.values() if
-         store_type.suffix == item_suffix), PickleStore)
-
-    if matched_store_type:
-        return matched_store_type(None, _path).load()
-    else:
-        # Handle the case when no matching suffix is found
-        raise ValueError(
-            f"No matching store type for item type: '{item_suffix}'")
-
-
-def save_object(object: Any, path: Path, experimentdata_directory: Path,
-                store_method: Optional[Type[StoreProtocol]] = None) -> str:
-    """Function to save the object to path,
-     with the appropriate storing method.
-
-    Parameters
-    ----------
-    object : Any
-        Object to store
-    path : Path
-        Path to store the object to
-    store_method : Optional[Store], optional
-        Storage method, by default None
-
-    Returns
-    -------
-    str
-        suffix of the storage method
-
-    Raises
-    ------
-    TypeError
-        Raises if the object type is not supported,
-         and you haven't provided a custom store method.
-    """
-    # Combine the path with the experimentdata directory
-    _path = experimentdata_directory / path
-
-    # Check if a custom store method is provided
-    if store_method is not None:
-        storage = store_method(object, _path)
-
-    # If no store method is provided, try to find a matching store type
-    else:
-        # Check if object type is supported
-        object_type = type(object)
-
-        if object_type not in STORE_TYPE_MAPPING:
-            storage: StoreProtocol = PickleStore(object, _path)
-            logger.debug(
-                f"Object type {object_type} is not natively supported. "
-                f"The default pickle storage method will be used.")
-
-        else:
-            storage: StoreProtocol = STORE_TYPE_MAPPING[object_type](
-                object, _path)
-    # Store object
-    storage.store()
-    return storage.suffix
 
 
 def _project_dir_factory(project_dir: Path | str | None) -> Path:
@@ -353,3 +154,112 @@ def _project_dir_factory(project_dir: Path | str | None) -> Path:
     raise TypeError(
         f"project_dir must be of type Path, str or None, \
             not {type(project_dir).__name__}")
+
+
+def store_to_disk(project_dir: Path, object: Any,
+                  name: str, id: int,
+                  store_function: Optional[StoreFunction] = None) -> str:
+    """
+    Store an object to disk
+
+    Parameters
+    ----------
+    project_dir : Path
+        The ExperimentData project_dir path
+    object : Any
+        The object to store
+    name : str
+        The name of the object
+    id : int
+        The id of the object
+    store_function : Callable
+        The method to store the object
+
+    Returns
+    -------
+    str
+        The path to the stored object
+
+    Notes
+    -----
+    If no store method is provided, the function will try to find a matching
+    store type based on the object's type. If no matching type is found, the
+    function will use the pickle to store the object to disk.
+    """
+    path = project_dir / EXPERIMENTDATA_SUBFOLDER / name / str(id)
+
+    # Check if the storage parent folder exists
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # If no store method is provided, try to find a matching store type
+    if store_function is None:
+        # Check if object type is supported
+        object_type = type(object)
+
+        if object_type not in STORE_FUNCTION_MAPPING:
+            store_function = pickle_store
+            logger.debug(
+                f"Object type {object_type} is not natively supported. "
+                f"The default pickle storage method will be used.")
+
+        else:
+            store_function = STORE_FUNCTION_MAPPING[object_type]
+
+    # Store the object
+    absolute_path = Path(store_function(object, path))
+
+    # Return the path relative from the the project directory
+    return str(absolute_path.relative_to(
+        project_dir / EXPERIMENTDATA_SUBFOLDER))
+
+
+def load_object(project_dir: Path, path: str | Path,
+                load_function: Optional[LoadFunction] = None) -> Any:
+    """
+    Load an object from disk from a given path and storing method
+
+    Parameters
+    ----------
+    project_dir : Path
+        The ExperimentData project_dir path
+    path: str | Path
+        The path to the object
+    load_function: Callable
+        The method to load the object
+
+
+    Returns
+    -------
+    Any
+        the object loaded from disk
+
+    Raises
+    ------
+    ValueError
+        Raises if no matching store type is found
+
+    Note
+    ----
+    If no store method is provided, the function will try to find a matching
+    store type based on the suffix of the item's path. If no matching type
+    is found, the function will use the pickle to load the object from disk.
+    """
+
+    _path = project_dir / EXPERIMENTDATA_SUBFOLDER / path
+    suffix = _path.suffix
+
+    # If no store method is provided, try to find a matching store type
+    if load_function is None:
+        # Check if object type is supported
+
+        if suffix not in LOAD_FUNCTION_MAPPING:
+            load_function = pickle_load
+            logger.debug(
+                f"Object type '{suffix}' is not natively supported. "
+                f"The default pickle load method will be used.")
+
+        else:
+            load_function = LOAD_FUNCTION_MAPPING[suffix]
+
+    # Store the object and return the storage location
+    return load_function(_path)

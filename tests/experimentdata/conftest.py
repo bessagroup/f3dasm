@@ -59,13 +59,14 @@ def experimentdata_expected() -> ExperimentData:
         bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3)
     data = ExperimentData.from_sampling(
         sampler='random', domain=domain_continuous, n_samples=10, seed=SEED)
-    for es, output in zip(data, np.zeros((10, 1))):
+    for (id, es), output in zip(data, np.zeros((10, 1))):
         es.store(name='y', object=float(output))
-        data._set_experiment_sample(es)
+        data.store_experimentsample(experiment_sample=es,
+                                    id=id)
     data.add(input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
              output_data=np.array([[0.0], [0.0]]), domain=domain_continuous)
 
-    data._input_data.round(6)
+    # data._input_data.round(6)
     # data._input_data.data = [[round(num, 6) if isinstance(
     #     num, float) else num for num in sublist]
     #     for sublist in data._input_data.data]

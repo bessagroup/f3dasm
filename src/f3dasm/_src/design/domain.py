@@ -22,7 +22,8 @@ from omegaconf import DictConfig, OmegaConf
 # Local
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, Parameter)
+                        DiscreteParameter, LoadFunction, Parameter,
+                        StoreFunction)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -100,33 +101,69 @@ class Domain:
 
     @property
     def input_names(self) -> List[str]:
-        """Return a list of the names of the parameters"""
+        """
+        Retrieve the input space names
+
+        Returns
+        -------
+        List[str]
+            List of the names of the input parameters
+        """
         return list(self.input_space.keys())
 
     @property
     def output_names(self) -> List[str]:
-        """Return a list of the names of the output parameters"""
+        """
+        Retrieve the output space names
+
+        Returns
+        -------
+        List[str]
+            List of the names of the output parameters"""
         return list(self.output_space.keys())
 
     @property
     def continuous(self) -> Domain:
-        """Returns a Domain object containing only the continuous parameters"""
+        """Filter the continuous parameters of the domain
+
+        Returns
+        -------
+        Domain
+            Domain object containing the continuous parameters
+        """
         return self._filter(ContinuousParameter)
 
     @property
     def discrete(self) -> Domain:
-        """Returns a Domain object containing only the discrete parameters"""
+        """Filter the discrete parameters of the domain
+
+        Returns
+        -------
+        Domain
+            Domain object containing the discrete parameters
+        """
         return self._filter(DiscreteParameter)
 
     @property
     def categorical(self) -> Domain:
-        """Returns a Domain object containing only
-         the categorical parameters"""
+        """Filter the categorical parameters of the domain
+
+        Returns
+        -------
+        Domain
+            Domain object containing the categorical parameters
+        """
         return self._filter(CategoricalParameter)
 
     @property
     def constant(self) -> Domain:
-        """Returns a Domain object containing only the constant parameters"""
+        """Filter the constant parameters of the domain
+
+        Returns
+        -------
+        Domain
+            Domain object containing the constant parameters
+        """
         return self._filter(ConstantParameter)
 #                                                      Alternative constructors
 # =============================================================================
@@ -137,13 +174,13 @@ class Domain:
 
         Parameters
         ----------
-        filename : Path
-            Name of the file.
+        filename : Path | str
+            Path of the Domain pickle file.
 
         Returns
         -------
         Domain
-            Domain object containing the loaded data.
+            Domain object containing the loaded design spaces.
         """
         # convert filename to Path object
         filename = Path(filename)
@@ -153,9 +190,9 @@ class Domain:
             raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
         with open(filename.with_suffix('.pkl'), "rb") as file:
-            obj = pickle.load(file)
+            domain = pickle.load(file)
 
-        return obj
+        return domain
 
     @classmethod
     def from_yaml(cls: Type[Domain], cfg: DictConfig) -> Domain:
@@ -240,7 +277,7 @@ class Domain:
         for name in df_output.columns:
             output_space[name] = Parameter(to_disk=False)
 
-        return cls(space=input_space, output_space=output_space)
+        return cls(input_space=input_space, output_space=output_space)
 
 #                                                                        Export
 # =============================================================================
@@ -266,6 +303,16 @@ class Domain:
 # =============================================================================
 
     def _add(self, name: str, parameter: Parameter):
+        """
+        Add a new input parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+        parameter : Parameter
+            Parameter object to be added to the domain.
+        """
         # Check if parameter is already in the domain
         if name in self.input_space:
             raise KeyError(
@@ -292,8 +339,8 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_int('param1', 0, 10, 2)
-        >>> domain.space
-        {'param1': _DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
+        >>> domain.input_space
+        {'param1': DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
 
         Note
         ----
@@ -323,8 +370,8 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_float('param1', 0., 10., log=True)
-        >>> domain.space
-        {'param1': _ContinuousParameter(lower_bound=0.,
+        >>> domain.input_space
+        {'param1': ContinuousParameter(lower_bound=0.,
          upper_bound=10., log=True)}
 
         Note
@@ -351,7 +398,7 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_category('param1', [0, 1, 2])
-        >>> domain.space
+        >>> domain.input_space
         {'param1': CategoricalParameter(categories=[0, 1, 2])}
         """
         self._add(name, CategoricalParameter(categories))
@@ -370,7 +417,7 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_constant('param1', 0)
-        >>> domain.space
+        >>> domain.input_space
         {'param1': ConstantParameter(value=0)}
         """
         self._add(name, ConstantParameter(value))
@@ -399,8 +446,8 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain._new_add('param1', 'float', low=0., high=1.)
-        >>> domain.space
-        {'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.)}
+        >>> domain.input_space
+        {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
 
         if type == 'float':
@@ -417,7 +464,9 @@ class Domain:
                 f"Possible types are: 'float', 'int', 'category', 'constant'.")
 
     def add_output(self, name: str, to_disk: bool = False,
-                   exist_ok: bool = False):
+                   exist_ok: bool = False,
+                   store_function: Optional[StoreFunction] = None,
+                   load_function: Optional[LoadFunction] = None):
         """Add a new output parameter to the domain.
 
         Parameters
@@ -434,7 +483,7 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_output('param1', True)
-        >>> domain.space
+        >>> domain.input_space
         {'param1': OutputParameter(to_disk=True)}
         """
         if name in self.output_space:
@@ -444,7 +493,9 @@ class Domain:
                         Choose a different name.")
             return
 
-        self.output_space[name] = Parameter(to_disk)
+        self.output_space[name] = Parameter(to_disk=to_disk,
+                                            store_function=store_function,
+                                            load_function=load_function)
 #                                                                       Getters
 # =============================================================================
 
@@ -459,10 +510,10 @@ class Domain:
         Example
         -------
         >>> domain = Domain()
-        >>> domain.space = {
-        ...     'param1': _ContinuousParameter(lower_bound=0, upper_bound=1),
-        ...     'param2': _ContinuousParameter(lower_bound=-1, upper_bound=1),
-        ...     'param3': _ContinuousParameter(lower_bound=0, upper_bound=10)
+        >>> domain.input_space = {
+        ...     'param1': ContinuousParameter(lower_bound=0, upper_bound=1),
+        ...     'param2': ContinuousParameter(lower_bound=-1, upper_bound=1),
+        ...     'param3': ContinuousParameter(lower_bound=0, upper_bound=10)
         ... }
         >>> bounds = domain.get_bounds()
         >>> bounds
@@ -491,14 +542,14 @@ class Domain:
         Example
         -------
         >>> domain = Domain()
-        >>> domain.space = {
-        ...     'param1': _ContinuousParameter(lower_bound=0., upper_bound=1.),
-        ...     'param2': _DiscreteParameter(lower_bound=0, upper_bound=8),
+        >>> domain.input_space = {
+        ...     'param1': ContinuousParameter(lower_bound=0., upper_bound=1.),
+        ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
         ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
         ... }
-        >>> filtered_domain = domain.filter_parameters(_ContinuousParameter)
-        >>> filtered_domain.space
-        {'param1': _ContinuousParameter(lower_bound=0, upper_bound=1)}
+        >>> filtered_domain = domain.filter_parameters(ContinuousParameter)
+        >>> filtered_domain.input_space
+        {'param1': ContinuousParameter(lower_bound=0, upper_bound=1)}
 
         """
         return Domain(
@@ -561,6 +612,19 @@ def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
 
 
 def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
+    """
+    Factory function to create a Domain object from various input types.
+
+    Parameters
+    ----------
+    domain : Domain | DictConfig | Path | str
+        The domain to be converted to a Domain object.
+
+    Returns
+    -------
+    Domain
+        Domain object
+    """
     # If domain is already a Domain object, return it
     if isinstance(domain, Domain):
         return domain

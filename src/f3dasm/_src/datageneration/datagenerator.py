@@ -57,8 +57,8 @@ class ExperimentData(Protocol):
     def _access_open_job_data(self) -> Tuple[int, ExperimentSample]:
         ...
 
-    def _set_experiment_sample(self,
-                               experiment_sample: ExperimentSample) -> None:
+    def store_experimentsample(self,
+                               experiment_sample: ExperimentSample, id: int):
         ...
 
     def _set_error(self, job_number: int) -> None:
@@ -176,7 +176,7 @@ class DataGenerator:
 
                 _experiment_sample = self._run(
                     experiment_sample, **kwargs)  # no *args!
-                self.data._set_experiment_sample(
+                self.data.store_experimentsample(
                     experiment_sample=_experiment_sample,
                     id=job_number)
             except Exception as e:
@@ -237,7 +237,7 @@ class DataGenerator:
 
         for job_number, _experiment_sample, exit_code in _experiment_samples:
             if exit_code == 0:
-                self.data._set_experiment_sample(
+                self.data.store_experimentsample(
                     experiment_sample=_experiment_sample,
                     id=job_number)
             else:

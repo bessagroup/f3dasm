@@ -10,14 +10,15 @@ from __future__ import annotations
 
 # Standard
 from enum import Enum
-from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
+from pathlib import Path
+from typing import Any, Dict, Literal, Optional, Tuple, Type
 
 # Third-party
 import autograd.numpy as np
 
 # Local
 from ..design.domain import Domain
-from ._io import StoreProtocol, convert_refs_to_objects
+from ._io import LoadFunction, StoreFunction, load_object
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -38,7 +39,8 @@ class ExperimentSample:
     def __init__(self, input_data: Optional[Dict[str, Any]] = None,
                  output_data: Optional[Dict[str, Any]] = None,
                  domain: Optional[Domain] = None,
-                 job_status: Optional[JobStatus] = None):
+                 job_status: Optional[str] = None,
+                 project_dir: Optional[Path] = None):
         """Single realization of a design of experiments.
 
         Parameters
@@ -51,8 +53,10 @@ class ExperimentSample:
             of the parameter.
         domain : Optional[Domain]
             Domain of the experiment, by default None
-        job_status : Optional[_Jobs]
+        job_status : Optional[str]
             Job status of the experiment, by default None
+        project_dir : Optional[Path]
+            Directory of the project, by default None
         """
 
         if input_data is None:
@@ -66,15 +70,18 @@ class ExperimentSample:
 
         if job_status is None:
             if output_data:
-                job_status = JobStatus.FINISHED
+                job_status = 'FINISHED'
             else:
-                job_status = JobStatus.OPEN
+                job_status = 'OPEN'
+
+        if project_dir is None:
+            project_dir = Path.cwd()
 
         self._input_data = input_data
         self._output_data = output_data
         self.domain = domain
-        self.job_status = job_status
-        self.registered_keys = {}
+        self.job_status = JobStatus[job_status]
+        self.project_dir = project_dir
 
     def __repr__(self):
         return (f"ExperimentSample("
@@ -88,15 +95,16 @@ class ExperimentSample:
             input_data={**self._input_data, **__o._input_data},
             output_data={**self._output_data, **__o._output_data},
             domain=self.domain + __o.domain,
+            project_dir=self.project_dir,
         )
 
     @property
-    def input_data(self):
-        return self._input_data
+    def input_data(self) -> Dict[str, Any]:
+        return {k: self._get_input(k) for k in self._input_data}
 
     @property
     def output_data(self):
-        return self._output_data
+        return {k: self._get_output(k) for k in self._output_data}
 
     #                                                  Alternative constructors
     # =========================================================================
@@ -111,42 +119,51 @@ class ExperimentSample:
     #                                                                   Getters
     # =========================================================================
 
-    def get(self, item: str,
-            load_method: Optional[Type[StoreProtocol]] = None):
-        if item not in self.domain.input_names:
-            raise KeyError(f"Key {item} not in input domain!")
+    def get(self, name: str) -> Any:
+        # Check if the name is in the input data
+        value = self._get_input(name)
 
-        parameter = self.domain.input_space[item]
+        if value is not None:
+            return value
+
+        # Check if the name is in the output data
+        value = self._get_output(name)
+
+        if value is not None:
+            return value
+
+        raise KeyError(f"Parameter {name} not found in input or output data.")
+
+    def _get_input(self, name: str):
+        if name not in self.domain.input_names:
+            return None
+
+        parameter = self.domain.input_space[name]
 
         if parameter.to_disk:
-            return self._load_from_disk(name=item, load_method=load_method)
+            return load_object(project_dir=self.project_dir,
+                               path=self._input_data[name],
+                               load_function=parameter.load_function)
 
         else:
-            return self._load_from_experimentdata(name=item)
+            return self._input_data[name]
 
-    def _load_from_disk(self, name: str, load_method: Type[StoreProtocol]):
-        ...
+    def _get_output(self, name: str):
+        if name not in self.domain.output_names:
+            return None
 
-    def _load_from_experimentdata(self, name: str):
-        return self._input_data[name]
+        parameter = self.domain.output_space[name]
 
-    def load(self,
-             reference_keys: Dict[str, Tuple[Callable, Callable]]
-             ) -> ExperimentSample:
-        input_data = convert_refs_to_objects(self._input_data, reference_keys)
-        output_data = convert_refs_to_objects(
-            self._output_data, reference_keys)
-        return ExperimentSample(
-            input_data=input_data,
-            output_data=output_data,
-            domain=self.domain,
-            job_status=self.job_status)
+        if parameter.to_disk:
+            return load_object(project_dir=self.project_dir,
+                               path=self._output_data[name],
+                               load_function=parameter.load_function)
 
-    # def update_job_status(self):
-    #     if self.output_data:
-    #         self.job_status = _Jobs.FINISHED
-    #     else:
-    #         self.job_status = _Jobs.OPEN
+        else:
+            return self._output_data[name]
+
+    #                                                                   Setters
+    # =========================================================================
 
     def mark(self,
              status: Literal['open', 'in_progress', 'finished', 'error']):
@@ -160,9 +177,18 @@ class ExperimentSample:
     # =========================================================================
 
     def to_multiindex(self):
+        """
+        Convert the experiment sample to a multiindex dictionary,
+        which can be used for displaying the data in a pandas DataFrame.
+
+        Note
+        ----
+        If input or output data is stored on disk, the path to the
+        stored object will be displayed in the multiindex.
+        """
         return {('jobs', ''): self.job_status.name.lower(),
-                **{('input', k): v for k, v in self.input_data.items()},
-                **{('output', k): v for k, v in self.output_data.items()},
+                **{('input', k): v for k, v in self._input_data.items()},
+                **{('output', k): v for k, v in self._output_data.items()},
                 }
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -177,76 +203,19 @@ class ExperimentSample:
     # =========================================================================
 
     def store(self, name: str, object: Any, to_disk: bool = False,
-              store_method: Optional[Type[StoreProtocol]] = None) -> None:
+              store_function: Optional[Type[StoreFunction]] = None,
+              load_function: Optional[Type[LoadFunction]] = None):
 
         # Add the output to the domain if it is not already there
         if name not in self.domain.output_names:
-            self.domain.add_output(name=name, to_disk=to_disk)
+            self.domain.add_output(name=name, to_disk=to_disk,
+                                   store_function=store_function,
+                                   load_function=load_function)
 
-        parameter = self.domain.output_space[name]
-
-        if parameter.to_disk:
-            self._store_to_disk(object=object, name=name,
-                                store_method=parameter.store_protocol)
-        else:
-            self._store_to_experimentdata(object=object, name=name)
-
-        self.registered_keys[name] = to_disk
-
-    def _store_to_disk(
-        self, object: Any, name: str,
-            store_method: Optional[Type[StoreProtocol]] = None) -> None:
-        ...
-        # file_path = Path(name) / str(self.job_number)
-
-        # # Check if the file_dir exists
-        # (self._experimentdata_directory / Path(name)
-        #  ).mkdir(parents=True, exist_ok=True)
-
-        # # Save the object to disk
-        # suffix = save_object(
-        #     object=object, path=file_path,
-        #     experimentdata_directory=self._experimentdata_directory,
-        #     store_method=store_method)
-
-        # # Store the path to the object in the output_data
-        # self._dict_output[name] = (str(
-        #     file_path.with_suffix(suffix)), True)
-
-        # logger.info(f"Stored {name} to {file_path.with_suffix(suffix)}")
-
-    def _store_to_experimentdata(self, object: Any, name: str) -> None:
         self._output_data[name] = object
-
-    def clean_registered_keys(self):
-        self.registered_keys = {}
 
     #                                                                Job status
     # =========================================================================
 
     def is_status(self, status: str) -> bool:
         return self.job_status == JobStatus[status.upper()]
-
-    # def _store_to_disk(
-    #     self, object: Any, name: str,
-    #         store_method: Optional[Type[StoreProtocol]] = None) -> None:
-    #     file_path = Path(name) / str(self.job_number)
-
-    #     # Check if the file_dir exists
-    #     (self._experimentdata_directory / Path(name)
-    #      ).mkdir(parents=True, exist_ok=True)
-
-    #     # Save the object to disk
-    #     suffix = save_object(
-    #         object=object, path=file_path,
-    #         experimentdata_directory=self._experimentdata_directory,
-    #         store_method=store_method)
-
-    #     # Store the path to the object in the output_data
-    #     self._dict_output[name] = (str(
-    #         file_path.with_suffix(suffix)), True)
-
-    #     logger.info(f"Stored {name} to {file_path.with_suffix(suffix)}")
-
-    # def _store_to_experimentdata(self, object: Any, name: str) -> None:
-    #     self.output_data[name] = object

@@ -38,15 +38,15 @@ def test_get_categorical_parameters(doe: Domain):
 
 
 def test_get_continuous_names(doe: Domain):
-    assert doe.continuous.names == ["x1", "x3"]
+    assert doe.continuous.input_names == ["x1", "x3"]
 
 
 def test_get_discrete_names(doe: Domain):
-    assert doe.discrete.names == ["x2", "x5"]
+    assert doe.discrete.input_names == ["x2", "x5"]
 
 
 def test_get_categorical_names(doe: Domain):
-    assert doe.categorical.names == ["x4"]
+    assert doe.categorical.input_names == ["x4"]
 
 
 def test_add_arbitrary_list_as_categorical_parameter():
@@ -107,21 +107,6 @@ def test_getNumberOfInputParameters(doe: Domain):
     assert len(doe) == 5
 
 
-def test_all_input_continuous_False(doe: Domain):
-    assert doe._all_input_continuous() is False
-
-
-def test_all_input_continuous_True():
-    designspace = {
-        'x1': ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        'x3': ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-    }
-
-    doe = Domain(input_space=designspace)
-
-    assert doe._all_input_continuous() is True
-
-
 def test_cast_types_dataframe_input(doe: Domain):
     ground_truth = {
         "x1": "float",
@@ -136,7 +121,7 @@ def test_cast_types_dataframe_input(doe: Domain):
 
 def test_get_input_names(domain: Domain):
     # Ensure that get_input_names returns the correct input parameter names
-    assert domain.names == ['x1', 'x2', 'x3']
+    assert domain.input_names == ['x1', 'x2', 'x3']
 
 
 def test_get_number_of_input_parameters(domain: Domain):
@@ -157,9 +142,14 @@ def test_domain_from_dataframe(sample_dataframe: pd.DataFrame):
                                     np.array([[0., 1.], [0., 1.], [0., 1.]]), np.tile([0., 1.], (3, 1))])
 def test_make_nd_continuous_domain(bounds):
     domain = make_nd_continuous_domain(bounds=bounds, dimensionality=3)
-    ground_truth = Domain(input_space={'x0': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
-                                       'x1': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
-                                       'x2': ContinuousParameter(lower_bound=0.0, upper_bound=1.0)})
+    # ground_truth = Domain(input_space={'x0': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+    #                                    'x1': ContinuousParameter(lower_bound=0.0, upper_bound=1.0),
+    #                                    'x2': ContinuousParameter(lower_bound=0.0, upper_bound=1.0)})
+
+    ground_truth = Domain()
+    ground_truth.add_float('x0', low=0.0, high=1.0)
+    ground_truth.add_float('x1', low=0.0, high=1.0)
+    ground_truth.add_float('x2', low=0.0, high=1.0)
     assert (domain.input_space == ground_truth.input_space)
 
 

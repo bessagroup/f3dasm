@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Optional, Union
+from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,6 +19,52 @@ __status__ = 'Stable'
 # =============================================================================
 
 CategoricalType = Union[None, int, float, str]
+
+# =============================================================================
+
+
+class StoreFunction(Protocol):
+    """Base class for storing and loading output data from disk"""
+
+    def __call__(object: Any, path: str) -> str:
+        """
+        Protocol class for storing output data from disk
+
+        Parameters
+        ----------
+        object : Any
+            object to store
+        path : Path
+            location to store the object to
+
+        Notes
+        -----
+        The function should store the object to the location specified by the
+        path parameter. The suffix of the file should be determined by the
+        object type, and is not yet implemented in the path!
+        """
+        ...
+
+
+class LoadFunction(Protocol):
+    """Base class for storing and loading output data from disk"""
+
+    def __call__(path: str) -> Any:
+        """
+        Protocol class for loading output data from disk
+
+        Parameters
+        ----------
+        path : Path
+            location to load the object from
+
+
+        Returns
+        -------
+        Any
+            The loaded object
+        """
+        ...
 
 # =============================================================================
 
@@ -76,9 +122,11 @@ class Parameter:
     _type: ClassVar[str] = "object"
 
     def __init__(self, to_disk: bool = False,
-                 store_protocol: Optional[StoreProtocol] = None):
+                 store_function: Optional[StoreFunction] = None,
+                 load_function: Optional[LoadFunction] = None):
         self.to_disk = to_disk
-        self.store_protocol = store_protocol
+        self.store_function = store_function
+        self.load_function = load_function
 
     def __str__(self):
         return f"Parameter(type={self._type}, to_disk={self.to_disk})"
@@ -146,6 +194,12 @@ class ConstantParameter(Parameter):
     def __repr__(self):
         return f"{self.__class__.__name__}(value={repr(self.value)})"
 
+    def __eq__(self, __o: Parameter) -> bool:
+        if not isinstance(__o, ConstantParameter):
+            return False
+
+        return self.value == __o.value
+
 # =============================================================================
 
 
@@ -194,6 +248,13 @@ class ContinuousParameter(Parameter):
         return (f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound}, log={self.log})")
 
+    def __eq__(self, __o: Parameter) -> bool:
+        if not isinstance(__o, ContinuousParameter):
+            return False
+
+        return (self.lower_bound == __o.lower_bound and self.upper_bound
+                == __o.upper_bound and self.log == __o.log)
+
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError((
@@ -217,7 +278,7 @@ class ContinuousParameter(Parameter):
 class DiscreteParameter(Parameter):
     """Create a search space parameter that is discrete."""
 
-    def __init__(self, lower_bound=0, upper_bound=1, step=1):
+    def __init__(self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1):
         super().__init__()
         self.lower_bound = int(lower_bound)
         self.upper_bound = int(upper_bound)
@@ -242,6 +303,14 @@ class DiscreteParameter(Parameter):
         if isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to discrete!")
         return self  # Assuming the same discrete parameters are being added.
+
+    def __eq__(self, __o: Parameter) -> bool:
+        if not isinstance(__o, DiscreteParameter):
+            return False
+
+        return (self.lower_bound == __o.lower_bound and self.upper_bound
+                == __o.upper_bound and self.step ==
+                __o.step)
 
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
@@ -283,7 +352,7 @@ class CategoricalParameter(Parameter):
                 f"Cannot add parameter of type {type(other)} to categorical.")
         return CategoricalParameter(joint_categories)
 
-    def __eq__(self, other: "CategoricalParameter") -> bool:
+    def __eq__(self, other: CategoricalParameter) -> bool:
         return set(self.categories) == set(other.categories)
 
     def _check_duplicates(self):

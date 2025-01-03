@@ -19,7 +19,7 @@ def design():
     }
 
     # Create the design space
-    design = Domain(parameters)
+    design = Domain(input_space=parameters)
     return design
 
 
@@ -36,7 +36,7 @@ def design2():
     }
 
     # Create the design space
-    design = Domain(parameters)
+    design = Domain(input_space=parameters)
     return design
 
 
@@ -52,7 +52,7 @@ def design3():
     }
 
     # Create the design space
-    design = Domain(parameters)
+    design = Domain(input_space=parameters)
     return design
 
 
@@ -68,7 +68,7 @@ def design4():
     }
 
     # Create the design space
-    design = Domain(parameters)
+    design = Domain(input_space=parameters)
     return design
 
 
@@ -85,5 +85,5 @@ def design5():
     }
 
     # Create the design space
-    design = Domain(parameters)
+    design = Domain(input_space=parameters)
     return design
