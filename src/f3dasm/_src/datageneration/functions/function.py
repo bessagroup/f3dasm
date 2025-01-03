@@ -229,7 +229,6 @@ class Function(DataGenerator):
         show: bool = True,
         ax: plt.Axes = None,
     ) -> Tuple[plt.Figure, plt.Axes]:
-        # TODO: orientation string is case sensitive!
         """Generate a surface plot, either 2D or 3D, of the function
 
         Parameters
@@ -259,13 +258,13 @@ class Function(DataGenerator):
         Y_shifted = Y - np.min(Y) + 1e-6
 
         fig = plt.figure(figsize=(7, 7), constrained_layout=True)
-        if orientation == "2D":
+        if orientation.upper() == "2D":
             if ax is None:
                 ax = plt.axes()
             ax.pcolormesh(xv, yv, Y_shifted, cmap="viridis",
                           norm=mcol.LogNorm())
 
-        if orientation == "3D":
+        if orientation.upper() == "3D":
             if ax is None:
                 ax = plt.axes(projection="3d", elev=50, azim=-50)
 

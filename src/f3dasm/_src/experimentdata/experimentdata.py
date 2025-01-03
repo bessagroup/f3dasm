@@ -542,30 +542,36 @@ class ExperimentData:
                              index=self.index)
             )
 
-    def to_xarray(self) -> xr.Dataset:
+    def to_xarray(self, keep_references: bool = False) -> xr.Dataset:
         """
         Convert the ExperimentData object to an xarray Dataset.
+
+        keep_references : bool, optional
+            If True, the references to the output data are kept.
+            The default behaviour is False, for which the output data is
+            loaded from disk
 
         Returns
         -------
         xarray.Dataset
             An xarray Dataset containing the data.
         """
-        ...
-        # df_input, df_output = self.to_pandas()
-        # da_input = xr.DataArray(df_input, dims=['iterations', 'input'],
-        #                         coords={'iterations': self.index,
-        #                                 'input': df_input.columns})
-        # da_output = xr.DataArray(df_output, dims=['iterations', 'output'],
-        #                          coords={'iterations': self.index,
-        #                                  'output': df_output.columns})
+        df_input, df_output = self.to_pandas(keep_references=keep_references)
 
-        # return xr.Dataset(
-        #     {'input': da_input,
-        #      'output': da_output})
+        da_input = xr.DataArray(df_input, dims=['iterations', 'input_dim'],
+                                coords={'iterations': self.index,
+                                        'input_dim': df_input.columns})
 
+        da_output = xr.DataArray(df_output, dims=['iterations', 'output_dim'],
+                                 coords={'iterations': self.index,
+                                         'output_dim': df_output.columns})
+
+        return xr.Dataset({'input': da_input, 'output': da_output})
+
+    # TODO: Implement this
     def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        """Get the n best samples from the output data.
+        """
+        Get the n best samples from the output data.
         We consider lower values to be better.
 
         Parameters

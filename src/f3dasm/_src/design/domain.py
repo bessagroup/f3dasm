@@ -62,7 +62,8 @@ class Domain:
             return TypeError(f"Cannot compare Domain with \
                 {type(__o.__name__)}")
         return (
-            self.input_space == __o.input_space)
+            self.input_space == __o.input_space
+            and self.output_space == __o.output_space)
 
     def __str__(self):
         input_space_str = ", ".join(

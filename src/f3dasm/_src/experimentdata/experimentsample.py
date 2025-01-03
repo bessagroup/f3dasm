@@ -90,7 +90,6 @@ class ExperimentSample:
                 f"job_status={self.job_status})")
 
     def __add__(self, __o: ExperimentSample) -> ExperimentSample:
-        # TODO: Job status None is default
         return ExperimentSample(
             input_data={**self._input_data, **__o._input_data},
             output_data={**self._output_data, **__o._output_data},

@@ -278,7 +278,8 @@ class ContinuousParameter(Parameter):
 class DiscreteParameter(Parameter):
     """Create a search space parameter that is discrete."""
 
-    def __init__(self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1):
+    def __init__(self, lower_bound: int = 0,
+                 upper_bound: int = 1, step: int = 1):
         super().__init__()
         self.lower_bound = int(lower_bound)
         self.upper_bound = int(upper_bound)
@@ -309,8 +310,8 @@ class DiscreteParameter(Parameter):
             return False
 
         return (self.lower_bound == __o.lower_bound and self.upper_bound
-                == __o.upper_bound and self.step ==
-                __o.step)
+                == __o.upper_bound and self.step
+                == __o.step)
 
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
