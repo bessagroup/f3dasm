@@ -13,13 +13,13 @@ from pathos.helpers import mp
 
 # Locals
 from f3dasm import ExperimentData, logger
-from f3dasm._src.datageneration.functions.datagenerator_factory import \
+from f3dasm._src.datageneration.datagenerator_factory import \
     _datagenerator_factory
 from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS_2D, FUNCTIONS_7D
 from f3dasm.design import Domain, make_nd_continuous_domain
-from f3dasm.optimization import OPTIMIZERS, Optimizer
+from f3dasm.optimization import Optimizer, available_optimizers
 
 
 class OptimizationResult:
@@ -245,7 +245,7 @@ def run_multiple_realizations(
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("optimizer", available_optimizers())
 @pytest.mark.parametrize("data_generator", ['Levy', 'Ackley', 'Sphere'])
 @pytest.mark.parametrize("dimensionality", [2])
 def test_run_multiple_realizations_3_functions(data_generator: str,
@@ -253,7 +253,7 @@ def test_run_multiple_realizations_3_functions(data_generator: str,
     test_run_multiple_realizations(data_generator, optimizer, dimensionality)
 
 
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("optimizer", available_optimizers())
 @pytest.mark.parametrize("data_generator", FUNCTIONS_2D)
 @pytest.mark.parametrize("dimensionality", [2])
 def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensionality: int):
@@ -292,14 +292,14 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
     )
 
 
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("optimizer", available_optimizers())
 @pytest.mark.parametrize("data_generator", FUNCTIONS_7D)
 @pytest.mark.parametrize("dimensionality", [7])
 def test_run_multiple_realizations_7D(data_generator: str, optimizer: str, dimensionality: int):
     test_run_multiple_realizations(data_generator, optimizer, dimensionality)
 
 
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("optimizer", available_optimizers())
 @pytest.mark.parametrize("data_generator", ['griewank'])
 @pytest.mark.parametrize("dimensionality", [2])
 def test_run_multiple_realizations_fast(data_generator: str, optimizer: str, dimensionality: int):

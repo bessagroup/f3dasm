@@ -6,33 +6,36 @@ import numpy as np
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm._src.datageneration.functions.datagenerator_factory import (
-    _datagenerator_factory, is_dim_compatible)
+from f3dasm._src.datageneration.datagenerator_factory import \
+    _datagenerator_factory
 from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
-from f3dasm.optimization import OPTIMIZERS, Optimizer
+from f3dasm.optimization import Optimizer, available_optimizers
 
 
 @pytest.mark.parametrize("seed", [42])
-@pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@pytest.mark.parametrize("optimizer", available_optimizers())
 @pytest.mark.parametrize("data_generator", FUNCTIONS)
 def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer: str):
     i = 10  # iterations
 
+    _func = _datagenerator_factory(
+        data_generator=data_generator, seed=seed)
+
     dim = 6
     domain = make_nd_continuous_domain(bounds=np.tile(
         [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-    if not is_dim_compatible(data_generator, domain):
+    if not _func.is_dim_compatible(d=dim):
         dim = 4
         domain = make_nd_continuous_domain(bounds=np.tile(
             [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-        if not is_dim_compatible(data_generator, domain):
+        if not _func.is_dim_compatible(d=dim):
             dim = 3
             domain = make_nd_continuous_domain(bounds=np.tile(
                 [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-            if not is_dim_compatible(data_generator, domain):
+            if not _func.is_dim_compatible(d=dim):
                 dim = 2
                 domain = make_nd_continuous_domain(bounds=np.tile(
                     [-1.0, 1.0], (dim, 1)), dimensionality=dim)
@@ -58,12 +61,15 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
                                          'scale_bounds': np.tile([-1.0, 1.0], (dim, 1))},
                    hyperparameters={'seed': seed})
 
+    data1.replace_nan(None)
+    data2.replace_nan(None)
+
     assert (data1 == data2)
 
 
 @ pytest.mark.smoke
 @ pytest.mark.parametrize("seed", [42])
-@ pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@ pytest.mark.parametrize("optimizer", available_optimizers())
 @ pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
 def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: str):
     test_all_optimizers_and_functions(seed, data_generator, optimizer)
@@ -72,7 +78,7 @@ def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, op
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
 @ pytest.mark.smoke
 @ pytest.mark.parametrize("iterations", [10, 23, 66, 86])
-@ pytest.mark.parametrize("optimizer", OPTIMIZERS)
+@ pytest.mark.parametrize("optimizer", available_optimizers())
 @ pytest.mark.parametrize("data_generator", ["sphere"])
 @ pytest.mark.parametrize("x0_selection", ["best", "new"])
 def test_optimizer_iterations(iterations: int, data_generator: str,
@@ -80,22 +86,24 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
     numsamples = 40  # initial samples
     seed = 42
 
+    _func = _datagenerator_factory(
+        data_generator=data_generator)
+
     dim = 6
     domain = make_nd_continuous_domain(bounds=np.tile(
         [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-    if not is_dim_compatible(data_generator, domain):
+    if not _func.is_dim_compatible(d=dim):
         dim = 4
         domain = make_nd_continuous_domain(bounds=np.tile(
             [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-        if not is_dim_compatible(data_generator, domain):
+        if not _func.is_dim_compatible(d=dim):
             dim = 3
             domain = make_nd_continuous_domain(bounds=np.tile(
                 [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-            if not is_dim_compatible(data_generator, domain):
+            if not _func.is_dim_compatible(d=dim):
                 dim = 2
                 domain = make_nd_continuous_domain(bounds=np.tile(
                     [-1.0, 1.0], (dim, 1)), dimensionality=dim)
-
     data = ExperimentData.from_sampling(
         sampler='random', domain=domain, n_samples=numsamples, seed=seed)
 

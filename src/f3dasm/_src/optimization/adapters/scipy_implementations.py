@@ -49,7 +49,8 @@ class ScipyOptimizer(Optimizer):
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.data.add_experiments(
-            ExperimentSample.from_numpy(xk, domain=self.data.domain))
+            ExperimentSample.from_numpy(input_array=xk,
+                                        domain=self.data.domain))
 
     def update_step(self):
         """Update step function"""
@@ -68,8 +69,10 @@ class ScipyOptimizer(Optimizer):
         """
 
         def fun(x):
+            x_ = ExperimentSample.from_numpy(input_array=x,
+                                             domain=self.data.domain)
             sample: ExperimentSample = self.data_generator._run(
-                x, domain=self.data.domain)
+                x_, domain=self.data.domain)
             _, y = sample.to_numpy()
             return float(y)
 

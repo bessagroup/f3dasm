@@ -569,7 +569,7 @@ class ExperimentData:
         return xr.Dataset({'input': da_input, 'output': da_output})
 
     # TODO: Implement this
-    def get_n_best_output(self, n_samples: int) -> ExperimentData:
+    def get_n_best_output(self, n_samples: int, output_name: Optional[str] = 'y') -> ExperimentData:
         """
         Get the n best samples from the output data.
         We consider lower values to be better.
@@ -578,6 +578,8 @@ class ExperimentData:
         ----------
         n_samples : int
             Number of samples to select.
+        output_name : str, optional
+
 
         Returns
         -------
@@ -591,7 +593,9 @@ class ExperimentData:
         The output data is sorted based on the first output parameter.
         The n best samples are selected based on this sorting.
         """
-        ...
+        _, df_out = self.to_pandas()
+        indices = df_out.nsmallest(n=n_samples, columns=output_name).index
+        return self[indices]
 
     def to_multiindex(self) -> pd.DataFrame:
         list_of_dicts = [sample.to_multiindex() for _, sample in self]
@@ -844,6 +848,13 @@ class ExperimentData:
             self.data[id] = es
 
         self.domain += copy_other.domain
+
+    def replace_nan(self, value: Any):
+        """
+        Replace all NaN values in the output data with the given value.
+        """
+        for _, es in self:
+            es.replace_nan(value)
 
     #                                                          ExperimentSample
     # =========================================================================

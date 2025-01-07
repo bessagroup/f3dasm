@@ -97,6 +97,11 @@ class ExperimentSample:
             project_dir=self.project_dir,
         )
 
+    def __eq__(self, __o: ExperimentSample) -> ExperimentSample:
+        return (self._input_data == __o._input_data
+                and self._output_data == __o._output_data
+                and self.job_status == __o.job_status)
+
     @property
     def input_data(self) -> Dict[str, Any]:
         return {k: self._get_input(k) for k in self._input_data}
@@ -110,11 +115,18 @@ class ExperimentSample:
 
     @classmethod
     def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
-                   output_value: Optional[float] = None,
-                   jobnumber: int = 0,
                    domain: Optional[Domain] = None) -> ExperimentSample:
-        print('Catched!')
 
+        if domain is None:
+            n_dim = input_array.flatten().shape[0]
+            domain = Domain()
+            for i in range(n_dim):
+                domain.add_float(name=f'x{i}', to_disk=False)
+
+        return cls(input_data={input_name: v for input_name, v in
+                               zip(domain.input_space.keys(),
+                                   input_array.flatten())},
+                   domain=domain,)
     #                                                                   Getters
     # =========================================================================
 
@@ -171,6 +183,21 @@ class ExperimentSample:
             raise ValueError(f"Status {status} not valid.")
 
         self.job_status = JobStatus[status.upper()]
+
+    def replace_nan(self, replacement_value: Any):
+        """Replace NaN values in input_data and output_data with a custom value.
+
+        Parameters
+        ----------
+        replacement_value : Any
+            The value to replace NaN values with.
+        """
+        def replace_nan_in_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+            return {k: (replacement_value if isinstance(v, float)
+                        and np.isnan(v) else v) for k, v in data.items()}
+
+        self._input_data = replace_nan_in_dict(self._input_data)
+        self._output_data = replace_nan_in_dict(self._output_data)
 
     #                                                                 Exporting
     # =========================================================================

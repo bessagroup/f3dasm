@@ -21,4 +21,5 @@ def data():
     design = Domain(input_space=input_parameters)
 
     # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
-    return ExperimentData.from_sampling(sampler='random', domain=design, n_samples=N, seed=seed)
+    return ExperimentData.from_sampling(sampler='random',
+                                        domain=design, n_samples=N, seed=seed)
