@@ -11,12 +11,12 @@ from __future__ import annotations
 # Standard
 import math
 import pickle
+from itertools import zip_longest
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Type
 
 # Third-party core
 import numpy as np
-import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 
 # Local
@@ -52,18 +52,22 @@ class Domain:
         self.output_space = output_space if output_space is not None else {}
 
     def __len__(self) -> int:
-        """The len() method returns the number of parameters"""
+        """The len() method returns the number of input parameters"""
         return len(self.input_space)
 
     def __eq__(self, __o: Domain) -> bool:
         """Custom equality comparison for Domain objects."""
 
         if not isinstance(__o, Domain):
-            return TypeError(f"Cannot compare Domain with \
-                {type(__o.__name__)}")
+            raise TypeError(f"Cannot compare Domain with \
+                {type(__o)}")
         return (
             self.input_space == __o.input_space
             and self.output_space == __o.output_space)
+
+    def __bool__(self) -> bool:
+        """Check if the Domain object is empty"""
+        return bool(self.input_space) or bool(self.output_space)
 
     def __str__(self):
         input_space_str = ", ".join(
@@ -81,7 +85,7 @@ class Domain:
 
     def __add__(self, __o: Domain) -> Domain:
         if not isinstance(__o, Domain):
-            raise TypeError(f"Cannot add Domain with {type(__o.__name__)}")
+            raise TypeError(f"Cannot add Domain with {type(__o)}")
 
         combined_space = {}
         # Merge values for keys that are present in both dictionaries
@@ -227,56 +231,57 @@ class Domain:
         """
         domain = cls()
 
-        for key, value in cfg.items():
-            _dict = OmegaConf.to_container(value, resolve=True)
-            domain.add(name=key, type=_dict.pop('type'), **_dict)
+        if 'input' not in cfg:
+            # For legacy reasons, the input parameters are stored in the
+            # domain key directly
+            for key, value in cfg.items():
+                _dict = OmegaConf.to_container(value, resolve=True)
+                domain.add(name=key, type=_dict.pop('type'), **_dict)
 
-        return domain
+            return domain
+
+        else:
+            for key, value in cfg.input.items():
+                _dict = OmegaConf.to_container(value, resolve=True)
+                domain.add(name=key, type=_dict.pop('type'), **_dict)
+
+            for key, value in cfg.output.items():
+                _dict = OmegaConf.to_container(value, resolve=True)
+                domain.add_output(name=key, **_dict)
+
+            return domain
 
     @classmethod
-    def from_dataframe(cls, df_input: pd.DataFrame,
-                       df_output: pd.DataFrame) -> Domain:
-        """Initializes a Domain from a pandas DataFrame.
+    def from_data(cls, input_data: List[Dict[str, Any]],
+                  output_data: List[Dict[str, Any]]
+                  ) -> Domain:
+        """
+        Initialize a Domain from input and output data.
 
         Parameters
         ----------
-        df_input : pd.DataFrame
-            DataFrame containing the input parameters.
-        df_output : pd.DataFrame
-            DataFrame containing the output parameters.
+        input_data : List[Dict[str, Any]]
+            List of dictionaries containing the input parameters.
+        output_data : List[Dict[str, Any]]
+            List of dictionaries containing the output parameters.
 
         Returns
         -------
         Domain
-            Domain object
+            Domain object containing the input and output parameter names.
         """
-        input_space = {}
-        for name, type in df_input.dtypes.items():
-            if type == 'float64':
-                if float(df_input[name].min()) == float(df_input[name].max()):
-                    input_space[name] = ConstantParameter(
-                        value=float(df_input[name].min()))
-                    continue
+        all_input_parameters, all_output_parameters = set(), set()
+        for experiment_input, experiment_output in zip_longest(
+                input_data, output_data, fillvalue={}):
 
-                input_space[name] = ContinuousParameter(lower_bound=float(
-                    df_input[name].min()),
-                    upper_bound=float(df_input[name].max()))
-            elif type == 'int64':
-                if int(df_input[name].min()) == int(df_input[name].max()):
-                    input_space[name] = ConstantParameter(
-                        value=int(df_input[name].min()))
-                    continue
+            all_input_parameters.update(experiment_input.keys())
+            all_output_parameters.update(experiment_output.keys())
 
-                input_space[name] = DiscreteParameter(lower_bound=int(
-                    df_input[name].min()),
-                    upper_bound=int(df_input[name].max()))
-            else:
-                input_space[name] = CategoricalParameter(
-                    df_input[name].unique().tolist())
+        input_names = sorted(list(all_input_parameters))
+        output_names = sorted(list(all_output_parameters))
 
-        output_space = {}
-        for name in df_output.columns:
-            output_space[name] = Parameter(to_disk=False)
+        input_space = {name: Parameter() for name in input_names}
+        output_space = {name: Parameter() for name in output_names}
 
         return cls(input_space=input_space, output_space=output_space)
 
@@ -322,6 +327,33 @@ class Domain:
 
         self.input_space[name] = parameter
 
+    def add_parameter(self, name: str,
+                      to_disk=False,
+                      store_function: Optional[StoreFunction] = None,
+                      load_function: Optional[LoadFunction] = None):
+        """Add a new parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+        store_function : StoreFunction, optional
+            Function to store the parameter, by default None.
+        load_function : LoadFunction, optional
+            Function to load the parameter, by default None.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_parameter('param1', store_function, load_function)
+        >>> domain.input_space
+        {'param1': Parameter(store_function=store_function,
+        load_function=load_function)}
+        """
+        self._add(name, Parameter(store_function=store_function,
+                                  load_function=load_function,
+                                  to_disk=to_disk))
+
     def add_int(self, name: str, low: int, high: int, step: int = 1):
         """Add a new discrete input parameter to the domain.
 
@@ -350,7 +382,8 @@ class Domain:
         """
         if low == high:
             self.add_constant(name, low)
-        self._add(name, DiscreteParameter(low, high, step))
+        else:
+            self._add(name, DiscreteParameter(low, high, step))
 
     def add_float(self, name: str, low: float = -np.inf, high: float = np.inf,
                   log: bool = False):

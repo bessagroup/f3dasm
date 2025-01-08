@@ -3,7 +3,7 @@
 # import csv
 # import pickle
 # from pathlib import Path
-# from typing import Iterable
+# from typing import Callable, Iterable, Union
 
 # import numpy as np
 # import pandas as pd
@@ -12,7 +12,7 @@
 
 # from f3dasm import ExperimentData, ExperimentSample
 # from f3dasm._src.design.parameter import ContinuousParameter
-# # from f3dasm._src.experimentdata._data import DataTypes, _Data
+# from f3dasm._src.experimentdata.utils import DataTypes
 # from f3dasm.design import Domain, make_nd_continuous_domain
 
 # pytestmark = pytest.mark.smoke
@@ -51,12 +51,10 @@
 
 # @pytest.mark.parametrize("slice_type", [3, [0, 1, 3]])
 # def test_experiment_data_select(slice_type: int | Iterable[int], experimentdata: ExperimentData):
-#     input_data = experimentdata[slice_type]
-#     output_data = experimentdata._output_data[slice_type]
-#     jobs = experimentdata._jobs[slice_type]
-#     constructed_experimentdata = ExperimentData(
-#         input_data=input_data, output_data=output_data, jobs=jobs, domain=experimentdata.domain)
-#     assert constructed_experimentdata == experimentdata.select(slice_type)
+#     sliced_experimentdata = experimentdata.select(slice_type)
+#     constructed_experimentdata = ExperimentData.from_data(data=sliced_experimentdata.data,
+#                                                           domain=experimentdata.domain)
+#     assert sliced_experimentdata == constructed_experimentdata
 
 # #                                                                           Constructors
 # # ======================================================================================
@@ -69,21 +67,24 @@
 #     experimentdata_from_file = ExperimentData.from_file(
 #         tmp_path / 'experimentdata')
 
-#     # Check if the input_data attribute of ExperimentData matches the expected_data
-#     pd.testing.assert_frame_equal(
-#         experimentdata_continuous._input_data.to_dataframe(), experimentdata_from_file._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
-#     pd.testing.assert_frame_equal(experimentdata_continuous._output_data.to_dataframe(),
-#                                   experimentdata_from_file._output_data.to_dataframe())
-#     pd.testing.assert_series_equal(
-#         experimentdata_continuous._jobs.jobs, experimentdata_from_file._jobs.jobs)
-#     # assert experimentdata_continuous.input_data == experimentdata_from_file.input_data
-#     assert experimentdata_continuous._output_data == experimentdata_from_file._output_data
-#     assert experimentdata_continuous.domain == experimentdata_from_file.domain
-#     assert experimentdata_continuous._jobs == experimentdata_from_file._jobs
+#     experimentdata_from_file.round(3)
+
+#     assert experimentdata_from_file == experimentdata_continuous
+#     # # Check if the input_data attribute of ExperimentData matches the expected_data
+#     # pd.testing.assert_frame_equal(
+#     #     experimentdata_continuous._input_data.to_dataframe(), experimentdata_from_file._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
+#     # pd.testing.assert_frame_equal(experimentdata_continuous._output_data.to_dataframe(),
+#     #                               experimentdata_from_file._output_data.to_dataframe())
+#     # pd.testing.assert_series_equal(
+#     #     experimentdata_continuous._jobs.jobs, experimentdata_from_file._jobs.jobs)
+#     # # assert experimentdata_continuous.input_data == experimentdata_from_file.input_data
+#     # assert experimentdata_continuous._output_data == experimentdata_from_file._output_data
+#     # assert experimentdata_continuous.domain == experimentdata_from_file.domain
+#     # assert experimentdata_continuous._jobs == experimentdata_from_file._jobs
 
 
 # def test_from_file_wrong_name(experimentdata_continuous: ExperimentData, seed: int, tmp_path: Path):
-#     experimentdata_continuous.filename = tmp_path / 'test001'
+#     experimentdata_continuous.set_project_dir(tmp_path / 'test001')
 #     experimentdata_continuous.store()
 
 #     with pytest.raises(FileNotFoundError):
@@ -95,6 +96,8 @@
 #     experimentdata_from_sampling = ExperimentData.from_sampling(sampler='random',
 #                                                                 domain=experimentdata_continuous.domain,
 #                                                                 n_samples=10, seed=seed)
+
+#     experimentdata_from_sampling.round(3)
 #     assert experimentdata_from_sampling == experimentdata_continuous
 
 
@@ -123,15 +126,25 @@
 
 
 # def test_from_object(experimentdata_continuous: ExperimentData):
-#     input_data = experimentdata_continuous._input_data
-#     output_data = experimentdata_continuous._output_data
-#     jobs = experimentdata_continuous._jobs
-#     domain = experimentdata_continuous.domain
+#     df_input, df_output = experimentdata_continuous.to_pandas()
+
 #     experiment_data = ExperimentData(
-#         input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
-#     assert experiment_data == ExperimentData(
-#         input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
-#     assert experiment_data == experimentdata_continuous
+#         input_data=df_input,
+#         output_data=df_output,
+#         domain=experimentdata_continuous.domain,
+#         project_dir=experimentdata_continuous.project_dir)
+
+#     assert experimentdata_continuous == experiment_data
+
+#     # input_data = experimentdata_continuous._input_data
+#     # output_data = experimentdata_continuous._output_data
+#     # jobs = experimentdata_continuous._jobs
+#     # domain = experimentdata_continuous.domain
+#     # experiment_data = ExperimentData(
+#     #     input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
+#     # assert experiment_data == ExperimentData(
+#     #     input_data=input_data, output_data=output_data, jobs=jobs, domain=domain)
+#     # assert experiment_data == experimentdata_continuous
 
 # #                                                                              Exporters
 # # ======================================================================================
@@ -142,8 +155,9 @@
 
 #     # cast x to floats
 #     x = x.astype(float)
+
 #     # assert if x and numpy_array have all the same values
-#     assert np.allclose(x, numpy_array)
+#     assert np.allclose(x, numpy_array, rtol=1e-2)
 
 
 # def test_to_xarray(experimentdata_continuous: ExperimentData, xarray_dataset: xr.DataSet):
@@ -161,23 +175,9 @@
 # # ======================================================================================
 
 
-# def test_add_new_input_column(experimentdata: ExperimentData,
-#                               continuous_parameter: ContinuousParameter):
-#     kwargs = {'low': continuous_parameter.lower_bound,
-#               'high': continuous_parameter.upper_bound}
-#     experimentdata.add_input_parameter(
-#         name='test', type='float', **kwargs)
-#     assert 'test' in experimentdata._input_data.input_names
-
-
-# def test_add_new_output_column(experimentdata: ExperimentData):
-#     experimentdata.add_output_parameter(name='test', is_disk=False)
-#     assert 'test' in experimentdata._output_data.input_names
-
-
 # def test_set_error(experimentdata_continuous: ExperimentData):
-#     experimentdata_continuous._set_error(3)
-#     assert experimentdata_continuous._jobs.jobs[3] == Status.ERROR
+#     experimentdata_continuous.mark(indices=3, status='error')
+#     assert experimentdata_continuous.data[3].is_status('error')
 
 
 # # Helper function to create a temporary CSV file with sample data
@@ -229,27 +229,28 @@
 # def create_domain_pickle(filepath):
 #     domain = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
 #                                        dimensionality=3)
+#     domain.add_output('y', exist_ok=True)
 #     domain.store(filepath)
 
 
-# def create_jobs_pickle_finished(filepath):
+# def create_jobs_csv_finished(filepath):
 #     domain = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
 #                                        dimensionality=3)
 
-#     _data_input = _Data.from_dataframe(pd_input())
-#     _data_output = _Data.from_dataframe(pd_output())
+#     _data_input = pd_input()
+#     _data_output = pd_output()
 #     experimentdata = ExperimentData(
 #         domain=domain, input_data=_data_input, output_data=_data_output)
-#     experimentdata._jobs.store(filepath)
+#     experimentdata.jobs.to_csv(Path(filepath).with_suffix('.csv'))
 
 
-# def create_jobs_pickle_open(filepath):
+# def create_jobs_csv_open(filepath):
 #     domain = make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
 #                                        dimensionality=3)
 
-#     _data_input = _Data.from_dataframe(pd_input())
+#     _data_input = pd_input()
 #     experimentdata = ExperimentData(domain=domain, input_data=_data_input)
-#     experimentdata._jobs.store(filepath)
+#     experimentdata.jobs.to_csv(Path(filepath).with_suffix('.csv'))
 
 
 # def path_domain(tmp_path):
@@ -265,26 +266,26 @@
 
 
 # def path_jobs_finished(tmp_path):
-#     jobs_file_path = tmp_path / "test_jobs.pkl"
-#     create_jobs_pickle_finished(jobs_file_path)
+#     jobs_file_path = tmp_path / "test_jobs.csv"
+#     create_jobs_csv_finished(jobs_file_path)
 #     return jobs_file_path
 
 
 # def str_jobs_finished(tmp_path):
-#     jobs_file_path = tmp_path / "test_jobs.pkl"
-#     create_jobs_pickle_finished(jobs_file_path)
+#     jobs_file_path = tmp_path / "test_jobs.csv"
+#     create_jobs_csv_finished(jobs_file_path)
 #     return str(jobs_file_path)
 
 
 # def path_jobs_open(tmp_path):
 #     jobs_file_path = tmp_path / "test_jobs.pkl"
-#     create_jobs_pickle_open(jobs_file_path)
+#     create_jobs_csv_open(jobs_file_path)
 #     return jobs_file_path
 
 
 # def str_jobs_open(tmp_path):
 #     jobs_file_path = tmp_path / "test_jobs.pkl"
-#     create_jobs_pickle_open(jobs_file_path)
+#     create_jobs_csv_open(jobs_file_path)
 #     return str(jobs_file_path)
 
 
@@ -314,7 +315,7 @@
 # # Pytest test function for reading and monkeypatching a CSV file
 
 
-# def numpy_input():
+# def numpy_input(*args, **kwargs):
 #     return np.array([
 #         [0.77395605, 0.43887844, 0.85859792],
 #         [0.69736803, 0.09417735, 0.97562235],
@@ -331,7 +332,7 @@
 #     ])
 
 
-# def numpy_output():
+# def numpy_output(*args, **kwargs):
 #     return np.array([
 #         [0.0],
 #         [0.0],
@@ -349,7 +350,7 @@
 #     ])
 
 
-# def pd_input():
+# def pd_input(*args, **kwargs):
 #     return pd.DataFrame([
 #         [0.77395605, 0.43887844, 0.85859792],
 #         [0.69736803, 0.09417735, 0.97562235],
@@ -366,7 +367,7 @@
 #     ], columns=["x0", "x1", "x2"])
 
 
-# def pd_output():
+# def pd_output(*args, **kwargs):
 #     return pd.DataFrame([
 #         [0.0],
 #         [0.0],
@@ -384,230 +385,316 @@
 #     ], columns=["y"])
 
 
-# def data_input():
-#     return _Data.from_dataframe(pd_input())
+# # def data_input():
+# #     return _Data.from_dataframe(pd_input())
 
 
-# def data_output():
-#     return _Data.from_dataframe(pd_output())
+# # def data_output():
+# #     return _Data.from_dataframe(pd_output())
 
 
-# @pytest.mark.parametrize("input_data", [path_input, str_input, pd_input(), data_input(), numpy_input()])
-# @pytest.mark.parametrize("output_data", [path_output, str_output, pd_output(), data_output()])
-# @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
-#                                                               dimensionality=3), None, path_domain, str_domain])
+# @pytest.mark.parametrize("input_data", [path_input, str_input, pd_input, numpy_input])
+# @pytest.mark.parametrize("output_data", [path_output, str_output, pd_output])
+# @pytest.mark.parametrize("domain", [
+#     make_nd_continuous_domain(bounds=np.array(
+#         [[0., 1.], [0., 1.], [0., 1.]]), dimensionality=3),
+#     None,
+#     path_domain,
+#     str_domain
+# ])
 # @pytest.mark.parametrize("jobs", [None, path_jobs_finished, str_jobs_finished])
-# def test_init_with_output(input_data: DataTypes, output_data: DataTypes, domain: Domain | str | Path | None,
-#                           jobs: _JobQueue | str | Path | None,
-#                           experimentdata_expected: ExperimentData, monkeypatch, tmp_path: Path):
+# def test_init_with_output(
+#     input_data: Union[Callable[[Path], Union[str, Path]], DataTypes],
+#     output_data: Union[Callable[[Path], Union[str, Path]], DataTypes],
+#     domain: Union[Domain, str, Path, None],
+#     jobs: Union[str, Path, None],
+#     experimentdata_expected: ExperimentData,
+#     monkeypatch,
+#     tmp_path: Path,
+# ):
+#     # Handle callable parameters
+#     def resolve_param(param, tmp_path):
+#         if callable(param):
+#             return param(tmp_path)
+#         return param
 
-#     # if input_data is Callable
-#     if callable(input_data):
-#         input_data = input_data(tmp_path)
-#         expected_data_input = pd.read_csv(input_data)
+#     input_data = resolve_param(input_data, tmp_path)
+#     output_data = resolve_param(output_data, tmp_path)
+#     domain = resolve_param(domain, tmp_path)
+#     jobs = resolve_param(jobs, tmp_path)
 
-#     # if output_data is Callable
-#     if callable(output_data):
-#         output_data = output_data(tmp_path)
-#         expected_data_output = pd.read_csv(output_data)
-
-#     if callable(domain):
-#         domain = domain(tmp_path)
-#         expected_domain = Domain.from_file(domain)
-
-#     if callable(jobs):
-#         jobs = jobs(tmp_path)
-#         expected_jobs = _JobQueue.from_file(jobs).jobs
-
-#     # monkeypatch pd.read_csv to return the expected_data DataFrame
-#     def mock_read_csv(*args, **kwargs):
-
-#         path = args[0]
-#         if isinstance(args[0], str):
-#             path = Path(path)
-
+#     # Mock `pd.read_csv`
+#     def mock_read_csv(file_path, *args, **kwargs):
+#         path = Path(file_path)
 #         if path == tmp_path / "test_input.csv":
-#             return expected_data_input
-
+#             return experimentdata_expected.to_pandas()[0]
 #         elif path == tmp_path / "test_output.csv":
-#             return expected_data_output
+#             return experimentdata_expected.to_pandas()[1]
+#         elif path == tmp_path / "test_jobs.csv":
+#             return experimentdata_expected.jobs
+#         raise ValueError(f"Unexpected file path: {file_path}")
 
-#         else:
-#             raise ValueError("Unexpected file path")
-
-#     def mock_load_pickle(*args, **kwargs):
-#         return expected_domain
-
-#     def mock_pd_read_pickle(*args, **kwargs):
-#         path = args[0]
-
-#         if isinstance(path, str):
-#             path = Path(path)
-
-#         if path == tmp_path / "test_jobs.pkl":
-#             return expected_jobs
-
-#         else:
-#             raise ValueError("Unexpected jobs file path")
-
-#     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
-#     monkeypatch.setattr(pickle, "load", mock_load_pickle)
-#     monkeypatch.setattr(pd, "read_pickle", mock_pd_read_pickle)
-
-#     if isinstance(input_data, np.ndarray) and domain is None:
-#         with pytest.raises(ValueError):
-#             ExperimentData(domain=domain, input_data=input_data,
-#                            output_data=output_data, jobs=jobs)
-#         return
-#     # Initialize ExperimentData with the CSV file
-#     experiment_data = ExperimentData(domain=domain, input_data=input_data,
-#                                      output_data=output_data, jobs=jobs)
-
-#     # Check if the input_data attribute of ExperimentData matches the expected_data
-#     pd.testing.assert_frame_equal(
-#         experiment_data._input_data.to_dataframe(), experimentdata_expected._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
-#     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
-#                                   experimentdata_expected._output_data.to_dataframe(), check_dtype=False)
-
-
-# @pytest.mark.parametrize("input_data", [pd_input(), path_input, str_input, data_input(), numpy_input()])
-# @pytest.mark.parametrize("output_data", [None])
-# @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
-#                                                               dimensionality=3), None, path_domain, str_domain])
-# @pytest.mark.parametrize("jobs", [None, path_jobs_open, str_jobs_open])
-# def test_init_without_output(input_data: DataTypes, output_data: DataTypes, domain: Domain, jobs: _JobQueue,
-#                              experimentdata_expected_no_output: ExperimentData, monkeypatch, tmp_path):
-
-#     # if input_data is Callable
-#     if callable(input_data):
-#         input_data = input_data(tmp_path)
-#         expected_data_input = pd.read_csv(input_data)
-
-#     # if output_data is Callable
-#     if callable(output_data):
-#         output_data = output_data(tmp_path)
-#         expected_data_output = pd.read_csv(output_data)
-
-#     if callable(domain):
-#         domain = domain(tmp_path)
-#         expected_domain = Domain.from_file(domain)
-
-#     if callable(jobs):
-#         jobs = jobs(tmp_path)
-#         expected_jobs = _JobQueue.from_file(jobs).jobs
-
-#     # monkeypatch pd.read_csv to return the expected_data DataFrame
-#     def mock_read_csv(*args, **kwargs):
-
-#         path = args[0]
-#         if isinstance(args[0], str):
-#             path = Path(path)
-
-#         if path == tmp_path / "test_input.csv":
-#             return expected_data_input
-
-#         elif path == tmp_path / "test_output.csv":
-#             return expected_data_output
-
-#         else:
-#             raise ValueError("Unexpected file path")
-
-#     def mock_load_pickle(*args, **kwargs):
-#         return expected_domain
-
-#     def mock_pd_read_pickle(*args, **kwargs):
-#         path = args[0]
-
-#         if isinstance(path, str):
-#             path = Path(path)
-
-#         if path == tmp_path / "test_jobs.pkl":
-#             return expected_jobs
-
-#     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
-#     monkeypatch.setattr(pickle, "load", mock_load_pickle)
-#     monkeypatch.setattr(pd, "read_pickle", mock_pd_read_pickle)
-
-#     if isinstance(input_data, np.ndarray) and domain is None:
-#         with pytest.raises(ValueError):
-#             ExperimentData(domain=domain, input_data=input_data,
-#                            output_data=output_data, jobs=jobs)
-#         return
-
-#     # Initialize ExperimentData with the CSV file
-#     experiment_data = ExperimentData(domain=domain, input_data=input_data,
-#                                      output_data=output_data, jobs=jobs)
-
-#     # Check if the input_data attribute of ExperimentData matches the expected_data
-#     pd.testing.assert_frame_equal(
-#         experiment_data._input_data.to_dataframe(), experimentdata_expected_no_output._input_data.to_dataframe(), atol=1e-6, check_dtype=False)
-#     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
-#                                   experimentdata_expected_no_output._output_data.to_dataframe())
-#     pd.testing.assert_series_equal(
-#         experiment_data._jobs.jobs, experimentdata_expected_no_output._jobs.jobs)
-#     # assert experiment_data.domain == experimentdata_expected_no_output.domain
-#     assert experiment_data._jobs == experimentdata_expected_no_output._jobs
-
-
-# @pytest.mark.parametrize("input_data", [None])
-# @pytest.mark.parametrize("output_data", [None])
-# @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
-#                                                               dimensionality=3), path_domain, str_domain])
-# def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain: Domain | str | Path,
-#                           experimentdata_expected_only_domain: ExperimentData,
-#                           monkeypatch, tmp_path):
-
-#     # if input_data is Callable
-#     if callable(input_data):
-#         input_data = input_data(tmp_path)
-#         expected_data_input = pd.read_csv(input_data)
-
-#     # if output_data is Callable
-#     if callable(output_data):
-#         output_data = output_data(tmp_path)
-#         expected_data_output = pd.read_csv(output_data)
-
-#     if callable(domain):
-#         domain = domain(tmp_path)
-#         expected_domain = Domain.from_file(domain)
-
-#     # monkeypatch pd.read_csv to return the expected_data DataFrame
-#     def mock_read_csv(*args, **kwargs):
-
-#         path = args[0]
-#         if isinstance(args[0], str):
-#             path = Path(path)
-
-#         if path == tmp_path / "test_input.csv":
-#             return expected_data_input
-
-#         elif path == tmp_path / "test_output.csv":
-#             return expected_data_output
-
-#         else:
-#             raise ValueError("Unexpected file path")
-
-#     def mock_load_pickle(*args, **kwargs):
-#         return expected_domain
+#     # Mock `pickle.load`
+#     def mock_load_pickle(file, *args, **kwargs):
+#         if Path(file) == tmp_path / "test_domain.pkl":
+#             return experimentdata_expected.domain
+#         raise ValueError(f"Unexpected pickle file path: {file}")
 
 #     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
 #     monkeypatch.setattr(pickle, "load", mock_load_pickle)
 
-#     # Initialize ExperimentData with the CSV file
-#     experiment_data = ExperimentData(domain=domain, input_data=input_data,
-#                                      output_data=output_data)
+#     # # Validation logic for specific inputs
+#     # if isinstance(input_data, np.ndarray) and domain is None:
+#     #     with pytest.raises(ValueError):
+#     #         ExperimentData(domain=domain, input_data=input_data,
+#     #                        output_data=output_data, jobs=jobs)
+#     #     return
 
-#     # Check if the input_data attribute of ExperimentData matches the expected_data
-#     pd.testing.assert_frame_equal(
-#         experiment_data._input_data.to_dataframe(), experimentdata_expected_only_domain._input_data.to_dataframe(), check_dtype=False)
-#     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
-#                                   experimentdata_expected_only_domain._output_data.to_dataframe(), check_dtype=False)
-#     assert experiment_data._input_data == experimentdata_expected_only_domain._input_data
-#     assert experiment_data._output_data == experimentdata_expected_only_domain._output_data
-#     assert experiment_data.domain == experimentdata_expected_only_domain.domain
-#     assert experiment_data._jobs == experimentdata_expected_only_domain._jobs
+#     # Initialize ExperimentData and validate
 
-#     assert experiment_data == experimentdata_expected_only_domain
+#     experiment_data = ExperimentData(
+#         domain=domain, input_data=input_data, output_data=output_data,
+#         jobs=jobs)
+#     experiment_data.domain.add_output('y', exist_ok=True)
+#     experiment_data.round(3)
+
+#     print(experiment_data)
+
+#     print(experiment_data.domain)
+#     print(experimentdata_expected)
+
+#     print(experimentdata_expected.domain)
+
+#     # Assertions
+#     assert experiment_data == experimentdata_expected
+
+
+# # @pytest.mark.parametrize("input_data", [path_input, str_input, pd_input, numpy_input])
+# # @pytest.mark.parametrize("output_data", [path_output, str_output, pd_output])
+# # @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
+# #                                                               dimensionality=3), None, path_domain, str_domain])
+# # @pytest.mark.parametrize("jobs", [None, path_jobs_finished, str_jobs_finished])
+# # def test_init_with_output(
+# #         input_data: DataTypes, output_data: DataTypes,
+# #         domain: Domain | str | Path | None,
+# #         jobs: str | Path | None,
+# #         experimentdata_expected: ExperimentData,
+# #         monkeypatch, tmp_path: Path):
+
+# #     # if input_data is Callable
+# #     if callable(input_data):
+# #         input_data = input_data(tmp_path)
+# #         expected_data_input = pd.read_csv(input_data)
+
+# #     # if output_data is Callable
+# #     if callable(output_data):
+# #         output_data = output_data(tmp_path)
+# #         expected_data_output = pd.read_csv(output_data)
+
+# #     if callable(domain):
+# #         domain = domain(tmp_path)
+# #         expected_domain = Domain.from_file(domain)
+
+# #     if callable(jobs):
+# #         jobs = jobs(tmp_path)
+# #         expected_jobs = pd.read_csv(jobs)
+
+# #     # monkeypatch pd.read_csv to return the expected_data DataFrame
+# #     def mock_read_csv(*args, **kwargs):
+
+# #         path = args[0]
+# #         if isinstance(args[0], str):
+# #             path = Path(path)
+
+# #         if path == tmp_path / "test_input.csv":
+# #             return expected_data_input
+
+# #         elif path == tmp_path / "test_output.csv":
+# #             return expected_data_output
+
+# #         elif path == tmp_path / "test_jobs.csv":
+# #             return expected_jobs
+
+# #         else:
+# #             raise ValueError("Unexpected file path")
+
+# #     def mock_load_pickle(*args, **kwargs):
+# #         return expected_domain
+
+# #     def mock_pd_read_pickle(*args, **kwargs):
+# #         path = args[0]
+
+# #         if isinstance(path, str):
+# #             path = Path(path)
+
+# #         if path == tmp_path / "test_jobs.pkl":
+# #             return expected_jobs
+
+# #         else:
+# #             raise ValueError("Unexpected jobs file path")
+
+# #     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
+# #     monkeypatch.setattr(pickle, "load", mock_load_pickle)
+# #     monkeypatch.setattr(pd, "read_pickle", mock_pd_read_pickle)
+
+# #     if isinstance(input_data, np.ndarray) and domain is None:
+# #         with pytest.raises(ValueError):
+# #             ExperimentData(domain=domain, input_data=input_data,
+# #                            output_data=output_data, jobs=jobs)
+# #         return
+# #     # Initialize ExperimentData with the CSV file
+# #     experiment_data = ExperimentData(domain=domain, input_data=input_data,
+# #                                      output_data=output_data, jobs=jobs)
+
+# #     experiment_data.round(3)
+
+# #     # Check if the input_data attribute of ExperimentData matches the expected_data
+# #     # pd.testing.assert_frame_equal(
+# #     #     experiment_data._input_data.to_dataframe(), experimentdata_expected._input_data.to_dataframe(), check_dtype=False, atol=1e-6)
+# #     # pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+# #     #                               experimentdata_expected._output_data.to_dataframe(), check_dtype=False)
+
+# #     assert experiment_data == experimentdata_expected
+
+
+# # @pytest.mark.parametrize("input_data", [pd_input(), path_input, str_input, numpy_input()])
+# # @pytest.mark.parametrize("output_data", [None])
+# # @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
+# #                                                               dimensionality=3), None, path_domain, str_domain])
+# # @pytest.mark.parametrize("jobs", [None, path_jobs_open, str_jobs_open])
+# # def test_init_without_output(input_data: DataTypes, output_data: DataTypes, domain: Domain, jobs: _JobQueue,
+# #                              experimentdata_expected_no_output: ExperimentData, monkeypatch, tmp_path):
+
+# #     # if input_data is Callable
+# #     if callable(input_data):
+# #         input_data = input_data(tmp_path)
+# #         expected_data_input = pd.read_csv(input_data)
+
+# #     # if output_data is Callable
+# #     if callable(output_data):
+# #         output_data = output_data(tmp_path)
+# #         expected_data_output = pd.read_csv(output_data)
+
+# #     if callable(domain):
+# #         domain = domain(tmp_path)
+# #         expected_domain = Domain.from_file(domain)
+
+# #     if callable(jobs):
+# #         jobs = jobs(tmp_path)
+# #         expected_jobs = _JobQueue.from_file(jobs).jobs
+
+# #     # monkeypatch pd.read_csv to return the expected_data DataFrame
+# #     def mock_read_csv(*args, **kwargs):
+
+# #         path = args[0]
+# #         if isinstance(args[0], str):
+# #             path = Path(path)
+
+# #         if path == tmp_path / "test_input.csv":
+# #             return expected_data_input
+
+# #         elif path == tmp_path / "test_output.csv":
+# #             return expected_data_output
+
+# #         else:
+# #             raise ValueError("Unexpected file path")
+
+# #     def mock_load_pickle(*args, **kwargs):
+# #         return expected_domain
+
+# #     def mock_pd_read_pickle(*args, **kwargs):
+# #         path = args[0]
+
+# #         if isinstance(path, str):
+# #             path = Path(path)
+
+# #         if path == tmp_path / "test_jobs.pkl":
+# #             return expected_jobs
+
+# #     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
+# #     monkeypatch.setattr(pickle, "load", mock_load_pickle)
+# #     monkeypatch.setattr(pd, "read_pickle", mock_pd_read_pickle)
+
+# #     if isinstance(input_data, np.ndarray) and domain is None:
+# #         with pytest.raises(ValueError):
+# #             ExperimentData(domain=domain, input_data=input_data,
+# #                            output_data=output_data, jobs=jobs)
+# #         return
+
+# #     # Initialize ExperimentData with the CSV file
+# #     experiment_data = ExperimentData(domain=domain, input_data=input_data,
+# #                                      output_data=output_data, jobs=jobs)
+
+# #     # Check if the input_data attribute of ExperimentData matches the expected_data
+# #     pd.testing.assert_frame_equal(
+# #         experiment_data._input_data.to_dataframe(), experimentdata_expected_no_output._input_data.to_dataframe(), atol=1e-6, check_dtype=False)
+# #     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+# #                                   experimentdata_expected_no_output._output_data.to_dataframe())
+# #     pd.testing.assert_series_equal(
+# #         experiment_data._jobs.jobs, experimentdata_expected_no_output._jobs.jobs)
+# #     # assert experiment_data.domain == experimentdata_expected_no_output.domain
+# #     assert experiment_data._jobs == experimentdata_expected_no_output._jobs
+
+
+# # @pytest.mark.parametrize("input_data", [None])
+# # @pytest.mark.parametrize("output_data", [None])
+# # @pytest.mark.parametrize("domain", [make_nd_continuous_domain(bounds=np.array([[0., 1.], [0., 1.], [0., 1.]]),
+# #                                                               dimensionality=3), path_domain, str_domain])
+# # def test_init_only_domain(input_data: DataTypes, output_data: DataTypes, domain: Domain | str | Path,
+# #                           experimentdata_expected_only_domain: ExperimentData,
+# #                           monkeypatch, tmp_path):
+
+# #     # if input_data is Callable
+# #     if callable(input_data):
+# #         input_data = input_data(tmp_path)
+# #         expected_data_input = pd.read_csv(input_data)
+
+# #     # if output_data is Callable
+# #     if callable(output_data):
+# #         output_data = output_data(tmp_path)
+# #         expected_data_output = pd.read_csv(output_data)
+
+# #     if callable(domain):
+# #         domain = domain(tmp_path)
+# #         expected_domain = Domain.from_file(domain)
+
+# #     # monkeypatch pd.read_csv to return the expected_data DataFrame
+# #     def mock_read_csv(*args, **kwargs):
+
+# #         path = args[0]
+# #         if isinstance(args[0], str):
+# #             path = Path(path)
+
+# #         if path == tmp_path / "test_input.csv":
+# #             return expected_data_input
+
+# #         elif path == tmp_path / "test_output.csv":
+# #             return expected_data_output
+
+# #         else:
+# #             raise ValueError("Unexpected file path")
+
+# #     def mock_load_pickle(*args, **kwargs):
+# #         return expected_domain
+
+# #     monkeypatch.setattr(pd, "read_csv", mock_read_csv)
+# #     monkeypatch.setattr(pickle, "load", mock_load_pickle)
+
+# #     # Initialize ExperimentData with the CSV file
+# #     experiment_data = ExperimentData(domain=domain, input_data=input_data,
+# #                                      output_data=output_data)
+
+# #     # Check if the input_data attribute of ExperimentData matches the expected_data
+# #     pd.testing.assert_frame_equal(
+# #         experiment_data._input_data.to_dataframe(), experimentdata_expected_only_domain._input_data.to_dataframe(), check_dtype=False)
+# #     pd.testing.assert_frame_equal(experiment_data._output_data.to_dataframe(),
+# #                                   experimentdata_expected_only_domain._output_data.to_dataframe(), check_dtype=False)
+# #     assert experiment_data._input_data == experimentdata_expected_only_domain._input_data
+# #     assert experiment_data._output_data == experimentdata_expected_only_domain._output_data
+# #     assert experiment_data.domain == experimentdata_expected_only_domain.domain
+# #     assert experiment_data._jobs == experimentdata_expected_only_domain._jobs
+
+# #     assert experiment_data == experimentdata_expected_only_domain
 
 
 # @pytest.mark.parametrize("input_data", [[0.1, 0.2], {"a": 0.1, "b": 0.2}, 0.2, 2])
@@ -664,13 +751,6 @@
 #             seed=SEED)
 
 
-# def test_get_input_data(experimentdata_expected_no_output: ExperimentData):
-#     input_data = experimentdata_expected_no_output.get_input_data()
-#     df, _ = input_data.to_pandas()
-#     pd.testing.assert_frame_equal(df, pd_input(), check_dtype=False, atol=1e-6)
-#     assert experimentdata_expected_no_output._input_data == input_data._input_data
-
-
 # @pytest.mark.parametrize("selection", ["x0", ["x0"], ["x0", "x2"]])
 # def test_get_input_data_selection(experimentdata_expected_no_output: ExperimentData, selection: Iterable[str] | str):
 #     input_data = experimentdata_expected_no_output.get_input_data(selection)
@@ -680,23 +760,6 @@
 #     selected_pd = pd_input()[selection]
 #     pd.testing.assert_frame_equal(
 #         df, selected_pd, check_dtype=False, atol=1e-6)
-
-
-# def test_get_output_data(experimentdata_expected: ExperimentData):
-#     output_data = experimentdata_expected.get_output_data()
-#     _, df = output_data.to_pandas()
-#     pd.testing.assert_frame_equal(df, pd_output(), check_dtype=False)
-#     assert experimentdata_expected._output_data == output_data._output_data
-
-
-# @pytest.mark.parametrize("selection", ["y", ["y"]])
-# def test_get_output_data_selection(experimentdata_expected: ExperimentData, selection: Iterable[str] | str):
-#     output_data = experimentdata_expected.get_output_data(selection)
-#     _, df = output_data.to_pandas()
-#     if isinstance(selection, str):
-#         selection = [selection]
-#     selected_pd = pd_output()[selection]
-#     pd.testing.assert_frame_equal(df, selected_pd, check_dtype=False)
 
 
 # def test_iter_behaviour(experimentdata_continuous: ExperimentData):
@@ -710,22 +773,22 @@
 
 # def test_select_with_status_open(experimentdata: ExperimentData):
 #     selected_data = experimentdata.select_with_status('open')
-#     assert all(job == Status.OPEN for job in selected_data._jobs.jobs)
+#     assert all(es.is_status('open') for _, es in selected_data)
 
 
 # def test_select_with_status_in_progress(experimentdata: ExperimentData):
 #     selected_data = experimentdata.select_with_status('in progress')
-#     assert all(job == Status.IN_PROGRESS for job in selected_data._jobs.jobs)
+#     assert all(es.is_status('in progress') for _, es in selected_data)
 
 
 # def test_select_with_status_finished(experimentdata: ExperimentData):
 #     selected_data = experimentdata.select_with_status('finished')
-#     assert all(job == Status.FINISHED for job in selected_data._jobs.jobs)
+#     assert all(es.is_status('finished') for _, es in selected_data)
 
 
 # def test_select_with_status_error(experimentdata: ExperimentData):
 #     selected_data = experimentdata.select_with_status('error')
-#     assert all(job == Status.ERROR for job in selected_data._jobs.jobs)
+#     assert all(es.is_status('error') for _, es in selected_data)
 
 
 # def test_select_with_status_invalid_status(experimentdata: ExperimentData):

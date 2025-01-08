@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 # Standard
-from pathlib import Path
 from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
 
 #                                                          Authorship & Credits
@@ -66,53 +65,6 @@ class LoadFunction(Protocol):
         """
         ...
 
-# =============================================================================
-
-
-class StoreProtocol:
-    """Base class for storing and loading output data from disk"""
-    suffix: int
-
-    def __init__(self, object: Any, path: Path):
-        """
-        Protocol class for storing and loading output data from disk
-
-        Parameters
-        ----------
-        object : Any
-            object to store
-        path : Path
-            location to store the object to
-        """
-        self.path = path
-        self.object = object
-
-    def store(self) -> None:
-        """
-        Protocol class for storing objects to disk
-
-        Raises
-        ------
-        NotImplementedError
-            Raises if the method is not implemented
-        """
-        raise NotImplementedError()
-
-    def load(self) -> Any:
-        """
-        Protocol class for loading objects to disk
-
-        Returns
-        -------
-        Any
-            The loaded object
-
-        Raises
-        ------
-        NotImplementedError
-            Raises if the method is not implemented
-        """
-        raise NotImplementedError()
 
 # =============================================================================
 
@@ -124,6 +76,31 @@ class Parameter:
     def __init__(self, to_disk: bool = False,
                  store_function: Optional[StoreFunction] = None,
                  load_function: Optional[LoadFunction] = None):
+        """
+        Initialize the Parameter.
+
+        Parameters
+        ----------
+        to_disk : bool, optional
+            Whether the parameter should be saved to disk. Defaults to False.
+        store_function : Optional[StoreFunction], optional
+            Function to store the parameter to disk. Defaults to None.
+        load_function : Optional[LoadFunction], optional
+            Function to load the parameter from disk. Defaults to None.
+
+        Raises
+        ------
+        ValueError
+            If `to_disk` is False but either `store_function` or
+            `load_function` is not None.
+        """
+
+        if not to_disk and (
+                store_function is not None or load_function is not None):
+            raise ValueError(("If 'to_disk' is False, 'store_function' and"
+                              "load_function' must be None.")
+                             )
+
         self.to_disk = to_disk
         self.store_function = store_function
         self.load_function = load_function
@@ -133,6 +110,12 @@ class Parameter:
 
     def __repr__(self):
         return f"{self.__class__.__name__}(to_disk={self.to_disk})"
+
+    def __eq__(self, __o: Parameter):
+        return self.to_disk == __o.to_disk
+
+    def __add__(self, __o: Parameter) -> Parameter:
+        return self
 
 # =============================================================================
 

@@ -11,14 +11,14 @@ from __future__ import annotations
 # Standard
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 
 # Third-party
 import autograd.numpy as np
 
 # Local
 from ..design.domain import Domain
-from ._io import LoadFunction, StoreFunction, load_object
+from ._io import load_object
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -121,7 +121,7 @@ class ExperimentSample:
             n_dim = input_array.flatten().shape[0]
             domain = Domain()
             for i in range(n_dim):
-                domain.add_float(name=f'x{i}', to_disk=False)
+                domain.add_float(name=f'x{i}')
 
         return cls(input_data={input_name: v for input_name, v in
                                zip(domain.input_space.keys(),
@@ -185,7 +185,8 @@ class ExperimentSample:
         self.job_status = JobStatus[status.upper()]
 
     def replace_nan(self, replacement_value: Any):
-        """Replace NaN values in input_data and output_data with a custom value.
+        """
+        Replace NaN values in input_data and output_data with a custom value.
 
         Parameters
         ----------
@@ -198,6 +199,23 @@ class ExperimentSample:
 
         self._input_data = replace_nan_in_dict(self._input_data)
         self._output_data = replace_nan_in_dict(self._output_data)
+
+    def round(self, decimals: int):
+        """
+        Round the input and output data to a specified
+        number of decimal places.
+
+        Parameters
+        ----------
+        decimals : int
+            The number of decimal places to round to.
+        """
+        def round_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+            return {k: (round(v, decimals) if isinstance(v, float)
+                        else v) for k, v in data.items()}
+
+        self._input_data = round_dict(self._input_data)
+        self._output_data = round_dict(self._output_data)
 
     #                                                                 Exporting
     # =========================================================================
@@ -229,8 +247,8 @@ class ExperimentSample:
     # =========================================================================
 
     def store(self, name: str, object: Any, to_disk: bool = False,
-              store_function: Optional[Type[StoreFunction]] = None,
-              load_function: Optional[Type[LoadFunction]] = None):
+              store_function: Optional[Type[Callable]] = None,
+              load_function: Optional[Type[Callable]] = None):
 
         # Add the output to the domain if it is not already there
         if name not in self.domain.output_names:

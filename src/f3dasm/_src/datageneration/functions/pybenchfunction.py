@@ -49,9 +49,6 @@ class Thevenot(PyBenchFunction):
         self.m = m
         self.beta = beta
 
-    def get_param(self):
-        return {"m": self.m, "beta": self.beta}
-
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
         return (self._retrieve_original_input(X), self(
@@ -89,9 +86,6 @@ class Ackley(PyBenchFunction):
         self.b = b
         self.c = c
 
-    def get_param(self):
-        return {"a": self.a, "b": self.b, "c": self.c}
-
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0 for _ in range(d)])
@@ -128,9 +122,6 @@ class AckleyN2(PyBenchFunction):
     def _set_parameters(self=None):
         self.input_domain = np.array([[-32, 32], [-32, 32]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -140,9 +131,6 @@ class AckleyN2(PyBenchFunction):
         x, y = X
         res = -200 * np.exp(-0.2 * np.sqrt(x**2 + y**2))
         return res
-
-    def custom_grad(self, X):
-        x, y = X
 
 
 class AckleyN3(PyBenchFunction):
@@ -166,9 +154,6 @@ class AckleyN3(PyBenchFunction):
 
     def _set_parameters(self=None):
         self.input_domain = np.array([[-32, 32], [-32, 32]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0.682584587365898, -0.36075325513719])
@@ -204,9 +189,6 @@ class AckleyN4(PyBenchFunction):
     def _set_parameters(self=None):
         d = self.dimensionality
         self.input_domain = np.array([[-35, 35] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
 
@@ -247,9 +229,6 @@ class Adjiman(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-1, 2], [-1, 1]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([1 / (i + 1) for i in range(d)])
         X = np.array([0, 0])
@@ -284,9 +263,6 @@ class Bartels(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-500, 500], [-500, 500]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -320,9 +296,6 @@ class Beale(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-4.5, 4.5], [-4.5, 4.5]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([3, 0.5])
@@ -360,9 +333,6 @@ class Bird(PyBenchFunction):
         self.input_domain = np.array(
             [[-2 * np.pi, 2 * np.pi], [-2 * np.pi, 2 * np.pi]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([[4.70104, 3.15294], [-1.58214, -3.13024]])
         return (self._retrieve_original_input(X),
@@ -396,9 +366,6 @@ class BohachevskyN1(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-100, 100], [-100, 100]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
@@ -434,9 +401,6 @@ class BohachevskyN2(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-100, 100], [-100, 100]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -471,9 +435,6 @@ class BohachevskyN3(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-50, 50], [-50, 50]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -507,9 +468,6 @@ class Booth(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([1, 3])
@@ -558,16 +516,6 @@ class Branin(PyBenchFunction):
         self.s = s
         self.t = t
 
-    def get_param(self):
-        return {
-            "a": self.a,
-            "b": self.b,
-            "c": self.c,
-            "r": self.r,
-            "s": self.s,
-            "t": self.t,
-        }
-
     def get_global_minimum(self, d):
         X = np.array([[-np.pi, 12.275], [np.pi, 2.275], [9.42478, 2.475]])
         return (self._retrieve_original_input(X),
@@ -601,9 +549,6 @@ class Brent(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-20, 0], [-20, 0]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([-10, -10])
@@ -639,9 +584,6 @@ class Brown(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 4] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X), self(
@@ -676,9 +618,6 @@ class BukinN6(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-15, -5], [-3, 3]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([-10, 1])
         return (self._retrieve_original_input(X), self(
@@ -712,9 +651,6 @@ class Colville(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array(
             [[-10, 10], [-10, 10], [-10, 10], [-10, 10]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([1, 1, 1, 1])
@@ -751,9 +687,6 @@ class CrossInTray(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array(
@@ -804,9 +737,6 @@ class DeJongN5(PyBenchFunction):
         else:
             self.a = a
 
-    def get_param(self):
-        return {"a": self.a}
-
     def get_global_minimum(self, d):
         X = self.a[0]
         return (self._retrieve_original_input(X), self(
@@ -843,9 +773,6 @@ class DeckkersAarts(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-20, 20], [-20, 20]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([[0, -15], [0, 15]])
         return (self._retrieve_original_input(X),
@@ -880,9 +807,6 @@ class DixonPrice(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([2 ** -(((2 ** (i)) - 2) / 2**i)
@@ -919,9 +843,6 @@ class DropWave(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-5.2, 5.2], [-5.2, 5.2]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -955,9 +876,6 @@ class Easom(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-100, 100], [-100, 100]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([np.pi, np.pi])
@@ -993,9 +911,6 @@ class EggCrate(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X), self(
@@ -1028,9 +943,6 @@ class EggHolder(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-512, 512], [-512, 512]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([512, 404.2319])
@@ -1067,9 +979,6 @@ class Exponential(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 1] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X), self(
@@ -1101,9 +1010,6 @@ class GoldsteinPrice(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-2, 2], [-2, 2]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, -1])
@@ -1143,9 +1049,6 @@ class Griewank(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-600, 600] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X), self(
@@ -1183,9 +1086,6 @@ class HappyCat(PyBenchFunction):
         self.input_domain = np.array([[-2, 2] for _ in range(d)])
         self.alpha = alpha
 
-    def get_param(self):
-        return {"alpha": self.alpha}
-
     def get_global_minimum(self, d):
         X = np.array([-1 for _ in range(d)])
         return (self._retrieve_original_input(X), self(
@@ -1220,9 +1120,6 @@ class Himmelblau(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-6, 6], [-6, 6]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array(
@@ -1263,9 +1160,6 @@ class HolderTable(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array(
@@ -1309,9 +1203,6 @@ class Keane(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([[1.393249070031784, 0], [0, 1.393249070031784]])
         return (self._retrieve_original_input(X),
@@ -1349,9 +1240,6 @@ class Langermann(PyBenchFunction):
         self.c = c if c is not None else np.array([1, 2, 5, 2, 3])
         self.A = A if A is not None else np.array(
             [[3, 5], [5, 2], [2, 1], [1, 4], [7, 9]])
-
-    def get_param(self):
-        return {"m": self.m, "c": self.c, "A": self.A}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -1394,9 +1282,6 @@ class Leon(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[0, 10], [0, 10]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([1, 1])
         return (self._retrieve_original_input(X),
@@ -1430,9 +1315,6 @@ class Levy(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
@@ -1472,9 +1354,6 @@ class LevyN13(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([1, 1])
         return (self._retrieve_original_input(X),
@@ -1512,9 +1391,6 @@ class Matyas(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-10, 10], [-10, 10]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X),
@@ -1547,9 +1423,6 @@ class McCormick(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-1.5, 4], [-3, 3]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([-0.547, -1.547])
@@ -1585,9 +1458,6 @@ class Michalewicz(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[0, np.pi] for _ in range(d)])
         self.m = m
-
-    def get_param(self):
-        return {"m": self.m}
 
     def get_global_minimum(self, d):
         if d != 2:  # Michalewicz minimum is only given for d=2
@@ -1630,9 +1500,6 @@ class Periodic(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -1665,9 +1532,6 @@ class Powell(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-1, 1] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -1702,9 +1566,6 @@ class Qing(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-500, 500] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -1749,9 +1610,6 @@ class Quartic(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-1.28, 1.28] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         # Global minimum value without the randomized term
@@ -1786,9 +1644,6 @@ class Rastrigin(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5.12, 5.12] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -1827,9 +1682,6 @@ class Ridge(PyBenchFunction):
         self.beta = beta
         self.alpha = alpha
 
-    def get_param(self):
-        return {"beta": self.beta, "alpha": self.alpha}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         X[0] = self.input_domain[0, 0]
@@ -1865,9 +1717,6 @@ class Rosenbrock(PyBenchFunction):
         self.input_domain = np.array([[-5, 10] for _ in range(d)])
         self.a = a
         self.b = b
-
-    def get_param(self):
-        return {"a": self.a, "b": self.b}
 
     def get_global_minimum(self, d):
         X = np.array([1 for _ in range(d)])
@@ -1906,9 +1755,6 @@ class RotatedHyperEllipsoid(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-65.536, 65.536] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -1945,9 +1791,6 @@ class Salomon(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -1980,9 +1823,6 @@ class SchaffelN1(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-100, 100], [-100, 100]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, 0])
@@ -2018,9 +1858,6 @@ class SchaffelN2(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-4, 4], [-4, 4]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X),
@@ -2054,9 +1891,6 @@ class SchaffelN3(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-4, 4], [-4, 4]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
@@ -2092,9 +1926,6 @@ class SchaffelN4(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[-4, 4], [-4, 4]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, 1.253115])
@@ -2134,9 +1965,6 @@ class Schwefel(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-500, 500] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([420.9687 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2173,9 +2001,6 @@ class Schwefel2_20(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2210,9 +2035,6 @@ class Schwefel2_21(PyBenchFunction):
     ):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -2250,9 +2072,6 @@ class Schwefel2_22(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-100, 100] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2287,9 +2106,6 @@ class Schwefel2_23(PyBenchFunction):
     ):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -2345,9 +2161,6 @@ class Shekel(PyBenchFunction):
             )
         )
 
-    def get_param(self):
-        return {"m": self.m, "C": self.C, "beta": self.beta}
-
     def get_global_minimum(self, d):
         X = self.C[0]
         return (self._retrieve_original_input(X),
@@ -2384,9 +2197,6 @@ class Shubert(PyBenchFunction):
     ):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         # Global minimum from
@@ -2429,9 +2239,6 @@ class ShubertN3(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([-7.4 for _ in range(d)])
 
@@ -2469,9 +2276,6 @@ class ShubertN4(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([4.85 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2508,9 +2312,6 @@ class Sphere(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-5.12, 5.12] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2546,9 +2347,6 @@ class StyblinskiTang(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([-2.903534 for _ in range(d)])
         return (self._retrieve_original_input(X),
@@ -2581,9 +2379,6 @@ class SumSquares(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for _ in range(d)])
@@ -2619,9 +2414,6 @@ class ThreeHump(PyBenchFunction):
     def _set_parameters(self):
         self.input_domain = np.array([[-5, 5], [-5, 5]])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0, 0])
         return (self._retrieve_original_input(X),
@@ -2656,9 +2448,6 @@ class Trid(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-(d**2), d**2] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([i * (d + 1 - i) for i in range(1, d + 1)])
         return (self._retrieve_original_input(X),
@@ -2690,9 +2479,6 @@ class Wolfe(PyBenchFunction):
 
     def _set_parameters(self):
         self.input_domain = np.array([[0, 2], [0, 2], [0, 2]])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0, 0, 0])
@@ -2727,9 +2513,6 @@ class XinSheYang(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 5] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
@@ -2768,9 +2551,6 @@ class XinSheYangN2(PyBenchFunction):
         self.input_domain = np.array(
             [[-2 * np.pi, 2 * np.pi] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
         return (self._retrieve_original_input(X),
@@ -2807,9 +2587,6 @@ class XinSheYangN3(PyBenchFunction):
         self.m = m
         self.beta = beta
 
-    def get_param(self):
-        return {"m": self.m, "beta": self.beta}
-
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
         return (self._retrieve_original_input(X),
@@ -2845,9 +2622,6 @@ class XinSheYangN4(PyBenchFunction):
         d = self.dimensionality
         self.input_domain = np.array([[-10, 10] for _ in range(d)])
 
-    def get_param(self):
-        return {}
-
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])
         return (self._retrieve_original_input(X),
@@ -2881,9 +2655,6 @@ class Zakharov(PyBenchFunction):
     def _set_parameters(self):
         d = self.dimensionality
         self.input_domain = np.array([[-5, 10] for _ in range(d)])
-
-    def get_param(self):
-        return {}
 
     def get_global_minimum(self, d):
         X = np.array([0 for i in range(1, d + 1)])

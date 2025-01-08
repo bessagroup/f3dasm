@@ -10,7 +10,6 @@ from __future__ import annotations
 # Standard
 import warnings
 from functools import wraps
-from pathlib import Path
 from typing import List, Union
 
 # Third-party
@@ -27,7 +26,7 @@ __status__ = 'Stable'
 
 # =============================================================================
 
-DataTypes = Union[pd.DataFrame, np.ndarray, Path, str, List]
+DataTypes = Union[pd.DataFrame, np.ndarray, List]
 
 # =============================================================================
 

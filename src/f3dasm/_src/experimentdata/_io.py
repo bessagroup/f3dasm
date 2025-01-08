@@ -11,7 +11,7 @@ from __future__ import annotations
 # Standard
 import pickle
 from pathlib import Path
-from typing import Any, Mapping, Optional, Type
+from typing import Any, Callable, Mapping, Optional, Type
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -20,7 +20,6 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from ..design.parameter import LoadFunction, StoreFunction
 from ..logger import logger
 
 #                                                          Authorship & Credits
@@ -81,19 +80,32 @@ def pandas_store(object: pd.DataFrame, path: str) -> str:
 
 def pandas_load(path: str) -> pd.DataFrame:
     _path = Path(path).with_suffix('.csv')
-    return pd.read_csv(_path)
+    return pd.read_csv(_path, index_col=0, header=0)
 
 
-def xarray_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
-    _path = Path(path).with_suffix('.nc')
+def xarray_dataset_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
+    _path = Path(path).with_suffix('.ncs')
     object.to_netcdf(_path)
     return str(_path)
 
 
-def xarray_load(path: str) -> xr.DataArray | xr.Dataset:
+def xarray_dataarray_store(object: xr.DataArray | xr.Dataset, path: str
+                           ) -> str:
+    _path = Path(path).with_suffix('.nca')
+    object.to_netcdf(_path)
+    return str(_path)
+
+
+def xarray_dataset_load(path: str) -> xr.DataArray | xr.Dataset:
     # TODO: open_dataset and open_dataarray?
-    _path = Path(path).with_suffix('.nc')
+    _path = Path(path).with_suffix('.ncs')
     return xr.open_dataset(_path)
+
+
+def xarray_dataarray_load(path: str) -> xr.DataArray | xr.Dataset:
+    # TODO: open_dataset and open_dataarray?
+    _path = Path(path).with_suffix('.nca')
+    return xr.open_dataarray(_path)
 
 
 def figure_store(object: plt.Figure, path: str) -> str:
@@ -108,19 +120,20 @@ def figure_load(path: str) -> np.ndarray:
     return plt.imread(_path)
 
 
-STORE_FUNCTION_MAPPING: Mapping[Type, StoreFunction] = {
+STORE_FUNCTION_MAPPING: Mapping[Type, Callable] = {
     np.ndarray: numpy_store,
     pd.DataFrame: pandas_store,
     pd.Series: pandas_store,
-    xr.DataArray: xarray_store,
-    xr.Dataset: xarray_store,
+    xr.DataArray: xarray_dataarray_store,
+    xr.Dataset: xarray_dataset_store,
     plt.Figure: figure_store,
 }
 
-LOAD_FUNCTION_MAPPING: Mapping[str, StoreFunction] = {
+LOAD_FUNCTION_MAPPING: Mapping[str, Callable] = {
     '.npy': numpy_load,
     '.csv': pandas_load,
-    '.nc': xarray_load,
+    '.ncs': xarray_dataset_load,
+    '.nca': xarray_dataarray_load,
     '.png': figure_load,
 }
 
@@ -158,7 +171,7 @@ def _project_dir_factory(project_dir: Path | str | None) -> Path:
 
 def store_to_disk(project_dir: Path, object: Any,
                   name: str, id: int,
-                  store_function: Optional[StoreFunction] = None) -> str:
+                  store_function: Optional[Callable] = None) -> str:
     """
     Store an object to disk
 
@@ -214,7 +227,7 @@ def store_to_disk(project_dir: Path, object: Any,
 
 
 def load_object(project_dir: Path, path: str | Path,
-                load_function: Optional[LoadFunction] = None) -> Any:
+                load_function: Optional[Callable] = None) -> Any:
     """
     Load an object from disk from a given path and storing method
 

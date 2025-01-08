@@ -18,7 +18,6 @@ from SALib.sample import sobol_sequence
 
 # Locals
 from ..design.domain import Domain
-from .utils import DataTypes
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -35,7 +34,7 @@ class Sampler:
         self.domain = domain
 
     @abstractmethod
-    def sample(self, **kwargs) -> DataTypes:
+    def sample(self, **kwargs) -> pd.DataFrame | np.ndarray:
         ...
 
 #                                                             Utility functions
@@ -314,6 +313,9 @@ class Grid(Sampler):
         for k, v, in continuous_to_discrete.input_space.items():
             _iterdict[k] = np.arange(
                 start=v.lower_bound, stop=v.upper_bound, step=v.step)
+
+        for k, v, in self.domain.constant.input_space.items():
+            _iterdict[k] = [v.value]
 
         df = pd.DataFrame(list(product(*_iterdict.values())),
                           columns=_iterdict, dtype=object

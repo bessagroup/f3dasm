@@ -52,8 +52,8 @@ __status__ = 'Stable'
 class ExperimentData:
     def __init__(self,
                  domain: Optional[Domain] = None,
-                 input_data: Optional[DataTypes] = None,
-                 output_data: Optional[DataTypes] = None,
+                 input_data: Optional[DataTypes | str | Path] = None,
+                 output_data: Optional[DataTypes | str | Path] = None,
                  jobs: Optional[pd.Series] = None,
                  project_dir: Optional[Path] = None):
         """
@@ -63,9 +63,9 @@ class ExperimentData:
         ----------
         domain : Domain, optional
             The domain of the experiment, by default None
-        input_data : DataTypes, optional
+        input_data : DataTypes | Path | str, optional
             The input data of the experiment, by default None
-        output_data : DataTypes, optional
+        output_data : DataTypes | Path | str, optional
             The output data of the experiment, by default None
         jobs : pandas.Series, optional
             The status of all the jobs, by default None
@@ -93,40 +93,46 @@ class ExperimentData:
         ValueError
             If the input_data is a numpy array, the domain has to be provided.
         """
-
-        _project_dir = _project_dir_factory(project_dir)
         _domain = _domain_factory(domain)
+        _project_dir = _project_dir_factory(project_dir)
+        _jobs = jobs_factory(jobs)
 
         # If input_data is a numpy array, create pd.Dataframe to include column
         # names from the domain
         if isinstance(input_data, np.ndarray):
             input_data = convert_numpy_to_dataframe_with_domain(
                 array=input_data,
-                names=_domain.input_names)
+                names=_domain.input_names,
+                mode='input')
 
         # Same with output data
         if isinstance(output_data, np.ndarray):
             output_data = convert_numpy_to_dataframe_with_domain(
                 array=output_data,
-                names=_domain.output_names)
+                names=_domain.output_names,
+                mode='output')
+
+        _input_data = _dict_factory(data=input_data)
+        _output_data = _dict_factory(data=output_data)
+
+        # If the domain is empty, try to infer it from the input_data
+        # and output_data
+        if not _domain:
+            _domain = Domain.from_data(input_data=_input_data,
+                                       output_data=_output_data)
 
         _data = data_factory(
-            input_data=input_data, output_data=output_data,
-            domain=_domain, jobs=jobs,
-            project_dir=_project_dir)
-
-        # If the domain is None, try to infer it from the input_data and output
-        # data
-        if not _domain and _data:
-            _data = data_factory(
-                input_data=input_data, output_data=output_data,
-                domain=infer_domain_from_data(_data), jobs=jobs,
-                project_dir=_project_dir
-            )
+            input_data=_input_data, output_data=_output_data,
+            domain=_domain, jobs=_jobs, project_dir=_project_dir
+        )
 
         self.data = _data
         self.domain = _domain
         self.project_dir = _project_dir
+
+        # Store to_disk objects so that the references are kept only
+        for id, experiment_sample in self:
+            self.store_experimentsample(experiment_sample, id)
 
     def __len__(self):
         return len(self.data)
@@ -141,7 +147,8 @@ class ExperimentData:
         return copy_self
 
     def __eq__(self, __o: ExperimentData) -> bool:
-        return self.data == __o.data and self.domain == __o.domain
+        return (self.data == __o.data and self.domain == __o.domain
+                and self.project_dir == __o.project_dir)
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
         if isinstance(key, int):
@@ -389,63 +396,6 @@ class ExperimentData:
         idx = [i for i, es in self if es.is_status(status)]
         return self[idx]
 
-    # Do you need to use this?
-    @deprecated(version="2.0.0")
-    def get_input_data(
-            self,
-            parameter_names: Optional[str | Iterable[str]] = None
-    ) -> ExperimentData:
-        """Retrieve a subset of the input data from the ExperimentData object
-
-        Parameters
-        ----------
-        parameter_names : str | Iterable[str], optional
-            The name(s) of the input parameters that you want to retrieve, \
-            if None all input parameters are retrieved, by default None
-
-        Returns
-        -------
-        ExperimentData
-            The selected ExperimentData object with only the\
-             selected input data.
-
-        Note
-        ----
-        If parameter_names is None, all input data is retrieved. \
-        The returned ExperimentData object has the domain of \
-        the original ExperimentData object, \
-        but only with the selected input parameters.\
-        """
-        ...
-
-    # Do you need to use this?
-    @deprecated(version="2.0.0")
-    def get_output_data(
-        self,
-        parameter_names: Optional[str | Iterable[str]] = None
-    ) -> ExperimentData:
-        """Retrieve a subset of the output data from the ExperimentData object
-
-        Parameters
-        ----------
-        parameter_names : str | Iterable[str], optional
-            The name(s) of the output parameters that you want to retrieve, \
-            if None all output parameters are retrieved, by default None
-
-        Returns
-        -------
-        ExperimentData
-            The selected ExperimentData object with only \
-            the selected output data.
-
-        Note
-        ----
-        If parameter_names is None, all output data is retrieved. \
-        The returned ExperimentData object has no domain object and \
-        no input data!
-        """
-        ...
-
     #                                                                    Export
     # =========================================================================
 
@@ -569,7 +519,8 @@ class ExperimentData:
         return xr.Dataset({'input': da_input, 'output': da_output})
 
     # TODO: Implement this
-    def get_n_best_output(self, n_samples: int, output_name: Optional[str] = 'y') -> ExperimentData:
+    def get_n_best_output(self, n_samples: int,
+                          output_name: Optional[str] = 'y') -> ExperimentData:
         """
         Get the n best samples from the output data.
         We consider lower values to be better.
@@ -719,43 +670,6 @@ class ExperimentData:
     ) -> None:
         ...
 
-    # Not used
-    @deprecated(version="2.0.0")
-    def add_input_parameter(
-        self, name: str,
-        type: Literal['float', 'int', 'category', 'constant'],
-            **kwargs):
-        """Add a new input column to the ExperimentData object.
-
-        Parameters
-        ----------
-        name
-            name of the new input column
-        type
-            type of the new input column: float, int, category or constant
-        kwargs
-            additional arguments for the new parameter
-        """
-        ...
-
-    # Not used
-    @deprecated(version="2.0.0")
-    def add_output_parameter(
-            self, name: str, is_disk: bool, exist_ok: bool = False) -> None:
-        """Add a new output column to the ExperimentData object.
-
-        Parameters
-        ----------
-        name
-            name of the new output column
-        is_disk
-            Whether the output column will be stored on disk or not
-        exist_ok
-            If True, it will not raise an error if the output column already
-            exists, by default False
-        """
-        ...
-
     def remove_rows_bottom(self, number_of_rows: int):
         """
         Remove a number of rows from the end of the ExperimentData object.
@@ -768,14 +682,6 @@ class ExperimentData:
         # remove the last n rows
         for i in range(number_of_rows):
             self.data.pop(self.index[-1])
-
-    # Not used
-    @deprecated(version="2.0.0", message="Use reset_index() instead.")
-    def _reset_index(self) -> None:
-        """
-        Reset the index of the ExperimentData object.
-        """
-        ...
 
     def reset_index(self) -> ExperimentData:
         """
@@ -856,6 +762,18 @@ class ExperimentData:
         for _, es in self:
             es.replace_nan(value)
 
+    def round(self, decimals: int):
+        """
+        Round all output data to the given number of decimals.
+
+        Parameters
+        ----------
+        decimals : int
+            Number of decimals to round to.
+        """
+        for _, es in self:
+            es.round(decimals)
+
     #                                                          ExperimentSample
     # =========================================================================
 
@@ -924,6 +842,23 @@ class ExperimentData:
                     id=id, store_function=parameter.store_function)
 
                 experiment_sample._output_data[name] = Path(storage_location)
+
+        for name, value in experiment_sample._input_data.items():
+
+            # # If the output parameter is not in the domain, add it
+            # if name not in self.domain.output_names:
+            #     self.domain.add_output(name=name, to_disk=True)
+
+            parameter = self.domain.input_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir, object=value, name=name,
+                    id=id, store_function=parameter.store_function)
+
+                experiment_sample._input_data[name] = Path(storage_location)
 
         # Set the experiment sample in the ExperimentData object
         self.data[id] = experiment_sample
@@ -1034,27 +969,6 @@ class ExperimentData:
         for _, es in self:
             es.mark(status)
 
-    @deprecated(version="2.0.0")
-    def mark_all_error_open(self) -> None:
-        """
-        Mark all the experiments that have the status 'error' open
-        """
-        ...
-
-    @deprecated(version="2.0.0")
-    def mark_all_in_progress_open(self) -> None:
-        """
-        Mark all the experiments that have the status 'in progress' open
-        """
-        ...
-
-    @deprecated(version="2.0.0")
-    def mark_all_nan_open(self) -> None:
-        """
-        Mark all the experiments that have 'nan' in output open
-        """
-        ...
-
     #                                                            Datageneration
     # =========================================================================
 
@@ -1101,9 +1015,6 @@ class ExperimentData:
 
         # Call
         self = data_generator.call(mode=mode, **kwargs)
-
-    # # It would be cool to have a different variant of ExperimentData that
-    # # has disk reading/writing operations for the data
 
     #                                                              Optimization
     # =========================================================================
@@ -1394,54 +1305,33 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
     try:
+        return ExperimentData(domain=subdirectory / DOMAIN_FILENAME,
+                              input_data=subdirectory / INPUT_DATA_FILENAME,
+                              output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                              jobs=subdirectory / JOBS_FILENAME)
 
-        input_data = pd.read_csv(
-            (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'),
-            header=0, index_col=0)
-
-        output_data = pd.read_csv(
-            (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'),
-            header=0, index_col=0)
-
-        jobs: pd.Series = pd.read_csv(
-            (subdirectory / JOBS_FILENAME).with_suffix('.csv'),
-            header=0, index_col=0).squeeze()
-
-        domain = Domain.from_file(subdirectory / DOMAIN_FILENAME)
-
-        return ExperimentData(domain=domain,
-                              input_data=input_data,
-                              output_data=output_data,
-                              jobs=jobs,
-                              project_dir=project_dir)
     except FileNotFoundError:
         raise FileNotFoundError(
             f"Cannot find the files from {subdirectory}.")
 
 
 def convert_numpy_to_dataframe_with_domain(
-        array: np.ndarray, names: Optional[Domain]) -> pd.DataFrame:
+        array: np.ndarray, names: Optional[List[str]], mode: str
+) -> pd.DataFrame:
     if not names:
-        names = [f'{i}' for i in range(array.shape[1])]
+        if mode == 'input':
+            names = [f'x{i}' for i in range(array.shape[1])]
+        elif mode == 'output':
+            if array.shape[1] == 1:
+                names = ['y']
+            else:
+                names = [f'y{i}' for i in range(array.shape[1])]
+
+        else:
+            raise ValueError(
+                f"Unknown mode {mode}, use 'input' or 'output'")
 
     return pd.DataFrame(array, columns=names)
-
-
-def infer_domain_from_data(data: Dict[int, ExperimentSample]) -> Domain:
-    df_input = pd.DataFrame(
-        [es.input_data for _, es in data.items()], index=data.keys())
-    df_output = pd.DataFrame(
-        [es.output_data for _, es in data.items()], index=data.keys())
-    return Domain.from_dataframe(df_input=df_input, df_output=df_output)
-
-
-def _dict_from_numpy(arr: np.ndarray,
-                     names: Optional[Iterable[str]]) -> Dict[str, Any]:
-    assert arr.ndim == 1, "Array must be 1D"
-
-    names = names if names is not None else [
-        f'x{i}' for i in range(arr.shape[0])]
-    return dict(zip(names, arr))
 
 
 def merge_dicts(list_of_dicts):
@@ -1467,13 +1357,14 @@ def merge_dicts(list_of_dicts):
     return dict(merged_dict)
 
 
-def _dict_factory(data: Optional[DataTypes]) -> List[Dict[str, Any]]:
+def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
+                  ) -> List[Dict[str, Any]]:
     """
     Convert the DataTypes to a list of dictionaries
 
     Parameters
     ----------
-    data : Optional[DataTypes]
+    data : pd.DataFrame | List[Dict[str, Any]] | None | Path | str
         The data to be converted
 
     Returns
@@ -1493,27 +1384,26 @@ def _dict_factory(data: Optional[DataTypes]) -> List[Dict[str, Any]]:
     if data is None:
         return []
 
+    elif isinstance(data, (Path, str)):
+        return _dict_factory(pd.read_csv(
+            Path(data).with_suffix('.csv'),
+            header=0, index_col=0))
+
     # check if data is already a list of dicts
     elif isinstance(data, list) and all(isinstance(d, dict) for d in data):
         return data
-
-    # This one is not reached since numpy is already handled earlier
-    elif isinstance(data, np.ndarray):
-        return [_dict_from_numpy(d) for d in data]
 
     # If the data is a pandas DataFrame, convert it to a list of dictionaries
     elif isinstance(data, pd.DataFrame):
         return [row._asdict() for row in data.itertuples(index=False)]
 
-    # TODO: Add support for str argument
-
     raise ValueError(f"Data type {type(data)} not supported")
 
 
-def data_factory(input_data: Optional[DataTypes],
-                 output_data: Optional[DataTypes],
+def data_factory(input_data: List[Dict[str, Any]],
+                 output_data: List[Dict[str, Any]],
                  domain: Domain,
-                 jobs: Optional[pd.Series],
+                 jobs: pd.Series,
                  project_dir: Path,
                  ) -> Dict[int, ExperimentSample]:
     """
@@ -1522,10 +1412,10 @@ def data_factory(input_data: Optional[DataTypes],
 
     Parameters
     ----------
-    input_data : Optional[DataTypes]
-        The input data to be converted
-    output_data : Optional[DataTypes]
-        The output data to be converted
+    input_data : List[Dict[str, Any]]
+        The input data of the experiments
+    output_data : List[Dict[str, Any]]
+        The output data of the experiments
     domain : Domain
         The domain of the data
     jobs : pd.Series
@@ -1540,20 +1430,29 @@ def data_factory(input_data: Optional[DataTypes],
         The converted data as a defaultdict of ExperimentSamples
 
     """
-    # Create two lists of dictionaries from the input data
-    _input_data: List[Dict[str, Any]] = _dict_factory(input_data)
-    _output_data: List[Dict[str, Any]] = _dict_factory(output_data)
-
-    if jobs is None:
-        jobs = pd.Series()
-
     # Combine the two lists into a dictionary of ExperimentSamples
-    data = {index: ExperimentSample(input_data=input_data,
-                                    output_data=output_data,
+    data = {index: ExperimentSample(input_data=experiment_input,
+                                    output_data=experiment_output,
                                     domain=domain,
                                     job_status=job_status,
                                     project_dir=project_dir)
-            for index, (input_data, output_data, job_status) in enumerate(
-                zip_longest(_input_data, _output_data, jobs))}
+            for index, (experiment_input, experiment_output, job_status) in
+            enumerate(zip_longest(input_data, output_data, jobs))}
 
     return defaultdict(ExperimentSample, data)
+
+
+def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
+    if isinstance(jobs, pd.Series):
+        return jobs
+
+    elif jobs is None:
+        return pd.Series()
+
+    elif isinstance(jobs, (Path, str)):
+        return pd.read_csv(
+            Path(jobs).with_suffix('.csv'),
+            header=0, index_col=0).squeeze()
+
+    else:
+        raise ValueError(f"Jobs type {type(jobs)} not supported")
