@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 from collections import defaultdict
 from copy import copy
+from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
@@ -135,22 +136,103 @@ class ExperimentData:
             self.store_experimentsample(experiment_sample, id)
 
     def __len__(self):
+        """
+        Returns the number of experiments in the ExperimentData object.
+
+        Returns
+        -------
+        int
+            Number of experiments.
+
+        Examples
+        --------
+        >>> experimentdata = ExperimentData(input_data=np.array([1, 2, 3]),)
+        >>> len(experiment_data)
+        3
+        """
         return len(self.data)
 
     def __iter__(self) -> Iterator[Tuple[int, ExperimentSample]]:
+        """
+        Returns an iterator over the ExperimentData object.
+
+        Returns
+        -------
+        Iterator[Tuple[int, ExperimentSample]]
+            Iterator over the ExperimentData object.
+
+        Examples
+        --------
+        >>> for id, sample in experiment_data:
+        ...     print(id, sample)
+        0 ExperimentSample(...)
+        """
         return iter(self.data.items())
 
     def __add__(self, __o: ExperimentData) -> ExperimentData:
-        # copy and reset self
+        """
+        Adds two ExperimentData objects.
+
+        Parameters
+        ----------
+        __o : ExperimentData
+            The other ExperimentData object to add.
+
+        Returns
+        -------
+        ExperimentData
+            The combined ExperimentData object.
+
+        Examples
+        --------
+        >>> combined_data = experiment_data1 + experiment_data2
+        """
         copy_self = copy(self).reset_index()
         copy_self._add(__o)
         return copy_self
 
     def __eq__(self, __o: ExperimentData) -> bool:
+        """
+        Checks if two ExperimentData objects are equal.
+
+        Parameters
+        ----------
+        __o : ExperimentData
+            The other ExperimentData object to compare.
+
+        Returns
+        -------
+        bool
+            True if the objects are equal, False otherwise.
+
+        Notes
+        -----
+        Two ExperimentData objects are considered equal if their data, domain
+        and project_dir are equal.
+
+        Examples
+        --------
+        >>> experiment_data1 == experiment_data2
+        True
+        """
         return (self.data == __o.data and self.domain == __o.domain
                 and self.project_dir == __o.project_dir)
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
+        """
+        Gets a subset of the ExperimentData object.
+
+        Parameters
+        ----------
+        key : int or Iterable[int]
+            The indices to select.
+
+        Returns
+        -------
+        ExperimentData
+            The selected subset of the ExperimentData object.
+
+        """
         if isinstance(key, int):
             key = [key]
 
@@ -161,39 +243,85 @@ class ExperimentData:
                                         domain=self.domain)
 
     def _repr_html_(self) -> str:
+        """
+        Returns an HTML representation of the ExperimentData object.
+
+        Returns
+        -------
+        str
+            HTML representation of the ExperimentData object.
+
+        Examples
+        --------
+        >>> experiment_data._repr_html_()
+        '<div>...</div>'
+        """
         return self.to_multiindex()._repr_html_()
 
     def __repr__(self) -> str:
+        """
+        Returns a string representation of the ExperimentData object.
+
+        Returns
+        -------
+        str
+            String representation of the ExperimentData object.
+
+        Examples
+        --------
+        >>> repr(experiment_data)
+        'ExperimentData(...)'
+        """
         return self.to_multiindex().__repr__()
 
-    def _access_file(operation: Callable) -> Callable:
-        """Wrapper for accessing a single resource with a file lock
+    def access_file(self, operation: Callable) -> Callable:
+        """
+        Wrapper for accessing a single resource with a file lock.
 
         Parameters
         ----------
         operation : Callable
-            The operation to be performed on the resource
+            The operation to be performed on the resource.
 
         Returns
         -------
         Callable
-            The wrapped operation
+            The wrapped operation.
+
+        Examples
+        --------
+        >>> @experiment_data.access_file
+        ... def read_data(project_dir):
+        ...     # read data from file
+        ...     pass
         """
         @functools.wraps(operation)
-        def wrapper_func(self: ExperimentData, *args, **kwargs) -> None:
+        def wrapper_func(project_dir: Path, *args, **kwargs) -> None:
             lock = FileLock(
-                (self.
-                 project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME)
-                .with_suffix('.lock'))
+                (project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+                 ).with_suffix('.lock'))
 
             # If the lock has been acquired:
             with lock:
                 tries = 0
                 while tries < MAX_TRIES:
+                    # try:
+                    #     print(f"{args=}, {kwargs=}")
+                    #     self = ExperimentData.from_file(project_dir)
+                    #     value = operation(*args, **kwargs)
+                    #     self.store()
+                    #     break
                     try:
-                        self = ExperimentData.from_file(self.project_dir)
-                        value = operation(self, *args, **kwargs)
-                        self.store()
+                        # Load a fresh instance of ExperimentData from file
+                        loaded_self = ExperimentData.from_file(
+                            self.project_dir)
+
+                        # Call the operation with the loaded instance
+                        # Replace the self in args with the loaded instance
+                        # Modify the first argument
+                        args = (loaded_self,) + args[1:]
+                        value = operation(*args, **kwargs)
+                        loaded_self.store()
                         break
 
                     # Racing conditions can occur when the file is empty
@@ -209,24 +337,45 @@ class ExperimentData:
 
             return value
 
-        return wrapper_func
+        return partial(wrapper_func, project_dir=self.project_dir)
 
     #                                                                Properties
     # =========================================================================
 
     @property
     def index(self) -> pd.Index:
-        """Returns an iterable of the job number of the experiments
+        """
+        Returns an iterable of the job number of the experiments.
 
         Returns
         -------
         pd.Index
-            The job number of all the experiments in pandas Index format
+            The job number of all the experiments in pandas Index format.
+
+        Examples
+        --------
+        >>> experiment_data.index
+        Int64Index([0, 1, 2], dtype='int64')
         """
         return pd.Index(self.data.keys())
 
     @property
     def jobs(self) -> pd.Series:
+        """
+        Returns the status of all the jobs.
+
+        Returns
+        -------
+        pd.Series
+            The status of all the jobs.
+
+        Examples
+        --------
+        >>> experiment_data.jobs
+        0    open
+        1    finished
+        dtype: object
+        """
         return pd.Series({id: es.job_status.name for id, es in self})
 
     #                                                  Alternative constructors
@@ -235,17 +384,22 @@ class ExperimentData:
     @classmethod
     def from_file(cls: Type[ExperimentData],
                   project_dir: Path | str) -> ExperimentData:
-        """Create an ExperimentData object from .csv and .json files.
+        """
+        Create an ExperimentData object from .csv and .json files.
 
         Parameters
         ----------
-        project_dir : Path | str
+        project_dir : Path or str
             User defined path of the experimentdata directory.
 
         Returns
         -------
         ExperimentData
             ExperimentData object containing the loaded data.
+
+        Examples
+        --------
+        >>> experiment_data = ExperimentData.from_file('path/to/project_dir')
         """
         if isinstance(project_dir, str):
             project_dir = Path(project_dir)
@@ -264,38 +418,28 @@ class ExperimentData:
     @classmethod
     def from_sampling(cls, sampler: Sampler | str, domain: Domain | DictConfig,
                       **kwargs):
-        """Create an ExperimentData object from a sampler.
+        """
+        Create an ExperimentData object from a sampler.
 
         Parameters
         ----------
-        sampler : Sampler | str
+        sampler : Sampler or str
             Sampler object containing the sampling strategy or one of the
             built-in sampler names.
-        domain : Domain | DictConfig
+        domain : Domain or DictConfig
             Domain object containing the domain of the experiment or hydra
             DictConfig object containing the configuration.
-        n_samples : int, optional
-            Number of samples, by default 1.
-        seed : int, optional
-            Seed for the random number generator, by default None.
+        **kwargs
+            Additional keyword arguments passed to the sampler.
 
         Returns
         -------
         ExperimentData
             ExperimentData object containing the sampled data.
 
-        Note
-        ----
-
-        If a string is passed for the sampler argument, it should be one
-        of the built-in samplers:
-
-        * 'random' : Random sampling
-        * 'latin' : Latin Hypercube Sampling
-        * 'sobol' : Sobol Sequence Sampling
-        * 'grid' : Grid Search Sampling
-
-        Any additional keyword arguments are passed to the sampler.
+        Examples
+        --------
+        >>> experiment_data = ExperimentData.from_sampling('random', domain)
         """
         data = cls(domain=domain)
         data.sample(sampler=sampler, **kwargs)
@@ -303,6 +447,23 @@ class ExperimentData:
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
+        """
+        Create an ExperimentData object from a YAML configuration.
+
+        Parameters
+        ----------
+        config : DictConfig
+            Hydra DictConfig object containing the configuration.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+
+        Examples
+        --------
+        >>> experiment_data = ExperimentData.from_yaml(config)
+        """
         # Option 0: Both existing and sampling
         if 'from_file' in config and 'from_sampling' in config:
             return cls.from_file(config.from_file) + cls.from_sampling(
@@ -323,7 +484,27 @@ class ExperimentData:
     def from_data(cls, data: Optional[Dict[int, ExperimentSample]] = None,
                   domain: Optional[Domain] = None,
                   project_dir: Optional[Path] = None) -> ExperimentData:
+        """
+        Create an ExperimentData object from existing data.
 
+        Parameters
+        ----------
+        data : dict of int to ExperimentSample, optional
+            The existing data, by default None.
+        domain : Domain, optional
+            The domain of the data, by default None.
+        project_dir : Path, optional
+            The project directory, by default None.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+
+        Examples
+        --------
+        >>> experiment_data = ExperimentData.from_data(data, domain)
+        """
         if data is None:
             data = {}
 
@@ -341,57 +522,46 @@ class ExperimentData:
     # =========================================================================
 
     def select(self, indices: int | Iterable[int]) -> ExperimentData:
-        """Select a subset of the ExperimentData object
+        """
+        Select a subset of the ExperimentData object.
 
         Parameters
         ----------
-        indices : int | Iterable[int]
+        indices : int or Iterable[int]
             The indices to select.
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the selected indices.
+            The selected subset of the ExperimentData object.
+
+        Examples
+        --------
+        >>> subset = experiment_data.select([0, 1, 2])
         """
         return self[indices]
-
-    # Not used
-    @deprecated(version="2.0.0")
-    def drop_output(self, names: Iterable[str] | str) -> ExperimentData:
-        """Drop a column from the output data
-
-        Parameters
-        ----------
-        names : Iteraeble | str
-            The names of the columns to drop.
-
-        Returns
-        -------
-        ExperimentData
-            The ExperimentData object with the column dropped.
-        """
-        ...
 
     def select_with_status(
             self,
             status: Literal['open', 'in_progress', 'finished', 'error']
     ) -> ExperimentData:
-        """Select a subset of the ExperimentData object with a given status
+        """
+        Select a subset of the ExperimentData object with a given status.
 
         Parameters
         ----------
-        status : Literal['open', 'in progress', 'finished', 'error']
+        status : {'open', 'in_progress', 'finished', 'error'}
             The status to select.
 
         Returns
         -------
         ExperimentData
-            The selected ExperimentData object with only the selected status.
+            The selected subset of the ExperimentData object with the given
+            status.
 
-        Raises
-        ------
-        ValueError
-            Raised when invalid status is specified
+        Examples
+        --------
+        >>> subset = experiment_data.select_with_status('finished')
         """
         idx = [i for i, es in self if es.is_status(status)]
         return self[idx]
@@ -400,7 +570,8 @@ class ExperimentData:
     # =========================================================================
 
     def store(self, project_dir: Optional[Path | str] = None):
-        """Write the ExperimentData to disk in the project directory.
+        """
+        Write the ExperimentData to disk in the project directory.
 
         Parameters
         ----------
@@ -420,7 +591,7 @@ class ExperimentData:
 
         * the input data (`input.csv`)
         * the output data (`output.csv`)
-        * the jobs (`jobs.pkl`)
+        * the jobs (`jobs.csv`)
         * the domain (`domain.pkl`)
 
         To avoid the ExperimentData to be written simultaneously by multiple
@@ -452,10 +623,13 @@ class ExperimentData:
 
         Returns
         -------
-        tuple
-            A tuple containing two numpy arrays,
-            the first one for input columns,
-            and the second for output columns.
+        tuple of np.ndarray
+            A tuple containing two numpy arrays, the first one for input
+            columns, and the second for output columns.
+
+        Examples
+        --------
+        >>> input_array, output_array = experiment_data.to_numpy()
         """
         df_input, df_output = self.to_pandas(keep_references=False)
         return df_input.to_numpy(), df_output.to_numpy()
@@ -463,19 +637,23 @@ class ExperimentData:
     def to_pandas(self, keep_references: bool = False
                   ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Convert the ExperimentData object to a pandas DataFrame.
+        Convert the ExperimentData object to pandas DataFrames.
 
         Parameters
         ----------
         keep_references : bool, optional
-            If True, the references to the output data are kept.
-            The default behaviour is False, for which the output data is
-            loaded from disk
+            If True, the references to the output data are kept, by default
+            False.
+
         Returns
         -------
-        tuple
-            A tuple containing two pandas DataFrames,
-            the first one for input columns, and the second for output
+        tuple of pd.DataFrame
+            A tuple containing two pandas DataFrames, the first one for input
+            columns, and the second for output columns.
+
+        Examples
+        --------
+        >>> df_input, df_output = experiment_data.to_pandas()
         """
         if keep_references:
             return (
@@ -496,15 +674,20 @@ class ExperimentData:
         """
         Convert the ExperimentData object to an xarray Dataset.
 
+        Parameters
+        ----------
         keep_references : bool, optional
-            If True, the references to the output data are kept.
-            The default behaviour is False, for which the output data is
-            loaded from disk
+            If True, the references to the output data are kept, by default
+            False.
 
         Returns
         -------
-        xarray.Dataset
+        xr.Dataset
             An xarray Dataset containing the data.
+
+        Examples
+        --------
+        >>> dataset = experiment_data.to_xarray()
         """
         df_input, df_output = self.to_pandas(keep_references=keep_references)
 
@@ -522,59 +705,48 @@ class ExperimentData:
     def get_n_best_output(self, n_samples: int,
                           output_name: Optional[str] = 'y') -> ExperimentData:
         """
-        Get the n best samples from the output data.
-        We consider lower values to be better.
+        Get the n best samples from the output data. Lower values are better.
 
         Parameters
         ----------
         n_samples : int
             Number of samples to select.
         output_name : str, optional
-
+            The name of the output column to sort by, by default 'y'.
 
         Returns
         -------
         ExperimentData
-            New experimentData object with a selection of the n best samples.
+            New ExperimentData object with a selection of the n best samples.
 
-        Note
-        ----
-
-        The n best samples are selected based on the output data.
-        The output data is sorted based on the first output parameter.
-        The n best samples are selected based on this sorting.
+        Examples
+        --------
+        >>> best_samples = experiment_data.get_n_best_output(5)
         """
         _, df_out = self.to_pandas()
         indices = df_out.nsmallest(n=n_samples, columns=output_name).index
         return self[indices]
 
     def to_multiindex(self) -> pd.DataFrame:
+        """
+        Convert the ExperimentData object to a pandas DataFrame with a
+        MultiIndex. This is used for visualization purposes in a Jupyter
+        notebook environment.
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas DataFrame with a MultiIndex.
+
+        Examples
+        --------
+        >>> df_multiindex = experiment_data.to_multiindex()
+        """
         list_of_dicts = [sample.to_multiindex() for _, sample in self]
         return pd.DataFrame(merge_dicts(list_of_dicts), index=self.index)
 
     #                                                     Append or remove data
     # =========================================================================
-
-    # Not used
-    @deprecated(version="2.0.0")
-    def add(self, domain: Optional[Domain] = None,
-            input_data: Optional[DataTypes] = None,
-            output_data: Optional[DataTypes] = None,
-            jobs: Optional[Path | str] = None) -> None:
-        """Add data to the ExperimentData object.
-
-        Parameters
-        ----------
-        domain : Optional[Domain], optional
-            Domain of the added object, by default None
-        input_data : Optional[DataTypes], optional
-            input parameters of the added object, by default None
-        output_data : Optional[DataTypes], optional
-            output parameters of the added object, by default None
-        jobs : Optional[Path  |  str], optional
-            jobs off the added object, by default None
-        """
-        ...
 
     def add_experiments(self,
                         data: ExperimentSample | ExperimentData
@@ -585,14 +757,18 @@ class ExperimentData:
 
         Parameters
         ----------
-        experiment_sample : ExperimentSample or ExperimentData
+        data : ExperimentSample or ExperimentData
             Experiment(s) to add.
 
         Raises
         ------
         ValueError
-            If -after checked- the indices of the input and output data
-            objects are not equal.
+            If the input is not an ExperimentSample or ExperimentData object.
+
+        Examples
+        --------
+        >>> experiment_data.add_experiments(new_sample)
+        >>> experiment_data.add_experiments(new_data)
         """
         if isinstance(data, ExperimentSample):
             self._add_experiment_sample(data)
@@ -605,7 +781,7 @@ class ExperimentData:
                 f"The input to this function should be an ExperimentSample or "
                 f"ExperimentData object, not {type(data)} ")
             )
-        ...
+        raise NotImplementedError()
 
     # Not used
     @deprecated(version="2.0.0")
@@ -635,7 +811,7 @@ class ExperimentData:
             If True, the new objects are added if the requested indices
             do not exist in the current ExperimentData object, by default False
         """
-        ...
+        raise NotImplementedError()
 
     # Not used
     @deprecated(version="2.0.0")
@@ -656,7 +832,7 @@ class ExperimentData:
             If True, the new objects are added if the requested indices
             do not exist in the current ExperimentData object.
         """
-        ...
+        raise NotImplementedError()
 
     # Used in parallel mode
     @deprecated(version="2.0.0")
@@ -668,7 +844,7 @@ class ExperimentData:
             jobs: Optional[Path | str] = None,
             add_if_not_exist: bool = False
     ) -> None:
-        ...
+        raise NotImplementedError()
 
     def remove_rows_bottom(self, number_of_rows: int):
         """
@@ -678,6 +854,10 @@ class ExperimentData:
         ----------
         number_of_rows : int
             Number of rows to remove from the bottom.
+
+        Examples
+        --------
+        >>> experiment_data.remove_rows_bottom(3)
         """
         # remove the last n rows
         for i in range(number_of_rows):
@@ -686,11 +866,16 @@ class ExperimentData:
     def reset_index(self) -> ExperimentData:
         """
         Reset the index of the ExperimentData object.
+        The index will be reset to a range from 0 to the number of experiments.
 
         Returns
         -------
         ExperimentData
             ExperimentData object with a reset index.
+
+        Examples
+        --------
+        >>> reset_data = experiment_data.reset_index()
         """
         return ExperimentData.from_data(
             data={i: v for i, v in enumerate(self.data.values())},
@@ -698,7 +883,8 @@ class ExperimentData:
             project_dir=self.project_dir)
 
     def join(self, experiment_data: ExperimentData) -> ExperimentData:
-        """Join two ExperimentData objects.
+        """
+        Join two ExperimentData objects.
 
         Parameters
         ----------
@@ -709,6 +895,10 @@ class ExperimentData:
         -------
         ExperimentData
             The joined ExperimentData object.
+
+        Examples
+        --------
+        >>> joined_data = experiment_data1.join(experiment_data2)
         """
         copy_self = self.reset_index()
         # TODO: Reset isnt necessary, only copy
@@ -758,6 +948,15 @@ class ExperimentData:
     def replace_nan(self, value: Any):
         """
         Replace all NaN values in the output data with the given value.
+
+        Parameters
+        ----------
+        value : Any
+            The value to replace NaNs with.
+
+        Examples
+        --------
+        >>> experiment_data.replace_nan(0)
         """
         for _, es in self:
             es.replace_nan(value)
@@ -770,6 +969,10 @@ class ExperimentData:
         ----------
         decimals : int
             Number of decimals to round to.
+
+        Examples
+        --------
+        >>> experiment_data.round(2)
         """
         for _, es in self:
             es.round(decimals)
@@ -783,34 +986,19 @@ class ExperimentData:
 
         Parameters
         ----------
-        index : int
+        id : int
             The index of the experiment_sample to retrieve.
 
         Returns
         -------
         ExperimentSample
             The ExperimentSample at the given index.
+
+        Examples
+        --------
+        >>> sample = experiment_data.get_experiment_sample(0)
         """
         return self.data[id]
-
-    @deprecated(version="2.0.0")
-    def get_experiment_samples(
-            self, indices: Iterable[int]) -> List[ExperimentSample]:
-        """
-        Gets the experiment_samples at the given indices.
-
-        Parameters
-        ----------
-        indices : Optional[Iterable[int]], optional
-            The indices of the experiment_samples to retrieve, by default None
-            If None, all experiment_samples are retrieved.
-
-        Returns
-        -------
-        List[ExperimentSample]
-            The ExperimentSamples at the given indices.
-        """
-        return [self.data[i] for i in indices]
 
     def store_experimentsample(
             self, experiment_sample: ExperimentSample, id: int):
@@ -823,6 +1011,10 @@ class ExperimentData:
             The ExperimentSample object to store.
         id : int
             The index of the ExperimentSample object.
+
+        Examples
+        --------
+        >>> experiment_data.store_experimentsample(sample, 0)
         """
         self.domain += experiment_sample.domain
 
@@ -865,43 +1057,19 @@ class ExperimentData:
 
     # Used in parallel mode
 
-    @deprecated(version="2.0.0")
-    def _write_experiment_sample(self,
-                                 experiment_sample: ExperimentSample) -> None:
-        """
-        Sets the ExperimentSample at the given index.
-
-        Parameters
-        ----------
-        experiment_sample : ExperimentSample
-            The ExperimentSample to set.
-        """
-        ...
-
-    # Used in parallel mode
-    def _access_open_job_data(self) -> Tuple[int, ExperimentSample]:
-        """Get the data of the first available open job.
-
-        Returns
-        -------
-        ExperimentSample
-            The ExperimentSample object of the first available open job.
-        """
-        return self.get_open_job()
-
-    @deprecated(version="2.0.0")
-    def _get_open_job_data(self) -> ExperimentSample:
-        """Get the data of the first available open job by
-        accessing the ExperimenData on disk.
-
-        Returns
-        -------
-        ExperimentSample
-            The ExperimentSample object of the first available open job.
-        """
-        return self.get_open_job()
-
     def get_open_job(self) -> Tuple[int, ExperimentSample]:
+        """
+        Get the first open job in the ExperimentData object.
+
+        Returns
+        -------
+        tuple of int and ExperimentSample
+            The index and ExperimentSample of the first open job.
+
+        Examples
+        --------
+        >>> job_id, job_sample = experiment_data.get_open_job()
+        """
         for id, es in self:
             if es.is_status('open'):
                 es.mark('in_progress')
@@ -913,32 +1081,41 @@ class ExperimentData:
     # =========================================================================
 
     def is_all_finished(self) -> bool:
-        """Check if all jobs are finished
+        """
+        Check if all jobs are finished.
 
         Returns
         -------
         bool
-            True if all jobs are finished, False otherwise
+            True if all jobs are finished, False otherwise.
+
+        Examples
+        --------
+        >>> experiment_data.is_all_finished()
+        True
         """
         return all(es.is_status('finished') for _, es in self)
 
     def mark(self, indices: int | Iterable[int],
              status: Literal['open', 'in_progress', 'finished', 'error']):
-        """Mark the jobs at the given indices with the given status.
+        """
+        Mark the jobs at the given indices with the given status.
 
         Parameters
         ----------
-        indices : Iterable[int]
-            indices of the jobs to mark
-        status : Literal['open', 'in progress', 'finished', 'error']
-            status to mark the jobs with: choose between: 'open',
-            'in progress', 'finished' or 'error'
+        indices : int or Iterable[int]
+            Indices of the jobs to mark.
+        status : {'open', 'in_progress', 'finished', 'error'}
+            Status to mark the jobs with.
 
         Raises
         ------
         ValueError
-            If the given status is not any of 'open', 'in progress',
-            'finished' or 'error'
+            If the given status is not valid.
+
+        Examples
+        --------
+        >>> experiment_data.mark([0, 1], 'finished')
         """
         if isinstance(indices, int):
             indices = [indices]
@@ -947,24 +1124,22 @@ class ExperimentData:
 
     def mark_all(self,
                  status: Literal['open', 'in_progress', 'finished', 'error']):
-        """Mark all the experiments with the given status
+        """
+        Mark all the experiments with the given status.
 
         Parameters
         ----------
-        status : Literal['open', 'in progress', 'finished', 'error']
-            status to mark the jobs with: \
-            choose between:
-
-            * 'open',
-            * 'in progress',
-            * 'finished'
-            * 'error'
+        status : {'open', 'in_progress', 'finished', 'error'}
+            Status to mark the jobs with.
 
         Raises
         ------
         ValueError
-            If the given status is not any of \
-            'open', 'in progress', 'finished' or 'error'
+            If the given status is not valid.
+
+        Examples
+        --------
+        >>> experiment_data.mark_all('finished')
         """
         for _, es in self:
             es.mark(status)
@@ -977,35 +1152,30 @@ class ExperimentData:
                                'cluster', 'cluster_parallel'] = 'sequential',
                  output_names: Optional[List[str]] = None,
                  **kwargs) -> None:
-        """Run any function over the entirety of the experiments
+        """
+        Run any function over the entirety of the experiments.
 
         Parameters
         ----------
         data_generator : DataGenerator
-            data generator to use
-        mode : str, optional
-            operational mode, by default 'sequential'. Choose between:
-
-            * 'sequential' : Run the operation sequentially
-            * 'parallel' : Run the operation on multiple cores
-            * 'cluster' : Run the operation on the cluster
-            * 'cluster_parallel' : Run the operation on the cluster in parallel
-
-        output_names : List[str], optional
-            If you provide a function as data generator, you have to provide
-            the names of all the output parameters that are in the return
-            statement, in order of appearance.
+            Data generator to use.
+        mode : {'sequential', 'parallel', 'cluster', 'cluster_parallel'},
+          optional
+            Operational mode, by default 'sequential'.
+        output_names : list of str, optional
+            Names of the output parameters, by default None.
+        **kwargs
+            Additional keyword arguments passed to the data generator.
 
         Raises
         ------
         ValueError
-            Raised when invalid parallelization mode is specified
+            If an invalid parallelization mode is specified.
 
-        Notes
-        -----
-        Any additional keyword arguments are passed to the data generator.
+        Examples
+        --------
+        >>> experiment_data.evaluate(data_generator, mode='parallel')
         """
-
         # Create
         data_generator = _datagenerator_factory(
             data_generator=data_generator, output_names=output_names, **kwargs)
@@ -1030,56 +1200,39 @@ class ExperimentData:
                  sampler: Optional[Sampler | str] = 'random',
                  overwrite: bool = False,
                  callback: Optional[Callable] = None) -> None:
-        """Optimize the experimentdata object
+        """
+        Optimize the ExperimentData object.
 
         Parameters
         ----------
-        optimizer : Optimizer | str | Callable
-            Optimizer object
-        data_generator : DataGenerator | str
-            DataGenerator object
+        optimizer : Optimizer or str or Callable
+            Optimizer object.
+        data_generator : DataGenerator or str
+            DataGenerator object.
         iterations : int
-            number of iterations
-        kwargs : Dict[str, Any], optional
-            any additional keyword arguments that will be passed to
-            the DataGenerator
-        hyperparameters : Dict[str, Any], optional
-            any additional keyword arguments that will be passed to
-            the optimizer
-        x0_selection : str | ExperimentData
-            How to select the initial design. By default 'best'
-            The following x0_selections are available:
-
-            * 'best': Select the best designs from the current experimentdata
-            * 'random': Select random designs from the current experimentdata
-            * 'last': Select the last designs from the current experimentdata
-            * 'new': Create new random designs from the current experimentdata
-
-            If the x0_selection is 'new', new designs are sampled with the
-            sampler provided. The number of designs selected is equal to the
-            population size of the optimizer.
-
-            If an ExperimentData object is passed as x0_selection,
-            the optimizer will use the input_data and output_data from this
-            object as initial samples.
-        sampler: Sampler, optional
-            If x0_selection = 'new', the sampler to use. By default 'random'
-        overwrite: bool, optional
-            If True, the optimizer will overwrite the current data. By default
-            False
+            Number of iterations.
+        kwargs : dict, optional
+            Additional keyword arguments passed to the DataGenerator.
+        hyperparameters : dict, optional
+            Additional keyword arguments passed to the optimizer.
+        x0_selection : {'best', 'random', 'last', 'new'} or ExperimentData
+            How to select the initial design, by default 'best'.
+        sampler : Sampler or str, optional
+            Sampler to use if x0_selection is 'new', by default 'random'.
+        overwrite : bool, optional
+            If True, the optimizer will overwrite the current data, by default
+            False.
         callback : Callable, optional
-            A callback function that is called after every iteration. It has
-            the following signature:
-
-                    ``callback(intermediate_result: ExperimentData)``
-
-            where the first argument is a parameter containing an
-            `ExperimentData` object with the current iterate(s).
+            A callback function called after every iteration.
 
         Raises
         ------
         ValueError
-            Raised when invalid x0_selection is specified
+            If an invalid x0_selection is specified.
+
+        Examples
+        --------
+        >>> experiment_data.optimize(optimizer, data_generator, iterations=10)
         """
         if kwargs is None:
             kwargs = {}
@@ -1163,7 +1316,8 @@ class ExperimentData:
     # =========================================================================
 
     def sample(self, sampler: Sampler | str, **kwargs) -> None:
-        """Sample data from the domain providing the sampler strategy
+        """
+        Sample data from the domain providing the sampler strategy
 
         Parameters
         ----------
@@ -1229,6 +1383,10 @@ class ExperimentData:
         is written to disk. Concurrent processes can only sequentially access
         the lock file. This lock file is removed after the ExperimentData
         object is written to disk.
+
+        Examples
+        --------
+        >>> experiment_data.remove_lockfile()
         """
         (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
          ).with_suffix('.lock').unlink(missing_ok=True)

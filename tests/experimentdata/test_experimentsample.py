@@ -145,3 +145,62 @@ def test_get(sample_domain):
     assert sample.get('y1') == 3
     with pytest.raises(KeyError):
         sample.get('nonexistent')
+
+
+def test_is_status(sample_domain):
+    """
+    Test the is_status method of the ExperimentSample class.
+
+    Parameters
+    ----------
+    sample_domain : Domain
+        The domain fixture for the experiment sample.
+    """
+    sample = ExperimentSample(domain=sample_domain, job_status='OPEN')
+    assert sample.is_status('open')
+    assert not sample.is_status('finished')
+
+
+def test_store_to_disk(sample_domain, tmp_path):
+    """
+    Test the store method of the ExperimentSample class with to_disk=True.
+
+    Parameters
+    ----------
+    sample_domain : Domain
+        The domain fixture for the experiment sample.
+    tmp_path : Path
+        Temporary directory for storing the object.
+    """
+    def dummy_store_function(obj, path):
+        with open(path, 'w') as f:
+            f.write(str(obj))
+        return path
+
+    def dummy_load_function(path):
+        with open(path, 'r') as f:
+            return f.read()
+
+    sample = ExperimentSample(domain=sample_domain, project_dir=tmp_path)
+    sample.store('y2', 42, to_disk=True, store_function=dummy_store_function,
+                 load_function=dummy_load_function)
+    assert sample._output_data['y2'] == 42
+    assert sample.domain.output_space['y2'].to_disk
+    assert sample.domain.output_space['y2'].store_function == dummy_store_function
+    assert sample.domain.output_space['y2'].load_function == dummy_load_function
+
+
+def test_to_numpy_with_nan(sample_domain):
+    """
+    Test the to_numpy method of the ExperimentSample class with NaN values.
+
+    Parameters
+    ----------
+    sample_domain : Domain
+        The domain fixture for the experiment sample.
+    """
+    sample = ExperimentSample(input_data={'x1': float('nan'), 'x2': 2}, output_data={
+                              'y1': 3}, domain=sample_domain)
+    input_array, output_array = sample.to_numpy()
+    np.testing.assert_array_equal(input_array, [np.nan, 2])
+    np.testing.assert_array_equal(output_array, [3])

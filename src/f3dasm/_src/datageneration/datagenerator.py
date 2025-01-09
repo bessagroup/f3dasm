@@ -54,39 +54,20 @@ class ExperimentData(Protocol):
     def project_dir(self) -> Path:
         ...
 
-    def _access_open_job_data(self) -> Tuple[int, ExperimentSample]:
+    def access_file(self, operation: Callable) -> Callable:
+        ...
+
+    def get_open_job(self) -> Tuple[int, ExperimentSample]:
         ...
 
     def store_experimentsample(self,
                                experiment_sample: ExperimentSample, id: int):
         ...
 
-    def _set_error(self, job_number: int) -> None:
-        ...
-
-    def _get_open_job_data(self) -> ExperimentSample:
-        ...
-
-    def _write_experiment_sample(self,
-                                 experiment_sample: ExperimentSample) -> None:
-        ...
-
-    def _write_error(self, job_number: int) -> None:
-        ...
-
     def from_file(self, project_dir: str) -> ExperimentData:
         ...
 
     def store(self) -> None:
-        ...
-
-    def select(self, indices: List[int]) -> ExperimentData:
-        ...
-
-    def overwrite_disk(
-            self, indices: List[int], input_data: np.ndarray,
-            output_data: np.ndarray, jobs: np.ndarray, domain: Domain,
-            add_if_not_exist: bool) -> None:
         ...
 
     def mark(self, indices: int | Iterable[int],
@@ -129,9 +110,9 @@ class DataGenerator:
         elif mode == 'parallel':
             self._evaluate_multiprocessing(**kwargs)
         elif mode.lower() == "cluster":
-            return self._evaluate_cluster(**kwargs)
-        elif mode.lower() == "cluster_parallel":
-            return self._evaluate_cluster_parallel(**kwargs)
+            self._evaluate_cluster(**kwargs)
+        # elif mode.lower() == "cluster_parallel":
+        #     return self._evaluate_cluster_parallel(**kwargs)
         else:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
@@ -142,8 +123,6 @@ class DataGenerator:
 
         Parameters
         ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
         kwargs : dict
             Any keyword arguments that need to be supplied to the function
 
@@ -154,7 +133,7 @@ class DataGenerator:
         """
         while True:
 
-            job_number, experiment_sample = self.data._access_open_job_data()
+            job_number, experiment_sample = self.data.get_open_job()
             logger.debug(
                 f"Accessed experiment_sample \
                         {job_number}")
@@ -186,31 +165,15 @@ class DataGenerator:
                 logger.error(f"{error_msg}\n{error_traceback}")
                 self.data.mark(indices=job_number, status='error')
 
-    def _evaluate_multiprocessing(self, **kwargs):
-        """Run the operation on multiple cores
-
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
-
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Get all the jobs
+    def _evaluate_multiprocessing(self, nodes: int = mp.cpu_count(), **kwargs):
         options = []
         while True:
-            job_number, experiment_sample = self.data._access_open_job_data()
+            job_number, experiment_sample = self.data.get_open_job()
+            if job_number is None:
+                break
             options.append(
                 ({'experiment_sample': experiment_sample,
                   '_job_number': job_number, **kwargs},))
-
-            if job_number is None:
-                break
 
         def f(options: Dict[str, Any]) -> Tuple[int, ExperimentSample, int]:
             try:
@@ -243,7 +206,7 @@ class DataGenerator:
             else:
                 self.data.mark(indices=job_number, status='error')
 
-    def _evaluate_cluster(self, data_generator: DataGenerator, **kwargs):
+    def _evaluate_cluster(self, **kwargs):
         """Run the operation on the cluster
 
         Parameters
@@ -264,23 +227,29 @@ class DataGenerator:
         except FileNotFoundError:  # If not found, store current
             self.data.store()
 
+        get_open_job = self.data.access_file(type(self.data).get_open_job)
+        store_experiment_sample = self.data.access_file(
+            type(self.data).store_experimentsample)
+        mark = self.data.access_file(type(self.data).mark)
+
         while True:
 
-            job_number, experiment_sample = self.data._get_open_job_data()
+            job_number, experiment_sample = get_open_job()
             if job_number is None:
                 logger.debug("No Open jobs left!")
                 break
 
             try:
-                _experiment_sample = data_generator._run(
+                _experiment_sample = self._run(
                     experiment_sample, **kwargs)
-                self.data._write_experiment_sample(_experiment_sample)
+                store_experiment_sample(experiment_sample=_experiment_sample,
+                                        id=job_number)
             except Exception:
                 # n = experiment_sample.job_number
                 error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.data._write_error(job_number)
+                mark(indices=job_number, status='error')
                 continue
 
         self.data = self.data.from_file(self.data.project_dir)
@@ -288,59 +257,64 @@ class DataGenerator:
         # Remove the lockfile from disk
         self.data.remove_lockfile()
 
-    def _evaluate_cluster_parallel(
-            self, data_generator: DataGenerator, **kwargs):
-        """Run the operation on the cluster and parallelize it over cores
+    # def _evaluate_cluster_parallel(
+    #         self, data_generator: DataGenerator, **kwargs):
+    #     """Run the operation on the cluster and parallelize it over cores
 
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
+    #     Parameters
+    #     ----------
+    #     operation : ExperimentSampleCallable
+    #         function execution for every entry in the ExperimentData object
+    #     kwargs : dict
+    #         Any keyword arguments that need to be supplied to the function
 
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Retrieve the updated experimentdata object from disc
-        try:
-            self.data = self.data.from_file(self.data.project_dir)
-        except FileNotFoundError:  # If not found, store current
-            self.data.store()
+    #     Raises
+    #     ------
+    #     NoOpenJobsError
+    #         Raised when there are no open jobs left
+    #     """
+    #     # Retrieve the updated experimentdata object from disc
+    #     try:
+    #         self.data = self.data.from_file(self.data.project_dir)
+    #     except FileNotFoundError:  # If not found, store current
+    #         self.data.store()
 
-        no_jobs = False
+    #     get_open_job = self.data._access_file(type(self.data).get_open_job)
+    #     store_experiment_sample = self.data._access_file(
+    #         type(self.data).store_experimentsample)
+    #     mark = self.data._access_file(type(self.data).mark)
 
-        while True:
-            es_list = []
-            for core in range(mp.cpu_count()):
-                job_number, experiment_sample = self.data._get_open_job_data()
+    #     no_jobs = False
 
-                if job_number is None:
-                    logger.debug("No Open jobs left!")
-                    no_jobs = True
-                    break
+    #     while True:
+    #         es_list = []
+    #         for core in range(mp.cpu_count()):
+    #             job_number, experiment_sample = get_open_job()
 
-                es_list.append((job_number, self.data._get_open_job_data()))
+    #             if job_number is None:
+    #                 logger.debug("No Open jobs left!")
+    #                 no_jobs = True
+    #                 break
 
-            d = self.data.select([e[0] for e in es_list])
+    #             es_list.append((job_number, experiment_sample))
 
-            # TODO: fix this; probably not working!
-            self._evaluate_multiprocessing(**kwargs)
+    #         d = self.data.select([e[0] for e in es_list])
 
-            # TODO access resource first!
-            self.data.overwrite_disk(
-                indices=d.index, input_data=d._input_data,
-                output_data=d._output_data, jobs=d._jobs,
-                domain=d.domain, add_if_not_exist=False)
+    #         # TODO: fix this; probably not working!
+    #         self._evaluate_multiprocessing(**kwargs)
 
-            if no_jobs:
-                break
+    #         # TODO access resource first!
+    #         self.data.overwrite_disk(
+    #             indices=d.index, input_data=d._input_data,
+    #             output_data=d._output_data, jobs=d._jobs,
+    #             domain=d.domain, add_if_not_exist=False)
 
-        self.data = self.data.from_file(self.data.project_dir)
-        # Remove the lockfile from disk
-        self.data.remove_lockfile()
+    #         if no_jobs:
+    #             break
+
+    #     self.data = self.data.from_file(self.data.project_dir)
+    #     # Remove the lockfile from disk
+    #     self.data.remove_lockfile()
 
     # =========================================================================
 
@@ -391,10 +365,6 @@ class DataGenerator:
             Processed design with the response of the data generator \
             saved in the experiment_sample
         """
-        # Cache the design
-        # self.experiment_sample: ExperimentSample = _experimentsample_factory(
-        #     experiment_sample=experiment_sample, domain=domain)
-
         self.experiment_sample = experiment_sample
 
         self.execute(**kwargs)

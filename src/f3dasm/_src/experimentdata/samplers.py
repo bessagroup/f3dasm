@@ -31,10 +31,31 @@ __status__ = 'Stable'
 
 class Sampler:
     def init(self, domain: Domain):
+        """
+        Initialize the sampler with a domain.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain object containing the input space.
+        """
         self.domain = domain
 
     @abstractmethod
     def sample(self, **kwargs) -> pd.DataFrame | np.ndarray:
+        """
+        Abstract method to sample data.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Additional parameters for sampling.
+
+        Returns
+        -------
+        pd.DataFrame | np.ndarray
+            The sampled data.
+        """
         ...
 
 #                                                             Utility functions
@@ -71,19 +92,20 @@ def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
 
 
 def sample_constant(domain: Domain, n_samples: int):
-    """Sample the constant parameters
+    """
+    Sample the constant parameters.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     samples = np.array([param.value for param in domain.input_space.values()])
     return np.tile(samples, (n_samples, 1))
@@ -92,21 +114,24 @@ def sample_constant(domain: Domain, n_samples: int):
 def sample_np_random_choice(
         domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs):
-    """Sample with np random choice
+    """
+    Sample with numpy random choice.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
     seed : Optional[int], optional
-        random seed, by default None
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for sampling.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     rng = np.random.default_rng(seed)
     samples = np.empty(shape=(n_samples, len(domain)), dtype=object)
@@ -120,21 +145,24 @@ def sample_np_random_choice(
 def sample_np_random_choice_range(
         domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs):
-    """Samples with np random choice with a range of values
+    """
+    Sample with numpy random choice within a range of values.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
     seed : Optional[int], optional
-        random seed, by default None
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for sampling.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     samples = np.empty(shape=(n_samples, len(domain)), dtype=np.int32)
     rng = np.random.default_rng(seed)
@@ -151,21 +179,24 @@ def sample_np_random_choice_range(
 def sample_np_random_uniform(
         domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs) -> np.ndarray:
-    """Sample with numpy random uniform
+    """
+    Sample with numpy random uniform distribution.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
     seed : Optional[int], optional
-        random seed, by default None
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for sampling.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     rng = np.random.default_rng(seed)
     samples = rng.uniform(low=0.0, high=1.0, size=(n_samples, len(domain)))
@@ -178,21 +209,24 @@ def sample_np_random_uniform(
 def sample_latin_hypercube(
         domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs) -> np.ndarray:
-    """Sample with Latin Hypercube sampling
+    """
+    Sample with Latin Hypercube sampling.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
     seed : Optional[int], optional
-        random seed, by default None
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for sampling.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     problem = {
         "num_vars": len(domain),
@@ -207,19 +241,22 @@ def sample_latin_hypercube(
 
 def sample_sobol_sequence(
         domain: Domain, n_samples: int, **kwargs) -> np.ndarray:
-    """Sample with Sobol sequence sampling
+    """
+    Sample with Sobol sequence sampling.
 
     Parameters
     ----------
     domain : Domain
-        domain object
+        The domain object containing the input space.
     n_samples : int
-        number of samples
+        The number of samples to generate.
+    **kwargs : dict
+        Additional parameters for sampling.
 
     Returns
     -------
     np.ndarray
-        samples
+        The sampled data.
     """
     samples = sobol_sequence.sample(N=n_samples, D=len(domain))
 
@@ -233,10 +270,35 @@ def sample_sobol_sequence(
 
 class RandomUniform(Sampler):
     def __init__(self, seed: Optional[int], **parameters):
+        """
+        Initialize the RandomUniform sampler.
+
+        Parameters
+        ----------
+        seed : Optional[int]
+            The random seed.
+        **parameters : dict
+            Additional parameters for the sampler.
+        """
         self.seed = seed
         self.parameters = parameters
 
     def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        """
+        Sample data using the RandomUniform method.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to generate.
+        **kwargs : dict
+            Additional parameters for sampling.
+
+        Returns
+        -------
+        pd.DataFrame
+            The sampled data.
+        """
         _continuous = sample_np_random_uniform(
             domain=self.domain.continuous, n_samples=n_samples,
             seed=self.seed)
@@ -273,12 +335,35 @@ def random(seed: Optional[int] = None, **kwargs) -> Sampler:
 
 class Grid(Sampler):
     def __init__(self, **parameters):
+        """
+        Initialize the Grid sampler.
+
+        Parameters
+        ----------
+        **parameters : dict
+            Additional parameters for the sampler.
+        """
         self.parameters = parameters
 
     def sample(self,
                stepsize_continuous_parameters:
                Optional[Dict[str, float] | float],
                **kwargs) -> pd.DataFrame:
+        """
+        Sample data using the Grid method.
+
+        Parameters
+        ----------
+        stepsize_continuous_parameters : Optional[Dict[str, float] | float]
+            The step size for continuous parameters.
+        **kwargs : dict
+            Additional parameters for sampling.
+
+        Returns
+        -------
+        pd.DataFrame
+            The sampled data.
+        """
         continuous = self.domain.continuous
 
         if not continuous.input_space:
@@ -332,10 +417,37 @@ def grid(**kwargs) -> Sampler:
 
 class Sobol(Sampler):
     def __init__(self, n_samples, seed: Optional[int], **parameters):
+        """
+        Initialize the Sobol sampler.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to generate.
+        seed : Optional[int]
+            The random seed.
+        **parameters : dict
+            Additional parameters for the sampler.
+        """
         self.seed = seed
         self.parameters = parameters
 
     def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        """
+        Sample data using the Sobol method.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to generate.
+        **kwargs : dict
+            Additional parameters for sampling.
+
+        Returns
+        -------
+        pd.DataFrame
+            The sampled data.
+        """
         _continuous = sample_sobol_sequence(
             domain=self.domain.continuous, n_samples=n_samples)
 
@@ -372,10 +484,35 @@ def sobol(seed: Optional[int] = None, **kwargs) -> Sampler:
 
 class Latin(Sampler):
     def __init__(self, seed: Optional[int], **parameters):
+        """
+        Initialize the Latin sampler.
+
+        Parameters
+        ----------
+        seed : Optional[int]
+            The random seed.
+        **parameters : dict
+            Additional parameters for the sampler.
+        """
         self.seed = seed
         self.parameters = parameters
 
     def sample(self, n_samples: int, **kwargs) -> pd.DataFrame:
+        """
+        Sample data using the Latin Hypercube method.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to generate.
+        **kwargs : dict
+            Additional parameters for sampling.
+
+        Returns
+        -------
+        pd.DataFrame
+            The sampled data.
+        """
         _continuous = sample_latin_hypercube(
             domain=self.domain.continuous, n_samples=n_samples,
             seed=self.seed)

@@ -13,7 +13,7 @@ SEED = 42
 pytestmark = pytest.mark.smoke
 
 
-def domain_dictconfig():
+def domain_dictconfig_with_output():
     config_dict = {"input": {"x0": {"type": "float", "low": 0.0, "high": 1.0},
                    "x1": {"type": "float", "low": 0.0, "high": 1.0},
                    "x2": {"type": "float", "low": 0.0, "high": 1.0}},
@@ -24,12 +24,33 @@ def domain_dictconfig():
     return DictConfig(config_dict)
 
 
+def domain_dictconfig_without_output():
+    config_dict = {"input": {"x0": {"type": "float", "low": 0.0, "high": 1.0},
+                   "x1": {"type": "float", "low": 0.0, "high": 1.0},
+                   "x2": {"type": "float", "low": 0.0, "high": 1.0}},
+                   }
+
+    return DictConfig(config_dict)
+
+
+def edata_domain_with_output() -> Domain:
+    return experiment_data_with_output().domain
+
+
+def edata_domain_without_output() -> Domain:
+    return experiment_data_without_output().domain
+
+# =============================================================================
+
+
 def test_project_dir_false_data():
     with pytest.raises(TypeError):
         ExperimentData(project_dir=0)
 
+# =============================================================================
 
-def experiment_data() -> ExperimentData:
+
+def experiment_data_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
@@ -48,11 +69,55 @@ def experiment_data() -> ExperimentData:
     data.round(3)
 
     data.set_project_dir('./test_project')
+    return data
+
+
+def experiment_data_without_output() -> ExperimentData:
+    domain = make_nd_continuous_domain(
+        bounds=[[0., 1.], [0., 1.], [0., 1.]])
+
+    data = ExperimentData.from_sampling(
+        sampler='random', domain=domain, n_samples=10, seed=SEED
+    )
+
+    data += ExperimentData(
+        input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
+        domain=data.domain)
+
+    data.round(3)
+
+    data.set_project_dir('./test_project')
+    return data
+
+
+# =============================================================================
+
+@ pytest.fixture(scope="package")
+def edata_expected_with_output() -> ExperimentData:
+    domain = make_nd_continuous_domain(
+        bounds=[[0., 1.], [0., 1.], [0., 1.]])
+
+    data = ExperimentData.from_sampling(
+        sampler='random', domain=domain, n_samples=10, seed=SEED
+    )
+
+    data += ExperimentData(
+        input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
+        domain=data.domain)
+
+    def f(*args, **kwargs):
+        return 0.0
+
+    data.evaluate(data_generator=f, output_names=['y'])
+    data.round(3)
+
+    data.set_project_dir('./test_project')
+
     return data
 
 
 @ pytest.fixture(scope="package")
-def edata_expected() -> ExperimentData:
+def edata_expected_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
@@ -64,10 +129,6 @@ def edata_expected() -> ExperimentData:
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
         domain=data.domain)
 
-    def f(*args, **kwargs):
-        return 0.0
-
-    data.evaluate(data_generator=f, output_names=['y'])
     data.round(3)
 
     data.set_project_dir('./test_project')
@@ -75,12 +136,17 @@ def edata_expected() -> ExperimentData:
     return data
 
 
-def edata_domain() -> Domain:
-    return experiment_data().domain
+# =============================================================================
 
 
-def edata_jobs() -> pd.Series:
-    return experiment_data().jobs
+def edata_jobs_with_output() -> pd.Series:
+    return experiment_data_with_output().jobs
+
+
+def edata_jobs_without_output() -> pd.Series:
+    return experiment_data_without_output().jobs
+
+# =============================================================================
 
 
 def arr_input():
@@ -159,11 +225,11 @@ def pd_output():
 
 @ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
 @ pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
-@ pytest.mark.parametrize("domain", ["test_domain.pkl", edata_domain(), None, domain_dictconfig()])
-@ pytest.mark.parametrize("jobs", [edata_jobs(), "test_jobs.csv", None])
+@ pytest.mark.parametrize("domain", ["test_domain.pkl", edata_domain_with_output(), None, domain_dictconfig_with_output()])
+@ pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
 @ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
-def test_experimentdata_creation(
-        input_data, output_data, domain, jobs, project_dir, edata_expected, monkeypatch):
+def test_experimentdata_creation_with_output(
+        input_data, output_data, domain, jobs, project_dir, edata_expected_with_output, monkeypatch):
 
     def mock_read_csv(path, *args, **kwargs):
         if str(path) == "test_input.csv":
@@ -171,11 +237,11 @@ def test_experimentdata_creation(
         elif str(path) == "test_output.csv":
             return pd_output()
         elif str(path) == "test_jobs.csv":
-            return edata_jobs()
+            return edata_jobs_with_output()
         raise ValueError(f"Unexpected file path: {path}")
 
     def mock_domain_from_file(path, *args, **kwargs):
-        return edata_domain()
+        return edata_domain_with_output()
 
     monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
     monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
@@ -185,12 +251,45 @@ def test_experimentdata_creation(
                                      project_dir=project_dir)
 
     if domain is None:
-        experiment_data.domain = edata_domain()
+        experiment_data.domain = edata_domain_with_output()
 
     experiment_data.round(3)
-    # assert experiment_data.domain == edata_expected.domain
-    # assert experiment_data.data == edata_expected.data
-    assert experiment_data == edata_expected
+    assert experiment_data == edata_expected_with_output
+
+
+# =============================================================================
+
+@ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
+@ pytest.mark.parametrize("domain", ["test_domain.pkl", edata_domain_without_output(), domain_dictconfig_without_output()])
+@ pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
+@ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
+def test_experimentdata_creation_without_output(
+        input_data, domain, jobs, project_dir, edata_expected_without_output, monkeypatch):
+
+    def mock_read_csv(path, *args, **kwargs):
+        if str(path) == "test_input.csv":
+            return pd_input()
+        elif str(path) == "test_output.csv":
+            return pd_output()
+        elif str(path) == "test_jobs.csv":
+            return edata_jobs_without_output()
+        raise ValueError(f"Unexpected file path: {path}")
+
+    def mock_domain_from_file(path, *args, **kwargs):
+        return edata_domain_without_output()
+
+    monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
+    monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
+
+    experiment_data = ExperimentData(domain=domain, input_data=input_data,
+                                     jobs=jobs,
+                                     project_dir=project_dir)
+
+    if domain is None:
+        experiment_data.domain = edata_domain_without_output()
+
+    experiment_data.round(3)
+    assert experiment_data == edata_expected_without_output
 
 
 def test_experiment_data_from_yaml_sampling():

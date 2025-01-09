@@ -27,14 +27,14 @@ def update_config_with_experiment_sample(
         config: OmegaConf, experiment_sample: ExperimentSample,
         force_add: bool = False) -> OmegaConf:
     """
-    Update the config with the values from the experiment sample
+    Update the config with the values from the experiment sample.
 
     Parameters
     ----------
     config : OmegaConf
-        The configuration to update
+        The configuration to update.
     experiment_sample : ExperimentSample
-        The experiment sample to update the configuration with
+        The experiment sample to update the configuration with.
     force_add : bool, optional
         If True, the function will add keys that are not present in the
         configuration. If False, the function will ignore keys that are not
@@ -43,7 +43,7 @@ def update_config_with_experiment_sample(
     Returns
     -------
     OmegaConf
-        The updated configuration
+        The updated configuration.
 
     Notes
     -----
@@ -56,6 +56,17 @@ def update_config_with_experiment_sample(
 
     The function will return a new configuration object with the
     updated values. The original configuration object will not be modified.
+
+    Examples
+    --------
+    >>> from omegaconf import OmegaConf
+    >>> from f3dasm._src.experimentdata.experimentsample
+    import ExperimentSample
+    >>> config = OmegaConf.create({'param1': 1, 'param2': 2})
+    >>> sample = ExperimentSample(input_data={'param1': 10})
+    >>> updated_config = update_config_with_experiment_sample(config, sample)
+    >>> print(updated_config)
+    {'param1': 10, 'param2': 2}
     """
     cfg = deepcopy(config)
     for key, value in experiment_sample.to_dict().items():

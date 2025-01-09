@@ -27,14 +27,14 @@ class StoreFunction(Protocol):
 
     def __call__(object: Any, path: str) -> str:
         """
-        Protocol class for storing output data from disk
+        Protocol class for storing output data from disk.
 
         Parameters
         ----------
         object : Any
-            object to store
-        path : Path
-            location to store the object to
+            The object to store.
+        path : str
+            The location to store the object to.
 
         Notes
         -----
@@ -50,18 +50,17 @@ class LoadFunction(Protocol):
 
     def __call__(path: str) -> Any:
         """
-        Protocol class for loading output data from disk
+        Protocol class for loading output data from disk.
 
         Parameters
         ----------
-        path : Path
-            location to load the object from
-
+        path : str
+            The location to load the object from.
 
         Returns
         -------
         Any
-            The loaded object
+            The loaded object.
         """
         ...
 
@@ -93,6 +92,12 @@ class Parameter:
         ValueError
             If `to_disk` is False but either `store_function` or
             `load_function` is not None.
+
+        Examples
+        --------
+        >>> param = Parameter(to_disk=True)
+        >>> print(param)
+        Parameter(type=object, to_disk=True)
         """
 
         if not to_disk and (
@@ -121,7 +126,8 @@ class Parameter:
 
 
 class ConstantParameter(Parameter):
-    """Create a search space parameter that is constant.
+    """
+    Create a search space parameter that is constant.
 
     Parameters
     ----------
@@ -137,6 +143,12 @@ class ConstantParameter(Parameter):
     ------
     TypeError
         If the value is not hashable.
+
+    Examples
+    --------
+    >>> param = ConstantParameter(value=5)
+    >>> print(param)
+    ConstantParameter(value=5)
     """
 
     def __init__(self, value: Any):
@@ -189,6 +201,27 @@ class ConstantParameter(Parameter):
 class ContinuousParameter(Parameter):
     """
     A search space parameter that is continuous.
+
+    Parameters
+    ----------
+    lower_bound : float, optional
+        The lower bound of the parameter. Defaults to -inf.
+    upper_bound : float, optional
+        The upper bound of the parameter. Defaults to inf.
+    log : bool, optional
+        Whether the parameter should be on a log scale. Defaults to False.
+
+    Raises
+    ------
+    ValueError
+        If `log` is True and `lower_bound` is less than or equal to 0.
+        If `upper_bound` is less than or equal to `lower_bound`.
+
+    Examples
+    --------
+    >>> param = ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+    >>> print(param)
+    ContinuousParameter(lower_bound=0.0, upper_bound=1.0, log=False)
     """
     _type: ClassVar[str] = "float"
 
@@ -247,6 +280,31 @@ class ContinuousParameter(Parameter):
             )
 
     def to_discrete(self, step: int = 1) -> "DiscreteParameter":
+        """
+        Convert the continuous parameter to a discrete parameter.
+
+        Parameters
+        ----------
+        step : int, optional
+            The step size for the discrete parameter. Defaults to 1.
+
+        Returns
+        -------
+        DiscreteParameter
+            The converted discrete parameter.
+
+        Raises
+        ------
+        ValueError
+            If the step size is less than or equal to 0.
+
+        Examples
+        --------
+        >>> param = ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        >>> discrete_param = param.to_discrete(step=0.1)
+        >>> print(discrete_param)
+        DiscreteParameter(lower_bound=0.0, upper_bound=1.0, step=0.1)
+        """
         if step <= 0:
             raise ValueError("The step size must be larger than 0.")
         return DiscreteParameter(
@@ -259,7 +317,30 @@ class ContinuousParameter(Parameter):
 
 
 class DiscreteParameter(Parameter):
-    """Create a search space parameter that is discrete."""
+    """
+    Create a search space parameter that is discrete.
+
+    Parameters
+    ----------
+    lower_bound : int, optional
+        The lower bound of the parameter. Defaults to 0.
+    upper_bound : int, optional
+        The upper bound of the parameter. Defaults to 1.
+    step : int, optional
+        The step size for the parameter. Defaults to 1.
+
+    Raises
+    ------
+    ValueError
+        If `upper_bound` is less than or equal to `lower_bound`.
+        If `step` is less than or equal to 0.
+
+    Examples
+    --------
+    >>> param = DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
+    >>> print(param)
+    DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
+    """
 
     def __init__(self, lower_bound: int = 0,
                  upper_bound: int = 1, step: int = 1):
@@ -306,7 +387,25 @@ class DiscreteParameter(Parameter):
 
 
 class CategoricalParameter(Parameter):
-    """Create a search space parameter that is categorical."""
+    """
+    Create a search space parameter that is categorical.
+
+    Parameters
+    ----------
+    categories : Iterable[Any]
+        The categories of the parameter.
+
+    Raises
+    ------
+    ValueError
+        If the categories contain duplicates.
+
+    Examples
+    --------
+    >>> param = CategoricalParameter(categories=['a', 'b', 'c'])
+    >>> print(param)
+    CategoricalParameter(categories=['a', 'b', 'c'])
+    """
     _type: ClassVar[str] = "object"
 
     def __init__(self, categories: Iterable[Any]):

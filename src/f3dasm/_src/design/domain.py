@@ -211,12 +211,16 @@ class Domain:
         .. code-block:: yaml
 
             domain:
-                <parameter_name>:
-                    type: <parameter_type>
-                    <parameter_type_specific_parameters>
-                <parameter_name>:
-                    type: <parameter_type>
-                    <parameter_type_specific_parameters>
+                input:
+                    <parameter_name>:
+                        type: <parameter_type>
+                        <parameter_type_specific_parameters>
+                    <parameter_name>:
+                        type: <parameter_type>
+                        <parameter_type_specific_parameters>
+                output:
+                    <parameter_name>:
+                        to_disk: <bool>
 
 
         Parameters
@@ -229,27 +233,27 @@ class Domain:
         Domain
             Domain object
         """
-        domain = cls()
-
-        if 'input' not in cfg:
-            # For legacy reasons, the input parameters are stored in the
-            # domain key directly
-            for key, value in cfg.items():
+        def process_input(items):
+            for key, value in items.items():
                 _dict = OmegaConf.to_container(value, resolve=True)
-                domain.add(name=key, type=_dict.pop('type'), **_dict)
+                domain.add(name=key, type=_dict.pop('type', None), **_dict)
 
-            return domain
-
-        else:
-            for key, value in cfg.input.items():
-                _dict = OmegaConf.to_container(value, resolve=True)
-                domain.add(name=key, type=_dict.pop('type'), **_dict)
-
-            for key, value in cfg.output.items():
+        def process_output(items):
+            for key, value in items.items():
                 _dict = OmegaConf.to_container(value, resolve=True)
                 domain.add_output(name=key, **_dict)
 
-            return domain
+        domain = cls()
+
+        if 'input' in cfg:
+            process_input(cfg.input)
+        else:
+            process_input(cfg)
+
+        if 'output' in cfg:
+            process_output(cfg.output)
+
+        return domain
 
     @classmethod
     def from_data(cls, input_data: List[Dict[str, Any]],
