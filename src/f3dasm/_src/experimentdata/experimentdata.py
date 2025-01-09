@@ -781,7 +781,6 @@ class ExperimentData:
                 f"The input to this function should be an ExperimentSample or "
                 f"ExperimentData object, not {type(data)} ")
             )
-        raise NotImplementedError()
 
     # Not used
     @deprecated(version="2.0.0")
