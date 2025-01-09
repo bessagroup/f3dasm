@@ -93,11 +93,11 @@ domain.add_category("param_3", ["red", "blue", "green", "yellow", "purple"])
 # We will now sample the domain using the grid sampler we implemented.
 # We can create an empty ExperimentData object and call the :meth:`~f3dasm.data.ExperimentData.sample` method to add the samples to the object:
 
-experiment_data = ExperimentData(domain=domain)
-experiment_data.sample(
-    sampler=grid, stepsize_continuous_parameters={"param_1": 0.2})
+# experiment_data = ExperimentData(domain=domain)
+# experiment_data.sample(
+#     sampler=grid, stepsize_continuous_parameters={"param_1": 0.2})
 
-###############################################################################
-# We can print the samples to see the results:
+# ###############################################################################
+# # We can print the samples to see the results:
 
-print(experiment_data)
+# print(experiment_data)
