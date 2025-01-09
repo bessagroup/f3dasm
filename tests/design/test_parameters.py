@@ -1,3 +1,5 @@
+import pickle
+
 import pytest
 
 from f3dasm._src.design.parameter import (  # Replace with actual module name
@@ -7,12 +9,24 @@ from f3dasm._src.design.parameter import (  # Replace with actual module name
 pytestmark = pytest.mark.smoke
 
 
+def store_function(obj, path):
+    with open(path, 'wb') as f:
+        pickle.dump(obj, f)
+    return path
+
+
+def load_function(path):
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
 # Test Parameter Base Class
+
+
 @pytest.mark.parametrize("to_disk, store_function, load_function, raises", [
     (False, None, None, False),
-    (True, lambda x, y: None, lambda x: None, False),
-    (False, lambda x, y: None, None, True),
-    (False, None, lambda x: None, True),
+    (True, store_function, load_function, False),
+    (False, store_function, None, True),
+    (False, None, load_function, True),
 ])
 def test_parameter_init(to_disk, store_function, load_function, raises):
     if raises:
@@ -46,6 +60,40 @@ def test_parameter_add():
     param2 = Parameter()
     result = param1 + param2
     assert result == param1
+
+
+def test_parameter_to_dict():
+    param = Parameter(to_disk=True)
+    param_dict = param.to_dict()
+    assert param_dict['type'] == 'object'
+    assert param_dict['to_disk'] is True
+
+
+def test_parameter_from_dict():
+    param_dict = {'type': 'object', 'to_disk': True, 'store_function': None,
+                  'load_function': None}
+    param = Parameter.from_dict(param_dict)
+    assert param.to_disk is True
+
+
+def test_parameter_with_functions_to_dict():
+    param = Parameter(to_disk=True, store_function=store_function,
+                      load_function=load_function)
+    param_dict = param.to_dict()
+    assert param_dict['store_function'] is not None
+    assert param_dict['load_function'] is not None
+
+
+def test_parameter_with_functions_from_dict():
+    param = Parameter(to_disk=True, store_function=store_function,
+                      load_function=load_function)
+    param_dict = param.to_dict()
+    loaded_param = Parameter.from_dict(param_dict)
+    assert loaded_param.to_disk is True
+    assert pickle.dumps(
+        loaded_param.store_function) == pickle.dumps(store_function)
+    assert pickle.dumps(
+        loaded_param.load_function) == pickle.dumps(load_function)
 
 # Test ConstantParameter
 

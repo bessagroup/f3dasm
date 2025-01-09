@@ -225,7 +225,7 @@ def pd_output():
 
 @ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
 @ pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
-@ pytest.mark.parametrize("domain", ["test_domain.pkl", edata_domain_with_output(), None, domain_dictconfig_with_output()])
+@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_with_output(), None, domain_dictconfig_with_output()])
 @ pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
 @ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_with_output(
@@ -260,7 +260,7 @@ def test_experimentdata_creation_with_output(
 # =============================================================================
 
 @ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
-@ pytest.mark.parametrize("domain", ["test_domain.pkl", edata_domain_without_output(), domain_dictconfig_without_output()])
+@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_without_output(), domain_dictconfig_without_output()])
 @ pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
 @ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_without_output(

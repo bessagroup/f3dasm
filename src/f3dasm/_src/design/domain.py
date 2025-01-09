@@ -9,8 +9,8 @@ The Domain is a set of Parameter instances that make up
 from __future__ import annotations
 
 # Standard
+import json
 import math
-import pickle
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Type
@@ -175,29 +175,39 @@ class Domain:
 
     @classmethod
     def from_file(cls: Type[Domain], filename: Path | str) -> Domain:
-        """Create a Domain object from a pickle file.
+        """
+        Create a Domain object from a JSON file.
 
         Parameters
         ----------
-        filename : Path | str
-            Path of the Domain pickle file.
+        filename : Path or str
+            Path of the JSON file to load the Domain object from.
 
         Returns
         -------
         Domain
             Domain object containing the loaded design spaces.
+
+        Examples
+        --------
+        >>> domain = Domain.from_json('domain.json')
         """
         # convert filename to Path object
         filename = Path(filename)
 
         # Check if filename exists
-        if not filename.with_suffix('.pkl').exists():
+        if not filename.with_suffix('.json').exists():
             raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
-        with open(filename.with_suffix('.pkl'), "rb") as file:
-            domain = pickle.load(file)
+        with open(filename.with_suffix('.json'), 'r') as f:
+            domain_dict = json.load(f)
 
-        return domain
+        input_space = {k: Parameter.from_dict(
+            v) for k, v in domain_dict['input_space'].items()}
+        output_space = {k: Parameter.from_dict(
+            v) for k, v in domain_dict['output_space'].items()}
+
+        return cls(input_space=input_space, output_space=output_space)
 
     @classmethod
     def from_yaml(cls: Type[Domain], cfg: DictConfig) -> Domain:
@@ -292,22 +302,27 @@ class Domain:
 #                                                                        Export
 # =============================================================================
 
-    def store(self, filename: Path) -> None:
-        """Stores the Domain in a pickle file.
+    def store(self, filename: Path | str) -> None:
+        """
+        Store the Domain object and its parameters as a JSON file.
 
         Parameters
         ----------
-        filename : str
-            Name of the file.
-        """
-        with open(filename.with_suffix('.pkl'), 'wb') as f:
-            pickle.dump(self, f)
+        filename : Path or str
+            Path of the JSON file to store the Domain object.
 
-    # Not used
-    def _cast_types_dataframe(self) -> dict:
-        """Make a dictionary that provides the datatype of each parameter"""
-        return {name: parameter._type for
-                name, parameter in self.input_space.items()}
+        Examples
+        --------
+        >>> domain.to_json('domain.json')
+        """
+        domain_dict = {
+            'input_space': {k: v.to_dict()
+                            for k, v in self.input_space.items()},
+            'output_space': {k: v.to_dict()
+                             for k, v in self.output_space.items()}
+        }
+        with open(filename.with_suffix('.json'), 'w') as f:
+            json.dump(domain_dict, f, indent=4)
 
 #                                                  Append and remove parameters
 # =============================================================================

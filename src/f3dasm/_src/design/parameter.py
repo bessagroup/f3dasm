@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import pickle
 # Standard
 from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
 
@@ -122,6 +123,91 @@ class Parameter:
     def __add__(self, __o: Parameter) -> Parameter:
         return self
 
+    def to_dict(self) -> dict:
+        """
+        Convert the Parameter object to a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the Parameter object.
+
+        Examples
+        --------
+        >>> param = Parameter(to_disk=True)
+        >>> param_dict = param.to_dict()
+        """
+        param_dict = {
+            'type': self._type,
+            'to_disk': self.to_disk,
+            'store_function': None,
+            'load_function': None
+        }
+        if self.store_function:
+            param_dict['store_function'] = pickle.dumps(
+                self.store_function).hex()
+        if self.load_function:
+            param_dict['load_function'] = pickle.dumps(
+                self.load_function).hex()
+        return param_dict
+
+    @classmethod
+    def from_dict(cls, param_dict: dict) -> Parameter:
+        """
+        Create a Parameter object from a dictionary.
+
+        Parameters
+        ----------
+        param_dict : dict
+            Dictionary representation of the Parameter object.
+
+        Returns
+        -------
+        Parameter
+            Parameter object created from the dictionary.
+
+        Examples
+        --------
+        >>> param_dict = {'type': 'object', 'to_disk': False}
+        >>> param = Parameter.from_dict(param_dict)
+        """
+        param_type = param_dict['type']
+        store_function = None
+        load_function = None
+        if param_dict['store_function']:
+            store_function = pickle.loads(
+                bytes.fromhex(param_dict['store_function']))
+        if param_dict['load_function']:
+            load_function = pickle.loads(
+                bytes.fromhex(param_dict['load_function']))
+
+        if param_type == 'object':
+            return Parameter(to_disk=param_dict['to_disk'],
+                             store_function=store_function,
+                             load_function=load_function)
+        elif param_type == 'float':
+            return ContinuousParameter(
+                lower_bound=param_dict.get('lower_bound', float('-inf')),
+                upper_bound=param_dict.get('upper_bound', float('inf')),
+                log=param_dict.get('log', False)
+            )
+        elif param_type == 'int':
+            return DiscreteParameter(
+                lower_bound=param_dict.get('lower_bound', 0),
+                upper_bound=param_dict.get('upper_bound', 1),
+                step=param_dict.get('step', 1)
+            )
+        elif param_type == 'category':
+            return CategoricalParameter(
+                categories=param_dict.get('categories', [])
+            )
+        elif param_type == 'constant':
+            return ConstantParameter(
+                value=param_dict.get('value')
+            )
+        else:
+            raise ValueError(f"Unknown parameter type: {param_type}")
+
 # =============================================================================
 
 
@@ -175,6 +261,12 @@ class ConstantParameter(Parameter):
 
     def to_categorical(self) -> "CategoricalParameter":
         return CategoricalParameter(categories=[self.value])
+
+    def to_dict(self):
+        param_dict = super().to_dict()
+        param_dict['type'] = 'constant'
+        param_dict['value'] = self.value
+        return param_dict
 
     def _validate_hashable(self):
         """Check if the value is hashable."""
@@ -313,6 +405,14 @@ class ContinuousParameter(Parameter):
             step=step
         )
 
+    def to_dict(self) -> dict:
+        param_dict = super().to_dict()
+        param_dict['type'] = 'float'
+        param_dict['lower_bound'] = self.lower_bound
+        param_dict['upper_bound'] = self.upper_bound
+        param_dict['log'] = self.log
+        return param_dict
+
 # =============================================================================
 
 
@@ -383,6 +483,15 @@ class DiscreteParameter(Parameter):
         if self.step <= 0:
             raise ValueError("Step size must be positive.")
 
+    def to_dict(self):
+        param_dict = super().to_dict()
+        param_dict['type'] = 'int'
+        param_dict['lower_bound'] = self.lower_bound
+        param_dict['upper_bound'] = self.upper_bound
+        param_dict['step'] = self.step
+        return param_dict
+
+
 # =============================================================================
 
 
@@ -442,6 +551,11 @@ class CategoricalParameter(Parameter):
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
+    def to_dict(self) -> dict:
+        param_dict = super().to_dict()
+        param_dict['type'] = 'category'
+        param_dict['categories'] = self.categories
+        return param_dict
 # =============================================================================
 
 

@@ -108,18 +108,6 @@ def test_getNumberOfInputParameters(doe: Domain):
     assert len(doe) == 5
 
 
-def test_cast_types_dataframe_input(doe: Domain):
-    ground_truth = {
-        "x1": "float",
-        "x2": "int",
-        "x3": "float",
-        "x4": "object",
-        "x5": "int",
-    }
-
-    assert doe._cast_types_dataframe() == ground_truth
-
-
 def test_get_input_names(domain: Domain):
     # Ensure that get_input_names returns the correct input parameter names
     assert domain.input_names == ['x1', 'x2', 'x3']

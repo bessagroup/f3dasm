@@ -1,6 +1,10 @@
+import json
+from pathlib import Path
+
 import numpy as np
 import pytest
 
+from f3dasm._src.design.domain import Domain
 from f3dasm._src.design.parameter import (CategoricalParameter,
                                           ConstantParameter,
                                           ContinuousParameter,
@@ -191,6 +195,45 @@ def test_default_stepsize_to_discrete():
     assert b.upper_bound == 5
     assert b.step == default_stepsize
     assert b == c
+
+
+def test_domain_store(tmp_path):
+    domain = Domain()
+    domain.add_float('param1', 0.0, 1.0)
+    domain.add_int('param2', 0, 10)
+    domain.add_category('param3', ['a', 'b', 'c'])
+    domain.add_constant('param4', 42)
+
+    json_file = tmp_path / "domain.json"
+    domain.store(json_file)
+
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+
+    assert 'input_space' in data
+    assert 'output_space' in data
+    assert 'param1' in data['input_space']
+    assert 'param2' in data['input_space']
+    assert 'param3' in data['input_space']
+    assert 'param4' in data['input_space']
+
+
+def test_domain_from_json(tmp_path):
+    domain = Domain()
+    domain.add_float('param1', 0.0, 1.0)
+    domain.add_int('param2', 0, 10)
+    domain.add_category('param3', ['a', 'b', 'c'])
+    domain.add_constant('param4', 42)
+
+    json_file = tmp_path / "domain.json"
+    domain.store(json_file)
+
+    loaded_domain = Domain.from_file(json_file)
+
+    assert loaded_domain.input_space['param1'] == domain.input_space['param1']
+    assert loaded_domain.input_space['param2'] == domain.input_space['param2']
+    assert loaded_domain.input_space['param3'] == domain.input_space['param3']
+    assert loaded_domain.input_space['param4'] == domain.input_space['param4']
 
 
 if __name__ == "__main__":  # pragma: no cover
