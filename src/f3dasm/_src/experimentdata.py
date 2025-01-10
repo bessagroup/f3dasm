@@ -242,11 +242,10 @@ class ExperimentData:
         if isinstance(key, int):
             key = [key]
 
-        if not pd.Index(key).isin(self.index).all():
-            raise KeyError(f"Keys {key} not found in index")
-
-        return ExperimentData.from_data(data={k: self.data[k] for k in key},
-                                        domain=self.domain)
+        return ExperimentData.from_data(
+            data={k: self.data[k] for k in self.index[key]},
+            domain=self.domain,
+            project_dir=self.project_dir)
 
     def _repr_html_(self) -> str:
         """
