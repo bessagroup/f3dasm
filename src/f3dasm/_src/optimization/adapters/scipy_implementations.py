@@ -12,10 +12,9 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from ...datageneration import DataGenerator
-from ...experimentdata.experimentsample import ExperimentSample
+from ...core import DataGenerator, Optimizer
+from ...experimentsample import ExperimentSample
 from .._protocol import ExperimentData
-from ..optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -42,7 +41,7 @@ class ScipyOptimizer(Optimizer):
         self.algorithm_cls = algorithm_cls
         self.hyperparameters = hyperparameters
 
-    def init(self, data: ExperimentData, data_generator: DataGenerator):
+    def arm(self, data: ExperimentData, data_generator: DataGenerator):
         self.data = data
         self.algorithm = self.algorithm_cls
         self.data_generator = data_generator

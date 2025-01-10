@@ -3,7 +3,7 @@ from typing import Callable
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm._src.datageneration.datagenerator import convert_function
+from f3dasm._src.datageneration.datagenerator_factory import convert_function
 from f3dasm.datageneration import DataGenerator
 from f3dasm.design import make_nd_continuous_domain
 

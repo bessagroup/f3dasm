@@ -6,13 +6,13 @@ Functional aliasses for the builtin functions.
 
 # Standard
 from functools import partial
-from typing import Optional
+from typing import NamedTuple, Optional, Type
 
 # Third-party
 import numpy as np
 
 # Local
-from ..datagenerator import BuiltinDataGenerator
+from ...core import DataGenerator
 from .pybenchfunction import (Ackley, AckleyN2, AckleyN3, AckleyN4, Adjiman,
                               Bartels, Beale, Bird, BohachevskyN1,
                               BohachevskyN2, BohachevskyN3, Booth, Branin,
@@ -39,6 +39,16 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+
+class BuiltinDataGenerator(NamedTuple):
+    base_class: Type[DataGenerator]
+    options: dict
+
+    def init(self, domain) -> DataGenerator:
+        return self.base_class(domain=domain, **self.options)
+
 # =============================================================================
 
 

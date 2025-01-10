@@ -8,7 +8,7 @@ Module for data-generation
 from typing import List
 
 # Local
-from .datagenerator import DataGenerator
+from ..core import DataGenerator
 from .datagenerator_factory import _datagenerator_factory
 
 #                                                          Authorship & Credits

@@ -20,7 +20,7 @@ from autograd import grad
 from autograd.numpy.numpy_boxes import ArrayBox
 
 # Locals
-from ..datagenerator import DataGenerator
+from ...core import DataGenerator
 from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits

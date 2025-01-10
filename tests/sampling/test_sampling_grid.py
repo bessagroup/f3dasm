@@ -4,8 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from f3dasm._src.experimentdata.samplers import Grid
-from f3dasm.design import Domain  # Replace with the actual import
+from f3dasm import ExperimentData
+from f3dasm._src.design.samplers import Grid
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 
@@ -38,11 +39,12 @@ def sample_domain_no_continuous() -> Domain:
 def test_grid_sample_with_default_steps(sample_domain):
     """Test Grid sampler with default step size."""
     grid_sampler = Grid()
-    grid_sampler.init(sample_domain)
+    experiment_data = ExperimentData(domain=sample_domain)
+    grid_sampler.arm(experiment_data)
 
     stepsize = 0.5
-    df = grid_sampler.sample(stepsize_continuous_parameters=stepsize)
-
+    samples = grid_sampler.call(stepsize_continuous_parameters=stepsize)
+    df, _ = samples.to_pandas()
     # Expected continuous values
     x1_values = np.arange(0, 1, stepsize)
     x2_values = np.arange(2, 4, stepsize)
@@ -75,10 +77,12 @@ def test_grid_sample_with_default_steps(sample_domain):
 def test_grid_sample_with_custom_steps(sample_domain):
     """Test Grid sampler with custom step sizes for continuous parameters."""
     grid_sampler = Grid()
-    grid_sampler.init(sample_domain)
+    experiment_data = ExperimentData(domain=sample_domain)
+    grid_sampler.arm(experiment_data)
 
     custom_steps = {"x1": 0.25, "x2": 0.5}
-    df = grid_sampler.sample(stepsize_continuous_parameters=custom_steps)
+    samples = grid_sampler.call(stepsize_continuous_parameters=custom_steps)
+    df, _ = samples.to_pandas()
 
     # Expected continuous values
     x1_values = np.arange(0, 1, custom_steps["x1"])
@@ -112,9 +116,11 @@ def test_grid_sample_with_custom_steps(sample_domain):
 def test_grid_sample_with_no_continuous(sample_domain_no_continuous):
     """Test Grid sampler with no continuous parameters."""
     grid_sampler = Grid()
-    grid_sampler.init(sample_domain_no_continuous)
+    experiment_data = ExperimentData(domain=sample_domain_no_continuous)
+    grid_sampler.arm(experiment_data)
 
-    df = grid_sampler.sample(stepsize_continuous_parameters=None)
+    samples = grid_sampler.call(stepsize_continuous_parameters=None)
+    df, _ = samples.to_pandas()
 
     # Expected discrete values
     d1_values = [1, 2, 3]

@@ -11,10 +11,10 @@ from __future__ import annotations
 
 # Standard
 import inspect
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 # Local
-from .datagenerator import DataGenerator, convert_function
+from ..core import DataGenerator
 from .functions import _DATAGENERATORS
 
 #                                                          Authorship & Credits
@@ -32,6 +32,71 @@ DATAGENERATOR_MAPPING: Dict[str, DataGenerator] = {
         '_', '').replace('.', ''): f for f in _DATAGENERATORS}
 
 # =============================================================================
+
+
+def convert_function(f: Callable,
+                     output: Optional[List[str]] = None,
+                     kwargs: Optional[Dict[str, Any]] = None,
+                     to_disk: Optional[List[str]] = None) -> DataGenerator:
+    """
+    Converts a given function `f` into a `DataGenerator` object.
+
+    Parameters
+    ----------
+    f : Callable
+        The function to be converted.
+    output : Optional[List[str]], optional
+        A list of names for the return values of the function.
+        Defaults to None.
+    kwargs : Optional[Dict[str, Any]], optional
+        Additional keyword arguments passed to the function. Defaults to None.
+    to_disk : Optional[List[str]], optional
+        The list of output names where the value needs to be stored on disk.
+        Defaults to None.
+
+    Returns
+    -------
+    DataGenerator
+        A converted `DataGenerator` object.
+
+    Notes
+    -----
+
+    The function `f` can have any number of arguments and any number of returns
+    as long as they are consistent with the `input` and `output` arguments that
+    are given to this function.
+    """
+    signature = inspect.signature(f)
+    input = list(signature.parameters)
+    kwargs = kwargs if kwargs is not None else {}
+    to_disk = to_disk if to_disk is not None else []
+    output = output if output is not None else []
+
+    class TempDataGenerator(DataGenerator):
+        def execute(self, **_kwargs) -> None:
+            _input = {input_name:
+                      self.experiment_sample.input_data.get(input_name)
+                      for input_name in input if input_name not in kwargs}
+            _output = f(**_input, **kwargs)
+
+            # check if output is empty
+            if output is None:
+                return
+
+            if len(output) == 1:
+                _output = (_output,)
+
+            for name, value in zip(output, _output):
+                if name in to_disk:
+                    self.experiment_sample.store(name=name,
+                                                 object=value,
+                                                 to_disk=True)
+                else:
+                    self.experiment_sample.store(name=name,
+                                                 object=value,
+                                                 to_disk=False)
+
+    return TempDataGenerator()
 
 
 def _datagenerator_factory(

@@ -6,8 +6,8 @@ Optimizers based from the scipy.optimize library
 # =============================================================================
 
 # Locals
+from ..core import Optimizer
 from .adapters.scipy_implementations import ScipyOptimizer
-from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================

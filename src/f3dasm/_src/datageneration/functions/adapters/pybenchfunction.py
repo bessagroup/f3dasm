@@ -58,7 +58,7 @@ class PyBenchFunction(Function):
         self.noise = noise
         self.offset = offset
 
-    def init(self, data: ExperimentData):
+    def arm(self, data: ExperimentData):
         self.data = data
         self.dimensionality = len(data.domain)
         self._set_parameters()

@@ -20,7 +20,7 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from ..logger import logger
+from .logger import logger
 
 #                                                          Authorship & Credits
 # =============================================================================

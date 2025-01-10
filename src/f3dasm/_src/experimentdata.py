@@ -28,17 +28,16 @@ from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
-from .._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME,
-                   MAX_TRIES, OUTPUT_DATA_FILENAME, _project_dir_factory,
-                   store_to_disk)
+from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
+                  OUTPUT_DATA_FILENAME, _project_dir_factory, store_to_disk)
 # Local
-from ..core import Block, Optimizer
-from ..datageneration import _datagenerator_factory
-from ..design import Domain, _domain_factory, _sampler_factory
-from ..experimentsample import ExperimentSample
-from ..logger import logger
-from ..optimization import _optimizer_factory
+from .core import Block, Optimizer
+from .datageneration import _datagenerator_factory
+from .design import Domain, _domain_factory, _sampler_factory
+from .experimentsample import ExperimentSample
+from .logger import logger
+from .optimization import _optimizer_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -1163,6 +1162,29 @@ class ExperimentData:
         for _, es in self:
             es.mark(status)
 
+    def run(self, block: Block, **kwargs) -> ExperimentData:
+        """
+        Run a block over the entire ExperimentData object.
+
+        Parameters
+        ----------
+        block : Block
+            The block to run.
+        **kwargs
+            Additional keyword arguments passed to the block.
+
+        Returns
+        -------
+        ExperimentData
+            The ExperimentData object after running the block.
+
+        Examples
+        --------
+        >>> experiment_data.run(block)
+        """
+        block.arm(data=self)
+        return block.call(**kwargs)
+
     #                                                            Datageneration
     # =========================================================================
 
@@ -1199,11 +1221,7 @@ class ExperimentData:
         data_generator = _datagenerator_factory(
             data_generator=data_generator, output_names=output_names, **kwargs)
 
-        # Arm the data generator
-        data_generator.arm(data=self)
-
-        # Call
-        self = data_generator.call(mode=mode, **kwargs)
+        self = self.run(block=data_generator, mode=mode, **kwargs)
 
     #                                                              Optimization
     # =========================================================================
@@ -1369,13 +1387,9 @@ class ExperimentData:
         # Creation
         sampler = _sampler_factory(sampler=sampler, **kwargs)
 
-        # Arm the sampler
-        sampler.arm(data=self)
+        samples = self.run(block=sampler, **kwargs)
 
-        # Invoking the call method of the sampler
-        sample_data = sampler.call(**kwargs)
-
-        self._add(sample_data)
+        self._add(samples)
 
     #                                                         Project directory
     # =========================================================================

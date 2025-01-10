@@ -1,7 +1,7 @@
 import pytest
 from omegaconf import OmegaConf
 
-from f3dasm._src.experimentdata.experimentsample import ExperimentSample
+from f3dasm._src.experimentsample import ExperimentSample
 from f3dasm._src.hydra_utils import update_config_with_experiment_sample
 from f3dasm.design import Domain
 

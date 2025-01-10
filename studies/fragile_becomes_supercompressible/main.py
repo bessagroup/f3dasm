@@ -64,7 +64,7 @@ class LogNormalSampler(Sampler):
         self.sigma = sigma
         self.seed = seed
 
-    def sample(self, n_samples: int):
+    def call(self, n_samples: int):
         """Sampler function for lognormal distribution
 
         Parameters

@@ -7,8 +7,8 @@ Module for optimization
 # Standard
 from typing import Callable, List
 
+from ..core import Optimizer
 from .numpy_implementations import random_search
-from .optimizer import Optimizer
 from .optimizer_factory import _optimizer_factory, available_optimizers
 from .scipy_implementations import cg, lbfgsb, nelder_mead
 

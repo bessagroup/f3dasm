@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 import numpy as np
 import pytest
 
@@ -12,7 +10,7 @@ from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
-from f3dasm.optimization import Optimizer, available_optimizers
+from f3dasm.optimization import available_optimizers
 
 
 @pytest.mark.parametrize("seed", [42])

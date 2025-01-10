@@ -12,9 +12,8 @@ from typing import Optional, Tuple
 import numpy as np
 
 # Locals
-from ...datageneration import DataGenerator
+from ..core import DataGenerator, Optimizer
 from ._protocol import ExperimentData
-from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -34,7 +33,7 @@ class NumpyOptimizer(Optimizer):
         self.seed = seed
         self.hyperparameters = hyperparameters
 
-    def init(self, data: ExperimentData, data_generator: DataGenerator):
+    def arm(self, data: ExperimentData, data_generator: DataGenerator):
         self.data_generator = data_generator
         self.data = data
         self.algorithm = np.random.default_rng(self.seed)

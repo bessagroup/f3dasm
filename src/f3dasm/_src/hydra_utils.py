@@ -11,7 +11,7 @@ from copy import deepcopy
 from omegaconf import OmegaConf
 
 # Local
-from .experimentdata.experimentsample import ExperimentSample
+from .experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================

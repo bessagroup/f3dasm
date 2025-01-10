@@ -51,7 +51,7 @@ class CustomSampler(Sampler):
     def __init__(self, seed: int):
         self.seed = seed
 
-    def sample(self, n_samples: int) -> pd.DataFrame:
+    def call(self, n_samples: int) -> pd.DataFrame:
         rng = np.random.default_rng(self.seed)
         samples = []
 

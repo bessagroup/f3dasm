@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Callable, Dict, List
 
 # Local
+from ..core import Optimizer
 from .numpy_implementations import random_search
-from .optimizer import Optimizer
 from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits

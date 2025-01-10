@@ -5,8 +5,8 @@ Module for design-of-experiments
 # =============================================================================
 
 # Local
+from ._src.core import Sampler
 from ._src.design.domain import Domain, make_nd_continuous_domain
-from ._src.experimentdata.samplers import Sampler
 
 #                                                          Authorship & Credits
 # =============================================================================

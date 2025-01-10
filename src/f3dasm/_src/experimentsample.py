@@ -17,8 +17,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 import autograd.numpy as np
 
 # Local
-from ..design.domain import Domain
 from ._io import load_object
+from .design.domain import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
