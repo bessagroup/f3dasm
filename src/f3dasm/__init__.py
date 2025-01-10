@@ -15,6 +15,7 @@ optimization, sampling, and simulation.
 
 from .__version__ import __version__
 from ._src._argparser import HPC_JOBID
+from ._src.core import Block
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
@@ -34,6 +35,7 @@ logger.info(f"Imported f3dasm (version: {__version__})")
 __all__ = [
     'ExperimentData',
     'ExperimentSample',
+    'Block',
     'DistributedFileHandler',
     'logger',
     'HPC_JOBID',
