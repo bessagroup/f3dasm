@@ -37,7 +37,7 @@ class Block(ABC):
         self.data = data
 
     @abstractmethod
-    def call(self) -> ExperimentData:
+    def call(self, **kwargs) -> ExperimentData:
         pass
 
 # =============================================================================
