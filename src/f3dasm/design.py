@@ -5,7 +5,6 @@ Module for design-of-experiments
 # =============================================================================
 
 # Local
-from ._src.core import Sampler
 from ._src.design.domain import Domain, make_nd_continuous_domain
 
 #                                                          Authorship & Credits
@@ -20,5 +19,4 @@ __status__ = 'Stable'
 __all__ = [
     'Domain',
     'make_nd_continuous_domain',
-    'Sampler',
 ]

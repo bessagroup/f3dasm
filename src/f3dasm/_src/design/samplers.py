@@ -16,7 +16,7 @@ from SALib.sample import latin as salib_latin
 from SALib.sample import sobol_sequence
 
 # Locals
-from ..core import ExperimentData, Sampler
+from ..core import Block, ExperimentData
 from .domain import Domain
 
 #                                                          Authorship & Credits
@@ -61,7 +61,7 @@ def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
     return samples
 
 
-def sample_constant(domain: Domain, n_samples: int):
+def sample_constant(domain: Domain, n_samples: int) -> np.ndarray:
     """
     Sample the constant parameters.
 
@@ -83,7 +83,7 @@ def sample_constant(domain: Domain, n_samples: int):
 
 def sample_np_random_choice(
         domain: Domain, n_samples: int,
-        seed: Optional[int] = None, **kwargs):
+        seed: Optional[int] = None, **kwargs) -> np.ndarray:
     """
     Sample with numpy random choice.
 
@@ -114,7 +114,7 @@ def sample_np_random_choice(
 
 def sample_np_random_choice_range(
         domain: Domain, n_samples: int,
-        seed: Optional[int] = None, **kwargs):
+        seed: Optional[int] = None, **kwargs) -> np.ndarray:
     """
     Sample with numpy random choice within a range of values.
 
@@ -238,7 +238,7 @@ def sample_sobol_sequence(
 #                                                             Built-in samplers
 # =============================================================================
 
-class RandomUniform(Sampler):
+class RandomUniform(Block):
     def __init__(self, seed: Optional[int], **parameters):
         """
         Initialize the RandomUniform sampler.
@@ -253,7 +253,7 @@ class RandomUniform(Sampler):
         self.seed = seed
         self.parameters = parameters
 
-    def call(self, n_samples: int, **kwargs) -> pd.DataFrame:
+    def call(self, n_samples: int, **kwargs) -> ExperimentData:
         """
         Sample data using the RandomUniform method.
 
@@ -301,13 +301,13 @@ class RandomUniform(Sampler):
         # return df
 
 
-def random(seed: Optional[int] = None, **kwargs) -> Sampler:
+def random(seed: Optional[int] = None, **kwargs) -> Block:
     return RandomUniform(seed=seed, **kwargs)
 
 
 # =============================================================================
 
-class Grid(Sampler):
+class Grid(Block):
     def __init__(self, **parameters):
         """
         Initialize the Grid sampler.
@@ -385,13 +385,13 @@ class Grid(Sampler):
         # return df
 
 
-def grid(**kwargs) -> Sampler:
+def grid(**kwargs) -> Block:
     return Grid(**kwargs)
 
 # =============================================================================
 
 
-class Sobol(Sampler):
+class Sobol(Block):
     def __init__(self, seed: Optional[int], **parameters):
         """
         Initialize the Sobol sampler.
@@ -456,13 +456,13 @@ class Sobol(Sampler):
         # return df
 
 
-def sobol(seed: Optional[int] = None, **kwargs) -> Sampler:
+def sobol(seed: Optional[int] = None, **kwargs) -> Block:
     return Sobol(seed=seed, **kwargs)
 
 
 # =============================================================================
 
-class Latin(Sampler):
+class Latin(Block):
     def __init__(self, seed: Optional[int], **parameters):
         """
         Initialize the Latin sampler.
@@ -477,7 +477,7 @@ class Latin(Sampler):
         self.seed = seed
         self.parameters = parameters
 
-    def call(self, n_samples: int, **kwargs) -> pd.DataFrame:
+    def call(self, n_samples: int, **kwargs) -> ExperimentData:
         """
         Sample data using the Latin Hypercube method.
 
@@ -523,10 +523,9 @@ class Latin(Sampler):
 
         return type(self.data)(domain=self.data.domain,
                                input_data=df)
-        # return df
 
 
-def latin(seed: Optional[int] = None, **kwargs) -> Sampler:
+def latin(seed: Optional[int] = None, **kwargs) -> Block:
     return Latin(seed=seed, **kwargs)
 
 # =============================================================================
@@ -534,29 +533,29 @@ def latin(seed: Optional[int] = None, **kwargs) -> Sampler:
 
 _SAMPLERS = [random, latin, sobol, grid]
 
-SAMPLER_MAPPING: Dict[str, Sampler] = {
+SAMPLER_MAPPING: Dict[str, Block] = {
     sampler.__name__.lower(): sampler for sampler in _SAMPLERS}
 
 #                                                              Factory function
 # =============================================================================
 
 
-def _sampler_factory(sampler: str | Sampler, **parameters) -> Sampler:
+def _sampler_factory(sampler: str | Block, **parameters) -> Block:
     """
     Factory function for samplers
 
     Parameters
     ----------
-    sampler : str | Sampler
+    sampler : str | Block
         name of the sampler
 
     Returns
     -------
-    Sampler
+    Block
         sampler object
     """
 
-    if isinstance(sampler, Sampler):
+    if isinstance(sampler, Block):
         return sampler
 
     elif isinstance(sampler, str):

@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Callable, Dict, List
 
 # Local
-from ..core import Optimizer
+from ..core import Block
 from .numpy_implementations import random_search
 from .scipy_implementations import cg, lbfgsb, nelder_mead
 
@@ -28,7 +28,7 @@ def available_optimizers():
     return list(get_optimizer_mapping().keys())
 
 
-def get_optimizer_mapping() -> Dict[str, Optimizer]:
+def get_optimizer_mapping() -> Dict[str, Block]:
     # List of available optimizers
     _OPTIMIZERS: List[Callable] = [
         cg, lbfgsb, nelder_mead, random_search]
@@ -40,15 +40,15 @@ def get_optimizer_mapping() -> Dict[str, Optimizer]:
     except ImportError:
         pass
 
-    OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
+    OPTIMIZER_MAPPING: Dict[str, Block] = {
         opt.__name__.lower().replace(' ', '').replace('-', '').replace(
             '_', ''): opt for opt in _OPTIMIZERS}
 
     return OPTIMIZER_MAPPING
 
 
-def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
-                       ) -> Optimizer:
+def _optimizer_factory(optimizer: str | Block, **hyperparameters
+                       ) -> Block:
     """Factory function for optimizers
 
     Parameters
@@ -69,7 +69,7 @@ def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
     KeyError
         If the optimizer is not found
     """
-    if isinstance(optimizer, Optimizer):
+    if isinstance(optimizer, Block):
         return optimizer
 
     elif isinstance(optimizer, str):

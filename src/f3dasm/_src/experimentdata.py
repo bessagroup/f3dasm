@@ -32,7 +32,7 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory, store_to_disk)
 # Local
-from .core import Block, Optimizer
+from .core import Block, DataGenerator
 from .datageneration import _datagenerator_factory
 from .design import Domain, _domain_factory, _sampler_factory
 from .experimentsample import ExperimentSample
@@ -429,7 +429,7 @@ class ExperimentData:
 
         Parameters
         ----------
-        sampler : Sampler or str
+        sampler : Block or str
             Sampler object containing the sampling strategy or one of the
             built-in sampler names.
         domain : Domain or DictConfig
@@ -1225,8 +1225,8 @@ class ExperimentData:
     #                                                              Optimization
     # =========================================================================
 
-    def optimize(self, optimizer: Optimizer | str | Callable,
-                 data_generator: Block | str,
+    def optimize(self, optimizer: Block | str,
+                 data_generator: DataGenerator | str,
                  iterations: int,
                  kwargs: Optional[Dict[str, Any]] = None,
                  hyperparameters: Optional[Dict[str, Any]] = None,
@@ -1241,7 +1241,7 @@ class ExperimentData:
 
         Parameters
         ----------
-        optimizer : Optimizer or str or Callable
+        optimizer : Block or str or Callable
             Optimizer object.
         data_generator : DataGenerator or str
             DataGenerator object.
@@ -1253,7 +1253,7 @@ class ExperimentData:
             Additional keyword arguments passed to the optimizer.
         x0_selection : {'best', 'random', 'last', 'new'} or ExperimentData
             How to select the initial design, by default 'best'.
-        sampler : Sampler or str, optional
+        sampler : Block or str, optional
             Sampler to use if x0_selection is 'new', by default 'random'.
         overwrite : bool, optional
             If True, the optimizer will overwrite the current data, by default
@@ -1278,9 +1278,6 @@ class ExperimentData:
             data_generator = _datagenerator_factory(
                 data_generator=data_generator, **kwargs)
 
-        # # Create a copy of the optimizer object
-        # _optimizer = copy(optimizer)
-
         if hyperparameters is None:
             hyperparameters = {}
 
@@ -1295,22 +1292,28 @@ class ExperimentData:
 
         last_index = self.index[-1] if not self.index.empty else -1
 
+        population = optimizer.population if hasattr(
+            optimizer, 'population') else 1
+        seed = optimizer.seed if hasattr(optimizer, 'seed') else None
+        opt_type = optimizer.type if hasattr(optimizer, 'type') else None
+
         if isinstance(x0_selection, str):
             if x0_selection == 'new':
 
-                if iterations < optimizer._population:
+                if iterations < population:
                     raise ValueError(
                         f'For creating new samples, the total number of '
                         f'requested iterations ({iterations}) cannot be '
                         f'smaller than the population size '
-                        f'({optimizer._population})')
+                        f'({population})')
 
-                init_samples = ExperimentData(domain=self.domain)
-                init_samples.remove_rows_bottom(len(init_samples))
+                init_samples = ExperimentData(
+                    domain=self.domain,
+                    project_dir=self.project_dir)
 
                 init_samples.sample(sampler=sampler,
-                                    n_samples=optimizer._population,
-                                    seed=optimizer._seed)
+                                    n_samples=population,
+                                    seed=seed)
 
                 init_samples.evaluate(
                     data_generator=data_generator, mode='sequential',
@@ -1330,23 +1333,41 @@ class ExperimentData:
                     self._add(init_samples)
 
                 x0_selection = 'last'
-                iterations -= optimizer._population
+                iterations -= population
 
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=optimizer._population)
+                        n_samples=population)
 
         x0.evaluate(data_generator=data_generator, mode='sequential',
                     **kwargs)
 
-        optimizer.arm(data=x0, data_generator=data_generator)
-        self._add(optimizer.call(iterations=iterations,
-                                 kwargs=kwargs,
-                                 x0_selection=x0_selection,
-                                 sampler=sampler,
-                                 overwrite=overwrite,
-                                 callback=callback,
-                                 last_index=last_index)
-                  )
+        if len(x0) < population:
+            raise ValueError((
+                f"There are {len(self.data)} samples available, "
+                f"need {population} for initial population!"
+            ))
+
+        optimizer.arm(data=x0)
+        n_updates = range(
+            iterations // population + (iterations % population > 0))
+
+        if opt_type == 'scipy':
+            # Scipy optimizers work differently since they are not
+            # able to output a single update step
+            optimizer._iterate(data_generator=data_generator,
+                               iterations=iterations, kwargs=kwargs,
+                               overwrite=overwrite)
+        else:
+            for _ in n_updates:
+                optimizer.data += optimizer.call(grad_fn=data_generator.dfdx)
+                optimizer.data.evaluate(data_generator=data_generator,
+                                        mode='sequential',
+                                        **kwargs)
+
+        optimizer.data.remove_rows_bottom(
+            number_of_rows=population * n_updates.stop - iterations)
+
+        self._add(experiment_data=optimizer.data[population:])
 
     #                                                                  Sampling
     # =========================================================================

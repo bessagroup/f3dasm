@@ -116,8 +116,9 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
         scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), seed=seed)
 
     _optimizer = _optimizer_factory(optimizer)
-
-    if x0_selection == "new" and iterations < _optimizer._population:
+    population = _optimizer._population if hasattr(
+        _optimizer, '_population') else 1
+    if x0_selection == "new" and iterations < population:
         with pytest.raises(ValueError):
             data.optimize(
                 optimizer=optimizer, data_generator=data_generator,
