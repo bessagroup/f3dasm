@@ -321,7 +321,7 @@ class Domain:
             'output_space': {k: v.to_dict()
                              for k, v in self.output_space.items()}
         }
-        with open(filename.with_suffix('.json'), 'w') as f:
+        with open(Path(filename).with_suffix('.json'), 'w') as f:
             json.dump(domain_dict, f, indent=4)
 
 #                                                  Append and remove parameters

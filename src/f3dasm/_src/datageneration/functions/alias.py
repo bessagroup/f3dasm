@@ -6,7 +6,7 @@ Functional aliasses for the builtin functions.
 
 # Standard
 from functools import partial
-from typing import NamedTuple, Optional, Type
+from typing import Optional
 
 # Third-party
 import numpy as np
@@ -42,19 +42,9 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class BuiltinDataGenerator(NamedTuple):
-    base_class: Type[DataGenerator]
-    options: dict
-
-    def init(self, domain) -> DataGenerator:
-        return self.base_class(domain=domain, **self.options)
-
-# =============================================================================
-
-
 def fn(base_class, scale_bounds: Optional[np.ndarray] = None,
        noise: Optional[float] = None, offset: bool = True,
-       seed: Optional[int] = None) -> BuiltinDataGenerator:
+       seed: Optional[int] = None) -> DataGenerator:
     """
     Parameters
     ----------
@@ -69,13 +59,12 @@ def fn(base_class, scale_bounds: Optional[np.ndarray] = None,
 
     Returns
     -------
-    BuiltinDataGenerator
-        An instance of BuiltinDataGenerator configured with the provided
+    DataGenerator
+        A DataGenerator configured with the provided
         options.
     """
-    return BuiltinDataGenerator(base_class=base_class, options=dict(
-        scale_bounds=scale_bounds, noise=noise, offset=offset, seed=seed))
-
+    return base_class(scale_bounds=scale_bounds, noise=noise, offset=offset,
+                      seed=seed)
 # =============================================================================
 
 

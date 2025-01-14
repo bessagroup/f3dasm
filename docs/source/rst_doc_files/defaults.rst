@@ -8,14 +8,14 @@ Implemented samplers
 
 The following built-in implementations of samplers can be used in the data-driven process.
 
-======================== ====================================================================== ===========================================================================================================
-Name                     Method                                                                 Reference
-======================== ====================================================================== ===========================================================================================================
-``"random"``             Random Uniform sampling                                                `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
-``"latin"``              Latin Hypercube sampling                                               `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
-``"sobol"``              Sobol Sequence sampling                                                `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
-``"grid"``               Grid Search sampling                                                   `itertools.product <https://docs.python.org/3/library/itertools.html#itertools.product>`_
-======================== ====================================================================== ===========================================================================================================
+======================== ============================= ======================================== ===========================================================================================================
+Name                     Key-word                      Function                                 Reference
+======================== ============================= ======================================== ===========================================================================================================
+Random Uniform sampling  ``"random"``                  :func:`~f3dasm.design.random`            `numpy.random.uniform <https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html>`_
+Latin Hypercube sampling ``"latin"``                   :func:`~f3dasm.design.latin`             `SALib.latin <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=latin%20hypercube#SALib.sample.latin.sample>`_
+Sobol Sequence sampling  ``"sobol"``                   :func:`~f3dasm.design.sobol`             `SALib.sobol_sequence <https://salib.readthedocs.io/en/latest/api/SALib.sample.html?highlight=sobol%20sequence#SALib.sample.sobol_sequence.sample>`_
+Grid Search sampling     ``"grid"``                    :func:`~f3dasm.design.grid`              `itertools.product <https://docs.python.org/3/library/itertools.html#itertools.product>`_
+======================== ============================= ======================================== ===========================================================================================================
 
 .. _implemented-benchmark-functions:
 

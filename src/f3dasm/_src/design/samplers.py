@@ -382,7 +382,6 @@ class Grid(Block):
 
         return type(self.data)(domain=self.data.domain,
                                input_data=df)
-        # return df
 
 
 def grid(**kwargs) -> Block:

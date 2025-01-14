@@ -46,7 +46,8 @@ extensions = ['sphinx.ext.duration',
               'sphinx.ext.viewcode',
               'sphinx_autodoc_typehints',
               'sphinx_tabs.tabs',
-              'sphinx_gallery.gen_gallery',]
+              'sphinx_gallery.gen_gallery',
+              'nbsphinx',]
 
 sphinx_gallery_conf = {
     'examples_dirs': ['../../examples'],   # path to your example scripts

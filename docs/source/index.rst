@@ -26,6 +26,7 @@ f3dasm
    :includehidden:
 
    auto_examples/index
+   rst_doc_files/gallery
    rst_doc_files/defaults
 
 .. toctree::
