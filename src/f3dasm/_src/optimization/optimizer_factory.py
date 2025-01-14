@@ -7,11 +7,12 @@ Module for the data generator factory.
 from __future__ import annotations
 
 # Standard
-from typing import Dict
+from typing import Callable, Dict, List
 
 # Local
-from . import _OPTIMIZERS
-from .optimizer import Optimizer
+from ..core import Block
+from .numpy_implementations import random_search
+from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,24 +23,32 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# Try importing f3dasm_optimize package
-try:
-    import f3dasm_optimize  # NOQA
-    _OPTIMIZERS.extend(f3dasm_optimize._OPTIMIZERS)
-except ImportError:
-    pass
+
+def available_optimizers():
+    return list(get_optimizer_mapping().keys())
 
 
-OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
-    opt.__name__.lower().replace(' ', '').replace('-', '').replace(
-        '_', ''): opt for opt in _OPTIMIZERS}
+def get_optimizer_mapping() -> Dict[str, Block]:
+    # List of available optimizers
+    _OPTIMIZERS: List[Callable] = [
+        cg, lbfgsb, nelder_mead, random_search]
+
+    # Try importing f3dasm_optimize package
+    try:
+        from f3dasm_optimize import optimizers_extension  # NOQA
+        _OPTIMIZERS.extend(optimizers_extension())
+    except ImportError:
+        pass
+
+    OPTIMIZER_MAPPING: Dict[str, Block] = {
+        opt.__name__.lower().replace(' ', '').replace('-', '').replace(
+            '_', ''): opt for opt in _OPTIMIZERS}
+
+    return OPTIMIZER_MAPPING
 
 
-OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
-
-
-def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
-                       ) -> Optimizer:
+def _optimizer_factory(optimizer: str | Block, **hyperparameters
+                       ) -> Block:
     """Factory function for optimizers
 
     Parameters
@@ -60,13 +69,15 @@ def _optimizer_factory(optimizer: str | Optimizer, **hyperparameters
     KeyError
         If the optimizer is not found
     """
-    if isinstance(optimizer, Optimizer):
+    if isinstance(optimizer, Block):
         return optimizer
 
     elif isinstance(optimizer, str):
 
         filtered_name = optimizer.lower().replace(
             ' ', '').replace('-', '').replace('_', '')
+
+        OPTIMIZER_MAPPING = get_optimizer_mapping()
 
         if filtered_name in OPTIMIZER_MAPPING:
             return OPTIMIZER_MAPPING[filtered_name](

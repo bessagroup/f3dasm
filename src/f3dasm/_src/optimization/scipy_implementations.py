@@ -6,8 +6,8 @@ Optimizers based from the scipy.optimize library
 # =============================================================================
 
 # Locals
+from ..core import Block
 from .adapters.scipy_implementations import ScipyOptimizer
-from .optimizer import Optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,7 +19,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-def cg(gtol: float = 0.0, **kwargs) -> Optimizer:
+def cg(gtol: float = 0.0, **kwargs) -> Block:
     """
     Conjugate Gradient optimizer
     Adapted from scipy.optimize.minimize
@@ -35,7 +35,7 @@ def cg(gtol: float = 0.0, **kwargs) -> Optimizer:
         Optimizer
     """
     return ScipyOptimizer(
-        algorithm_cls='CG',
+        algorithm='CG',
         gtol=gtol,
         **kwargs
     )
@@ -43,7 +43,7 @@ def cg(gtol: float = 0.0, **kwargs) -> Optimizer:
 # =============================================================================
 
 
-def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> Optimizer:
+def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> Block:
     """
     L-BFGS-B optimizer
     Adapted from scipy.optimize.minimize
@@ -61,7 +61,7 @@ def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> Optimizer:
         Optimizer
     """
     return ScipyOptimizer(
-        algorithm_cls='L-BFGS-B',
+        algorithm='L-BFGS-B',
         ftol=ftol,
         gtol=gtol,
         **kwargs
@@ -71,7 +71,7 @@ def lbfgsb(ftol: float = 0.0, gtol: float = 0.0, **kwargs) -> Optimizer:
 
 
 def nelder_mead(xatol: float = 0.0, fatol: float = 0.0,
-                adaptive: bool = False, **kwargs) -> Optimizer:
+                adaptive: bool = False, **kwargs) -> Block:
     """
     Nelder-Mead optimizer
     Adapted from scipy.optimize.minimize
@@ -91,7 +91,7 @@ def nelder_mead(xatol: float = 0.0, fatol: float = 0.0,
         Optimizer
     """
     return ScipyOptimizer(
-        algorithm_cls='Nelder-Mead',
+        algorithm='Nelder-Mead',
         xatol=xatol,
         fatol=fatol,
         adaptive=adaptive,

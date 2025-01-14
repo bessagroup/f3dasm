@@ -14,7 +14,7 @@ def test_create_mesh_returns_correct_mesh_shape():
     arr = np.array([[-5.0, 5.0], [-5.0, 5.0]])
     domain = make_nd_continuous_domain(bounds=arr)
     instance = Ackley()
-    instance.init(data=ExperimentData(domain=domain))
+    instance.arm(data=ExperimentData(domain=domain))
     # Act
     xv, yv, Y = instance._create_mesh(px, arr)
 
@@ -31,7 +31,7 @@ def test_create_mesh_raises_value_error_with_invalid_px():
     domain = make_nd_continuous_domain(bounds=arr)
     instance = Ackley()
 
-    instance.init(data=ExperimentData(domain=domain))
+    instance.arm(data=ExperimentData(domain=domain))
 
     # Act / Assert
     with pytest.raises(ValueError):

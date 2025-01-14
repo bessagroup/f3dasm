@@ -51,27 +51,28 @@ class CustomSampler(Sampler):
     def __init__(self, seed: int):
         self.seed = seed
 
-    def sample(self, n_samples: int) -> pd.DataFrame:
+    def call(self, n_samples: int) -> pd.DataFrame:
         rng = np.random.default_rng(self.seed)
         samples = []
 
         for i in range(n_samples):
-            dim = rng.choice(self.domain.space['dimensionality'].categories)
+            dim = rng.choice(
+                self.domain.input_space['dimensionality'].categories)
 
             available_functions = list(set(get_functions(d=int(dim))) & set(
-                self.domain.space['function_name'].categories))
+                self.domain.input_space['function_name'].categories))
             function_name = rng.choice(available_functions)
 
-            noise = rng.choice(self.domain.space['noise'].categories)
+            noise = rng.choice(self.domain.input_space['noise'].categories)
             seed = rng.integers(
-                low=self.domain.space['seed'].lower_bound,
-                high=self.domain.space['seed'].upper_bound)
-            budget = self.domain.space['budget'].value
+                low=self.domain.input_space['seed'].lower_bound,
+                high=self.domain.input_space['seed'].upper_bound)
+            budget = self.domain.input_space['budget'].value
 
             samples.append([function_name, dim, noise, seed, budget])
 
         return pd.DataFrame(
-            samples, columns=self.domain.names)[self.domain.names]
+            samples, columns=self.domain.input_names)[self.domain.input_names]
 
 #                                                          Custom datagenerator
 # =============================================================================

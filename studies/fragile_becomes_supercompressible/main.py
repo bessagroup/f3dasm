@@ -64,7 +64,7 @@ class LogNormalSampler(Sampler):
         self.sigma = sigma
         self.seed = seed
 
-    def sample(self, n_samples: int):
+    def call(self, n_samples: int):
         """Sampler function for lognormal distribution
 
         Parameters
@@ -80,7 +80,8 @@ class LogNormalSampler(Sampler):
         rng = np.random.default_rng(self.seed)
         sampled_imperfections = rng.lognormal(
             mean=self.mean, sigma=self.sigma, size=n_samples)
-        return pd.DataFrame(sampled_imperfections, columns=self.domain.names)
+        return pd.DataFrame(sampled_imperfections,
+                            columns=self.domain.input_names)
 
 # =============================================================================
 
