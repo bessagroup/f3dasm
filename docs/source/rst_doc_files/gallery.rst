@@ -47,3 +47,14 @@ The :mod:`f3dasm` package comes with built-in implementations of the :class:`~f3
     :glob:
 
     notebooks/builtins/*
+
+Integration with hydra
+----------------------
+
+Examples that integrate the :mod:`f3dasm` package with the configuration manager `hydra <https://hydra.cc/>`_
+
+.. nblinkgallery::
+    :name: hydra
+    :glob:
+
+    notebooks/hydra/*

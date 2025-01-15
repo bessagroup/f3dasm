@@ -39,6 +39,53 @@ class Block(ABC):
     def call(self, **kwargs) -> ExperimentData:
         pass
 
+
+class LoopBlock(Block):
+    def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
+        """
+        LoopBlock constructor
+
+        Parameters
+        ----------
+        blocks : Block | Iterable[Block]
+            The block or blocks to loop over
+        n_loops : int
+            The number of loops to perform
+        """
+        if isinstance(blocks, Block):
+            blocks = [blocks]
+
+        self.blocks = blocks
+        self.n_loops = n_loops
+
+    def call(self, **kwargs) -> ExperimentData:
+        for _ in range(self.n_loops):
+            for block in self.blocks:
+                block.arm(self.data)
+                self.data = block.call(**kwargs)
+
+        return self.data
+
+
+def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
+    """
+    Loop function
+
+    Parameters
+    ----------
+    blocks : Block | Iterable[Block]
+        The block or blocks to loop over
+    n_loops : int
+        The number of loops to perform
+
+    Returns
+    -------
+
+    Block
+        The loop block
+    """
+    return LoopBlock(blocks=blocks, n_loops=n_loops)
+
 # =============================================================================
 
 

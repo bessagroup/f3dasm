@@ -1161,14 +1161,14 @@ class ExperimentData:
         for _, es in self:
             es.mark(status)
 
-    def run(self, block: Block, **kwargs) -> ExperimentData:
+    def run(self, block: Block | Iterable[Block], **kwargs) -> ExperimentData:
         """
         Run a block over the entire ExperimentData object.
 
         Parameters
         ----------
         block : Block
-            The block to run.
+            The block(s) to run.
         **kwargs
             Additional keyword arguments passed to the block.
 
@@ -1181,8 +1181,14 @@ class ExperimentData:
         --------
         >>> experiment_data.run(block)
         """
-        block.arm(data=self)
-        return block.call(**kwargs)
+        if isinstance(block, Block):
+            block = [block]
+
+        for b in block:
+            b.arm(data=self)
+            self = b.call(**kwargs)
+
+        return self
 
     #                                                            Datageneration
     # =========================================================================
