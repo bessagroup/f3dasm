@@ -55,6 +55,5 @@ Examples that integrate the :mod:`f3dasm` package with the configuration manager
 
 .. nblinkgallery::
     :name: hydra
-    :glob:
 
-    notebooks/hydra/*
+    notebooks/hydra/usehydra
