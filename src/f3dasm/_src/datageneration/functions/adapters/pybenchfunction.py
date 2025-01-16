@@ -10,7 +10,8 @@ import autograd.numpy as np
 # Locals
 from ....design.domain import Domain
 from ..function import Function
-from .augmentor import Noise, Offset, Scale
+from .augmentor import (EmptyAugmentor, FunctionAugmentor, Noise, Offset,
+                        Scale, _Augmentor)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -59,37 +60,43 @@ class PyBenchFunction(Function):
         self.offset = offset
 
     def arm(self, data: ExperimentData):
-        self.data = data
+        self.set_seed(self.seed)
+        self.augmentor = FunctionAugmentor()
         self.dimensionality = len(data.domain)
         self._set_parameters()
+        s = self._configure_scale_bounds()
+        n = self._configure_noise()
+        o = self._configure_offset()
 
-        self._configure_scale_bounds()
-        self._configure_noise()
-        self._configure_offset()
+        self.augmentor = FunctionAugmentor(input_augmentors=[o, s],
+                                           output_augmentors=[n])
 
-    def _configure_scale_bounds(self):
+    def _configure_scale_bounds(self) -> _Augmentor:
         """Create a Scale augmentor"""
         if self.scale_bounds is None:
-            return
+            return EmptyAugmentor()
+
         s = Scale(scale_bounds=self.scale_bounds,
                   input_domain=self.input_domain)
-        self.augmentor.add_input_augmentor(s)
+        self.augmentor = FunctionAugmentor(input_augmentors=[s])
+        return s
+
+        # self.augmentor.add_input_augmentor(s)
 
     def _configure_noise(self):
         """Create a Noise augmentor"""
         if self.noise is None:
-            return
+            return EmptyAugmentor()
 
         n = Noise(noise=self.noise, rng=self.rng)
-        self.augmentor.add_output_augmentor(n)
+        return n
 
     def _configure_offset(self):
         """Create an Offset augmentor"""
         if not self.offset or self.scale_bounds is None:
-            return
+            return EmptyAugmentor()
 
         g = self._get_global_minimum_for_offset_calculation()
-
         unscaled_offset = np.atleast_1d(
             [
                 # This is added so we only create offsets in one quadrant
@@ -100,8 +107,8 @@ class PyBenchFunction(Function):
             ]
         )
 
-        self.o = Offset(offset=unscaled_offset)
-        self.augmentor.insert_input_augmentor(position=0, augmentor=self.o)
+        return Offset(offset=unscaled_offset)
+        # self.augmentor.insert_input_augmentor(position=0, augmentor=self.o)
 
     def _get_global_minimum_for_offset_calculation(self):
         """Get the global minimum used for offset calculations

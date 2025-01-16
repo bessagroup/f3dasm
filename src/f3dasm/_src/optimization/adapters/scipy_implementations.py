@@ -2,8 +2,8 @@
 # =============================================================================
 from __future__ import annotations
 
-import warnings
 # Standard
+import warnings
 from copy import deepcopy
 
 # Third-party core
@@ -11,7 +11,7 @@ import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from ...core import Block, DataGenerator
+from ...core import Block, DataGenerator, ExperimentData
 from ...experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
@@ -42,7 +42,7 @@ class ScipyOptimizer(Block):
                             project_dir=self.data.project_dir)
         )
 
-    def call(self, **kwargs):
+    def call(self, data: ExperimentData, **kwargs):
         """Update step function"""
         raise ValueError(
             'Scipy optimizers don\'t have an update steps. \
@@ -82,7 +82,8 @@ class ScipyOptimizer(Block):
             tol=0.0,
         )
 
-    def _iterate(self, data_generator: DataGenerator, iterations: int,
+    def _iterate(self, data: ExperimentData, data_generator: DataGenerator,
+                 iterations: int,
                  kwargs: dict, overwrite: bool):
         """Internal represenation of the iteration process for scipy-minimize
         optimizers.
@@ -99,10 +100,11 @@ class ScipyOptimizer(Block):
         overwrite: bool
             If True, the optimizer will overwrite the current data.
         """
-        n_data_before_iterate = deepcopy(len(self.data))
-        if len(self.data) < 1:
+        self.data = data
+        n_data_before_iterate = deepcopy(len(data))
+        if len(data) < 1:
             raise ValueError(
-                f'There are {len(self.data)} datapoints available, \
+                f'There are {len(data)} datapoints available, \
                         need 1 for initial \
                             population!'
             )
@@ -117,7 +119,7 @@ class ScipyOptimizer(Block):
 
         if overwrite:
             self.data.add_experiments(
-                self.data.select([self.data.index[-1]]))
+                data.select([self.data.index[-1]]))
 
         elif not overwrite:
             # If x_new is empty, repeat best x0 to fill up total iteration

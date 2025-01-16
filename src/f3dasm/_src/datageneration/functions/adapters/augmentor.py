@@ -56,6 +56,14 @@ class _Augmentor(ABC):
         ...
 
 
+class EmptyAugmentor(_Augmentor):
+    def augment(self, input: np.ndarray) -> np.ndarray:
+        return input
+
+    def reverse_augment(self, output: np.ndarray) -> np.ndarray:
+        return output
+
+
 class Noise(_Augmentor):
     def __init__(self, noise: float, rng: np.random.Generator):
         """Augmentor class to add noise to a function output

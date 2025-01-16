@@ -58,6 +58,9 @@ class Function(DataGenerator):
         Function(seed=42)
         """
         self.augmentor = FunctionAugmentor()
+        if seed is None:
+            seed = np.random.randint(2**32)
+
         self.seed = seed
         self.grad = grad(self.__call__)
 

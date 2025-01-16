@@ -33,20 +33,20 @@ class NumpyOptimizer(Block):
         self.hyperparameters = hyperparameters
         self.algorithm = np.random.default_rng(seed)
 
-    def call(self, **kwargs) -> ExperimentData:
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
         x_new = np.atleast_2d(
             [
                 self.algorithm.uniform(
-                    low=self.data.domain.get_bounds()[d, 0],
-                    high=self.data.domain.get_bounds()[d, 1])
-                for d in range(len(self.data.domain.input_space))
+                    low=data.domain.get_bounds()[d, 0],
+                    high=data.domain.get_bounds()[d, 1])
+                for d in range(len(data.domain.input_space))
             ]
         )
 
         # return the data
-        return type(self.data)(domain=self.data.domain,
-                               input_data=x_new,
-                               )
+        return type(data)(domain=data.domain,
+                          input_data=x_new,
+                          )
 
 
 def random_search(seed: Optional[int] = None, **kwargs) -> Block:
