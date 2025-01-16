@@ -33,10 +33,10 @@ __status__ = 'Alpha'
 
 class Block(ABC):
     def arm(self, data: ExperimentData) -> None:
-        self.data = data
+        pass
 
     @abstractmethod
-    def call(self, **kwargs) -> ExperimentData:
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
         pass
 
 
@@ -58,13 +58,13 @@ class LoopBlock(Block):
         self.blocks = blocks
         self.n_loops = n_loops
 
-    def call(self, **kwargs) -> ExperimentData:
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
         for _ in range(self.n_loops):
             for block in self.blocks:
-                block.arm(self.data)
-                self.data = block.call(**kwargs)
+                block.arm(data)
+                data = block.call(data=data, **kwargs)
 
-        return self.data
+        return data
 
 
 def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
@@ -191,7 +191,7 @@ class ExperimentData(Protocol):
 class DataGenerator(Block):
     """Base class for a data generator"""
 
-    def call(self, mode: str = 'sequential', **kwargs
+    def call(self, data: ExperimentData, mode: str = 'sequential', **kwargs
              ) -> ExperimentData:
         """
         Evaluate the data generator.
@@ -210,19 +210,18 @@ class DataGenerator(Block):
             The processed data
         """
         if mode == 'sequential':
-            self._evaluate_sequential(**kwargs)
+            return self._evaluate_sequential(data=data, **kwargs)
         elif mode == 'parallel':
-            self._evaluate_multiprocessing(**kwargs)
+            return self._evaluate_multiprocessing(data=data, **kwargs)
         elif mode.lower() == "cluster":
-            self._evaluate_cluster(**kwargs)
+            return self._evaluate_cluster(data=data, **kwargs)
         else:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
-        return self.data
-
     # =========================================================================
 
-    def _evaluate_sequential(self, **kwargs):
+    def _evaluate_sequential(self, data: ExperimentData, **kwargs
+                             ) -> ExperimentData:
         """Run the operation sequentially
 
         Parameters
@@ -237,7 +236,7 @@ class DataGenerator(Block):
         """
         while True:
 
-            job_number, experiment_sample = self.data.get_open_job()
+            job_number, experiment_sample = data.get_open_job()
             logger.debug(
                 f"Accessed experiment_sample \
                         {job_number}")
@@ -259,7 +258,7 @@ class DataGenerator(Block):
 
                 _experiment_sample = self._run(
                     experiment_sample, **kwargs)  # no *args!
-                self.data.store_experimentsample(
+                data.store_experimentsample(
                     experiment_sample=_experiment_sample,
                     id=job_number)
             except Exception as e:
@@ -267,12 +266,16 @@ class DataGenerator(Block):
                      {job_number}: {e}"
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                self.data.mark(indices=job_number, status='error')
+                data.mark(indices=job_number, status='error')
 
-    def _evaluate_multiprocessing(self, nodes: int = mp.cpu_count(), **kwargs):
+        return data
+
+    def _evaluate_multiprocessing(
+        self, data: ExperimentData,
+            nodes: int = mp.cpu_count(), **kwargs) -> ExperimentData:
         options = []
         while True:
-            job_number, experiment_sample = self.data.get_open_job()
+            job_number, experiment_sample = data.get_open_job()
             if job_number is None:
                 break
             options.append(
@@ -304,13 +307,16 @@ class DataGenerator(Block):
 
         for job_number, _experiment_sample, exit_code in _experiment_samples:
             if exit_code == 0:
-                self.data.store_experimentsample(
+                data.store_experimentsample(
                     experiment_sample=_experiment_sample,
                     id=job_number)
             else:
-                self.data.mark(indices=job_number, status='error')
+                data.mark(indices=job_number, status='error')
 
-    def _evaluate_cluster(self, **kwargs):
+        return data
+
+    def _evaluate_cluster(
+            self, data: ExperimentData, **kwargs) -> ExperimentData:
         """Run the operation on the cluster
 
         Parameters
@@ -327,14 +333,14 @@ class DataGenerator(Block):
         """
         # Retrieve the updated experimentdata object from disc
         try:
-            self.data = self.data.from_file(self.data.project_dir)
+            data = type(data).from_file(data.project_dir)
         except FileNotFoundError:  # If not found, store current
-            self.data.store()
+            data.store()
 
-        get_open_job = self.data.access_file(type(self.data).get_open_job)
-        store_experiment_sample = self.data.access_file(
-            type(self.data).store_experimentsample)
-        mark = self.data.access_file(type(self.data).mark)
+        get_open_job = data.access_file(type(data).get_open_job)
+        store_experiment_sample = data.access_file(
+            type(data).store_experimentsample)
+        mark = data.access_file(type(data).mark)
 
         while True:
 
@@ -356,10 +362,11 @@ class DataGenerator(Block):
                 mark(indices=job_number, status='error')
                 continue
 
-        self.data = self.data.from_file(self.data.project_dir)
+        data = type(data).from_file(data.project_dir)
 
         # Remove the lockfile from disk
-        self.data.remove_lockfile()
+        data.remove_lockfile()
+        return data
 
     # =========================================================================
 
