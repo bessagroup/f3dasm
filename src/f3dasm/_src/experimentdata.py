@@ -1046,11 +1046,6 @@ class ExperimentData:
                 experiment_sample._output_data[name] = Path(storage_location)
 
         for name, value in experiment_sample._input_data.items():
-
-            # # If the output parameter is not in the domain, add it
-            # if name not in self.domain.output_names:
-            #     self.domain.add_output(name=name, to_disk=True)
-
             parameter = self.domain.input_space[name]
 
             # If the parameter is to be stored on disk, store it
@@ -1515,7 +1510,8 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
         return ExperimentData(domain=subdirectory / DOMAIN_FILENAME,
                               input_data=subdirectory / INPUT_DATA_FILENAME,
                               output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                              jobs=subdirectory / JOBS_FILENAME)
+                              jobs=subdirectory / JOBS_FILENAME,
+                              project_dir=project_dir)
 
     except FileNotFoundError:
         raise FileNotFoundError(
@@ -1637,6 +1633,9 @@ def data_factory(input_data: List[Dict[str, Any]],
         The converted data as a defaultdict of ExperimentSamples
 
     """
+    # remove all key-value pairs that have a None or np.nan value
+    input_data = remove_nan_and_none_keys_inplace(input_data)
+    output_data = remove_nan_and_none_keys_inplace(output_data)
     # Combine the two lists into a dictionary of ExperimentSamples
     data = {index: ExperimentSample(input_data=experiment_input,
                                     output_data=experiment_output,
@@ -1647,6 +1646,16 @@ def data_factory(input_data: List[Dict[str, Any]],
             enumerate(zip_longest(input_data, output_data, jobs))}
 
     return defaultdict(ExperimentSample, data)
+
+
+def remove_nan_and_none_keys_inplace(data_list: List[Dict[str, Any]]) -> None:
+    for data in data_list:
+        keys_to_remove = [k for k, v in data.items() if v is None or (
+            isinstance(v, float) and np.isnan(v))]
+        for k in keys_to_remove:
+            del data[k]
+
+    return data_list
 
 
 def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:

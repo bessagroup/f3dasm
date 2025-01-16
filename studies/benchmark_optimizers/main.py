@@ -29,10 +29,10 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from f3dasm import ExperimentData
+from f3dasm import Block, ExperimentData
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
-from f3dasm.design import Domain, Sampler, make_nd_continuous_domain
+from f3dasm.design import Domain, make_nd_continuous_domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -47,32 +47,36 @@ __status__ = 'Stable'
 #                                                         Custom sampler method
 # =============================================================================
 
-class CustomSampler(Sampler):
+class CustomSampler(Block):
     def __init__(self, seed: int):
         self.seed = seed
 
-    def call(self, n_samples: int) -> pd.DataFrame:
+    def call(self, data: ExperimentData, n_samples: int) -> ExperimentData:
         rng = np.random.default_rng(self.seed)
         samples = []
 
         for i in range(n_samples):
             dim = rng.choice(
-                self.domain.input_space['dimensionality'].categories)
+                data.domain.input_space['dimensionality'].categories)
 
             available_functions = list(set(get_functions(d=int(dim))) & set(
-                self.domain.input_space['function_name'].categories))
+                data.domain.input_space['function_name'].categories))
             function_name = rng.choice(available_functions)
 
-            noise = rng.choice(self.domain.input_space['noise'].categories)
+            noise = rng.choice(data.domain.input_space['noise'].categories)
             seed = rng.integers(
-                low=self.domain.input_space['seed'].lower_bound,
-                high=self.domain.input_space['seed'].upper_bound)
-            budget = self.domain.input_space['budget'].value
+                low=data.domain.input_space['seed'].lower_bound,
+                high=data.domain.input_space['seed'].upper_bound)
+            budget = data.domain.input_space['budget'].value
 
             samples.append([function_name, dim, noise, seed, budget])
 
-        return pd.DataFrame(
-            samples, columns=self.domain.input_names)[self.domain.input_names]
+        df = pd.DataFrame(
+            samples, columns=data.domain.input_names)[data.domain.input_names]
+
+        return ExperimentData(
+            domain=data.domain, input_data=df,
+            project_dir=data.project_dir)
 
 #                                                          Custom datagenerator
 # =============================================================================
@@ -83,11 +87,11 @@ class BenchmarkOptimizer(DataGenerator):
         self.config = config
 
     def optimize_function(self, optimizer: dict) -> xr.Dataset:
-        seed = self.experiment_sample.get('seed')
-        function_name = self.experiment_sample.get('function_name')
-        dimensionality = self.experiment_sample.get('dimensionality')
-        noise = self.experiment_sample.get('noise')
-        budget = self.experiment_sample.get('budget')
+        seed = self.experiment_sample.input_data['seed']
+        function_name = self.experiment_sample.input_data['function_name']
+        dimensionality = self.experiment_sample.input_data['dimensionality']
+        noise = self.experiment_sample.input_data['noise']
+        budget = self.experiment_sample.input_data['budget']
 
         hyperparameters = optimizer['hyperparameters'] \
             if 'hyperparameters' in optimizer else {}
