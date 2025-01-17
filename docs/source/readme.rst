@@ -31,6 +31,28 @@ Authorship & Citation
 
 .. [1] PhD Candiate, Delft University of Technology, `Website <https://mpvanderschelling.github.io/>`_ , `GitHub <https://github.com/mpvanderschelling/>`_
 
+.. note::
+
+   If you use ``f3dasm`` in your research or in a scientific publication, it is appreciated that you cite the paper below:
+
+   **Journal of Open Source Software** (`paper <https://doi.org/10.21105/joss.06912>`_):
+
+   .. code-block:: bibtex
+
+      @article{vanderSchelling2024,
+        title = {f3dasm: Framework for Data-Driven Design and Analysis of Structures and Materials},
+        author = {M. P. van der Schelling and B. P. Ferreira and M. A. Bessa},
+        doi = {10.21105/joss.06912},
+        url = {https://doi.org/10.21105/joss.06912},
+        year = {2024},
+        publisher = {The Open Journal},
+        volume = {9},
+        number = {100},
+        pages = {6912},
+        journal = {Journal of Open Source Software}
+      }
+
+
 ----
 
 Contribute
@@ -42,8 +64,9 @@ Contribute
 Useful links
 ------------
 * `GitHub repository <https://github.com/bessagroup/F3DASM/tree/main>`_ (source code)
-* `Wiki for development <https://github.com/bessagroup/F3DASM/wiki>`_
+* `Journal of Open Source Software <https://doi.org/10.21105/joss.06912>`_ (paper)
 * `PyPI package <https://pypi.org/project/f3dasm/>`_ (distribution package)
+* `Wiki for development <https://github.com/bessagroup/F3DASM/wiki>`_
 
 Related extension libraries
 ---------------------------
@@ -53,7 +76,7 @@ Related extension libraries
 
 License
 -------
-Copyright 2024, Martin van der Schelling
+Copyright 2025, Martin van der Schelling
 
 All rights reserved.
 

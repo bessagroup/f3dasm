@@ -44,13 +44,13 @@ logger.addHandler(handler)
 
 
 class DistributedFileHandler(FileHandler):
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         """Distributed FileHandler class for handling logging to
         one single file when multiple nodes access the same resource
 
         Parameters
         ----------
-        filename
+        filename : str
             name of the logging file
         """
         super().__init__(filename)

@@ -54,7 +54,7 @@ or
 
 ```bash
 # PyPI
-$ conda install f3dasm
+$ conda install conda-forge::f3dasm
 ```
 
 * Follow the complete [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) to get going!
@@ -100,7 +100,7 @@ If you find any **issues, bugs or problems** with this template, please use the 
 
 ## License
 
-Copyright 2024, Martin van der Schelling
+Copyright 2025, Martin van der Schelling
 
 All rights reserved.
 

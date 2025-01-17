@@ -32,25 +32,58 @@ __status__ = 'Alpha'
 
 
 class Block(ABC):
+    """
+    Abstract base class representing an operation in the data-driven process
+    """
+
     def arm(self, data: ExperimentData) -> None:
+        """
+        Prepare the block with a given ExperimentData.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to be used by the block.
+
+        Notes
+        -----
+        This method can be inherited by a subclasses to prepare the block
+        with the given experiment data. It is not required to implement this
+        method in the subclass.
+        """
         pass
 
     @abstractmethod
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """
+        Execute the block's operation on the ExperimentData.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments for the operation.
+
+        Returns
+        -------
+        ExperimentData
+            The processed experiment data.
+        """
         pass
 
 
 class LoopBlock(Block):
     def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
         """
-        LoopBlock constructor
+        Initialize a LoopBlock instance.
 
         Parameters
         ----------
-        blocks : Block | Iterable[Block]
-            The block or blocks to loop over
+        blocks : Block or Iterable[Block]
+            The block or blocks to loop over.
         n_loops : int
-            The number of loops to perform
+            The number of loops to perform.
         """
         if isinstance(blocks, Block):
             blocks = [blocks]
@@ -59,6 +92,21 @@ class LoopBlock(Block):
         self.n_loops = n_loops
 
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """
+        Execute the looped blocks on the ExperimentData.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments for the blocks.
+
+        Returns
+        -------
+        ExperimentData
+            The processed experiment data after looping.
+        """
         for _ in range(self.n_loops):
             for block in self.blocks:
                 block.arm(data)
@@ -69,20 +117,19 @@ class LoopBlock(Block):
 
 def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
     """
-    Loop function
+    Create a loop to execute blocks multiple times.
 
     Parameters
     ----------
-    blocks : Block | Iterable[Block]
-        The block or blocks to loop over
+    blocks : Block or Iterable[Block]
+        The block or blocks to loop over.
     n_loops : int
-        The number of loops to perform
+        The number of loops to perform.
 
     Returns
     -------
-
     Block
-        The loop block
+        An new Block instance that loops over the given blocks.
     """
     return LoopBlock(blocks=blocks, n_loops=n_loops)
 

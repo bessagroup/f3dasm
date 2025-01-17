@@ -1,12 +1,12 @@
-"""Parameters for constructing the feasible search space."""
+"""Parameters for constructing a feasible search space."""
 
 #                                                                       Modules
 # =============================================================================
 
 from __future__ import annotations
 
-import pickle
 # Standard
+import pickle
 from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
 
 #                                                          Authorship & Credits
@@ -94,6 +94,16 @@ class Parameter:
             If `to_disk` is False but either `store_function` or
             `load_function` is not None.
 
+        Notes
+        -----
+        The `store_function` and `load_function` parameters are used to store
+        the parameter to disk and load it from disk, respectively. f3dasm has
+        built-in support for some common datatypes (numpy array, pandas
+        DataFrame, xarray Dataarray and Dataset), for those data types the
+        `store_function` and `load_function` are automatically set. If the
+        parameter is not one of these types, the user must provide a custom
+        `store_function` and `load_function`.
+
         Examples
         --------
         >>> param = Parameter(to_disk=True)
@@ -121,6 +131,24 @@ class Parameter:
         return self.to_disk == __o.to_disk
 
     def __add__(self, __o: Parameter) -> Parameter:
+        """
+        Add two parameters together.
+
+        Parameters
+        ----------
+        __o : Parameter
+            The parameter to add to the current parameter.
+
+        Returns
+        -------
+        Parameter
+            The first parameter
+
+        Notes
+        -----
+        Adding two parameters together will return the first parameter. This
+        is because the parameters are not additive.
+        """
         return self
 
     def to_dict(self) -> dict:
@@ -132,10 +160,18 @@ class Parameter:
         dict
             Dictionary representation of the Parameter object.
 
+        Notes
+        -----
+        The dictionary representation of the Parameter object contains the
+        type of the parameter, whether it should be saved to disk, and the
+        store and load functions. The functions are stored as hex strings.
+
         Examples
         --------
         >>> param = Parameter(to_disk=True)
         >>> param_dict = param.to_dict()
+
+
         """
         param_dict = {
             'type': self._type,
@@ -259,7 +295,15 @@ class ConstantParameter(Parameter):
         if isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to constant!")
 
-    def to_categorical(self) -> "CategoricalParameter":
+    def to_categorical(self) -> CategoricalParameter:
+        """
+        Convert the constant parameter to a categorical parameter.
+
+        Returns
+        -------
+        CategoricalParameter
+            The converted categorical parameter.
+        """
         return CategoricalParameter(categories=[self.value])
 
     def to_dict(self):

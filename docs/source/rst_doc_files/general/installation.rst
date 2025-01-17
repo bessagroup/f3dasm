@@ -76,21 +76,10 @@ Then run:
           ><span class="sk-expandable" data-packager="pip" data-os="linux"><span class="gp">$ </span>pip install -U f3dasm</span
           ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda create -n f3dasm_env python=3.8</span
           ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda activate f3dasm_env</span
-          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda install pip</span
-          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>pip install -U f3dasm</span
+          ><span class="sk-expandable" data-packager="conda"><span class="gp">$ </span>conda install conda-forge::f3dasm</span
           ></pre></div></div>
 
 ----
-
-In order to check your installation you can use
-
-.. code-block:: console
-
-  $ python -c "import f3dasm"
-  >>> 2023-09-03 20:12:41,088 - Imported f3dasm (version: 1.x.x)
-
-This will show the installed version of f3dasm.
-
 
 .. note::
 
@@ -124,7 +113,7 @@ Building from source is required to work on a contribution (bug fix, new feature
      cd f3dasm
 
 
-2. Install a recent version of Python (3.7, 3.8, 3.9 or 3.10)
+2. Install a recent version of Python (3.8, 3.9 or 3.10)
    for instance using `Miniconda3 <https://docs.conda.io/en/latest/miniconda.html>`_ or `Mamba <https://github.com/conda-forge/miniforge#install>`_.
    If you installed Python with conda, we recommend to create a dedicated
    conda environment with all the build dependencies of f3dasm:
@@ -141,15 +130,6 @@ Building from source is required to work on a contribution (bug fix, new feature
    .. code-block:: console
 
      pip install --verbose --no-build-isolation --editable .
-
-4. In order to check your installation you can use
-
-  .. code-block:: console
-
-     $ python -c "import f3dasm"
-     >>> 2023-07-05 14:56:40,015 - Imported f3dasm (version: 1.x.x)
-
-
 
 .. note::
 

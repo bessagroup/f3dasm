@@ -42,7 +42,7 @@ class ExperimentSample:
                  job_status: Optional[str] = None,
                  project_dir: Optional[Path] = None):
         """
-        Initialize an ExperimentSample instance.
+        Realization of a single experiment in the design-of-experiment.
 
         Parameters
         ----------

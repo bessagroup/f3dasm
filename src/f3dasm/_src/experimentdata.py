@@ -62,43 +62,32 @@ class ExperimentData:
             jobs: Optional[pd.Series] = None,
             project_dir: Optional[Path] = None):
         """
-        Initializes an instance of ExperimentData.
+        Main object to store implementations of a design-of-experiments, keep
+        track of results, perform optimization and extract data for machine
+        learning purposes.
 
         Parameters
         ----------
         domain : Domain, optional
-            The domain of the experiment, by default None
-        input_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]]
-          | Path | str, optional
-            The input data of the experiment, by default None
-        output_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]]
-          | Path | str, optional
-            The output data of the experiment, by default None
-        jobs : pandas.Series, optional
-            The status of all the jobs, by default None
-        project_dir : Path | str, optional
-            A user-defined directory where the f3dasm project folder will be
-            created, by default the current working directory.
+            The domain of the experiment, by default None.
+        input_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
+                    str | Path, optional
+            The input data of the experiment, by default None.
+        output_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
+                     str | Path, optional
+            The output data of the experiment, by default None.
+        jobs : pd.Series, optional
+            The status of all the jobs, by default None.
+        project_dir : Path, optional
+            Directory of the project, by default None.
 
-        Note
-        ----
-
-        The following data formats are supported for input and output data:
-
-        * numpy array
-        * pandas Dataframe
-        * path to a csv file
-
-        If no domain object is provided, the domain is inferred from the
-        input_data.
-
-        If the provided project_dir does not exist, it will be created.
-
-        Raises
-        ------
-
-        ValueError
-            If the input_data is a numpy array, the domain has to be provided.
+        Examples
+        --------
+        >>> experiment_data = ExperimentData(
+        ...     domain=domain_obj,
+        ...     input_data=input_df,
+        ...     output_data=output_df
+        ... )
         """
         _domain = _domain_factory(domain)
         _project_dir = _project_dir_factory(project_dir)
@@ -598,7 +587,7 @@ class ExperimentData:
         * the input data (`input.csv`)
         * the output data (`output.csv`)
         * the jobs (`jobs.csv`)
-        * the domain (`domain.pkl`)
+        * the domain (`domain.json`)
 
         To avoid the ExperimentData to be written simultaneously by multiple
         processes, a '.lock' file is automatically created
@@ -854,6 +843,27 @@ class ExperimentData:
             jobs: Optional[Path | str] = None,
             add_if_not_exist: bool = False
     ) -> None:
+        """
+        Overwrite experiments on disk with new data.
+
+        Parameters
+        ----------
+        indices : Iterable[int]
+            The indices of the experiments to overwrite.
+        domain : Domain, optional
+            The new domain, by default None.
+        input_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
+                    str | Path, optional
+            The new input data, by default None.
+        output_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
+                     str | Path, optional
+            The new output data, by default None.
+        jobs : Path | str, optional
+            The new jobs data, by default None.
+        add_if_not_exist : bool, optional
+            If True, add experiments if the indices do not exist,
+            by default False.
+        """
         raise NotImplementedError()
 
     def remove_rows_bottom(self, number_of_rows: int):
@@ -1519,8 +1529,26 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
 
 
 def convert_numpy_to_dataframe_with_domain(
-        array: np.ndarray, names: Optional[List[str]], mode: str
+        array: np.ndarray, names: Optional[List[str]],
+        mode: Literal['input', 'output']
 ) -> pd.DataFrame:
+    """
+    Convert a numpy array to a pandas DataFrame with the domain names
+
+    Parameters
+    ----------
+    array : np.ndarray
+        The numpy array to be converted
+    names : List[str], optional
+        The names of the columns, by default None
+    mode : str
+        The mode of the data, either 'input' or 'output'
+
+    Returns
+    -------
+    pd.DataFrame
+        The converted data as a pandas DataFrame
+    """
     if not names:
         if mode == 'input':
             names = [f'x{i}' for i in range(array.shape[1])]

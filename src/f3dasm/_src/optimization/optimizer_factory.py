@@ -25,6 +25,14 @@ __status__ = 'Stable'
 
 
 def available_optimizers():
+    """
+    Returns a list of all available built-in optimization algorithms.
+
+    Returns
+    -------
+    List[str]
+        List of all available optimization algorithms 
+    """
     return list(get_optimizer_mapping().keys())
 
 

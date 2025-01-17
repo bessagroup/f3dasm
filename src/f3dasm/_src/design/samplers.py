@@ -302,6 +302,21 @@ class RandomUniform(Block):
 
 
 def random(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Create a RandomUniform sampler.
+
+    Parameters
+    ----------
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        An Block instance of a random uniform sampler.
+    """
     return RandomUniform(seed=seed, **kwargs)
 
 
@@ -385,6 +400,17 @@ class Grid(Block):
 
 
 def grid(**kwargs) -> Block:
+    """
+    Create a Grid sampler.
+
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        An Block instance of a grid sampler.
+    """
     return Grid(**kwargs)
 
 # =============================================================================
@@ -456,6 +482,21 @@ class Sobol(Block):
 
 
 def sobol(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Create a Sobol sampler.
+
+    Parameters
+    ----------
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        A Block instance of a sobol sequence sampler.
+    """
     return Sobol(seed=seed, **kwargs)
 
 
@@ -526,6 +567,21 @@ class Latin(Block):
 
 
 def latin(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Create a lating hypercube sampler.
+
+    Parameters
+    ----------
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        An Block instance of a latin hypercube sampler.
+    """
     return Latin(seed=seed, **kwargs)
 
 # =============================================================================

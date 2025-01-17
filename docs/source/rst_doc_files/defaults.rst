@@ -56,8 +56,6 @@ Sphere                   ``"Sphere"``                                           
 Sum Squares              ``"Sum Squares"``                                      :func:`~f3dasm.datageneration.functions.sumsquares`
 Thevenot                 ``"Thevenot"``                                         :func:`~f3dasm.datageneration.functions.thevenot`
 Trid                     ``"Trid"``                                             :func:`~f3dasm.datageneration.functions.trid`
-Xin She Yang N.3         ``"Xin She Yang N.3"``                                 :func:`~f3dasm.datageneration.functions.xin_she_yang_3`
-Xin-She Yang N.4         ``"Xin-She Yang N.4"``                                 :func:`~f3dasm.datageneration.functions.xin_she_yang_4`
 ======================== ====================================================== ===============================================================
 
 
@@ -140,7 +138,6 @@ Shubert N. 4             ``"Shubert N. 4"``                               :func:
 Styblinski Tank          ``"Styblinski Tank"``                            :func:`~f3dasm.datageneration.functions.styblinskitang`
 Thevenot                 ``"Thevenot"``                                   :func:`~f3dasm.datageneration.functions.thevenot`
 Xin She Yang             ``"Xin She Yang"``                               :func:`~f3dasm.datageneration.functions.xin_she_yang`
-Xin She Yang N.2         ``"Xin She Yang N.2"``                           :func:`~f3dasm.datageneration.functions.xin_she_yang_2`
 ======================== ================================================ ===========================================================
 
 
