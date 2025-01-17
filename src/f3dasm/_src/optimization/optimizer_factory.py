@@ -31,7 +31,7 @@ def available_optimizers():
     Returns
     -------
     List[str]
-        List of all available optimization algorithms 
+        List of all available optimization algorithms
     """
     return list(get_optimizer_mapping().keys())
 
