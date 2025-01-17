@@ -3,5 +3,4 @@ sphinx-book-theme
 sphinxcontrib-bibtex
 sphinx_autodoc_typehints
 sphinx-tabs==3.4.4
-sphinx-gallery
 nbsphinx

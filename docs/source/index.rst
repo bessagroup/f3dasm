@@ -25,7 +25,6 @@ f3dasm
    :hidden:
    :includehidden:
 
-   auto_examples/index
    rst_doc_files/gallery
    rst_doc_files/defaults
 

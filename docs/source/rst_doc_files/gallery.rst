@@ -1,5 +1,7 @@
-Gallery
-=======
+.. _tutorials:
+
+Tutorials
+=========
 
 Design-of-experiments
 ---------------------

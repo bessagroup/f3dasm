@@ -21,7 +21,7 @@ The best way to get started is to:
 
 * Read the :ref:`overview` section, containing a brief introduction to the framework and a statement of need.
 * Follow the :ref:`installation-instructions` to get going!
-* Check out the :ref:`examples` section, containing a collection of examples to get you familiar with the framework.
+* Check out the :ref:`tutorials` section, containing a collection of examples to get you familiar with the framework.
 
 ----
 
