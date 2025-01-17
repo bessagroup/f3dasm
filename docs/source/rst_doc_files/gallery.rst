@@ -12,7 +12,7 @@ The submodule :mod:`f3dasm.design` contains the  :class:`~f3dasm.design.Domain` 
     :name: designofexperiments
     :glob:
 
-    notebooks/design/*
+    ../notebooks/design/*
 
 Managing experiments with the ExperimentData object
 ---------------------------------------------------
@@ -26,7 +26,7 @@ All other processses of :mod:`f3dasm` use this object to manipulate and access d
     :name: experimentdata
     :glob:
 
-    notebooks/experimentdata/*
+    ../notebooks/experimentdata/*
 
 Designing your data-driven process
 ----------------------------------
@@ -37,7 +37,7 @@ Use the :class:`~f3dasm.Block` abstraction to manipulate the :class:`~f3dasm.Exp
     :name: datadriven
     :glob:
 
-    notebooks/data-driven/*
+    ../notebooks/data-driven/*
 
 Built-in implementations
 ------------------------
@@ -48,7 +48,7 @@ The :mod:`f3dasm` package comes with built-in implementations of the :class:`~f3
     :name: builtins
     :glob:
 
-    notebooks/builtins/*
+    ../notebooks/builtins/*
 
 Integration with hydra
 ----------------------
@@ -58,4 +58,4 @@ Examples that integrate the :mod:`f3dasm` package with the configuration manager
 .. nblinkgallery::
     :name: hydra
 
-    notebooks/hydra/usehydra
+    ../notebooks/hydra/usehydra
