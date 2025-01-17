@@ -53,9 +53,11 @@ The :mod:`f3dasm` package comes with built-in implementations of the :class:`~f3
 Integration with hydra
 ----------------------
 
-Examples that integrate the :mod:`f3dasm` package with the configuration manager `hydra <https://hydra.cc/>`_
+Examples that integrate the :mod:`f3dasm` package with the configuration manager hydra
 
 .. nblinkgallery::
     :name: hydra
+    :glob:
 
-    ../notebooks/hydra/usehydra
+    ../notebooks/hydra/*
+
