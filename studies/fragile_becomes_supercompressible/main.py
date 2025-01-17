@@ -64,24 +64,15 @@ class LogNormalSampler(Sampler):
         self.sigma = sigma
         self.seed = seed
 
-    def call(self, n_samples: int):
-        """Sampler function for lognormal distribution
-
-        Parameters
-        ----------
-        n_samples
-            Number of samples to generator
-
-        Returns
-        -------
-        DataFrame
-            pandas DataFrame with the samples
-        """
+    def call(self, data: ExperimentData, n_samples: int) -> ExperimentData:
         rng = np.random.default_rng(self.seed)
         sampled_imperfections = rng.lognormal(
             mean=self.mean, sigma=self.sigma, size=n_samples)
-        return pd.DataFrame(sampled_imperfections,
-                            columns=self.domain.input_names)
+        df = pd.DataFrame(sampled_imperfections,
+                          columns=self.domain.input_names)
+        return ExperimentData(domain=data.domain,
+                              input_data=df,
+                              project_dir=data.project_dir)
 
 # =============================================================================
 
