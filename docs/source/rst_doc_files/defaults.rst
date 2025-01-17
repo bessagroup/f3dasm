@@ -170,4 +170,4 @@ These extensions are provided as separate package: `f3dasm_optimize <https://git
 
     pip install f3dasm_optimize
 
-More information about this extension can be found in the `f3dasm_optimize documentation page <https://bessagroup.github.io/f3dasm_optimize/>`_
+More information about this extension can be found in the `f3dasm_optimize documentation page <https://f3dasm-optimize.readthedocs.io/en/latest/>`_
