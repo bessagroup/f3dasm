@@ -46,6 +46,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Setup pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: '3.1.2' # The pandoc version to download (if necessary) and use.
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
