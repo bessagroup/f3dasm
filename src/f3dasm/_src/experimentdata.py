@@ -997,6 +997,39 @@ class ExperimentData:
         for _, es in self:
             es.round(decimals)
 
+    def sort(self, criterion: Callable[[ExperimentSample], Any],
+             reverse: bool = False) -> ExperimentData:
+        """
+        Sort the ExperimentData object based on a criterion.
+
+        Parameters
+        ----------
+        criterion : Callable[[ExperimentSample], Any]
+            The criterion to sort on. This should be a function that takes an
+            ExperimentSample object and returns a value to sort on.
+        reverse : bool, optional
+            If True, sort in descending order, by default False.
+
+        Returns
+        -------
+        ExperimentData
+            The sorted ExperimentData object.
+
+        Examples
+        --------
+        >>> sorted_data = experiment_data.sort(lambda x: x.output_data['y'])
+        """
+
+        sorted_data = dict(
+            sorted(self.data.items(), key=lambda item: criterion(
+                item[1]), reverse=reverse)
+        )
+        return ExperimentData.from_data(
+            data=sorted_data,
+            domain=self.domain,
+            project_dir=self.project_dir
+        )
+
     #                                                          ExperimentSample
     # =========================================================================
 
@@ -1625,8 +1658,9 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
         return data
 
     # If the data is a pandas DataFrame, convert it to a list of dictionaries
+    # Note : itertuples() is faster but renames the column names
     elif isinstance(data, pd.DataFrame):
-        return [row._asdict() for row in data.itertuples(index=False)]
+        return [row.to_dict() for _, row in data.iterrows()]
 
     raise ValueError(f"Data type {type(data)} not supported")
 
