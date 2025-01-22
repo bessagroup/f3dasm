@@ -1,6 +1,85 @@
 Built-in functionalities
 ========================
 
+:mod:`f3dasm` provides a set of built-in functionalities that can be used to perform data-driven optimization and sensitivity analysis. 
+All built-ins are implementations of the :class:`~f3dasm.Block` class and can be used on your :class:`~f3dasm.ExperimentData` object.
+
+Blocks can be run on a :class:`~f3dasm.ExperimentData` object by calling the :meth:`~f3dasm.ExperimentData.run` method.
+Alternatively, you can use the following methods for specific parts of the data-driven process.
+
+=============================== ======================================= ===================================================
+Part of the data-driven process Submodule for built-ins                 Method on :class:`~f3dasm.ExperimentData`
+=============================== ======================================= ===================================================
+Sampling                        :mod:`f3dasm.design`                    :meth:`f3dasm.ExperimentData.sample`
+Data generation                 :mod:`f3dasm.datageneration`            :meth:`f3dasm.ExperimentData.evaluate`
+Optimization                    :mod:`f3dasm.optimization`              :meth:`f3dasm.ExperimentData.optimize`
+=============================== ======================================= ===================================================
+
+:mod:`f3dasm` provides two ways to use the built-in functionalities:
+
+1. Call the built-in functions
+
+You can import the built-in functions directly from the respective submodules and call them to change the (hyper)parameters.
+
+.. code-block:: python
+
+    from f3dasm.design import random
+    from f3dasm.datageneration import ackley
+
+    # Call the random uniform sampler with a specific seed
+    sampler_block = random(seed=123)
+
+    # Create a 2D instance of the 'Ackley' function with its box-constraints scaled to [0, 1]
+    data_generation_block = ackley(scale_bounds=[[0., 1.], [0., 1.]])
+
+    # Create an empty Domain
+    domain = Domain()
+
+    # Add two continuous parameters 'x0' and 'x1'
+    domain.add_float(name='x0', low=0.0, high=1.0)
+    domain.add_float(name='x1', low=0.0, high=1.0)
+
+    # Create an empty ExperimentData object with the domain
+    experiment_data = ExperimentData(domain=domain)
+
+    # 1. Sampling
+    experiment_data.sample(sampler=sampler_block, n_samples=10)
+
+    # 2. Evaluating the samples
+    experiment_data.evaluate(data_generator=data_generation_block)
+
+
+2. Use a string argument
+
+Alternatively, you can use a string argument to specify the built-in function you want to use. The default parameters will be used.
+
+
+.. code-block:: python
+
+    # Create an empty Domain
+    domain = Domain()
+
+    # Add two continuous parameters 'x0' and 'x1'
+    domain.add_float(name='x0', low=0.0, high=1.0)
+    domain.add_float(name='x1', low=0.0, high=1.0)
+
+    # Create an empty ExperimentData object with the domain
+    experiment_data = ExperimentData(domain=domain)
+
+    # 1. Sampling
+    experiment_data.sample(sampler='random', n_samples=10)
+
+    # 2. Evaluating the samples
+    experiment_data.evaluate(data_generator='ackley')
+
+
+.. warning::
+
+  The built-in functionalities are designed with the built-in parameters in mind! 
+  This means that in order to make use of the samplers, benchmark functions and optimizers, 
+  you are restricted to add parameters via the :meth:`~f3dasm.design.Domain.add_float`, :meth:`~f3dasm.design.Domain.add_int`, 
+  :meth:`~f3dasm.design.Domain.add_category` and :meth:`~f3dasm.design.Domain.add_constant` methods.
+
 .. _implemented samplers:
 
 Implemented samplers
