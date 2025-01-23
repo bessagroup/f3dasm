@@ -29,9 +29,9 @@ import numpy as np
 import pandas as pd
 from abaqus2py import F3DASMAbaqusSimulator
 
-from f3dasm import ExperimentData
+from f3dasm import Block, ExperimentData
 from f3dasm import logger as f3dasm_logger
-from f3dasm.design import Domain, Sampler
+from f3dasm.design import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -47,7 +47,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class LogNormalSampler(Sampler):
+class LogNormalSampler(Block):
     def __init__(self, mean: float, sigma: float, seed: Optional[int] = None):
         """Sampler function for lognormal distribution
 
