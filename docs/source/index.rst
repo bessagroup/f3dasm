@@ -9,7 +9,7 @@ f3dasm
 
 .. toctree::
    :name: gettingstartedtoc
-   :caption: Getting started
+   :caption: 🚶 Getting started
    :maxdepth: 3
    :hidden:
    :includehidden:
@@ -20,7 +20,7 @@ f3dasm
 
 .. toctree::
    :name: functionalitiestoc
-   :caption: Functionalities
+   :caption: 🌊 Functionalities
    :maxdepth: 3
    :hidden:
    :includehidden:
@@ -30,11 +30,11 @@ f3dasm
 
 .. toctree::
    :name: apitoc
-   :caption: API
+   :caption: 📖 Reference
    :hidden:
 
    rst_doc_files/reference/index.rst
-   API reference <_autosummary/f3dasm>
+   API documentation <_autosummary/f3dasm>
 
 .. toctree::
    :name: licensetoc
