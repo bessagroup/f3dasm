@@ -1728,9 +1728,15 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         return pd.Series()
 
     elif isinstance(jobs, (Path, str)):
-        return pd.read_csv(
+        df = pd.read_csv(
             Path(jobs).with_suffix('.csv'),
             header=0, index_col=0).squeeze()
+        # If the jobs is jut one value, it is parsed as a string
+        # So, make sure that we return a pd.Series either way!
+        if not isinstance(df, pd.Series):
+            df = pd.Series(df)
+
+        return df
 
     else:
         raise ValueError(f"Jobs type {type(jobs)} not supported")
