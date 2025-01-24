@@ -33,7 +33,7 @@ The benchmark function is optimized for a given number of iterations and repeate
 
 ### Before running the experiment
 
-1. Install `f3dasm_optimize` in your environment. See [here](https://bessagroup.github.io/f3dasm_optimize/rst_doc_files/getting_started.html) for instructions.
+1. Install `f3dasm_optimize` in your environment. See [here](https://f3dasm-optimize.readthedocs.io/en/latest/) for instructions.
 3. Change the `config.yaml` file to your liking. See [here](#explanation-of-configyaml-parameters) for an explanation of the parameters.
 
 ### Running the experiment on your local machine
@@ -134,7 +134,7 @@ outputs/
 | sampler_name               | `str`   | Name of the sampling strategy for the first iterations ([reference](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/sampling/sampling.html#id2)) |
 | number_of_samples          | `int`      | Number of initial samples ($\vec{x}_0$)          |
 | realizations               | `int`      | Number of realizations with different initial conditions    |
-| optimizers                 | `List[str]`     | List of dictionaries. Each dictionary contains a key ``name`` with the optimizer name ([from `f3dasm`](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/optimization/optimizers.html#implemented-optimizers), [and `f3dasm_optimize`](https://bessagroup.github.io/f3dasm_optimize/rst_doc_files/optimizers.html#implemented-optimizers)) and a (optionally) a ``hyperparameters`` key to overwrite hyper-parameters of that specific optimzier.      |
+| optimizers                 | `List[str]`     | List of dictionaries. Each dictionary contains a key ``name`` with the optimizer name ([from `f3dasm`](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/classes/optimization/optimizers.html#implemented-optimizers), [and `f3dasm_optimize`](https://f3dasm-optimize.readthedocs.io/en/latest/)) and a (optionally) a ``hyperparameters`` key to overwrite hyper-parameters of that specific optimzier.      |
 
 
 ### HPC

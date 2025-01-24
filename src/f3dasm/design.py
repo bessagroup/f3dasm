@@ -6,7 +6,7 @@ Module for design-of-experiments
 
 # Local
 from ._src.design.domain import Domain, make_nd_continuous_domain
-from ._src.experimentdata._jobqueue import NoOpenJobsError, Status
+from ._src.design.samplers import grid, latin, random, sobol
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -20,6 +20,8 @@ __status__ = 'Stable'
 __all__ = [
     'Domain',
     'make_nd_continuous_domain',
-    'NoOpenJobsError',
-    'Status',
+    'latin',
+    'random',
+    'grid',
+    'sobol',
 ]

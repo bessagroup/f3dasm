@@ -56,7 +56,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_dev.txt
       - name: Build documentation
-        run: |
+        uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: '3.1.2' # The pandoc version to download (if necessary) and use.
+      - run: |
           sphinx-build -b html ./docs/source ./docs/build/html
   build-package:
     strategy:

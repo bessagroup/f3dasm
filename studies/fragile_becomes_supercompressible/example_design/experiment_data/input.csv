@@ -1,2 +1,2 @@
 ,bottom_diameter,circular,imperfection,n_longerons,ratio_Ixx,ratio_Iyy,ratio_J,ratio_area,ratio_pitch,ratio_shear_modulus,ratio_top_diameter,young_modulus
-0,100,0,0.2,3,0.0000001697758,0.0000003717950,1e-06,0.003624,0.75,0.367714286,0.4,3500.0
+0,100.0,0.0,0.2,3.0,1.697758e-07,3.71795e-07,1e-06,0.003624,0.75,0.367714286,0.4,3500.0

@@ -1,18 +1,18 @@
 #                                                                       Modules
 # =============================================================================
+from __future__ import annotations
 
 # Standard
 import warnings
+from copy import deepcopy
 
 # Third-party core
 import autograd.numpy as np
 from scipy.optimize import minimize
 
 # Locals
-from ...datageneration.datagenerator import DataGenerator
-from ...design.domain import Domain
-from ...experimentdata.experimentsample import ExperimentSample
-from ..optimizer import Optimizer
+from ...core import Block, DataGenerator, ExperimentData
+from ...experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -27,54 +27,117 @@ warnings.filterwarnings(
     "ignore", message="^OptimizeWarning: Unknown solver options.*")
 
 
-class _SciPyOptimizer(Optimizer):
+class ScipyOptimizer(Block):
+    require_gradients: bool = False
     type: str = 'scipy'
 
-    def __init__(self, domain: Domain, method: str, **hyperparameters):
-        self.domain = domain
-        self.method = method
-        self.options = {**hyperparameters}
+    def __init__(self, algorithm, **hyperparameters):
+        self.algorithm = algorithm
+        self.hyperparameters = hyperparameters
 
     def _callback(self, xk: np.ndarray, *args, **kwargs) -> None:
         self.data.add_experiments(
-            ExperimentSample.from_numpy(xk, domain=self.domain))
+            type(self.data)(domain=self.data.domain,
+                            input_data=np.atleast_2d(xk),
+                            project_dir=self.data.project_dir)
+        )
 
-    def update_step(self):
+    def call(self, data: ExperimentData, **kwargs):
         """Update step function"""
         raise ValueError(
             'Scipy optimizers don\'t have an update steps. \
                  Multiple iterations are directly called \
                     througout scipy.minimize.')
 
-    def run_algorithm(self, iterations: int, data_generator: DataGenerator):
+    def run_algorithm(self, data_generator: DataGenerator, iterations: int):
         """Run the algorithm for a number of iterations
 
         Parameters
         ----------
         iterations
             number of iterations
-        function
-            function to be evaluated
         """
 
         def fun(x):
-            sample: ExperimentSample = data_generator._run(
-                x, domain=self.domain)
+            x_ = ExperimentSample.from_numpy(input_array=x,
+                                             domain=self.data.domain)
+            sample = data_generator._run(
+                x_, domain=self.data.domain)
             _, y = sample.to_numpy()
             return float(y)
-
-        self.options['maxiter'] = iterations
 
         if not hasattr(data_generator, 'dfdx'):
             data_generator.dfdx = None
 
+        self.hyperparameters['maxiter'] = iterations
+
         minimize(
             fun=fun,
-            method=self.method,
+            method=self.algorithm,
             jac=data_generator.dfdx,
             x0=self.data.get_n_best_output(1).to_numpy()[0].ravel(),
             callback=self._callback,
-            options=self.options,
-            bounds=self.domain.get_bounds(),
+            options=self.hyperparameters,
+            bounds=self.data.domain.get_bounds(),
             tol=0.0,
         )
+
+    def _iterate(self, data: ExperimentData, data_generator: DataGenerator,
+                 iterations: int,
+                 kwargs: dict, overwrite: bool):
+        """Internal represenation of the iteration process for scipy-minimize
+        optimizers.
+
+        Parameters
+        ----------
+        data_generator : DataGenerator
+            DataGenerator object
+        iterations : int
+            number of iterations
+        kwargs : Dict[str, Any]
+            any additional keyword arguments that will be passed to
+            the DataGenerator
+        overwrite: bool
+            If True, the optimizer will overwrite the current data.
+        """
+        self.data = data
+        n_data_before_iterate = deepcopy(len(data))
+        if len(data) < 1:
+            raise ValueError(
+                f'There are {len(data)} datapoints available, \
+                        need 1 for initial \
+                            population!'
+            )
+
+        self.run_algorithm(data_generator=data_generator,
+                           iterations=iterations)
+
+        new_samples = self.data.select(self.data.index[1:])
+
+        new_samples.evaluate(data_generator=data_generator,
+                             mode='sequential', **kwargs)
+
+        if overwrite:
+            self.data.add_experiments(
+                data.select([self.data.index[-1]]))
+
+        elif not overwrite:
+            # If x_new is empty, repeat best x0 to fill up total iteration
+            if len(self.data) == n_data_before_iterate:
+                repeated_sample = self.data.get_n_best_output(
+                    n_samples=1)
+
+                for repetition in range(iterations):
+                    self.data.add_experiments(repeated_sample)
+
+            # Repeat last iteration to fill up total iteration
+            if len(self.data) < n_data_before_iterate + iterations:
+                last_design = self.data.get_experiment_sample(len(self.data)-1)
+
+                while len(self.data) < n_data_before_iterate + iterations:
+                    self.data.add_experiments(last_design)
+
+        self.data.evaluate(data_generator=data_generator,
+                           mode='sequential', **kwargs)
+
+        return self.data

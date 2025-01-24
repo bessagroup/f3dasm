@@ -1,23 +1,23 @@
 import pandas as pd
 import pytest
 
-from f3dasm._src.design.parameter import (_CategoricalParameter,
-                                          _ContinuousParameter,
-                                          _DiscreteParameter)
+from f3dasm._src.design.parameter import (CategoricalParameter,
+                                          ContinuousParameter,
+                                          DiscreteParameter)
 from f3dasm.design import Domain
 
 
 @pytest.fixture(scope="package")
 def doe():
-    x1 = _ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
-    x2 = _DiscreteParameter(lower_bound=5, upper_bound=80)
-    x3 = _ContinuousParameter(lower_bound=10.0, upper_bound=380.3)
-    x4 = _CategoricalParameter(categories=["test1", "test2", "test3"])
-    x5 = _DiscreteParameter(lower_bound=2, upper_bound=3)
+    x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
+    x2 = DiscreteParameter(lower_bound=5, upper_bound=80)
+    x3 = ContinuousParameter(lower_bound=10.0, upper_bound=380.3)
+    x4 = CategoricalParameter(categories=["test1", "test2", "test3"])
+    x5 = DiscreteParameter(lower_bound=2, upper_bound=3)
 
     designspace = {'x1': x1, 'x2': x2, 'x3': x3, 'x4': x4, 'x5': x5}
 
-    doe = Domain(space=designspace)
+    doe = Domain(input_space=designspace)
     return doe
 
 
@@ -25,33 +25,33 @@ def doe():
 def domain():
 
     space = {
-        'x1': _ContinuousParameter(-5.12, 5.12),
-        'x2': _DiscreteParameter(-3, 3),
-        'x3': _CategoricalParameter(["red", "green", "blue"])
+        'x1': ContinuousParameter(-5.12, 5.12),
+        'x2': DiscreteParameter(-3, 3),
+        'x3': CategoricalParameter(["red", "green", "blue"])
     }
 
-    return Domain(space=space)
+    return Domain(input_space=space)
 
 
 @pytest.fixture(scope="package")
 def continuous_parameter():
     lower_bound = 3.3
     upper_bound = 3.8
-    return _ContinuousParameter(lower_bound=lower_bound,
-                                upper_bound=upper_bound)
+    return ContinuousParameter(lower_bound=lower_bound,
+                               upper_bound=upper_bound)
 
 
 @pytest.fixture(scope="package")
 def discrete_parameter():
     lower_bound = 3
     upper_bound = 6
-    return _DiscreteParameter(lower_bound=lower_bound, upper_bound=upper_bound)
+    return DiscreteParameter(lower_bound=lower_bound, upper_bound=upper_bound)
 
 
 @pytest.fixture(scope="package")
 def categorical_parameter():
     categories = ["test1", "test2", "test3"]
-    return _CategoricalParameter(categories=categories)
+    return CategoricalParameter(categories=categories)
 
 
 @pytest.fixture(scope="package")

@@ -1,0 +1,105 @@
+{
+    "input_space": {
+        "young_modulus": {
+            "type": "constant",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "value": 3500.0
+        },
+        "n_longerons": {
+            "type": "constant",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "value": 3
+        },
+        "bottom_diameter": {
+            "type": "constant",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "value": 100.0
+        },
+        "ratio_top_diameter": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.0,
+            "upper_bound": 0.8,
+            "log": false
+        },
+        "ratio_pitch": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.25,
+            "upper_bound": 1.5,
+            "log": false
+        },
+        "ratio_shear_modulus": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.035,
+            "upper_bound": 0.45,
+            "log": false
+        },
+        "ratio_area": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 1.17e-05,
+            "upper_bound": 0.0041,
+            "log": false
+        },
+        "ratio_Ixx": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 1.128e-11,
+            "upper_bound": 1.4e-06,
+            "log": false
+        },
+        "ratio_Iyy": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 1.128e-11,
+            "upper_bound": 1.4e-06,
+            "log": false
+        },
+        "ratio_J": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 1.353e-11,
+            "upper_bound": 7.77e-06,
+            "log": false
+        },
+        "circular": {
+            "type": "constant",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "value": false
+        },
+        "imperfection": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.0,
+            "upper_bound": 1.0,
+            "log": false
+        }
+    },
+    "output_space": {}
+}

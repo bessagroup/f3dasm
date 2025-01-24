@@ -6,15 +6,13 @@ Optimizers based from the numpy library
 # =============================================================================
 
 # Standard
-from typing import List, Optional, Tuple
+from typing import Optional
 
 # Third-party core
 import numpy as np
 
 # Locals
-from ..datageneration.datagenerator import DataGenerator
-from ..design.domain import Domain
-from .optimizer import Optimizer
+from ..core import Block, ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,32 +24,46 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class RandomSearch(Optimizer):
-    """Naive random search"""
+class NumpyOptimizer(Block):
+    """Numpy optimizer class"""
     require_gradients: bool = False
 
-    def __init__(self, domain: Domain, seed: Optional[int] = None, **kwargs):
-        self.domain = domain
+    def __init__(self, seed: Optional[int], **hyperparameters):
         self.seed = seed
-        self._set_algorithm()
+        self.hyperparameters = hyperparameters
+        self.algorithm = np.random.default_rng(seed)
 
-    def _set_algorithm(self):
-        self.algorithm = np.random.default_rng(self.seed)
-
-    def update_step(
-            self, data_generator: DataGenerator
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
         x_new = np.atleast_2d(
             [
                 self.algorithm.uniform(
-                    low=self.domain.get_bounds()[d, 0],
-                    high=self.domain.get_bounds()[d, 1])
-                for d in range(len(self.domain))
+                    low=data.domain.get_bounds()[d, 0],
+                    high=data.domain.get_bounds()[d, 1])
+                for d in range(len(data.domain.input_space))
             ]
         )
 
         # return the data
-        return x_new, None
+        return type(data)(domain=data.domain,
+                          input_data=x_new,
+                          )
 
-    def _get_info(self) -> List[str]:
-        return ['Fast', 'Single-Solution']
+
+def random_search(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Random search optimizer
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed, by default None
+
+    Returns
+    -------
+    Block
+        Optimizer object.
+    """
+    return NumpyOptimizer(
+        seed=seed,
+        **kwargs
+    )

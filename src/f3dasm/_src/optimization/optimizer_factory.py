@@ -4,13 +4,15 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
+from __future__ import annotations
+
 # Standard
-from typing import Any, Dict, Optional
+from typing import Callable, Dict, List
 
 # Local
-from ..design.domain import Domain
-from . import _OPTIMIZERS
-from .optimizer import Optimizer
+from ..core import Block
+from .numpy_implementations import random_search
+from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,25 +23,40 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# Try importing f3dasm_optimize package
-try:
-    import f3dasm_optimize  # NOQA
-    _OPTIMIZERS.extend(f3dasm_optimize._OPTIMIZERS)
-except ImportError:
-    pass
+
+def available_optimizers():
+    """
+    Returns a list of all available built-in optimization algorithms.
+
+    Returns
+    -------
+    List[str]
+        List of all available optimization algorithms
+    """
+    return list(get_optimizer_mapping().keys())
 
 
-OPTIMIZER_MAPPING: Dict[str, Optimizer] = {
-    opt.__name__.lower().replace(' ', '').replace('-', '').replace(
-        '_', ''): opt for opt in _OPTIMIZERS}
+def get_optimizer_mapping() -> Dict[str, Block]:
+    # List of available optimizers
+    _OPTIMIZERS: List[Callable] = [
+        cg, lbfgsb, nelder_mead, random_search]
+
+    # Try importing f3dasm_optimize package
+    try:
+        from f3dasm_optimize import optimizers_extension  # NOQA
+        _OPTIMIZERS.extend(optimizers_extension())
+    except ImportError:
+        pass
+
+    OPTIMIZER_MAPPING: Dict[str, Block] = {
+        opt.__name__.lower().replace(' ', '').replace('-', '').replace(
+            '_', ''): opt for opt in _OPTIMIZERS}
+
+    return OPTIMIZER_MAPPING
 
 
-OPTIMIZERS = [opt.__name__ for opt in _OPTIMIZERS]
-
-
-def _optimizer_factory(
-        optimizer: str, domain: Domain,
-        hyperparameters: Optional[Dict[str, Any]] = None) -> Optimizer:
+def _optimizer_factory(optimizer: str | Block, **hyperparameters
+                       ) -> Block:
     """Factory function for optimizers
 
     Parameters
@@ -47,10 +64,6 @@ def _optimizer_factory(
 
     optimizer : str
         Name of the optimizer to use
-    domain : Domain
-        Domain of the design space
-    hyperparameters : dict, optional
-        Hyperparameters for the optimizer
 
     Returns
     -------
@@ -64,16 +77,19 @@ def _optimizer_factory(
     KeyError
         If the optimizer is not found
     """
+    if isinstance(optimizer, Block):
+        return optimizer
 
-    if hyperparameters is None:
-        hyperparameters = {}
+    elif isinstance(optimizer, str):
 
-    filtered_name = optimizer.lower().replace(
-        ' ', '').replace('-', '').replace('_', '')
+        filtered_name = optimizer.lower().replace(
+            ' ', '').replace('-', '').replace('_', '')
 
-    if filtered_name in OPTIMIZER_MAPPING:
-        return OPTIMIZER_MAPPING[filtered_name](
-            domain=domain, **hyperparameters)
+        OPTIMIZER_MAPPING = get_optimizer_mapping()
+
+        if filtered_name in OPTIMIZER_MAPPING:
+            return OPTIMIZER_MAPPING[filtered_name](
+                **hyperparameters)
 
     else:
         raise KeyError(f"Unknown optimizer: {optimizer}")

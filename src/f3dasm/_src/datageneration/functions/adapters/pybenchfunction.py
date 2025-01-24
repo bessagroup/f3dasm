@@ -2,14 +2,16 @@
 # =============================================================================
 
 # Standard
-from typing import Optional
+from typing import Optional, Protocol
 
 # Third-party
 import autograd.numpy as np
 
 # Locals
+from ....design.domain import Domain
 from ..function import Function
-from .augmentor import Noise, Offset, Scale
+from .augmentor import (EmptyAugmentor, FunctionAugmentor, Noise, Offset,
+                        Scale, _Augmentor)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -21,10 +23,15 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+class ExperimentData(Protocol):
+    @property
+    def domain(self) -> Domain:
+        ...
+
+
 class PyBenchFunction(Function):
     def __init__(
             self,
-            dimensionality: int,
             scale_bounds: Optional[np.ndarray] = None,
             noise: Optional[float] = None,
             offset: bool = True,
@@ -36,8 +43,6 @@ class PyBenchFunction(Function):
 
         Parameters
         ----------
-        dimensionality
-            number of dimensions
         scale_bounds, optional
             array containing the lower and upper bound of the scaling
              factor of the input data, by default None
@@ -50,60 +55,60 @@ class PyBenchFunction(Function):
             seed for the random number generator, by default None
         """
         super().__init__(seed=seed)
-        self.dimensionality = dimensionality
         self.scale_bounds = scale_bounds
         self.noise = noise
         self.offset = offset
 
-        self.__post_init__()
-
-    def __post_init__(self):
+    def arm(self, data: ExperimentData):
+        self.set_seed(self.seed)
+        self.augmentor = FunctionAugmentor()
+        self.dimensionality = len(data.domain)
         self._set_parameters()
+        s = self._configure_scale_bounds()
+        n = self._configure_noise()
+        o = self._configure_offset()
 
-        self._configure_scale_bounds()
-        self._configure_noise()
-        self._configure_offset()
+        self.augmentor = FunctionAugmentor(input_augmentors=[o, s],
+                                           output_augmentors=[n])
 
-    def _configure_scale_bounds(self):
+    def _configure_scale_bounds(self) -> _Augmentor:
         """Create a Scale augmentor"""
         if self.scale_bounds is None:
-            return
+            return EmptyAugmentor()
+
         s = Scale(scale_bounds=self.scale_bounds,
                   input_domain=self.input_domain)
-        self.augmentor.add_input_augmentor(s)
+        self.augmentor = FunctionAugmentor(input_augmentors=[s])
+        return s
+
+        # self.augmentor.add_input_augmentor(s)
 
     def _configure_noise(self):
         """Create a Noise augmentor"""
         if self.noise is None:
-            return
+            return EmptyAugmentor()
 
-        n = Noise(noise=self.noise)
-        self.augmentor.add_output_augmentor(n)
+        n = Noise(noise=self.noise, rng=self.rng)
+        return n
 
     def _configure_offset(self):
         """Create an Offset augmentor"""
         if not self.offset or self.scale_bounds is None:
-            return
+            return EmptyAugmentor()
 
         g = self._get_global_minimum_for_offset_calculation()
-
         unscaled_offset = np.atleast_1d(
             [
-                # np.random.uniform(
-                #     low=-abs(g[d] - self.scale_bounds[d, 0]),
-                #     high=abs(g[d] - self.scale_bounds[d, 1]))
-
                 # This is added so we only create offsets in one quadrant
-
-                np.random.uniform(
+                self.rng.uniform(
                     low=-abs(g[d] - self.scale_bounds[d, 0]),
                     high=0.0)
                 for d in range(self.dimensionality)
             ]
         )
 
-        self.o = Offset(offset=unscaled_offset)
-        self.augmentor.insert_input_augmentor(position=0, augmentor=self.o)
+        return Offset(offset=unscaled_offset)
+        # self.augmentor.insert_input_augmentor(position=0, augmentor=self.o)
 
     def _get_global_minimum_for_offset_calculation(self):
         """Get the global minimum used for offset calculations

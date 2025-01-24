@@ -3,7 +3,7 @@
 BSD 3-Clause License
 ====================
 
-Copyright (c) 2022, Martin van der Schelling
+Copyright (c) 2025, Martin van der Schelling
 
 All rights reserved.
 
