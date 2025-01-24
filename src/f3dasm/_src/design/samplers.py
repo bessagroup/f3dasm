@@ -336,7 +336,7 @@ class Grid(Block):
 
     def call(self, data: ExperimentData,
              stepsize_continuous_parameters:
-             Optional[Dict[str, float] | float],
+             Optional[Dict[str, float] | float] = None,
              **kwargs) -> ExperimentData:
         """
         Sample data using the Grid method.
