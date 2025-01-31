@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 import autograd.numpy as np
 
 # Local
-from ._io import load_object
+from ._io import copy_object, load_object
 from .design.domain import Domain
 
 #                                                          Authorship & Credits
@@ -401,6 +401,30 @@ class ExperimentSample:
 
         self._input_data = round_dict(self._input_data)
         self._output_data = round_dict(self._output_data)
+
+    def copy_project_dir(self, project_dir: Path):
+        for key, value in self._input_data.items():
+            # If the parameter is stored on disk, update the path
+            if isinstance(value, str) and self.domain.\
+                    input_space[key].to_disk:
+                new_value = copy_object(object_path=Path(value),
+                                        old_project_dir=self.project_dir,
+                                        new_project_dir=project_dir)
+                # Update the path in the input data
+                self._input_data[key] = new_value
+
+        for key, value in self._output_data.items():
+            # If the parameter is stored on disk, update the path
+            if isinstance(value, str) and self.domain.\
+                    output_space[key].to_disk:
+                new_value = copy_object(object_path=Path(value),
+                                        old_project_dir=self.project_dir,
+                                        new_project_dir=project_dir)
+                # Update the path in the input data
+
+                self._output_data[key] = new_value
+
+        self.project_dir = project_dir
 
     #                                                                 Exporting
     # =========================================================================

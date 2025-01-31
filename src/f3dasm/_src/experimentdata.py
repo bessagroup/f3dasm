@@ -1443,6 +1443,15 @@ class ExperimentData:
         """
         self.project_dir = _project_dir_factory(project_dir)
 
+    def move_project_dir(self, project_dir: Path | str):
+
+        Path(project_dir).mkdir(parents=True, exist_ok=True)
+
+        for _, es in self:
+            es.copy_project_dir(Path(project_dir))
+
+        self.set_project_dir(project_dir)
+
     def remove_lockfile(self):
         """
         Remove the lock file from the project directory
