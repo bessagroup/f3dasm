@@ -145,6 +145,10 @@ class ExperimentSample(Protocol):
              status: Literal['open', 'in_progress', 'finished', 'error']):
         ...
 
+    def store(self,
+              name: str, object: Any, to_disk: bool):
+        ...
+
     @property
     def input_data(self) -> Dict[str, Any]:
         ...
