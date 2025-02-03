@@ -12,6 +12,8 @@ from typing import Dict, Literal, Optional
 # Third-party
 import numpy as np
 import pandas as pd
+from hydra.utils import instantiate
+from omegaconf import DictConfig
 from SALib.sample import latin as salib_latin
 from SALib.sample import sobol_sequence
 
@@ -623,6 +625,9 @@ def _sampler_factory(sampler: str | Block, **parameters) -> Block:
 
         else:
             raise KeyError(f"Unknown sampler name: {sampler}")
+
+    elif isinstance(sampler, DictConfig):
+        return instantiate(sampler)
 
     else:
         raise TypeError(f"Unknown sampler type: {type(sampler)}")
