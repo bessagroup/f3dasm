@@ -11,6 +11,7 @@ from __future__ import annotations
 
 # Standard
 import inspect
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 # Local
@@ -108,7 +109,8 @@ def _datagenerator_factory(
         return data_generator
 
     # If the data generator is a function, convert it to a DataGenerator object
-    if inspect.isfunction(data_generator):
+    if inspect.isfunction(data_generator) or isinstance(
+            data_generator, partial):
         if output_names is None:
             raise TypeError(
                 ("If you provide a function as data generator, you have to"
