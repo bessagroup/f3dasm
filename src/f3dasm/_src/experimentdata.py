@@ -410,20 +410,23 @@ class ExperimentData:
             return _from_file_attempt(filename_with_path)
 
     @classmethod
-    def from_sampling(cls, sampler: Block | str,
+    def from_sampling(cls, sampler: Block | str | DictConfig,
                       domain: Domain | DictConfig | str | Path,
+                      project_dir: Optional[Path | str] = None,
                       **kwargs):
         """
         Create an ExperimentData object from a sampler.
 
         Parameters
         ----------
-        sampler : Block or str
+        sampler : Block or str or DictConfig
             Sampler object containing the sampling strategy or one of the
             built-in sampler names.
         domain : Domain or DictConfig
             Domain object containing the domain of the experiment or hydra
             DictConfig object containing the configuration.
+        project_dir : Path or str, optional
+            Directory of the project, by default None.
         **kwargs
             Additional keyword arguments passed to the sampler.
 
@@ -436,7 +439,8 @@ class ExperimentData:
         --------
         >>> experiment_data = ExperimentData.from_sampling('random', domain)
         """
-        data = cls(domain=domain)
+
+        data = cls(domain=domain, project_dir=project_dir)
         data.sample(sampler=sampler, **kwargs)
         return data
 
