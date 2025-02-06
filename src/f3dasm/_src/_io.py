@@ -42,7 +42,7 @@ OUTPUT_DATA_FILENAME = "output"
 JOBS_FILENAME = "jobs"
 
 RESOLUTION_MATPLOTLIB_FIGURE = 300
-MAX_TRIES = 10
+MAX_TRIES = 20
 
 #                                                               Storing methods
 # =============================================================================

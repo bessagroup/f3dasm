@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -245,10 +246,14 @@ def test_experimentdata_creation_with_output(
 
     monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
     monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
+    mock_stat = MagicMock()
+    mock_stat.st_size = 10  # Non Empty file
 
-    experiment_data = ExperimentData(domain=domain, input_data=input_data,
-                                     output_data=output_data, jobs=jobs,
-                                     project_dir=project_dir)
+    with patch.object(Path, "exists", return_value=True), \
+            patch.object(Path, "stat", return_value=mock_stat):
+        experiment_data = ExperimentData(domain=domain, input_data=input_data,
+                                         output_data=output_data, jobs=jobs,
+                                         project_dir=project_dir)
 
     if domain is None:
         experiment_data.domain = edata_domain_with_output()
@@ -280,10 +285,14 @@ def test_experimentdata_creation_without_output(
 
     monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
     monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
+    mock_stat = MagicMock()
+    mock_stat.st_size = 10  # Non Empty file
 
-    experiment_data = ExperimentData(domain=domain, input_data=input_data,
-                                     jobs=jobs,
-                                     project_dir=project_dir)
+    with patch.object(Path, "exists", return_value=True), \
+            patch.object(Path, "stat", return_value=mock_stat):
+        experiment_data = ExperimentData(domain=domain, input_data=input_data,
+                                         jobs=jobs,
+                                         project_dir=project_dir)
 
     if domain is None:
         experiment_data.domain = edata_domain_without_output()

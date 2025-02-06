@@ -20,6 +20,7 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 # Local
+from ..errors import EmptyFileError
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
                         DiscreteParameter, LoadFunction, Parameter,
@@ -193,13 +194,16 @@ class Domain:
         >>> domain = Domain.from_json('domain.json')
         """
         # convert filename to Path object
-        filename = Path(filename)
+        filename = Path(filename).with_suffix('.json')
 
         # Check if filename exists
-        if not filename.with_suffix('.json').exists():
+        if not filename.exists():
             raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
-        with open(filename.with_suffix('.json'), 'r') as f:
+        if filename.stat().st_size == 0:
+            raise EmptyFileError(filename)
+
+        with open(filename, 'r') as f:
             domain_dict = json.load(f)
 
         input_space = {k: Parameter.from_dict(

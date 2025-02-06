@@ -11,6 +11,7 @@ from __future__ import annotations
 
 # Standard
 import functools
+import random
 from collections import defaultdict
 from copy import copy
 from functools import partial
@@ -35,6 +36,7 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
 from .core import Block, DataGenerator
 from .datageneration import _datagenerator_factory
 from .design import Domain, _domain_factory, _sampler_factory
+from .errors import EmptyFileError
 from .experimentsample import ExperimentSample
 from .logger import logger
 from .optimization import _optimizer_factory
@@ -299,17 +301,10 @@ class ExperimentData:
             with lock:
                 tries = 0
                 while tries < MAX_TRIES:
-                    # try:
-                    #     print(f"{args=}, {kwargs=}")
-                    #     self = ExperimentData.from_file(project_dir)
-                    #     value = operation(*args, **kwargs)
-                    #     self.store()
-                    #     break
                     try:
                         # Load a fresh instance of ExperimentData from file
                         loaded_self = ExperimentData.from_file(
                             self.project_dir)
-
                         # Call the operation with the loaded instance
                         # Replace the self in args with the loaded instance
                         # Modify the first argument
@@ -317,17 +312,16 @@ class ExperimentData:
                         value = operation(*args, **kwargs)
                         loaded_self.store()
                         break
-
                     # Racing conditions can occur when the file is empty
                     # and the file is being read at the same time
-                    except pd.errors.EmptyDataError:
+                    except EmptyFileError:
                         tries += 1
                         logger.debug((
                             f"EmptyDataError occurred, retrying"
                             f" {tries+1}/{MAX_TRIES}"))
-                        sleep(1)
+                        sleep(random.uniform(0.5, 2.5))
 
-                    raise pd.errors.EmptyDataError()
+                    raise EmptyFileError(self.project_dir)
 
             return value
 
@@ -1662,9 +1656,17 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
         return []
 
     elif isinstance(data, (Path, str)):
-        return _dict_factory(pd.read_csv(
-            Path(data).with_suffix('.csv'),
-            header=0, index_col=0))
+        filepath = Path(data).with_suffix('.csv')
+
+        if not filepath.exists():
+            raise FileNotFoundError(f"File {filepath} not found")
+
+        if filepath.stat().st_size == 0:
+            raise EmptyFileError(filepath)
+
+        df = pd.read_csv(filepath, header=0, index_col=0)
+
+        return _dict_factory(df)
 
     # check if data is already a list of dicts
     elif isinstance(data, list) and all(isinstance(d, dict) for d in data):
@@ -1741,9 +1743,17 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         return pd.Series()
 
     elif isinstance(jobs, (Path, str)):
-        df = pd.read_csv(
-            Path(jobs).with_suffix('.csv'),
-            header=0, index_col=0).squeeze()
+
+        filepath = Path(jobs).with_suffix('.csv')
+
+        if not filepath.exists():
+            raise FileNotFoundError(f"File {filepath} not found")
+
+        if filepath.stat().st_size == 0:
+            raise EmptyFileError(filepath)
+
+        df = pd.read_csv(filepath,
+                         header=0, index_col=0).squeeze()
         # If the jobs is jut one value, it is parsed as a string
         # So, make sure that we return a pd.Series either way!
         if not isinstance(df, pd.Series):
