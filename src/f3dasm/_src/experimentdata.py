@@ -305,15 +305,8 @@ class ExperimentData:
                         # Load a fresh instance of ExperimentData from file
                         loaded_self = ExperimentData.from_file(
                             self.project_dir)
-                        # Call the operation with the loaded instance
-                        # Replace the self in args with the loaded instance
-                        # Modify the first argument
-                        args = (loaded_self,) + args[1:]
-                        value = operation(*args, **kwargs)
-                        loaded_self.store()
                         break
-                    # Racing conditions can occur when the file is empty
-                    # and the file is being read at the same time
+                    # Catch racing conditions
                     except (EmptyFileError, DecodeError):
                         tries += 1
                         logger.debug((
@@ -321,8 +314,13 @@ class ExperimentData:
                             f" {tries+1}/{MAX_TRIES}"))
                         sleep(random.uniform(0.5, 2.5))
 
-                raise ReachMaximumTriesError(file_path=self.project_dir,
-                                             max_tires=tries)
+                if tries >= MAX_TRIES:
+                    raise ReachMaximumTriesError(file_path=self.project_dir,
+                                                 max_tires=tries)
+
+                args = (loaded_self,) + args[1:]
+                value = operation(*args, **kwargs)
+                loaded_self.store()
 
             return value
 
