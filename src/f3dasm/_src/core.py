@@ -19,6 +19,8 @@ import pandas as pd
 from pathos.helpers import mp
 
 # Local
+from ._io import MAX_TRIES
+from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .logger import logger
 
 #                                                          Authorship & Credits
@@ -383,10 +385,23 @@ class DataGenerator(Block):
             Raised when there are no open jobs left
         """
         # Retrieve the updated experimentdata object from disc
-        try:
-            data = type(data).from_file(data.project_dir)
-        except FileNotFoundError:  # If not found, store current
-            data.store()
+        tries = 0
+        while tries <= MAX_TRIES:
+            try:
+                data = type(data).from_file(data.project_dir)
+                break
+            except FileNotFoundError:  # If not found, store current
+                data.store()
+                break
+            except (EmptyFileError, DecodeError):
+                tries += 1
+                logger.debug((
+                    f"Error reading a file, retrying"
+                    f" {tries+1}/{MAX_TRIES}"
+                ))
+        if tries >= MAX_TRIES:
+            raise ReachMaximumTriesError(file_path=data.project_dir,
+                                         max_tries=MAX_TRIES)
 
         get_open_job = data.access_file(type(data).get_open_job)
         store_experiment_sample = data.access_file(

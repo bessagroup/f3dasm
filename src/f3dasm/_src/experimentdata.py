@@ -316,7 +316,7 @@ class ExperimentData:
 
                 if tries >= MAX_TRIES:
                     raise ReachMaximumTriesError(file_path=self.project_dir,
-                                                 max_tires=tries)
+                                                 max_tries=tries)
 
                 args = (loaded_self,) + args[1:]
                 value = operation(*args, **kwargs)
