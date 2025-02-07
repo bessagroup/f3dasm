@@ -464,8 +464,8 @@ def copy_object(object_path: Path,
     if new_location.exists():
 
         stem, suffix = object_path.stem, object_path.suffix
-        while (new_project_dir / EXPERIMENTDATA_SUBFOLDER /
-               object_path.parent / f"{stem}{suffix}").exists():
+        while (new_project_dir / EXPERIMENTDATA_SUBFOLDER
+                / object_path.parent / f"{stem}{suffix}").exists():
             try:
                 stem = str(int(stem) + 1)  # Increment stem as integer
             except ValueError:

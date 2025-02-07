@@ -299,24 +299,28 @@ class ExperimentData:
 
             # If the lock has been acquired:
             with lock:
-                tries = 0
-                while tries <= MAX_TRIES:
-                    try:
-                        # Load a fresh instance of ExperimentData from file
-                        loaded_self = ExperimentData.from_file(
-                            self.project_dir)
-                        break
-                    # Catch racing conditions
-                    except (EmptyFileError, DecodeError):
-                        tries += 1
-                        logger.debug((
-                            f"Error reading a file, retrying"
-                            f" {tries+1}/{MAX_TRIES}"))
-                        sleep(random.uniform(0.5, 2.5))
+                # tries = 0
+                # while tries <= MAX_TRIES:
+                #     try:
+                #         # Load a fresh instance of ExperimentData from file
+                #         loaded_self = ExperimentData.from_file(
+                #             self.project_dir)
+                #         break
+                #     # Catch racing conditions
+                #     except (EmptyFileError, DecodeError):
+                #         tries += 1
+                #         logger.debug((
+                #             f"Error reading a file, retrying"
+                #             f" {tries+1}/{MAX_TRIES}"))
+                #         sleep(random.uniform(0.5, 2.5))
 
-                if tries >= MAX_TRIES:
-                    raise ReachMaximumTriesError(file_path=self.project_dir,
-                                                 max_tries=tries)
+                # if tries >= MAX_TRIES:
+                #     raise ReachMaximumTriesError(file_path=self.project_dir,
+                #                                  max_tries=tries)
+
+                # Load a fresh instance of ExperimentData from file
+                loaded_self = ExperimentData.from_file(
+                    self.project_dir)
 
                 args = (loaded_self,) + args[1:]
                 value = operation(*args, **kwargs)
@@ -1534,7 +1538,8 @@ def x0_factory(experiment_data: ExperimentData,
     return x0.reset_index()
 
 
-def _from_file_attempt(project_dir: Path) -> ExperimentData:
+def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES
+                       ) -> ExperimentData:
     """Attempt to create an ExperimentData object
     from .csv and .pkl files.
 
@@ -1555,16 +1560,25 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
     """
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
-    try:
-        return ExperimentData(domain=subdirectory / DOMAIN_FILENAME,
-                              input_data=subdirectory / INPUT_DATA_FILENAME,
-                              output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                              jobs=subdirectory / JOBS_FILENAME,
-                              project_dir=project_dir)
+    # Retrieve the updated experimentdata object from disc
+    tries = 0
+    while tries <= max_tries:
+        try:
+            return ExperimentData(
+                domain=subdirectory / DOMAIN_FILENAME,
+                input_data=subdirectory / INPUT_DATA_FILENAME,
+                output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                jobs=subdirectory / JOBS_FILENAME,
+                project_dir=project_dir)
+        except (EmptyFileError, DecodeError):
+            tries += 1
+            logger.debug((
+                f"Error reading a file, retrying"
+                f" {tries+1}/{MAX_TRIES}"
+            ))
+            sleep(random.uniform(0.5, 2.5))
 
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"Cannot find the files from {subdirectory}.")
+    raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)
 
 
 def convert_numpy_to_dataframe_with_domain(
