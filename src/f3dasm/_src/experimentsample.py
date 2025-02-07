@@ -19,6 +19,7 @@ import autograd.numpy as np
 # Local
 from ._io import copy_object, load_object
 from .design.domain import Domain
+from .errors import DecodeError
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -90,7 +91,14 @@ class ExperimentSample:
         self._input_data = input_data
         self._output_data = output_data
         self.domain = domain
-        self.job_status = JobStatus[job_status]
+
+        try:
+            self.job_status = JobStatus[job_status]
+        # If nan is given as key, there is a problem with the decoding of
+        # the jobs.csv file
+        except KeyError:
+            raise DecodeError()
+
         self.project_dir = project_dir
 
     def __repr__(self):

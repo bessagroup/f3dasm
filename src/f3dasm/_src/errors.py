@@ -22,7 +22,7 @@ class EmptyFileError(Exception):
 class DecodeError(Exception):
     """Exception raised when opening a file gives errors"""
 
-    def __init__(self, file_path: str | Path,
+    def __init__(self, file_path: str | Path = '',
                  message: str = "Error decoding file"):
         """
         Initializes the EmptyFileError.
@@ -31,7 +31,7 @@ class DecodeError(Exception):
             file_path (str | Path): The path to faulty file.
             message (str): A custom error message.
         """
-        self.file_path = Path(file_path)  # Ensure it's a Path object
+        self.file_path = file_path  # Ensure it's a Path object
         self.message = f"{message}: {self.file_path}"
         super().__init__(self.message)
 
