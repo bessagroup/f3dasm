@@ -20,7 +20,7 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 # Local
-from ..errors import EmptyFileError
+from ..errors import DecodeError, EmptyFileError
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
                         DiscreteParameter, LoadFunction, Parameter,
@@ -203,8 +203,11 @@ class Domain:
         if filename.stat().st_size == 0:
             raise EmptyFileError(filename)
 
-        with open(filename, 'r') as f:
-            domain_dict = json.load(f)
+        try:
+            with open(filename, 'r') as f:
+                domain_dict = json.load(f)
+        except json.JSONDecodeError:
+            raise DecodeError(filename)
 
         input_space = {k: Parameter.from_dict(
             v) for k, v in domain_dict['input_space'].items()}

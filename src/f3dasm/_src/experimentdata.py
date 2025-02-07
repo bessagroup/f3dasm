@@ -36,7 +36,7 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
 from .core import Block, DataGenerator
 from .datageneration import _datagenerator_factory
 from .design import Domain, _domain_factory, _sampler_factory
-from .errors import EmptyFileError
+from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
 from .logger import logger
 from .optimization import _optimizer_factory
@@ -300,7 +300,7 @@ class ExperimentData:
             # If the lock has been acquired:
             with lock:
                 tries = 0
-                while tries < MAX_TRIES:
+                while tries <= MAX_TRIES:
                     try:
                         # Load a fresh instance of ExperimentData from file
                         loaded_self = ExperimentData.from_file(
@@ -314,14 +314,15 @@ class ExperimentData:
                         break
                     # Racing conditions can occur when the file is empty
                     # and the file is being read at the same time
-                    except EmptyFileError:
+                    except (EmptyFileError, DecodeError):
                         tries += 1
                         logger.debug((
-                            f"EmptyDataError occurred, retrying"
+                            f"Error reading a file, retrying"
                             f" {tries+1}/{MAX_TRIES}"))
                         sleep(random.uniform(0.5, 2.5))
 
-                    raise EmptyFileError(self.project_dir)
+                raise ReachMaximumTriesError(file_path=self.project_dir,
+                                             max_tires=tries)
 
             return value
 
@@ -1664,7 +1665,10 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
         if filepath.stat().st_size == 0:
             raise EmptyFileError(filepath)
 
-        df = pd.read_csv(filepath, header=0, index_col=0)
+        try:
+            df = pd.read_csv(filepath, header=0, index_col=0)
+        except pd.errors.EmptyDataError:
+            raise DecodeError(filepath)
 
         return _dict_factory(df)
 
@@ -1752,8 +1756,12 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         if filepath.stat().st_size == 0:
             raise EmptyFileError(filepath)
 
-        df = pd.read_csv(filepath,
-                         header=0, index_col=0).squeeze()
+        try:
+            df = pd.read_csv(filepath,
+                             header=0, index_col=0).squeeze()
+        except pd.errors.EmptyDataError:
+            raise DecodeError(filepath)
+
         # If the jobs is jut one value, it is parsed as a string
         # So, make sure that we return a pd.Series either way!
         if not isinstance(df, pd.Series):
