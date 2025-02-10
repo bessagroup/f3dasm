@@ -51,3 +51,21 @@ class ReachMaximumTriesError(Exception):
         self.max_tries = max_tries
         self.message = f"{message} for {file_path}: {self.max_tries}"
         super().__init__(self.message)
+
+
+class TimeOutError(Exception):
+    """Exception raised when a function takes too long."""
+
+    def __init__(self, timeout: int,
+                 message: str = "Reached time-out"):
+        """
+        Initializes the TimeOutError.
+
+        Args:
+            max_tries (int): The maximum number of tries.
+            message (str): A custom error message.
+        """
+        self.timeout = timeout
+        self.message = (f"{message}: function timed-out after "
+                        f"{self.timeout} seconds")
+        super().__init__(self.message)

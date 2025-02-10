@@ -8,3 +8,4 @@ pathos>=0.3.0
 autograd
 SALib
 filelock
+mpi4py
