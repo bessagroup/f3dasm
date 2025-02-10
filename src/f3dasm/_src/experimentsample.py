@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 import autograd.numpy as np
 
 # Local
-from ._io import copy_object, load_object
+from ._io import copy_object, load_object, store_to_disk
 from .design.domain import Domain
 from .errors import DecodeError
 
@@ -549,6 +549,38 @@ class ExperimentSample:
                                    load_function=load_function)
 
         self._output_data[name] = object
+
+    def store_experimentsample_references(self, idx: int):
+        for name, value in self._output_data.items():
+
+            # # If the output parameter is not in the domain, add it
+            # if name not in self.domain.output_names:
+            #     self.domain.add_output(name=name, to_disk=True)
+
+            parameter = self.domain.output_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir,
+                    object=value, name=name,
+                    id=idx, store_function=parameter.store_function)
+
+                self._output_data[name] = Path(storage_location)
+
+        for name, value in self._input_data.items():
+            parameter = self.domain.input_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir,
+                    object=value, name=name,
+                    id=idx, store_function=parameter.store_function)
+
+                self._input_data[name] = Path(storage_location)
 
     #                                                                Job status
     # =========================================================================

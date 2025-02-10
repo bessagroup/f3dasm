@@ -35,11 +35,11 @@ def domain_dictconfig_without_output():
 
 
 def edata_domain_with_output() -> Domain:
-    return experiment_data_with_output().domain
+    return experiment_data_with_output()._domain
 
 
 def edata_domain_without_output() -> Domain:
-    return experiment_data_without_output().domain
+    return experiment_data_without_output()._domain
 
 # =============================================================================
 
@@ -61,7 +61,7 @@ def experiment_data_with_output() -> ExperimentData:
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     def f(*args, **kwargs):
         return 0.0
@@ -83,7 +83,7 @@ def experiment_data_without_output() -> ExperimentData:
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     data.round(3)
 
@@ -93,7 +93,7 @@ def experiment_data_without_output() -> ExperimentData:
 
 # =============================================================================
 
-@ pytest.fixture(scope="package")
+@pytest.fixture(scope="package")
 def edata_expected_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
@@ -104,7 +104,7 @@ def edata_expected_with_output() -> ExperimentData:
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     def f(*args, **kwargs):
         return 0.0
@@ -117,7 +117,7 @@ def edata_expected_with_output() -> ExperimentData:
     return data
 
 
-@ pytest.fixture(scope="package")
+@pytest.fixture(scope="package")
 def edata_expected_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
@@ -128,7 +128,7 @@ def edata_expected_without_output() -> ExperimentData:
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     data.round(3)
 
@@ -224,11 +224,11 @@ def pd_output():
     return pd.DataFrame(arr_output(), columns=['y'])
 
 
-@ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
-@ pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
-@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_with_output(), None, domain_dictconfig_with_output()])
-@ pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
-@ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
+@pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
+@pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
+@pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_with_output(), None, domain_dictconfig_with_output()])
+@pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
+@pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_with_output(
         input_data, output_data, domain, jobs, project_dir, edata_expected_with_output, monkeypatch):
 
@@ -256,7 +256,7 @@ def test_experimentdata_creation_with_output(
                                          project_dir=project_dir)
 
     if domain is None:
-        experiment_data.domain = edata_domain_with_output()
+        experiment_data._domain = edata_domain_with_output()
 
     experiment_data.round(3)
     assert experiment_data == edata_expected_with_output
@@ -264,10 +264,10 @@ def test_experimentdata_creation_with_output(
 
 # =============================================================================
 
-@ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
-@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_without_output(), domain_dictconfig_without_output()])
-@ pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
-@ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
+@pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
+@pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_without_output(), domain_dictconfig_without_output()])
+@pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
+@pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_without_output(
         input_data, domain, jobs, project_dir, edata_expected_without_output, monkeypatch):
 
@@ -295,7 +295,7 @@ def test_experimentdata_creation_without_output(
                                          project_dir=project_dir)
 
     if domain is None:
-        experiment_data.domain = edata_domain_without_output()
+        experiment_data._domain = edata_domain_without_output()
 
     experiment_data.round(3)
     assert experiment_data == edata_expected_without_output
@@ -321,4 +321,4 @@ def test_experiment_data_from_yaml_sampling():
 
     data = ExperimentData.from_yaml(dict_config)
 
-    assert data.domain == data_expected.domain
+    assert data._domain == data_expected._domain

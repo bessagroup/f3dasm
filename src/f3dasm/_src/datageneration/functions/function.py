@@ -116,7 +116,8 @@ class Function(DataGenerator):
 
         return np.array(y).reshape(-1, 1)
 
-    def execute(self, **kwargs) -> None:
+    def execute(self, experiment_sample: ExperimentSample, **kwargs
+                ) -> ExperimentSample:
         """
         Execute the function and store the result in the experiment sample.
 
@@ -130,15 +131,17 @@ class Function(DataGenerator):
         >>> func = Function()
         >>> func.execute()
         """
-        x, _ = self.experiment_sample.to_numpy()
+        x, _ = experiment_sample.to_numpy()
 
         if isinstance(x, ArrayBox):
             x = x._value
             if isinstance(x, ArrayBox):
                 x = x._value
         y = np.nan_to_num(self(x), nan=np.nan)
-        self.experiment_sample.store(
+        experiment_sample.store(
             name="y", object=float(y.ravel().astype(np.float64)))
+
+        return experiment_sample
 
     def _retrieve_original_input(self, x: np.ndarray):
         """

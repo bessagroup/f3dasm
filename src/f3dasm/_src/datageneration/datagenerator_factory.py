@@ -15,7 +15,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional
 
 # Local
-from ..core import DataGenerator
+from ..core import DataGenerator, ExperimentSample
 from .functions import _DATAGENERATORS
 
 #                                                          Authorship & Credits
@@ -74,9 +74,10 @@ def convert_function(f: Callable,
     output = output if output is not None else []
 
     class TempDataGenerator(DataGenerator):
-        def execute(self, **_kwargs) -> None:
+        def execute(self, experiment_sample: ExperimentSample,
+                    **_kwargs) -> ExperimentSample:
             _input = {input_name:
-                      self.experiment_sample.input_data.get(input_name)
+                      experiment_sample.input_data.get(input_name)
                       for input_name in input if input_name not in kwargs}
             _output = f(**_input, **kwargs)
 
@@ -89,13 +90,15 @@ def convert_function(f: Callable,
 
             for name, value in zip(output, _output):
                 if name in to_disk:
-                    self.experiment_sample.store(name=name,
-                                                 object=value,
-                                                 to_disk=True)
+                    experiment_sample.store(name=name,
+                                            object=value,
+                                            to_disk=True)
                 else:
-                    self.experiment_sample.store(name=name,
-                                                 object=value,
-                                                 to_disk=False)
+                    experiment_sample.store(name=name,
+                                            object=value,
+                                            to_disk=False)
+
+            return experiment_sample
 
     return TempDataGenerator()
 

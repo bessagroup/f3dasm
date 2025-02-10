@@ -61,8 +61,7 @@ class ScipyOptimizer(Block):
         def fun(x):
             x_ = ExperimentSample.from_numpy(input_array=x,
                                              domain=self.data.domain)
-            sample = data_generator._run(
-                x_, domain=self.data.domain)
+            sample = data_generator.execute(experiment_sample=x_)
             _, y = sample.to_numpy()
             return float(y)
 

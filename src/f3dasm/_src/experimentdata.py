@@ -29,10 +29,10 @@ from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
+# Local
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory, store_to_disk)
-# Local
+                  OUTPUT_DATA_FILENAME, _project_dir_factory)
 from .core import Block, DataGenerator
 from .datageneration import _datagenerator_factory
 from .design import Domain, _domain_factory, _sampler_factory
@@ -125,12 +125,12 @@ class ExperimentData:
         )
 
         self.data = _data
-        self.domain = _domain
+        self._domain = _domain
         self.project_dir = _project_dir
 
         # Store to_disk objects so that the references are kept only
         for id, experiment_sample in self:
-            self.store_experimentsample(experiment_sample, id)
+            experiment_sample.store_experimentsample_references(idx=id)
 
     def __len__(self):
         """
@@ -212,7 +212,7 @@ class ExperimentData:
         >>> experiment_data1 == experiment_data2
         True
         """
-        return (self.data == __o.data and self.domain == __o.domain
+        return (self.data == __o.data and self._domain == __o._domain
                 and self.project_dir == __o.project_dir)
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
@@ -235,7 +235,7 @@ class ExperimentData:
 
         return ExperimentData.from_data(
             data={k: self.data[k] for k in self.index[key]},
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir)
 
     def _repr_html_(self) -> str:
@@ -299,26 +299,6 @@ class ExperimentData:
 
             # If the lock has been acquired:
             with lock:
-                # tries = 0
-                # while tries <= MAX_TRIES:
-                #     try:
-                #         # Load a fresh instance of ExperimentData from file
-                #         loaded_self = ExperimentData.from_file(
-                #             self.project_dir)
-                #         break
-                #     # Catch racing conditions
-                #     except (EmptyFileError, DecodeError):
-                #         tries += 1
-                #         logger.debug((
-                #             f"Error reading a file, retrying"
-                #             f" {tries+1}/{MAX_TRIES}"))
-                #         sleep(random.uniform(0.5, 2.5))
-
-                # if tries >= MAX_TRIES:
-                #     raise ReachMaximumTriesError(file_path=self.project_dir,
-                #                                  max_tries=tries)
-
-                # Load a fresh instance of ExperimentData from file
                 loaded_self = ExperimentData.from_file(
                     self.project_dir)
 
@@ -369,12 +349,32 @@ class ExperimentData:
         """
         return pd.Series({id: es.job_status.name for id, es in self})
 
+    @property
+    def domain(self) -> Domain:
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain: Domain):
+        """
+        Sets the domain of the ExperimentData object.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain to set.
+        """
+        self._domain = domain
+        for _, es in self:
+            es.domain = domain
+
     #                                                  Alternative constructors
     # =========================================================================
 
     @classmethod
     def from_file(cls: Type[ExperimentData],
-                  project_dir: Path | str) -> ExperimentData:
+                  project_dir: Path | str,
+                  wait_for_creation: bool = False,
+                  max_tries: int = MAX_TRIES) -> ExperimentData:
         """
         Create an ExperimentData object from .csv and .json files.
 
@@ -396,7 +396,9 @@ class ExperimentData:
             project_dir = Path(project_dir)
 
         try:
-            return _from_file_attempt(project_dir)
+            return _from_file_attempt(project_dir=project_dir,
+                                      wait_for_creation=wait_for_creation,
+                                      max_tries=max_tries)
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / project_dir
@@ -404,7 +406,9 @@ class ExperimentData:
                 raise FileNotFoundError(
                     f"Cannot find the folder {project_dir} !")
 
-            return _from_file_attempt(filename_with_path)
+            return _from_file_attempt(project_dir=filename_with_path,
+                                      wait_for_creation=wait_for_creation,
+                                      max_tries=max_tries)
 
     @classmethod
     def from_sampling(cls, sampler: Block | str | DictConfig,
@@ -510,7 +514,7 @@ class ExperimentData:
         experiment_data = cls()
 
         experiment_data.data = defaultdict(ExperimentSample, data)
-        experiment_data.domain = domain
+        experiment_data._domain = domain
         experiment_data.project_dir = _project_dir_factory(project_dir)
         return experiment_data
 
@@ -610,7 +614,7 @@ class ExperimentData:
             (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'))
         df_output.to_csv(
             (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'))
-        self.domain.store(subdirectory / DOMAIN_FILENAME)
+        self._domain.store(subdirectory / DOMAIN_FILENAME)
         self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -900,7 +904,7 @@ class ExperimentData:
         """
         return ExperimentData.from_data(
             data={i: v for i, v in enumerate(self.data.values())},
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir)
 
     def join(self, experiment_data: ExperimentData) -> ExperimentData:
@@ -928,7 +932,7 @@ class ExperimentData:
         for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
             copy_self.data[i] = es_self + es_other
 
-        copy_self.domain += copy_other.domain
+        copy_self._domain += copy_other._domain
 
         return copy_self
 
@@ -945,7 +949,7 @@ class ExperimentData:
                 copy_other.data.values())}
 
         self.data.update(other_updated_data)
-        self.domain += copy_other.domain
+        self._domain += copy_other._domain
 
     def _add_experiment_sample(self, experiment_sample: ExperimentSample):
         last_key = max(self.index) if self else -1
@@ -964,7 +968,7 @@ class ExperimentData:
         for (_, es), id in zip(copy_other, indices):
             self.data[id] = es
 
-        self.domain += copy_other.domain
+        self._domain += copy_other._domain
 
     def replace_nan(self, value: Any):
         """
@@ -1027,7 +1031,7 @@ class ExperimentData:
         )
         return ExperimentData.from_data(
             data=sorted_data,
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir
         )
 
@@ -1055,7 +1059,7 @@ class ExperimentData:
         return self.data[id]
 
     def store_experimentsample(
-            self, experiment_sample: ExperimentSample, id: int):
+            self, experiment_sample: ExperimentSample, idx: int):
         """
         Store an ExperimentSample object in the ExperimentData object.
 
@@ -1070,41 +1074,8 @@ class ExperimentData:
         --------
         >>> experiment_data.store_experimentsample(sample, 0)
         """
-        self.domain += experiment_sample.domain
-
-        for name, value in experiment_sample._output_data.items():
-
-            # # If the output parameter is not in the domain, add it
-            # if name not in self.domain.output_names:
-            #     self.domain.add_output(name=name, to_disk=True)
-
-            parameter = self.domain.output_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir, object=value, name=name,
-                    id=id, store_function=parameter.store_function)
-
-                experiment_sample._output_data[name] = Path(storage_location)
-
-        for name, value in experiment_sample._input_data.items():
-            parameter = self.domain.input_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir, object=value, name=name,
-                    id=id, store_function=parameter.store_function)
-
-                experiment_sample._input_data[name] = Path(storage_location)
-
-        # Set the experiment sample in the ExperimentData object
-        self.data[id] = experiment_sample
-
-    # Used in parallel mode
+        self._domain += experiment_sample.domain
+        self.data[idx] = experiment_sample
 
     def get_open_job(self) -> Tuple[int, ExperimentSample]:
         """
@@ -1514,7 +1485,7 @@ def x0_factory(experiment_data: ExperimentData,
     if mode == 'new':
         x0 = ExperimentData.from_sampling(
             sampler=sampler,
-            domain=experiment_data.domain,
+            domain=experiment_data._domain,
             n_samples=n_samples
         )
 
@@ -1538,15 +1509,20 @@ def x0_factory(experiment_data: ExperimentData,
     return x0.reset_index()
 
 
-def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES
+def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
+                       wait_for_creation: bool = False
                        ) -> ExperimentData:
     """Attempt to create an ExperimentData object
     from .csv and .pkl files.
 
     Parameters
     ----------
-    path : Path
+    project_dir : Path
         Name of the user-defined directory where the files are stored.
+    max_tries : int, optional
+        Maximum number of tries to read the files, by default MAX_TRIES
+    wait_for_creation : bool, optional
+        If True, wait for the files to be created, by default False
 
     Returns
     -------
@@ -1577,6 +1553,16 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES
                 f" {tries+1}/{MAX_TRIES}"
             ))
             sleep(random.uniform(0.5, 2.5))
+
+        except FileNotFoundError:
+            if not wait_for_creation:
+                raise FileNotFoundError(
+                    f"File {subdirectory} not found")
+            tries += 1
+            logger.debug((
+                f"FileNotFoundError({subdirectory}), sleeping!"
+            ))
+            sleep(random.uniform(9.5, 11.0))
 
     raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)
 

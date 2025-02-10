@@ -64,7 +64,7 @@ class OptimizationResult:
         logger.info(
             (f"Optimized {self.data_generator} \
                 function (seed={self.func.seed}, "
-             f"dim={len(self.data[0].domain)}, "
+             f"dim={len(self.data[0]._domain)}, "
              f"noise={self.func.noise}) "
              f"with {self.optimizer.__class__.__name__} optimizer for "
              f"{len(self.data)} realizations ({self.opt_time:.3f} s).")
@@ -84,7 +84,7 @@ class OptimizationResult:
         xarr.attrs['function_seed']: int = self.func.seed
         xarr.attrs['function_name']: str = self.data_generator
         xarr.attrs['function_noise']: str = self.func.noise
-        xarr.attrs['function_dimensionality']: int = len(self.data[0].domain)
+        xarr.attrs['function_dimensionality']: int = len(self.data[0]._domain)
 
         # Global minimum function
         _, g = self.func.get_global_minimum(d=self.func.dimensionality)

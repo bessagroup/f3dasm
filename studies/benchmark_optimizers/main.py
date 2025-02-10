@@ -57,25 +57,25 @@ class CustomSampler(Block):
 
         for i in range(n_samples):
             dim = rng.choice(
-                data.domain.input_space['dimensionality'].categories)
+                data._domain.input_space['dimensionality'].categories)
 
             available_functions = list(set(get_functions(d=int(dim))) & set(
-                data.domain.input_space['function_name'].categories))
+                data._domain.input_space['function_name'].categories))
             function_name = rng.choice(available_functions)
 
-            noise = rng.choice(data.domain.input_space['noise'].categories)
+            noise = rng.choice(data._domain.input_space['noise'].categories)
             seed = rng.integers(
-                low=data.domain.input_space['seed'].lower_bound,
-                high=data.domain.input_space['seed'].upper_bound)
-            budget = data.domain.input_space['budget'].value
+                low=data._domain.input_space['seed'].lower_bound,
+                high=data._domain.input_space['seed'].upper_bound)
+            budget = data._domain.input_space['budget'].value
 
             samples.append([function_name, dim, noise, seed, budget])
 
         df = pd.DataFrame(
-            samples, columns=data.domain.input_names)[data.domain.input_names]
+            samples, columns=data._domain.input_names)[data._domain.input_names]
 
         return ExperimentData(
-            domain=data.domain, input_data=df,
+            domain=data._domain, input_data=df,
             project_dir=data.project_dir)
 
 #                                                          Custom datagenerator

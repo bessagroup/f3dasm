@@ -70,7 +70,7 @@ class LogNormalSampler(Block):
             mean=self.mean, sigma=self.sigma, size=n_samples)
         df = pd.DataFrame(sampled_imperfections,
                           columns=self.domain.input_names)
-        return ExperimentData(domain=data.domain,
+        return ExperimentData(domain=data._domain,
                               input_data=df,
                               project_dir=data.project_dir)
 
