@@ -782,95 +782,6 @@ class ExperimentData:
                 f"ExperimentData object, not {type(data)} ")
             )
 
-    # Not used
-    def overwrite(
-        self, indices: Iterable[int],
-            domain: Optional[Domain] = None,
-            input_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            output_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            jobs: Optional[Path | str] = None,
-            add_if_not_exist: bool = False
-    ) -> None:
-        """Overwrite the ExperimentData object.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices to overwrite.
-        domain : Optional[Domain], optional
-            Domain of the new object, by default None
-        input_data : Optional[DataTypes], optional
-            input parameters of the new object, by default None
-        output_data : Optional[DataTypes], optional
-            output parameters of the new object, by default None
-        jobs : Optional[Path  |  str], optional
-            jobs off the new object, by default None
-        add_if_not_exist : bool, optional
-            If True, the new objects are added if the requested indices
-            do not exist in the current ExperimentData object, by default False
-        """
-        raise NotImplementedError()
-
-    # Not used
-    def _overwrite_experiments(
-        self, indices: Iterable[int],
-            experiment_sample: ExperimentSample | ExperimentData,
-            add_if_not_exist: bool) -> None:
-        """
-        Overwrite the ExperimentData object at the given indices.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices to overwrite.
-        experimentdata : ExperimentData | ExperimentSample
-            The new ExperimentData object to overwrite with.
-        add_if_not_exist : bool
-            If True, the new objects are added if the requested indices
-            do not exist in the current ExperimentData object.
-        """
-        raise NotImplementedError()
-
-    # Used in parallel mode
-    def overwrite_disk(
-        self, indices: Iterable[int],
-            domain: Optional[Domain] = None,
-            input_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            output_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            jobs: Optional[Path | str] = None,
-            add_if_not_exist: bool = False
-    ) -> None:
-        """
-        Overwrite experiments on disk with new data.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices of the experiments to overwrite.
-        domain : Domain, optional
-            The new domain, by default None.
-        input_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
-                    str | Path, optional
-            The new input data, by default None.
-        output_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
-                     str | Path, optional
-            The new output data, by default None.
-        jobs : Path | str, optional
-            The new jobs data, by default None.
-        add_if_not_exist : bool, optional
-            If True, add experiments if the indices do not exist,
-            by default False.
-        """
-        raise NotImplementedError()
-
     def remove_rows_bottom(self, number_of_rows: int):
         """
         Remove a number of rows from the end of the ExperimentData object.
@@ -955,21 +866,6 @@ class ExperimentData:
         last_key = max(self.index) if self else -1
         self.data[last_key + 1] = experiment_sample
 
-    def _overwrite(self, experiment_data: ExperimentData,
-                   indices: Iterable[int],
-                   add_if_not_exist: bool = False):
-        if len(indices) != len(experiment_data):
-            raise ValueError((
-                f"The number of indices ({len(indices)}) must match the number"
-                f"of experiments ({len(experiment_data)}).")
-            )
-        copy_other = experiment_data.reset_index()
-
-        for (_, es), id in zip(copy_other, indices):
-            self.data[id] = es
-
-        self._domain += copy_other._domain
-
     def replace_nan(self, value: Any):
         """
         Replace all NaN values in the output data with the given value.
@@ -1002,6 +898,7 @@ class ExperimentData:
         for _, es in self:
             es.round(decimals)
 
+    # TODO: Create tests for this
     def sort(self, criterion: Callable[[ExperimentSample], Any],
              reverse: bool = False) -> ExperimentData:
         """
