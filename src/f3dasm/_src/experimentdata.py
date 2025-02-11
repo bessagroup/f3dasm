@@ -1455,6 +1455,7 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
             if not wait_for_creation:
                 raise FileNotFoundError(
                     f"File {subdirectory} not found")
+
             tries += 1
             logger.debug((
                 f"FileNotFoundError({subdirectory}), sleeping!"

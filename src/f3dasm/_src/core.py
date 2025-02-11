@@ -7,8 +7,6 @@ This module contains the core blocks and protocols for the f3dasm package.
 from __future__ import annotations
 
 # Standard
-import functools
-import multiprocessing
 import traceback
 from abc import ABC, abstractmethod
 from functools import partial
@@ -24,7 +22,6 @@ from pathos.helpers import mp
 
 # Local
 from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
-from .errors import TimeOutError
 from .logger import logger
 from .mpi_utils import (mpi_get_open_job, mpi_lock_manager,
                         mpi_store_experiment_sample, mpi_terminate_worker)
@@ -265,8 +262,7 @@ class DataGenerator(Block):
         mode : str, optional
             The mode of evaluation, by default 'sequential'
         kwargs : dict
-            The keyword arguments to pass to the pre_process, execute and
-            post_process
+            The keyword arguments to pass to execute function
 
         Returns
         -------
@@ -286,7 +282,7 @@ class DataGenerator(Block):
 
     # =========================================================================
 
-    def _evaluate_sequential(self, data: ExperimentData, timeout: int = 0,
+    def _evaluate_sequential(self, data: ExperimentData,
                              **kwargs) -> ExperimentData:
         """Run the operation sequentially
 
@@ -300,12 +296,6 @@ class DataGenerator(Block):
         NoOpenJobsError
             Raised when there are no open jobs left
         """
-
-        if timeout > 0:
-            execute_fn = timeout_wrapper(timeout=timeout)(self.execute)
-        else:
-            execute_fn = self.execute
-
         while True:
             job_number, experiment_sample = data.get_open_job()
             if job_number is None:
@@ -313,7 +303,7 @@ class DataGenerator(Block):
                 break
 
             try:
-                experiment_sample: ExperimentSample = execute_fn(
+                experiment_sample: ExperimentSample = self.execute(
                     experiment_sample=experiment_sample, **kwargs)
 
                 experiment_sample.store_experimentsample_references(
@@ -386,8 +376,7 @@ class DataGenerator(Block):
     def _evaluate_cluster(
         self, data: ExperimentData,
             wait_for_creation: bool = False,
-            max_tries: int = MAX_TRIES,
-            timeout: int = 0, **kwargs
+            max_tries: int = MAX_TRIES, **kwargs
     ) -> None:
 
         # Creat lockfile
@@ -406,11 +395,6 @@ class DataGenerator(Block):
             wait_for_creation=wait_for_creation, max_tries=max_tries,
             lockfile=lockfile)
 
-        if timeout > 0:
-            execute_fn = timeout_wrapper(timeout=timeout)(self.execute)
-        else:
-            execute_fn = self.execute
-
         while True:
             job_number, experiment_sample = cluster_get_open_job()
             if job_number is None:
@@ -418,7 +402,7 @@ class DataGenerator(Block):
                 break
 
             try:
-                experiment_sample: ExperimentSample = execute_fn(
+                experiment_sample: ExperimentSample = self.execute(
                     experiment_sample=experiment_sample, **kwargs)
 
                 experiment_sample.store_experimentsample_references(
@@ -444,8 +428,7 @@ class DataGenerator(Block):
     def _evaluate_mpi(
         self, comm, data: ExperimentData,
         wait_for_creation: bool = False,
-        max_tries: int = MAX_TRIES,
-        timeout: int = 0, **kwargs
+        max_tries: int = MAX_TRIES, **kwargs
     ) -> None:
         rank = comm.Get_rank()
         size = comm.Get_size()
@@ -456,7 +439,7 @@ class DataGenerator(Block):
             mpi_worker(comm=comm, data=data, execute_fn=self.execute,
                        wait_for_creation=wait_for_creation,
                        max_tries=max_tries,
-                       timeout=timeout, **kwargs)
+                       **kwargs)
 
     # =========================================================================
 
@@ -520,44 +503,11 @@ def store_experiment_sample(
         data.store(project_dir)
 
 
-def timeout_wrapper(timeout):
-    """Decorator to enforce a timeout on a JAX function."""
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            def target_func(queue, *args, **kwargs):
-                try:
-                    result = func(*args, **kwargs)
-                    queue.put(result)
-                except Exception as e:
-                    queue.put(e)
-
-            queue = multiprocessing.Queue()
-            process = multiprocessing.Process(
-                target=target_func, args=(queue, *args), kwargs=kwargs)
-            process.start()
-            process.join(timeout)
-
-            if process.is_alive():
-                process.terminate()
-                process.join()
-                raise TimeOutError(timeout=timeout)
-
-            result = queue.get()
-            if isinstance(result, Exception):
-                raise result
-            return result
-
-        return wrapper
-    return decorator
-
-
 def mpi_worker(
     comm, data: ExperimentData,
         execute_fn: Callable,
         wait_for_creation: bool = False,
-        max_tries: int = MAX_TRIES,
-        timeout: int = 0, **kwargs
+        max_tries: int = MAX_TRIES, **kwargs
 ) -> None:
 
     cluster_get_open_job = partial(
