@@ -11,8 +11,7 @@ from __future__ import annotations
 
 # Standard
 import inspect
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, Type
 
 # Local
 from ..core import DataGenerator, ExperimentSample
@@ -35,92 +34,135 @@ DATAGENERATOR_MAPPING: Dict[str, DataGenerator] = {
 # =============================================================================
 
 
-def convert_function(f: Callable,
-                     output: Optional[List[str]] = None,
-                     kwargs: Optional[Dict[str, Any]] = None,
-                     to_disk: Optional[List[str]] = None) -> DataGenerator:
+def datagenerator(output_names: Iterable[str]
+                  ) -> Callable[[Callable[..., Any]], Type[DataGenerator]]:
     """
-    Converts a given function `f` into a `DataGenerator` object.
+    Decorator to convert a function into a `DataGenerator` subclass.
+
+    The decorated function should take named arguments matching the keys in
+    the Domain and return one or multiple output values. These values will be
+    stored in the `ExperimentData` under the names specified in `output_names`.
 
     Parameters
     ----------
-    f : Callable
-        The function to be converted.
-    output : Optional[List[str]], optional
-        A list of names for the return values of the function.
-        Defaults to None.
-    kwargs : Optional[Dict[str, Any]], optional
-        Additional keyword arguments passed to the function. Defaults to None.
-    to_disk : Optional[List[str]], optional
-        The list of output names where the value needs to be stored on disk.
-        Defaults to None.
+    output_names : Iterable[str]
+        A list of names for the returned values of the decorated function.
+        The function's return values will be stored in the `ExperimentSample`
+        object under these names.
+
+    Returns
+    -------
+    Callable[[Callable[..., Any]], Type[DataGenerator]]
+        A decorator that transforms a function into a `DataGenerator` subclass.
+
+    Raises
+    ------
+    ValueError
+        If `output_names` is not provided.
+
+    Examples
+    --------
+    >>> @datagenerator(output_names=['y'])
+    ... def my_function(x0: float, x1: float, x2: float) -> float:
+    ...     return x0**2 + x1**2 + x2**2
+    ...
+    >>> experiment_data = ExperimentData(domaind=domain)
+    >>> experiment_data = my_function.call(experiment_data)
+    """
+
+    if not output_names:
+        raise ValueError((
+            "If you provide a function as a data generator, you must "
+            "provide the names of the return arguments with the `output_names`"
+            "attribute."
+        ))
+
+    # If the output names is a single string, convert it to a list
+    if isinstance(output_names, str):
+        output_names = [output_names]
+
+    def decorator(f: Callable[..., Any]) -> Type[DataGenerator]:
+        signature = inspect.signature(f)
+        input_names = list(signature.parameters.keys())
+
+        class FunctionDataGenerator(DataGenerator):
+            """
+            Auto-generated DataGenerator subclass from a decorated function.
+            """
+
+            def execute(self, experiment_sample: ExperimentSample,
+                        **kwargs: Any) -> ExperimentSample:
+                """
+                Executes the data generation process by calling the decorated
+                function.
+
+                Parameters
+                ----------
+                experiment_sample : ExperimentSample
+                    The experiment sample containing input data.
+                **kwargs : dict
+                    Additional keyword arguments to override values in
+                    `experiment_sample.input_data`.
+
+                Returns
+                -------
+                ExperimentSample
+                    The modified `ExperimentSample` instance with new stored
+                    outputs.
+                """
+                # Extract input arguments from experiment sample
+                _input = {name: experiment_sample.input_data.get(
+                    name) for name in input_names if name not in kwargs}
+
+                # Call the function
+                _output = f(**_input, **kwargs)
+
+                # Ensure the output is iterable
+                if not isinstance(_output, tuple):
+                    _output = (_output,)
+
+                # Store outputs in the experiment sample
+                for name, value in zip(output_names, _output):
+                    experiment_sample.store(name=name, object=value)
+
+                return experiment_sample
+
+        return FunctionDataGenerator()
+
+    return decorator
+
+
+def create_datagenerator(
+        data_generator: str | DataGenerator, **parameters
+) -> DataGenerator:
+    """
+    Create a DataGenerator block from one of the built-in data generators.
+
+    Parameters
+    ----------
+    data_generator : str | DataGenerator
+        name of the built-in data generator. This can be a string with the name
+        of the data generator, a Block object (this will just by-pass the
+        function), or a function.
+    **parameters
+        Additional keyword arguments passed when initializing the data
+        generator
 
     Returns
     -------
     DataGenerator
-        A converted `DataGenerator` object.
+        DataGenerator object
 
-    Notes
-    -----
-
-    The function `f` can have any number of arguments and any number of returns
-    as long as they are consistent with the `input` and `output` arguments that
-    are given to this function.
+    Raises
+    ------
+    KeyError
+        If the built-in sampler data generator is not recognized.
+    TypeError
+        If the given type is not recognized.
     """
-    signature = inspect.signature(f)
-    input = list(signature.parameters)
-    kwargs = kwargs if kwargs is not None else {}
-    to_disk = to_disk if to_disk is not None else []
-    output = output if output is not None else []
-
-    class TempDataGenerator(DataGenerator):
-        def execute(self, experiment_sample: ExperimentSample,
-                    **_kwargs) -> ExperimentSample:
-            _input = {input_name:
-                      experiment_sample.input_data.get(input_name)
-                      for input_name in input if input_name not in kwargs}
-            _output = f(**_input, **kwargs)
-
-            # check if output is empty
-            if output is None:
-                return
-
-            if len(output) == 1:
-                _output = (_output,)
-
-            for name, value in zip(output, _output):
-                if name in to_disk:
-                    experiment_sample.store(name=name,
-                                            object=value,
-                                            to_disk=True)
-                else:
-                    experiment_sample.store(name=name,
-                                            object=value,
-                                            to_disk=False)
-
-            return experiment_sample
-
-    return TempDataGenerator()
-
-
-def _datagenerator_factory(
-        data_generator: str | Callable | DataGenerator,
-        output_names: Optional[List[str]] = None, **kwargs) -> DataGenerator:
-
     # If the data generator is already a DataGenerator object, return it
     if isinstance(data_generator, DataGenerator):
         return data_generator
-
-    # If the data generator is a function, convert it to a DataGenerator object
-    if inspect.isfunction(data_generator) or isinstance(
-            data_generator, partial):
-        if output_names is None:
-            raise TypeError(
-                ("If you provide a function as data generator, you have to"
-                    "provide the names of the return arguments with the"
-                    "output_names attribute."))
-        return convert_function(
-            f=data_generator, output=output_names, kwargs=kwargs)
 
     # If the data generator is a string, check if it is a known data generator
     if isinstance(data_generator, str):
@@ -129,7 +171,7 @@ def _datagenerator_factory(
             ' ', '').replace('-', '').replace('_', '').replace('.', '')
 
         if filtered_name in DATAGENERATOR_MAPPING:
-            return DATAGENERATOR_MAPPING[filtered_name](**kwargs)
+            return DATAGENERATOR_MAPPING[filtered_name](**parameters)
 
         else:
             raise KeyError(f"Unknown data generator name: {data_generator}")

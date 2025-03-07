@@ -598,19 +598,31 @@ SAMPLER_MAPPING: Dict[str, Block] = {
 # =============================================================================
 
 
-def _sampler_factory(sampler: str | Block, **parameters) -> Block:
+def create_sampler(sampler: str | Block | DictConfig, **parameters) -> Block:
     """
-    Factory function for samplers
+    Create a sampler block from one of the built-in samplers.
 
     Parameters
     ----------
-    sampler : str | Block
-        name of the sampler
+    sampler : str | Block | DictConfig
+        name of the built-in sampler. This can be a string with the name of the
+        sampler, a Block object (this will just by-pass the function), or a
+        DictConfig object (the sampler will be instantiated with
+        hydra.instantiate).
+    **parameters
+        Additional keyword arguments passed when initializing the sampler
 
     Returns
     -------
     Block
-        sampler object
+        Block object of the sampler
+
+    Raises
+    ------
+    KeyError
+        If the built-in sampler name is not recognized.
+    TypeError
+        If the given type is not recognized.
     """
 
     if isinstance(sampler, Block):
@@ -624,13 +636,13 @@ def _sampler_factory(sampler: str | Block, **parameters) -> Block:
             return SAMPLER_MAPPING[filtered_name](**parameters)
 
         else:
-            raise KeyError(f"Unknown sampler name: {sampler}")
+            raise KeyError(f"Unknown built-in sampler name: {sampler}")
 
     elif isinstance(sampler, DictConfig):
         return instantiate(sampler)
 
     else:
-        raise TypeError(f"Unknown sampler type: {type(sampler)}")
+        raise TypeError(f"Unknown sampler type given: {type(sampler)}")
 
 
 SamplerNames = Literal['random', 'latin', 'sobol', 'grid']

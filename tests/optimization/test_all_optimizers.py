@@ -5,8 +5,8 @@ import pytest
 
 from f3dasm import ExperimentData
 from f3dasm._src.datageneration.datagenerator_factory import \
-    _datagenerator_factory
-from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
+    create_datagenerator
+from f3dasm._src.optimization.optimizer_factory import create_optimizer
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS
 from f3dasm.design import make_nd_continuous_domain
@@ -19,7 +19,7 @@ from f3dasm.optimization import available_optimizers
 def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer: str):
     i = 10  # iterations
 
-    _func = _datagenerator_factory(
+    _func = create_datagenerator(
         data_generator=data_generator, seed=seed)
 
     dim = 6
@@ -65,26 +65,26 @@ def test_all_optimizers_and_functions(seed: int, data_generator: str, optimizer:
     assert (data1 == data2)
 
 
-@ pytest.mark.smoke
-@ pytest.mark.parametrize("seed", [42])
-@ pytest.mark.parametrize("optimizer", available_optimizers())
-@ pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
+@pytest.mark.smoke
+@pytest.mark.parametrize("seed", [42])
+@pytest.mark.parametrize("optimizer", available_optimizers())
+@pytest.mark.parametrize("data_generator", ['levy', 'ackley', 'sphere'])
 def test_all_optimizers_3_functions(seed: int, data_generator: DataGenerator, optimizer: str):
     test_all_optimizers_and_functions(seed, data_generator, optimizer)
 
 
 # TODO: Use stored data to assess this property (maybe hypothesis ?)
-@ pytest.mark.smoke
-@ pytest.mark.parametrize("iterations", [10, 23, 66, 86])
-@ pytest.mark.parametrize("optimizer", available_optimizers())
-@ pytest.mark.parametrize("data_generator", ["sphere"])
-@ pytest.mark.parametrize("x0_selection", ["best", "new"])
+@pytest.mark.smoke
+@pytest.mark.parametrize("iterations", [10, 23, 66, 86])
+@pytest.mark.parametrize("optimizer", available_optimizers())
+@pytest.mark.parametrize("data_generator", ["sphere"])
+@pytest.mark.parametrize("x0_selection", ["best", "new"])
 def test_optimizer_iterations(iterations: int, data_generator: str,
                               optimizer: str, x0_selection: str):
     numsamples = 40  # initial samples
     seed = 42
 
-    _func = _datagenerator_factory(
+    _func = create_datagenerator(
         data_generator=data_generator)
 
     dim = 6
@@ -111,11 +111,11 @@ def test_optimizer_iterations(iterations: int, data_generator: str,
     data.evaluate(data_generator, mode='sequential', seed=seed, noise=None,
                   scale_bounds=np.tile([-1.0, 1.0], (dim, 1)))
 
-    _data_generator = _datagenerator_factory(
+    _data_generator = create_datagenerator(
         data_generator=data_generator,
         scale_bounds=np.tile([-1.0, 1.0], (dim, 1)), seed=seed)
 
-    _optimizer = _optimizer_factory(optimizer)
+    _optimizer = create_optimizer(optimizer)
     population = _optimizer._population if hasattr(
         _optimizer, '_population') else 1
     if x0_selection == "new" and iterations < population:

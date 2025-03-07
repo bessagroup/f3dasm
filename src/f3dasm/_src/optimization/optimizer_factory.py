@@ -55,27 +55,30 @@ def get_optimizer_mapping() -> Dict[str, Block]:
     return OPTIMIZER_MAPPING
 
 
-def _optimizer_factory(optimizer: str | Block, **hyperparameters
-                       ) -> Block:
-    """Factory function for optimizers
+def create_optimizer(optimizer: str | Block, **hyperparameters
+                     ) -> Block:
+    """
+    Create a optimizer block from one of the built-in optimizers.
 
     Parameters
     ----------
-
-    optimizer : str
-        Name of the optimizer to use
+    optimizer : str | Block
+        name of the built-in optimizer. This can be a string with the name of
+        the optimizer, a Block object (this will just by-pass the function).
+    **hyperparameters
+        Additional keyword arguments passed when initializing the optimizer
 
     Returns
     -------
-
-    Optimizer
-        Optimizer instance
+    Block
+        Block object of the optimizer
 
     Raises
     ------
-
     KeyError
-        If the optimizer is not found
+        If the built-in optimizer name is not recognized.
+    TypeError
+        If the given type is not recognized.
     """
     if isinstance(optimizer, Block):
         return optimizer
@@ -90,6 +93,8 @@ def _optimizer_factory(optimizer: str | Block, **hyperparameters
         if filtered_name in OPTIMIZER_MAPPING:
             return OPTIMIZER_MAPPING[filtered_name](
                 **hyperparameters)
+        else:
+            raise KeyError(f"Unknown optimizer name: {optimizer}")
 
     else:
-        raise KeyError(f"Unknown optimizer: {optimizer}")
+        raise TypeError(f"Unknown optimizer type: {type(optimizer)}")

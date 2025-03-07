@@ -78,65 +78,65 @@ class Block(ABC):
         pass
 
 
-class LoopBlock(Block):
-    def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
-        """
-        Initialize a LoopBlock instance.
+# class LoopBlock(Block):
+#     def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
+#         """
+#         Initialize a LoopBlock instance.
 
-        Parameters
-        ----------
-        blocks : Block or Iterable[Block]
-            The block or blocks to loop over.
-        n_loops : int
-            The number of loops to perform.
-        """
-        if isinstance(blocks, Block):
-            blocks = [blocks]
+#         Parameters
+#         ----------
+#         blocks : Block or Iterable[Block]
+#             The block or blocks to loop over.
+#         n_loops : int
+#             The number of loops to perform.
+#         """
+#         if isinstance(blocks, Block):
+#             blocks = [blocks]
 
-        self.blocks = blocks
-        self.n_loops = n_loops
+#         self.blocks = blocks
+#         self.n_loops = n_loops
 
-    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
-        """
-        Execute the looped blocks on the ExperimentData.
+#     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+#         """
+#         Execute the looped blocks on the ExperimentData.
 
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data to process.
-        **kwargs : dict
-            Additional keyword arguments for the blocks.
+#         Parameters
+#         ----------
+#         data : ExperimentData
+#             The experiment data to process.
+#         **kwargs : dict
+#             Additional keyword arguments for the blocks.
 
-        Returns
-        -------
-        ExperimentData
-            The processed experiment data after looping.
-        """
-        for _ in range(self.n_loops):
-            for block in self.blocks:
-                block.arm(data)
-                data = block.call(data=data, **kwargs)
+#         Returns
+#         -------
+#         ExperimentData
+#             The processed experiment data after looping.
+#         """
+#         for _ in range(self.n_loops):
+#             for block in self.blocks:
+#                 block.arm(data)
+#                 data = block.call(data=data, **kwargs)
 
-        return data
+#         return data
 
 
-def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
-    """
-    Create a loop to execute blocks multiple times.
+# def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
+#     """
+#     Create a loop to execute blocks multiple times.
 
-    Parameters
-    ----------
-    blocks : Block or Iterable[Block]
-        The block or blocks to loop over.
-    n_loops : int
-        The number of loops to perform.
+#     Parameters
+#     ----------
+#     blocks : Block or Iterable[Block]
+#         The block or blocks to loop over.
+#     n_loops : int
+#         The number of loops to perform.
 
-    Returns
-    -------
-    Block
-        An new Block instance that loops over the given blocks.
-    """
-    return LoopBlock(blocks=blocks, n_loops=n_loops)
+#     Returns
+#     -------
+#     Block
+#         An new Block instance that loops over the given blocks.
+#     """
+#     return LoopBlock(blocks=blocks, n_loops=n_loops)
 
 # =============================================================================
 

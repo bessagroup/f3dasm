@@ -14,8 +14,8 @@ from pathos.helpers import mp
 # Locals
 from f3dasm import Block, ExperimentData, logger
 from f3dasm._src.datageneration.datagenerator_factory import \
-    _datagenerator_factory
-from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
+    create_datagenerator
+from f3dasm._src.optimization.optimizer_factory import create_optimizer
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS_2D, FUNCTIONS_7D
 from f3dasm.design import Domain, make_nd_continuous_domain
@@ -54,9 +54,9 @@ class OptimizationResult:
         self.seeds = seeds
         self.opt_time = opt_time
 
-        self.func = _datagenerator_factory(
+        self.func = create_datagenerator(
             data_generator=self.data_generator, **kwargs)
-        self.optimizer = _optimizer_factory(optimizer=optimizer)
+        self.optimizer = create_optimizer(optimizer=optimizer)
         self._log()
 
     def _log(self):
@@ -138,10 +138,10 @@ def run_optimization(
         hyperparameters = {}
 
     # Set function seed
-    data_generator = _datagenerator_factory(
+    data_generator = create_datagenerator(
         data_generator=data_generator, **kwargs)
 
-    optimizer = _optimizer_factory(optimizer=optimizer, **hyperparameters)
+    optimizer = create_optimizer(optimizer=optimizer, **hyperparameters)
 
     # Sample
     data = ExperimentData.from_sampling(
@@ -273,9 +273,9 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
     else:
         PARALLELIZATION = True
 
-    data_generator_ = _datagenerator_factory(
+    data_generator_ = create_datagenerator(
         data_generator=data_generator, **kwargs)
-    optimizer_ = _optimizer_factory(optimizer=optimizer)
+    optimizer_ = create_optimizer(optimizer=optimizer)
 
     opt_type = optimizer_.type if hasattr(optimizer_, 'type') else None
     if opt_type == 'evosax':

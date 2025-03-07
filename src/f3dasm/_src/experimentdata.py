@@ -34,12 +34,12 @@ from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from .core import Block, DataGenerator
-from .datageneration import _datagenerator_factory
-from .design import Domain, _domain_factory, _sampler_factory
+from .datageneration import create_datagenerator
+from .design import Domain, _domain_factory, create_sampler
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
 from .logger import logger
-from .optimization import _optimizer_factory
+from .optimization import create_optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -701,7 +701,6 @@ class ExperimentData:
 
         return xr.Dataset({'input': da_input, 'output': da_output})
 
-    # TODO: Implement this
     def get_n_best_output(self, n_samples: int,
                           output_name: Optional[str] = 'y') -> ExperimentData:
         """
@@ -1068,35 +1067,6 @@ class ExperimentData:
         for _, es in self:
             es.mark(status)
 
-    def run(self, block: Block | Iterable[Block], **kwargs) -> ExperimentData:
-        """
-        Run a block over the entire ExperimentData object.
-
-        Parameters
-        ----------
-        block : Block
-            The block(s) to run.
-        **kwargs
-            Additional keyword arguments passed to the block.
-
-        Returns
-        -------
-        ExperimentData
-            The ExperimentData object after running the block.
-
-        Examples
-        --------
-        >>> experiment_data.run(block)
-        """
-        if isinstance(block, Block):
-            block = [block]
-
-        for b in block:
-            b.arm(data=self)
-            self = b.call(data=self, **kwargs)
-
-        return self
-
     #                                                            Datageneration
     # =========================================================================
 
@@ -1130,10 +1100,11 @@ class ExperimentData:
         >>> experiment_data.evaluate(data_generator, mode='parallel')
         """
         # Create
-        data_generator = _datagenerator_factory(
+        data_generator = create_datagenerator(
             data_generator=data_generator, output_names=output_names, **kwargs)
 
-        self = self.run(block=data_generator, mode=mode, **kwargs)
+        data_generator.arm(data=self)
+        self = data_generator.call(data=self, mode=mode, **kwargs)
 
     #                                                              Optimization
     # =========================================================================
@@ -1185,7 +1156,7 @@ class ExperimentData:
 
         # Create the data generator object if a string reference is passed
         if isinstance(data_generator, str):
-            data_generator = _datagenerator_factory(
+            data_generator = create_datagenerator(
                 data_generator=data_generator, **kwargs)
 
         if hyperparameters is None:
@@ -1193,12 +1164,12 @@ class ExperimentData:
 
         # Create the optimizer object if a string reference is passed
         if isinstance(optimizer, str):
-            optimizer = _optimizer_factory(
+            optimizer = create_optimizer(
                 optimizer=optimizer, **hyperparameters)
 
         # Create the sampler object if a string reference is passed
         if isinstance(sampler, str):
-            sampler = _sampler_factory(sampler=sampler)
+            sampler = create_sampler(sampler=sampler)
 
         population = optimizer.population if hasattr(
             optimizer, 'population') else 1
@@ -1293,9 +1264,11 @@ class ExperimentData:
         """
 
         # Creation
-        sampler = _sampler_factory(sampler=sampler, **kwargs)
+        sampler = create_sampler(sampler=sampler, **kwargs)
 
-        samples = self.run(block=sampler, **kwargs)
+        sampler.arm(data=self)
+
+        samples = sampler.call(data=self, **kwargs)
 
         self._add(samples)
 
@@ -1320,25 +1293,6 @@ class ExperimentData:
             es.copy_project_dir(Path(project_dir))
 
         self.set_project_dir(project_dir)
-
-    def remove_lockfile(self):
-        """
-        Remove the lock file from the project directory
-
-        Note
-        ----
-        The lock file is automatically created when the ExperimentData object
-        is written to disk. Concurrent processes can only sequentially access
-        the lock file. This lock file is removed after the ExperimentData
-        object is written to disk.
-
-        Examples
-        --------
-        >>> experiment_data.remove_lockfile()
-        """
-        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
-
 
 # =============================================================================
 
