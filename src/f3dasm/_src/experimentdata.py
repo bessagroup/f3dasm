@@ -19,7 +19,7 @@ from itertools import zip_longest
 from pathlib import Path
 from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Tuple, Type)
+                    Optional, Protocol, Tuple, Type)
 
 # Third-party
 import numpy as np
@@ -33,13 +33,10 @@ from omegaconf import DictConfig
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
                   INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
-from .core import Block, DataGenerator
-from .datageneration import create_datagenerator
-from .design import Domain, _domain_factory, create_sampler
+from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
 from .logger import logger
-from .optimization import create_optimizer
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -48,6 +45,23 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+#                                                                      Protocol
+# =============================================================================
+
+
+class Block(Protocol):
+    def arm(self, data: ExperimentData) -> None:
+        ...
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        ...
+
+
+class DataGenerator(Block):
+    ...
+
 # =============================================================================
 
 
@@ -411,41 +425,6 @@ class ExperimentData:
                                       max_tries=max_tries)
 
     @classmethod
-    def from_sampling(cls, sampler: Block | str | DictConfig,
-                      domain: Domain | DictConfig | str | Path,
-                      project_dir: Optional[Path | str] = None,
-                      **kwargs):
-        """
-        Create an ExperimentData object from a sampler.
-
-        Parameters
-        ----------
-        sampler : Block or str or DictConfig
-            Sampler object containing the sampling strategy or one of the
-            built-in sampler names.
-        domain : Domain or DictConfig
-            Domain object containing the domain of the experiment or hydra
-            DictConfig object containing the configuration.
-        project_dir : Path or str, optional
-            Directory of the project, by default None.
-        **kwargs
-            Additional keyword arguments passed to the sampler.
-
-        Returns
-        -------
-        ExperimentData
-            ExperimentData object containing the sampled data.
-
-        Examples
-        --------
-        >>> experiment_data = ExperimentData.from_sampling('random', domain)
-        """
-
-        data = cls(domain=domain, project_dir=project_dir)
-        data.sample(sampler=sampler, **kwargs)
-        return data
-
-    @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
         """
         Create an ExperimentData object from a YAML configuration.
@@ -464,18 +443,9 @@ class ExperimentData:
         --------
         >>> experiment_data = ExperimentData.from_yaml(config)
         """
-        # Option 0: Both existing and sampling
-        if 'from_file' in config and 'from_sampling' in config:
-            return cls.from_file(config.from_file) + cls.from_sampling(
-                **config.from_sampling)
-
-        # Option 1: From exisiting ExperimentData files
+        # Option 1: From existing ExperimentData files
         if 'from_file' in config:
             return cls.from_file(config.from_file)
-
-        # Option 2: Sample from the domain
-        if 'from_sampling' in config:
-            return cls.from_sampling(**config.from_sampling)
 
         else:
             return cls(**config)
@@ -1067,77 +1037,33 @@ class ExperimentData:
         for _, es in self:
             es.mark(status)
 
-    #                                                            Datageneration
-    # =========================================================================
-
-    def evaluate(self, data_generator: Block | str,
-                 mode: Literal['sequential', 'parallel',
-                               'cluster', 'cluster_parallel'] = 'sequential',
-                 output_names: Optional[List[str]] = None,
-                 **kwargs) -> None:
-        """
-        Run any function over the entirety of the experiments.
-
-        Parameters
-        ----------
-        data_generator : DataGenerator
-            Data generator to use.
-        mode : {'sequential', 'parallel', 'cluster', 'cluster_parallel'},
-          optional
-            Operational mode, by default 'sequential'.
-        output_names : list of str, optional
-            Names of the output parameters, by default None.
-        **kwargs
-            Additional keyword arguments passed to the data generator.
-
-        Raises
-        ------
-        ValueError
-            If an invalid parallelization mode is specified.
-
-        Examples
-        --------
-        >>> experiment_data.evaluate(data_generator, mode='parallel')
-        """
-        # Create
-        data_generator = create_datagenerator(
-            data_generator=data_generator, output_names=output_names, **kwargs)
-
-        data_generator.arm(data=self)
-        self = data_generator.call(data=self, mode=mode, **kwargs)
-
     #                                                              Optimization
     # =========================================================================
 
-    def optimize(self, optimizer: Block | str,
-                 data_generator: DataGenerator | str,
+    def optimize(self, optimizer: Block,
+                 data_generator: DataGenerator,
                  iterations: int,
-                 kwargs: Optional[Dict[str, Any]] = None,
-                 hyperparameters: Optional[Dict[str, Any]] = None,
                  x0_selection: Literal['best', 'random',
                                        'last',
                                        'new'] | ExperimentData = 'best',
-                 sampler: Optional[Block | str] = 'random',
+                 kwargs: Optional[Dict[str, Any]] = None,
+                 sampler: Optional[Block] = None,
                  overwrite: bool = False) -> None:
         """
         Optimize the ExperimentData object.
 
         Parameters
         ----------
-        optimizer : Block or str or Callable
+        optimizer : Block
             Optimizer object.
-        data_generator : DataGenerator or str
+        data_generator : DataGenerator
             DataGenerator object.
         iterations : int
             Number of iterations.
-        kwargs : dict, optional
-            Additional keyword arguments passed to the DataGenerator.
-        hyperparameters : dict, optional
-            Additional keyword arguments passed to the optimizer.
         x0_selection : {'best', 'random', 'last', 'new'} or ExperimentData
             How to select the initial design, by default 'best'.
-        sampler : Block or str, optional
-            Sampler to use if x0_selection is 'new', by default 'random'.
+        sampler : Block, optional
+            Sampler to use if x0_selection is 'new', by default None.
         overwrite : bool, optional
             If True, the optimizer will overwrite the current data, by default
             False.
@@ -1154,23 +1080,6 @@ class ExperimentData:
         if kwargs is None:
             kwargs = {}
 
-        # Create the data generator object if a string reference is passed
-        if isinstance(data_generator, str):
-            data_generator = create_datagenerator(
-                data_generator=data_generator, **kwargs)
-
-        if hyperparameters is None:
-            hyperparameters = {}
-
-        # Create the optimizer object if a string reference is passed
-        if isinstance(optimizer, str):
-            optimizer = create_optimizer(
-                optimizer=optimizer, **hyperparameters)
-
-        # Create the sampler object if a string reference is passed
-        if isinstance(sampler, str):
-            sampler = create_sampler(sampler=sampler)
-
         population = optimizer.population if hasattr(
             optimizer, 'population') else 1
 
@@ -1186,8 +1095,7 @@ class ExperimentData:
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=population, sampler=sampler)
 
-        x0.evaluate(data_generator=data_generator, mode='sequential',
-                    **kwargs)
+        x0 = data_generator.call(data=x0, mode='sequential')
 
         if len(x0) < population:
             raise ValueError((
@@ -1227,50 +1135,6 @@ class ExperimentData:
 
         else:
             self._add(experiment_data=x)
-
-    #                                                                  Sampling
-    # =========================================================================
-
-    def sample(self, sampler: Block | str, **kwargs) -> None:
-        """
-        Sample data from the domain providing the sampler strategy
-
-        Parameters
-        ----------
-        sampler: BlockAbstract | str
-            Sampler callable or string of built-in sampler
-            If a string is passed, it should be one of the built-in samplers:
-
-            * 'random' : Random sampling
-            * 'latin' : Latin Hypercube Sampling
-            * 'sobol' : Sobol Sequence Sampling
-            * 'grid' : Grid Search Sampling
-
-        Note
-        ----
-        When using the 'grid' sampler, an optional argument
-        'stepsize_continuous_parameters' can be passed to specify the stepsize
-        to cast continuous parameters to discrete parameters.
-
-        - The stepsize should be a dictionary with the parameter names as keys\
-        and the stepsize as values.
-        - Alternatively, a single stepsize can be passed for all continuous\
-        parameters.
-
-        Raises
-        ------
-        ValueError
-            Raised when invalid sampler type is specified
-        """
-
-        # Creation
-        sampler = create_sampler(sampler=sampler, **kwargs)
-
-        sampler.arm(data=self)
-
-        samples = sampler.call(data=self, **kwargs)
-
-        self._add(samples)
 
     #                                                         Project directory
     # =========================================================================
@@ -1334,11 +1198,8 @@ def x0_factory(experiment_data: ExperimentData,
         x0 = mode
 
     if mode == 'new':
-        x0 = ExperimentData.from_sampling(
-            sampler=sampler,
-            domain=experiment_data._domain,
-            n_samples=n_samples
-        )
+        sampler.arm(data=experiment_data)
+        x0 = sampler.call(data=experiment_data, n_samples=n_samples)
 
     elif mode == 'best':
         x0 = experiment_data.get_n_best_output(n_samples)

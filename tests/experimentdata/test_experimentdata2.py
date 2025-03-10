@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from omegaconf import DictConfig
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_sampler, datagenerator
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 SEED = 42
@@ -55,18 +55,22 @@ def experiment_data_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
         domain=data._domain)
 
+    @datagenerator(output_names='y')
     def f(*args, **kwargs):
         return 0.0
 
-    data.evaluate(data_generator=f, output_names=['y'])
+    data = f.call(data=data)
     data.round(3)
 
     data.set_project_dir('./test_project')
@@ -77,9 +81,12 @@ def experiment_data_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
@@ -98,18 +105,23 @@ def edata_expected_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
         domain=data._domain)
 
+    @datagenerator(output_names='y')
     def f(*args, **kwargs):
         return 0.0
 
-    data.evaluate(data_generator=f, output_names=['y'])
+    data = f.call(data=data)
+    # data.evaluate(data_generator=f, output_names=['y'])
     data.round(3)
 
     data.set_project_dir('./test_project')
@@ -122,9 +134,12 @@ def edata_expected_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
@@ -299,26 +314,3 @@ def test_experimentdata_creation_without_output(
 
     experiment_data.round(3)
     assert experiment_data == edata_expected_without_output
-
-
-def test_experiment_data_from_yaml_sampling():
-    domain = make_nd_continuous_domain(
-        bounds=[[0., 1.], [0., 1.], [0., 1.]])
-
-    data_expected = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
-
-    dict_config = DictConfig({'from_sampling': {
-        'sampler': 'random',
-        'domain': {"x0": {"type": "float", "low": 0.0, "high": 1.0},
-                   "x1": {"type": "float", "low": 0.0, "high": 1.0},
-                   "x2": {"type": "float", "low": 0.0, "high": 1.0},
-                   },
-        'n_samples': 10,
-        'seed': SEED
-    }})
-
-    data = ExperimentData.from_yaml(dict_config)
-
-    assert data._domain == data_expected._domain

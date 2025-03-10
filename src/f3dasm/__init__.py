@@ -18,11 +18,11 @@ from ._src._argparser import HPC_JOBID
 from ._src.core import Block
 from ._src.datageneration.datagenerator_factory import (create_datagenerator,
                                                         datagenerator)
-from ._src.design.samplers import create_sampler
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
 from ._src.optimization.optimizer_factory import create_optimizer
+from ._src.samplers import create_sampler
 
 #                                                        Authorship and Credits
 # =============================================================================

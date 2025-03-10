@@ -11,17 +11,16 @@ import traceback
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Literal, Optional,
-                    Protocol, Tuple, Type)
+from typing import Any, Callable, Dict, List, Tuple, Type
 
 # Third-party
-import numpy as np
-import pandas as pd
 from filelock import FileLock
 from pathos.helpers import mp
 
 # Local
 from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
+from .experimentdata import ExperimentData
+from .experimentsample import ExperimentSample
 from .logger import logger
 from .mpi_utils import (mpi_get_open_job, mpi_lock_manager,
                         mpi_store_experiment_sample, mpi_terminate_worker)
@@ -77,174 +76,6 @@ class Block(ABC):
         """
         pass
 
-
-# class LoopBlock(Block):
-#     def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
-#         """
-#         Initialize a LoopBlock instance.
-
-#         Parameters
-#         ----------
-#         blocks : Block or Iterable[Block]
-#             The block or blocks to loop over.
-#         n_loops : int
-#             The number of loops to perform.
-#         """
-#         if isinstance(blocks, Block):
-#             blocks = [blocks]
-
-#         self.blocks = blocks
-#         self.n_loops = n_loops
-
-#     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
-#         """
-#         Execute the looped blocks on the ExperimentData.
-
-#         Parameters
-#         ----------
-#         data : ExperimentData
-#             The experiment data to process.
-#         **kwargs : dict
-#             Additional keyword arguments for the blocks.
-
-#         Returns
-#         -------
-#         ExperimentData
-#             The processed experiment data after looping.
-#         """
-#         for _ in range(self.n_loops):
-#             for block in self.blocks:
-#                 block.arm(data)
-#                 data = block.call(data=data, **kwargs)
-
-#         return data
-
-
-# def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
-#     """
-#     Create a loop to execute blocks multiple times.
-
-#     Parameters
-#     ----------
-#     blocks : Block or Iterable[Block]
-#         The block or blocks to loop over.
-#     n_loops : int
-#         The number of loops to perform.
-
-#     Returns
-#     -------
-#     Block
-#         An new Block instance that loops over the given blocks.
-#     """
-#     return LoopBlock(blocks=blocks, n_loops=n_loops)
-
-# =============================================================================
-
-
-class Domain(Protocol):
-    ...
-
-
-class ExperimentSample(Protocol):
-    def mark(self,
-             status: Literal['open', 'in_progress', 'finished', 'error']):
-        ...
-
-    def store(self,
-              name: str, object: Any, to_disk: bool):
-        ...
-
-    def store_experimentsample_references(self, idx: int) -> None:
-        ...
-
-    @property
-    def input_data(self) -> Dict[str, Any]:
-        ...
-
-    @property
-    def output_data(self) -> Dict[str, Any]:
-        ...
-
-
-class ExperimentData(Protocol):
-    def __init__(self, domain: Domain, input_data: np.ndarray,
-                 output_data: np.ndarray):
-        ...
-
-    @property
-    def domain(self) -> Domain:
-        ...
-
-    @property
-    def project_dir(self) -> Path:
-        ...
-
-    @property
-    def index(self) -> pd.Index:
-        ...
-
-    @classmethod
-    def from_sampling(cls, domain: Domain, sampler: Block,
-                      n_samples: int, seed: int) -> ExperimentData:
-        ...
-
-    def access_file(self, operation: Callable) -> Callable:
-        ...
-
-    def get_open_job(self) -> Tuple[int, ExperimentSample]:
-        ...
-
-    def store_experimentsample(self,
-                               experiment_sample: ExperimentSample, idx: int):
-        ...
-
-    def from_file(self, project_dir: str, wait_for_creation: bool,
-                  max_tries: int) -> ExperimentData:
-        ...
-
-    def store(self) -> None:
-        ...
-
-    def mark(self, indices: int | Iterable[int],
-             status: Literal['open', 'in_progress', 'finished', 'error']):
-        ...
-
-    def remove_lockfile(self) -> None:
-        ...
-
-    def sample(self, sampler: Block, **kwargs):
-        ...
-
-    def evaluate(self, data_generator: DataGenerator, mode:
-                 str, output_names: Optional[List[str]] = None, **kwargs):
-        ...
-
-    def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        ...
-
-    def to_numpy() -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
-        ...
-
-    def get_experiment_sample(self, id: int) -> ExperimentData:
-        ...
-
-    def remove_rows_bottom(self, number_of_rows: int):
-        ...
-
-    def add_experiments(self, experiment_sample: ExperimentData):
-        ...
-
-    def _overwrite_experiments(self, experiment_sample: ExperimentData,
-                               indices: pd.Index, add_if_not_exist: bool):
-        ...
-
-    def _reset_index(self):
-        ...
-
-
 # =============================================================================
 
 
@@ -252,37 +83,63 @@ class DataGenerator(Block):
     """Base class for a data generator"""
 
     def call(self, data: ExperimentData | str,
-             mode: str = 'sequential', **kwargs
+             mode: str = 'sequential', pass_id: bool = False, **kwargs
              ) -> ExperimentData:
         """
         Evaluate the data generator.
 
         Parameters
         ----------
+        data : ExperimentData | str
+            The experiment data to process.
         mode : str, optional
             The mode of evaluation, by default 'sequential'
-        kwargs : dict
+        pass_id : bool, optional
+            Whether to pass the id to the execute function, by default False
+        **kwargs : dict
             The keyword arguments to pass to execute function
 
         Returns
         -------
         ExperimentData
             The processed data
+
+        Raises
+        ------
+        ValueError
+            If an invalid mode is specified
+
+        Notes
+        -----
+        The mode can be one of the following:
+            - 'sequential': Run the data generator sequentially
+            - 'parallel': Run the data generator in parallel
+            - 'cluster': Run the data generator on a cluster
+            - 'mpi': Run the data generator using MPI
+
+        The 'pass_id' parameter is used to pass the id of the experiment sample
+        to the execute function. This is useful when the execute function
+        requires the id of the experiment sample to run. By default, this is
+        set to False. The id is passed through the 'id' keyword argument.
         """
         if mode == 'sequential':
-            return self._evaluate_sequential(data=data, **kwargs)
+            return self._evaluate_sequential(data=data,
+                                             pass_id=pass_id, ** kwargs)
         elif mode == 'parallel':
-            return self._evaluate_multiprocessing(data=data, **kwargs)
+            return self._evaluate_multiprocessing(data=data,
+                                                  pass_id=pass_id, **kwargs)
         elif mode.lower() == "cluster":
-            return self._evaluate_cluster(data=data, **kwargs)
+            return self._evaluate_cluster(data=data,
+                                          pass_id=pass_id, **kwargs)
         elif mode.lower() == "mpi":
-            return self._evaluate_mpi(data=data, **kwargs)
+            return self._evaluate_mpi(data=data,
+                                      pass_id=pass_id, **kwargs)
         else:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
     # =========================================================================
 
-    def _evaluate_sequential(self, data: ExperimentData,
+    def _evaluate_sequential(self, data: ExperimentData, pass_id: bool,
                              **kwargs) -> ExperimentData:
         """Run the operation sequentially
 
@@ -296,6 +153,7 @@ class DataGenerator(Block):
         NoOpenJobsError
             Raised when there are no open jobs left
         """
+
         while True:
             job_number, experiment_sample = data.get_open_job()
             if job_number is None:
@@ -303,8 +161,13 @@ class DataGenerator(Block):
                 break
 
             try:
-                experiment_sample: ExperimentSample = self.execute(
-                    experiment_sample=experiment_sample, **kwargs)
+                if pass_id:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, id=job_number,
+                        **kwargs)
+                else:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, **kwargs)
 
                 experiment_sample.store_experimentsample_references(
                     idx=job_number)
@@ -325,7 +188,7 @@ class DataGenerator(Block):
         return data
 
     def _evaluate_multiprocessing(
-        self, data: ExperimentData,
+        self, data: ExperimentData, pass_id: bool,
             nodes: int = mp.cpu_count(), **kwargs) -> ExperimentData:
         options = []
 
@@ -333,9 +196,15 @@ class DataGenerator(Block):
             job_number, experiment_sample = data.get_open_job()
             if job_number is None:
                 break
-            options.append(
-                ({'experiment_sample': experiment_sample,
-                  '_job_number': job_number, **kwargs},))
+
+            if pass_id:
+                options.append(
+                    ({'experiment_sample': experiment_sample,
+                      '_job_number': job_number, 'id': job_number, **kwargs},))
+            else:
+                options.append(
+                    ({'experiment_sample': experiment_sample,
+                      '_job_number': job_number, **kwargs},))
 
         def f(options: Dict[str, Any]) -> Tuple[int, ExperimentSample, int]:
             job_number = options.pop('_job_number')
@@ -374,7 +243,7 @@ class DataGenerator(Block):
         return data
 
     def _evaluate_cluster(
-        self, data: ExperimentData,
+        self, data: ExperimentData, pass_id: bool,
             wait_for_creation: bool = False,
             max_tries: int = MAX_TRIES, **kwargs
     ) -> None:
@@ -402,8 +271,13 @@ class DataGenerator(Block):
                 break
 
             try:
-                experiment_sample: ExperimentSample = self.execute(
-                    experiment_sample=experiment_sample, **kwargs)
+                if pass_id:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, id=job_number,
+                        **kwargs)
+                else:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, **kwargs)
 
                 experiment_sample.store_experimentsample_references(
                     idx=job_number)
@@ -426,7 +300,7 @@ class DataGenerator(Block):
          ).with_suffix('.lock').unlink(missing_ok=True)
 
     def _evaluate_mpi(
-        self, comm, data: ExperimentData,
+        self, comm, data: ExperimentData, pass_id: bool,
         wait_for_creation: bool = False,
         max_tries: int = MAX_TRIES, **kwargs
     ) -> None:
@@ -437,6 +311,7 @@ class DataGenerator(Block):
             mpi_lock_manager(comm=comm, size=size)
         else:
             mpi_worker(comm=comm, data=data, execute_fn=self.execute,
+                       pass_id=pass_id,
                        wait_for_creation=wait_for_creation,
                        max_tries=max_tries,
                        **kwargs)
@@ -506,6 +381,7 @@ def store_experiment_sample(
 def mpi_worker(
     comm, data: ExperimentData,
         execute_fn: Callable,
+        pass_id: bool,
         wait_for_creation: bool = False,
         max_tries: int = MAX_TRIES, **kwargs
 ) -> None:
@@ -528,8 +404,13 @@ def mpi_worker(
             break
 
         try:
-            experiment_sample: ExperimentSample = execute_fn(
-                experiment_sample=experiment_sample, **kwargs)
+            if pass_id:
+                experiment_sample: ExperimentSample = execute_fn(
+                    experiment_sample=experiment_sample, id=job_number,
+                    **kwargs)
+            else:
+                experiment_sample: ExperimentSample = execute_fn(
+                    experiment_sample=experiment_sample, **kwargs)
 
             experiment_sample.store_experimentsample_references(
                 idx=job_number)

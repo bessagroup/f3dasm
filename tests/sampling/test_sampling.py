@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_sampler
 from f3dasm._src.design.parameter import ContinuousParameter
 from f3dasm.design import Domain
 
@@ -18,9 +18,11 @@ def test_sampling_interface_not_implemented_error():
     space = {'x1': x1}
 
     design = Domain(space)
+    samples = ExperimentData(domain=design)
+
     with pytest.raises(KeyError):
-        samples = ExperimentData(domain=design)
-        samples.sample(sampler='test', n_samples=5, seed=seed)
+        sampler = create_sampler(sampler='test', seed=seed)
+        _ = sampler.call(data=sampler, n_samples=5)
 
 
 def test_correct_sampling_ran(design3: Domain):
@@ -47,7 +49,9 @@ def test_correct_sampling_ran(design3: Domain):
     )
 
     samples = ExperimentData(domain=design3)
-    samples.sample(sampler='random', n_samples=numsamples, seed=seed)
+
+    sampler = create_sampler(sampler='random', seed=seed)
+    samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
     df_input.columns = df_ground_truth.columns
@@ -82,7 +86,9 @@ def test_correct_sampling_sobol(design3: Domain):
     )
 
     samples = ExperimentData(domain=design3)
-    samples.sample(sampler='sobol', n_samples=numsamples, seed=seed)
+    sampler = create_sampler(sampler='sobol', seed=seed)
+
+    samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
     df_input.columns = df_ground_truth.columns
@@ -116,7 +122,10 @@ def test_correct_sampling_lhs(design3: Domain):
     )
 
     samples = ExperimentData(domain=design3)
-    samples.sample(sampler='latin', n_samples=numsamples, seed=seed)
+
+    sampler = create_sampler(sampler='latin', seed=seed)
+
+    samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
     df_input.columns = df_ground_truth.columns

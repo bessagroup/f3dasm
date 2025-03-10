@@ -12,7 +12,7 @@ import xarray as xr
 from pathos.helpers import mp
 
 # Locals
-from f3dasm import Block, ExperimentData, logger
+from f3dasm import Block, ExperimentData, create_sampler, logger
 from f3dasm._src.datageneration.datagenerator_factory import \
     create_datagenerator
 from f3dasm._src.optimization.optimizer_factory import create_optimizer
@@ -137,20 +137,23 @@ def run_optimization(
     if hyperparameters is None:
         hyperparameters = {}
 
-    # Set function seed
-    data_generator = create_datagenerator(
+    sampler = create_sampler(sampler='random', seed=seed)
+    _data_generator = create_datagenerator(
         data_generator=data_generator, **kwargs)
+    _optimizer = create_optimizer(
+        optimizer=optimizer, **hyperparameters, seed=seed)
 
-    optimizer = create_optimizer(optimizer=optimizer, **hyperparameters)
+    data = ExperimentData(domain=domain)
 
     # Sample
-    data = ExperimentData.from_sampling(
-        sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
+    data = sampler.call(data=data, n_samples=number_of_samples)
 
-    data.evaluate(data_generator, mode='sequential', **kwargs)
-    data.optimize(optimizer=optimizer, data_generator=data_generator,
-                  iterations=iterations, kwargs=kwargs,
-                  hyperparameters=hyperparameters)
+    _data_generator.arm(data=data)
+
+    data = _data_generator.call(data=data, mode='sequential')
+
+    data.optimize(optimizer=_optimizer, data_generator=_data_generator,
+                  iterations=iterations)
 
     return data
 

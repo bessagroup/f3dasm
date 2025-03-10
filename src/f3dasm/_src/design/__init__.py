@@ -7,7 +7,6 @@ Design-of-experiments (DOE) module for the f3dasm package.
 
 # Local
 from .domain import Domain, _domain_factory
-from .samplers import create_sampler
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -20,5 +19,4 @@ __status__ = 'Stable'
 
 __all__ = ['Domain',
            '_domain_factory',
-           'create_sampler'
            ]

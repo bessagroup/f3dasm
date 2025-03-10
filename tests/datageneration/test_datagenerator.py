@@ -2,7 +2,7 @@ from typing import Callable
 
 import pytest
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_datagenerator, create_sampler
 from f3dasm._src.datageneration.datagenerator_factory import datagenerator
 from f3dasm.datageneration import DataGenerator
 from f3dasm.design import make_nd_continuous_domain
@@ -33,26 +33,29 @@ def test_convert_function2(
 @pytest.mark.parametrize("mode", ['sequential', 'parallel'])
 def test_parallelization(mode, tmp_path):
     domain = make_nd_continuous_domain([[0, 1], [0, 1]])
-    experiment_data = ExperimentData.from_sampling(
-        sampler='random',
-        domain=domain,
-        n_samples=10,
-        seed=42)
 
+    sampler = create_sampler(sampler='random', seed=42)
+    experiment_data = ExperimentData(domain=domain)
+
+    experiment_data = sampler.call(data=experiment_data, n_samples=10)
     experiment_data.set_project_dir(tmp_path)
 
-    experiment_data.evaluate(data_generator='ackley',
-                             mode=mode)
+    func = create_datagenerator(data_generator='ackley')
+
+    func.arm(data=experiment_data)
+
+    experiment_data = func.call(data=experiment_data, mode=mode)
 
 
 def test_invalid_parallelization_mode():
     domain = make_nd_continuous_domain([[0, 1], [0, 1]])
-    experiment_data = ExperimentData.from_sampling(
-        sampler='random',
-        domain=domain,
-        n_samples=10,
-        seed=42)
+
+    sampler = create_sampler(sampler='random', seed=42)
+    experiment_data = ExperimentData(domain=domain)
+
+    experiment_data = sampler.call(data=experiment_data, n_samples=10)
+    func = create_datagenerator(data_generator='ackley')
 
     with pytest.raises(ValueError):
-        experiment_data.evaluate(data_generator='ackley',
-                                 mode='invalid')
+        experiment_data = func.call(data=experiment_data,
+                                    mode='invalid')

@@ -6,7 +6,7 @@ Module for design-of-experiments
 
 # Local
 from ._src.design.domain import Domain, make_nd_continuous_domain
-from ._src.design.samplers import grid, latin, random, sobol
+from ._src.samplers import grid, latin, random, sobol
 
 #                                                          Authorship & Credits
 # =============================================================================

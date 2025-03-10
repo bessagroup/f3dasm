@@ -18,8 +18,8 @@ from SALib.sample import latin as salib_latin
 from SALib.sample import sobol_sequence
 
 # Locals
-from ..core import Block, ExperimentData
-from .domain import Domain
+from .design.domain import Domain
+from .experimentdata import Block, ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -598,7 +598,7 @@ SAMPLER_MAPPING: Dict[str, Block] = {
 # =============================================================================
 
 
-def create_sampler(sampler: str | Block | DictConfig, **parameters) -> Block:
+def create_sampler(sampler: str | DictConfig, **parameters) -> Block:
     """
     Create a sampler block from one of the built-in samplers.
 
@@ -624,11 +624,7 @@ def create_sampler(sampler: str | Block | DictConfig, **parameters) -> Block:
     TypeError
         If the given type is not recognized.
     """
-
-    if isinstance(sampler, Block):
-        return sampler
-
-    elif isinstance(sampler, str):
+    if isinstance(sampler, str):
         filtered_name = sampler.lower().replace(
             ' ', '').replace('-', '').replace('_', '')
 

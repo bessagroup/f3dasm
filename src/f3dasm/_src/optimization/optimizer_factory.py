@@ -55,7 +55,7 @@ def get_optimizer_mapping() -> Dict[str, Block]:
     return OPTIMIZER_MAPPING
 
 
-def create_optimizer(optimizer: str | Block, **hyperparameters
+def create_optimizer(optimizer: str, **hyperparameters
                      ) -> Block:
     """
     Create a optimizer block from one of the built-in optimizers.
@@ -80,10 +80,7 @@ def create_optimizer(optimizer: str | Block, **hyperparameters
     TypeError
         If the given type is not recognized.
     """
-    if isinstance(optimizer, Block):
-        return optimizer
-
-    elif isinstance(optimizer, str):
+    if isinstance(optimizer, str):
 
         filtered_name = optimizer.lower().replace(
             ' ', '').replace('-', '').replace('_', '')

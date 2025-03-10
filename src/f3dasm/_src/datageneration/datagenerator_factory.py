@@ -14,7 +14,8 @@ import inspect
 from typing import Any, Callable, Dict, Iterable, Type
 
 # Local
-from ..core import DataGenerator, ExperimentSample
+from ..core import DataGenerator
+from ..experimentsample import ExperimentSample
 from .functions import _DATAGENERATORS
 
 #                                                          Authorship & Credits
@@ -133,7 +134,7 @@ def datagenerator(output_names: Iterable[str]
 
 
 def create_datagenerator(
-        data_generator: str | DataGenerator, **parameters
+        data_generator: str, **parameters
 ) -> DataGenerator:
     """
     Create a DataGenerator block from one of the built-in data generators.
@@ -160,10 +161,6 @@ def create_datagenerator(
     TypeError
         If the given type is not recognized.
     """
-    # If the data generator is already a DataGenerator object, return it
-    if isinstance(data_generator, DataGenerator):
-        return data_generator
-
     # If the data generator is a string, check if it is a known data generator
     if isinstance(data_generator, str):
 

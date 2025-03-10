@@ -81,16 +81,19 @@ def pre_processing(config):
     experimentdata = ExperimentData.from_yaml(config.experimentdata)
 
     if 'from_sampling' in config.imperfection:
-        domain_imperfections = Domain.from_yaml(config.imperfection.domain)
         log_normal_sampler = LogNormalSampler(
             mean=config.imperfection.mean,
             sigma=config.imperfection.sigma,
             seed=config.experimentdata.from_sampling.seed)
 
-        imperfections = ExperimentData.from_sampling(
-            sampler=log_normal_sampler,
-            domain=domain_imperfections,
-            n_samples=config.experimentdata.from_sampling.n_samples,
+        imperfections = ExperimentData(
+            domain=Domain.from_yaml(config.imperfection.domain))
+
+        log_normal_sampler.arm(data=imperfections)
+
+        imperfections = log_normal_sampler.call(
+            data=imperfections,
+            n_samples=config.experimentdata.from_sampling.n_samples
         )
 
         experimentdata = experimentdata.join(imperfections)
@@ -114,10 +117,6 @@ def process(config):
     config
         Hydra configuration file object
     """
-    # if 'from_file' in config.experimentdata:
-    #     project_dir = config.experimentdata.from_file
-
-    # else:
     project_dir = Path().cwd()
 
     # Retrieve the ExperimentData object
@@ -147,13 +146,14 @@ def process(config):
         working_directory=Path.cwd() / 'riks',
         max_waiting_time=120)
 
-    data.evaluate(data_generator=simulator_lin_buckle, mode=config.mode)
+    simulator_lin_buckle.arm(data=data)
+    data = simulator_lin_buckle.call(data=data, pass_id=True, mode=config.mode)
 
     data.store()
-
     data.mark_all('open')
 
-    data.evaluate(data_generator=simulator_riks, mode=config.mode)
+    simulator_riks.arm(data=data)
+    data = simulator_riks.call(data=data, pass_id=True, mode=config.mode)
 
     if config.mode == 'sequential':
         # Store the ExperimentData to a csv file

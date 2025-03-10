@@ -113,8 +113,9 @@ class ScipyOptimizer(Block):
 
         new_samples = self.data.select(self.data.index[1:])
 
-        new_samples.evaluate(data_generator=data_generator,
-                             mode='sequential', **kwargs)
+        data_generator.arm(data=new_samples)
+
+        new_samples = data_generator.call(data=new_samples, mode='sequential')
 
         if overwrite:
             self.data.add_experiments(
@@ -136,7 +137,6 @@ class ScipyOptimizer(Block):
                 while len(self.data) < n_data_before_iterate + iterations:
                     self.data.add_experiments(last_design)
 
-        self.data.evaluate(data_generator=data_generator,
-                           mode='sequential', **kwargs)
+        self.data = data_generator.call(data=self.data, mode='sequential')
 
         return self.data

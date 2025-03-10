@@ -10,7 +10,7 @@ called with an input vector to evaluate the function at that point.
 from __future__ import annotations
 
 # Standard
-from typing import Optional, Protocol, Tuple
+from typing import Optional, Tuple
 
 # Third-party core
 import autograd.numpy as np
@@ -21,6 +21,7 @@ from autograd.numpy.numpy_boxes import ArrayBox
 
 # Locals
 from ...core import DataGenerator
+from ...experimentsample import ExperimentSample
 from ..functions.adapters.augmentor import FunctionAugmentor
 
 #                                                          Authorship & Credits
@@ -31,14 +32,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class ExperimentSample(Protocol):
-    def __setitem__(self, key: str, value: np.ndarray):
-        ...
-
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
-        ...
 
 
 class Function(DataGenerator):
