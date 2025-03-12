@@ -10,11 +10,9 @@ The ExperimentData object is the main object used to store implementations
 from __future__ import annotations
 
 # Standard
-import functools
 import random
 from collections import defaultdict
 from copy import copy
-from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
@@ -25,13 +23,12 @@ from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
 import numpy as np
 import pandas as pd
 import xarray as xr
-from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
 from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
                   OUTPUT_DATA_FILENAME, _project_dir_factory)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError

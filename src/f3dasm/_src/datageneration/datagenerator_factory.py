@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # Standard
 import inspect
-from typing import Any, Callable, Dict, Iterable, Type
+from typing import Any, Callable, Dict, Iterable
 
 # Local
 from ..core import DataGenerator
