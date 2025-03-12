@@ -284,46 +284,6 @@ class ExperimentData:
         """
         return self.to_multiindex().__repr__()
 
-    def access_file(self, operation: Callable) -> Callable:
-        """
-        Wrapper for accessing a single resource with a file lock.
-
-        Parameters
-        ----------
-        operation : Callable
-            The operation to be performed on the resource.
-
-        Returns
-        -------
-        Callable
-            The wrapped operation.
-
-        Examples
-        --------
-        >>> @experiment_data.access_file
-        ... def read_data(project_dir):
-        ...     # read data from file
-        ...     pass
-        """
-        @functools.wraps(operation)
-        def wrapper_func(project_dir: Path, *args, **kwargs) -> None:
-            lock = FileLock(
-                (project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-                 ).with_suffix('.lock'))
-
-            # If the lock has been acquired:
-            with lock:
-                loaded_self = ExperimentData.from_file(
-                    self.project_dir)
-
-                args = (loaded_self,) + args[1:]
-                value = operation(*args, **kwargs)
-                loaded_self.store()
-
-            return value
-
-        return partial(wrapper_func, project_dir=self.project_dir)
-
     #                                                                Properties
     # =========================================================================
 

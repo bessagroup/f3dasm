@@ -11,10 +11,12 @@ import traceback
 from abc import ABC, abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 # Third-party
 from filelock import FileLock
+from hydra.utils import instantiate
+from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
@@ -75,6 +77,30 @@ class Block(ABC):
             The processed experiment data.
         """
         pass
+
+    @classmethod
+    def from_yaml(cls, init_config: DictConfig,
+                  call_config: Optional[DictConfig] = None) -> Block:
+        """
+        Create a block from a YAML configuration.
+
+        Parameters
+        ----------
+        init_config : DictConfig
+            The configuration for the block's initialization.
+        call_config : DictConfig, optional
+            The configuration for the block's call method, by default None
+
+        Returns
+        -------
+        Block
+            The block object created from the configuration.
+        """
+        block: Block = instantiate(init_config)
+        if call_config is not None:
+            block.call = partial(block.call, **call_config)
+
+        return block
 
 # =============================================================================
 
