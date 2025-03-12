@@ -36,7 +36,7 @@ DATAGENERATOR_MAPPING: Dict[str, DataGenerator] = {
 
 
 def datagenerator(output_names: Iterable[str]
-                  ) -> Callable[[Callable[..., Any]], Type[DataGenerator]]:
+                  ) -> Callable[[Callable[..., Any]], DataGenerator]:
     """
     Decorator to convert a function into a `DataGenerator` subclass.
 
@@ -53,7 +53,7 @@ def datagenerator(output_names: Iterable[str]
 
     Returns
     -------
-    Callable[[Callable[..., Any]], Type[DataGenerator]]
+    Callable[[Callable[..., Any]], DataGenerator]
         A decorator that transforms a function into a `DataGenerator` subclass.
 
     Raises
@@ -82,7 +82,7 @@ def datagenerator(output_names: Iterable[str]
     if isinstance(output_names, str):
         output_names = [output_names]
 
-    def decorator(f: Callable[..., Any]) -> Type[DataGenerator]:
+    def decorator(f: Callable[..., Any]) -> DataGenerator:
         signature = inspect.signature(f)
         input_names = list(signature.parameters.keys())
 
