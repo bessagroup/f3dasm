@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm._src.design.samplers import Grid
+from f3dasm._src.samplers import Grid
 from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke

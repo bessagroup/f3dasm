@@ -10,34 +10,30 @@ The ExperimentData object is the main object used to store implementations
 from __future__ import annotations
 
 # Standard
-import functools
+import random
 from collections import defaultdict
 from copy import copy
-from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
 from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Tuple, Type)
+                    Optional, Protocol, Tuple, Type)
 
 # Third-party
 import numpy as np
 import pandas as pd
 import xarray as xr
-from filelock import FileLock
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, LOCK_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory, store_to_disk)
 # Local
-from .core import Block, DataGenerator
-from .datageneration import _datagenerator_factory
-from .design import Domain, _domain_factory, _sampler_factory
+from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
+                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from .design.domain import Domain, _domain_factory
+from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
 from .logger import logger
-from .optimization import _optimizer_factory
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -46,6 +42,23 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
 # =============================================================================
 #
+# =============================================================================
+
+#                                                                      Protocol
+# =============================================================================
+
+
+class Block(Protocol):
+    def arm(self, data: ExperimentData) -> None:
+        ...
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        ...
+
+
+class DataGenerator(Block):
+    ...
+
 # =============================================================================
 
 
@@ -123,12 +136,12 @@ class ExperimentData:
         )
 
         self.data = _data
-        self.domain = _domain
+        self._domain = _domain
         self.project_dir = _project_dir
 
         # Store to_disk objects so that the references are kept only
         for id, experiment_sample in self:
-            self.store_experimentsample(experiment_sample, id)
+            experiment_sample.store_experimentsample_references(idx=id)
 
     def __len__(self):
         """
@@ -210,7 +223,7 @@ class ExperimentData:
         >>> experiment_data1 == experiment_data2
         True
         """
-        return (self.data == __o.data and self.domain == __o.domain
+        return (self.data == __o.data and self._domain == __o._domain
                 and self.project_dir == __o.project_dir)
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
@@ -233,7 +246,7 @@ class ExperimentData:
 
         return ExperimentData.from_data(
             data={k: self.data[k] for k in self.index[key]},
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir)
 
     def _repr_html_(self) -> str:
@@ -268,71 +281,37 @@ class ExperimentData:
         """
         return self.to_multiindex().__repr__()
 
-    def access_file(self, operation: Callable) -> Callable:
+    def __deepcopy__(self) -> ExperimentData:
         """
-        Wrapper for accessing a single resource with a file lock.
-
-        Parameters
-        ----------
-        operation : Callable
-            The operation to be performed on the resource.
+        Returns a deep copy of the ExperimentData object.
 
         Returns
         -------
-        Callable
-            The wrapped operation.
+        ExperimentData
+            Deep copy of the ExperimentData object.
 
         Examples
         --------
-        >>> @experiment_data.access_file
-        ... def read_data(project_dir):
-        ...     # read data from file
-        ...     pass
+        >>> from copy import deepcopy
+        >>> copied_data = deepcopy(experiment_data)
         """
-        @functools.wraps(operation)
-        def wrapper_func(project_dir: Path, *args, **kwargs) -> None:
-            lock = FileLock(
-                (project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-                 ).with_suffix('.lock'))
+        return self._copy(in_place=False, deep=True)
 
-            # If the lock has been acquired:
-            with lock:
-                tries = 0
-                while tries < MAX_TRIES:
-                    # try:
-                    #     print(f"{args=}, {kwargs=}")
-                    #     self = ExperimentData.from_file(project_dir)
-                    #     value = operation(*args, **kwargs)
-                    #     self.store()
-                    #     break
-                    try:
-                        # Load a fresh instance of ExperimentData from file
-                        loaded_self = ExperimentData.from_file(
-                            self.project_dir)
+    def __copy__(self) -> ExperimentData:
+        """
+        Returns a shallow copy of the ExperimentData object.
 
-                        # Call the operation with the loaded instance
-                        # Replace the self in args with the loaded instance
-                        # Modify the first argument
-                        args = (loaded_self,) + args[1:]
-                        value = operation(*args, **kwargs)
-                        loaded_self.store()
-                        break
+        Returns
+        -------
+        ExperimentData
+            Shallow copy of the ExperimentData object.
 
-                    # Racing conditions can occur when the file is empty
-                    # and the file is being read at the same time
-                    except pd.errors.EmptyDataError:
-                        tries += 1
-                        logger.debug((
-                            f"EmptyDataError occurred, retrying"
-                            f" {tries+1}/{MAX_TRIES}"))
-                        sleep(1)
-
-                    raise pd.errors.EmptyDataError()
-
-            return value
-
-        return partial(wrapper_func, project_dir=self.project_dir)
-
+        Examples
+        --------
+        >>> from copy import copy
+        >>> copied_data = copy(experiment_data)
+        """
+        return self._copy(in_place=False, deep=False)
     #                                                                Properties
     # =========================================================================
 
@@ -372,12 +351,60 @@ class ExperimentData:
         """
         return pd.Series({id: es.job_status.name for id, es in self})
 
+    @property
+    def domain(self) -> Domain:
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain: Domain):
+        """
+        Sets the domain of the ExperimentData object.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain to set.
+        """
+        self._domain = domain
+        for _, es in self:
+            es.domain = domain
+
     #                                                  Alternative constructors
     # =========================================================================
 
     @classmethod
+    def _from_attributes(cls: Type[ExperimentData],
+                         domain: Domain,
+                         data: Dict[int, ExperimentSample],
+                         project_dir: Path) -> ExperimentData:
+        """
+        Create an ExperimentData object from attributes.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain of the data.
+        data : dict of int to ExperimentSample
+            The data of the experiment.
+        project_dir : Path
+            The project directory.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+        experiment_data = cls()
+        experiment_data.data = data
+        experiment_data._domain = domain
+        experiment_data.project_dir = project_dir
+        return experiment_data
+
+    @classmethod
     def from_file(cls: Type[ExperimentData],
-                  project_dir: Path | str) -> ExperimentData:
+                  project_dir: Path | str,
+                  wait_for_creation: bool = False,
+                  max_tries: int = MAX_TRIES) -> ExperimentData:
         """
         Create an ExperimentData object from .csv and .json files.
 
@@ -399,7 +426,9 @@ class ExperimentData:
             project_dir = Path(project_dir)
 
         try:
-            return _from_file_attempt(project_dir)
+            return _from_file_attempt(project_dir=project_dir,
+                                      wait_for_creation=wait_for_creation,
+                                      max_tries=max_tries)
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / project_dir
@@ -407,38 +436,9 @@ class ExperimentData:
                 raise FileNotFoundError(
                     f"Cannot find the folder {project_dir} !")
 
-            return _from_file_attempt(filename_with_path)
-
-    @classmethod
-    def from_sampling(cls, sampler: Block | str,
-                      domain: Domain | DictConfig | str | Path,
-                      **kwargs):
-        """
-        Create an ExperimentData object from a sampler.
-
-        Parameters
-        ----------
-        sampler : Block or str
-            Sampler object containing the sampling strategy or one of the
-            built-in sampler names.
-        domain : Domain or DictConfig
-            Domain object containing the domain of the experiment or hydra
-            DictConfig object containing the configuration.
-        **kwargs
-            Additional keyword arguments passed to the sampler.
-
-        Returns
-        -------
-        ExperimentData
-            ExperimentData object containing the sampled data.
-
-        Examples
-        --------
-        >>> experiment_data = ExperimentData.from_sampling('random', domain)
-        """
-        data = cls(domain=domain)
-        data.sample(sampler=sampler, **kwargs)
-        return data
+            return _from_file_attempt(project_dir=filename_with_path,
+                                      wait_for_creation=wait_for_creation,
+                                      max_tries=max_tries)
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
@@ -459,18 +459,9 @@ class ExperimentData:
         --------
         >>> experiment_data = ExperimentData.from_yaml(config)
         """
-        # Option 0: Both existing and sampling
-        if 'from_file' in config and 'from_sampling' in config:
-            return cls.from_file(config.from_file) + cls.from_sampling(
-                **config.from_sampling)
-
-        # Option 1: From exisiting ExperimentData files
+        # Option 1: From existing ExperimentData files
         if 'from_file' in config:
             return cls.from_file(config.from_file)
-
-        # Option 2: Sample from the domain
-        if 'from_sampling' in config:
-            return cls.from_sampling(**config.from_sampling)
 
         else:
             return cls(**config)
@@ -509,7 +500,7 @@ class ExperimentData:
         experiment_data = cls()
 
         experiment_data.data = defaultdict(ExperimentSample, data)
-        experiment_data.domain = domain
+        experiment_data._domain = domain
         experiment_data.project_dir = _project_dir_factory(project_dir)
         return experiment_data
 
@@ -564,6 +555,42 @@ class ExperimentData:
     #                                                                    Export
     # =========================================================================
 
+    def _copy(self, in_place: bool = False,
+              deep: bool = True) -> ExperimentData:
+        """
+        Create a copy of the ExperimentData object.
+
+        Parameters
+        ----------
+        in_place : bool, optional
+            If True, no copy is made and the object itself is returned,
+            by default False.
+        deep : bool, optional
+            If True, a deep copy is made, by default True
+
+        Returns
+        -------
+        ExperimentData
+            A copy of the ExperimentData object or the original object
+
+        Examples
+        --------
+        >>> copied_data = experiment_data._copy(in_place=False)
+        """
+        if in_place:
+            return self
+
+        if deep:
+            data_copy = {k: v._copy() for k, v in self.data.items()}
+        else:
+            data_copy = self.data
+
+        return ExperimentData._from_attributes(
+            data=defaultdict(ExperimentSample, data_copy),
+            domain=self._domain._copy(),
+            project_dir=self.project_dir,
+        )
+
     def store(self, project_dir: Optional[Path | str] = None):
         """
         Write the ExperimentData to disk in the project directory.
@@ -596,7 +623,7 @@ class ExperimentData:
         ExperimentData object is written to disk.
         """
         if project_dir is not None:
-            self.set_project_dir(project_dir)
+            self.set_project_dir(project_dir, in_place=True)
 
         subdirectory = self.project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -609,7 +636,7 @@ class ExperimentData:
             (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'))
         df_output.to_csv(
             (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'))
-        self.domain.store(subdirectory / DOMAIN_FILENAME)
+        self._domain.store(subdirectory / DOMAIN_FILENAME)
         self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
 
     def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -696,7 +723,6 @@ class ExperimentData:
 
         return xr.Dataset({'input': da_input, 'output': da_output})
 
-    # TODO: Implement this
     def get_n_best_output(self, n_samples: int,
                           output_name: Optional[str] = 'y') -> ExperimentData:
         """
@@ -744,7 +770,8 @@ class ExperimentData:
     # =========================================================================
 
     def add_experiments(self,
-                        data: ExperimentSample | ExperimentData
+                        data: ExperimentSample | ExperimentData,
+                        in_place: bool = False,
                         ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
@@ -754,6 +781,8 @@ class ExperimentData:
         ----------
         data : ExperimentSample or ExperimentData
             Experiment(s) to add.
+        in_place : bool, optional
+            If True, the data is added in place, by default False.
 
         Raises
         ------
@@ -765,11 +794,13 @@ class ExperimentData:
         >>> experiment_data.add_experiments(new_sample)
         >>> experiment_data.add_experiments(new_data)
         """
+        d = self._copy(in_place=in_place)
+
         if isinstance(data, ExperimentSample):
-            self._add_experiment_sample(data)
+            d._add_experiment_sample(data)
 
         elif isinstance(data, ExperimentData):
-            self._add(data)
+            d._add(data)
 
         else:
             raise ValueError((
@@ -777,96 +808,12 @@ class ExperimentData:
                 f"ExperimentData object, not {type(data)} ")
             )
 
-    # Not used
-    def overwrite(
-        self, indices: Iterable[int],
-            domain: Optional[Domain] = None,
-            input_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            output_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            jobs: Optional[Path | str] = None,
-            add_if_not_exist: bool = False
-    ) -> None:
-        """Overwrite the ExperimentData object.
+        if in_place:
+            return None
+        else:
+            return d
 
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices to overwrite.
-        domain : Optional[Domain], optional
-            Domain of the new object, by default None
-        input_data : Optional[DataTypes], optional
-            input parameters of the new object, by default None
-        output_data : Optional[DataTypes], optional
-            output parameters of the new object, by default None
-        jobs : Optional[Path  |  str], optional
-            jobs off the new object, by default None
-        add_if_not_exist : bool, optional
-            If True, the new objects are added if the requested indices
-            do not exist in the current ExperimentData object, by default False
-        """
-        raise NotImplementedError()
-
-    # Not used
-    def _overwrite_experiments(
-        self, indices: Iterable[int],
-            experiment_sample: ExperimentSample | ExperimentData,
-            add_if_not_exist: bool) -> None:
-        """
-        Overwrite the ExperimentData object at the given indices.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices to overwrite.
-        experimentdata : ExperimentData | ExperimentSample
-            The new ExperimentData object to overwrite with.
-        add_if_not_exist : bool
-            If True, the new objects are added if the requested indices
-            do not exist in the current ExperimentData object.
-        """
-        raise NotImplementedError()
-
-    # Used in parallel mode
-    def overwrite_disk(
-        self, indices: Iterable[int],
-            domain: Optional[Domain] = None,
-            input_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            output_data: Optional[
-                pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
-            jobs: Optional[Path | str] = None,
-            add_if_not_exist: bool = False
-    ) -> None:
-        """
-        Overwrite experiments on disk with new data.
-
-        Parameters
-        ----------
-        indices : Iterable[int]
-            The indices of the experiments to overwrite.
-        domain : Domain, optional
-            The new domain, by default None.
-        input_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
-                    str | Path, optional
-            The new input data, by default None.
-        output_data : pd.DataFrame | np.ndarray | List[Dict[str, Any]] |
-                     str | Path, optional
-            The new output data, by default None.
-        jobs : Path | str, optional
-            The new jobs data, by default None.
-        add_if_not_exist : bool, optional
-            If True, add experiments if the indices do not exist,
-            by default False.
-        """
-        raise NotImplementedError()
-
-    def remove_rows_bottom(self, number_of_rows: int):
+    def remove_rows_bottom(self, number_of_rows: int, in_place: bool = False):
         """
         Remove a number of rows from the end of the ExperimentData object.
 
@@ -874,14 +821,23 @@ class ExperimentData:
         ----------
         number_of_rows : int
             Number of rows to remove from the bottom.
+        in_place : bool, optional
+            If True, the rows are removed in place, by default False.
 
         Examples
         --------
         >>> experiment_data.remove_rows_bottom(3)
         """
+        d = self._copy(in_place=in_place)
+
         # remove the last n rows
         for i in range(number_of_rows):
-            self.data.pop(self.index[-1])
+            d.data.pop(self.index[-1])
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def reset_index(self) -> ExperimentData:
         """
@@ -899,7 +855,7 @@ class ExperimentData:
         """
         return ExperimentData.from_data(
             data={i: v for i, v in enumerate(self.data.values())},
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir)
 
     def join(self, experiment_data: ExperimentData) -> ExperimentData:
@@ -927,7 +883,7 @@ class ExperimentData:
         for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
             copy_self.data[i] = es_self + es_other
 
-        copy_self.domain += copy_other.domain
+        copy_self._domain += copy_other._domain
 
         return copy_self
 
@@ -944,28 +900,13 @@ class ExperimentData:
                 copy_other.data.values())}
 
         self.data.update(other_updated_data)
-        self.domain += copy_other.domain
+        self._domain += copy_other._domain
 
     def _add_experiment_sample(self, experiment_sample: ExperimentSample):
         last_key = max(self.index) if self else -1
         self.data[last_key + 1] = experiment_sample
 
-    def _overwrite(self, experiment_data: ExperimentData,
-                   indices: Iterable[int],
-                   add_if_not_exist: bool = False):
-        if len(indices) != len(experiment_data):
-            raise ValueError((
-                f"The number of indices ({len(indices)}) must match the number"
-                f"of experiments ({len(experiment_data)}).")
-            )
-        copy_other = experiment_data.reset_index()
-
-        for (_, es), id in zip(copy_other, indices):
-            self.data[id] = es
-
-        self.domain += copy_other.domain
-
-    def replace_nan(self, value: Any):
+    def replace_nan(self, value: Any, in_place: bool = False):
         """
         Replace all NaN values in the output data with the given value.
 
@@ -973,15 +914,23 @@ class ExperimentData:
         ----------
         value : Any
             The value to replace NaNs with.
+        in_place : bool, optional
+            If True, the NaN values are replaced in place, by default False.
 
         Examples
         --------
         >>> experiment_data.replace_nan(0)
         """
-        for _, es in self:
+        d = self._copy(in_place=in_place)
+        for _, es in d:
             es.replace_nan(value)
 
-    def round(self, decimals: int):
+        if in_place:
+            return None
+        else:
+            return d
+
+    def round(self, decimals: int, in_place: bool = False):
         """
         Round all output data to the given number of decimals.
 
@@ -994,9 +943,17 @@ class ExperimentData:
         --------
         >>> experiment_data.round(2)
         """
+        d = self._copy(in_place=in_place)
+
         for _, es in self:
             es.round(decimals)
 
+        if in_place:
+            return None
+        else:
+            return d
+
+    # TODO: Create tests for this
     def sort(self, criterion: Callable[[ExperimentSample], Any],
              reverse: bool = False) -> ExperimentData:
         """
@@ -1026,7 +983,7 @@ class ExperimentData:
         )
         return ExperimentData.from_data(
             data=sorted_data,
-            domain=self.domain,
+            domain=self._domain,
             project_dir=self.project_dir
         )
 
@@ -1054,7 +1011,7 @@ class ExperimentData:
         return self.data[id]
 
     def store_experimentsample(
-            self, experiment_sample: ExperimentSample, id: int):
+            self, experiment_sample: ExperimentSample, idx: int):
         """
         Store an ExperimentSample object in the ExperimentData object.
 
@@ -1069,41 +1026,8 @@ class ExperimentData:
         --------
         >>> experiment_data.store_experimentsample(sample, 0)
         """
-        self.domain += experiment_sample.domain
-
-        for name, value in experiment_sample._output_data.items():
-
-            # # If the output parameter is not in the domain, add it
-            # if name not in self.domain.output_names:
-            #     self.domain.add_output(name=name, to_disk=True)
-
-            parameter = self.domain.output_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir, object=value, name=name,
-                    id=id, store_function=parameter.store_function)
-
-                experiment_sample._output_data[name] = Path(storage_location)
-
-        for name, value in experiment_sample._input_data.items():
-            parameter = self.domain.input_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir, object=value, name=name,
-                    id=id, store_function=parameter.store_function)
-
-                experiment_sample._input_data[name] = Path(storage_location)
-
-        # Set the experiment sample in the ExperimentData object
-        self.data[id] = experiment_sample
-
-    # Used in parallel mode
+        self._domain += experiment_sample.domain
+        self.data[idx] = experiment_sample
 
     def get_open_job(self) -> Tuple[int, ExperimentSample]:
         """
@@ -1152,7 +1076,8 @@ class ExperimentData:
         return all(es.is_status('finished') for _, es in self)
 
     def mark(self, indices: int | Iterable[int],
-             status: Literal['open', 'in_progress', 'finished', 'error']):
+             status: Literal['open', 'in_progress', 'finished', 'error'],
+             in_place: bool = False):
         """
         Mark the jobs at the given indices with the given status.
 
@@ -1172,13 +1097,21 @@ class ExperimentData:
         --------
         >>> experiment_data.mark([0, 1], 'finished')
         """
+        d = self._copy(in_place=in_place)
+
         if isinstance(indices, int):
             indices = [indices]
         for i in indices:
-            self.data[i].mark(status)
+            d.data[i].mark(status)
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def mark_all(self,
-                 status: Literal['open', 'in_progress', 'finished', 'error']):
+                 status: Literal['open', 'in_progress', 'finished', 'error'],
+                 in_place: bool = False):
         """
         Mark all the experiments with the given status.
 
@@ -1196,108 +1129,43 @@ class ExperimentData:
         --------
         >>> experiment_data.mark_all('finished')
         """
-        for _, es in self:
+        d = self._copy(in_place=in_place)
+
+        for _, es in d:
             es.mark(status)
 
-    def run(self, block: Block | Iterable[Block], **kwargs) -> ExperimentData:
-        """
-        Run a block over the entire ExperimentData object.
-
-        Parameters
-        ----------
-        block : Block
-            The block(s) to run.
-        **kwargs
-            Additional keyword arguments passed to the block.
-
-        Returns
-        -------
-        ExperimentData
-            The ExperimentData object after running the block.
-
-        Examples
-        --------
-        >>> experiment_data.run(block)
-        """
-        if isinstance(block, Block):
-            block = [block]
-
-        for b in block:
-            b.arm(data=self)
-            self = b.call(data=self, **kwargs)
-
-        return self
-
-    #                                                            Datageneration
-    # =========================================================================
-
-    def evaluate(self, data_generator: Block | str,
-                 mode: Literal['sequential', 'parallel',
-                               'cluster', 'cluster_parallel'] = 'sequential',
-                 output_names: Optional[List[str]] = None,
-                 **kwargs) -> None:
-        """
-        Run any function over the entirety of the experiments.
-
-        Parameters
-        ----------
-        data_generator : DataGenerator
-            Data generator to use.
-        mode : {'sequential', 'parallel', 'cluster', 'cluster_parallel'},
-          optional
-            Operational mode, by default 'sequential'.
-        output_names : list of str, optional
-            Names of the output parameters, by default None.
-        **kwargs
-            Additional keyword arguments passed to the data generator.
-
-        Raises
-        ------
-        ValueError
-            If an invalid parallelization mode is specified.
-
-        Examples
-        --------
-        >>> experiment_data.evaluate(data_generator, mode='parallel')
-        """
-        # Create
-        data_generator = _datagenerator_factory(
-            data_generator=data_generator, output_names=output_names, **kwargs)
-
-        self = self.run(block=data_generator, mode=mode, **kwargs)
+        if in_place:
+            return None
+        else:
+            return d
 
     #                                                              Optimization
     # =========================================================================
 
-    def optimize(self, optimizer: Block | str,
-                 data_generator: DataGenerator | str,
+    def optimize(self, optimizer: Block,
+                 data_generator: DataGenerator,
                  iterations: int,
-                 kwargs: Optional[Dict[str, Any]] = None,
-                 hyperparameters: Optional[Dict[str, Any]] = None,
                  x0_selection: Literal['best', 'random',
                                        'last',
                                        'new'] | ExperimentData = 'best',
-                 sampler: Optional[Block | str] = 'random',
+                 kwargs: Optional[Dict[str, Any]] = None,
+                 sampler: Optional[Block] = None,
                  overwrite: bool = False) -> None:
         """
         Optimize the ExperimentData object.
 
         Parameters
         ----------
-        optimizer : Block or str or Callable
+        optimizer : Block
             Optimizer object.
-        data_generator : DataGenerator or str
+        data_generator : DataGenerator
             DataGenerator object.
         iterations : int
             Number of iterations.
-        kwargs : dict, optional
-            Additional keyword arguments passed to the DataGenerator.
-        hyperparameters : dict, optional
-            Additional keyword arguments passed to the optimizer.
         x0_selection : {'best', 'random', 'last', 'new'} or ExperimentData
             How to select the initial design, by default 'best'.
-        sampler : Block or str, optional
-            Sampler to use if x0_selection is 'new', by default 'random'.
+        sampler : Block, optional
+            Sampler to use if x0_selection is 'new', by default None.
         overwrite : bool, optional
             If True, the optimizer will overwrite the current data, by default
             False.
@@ -1314,23 +1182,6 @@ class ExperimentData:
         if kwargs is None:
             kwargs = {}
 
-        # Create the data generator object if a string reference is passed
-        if isinstance(data_generator, str):
-            data_generator = _datagenerator_factory(
-                data_generator=data_generator, **kwargs)
-
-        if hyperparameters is None:
-            hyperparameters = {}
-
-        # Create the optimizer object if a string reference is passed
-        if isinstance(optimizer, str):
-            optimizer = _optimizer_factory(
-                optimizer=optimizer, **hyperparameters)
-
-        # Create the sampler object if a string reference is passed
-        if isinstance(sampler, str):
-            sampler = _sampler_factory(sampler=sampler)
-
         population = optimizer.population if hasattr(
             optimizer, 'population') else 1
 
@@ -1346,8 +1197,7 @@ class ExperimentData:
         x0 = x0_factory(experiment_data=self, mode=x0_selection,
                         n_samples=population, sampler=sampler)
 
-        x0.evaluate(data_generator=data_generator, mode='sequential',
-                    **kwargs)
+        x0 = data_generator.call(data=x0, mode='sequential')
 
         if len(x0) < population:
             raise ValueError((
@@ -1382,85 +1232,48 @@ class ExperimentData:
 
         if not overwrite:
             x.remove_rows_bottom(
-                number_of_rows=population * n_updates.stop - iterations)
+                number_of_rows=population * n_updates.stop - iterations,
+                in_place=True)
             self._add(experiment_data=x[population:])
 
         else:
             self._add(experiment_data=x)
 
-    #                                                                  Sampling
-    # =========================================================================
-
-    def sample(self, sampler: Block | str, **kwargs) -> None:
-        """
-        Sample data from the domain providing the sampler strategy
-
-        Parameters
-        ----------
-        sampler: BlockAbstract | str
-            Sampler callable or string of built-in sampler
-            If a string is passed, it should be one of the built-in samplers:
-
-            * 'random' : Random sampling
-            * 'latin' : Latin Hypercube Sampling
-            * 'sobol' : Sobol Sequence Sampling
-            * 'grid' : Grid Search Sampling
-
-        Note
-        ----
-        When using the 'grid' sampler, an optional argument
-        'stepsize_continuous_parameters' can be passed to specify the stepsize
-        to cast continuous parameters to discrete parameters.
-
-        - The stepsize should be a dictionary with the parameter names as keys\
-        and the stepsize as values.
-        - Alternatively, a single stepsize can be passed for all continuous\
-        parameters.
-
-        Raises
-        ------
-        ValueError
-            Raised when invalid sampler type is specified
-        """
-
-        # Creation
-        sampler = _sampler_factory(sampler=sampler, **kwargs)
-
-        samples = self.run(block=sampler, **kwargs)
-
-        self._add(samples)
-
     #                                                         Project directory
     # =========================================================================
 
-    def set_project_dir(self, project_dir: Path | str):
+    def set_project_dir(self, project_dir: Path | str,
+                        in_place: bool = False) -> ExperimentData:
         """Set the directory of the f3dasm project folder.
 
         Parameters
         ----------
         project_dir : Path or str
             Path to the project directory
+        in_place : bool, optional
+            If True, the project directory is set in place, by default False
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object with the updated project directory
         """
-        self.project_dir = _project_dir_factory(project_dir)
+        d = self._copy(in_place=in_place)
+        d.project_dir = _project_dir_factory(project_dir)
 
-    def remove_lockfile(self):
-        """
-        Remove the lock file from the project directory
+        if in_place:
+            return None
+        else:
+            return d
 
-        Note
-        ----
-        The lock file is automatically created when the ExperimentData object
-        is written to disk. Concurrent processes can only sequentially access
-        the lock file. This lock file is removed after the ExperimentData
-        object is written to disk.
+    def move_project_dir(self, project_dir: Path | str):
 
-        Examples
-        --------
-        >>> experiment_data.remove_lockfile()
-        """
-        (self.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock').unlink(missing_ok=True)
+        Path(project_dir).mkdir(parents=True, exist_ok=True)
 
+        for _, es in self:
+            es.copy_project_dir(Path(project_dir))
+
+        self.set_project_dir(project_dir, in_place=True)
 
 # =============================================================================
 
@@ -1502,11 +1315,8 @@ def x0_factory(experiment_data: ExperimentData,
         x0 = mode
 
     if mode == 'new':
-        x0 = ExperimentData.from_sampling(
-            sampler=sampler,
-            domain=experiment_data.domain,
-            n_samples=n_samples
-        )
+        sampler.arm(data=experiment_data)
+        x0 = sampler.call(data=experiment_data, n_samples=n_samples)
 
     elif mode == 'best':
         x0 = experiment_data.get_n_best_output(n_samples)
@@ -1528,14 +1338,20 @@ def x0_factory(experiment_data: ExperimentData,
     return x0.reset_index()
 
 
-def _from_file_attempt(project_dir: Path) -> ExperimentData:
+def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
+                       wait_for_creation: bool = False
+                       ) -> ExperimentData:
     """Attempt to create an ExperimentData object
     from .csv and .pkl files.
 
     Parameters
     ----------
-    path : Path
+    project_dir : Path
         Name of the user-defined directory where the files are stored.
+    max_tries : int, optional
+        Maximum number of tries to read the files, by default MAX_TRIES
+    wait_for_creation : bool, optional
+        If True, wait for the files to be created, by default False
 
     Returns
     -------
@@ -1549,16 +1365,36 @@ def _from_file_attempt(project_dir: Path) -> ExperimentData:
     """
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
-    try:
-        return ExperimentData(domain=subdirectory / DOMAIN_FILENAME,
-                              input_data=subdirectory / INPUT_DATA_FILENAME,
-                              output_data=subdirectory / OUTPUT_DATA_FILENAME,
-                              jobs=subdirectory / JOBS_FILENAME,
-                              project_dir=project_dir)
+    # Retrieve the updated experimentdata object from disc
+    tries = 0
+    while tries <= max_tries:
+        try:
+            return ExperimentData(
+                domain=subdirectory / DOMAIN_FILENAME,
+                input_data=subdirectory / INPUT_DATA_FILENAME,
+                output_data=subdirectory / OUTPUT_DATA_FILENAME,
+                jobs=subdirectory / JOBS_FILENAME,
+                project_dir=project_dir)
+        except (EmptyFileError, DecodeError):
+            tries += 1
+            logger.debug((
+                f"Error reading a file, retrying"
+                f" {tries+1}/{MAX_TRIES}"
+            ))
+            sleep(random.uniform(0.5, 2.5))
 
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"Cannot find the files from {subdirectory}.")
+        except FileNotFoundError:
+            if not wait_for_creation:
+                raise FileNotFoundError(
+                    f"File {subdirectory} not found")
+
+            tries += 1
+            logger.debug((
+                f"FileNotFoundError({subdirectory}), sleeping!"
+            ))
+            sleep(random.uniform(9.5, 11.0))
+
+    raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)
 
 
 def convert_numpy_to_dataframe_with_domain(
@@ -1649,9 +1485,20 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
         return []
 
     elif isinstance(data, (Path, str)):
-        return _dict_factory(pd.read_csv(
-            Path(data).with_suffix('.csv'),
-            header=0, index_col=0))
+        filepath = Path(data).with_suffix('.csv')
+
+        if not filepath.exists():
+            raise FileNotFoundError(f"File {filepath} not found")
+
+        if filepath.stat().st_size == 0:
+            raise EmptyFileError(filepath)
+
+        try:
+            df = pd.read_csv(filepath, header=0, index_col=0)
+        except pd.errors.EmptyDataError:
+            raise DecodeError(filepath)
+
+        return _dict_factory(df)
 
     # check if data is already a list of dicts
     elif isinstance(data, list) and all(isinstance(d, dict) for d in data):
@@ -1728,9 +1575,21 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         return pd.Series()
 
     elif isinstance(jobs, (Path, str)):
-        df = pd.read_csv(
-            Path(jobs).with_suffix('.csv'),
-            header=0, index_col=0).squeeze()
+
+        filepath = Path(jobs).with_suffix('.csv')
+
+        if not filepath.exists():
+            raise FileNotFoundError(f"File {filepath} not found")
+
+        if filepath.stat().st_size == 0:
+            raise EmptyFileError(filepath)
+
+        try:
+            df = pd.read_csv(filepath,
+                             header=0, index_col=0).squeeze()
+        except pd.errors.EmptyDataError:
+            raise DecodeError(filepath)
+
         # If the jobs is jut one value, it is parsed as a string
         # So, make sure that we return a pd.Series either way!
         if not isinstance(df, pd.Series):

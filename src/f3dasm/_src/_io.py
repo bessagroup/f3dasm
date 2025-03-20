@@ -10,6 +10,7 @@ from __future__ import annotations
 
 # Standard
 import pickle
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Type
 
@@ -41,7 +42,7 @@ OUTPUT_DATA_FILENAME = "output"
 JOBS_FILENAME = "jobs"
 
 RESOLUTION_MATPLOTLIB_FIGURE = 300
-MAX_TRIES = 10
+MAX_TRIES = 20
 
 #                                                               Storing methods
 # =============================================================================
@@ -448,3 +449,33 @@ def load_object(project_dir: Path, path: str | Path,
 
     # Store the object and return the storage location
     return load_function(_path)
+
+
+def copy_object(object_path: Path,
+                old_project_dir: Path, new_project_dir: Path) -> str:
+
+    old_location = old_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
+    new_location = new_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
+
+    # Check if the storage parent folder exists
+    new_location.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if we do not overwrite an object at new_location
+    if new_location.exists():
+
+        stem, suffix = object_path.stem, object_path.suffix
+        while (new_project_dir / EXPERIMENTDATA_SUBFOLDER
+                / object_path.parent / f"{stem}{suffix}").exists():
+            try:
+                stem = str(int(stem) + 1)  # Increment stem as integer
+            except ValueError:
+                raise ValueError((
+                    f"Filename {object_path.name} cannot be converted "
+                    f"to an integer.")
+                )
+
+        object_path = object_path.parent / f"{stem}{suffix}"
+        new_location = new_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
+
+    shutil.copy2(old_location, new_location)
+    return str(object_path)

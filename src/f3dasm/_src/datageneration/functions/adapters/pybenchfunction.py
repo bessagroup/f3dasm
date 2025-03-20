@@ -2,13 +2,13 @@
 # =============================================================================
 
 # Standard
-from typing import Optional, Protocol
+from typing import Optional
 
 # Third-party
 import autograd.numpy as np
 
 # Locals
-from ....design.domain import Domain
+from ....experimentdata import ExperimentData
 from ..function import Function
 from .augmentor import (EmptyAugmentor, FunctionAugmentor, Noise, Offset,
                         Scale, _Augmentor)
@@ -21,12 +21,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-class ExperimentData(Protocol):
-    @property
-    def domain(self) -> Domain:
-        ...
 
 
 class PyBenchFunction(Function):

@@ -1,6 +1,6 @@
 import pytest
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_sampler
 from f3dasm._src.design.parameter import ContinuousParameter
 from f3dasm.design import Domain
 
@@ -20,6 +20,9 @@ def data():
     # Create the design space
     design = Domain(input_space=input_parameters)
 
-    # Set the lower_bound and upper_bound of 'y' to None, indicating it has no bounds
-    return ExperimentData.from_sampling(sampler='random',
-                                        domain=design, n_samples=N, seed=seed)
+    data = ExperimentData(domain=design)
+
+    sampler = create_sampler(sampler='random', seed=seed)
+    sampler.arm(data=data)
+
+    return sampler.call(data=data, n_samples=N)

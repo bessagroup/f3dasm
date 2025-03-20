@@ -1,11 +1,12 @@
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 from omegaconf import DictConfig
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_sampler, datagenerator
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 SEED = 42
@@ -34,11 +35,11 @@ def domain_dictconfig_without_output():
 
 
 def edata_domain_with_output() -> Domain:
-    return experiment_data_with_output().domain
+    return experiment_data_with_output()._domain
 
 
 def edata_domain_without_output() -> Domain:
-    return experiment_data_without_output().domain
+    return experiment_data_without_output()._domain
 
 # =============================================================================
 
@@ -54,21 +55,25 @@ def experiment_data_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
+    @datagenerator(output_names='y')
     def f(*args, **kwargs):
         return 0.0
 
-    data.evaluate(data_generator=f, output_names=['y'])
+    data = f.call(data=data)
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
     return data
 
 
@@ -76,62 +81,73 @@ def experiment_data_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
     return data
 
 
 # =============================================================================
 
-@ pytest.fixture(scope="package")
+@pytest.fixture(scope="package")
 def edata_expected_with_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
+    @datagenerator(output_names='y')
     def f(*args, **kwargs):
         return 0.0
 
-    data.evaluate(data_generator=f, output_names=['y'])
+    data = f.call(data=data)
+    # data.evaluate(data_generator=f, output_names=['y'])
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
 
     return data
 
 
-@ pytest.fixture(scope="package")
+@pytest.fixture(scope="package")
 def edata_expected_without_output() -> ExperimentData:
     domain = make_nd_continuous_domain(
         bounds=[[0., 1.], [0., 1.], [0., 1.]])
 
-    data = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
+    data = ExperimentData(domain=domain)
+
+    sampler = create_sampler(sampler='random', seed=SEED)
+    sampler.arm(data=data)
+
+    data = sampler.call(data=data, n_samples=10)
 
     data += ExperimentData(
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
-        domain=data.domain)
+        domain=data._domain)
 
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
 
     return data
 
@@ -223,11 +239,11 @@ def pd_output():
     return pd.DataFrame(arr_output(), columns=['y'])
 
 
-@ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
-@ pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
-@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_with_output(), None, domain_dictconfig_with_output()])
-@ pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
-@ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
+@pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
+@pytest.mark.parametrize("output_data", ["test_output.csv", pd_output(), arr_output(), list_of_dicts_output()])
+@pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_with_output(), None, domain_dictconfig_with_output()])
+@pytest.mark.parametrize("jobs", [edata_jobs_with_output(), "test_jobs.csv", None])
+@pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_with_output(
         input_data, output_data, domain, jobs, project_dir, edata_expected_with_output, monkeypatch):
 
@@ -245,13 +261,17 @@ def test_experimentdata_creation_with_output(
 
     monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
     monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
+    mock_stat = MagicMock()
+    mock_stat.st_size = 10  # Non Empty file
 
-    experiment_data = ExperimentData(domain=domain, input_data=input_data,
-                                     output_data=output_data, jobs=jobs,
-                                     project_dir=project_dir)
+    with patch.object(Path, "exists", return_value=True), \
+            patch.object(Path, "stat", return_value=mock_stat):
+        experiment_data = ExperimentData(domain=domain, input_data=input_data,
+                                         output_data=output_data, jobs=jobs,
+                                         project_dir=project_dir)
 
     if domain is None:
-        experiment_data.domain = edata_domain_with_output()
+        experiment_data._domain = edata_domain_with_output()
 
     experiment_data.round(3)
     assert experiment_data == edata_expected_with_output
@@ -259,10 +279,10 @@ def test_experimentdata_creation_with_output(
 
 # =============================================================================
 
-@ pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
-@ pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_without_output(), domain_dictconfig_without_output()])
-@ pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
-@ pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
+@pytest.mark.parametrize("input_data", ["test_input.csv", pd_input(), arr_input(), list_of_dicts_input()])
+@pytest.mark.parametrize("domain", ["test_domain.json", edata_domain_without_output(), domain_dictconfig_without_output()])
+@pytest.mark.parametrize("jobs", [edata_jobs_without_output(), "test_jobs.csv", None])
+@pytest.mark.parametrize("project_dir", ["./test_project", Path("./test_project")])
 def test_experimentdata_creation_without_output(
         input_data, domain, jobs, project_dir, edata_expected_without_output, monkeypatch):
 
@@ -280,36 +300,17 @@ def test_experimentdata_creation_without_output(
 
     monkeypatch.setattr(pd, 'read_csv', mock_read_csv)
     monkeypatch.setattr(Domain, 'from_file', mock_domain_from_file)
+    mock_stat = MagicMock()
+    mock_stat.st_size = 10  # Non Empty file
 
-    experiment_data = ExperimentData(domain=domain, input_data=input_data,
-                                     jobs=jobs,
-                                     project_dir=project_dir)
+    with patch.object(Path, "exists", return_value=True), \
+            patch.object(Path, "stat", return_value=mock_stat):
+        experiment_data = ExperimentData(domain=domain, input_data=input_data,
+                                         jobs=jobs,
+                                         project_dir=project_dir)
 
     if domain is None:
-        experiment_data.domain = edata_domain_without_output()
+        experiment_data._domain = edata_domain_without_output()
 
     experiment_data.round(3)
     assert experiment_data == edata_expected_without_output
-
-
-def test_experiment_data_from_yaml_sampling():
-    domain = make_nd_continuous_domain(
-        bounds=[[0., 1.], [0., 1.], [0., 1.]])
-
-    data_expected = ExperimentData.from_sampling(
-        sampler='random', domain=domain, n_samples=10, seed=SEED
-    )
-
-    dict_config = DictConfig({'from_sampling': {
-        'sampler': 'random',
-        'domain': {"x0": {"type": "float", "low": 0.0, "high": 1.0},
-                   "x1": {"type": "float", "low": 0.0, "high": 1.0},
-                   "x2": {"type": "float", "low": 0.0, "high": 1.0},
-                   },
-        'n_samples': 10,
-        'seed': SEED
-    }})
-
-    data = ExperimentData.from_yaml(dict_config)
-
-    assert data.domain == data_expected.domain

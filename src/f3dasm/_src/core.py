@@ -9,17 +9,23 @@ from __future__ import annotations
 # Standard
 import traceback
 from abc import ABC, abstractmethod
+from functools import partial
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Literal, Optional,
-                    Protocol, Tuple)
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 # Third-party
-import numpy as np
-import pandas as pd
+from filelock import FileLock
+from hydra.utils import instantiate
+from omegaconf import DictConfig
 from pathos.helpers import mp
 
 # Local
+from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
+from .experimentdata import ExperimentData
+from .experimentsample import ExperimentSample
 from .logger import logger
+from .mpi_utils import (mpi_get_open_job, mpi_lock_manager,
+                        mpi_store_experiment_sample, mpi_terminate_worker)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -72,165 +78,29 @@ class Block(ABC):
         """
         pass
 
-
-class LoopBlock(Block):
-    def __init__(self, blocks: Block | Iterable[Block], n_loops: int):
+    @classmethod
+    def from_yaml(cls, init_config: DictConfig,
+                  call_config: Optional[DictConfig] = None) -> Block:
         """
-        Initialize a LoopBlock instance.
+        Create a block from a YAML configuration.
 
         Parameters
         ----------
-        blocks : Block or Iterable[Block]
-            The block or blocks to loop over.
-        n_loops : int
-            The number of loops to perform.
-        """
-        if isinstance(blocks, Block):
-            blocks = [blocks]
-
-        self.blocks = blocks
-        self.n_loops = n_loops
-
-    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
-        """
-        Execute the looped blocks on the ExperimentData.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data to process.
-        **kwargs : dict
-            Additional keyword arguments for the blocks.
+        init_config : DictConfig
+            The configuration for the block's initialization.
+        call_config : DictConfig, optional
+            The configuration for the block's call method, by default None
 
         Returns
         -------
-        ExperimentData
-            The processed experiment data after looping.
+        Block
+            The block object created from the configuration.
         """
-        for _ in range(self.n_loops):
-            for block in self.blocks:
-                block.arm(data)
-                data = block.call(data=data, **kwargs)
+        block: Block = instantiate(init_config)
+        if call_config is not None:
+            block.call = partial(block.call, **call_config)
 
-        return data
-
-
-def loop(blocks: Block | Iterable[Block], n_loops: int) -> Block:
-    """
-    Create a loop to execute blocks multiple times.
-
-    Parameters
-    ----------
-    blocks : Block or Iterable[Block]
-        The block or blocks to loop over.
-    n_loops : int
-        The number of loops to perform.
-
-    Returns
-    -------
-    Block
-        An new Block instance that loops over the given blocks.
-    """
-    return LoopBlock(blocks=blocks, n_loops=n_loops)
-
-# =============================================================================
-
-
-class Domain(Protocol):
-    ...
-
-
-class ExperimentSample(Protocol):
-    def mark(self,
-             status: Literal['open', 'in_progress', 'finished', 'error']):
-        ...
-
-    @property
-    def input_data(self) -> Dict[str, Any]:
-        ...
-
-    @property
-    def output_data(self) -> Dict[str, Any]:
-        ...
-
-
-class ExperimentData(Protocol):
-    def __init__(self, domain: Domain, input_data: np.ndarray,
-                 output_data: np.ndarray):
-        ...
-
-    @property
-    def domain(self) -> Domain:
-        ...
-
-    @property
-    def project_dir(self) -> Path:
-        ...
-
-    @property
-    def index(self) -> pd.Index:
-        ...
-
-    @classmethod
-    def from_sampling(cls, domain: Domain, sampler: Block,
-                      n_samples: int, seed: int) -> ExperimentData:
-        ...
-
-    def access_file(self, operation: Callable) -> Callable:
-        ...
-
-    def get_open_job(self) -> Tuple[int, ExperimentSample]:
-        ...
-
-    def store_experimentsample(self,
-                               experiment_sample: ExperimentSample, id: int):
-        ...
-
-    def from_file(self, project_dir: str) -> ExperimentData:
-        ...
-
-    def store(self) -> None:
-        ...
-
-    def mark(self, indices: int | Iterable[int],
-             status: Literal['open', 'in_progress', 'finished', 'error']):
-        ...
-
-    def remove_lockfile(self) -> None:
-        ...
-
-    def sample(self, sampler: Block, **kwargs):
-        ...
-
-    def evaluate(self, data_generator: DataGenerator, mode:
-                 str, output_names: Optional[List[str]] = None, **kwargs):
-        ...
-
-    def get_n_best_output(self, n_samples: int) -> ExperimentData:
-        ...
-
-    def to_numpy() -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def select(self, indices: int | slice | Iterable[int]) -> ExperimentData:
-        ...
-
-    def get_experiment_sample(self, id: int) -> ExperimentData:
-        ...
-
-    def remove_rows_bottom(self, number_of_rows: int):
-        ...
-
-    def add_experiments(self, experiment_sample: ExperimentData):
-        ...
-
-    def _overwrite_experiments(self, experiment_sample: ExperimentData,
-                               indices: pd.Index, add_if_not_exist: bool):
-        ...
-
-    def _reset_index(self):
-        ...
-
+        return block
 
 # =============================================================================
 
@@ -238,37 +108,67 @@ class ExperimentData(Protocol):
 class DataGenerator(Block):
     """Base class for a data generator"""
 
-    def call(self, data: ExperimentData, mode: str = 'sequential', **kwargs
+    def call(self, data: ExperimentData | str,
+             mode: str = 'sequential', pass_id: bool = False, **kwargs
              ) -> ExperimentData:
         """
         Evaluate the data generator.
 
         Parameters
         ----------
+        data : ExperimentData | str
+            The experiment data to process.
         mode : str, optional
             The mode of evaluation, by default 'sequential'
-        kwargs : dict
-            The keyword arguments to pass to the pre_process, execute and
-            post_process
+        pass_id : bool, optional
+            Whether to pass the id to the execute function, by default False
+        **kwargs : dict
+            The keyword arguments to pass to execute function
 
         Returns
         -------
         ExperimentData
             The processed data
+
+        Raises
+        ------
+        ValueError
+            If an invalid mode is specified
+
+        Notes
+        -----
+        The mode can be one of the following:
+            - 'sequential': Run the data generator sequentially
+            - 'parallel': Run the data generator in parallel
+            - 'cluster': Run the data generator on a cluster
+            - 'mpi': Run the data generator using MPI
+
+        The 'pass_id' parameter is used to pass the id of the experiment sample
+        to the execute function. This is useful when the execute function
+        requires the id of the experiment sample to run. By default, this is
+        set to False. The id is passed through the 'id' keyword argument.
         """
+        data = data._copy(in_place=False, deep=True)
+
         if mode == 'sequential':
-            return self._evaluate_sequential(data=data, **kwargs)
+            return self._evaluate_sequential(data=data,
+                                             pass_id=pass_id, ** kwargs)
         elif mode == 'parallel':
-            return self._evaluate_multiprocessing(data=data, **kwargs)
+            return self._evaluate_multiprocessing(data=data,
+                                                  pass_id=pass_id, **kwargs)
         elif mode.lower() == "cluster":
-            return self._evaluate_cluster(data=data, **kwargs)
+            return self._evaluate_cluster(data=data,
+                                          pass_id=pass_id, **kwargs)
+        elif mode.lower() == "mpi":
+            return self._evaluate_mpi(data=data,
+                                      pass_id=pass_id, **kwargs)
         else:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
     # =========================================================================
 
-    def _evaluate_sequential(self, data: ExperimentData, **kwargs
-                             ) -> ExperimentData:
+    def _evaluate_sequential(self, data: ExperimentData, pass_id: bool,
+                             **kwargs) -> ExperimentData:
         """Run the operation sequentially
 
         Parameters
@@ -281,192 +181,279 @@ class DataGenerator(Block):
         NoOpenJobsError
             Raised when there are no open jobs left
         """
-        while True:
 
+        while True:
             job_number, experiment_sample = data.get_open_job()
-            logger.debug(
-                f"Accessed experiment_sample \
-                        {job_number}")
             if job_number is None:
-                logger.debug("No Open Jobs left")
+                logger.debug("No Open jobs left!")
                 break
 
             try:
-
-                # If kwargs is empty dict
-                if not kwargs:
-                    logger.debug(
-                        f"Running experiment_sample "
-                        f"{job_number}")
+                if pass_id:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, id=job_number,
+                        **kwargs)
                 else:
-                    logger.debug(
-                        f"Running experiment_sample "
-                        f"{job_number} with kwargs {kwargs}")
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, **kwargs)
 
-                _experiment_sample = self._run(
-                    experiment_sample, **kwargs)  # no *args!
-                data.store_experimentsample(
-                    experiment_sample=_experiment_sample,
-                    id=job_number)
-            except Exception as e:
-                error_msg = f"Error in experiment_sample \
-                     {job_number}: {e}"
+                experiment_sample.store_experimentsample_references(
+                    idx=job_number)
+
+                experiment_sample.mark('finished')
+
+            except Exception:
+                error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                data.mark(indices=job_number, status='error')
+                experiment_sample.mark('error')
+                continue
 
+            finally:
+                data.store_experimentsample(
+                    idx=job_number, experiment_sample=experiment_sample,
+                )
         return data
 
     def _evaluate_multiprocessing(
-        self, data: ExperimentData,
+        self, data: ExperimentData, pass_id: bool,
             nodes: int = mp.cpu_count(), **kwargs) -> ExperimentData:
         options = []
+
         while True:
             job_number, experiment_sample = data.get_open_job()
             if job_number is None:
                 break
-            options.append(
-                ({'experiment_sample': experiment_sample,
-                  '_job_number': job_number, **kwargs},))
+
+            if pass_id:
+                options.append(
+                    ({'experiment_sample': experiment_sample,
+                      '_job_number': job_number, 'id': job_number, **kwargs},))
+            else:
+                options.append(
+                    ({'experiment_sample': experiment_sample,
+                      '_job_number': job_number, **kwargs},))
 
         def f(options: Dict[str, Any]) -> Tuple[int, ExperimentSample, int]:
+            job_number = options.pop('_job_number')
             try:
 
                 logger.debug(
                     f"Running experiment_sample "
-                    f"{options['_job_number']}")
+                    f"{job_number}")
 
-                # no *args!
-                return (options['_job_number'], self._run(**options), 0)
+                experiment_sample: ExperimentSample = self.execute(**options)
+                experiment_sample.store_experimentsample_references(
+                    idx=job_number)
+                # exit_code = 0
+                experiment_sample.mark('finished')
 
-            except Exception as e:
-                error_msg = f"Error in experiment_sample \
-                     {options['_job_number']}: {e}"
+            except Exception:
+                error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                return (options['_job_number'],
-                        options['experiment_sample'], 1)
+                experiment_sample.mark('error')
+                # exit_code = 1
+
+            finally:
+                return (job_number, experiment_sample)
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
             _experiment_samples: List[
                 Tuple[int, ExperimentSample, int]] = pool.starmap(f, options)
 
-        for job_number, _experiment_sample, exit_code in _experiment_samples:
-            if exit_code == 0:
-                data.store_experimentsample(
-                    experiment_sample=_experiment_sample,
-                    id=job_number)
-            else:
-                data.mark(indices=job_number, status='error')
+        for job_number, experiment_sample in _experiment_samples:
+            data.store_experimentsample(
+                experiment_sample=experiment_sample,
+                idx=job_number)
 
         return data
 
     def _evaluate_cluster(
-            self, data: ExperimentData, **kwargs) -> ExperimentData:
-        """Run the operation on the cluster
+        self, data: ExperimentData, pass_id: bool,
+            wait_for_creation: bool = False,
+            max_tries: int = MAX_TRIES, **kwargs
+    ) -> None:
 
-        Parameters
-        ----------
-        operation : ExperimentSampleCallable
-            function execution for every entry in the ExperimentData object
-        kwargs : dict
-            Any keyword arguments that need to be supplied to the function
+        # Creat lockfile
+        lockfile = FileLock(
+            (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+             ).with_suffix('.lock'))
 
-        Raises
-        ------
-        NoOpenJobsError
-            Raised when there are no open jobs left
-        """
-        # Retrieve the updated experimentdata object from disc
-        try:
-            data = type(data).from_file(data.project_dir)
-        except FileNotFoundError:  # If not found, store current
-            data.store()
-
-        get_open_job = data.access_file(type(data).get_open_job)
-        store_experiment_sample = data.access_file(
-            type(data).store_experimentsample)
-        mark = data.access_file(type(data).mark)
+        cluster_get_open_job = partial(
+            get_open_job, experiment_data_type=type(data),
+            project_dir=data.project_dir,
+            wait_for_creation=wait_for_creation, max_tries=max_tries,
+            lockfile=lockfile)
+        cluster_store_experiment_sample = partial(
+            store_experiment_sample, experiment_data_type=type(data),
+            project_dir=data.project_dir,
+            wait_for_creation=wait_for_creation, max_tries=max_tries,
+            lockfile=lockfile)
 
         while True:
-
-            job_number, experiment_sample = get_open_job()
+            job_number, experiment_sample = cluster_get_open_job()
             if job_number is None:
                 logger.debug("No Open jobs left!")
                 break
 
             try:
-                _experiment_sample = self._run(
-                    experiment_sample, **kwargs)
-                store_experiment_sample(experiment_sample=_experiment_sample,
-                                        id=job_number)
+                if pass_id:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, id=job_number,
+                        **kwargs)
+                else:
+                    experiment_sample: ExperimentSample = self.execute(
+                        experiment_sample=experiment_sample, **kwargs)
+
+                experiment_sample.store_experimentsample_references(
+                    idx=job_number)
+
+                experiment_sample.mark('finished')
+
             except Exception:
-                # n = experiment_sample.job_number
                 error_msg = f"Error in experiment_sample {job_number}: "
                 error_traceback = traceback.format_exc()
                 logger.error(f"{error_msg}\n{error_traceback}")
-                mark(indices=job_number, status='error')
+                experiment_sample.mark('error')
                 continue
 
-        data = type(data).from_file(data.project_dir)
+            finally:
+                cluster_store_experiment_sample(
+                    idx=job_number, experiment_sample=experiment_sample)
 
-        # Remove the lockfile from disk
-        data.remove_lockfile()
-        return data
+        # Remove lockfile
+        (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+         ).with_suffix('.lock').unlink(missing_ok=True)
+
+    def _evaluate_mpi(
+        self, comm, data: ExperimentData, pass_id: bool,
+        wait_for_creation: bool = False,
+        max_tries: int = MAX_TRIES, **kwargs
+    ) -> None:
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+
+        if rank == 0:
+            mpi_lock_manager(comm=comm, size=size)
+        else:
+            mpi_worker(comm=comm, data=data, execute_fn=self.execute,
+                       pass_id=pass_id,
+                       wait_for_creation=wait_for_creation,
+                       max_tries=max_tries,
+                       **kwargs)
 
     # =========================================================================
 
     @abstractmethod
-    def execute(self, **kwargs) -> None:
+    def execute(self, experiment_sample: ExperimentSample,
+                **kwargs) -> ExperimentSample:
         """Interface function that handles the execution of the data generator
+
+        Parameters
+        ----------
+        experiment_sample : ExperimentSample
+            The experiment sample to run the data generator on
+        kwargs : dict
+            The optional keyword arguments to pass to the function
+
+        Returns
+        -------
+        ExperimentSample
+            The experiment sample with the response of the data generator
+            saved in the experiment_sample
 
         Raises
         ------
         NotImplementedError
             If the function is not implemented by the user
-
-        Note
-        ----
-        The experiment_sample is cached inside the data generator. This
-        allows the user to access the experiment_sample in
-        the execute and function as a class variable called
-        self.experiment_sample.
         """
         ...
 
-    def _run(
-            self, experiment_sample: ExperimentSample,
-            **kwargs) -> ExperimentSample:
-        """
-        Run the data generator.
+# =============================================================================
 
-        The function also caches the experiment_sample in the data generator.
-        This allows the user to access the experiment_sample in the
-        execute function as a class variable
-        called self.experiment_sample.
 
-        Parameters
-        ----------
-        ExperimentSample : ExperimentSample
-            The design to run the data generator on
+def get_open_job(experiment_data_type: Type[ExperimentData],
+                 project_dir: Path, lockfile: FileLock,
+                 wait_for_creation: bool, max_tries: int,
+                 ) -> Tuple[int, ExperimentSample]:
 
-        kwargs : dict
-            The keyword arguments to pass to the pre_process, execute \
-            and post_process
+    with lockfile:
+        data: ExperimentData = experiment_data_type.from_file(
+            project_dir=project_dir, wait_for_creation=wait_for_creation,
+            max_tries=max_tries)
 
-        Returns
-        -------
-        ExperimentSample
-            Processed design with the response of the data generator \
-            saved in the experiment_sample
-        """
-        self.experiment_sample = experiment_sample
+        idx, es = data.get_open_job()
 
-        self.experiment_sample.mark('in_progress')
+        data.store(project_dir)
 
-        self.execute(**kwargs)
+    return idx, es
 
-        self.experiment_sample.mark('finished')
 
-        return self.experiment_sample
+def store_experiment_sample(
+    experiment_data_type: Type[ExperimentData],
+        project_dir: Path, lockfile: FileLock, wait_for_creation: bool,
+        max_tries: int, idx: int, experiment_sample: ExperimentSample) -> None:
+
+    with lockfile:
+        data: ExperimentData = experiment_data_type.from_file(
+            project_dir=project_dir, wait_for_creation=wait_for_creation,
+            max_tries=max_tries)
+
+        data.store_experimentsample(experiment_sample=experiment_sample,
+                                    idx=idx)
+        data.store(project_dir)
+
+
+def mpi_worker(
+    comm, data: ExperimentData,
+        execute_fn: Callable,
+        pass_id: bool,
+        wait_for_creation: bool = False,
+        max_tries: int = MAX_TRIES, **kwargs
+) -> None:
+
+    cluster_get_open_job = partial(
+        mpi_get_open_job, experiment_data_type=type(data),
+        project_dir=data.project_dir,
+        wait_for_creation=wait_for_creation, max_tries=max_tries,
+        comm=comm)
+    cluster_store_experiment_sample = partial(
+        mpi_store_experiment_sample, experiment_data_type=type(data),
+        project_dir=data.project_dir,
+        wait_for_creation=wait_for_creation, max_tries=max_tries,
+        comm=comm)
+
+    while True:
+        job_number, experiment_sample = cluster_get_open_job()
+        if job_number is None:
+            logger.debug("No Open jobs left!")
+            break
+
+        try:
+            if pass_id:
+                experiment_sample: ExperimentSample = execute_fn(
+                    experiment_sample=experiment_sample, id=job_number,
+                    **kwargs)
+            else:
+                experiment_sample: ExperimentSample = execute_fn(
+                    experiment_sample=experiment_sample, **kwargs)
+
+            experiment_sample.store_experimentsample_references(
+                idx=job_number)
+
+            experiment_sample.mark('finished')
+
+        except Exception:
+            error_msg = f"Error in experiment_sample {job_number}: "
+            error_traceback = traceback.format_exc()
+            logger.error(f"{error_msg}\n{error_traceback}")
+            experiment_sample.mark('error')
+            continue
+
+        finally:
+            cluster_store_experiment_sample(
+                idx=job_number, experiment_sample=experiment_sample)
+
+    mpi_terminate_worker(comm)

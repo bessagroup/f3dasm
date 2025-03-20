@@ -8,6 +8,7 @@ A ExperimentSample object contains a single realization of
 
 from __future__ import annotations
 
+from copy import deepcopy
 # Standard
 from enum import Enum
 from pathlib import Path
@@ -17,8 +18,9 @@ from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
 import autograd.numpy as np
 
 # Local
-from ._io import load_object
+from ._io import copy_object, load_object, store_to_disk
 from .design.domain import Domain
+from .errors import DecodeError
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -90,7 +92,14 @@ class ExperimentSample:
         self._input_data = input_data
         self._output_data = output_data
         self.domain = domain
-        self.job_status = JobStatus[job_status]
+
+        try:
+            self.job_status = JobStatus[job_status]
+        # If nan is given as key, there is a problem with the decoding of
+        # the jobs.csv file
+        except KeyError:
+            raise DecodeError()
+
         self.project_dir = project_dir
 
     def __repr__(self):
@@ -162,6 +171,23 @@ class ExperimentSample:
         return (self._input_data == __o._input_data
                 and self._output_data == __o._output_data
                 and self.job_status == __o.job_status)
+
+    def _copy(self) -> ExperimentSample:
+        """
+        Create a copy of the ExperimentSample instance.
+
+        Returns
+        -------
+        ExperimentSample
+            A new ExperimentSample instance with the same input and
+            output data.
+        """
+        return ExperimentSample(
+            input_data=deepcopy(self._input_data),
+            output_data=deepcopy(self._output_data),
+            domain=self.domain._copy(),
+            job_status=self.job_status.name,
+            project_dir=self.project_dir)
 
     @property
     def input_data(self) -> Dict[str, Any]:
@@ -402,6 +428,30 @@ class ExperimentSample:
         self._input_data = round_dict(self._input_data)
         self._output_data = round_dict(self._output_data)
 
+    def copy_project_dir(self, project_dir: Path):
+        for key, value in self._input_data.items():
+            # If the parameter is stored on disk, update the path
+            if isinstance(value, str) and self.domain.\
+                    input_space[key].to_disk:
+                new_value = copy_object(object_path=Path(value),
+                                        old_project_dir=self.project_dir,
+                                        new_project_dir=project_dir)
+                # Update the path in the input data
+                self._input_data[key] = new_value
+
+        for key, value in self._output_data.items():
+            # If the parameter is stored on disk, update the path
+            if isinstance(value, str) and self.domain.\
+                    output_space[key].to_disk:
+                new_value = copy_object(object_path=Path(value),
+                                        old_project_dir=self.project_dir,
+                                        new_project_dir=project_dir)
+                # Update the path in the input data
+
+                self._output_data[key] = new_value
+
+        self.project_dir = project_dir
+
     #                                                                 Exporting
     # =========================================================================
 
@@ -517,6 +567,38 @@ class ExperimentSample:
                                    load_function=load_function)
 
         self._output_data[name] = object
+
+    def store_experimentsample_references(self, idx: int):
+        for name, value in self._output_data.items():
+
+            # # If the output parameter is not in the domain, add it
+            # if name not in self.domain.output_names:
+            #     self.domain.add_output(name=name, to_disk=True)
+
+            parameter = self.domain.output_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir,
+                    object=value, name=name,
+                    id=idx, store_function=parameter.store_function)
+
+                self._output_data[name] = Path(storage_location)
+
+        for name, value in self._input_data.items():
+            parameter = self.domain.input_space[name]
+
+            # If the parameter is to be stored on disk, store it
+            # Also check if the value is not already a reference!
+            if parameter.to_disk and not isinstance(value, (Path, str)):
+                storage_location = store_to_disk(
+                    project_dir=self.project_dir,
+                    object=value, name=name,
+                    id=idx, store_function=parameter.store_function)
+
+                self._input_data[name] = Path(storage_location)
 
     #                                                                Job status
     # =========================================================================

@@ -15,10 +15,14 @@ optimization, sampling, and simulation.
 
 from .__version__ import __version__
 from ._src._argparser import HPC_JOBID
-from ._src.core import Block, loop
+from ._src.core import Block
+from ._src.datageneration.datagenerator_factory import (create_datagenerator,
+                                                        datagenerator)
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.logger import DistributedFileHandler, logger
+from ._src.optimization.optimizer_factory import create_optimizer
+from ._src.samplers import create_sampler
 
 #                                                        Authorship and Credits
 # =============================================================================
@@ -35,8 +39,11 @@ logger.info(f"Imported f3dasm (version: {__version__})")
 __all__ = [
     'ExperimentData',
     'ExperimentSample',
+    'create_datagenerator',
+    'datagenerator',
+    'create_optimizer',
+    'create_sampler',
     'Block',
-    'loop',
     'DistributedFileHandler',
     'logger',
     'HPC_JOBID',

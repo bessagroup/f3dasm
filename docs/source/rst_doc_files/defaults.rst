@@ -4,15 +4,14 @@ Built-in functionalities
 :mod:`f3dasm` provides a set of built-in functionalities that can be used to perform data-driven optimization and sensitivity analysis. 
 All built-ins are implementations of the :class:`~f3dasm.Block` class and can be used on your :class:`~f3dasm.ExperimentData` object.
 
-Blocks can be run on a :class:`~f3dasm.ExperimentData` object by calling the :meth:`~f3dasm.ExperimentData.run` method.
-Alternatively, you can use the following methods for specific parts of the data-driven process.
+The built-in blocks can be initialized by either importing the functions directly from the respective submodules or by using a string argument to specify the built-in function you want to use.
 
 =============================== ======================================= ===================================================
-Part of the data-driven process Submodule for built-ins                 Method on :class:`~f3dasm.ExperimentData`
+Part of the data-driven process Submodule for built-ins                 Function to call with string argument
 =============================== ======================================= ===================================================
-Sampling                        :mod:`f3dasm.design`                    :meth:`f3dasm.ExperimentData.sample`
-Data generation                 :mod:`f3dasm.datageneration`            :meth:`f3dasm.ExperimentData.evaluate`
-Optimization                    :mod:`f3dasm.optimization`              :meth:`f3dasm.ExperimentData.optimize`
+Sampling                        :mod:`f3dasm.design`                    :func:`f3dasm.create_sampler`
+Data generation                 :mod:`f3dasm.datageneration`            :func:`f3dasm.create_datagenerator`
+Optimization                    :mod:`f3dasm.optimization`              :func:`f3dasm.create_optimizer`
 =============================== ======================================= ===================================================
 
 :mod:`f3dasm` provides two ways to use the built-in functionalities:
@@ -43,18 +42,27 @@ You can import the built-in functions directly from the respective submodules an
     experiment_data = ExperimentData(domain=domain)
 
     # 1. Sampling
-    experiment_data.sample(sampler=sampler_block, n_samples=10)
-
+    experiment_data = sampler_block(data=experiment_data, n_samples=10)
+    
     # 2. Evaluating the samples
-    experiment_data.evaluate(data_generator=data_generation_block)
 
+    data_generation_block.arm(data=experiment_data)
+    experiment_data = data_generation_block.call(data=experiment_data)
 
 2. Use a string argument
 
-Alternatively, you can use a string argument to specify the built-in function you want to use. The default parameters will be used.
+Alternatively, you can use a string argument to specify the built-in function you want to use.
 
 
 .. code-block:: python
+  
+    from f3dasm import create_sampler, create_datagenerator
+
+    sampler_block = create_sampler(sampler='random', seed=123)
+
+    data_generation_block = create_datagenerator(
+      data_generator='ackley',
+      scale_bounds=[[0., 1.], [0., 1.]])
 
     # Create an empty Domain
     domain = Domain()
@@ -67,10 +75,13 @@ Alternatively, you can use a string argument to specify the built-in function yo
     experiment_data = ExperimentData(domain=domain)
 
     # 1. Sampling
-    experiment_data.sample(sampler='random', n_samples=10)
-
+    experiment_data = sampler_block(data=experiment_data, n_samples=10)
+    
     # 2. Evaluating the samples
-    experiment_data.evaluate(data_generator='ackley')
+
+    data_generation_block.arm(data=experiment_data)
+    experiment_data = data_generation_block.call(data=experiment_data)
+
 
 
 .. warning::

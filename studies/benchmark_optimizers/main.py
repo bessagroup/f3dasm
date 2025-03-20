@@ -29,7 +29,8 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from f3dasm import Block, ExperimentData
+from f3dasm import (Block, ExperimentData, ExperimentSample,
+                    create_datagenerator, create_optimizer, create_sampler)
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
 from f3dasm.design import Domain, make_nd_continuous_domain
@@ -57,25 +58,26 @@ class CustomSampler(Block):
 
         for i in range(n_samples):
             dim = rng.choice(
-                data.domain.input_space['dimensionality'].categories)
+                data._domain.input_space['dimensionality'].categories)
 
             available_functions = list(set(get_functions(d=int(dim))) & set(
-                data.domain.input_space['function_name'].categories))
+                data._domain.input_space['function_name'].categories))
             function_name = rng.choice(available_functions)
 
-            noise = rng.choice(data.domain.input_space['noise'].categories)
+            noise = rng.choice(data._domain.input_space['noise'].categories)
             seed = rng.integers(
-                low=data.domain.input_space['seed'].lower_bound,
-                high=data.domain.input_space['seed'].upper_bound)
-            budget = data.domain.input_space['budget'].value
+                low=data._domain.input_space['seed'].lower_bound,
+                high=data._domain.input_space['seed'].upper_bound)
+            budget = data._domain.input_space['budget'].value
 
             samples.append([function_name, dim, noise, seed, budget])
 
         df = pd.DataFrame(
-            samples, columns=data.domain.input_names)[data.domain.input_names]
+            samples,
+            columns=data._domain.input_names)[data._domain.input_names]
 
         return ExperimentData(
-            domain=data.domain, input_data=df,
+            domain=data._domain, input_data=df,
             project_dir=data.project_dir)
 
 #                                                          Custom datagenerator
@@ -86,12 +88,13 @@ class BenchmarkOptimizer(DataGenerator):
     def __init__(self, config):
         self.config = config
 
-    def optimize_function(self, optimizer: dict) -> xr.Dataset:
-        seed = self.experiment_sample.input_data['seed']
-        function_name = self.experiment_sample.input_data['function_name']
-        dimensionality = self.experiment_sample.input_data['dimensionality']
-        noise = self.experiment_sample.input_data['noise']
-        budget = self.experiment_sample.input_data['budget']
+    def optimize_function(self, experiment_sample: ExperimentSample,
+                          optimizer: dict) -> xr.Dataset:
+        seed = experiment_sample.input_data['seed']
+        function_name = experiment_sample.input_data['function_name']
+        dimensionality = experiment_sample.input_data['dimensionality']
+        noise = experiment_sample.input_data['noise']
+        budget = experiment_sample.input_data['budget']
 
         hyperparameters = optimizer['hyperparameters'] \
             if 'hyperparameters' in optimizer else {}
@@ -105,35 +108,49 @@ class BenchmarkOptimizer(DataGenerator):
                     [self.config.optimization.lower_bound,
                      self.config.optimization.upper_bound],
                     (dimensionality, 1)))
-            data = ExperimentData.from_sampling(
-                sampler=self.config.optimization.sampler_name, domain=domain,
-                n_samples=self.config.optimization.number_of_samples,
+            sampler = create_sampler(
+                sampler=self.config.optimization.sampler_name,
                 seed=seed + r)
 
-            data.evaluate(
+            data = ExperimentData(domain=domain)
+
+            sampler.arm(data=data)
+            data = sampler.call(
+                data=data,
+                n_samples=self.config.optimization.number_of_samples)
+
+            data_generator = create_datagenerator(
                 data_generator=function_name,
-                scale_bounds=domain.get_bounds(), offset=True, noise=noise,
-                seed=seed, mode='sequential')
+                scale_bounds=domain.get_bounds(),
+                offset=True, noise=noise, seed=seed + r)
+
+            data_generator.arm(data=data)
+
+            data = data_generator.call(data=data, mode='sequential')
+
+            _optimizer = create_optimizer(optimizer=optimizer['name'],
+                                          seed=seed + r, **hyperparameters)
 
             data.optimize(
-                optimizer=optimizer['name'], data_generator=function_name,
-                kwargs={'scale_bounds': domain.get_bounds(
-                ), 'offset': True, 'noise': noise, 'seed': seed},
+                optimizer=_optimizer, data_generator=data_generator,
                 iterations=budget, x0_selection='best',
-                hyperparameters={'seed': seed + r,
-                                 **hyperparameters})
+            )
 
             data_list.append(data.to_xarray())
 
         return xr.concat(data_list, dim=xr.DataArray(
             range(self.config.optimization.realizations), dims='realization'))
 
-    def execute(self):
+    def execute(self, experiment_sample: ExperimentSample) -> ExperimentSample:
         for optimizer in self.config.optimization.optimizers:
-            opt_results = self.optimize_function(optimizer)
+            opt_results = self.optimize_function(
+                experiment_sample=experiment_sample,
+                optimizer=optimizer)
 
-            self.experiment_sample.store(
+            experiment_sample.store(
                 object=opt_results, name=optimizer['name'], to_disk=True)
+
+        return experiment_sample
 
 #                                                          Data-driven workflow
 # =============================================================================
@@ -145,10 +162,13 @@ def pre_processing(config):
         seed=config.experimentdata.from_sampling.seed)
 
     if 'from_sampling' in config.experimentdata:
-        experimentdata = ExperimentData.from_sampling(
-            sampler=custom_sampler,
-            domain=Domain.from_yaml(config.domain),
-            n_samples=config.experimentdata.from_sampling.n_samples,
+        experimentdata = ExperimentData(domain=Domain.from_yaml(config.domain))
+
+        custom_sampler.arm(data=experimentdata)
+
+        experimentdata = custom_sampler.call(
+            data=experimentdata,
+            n_samples=config.experimentdata.from_sampling.n_samples
         )
 
     else:
@@ -185,7 +205,9 @@ def process(config):
 
     benchmark_optimizer = BenchmarkOptimizer(config)
 
-    data.evaluate(data_generator=benchmark_optimizer, mode=config.mode)
+    benchmark_optimizer.arm(data=data)
+
+    data = benchmark_optimizer.call(data=data, mode=config.mode)
 
     if config.mode == 'sequential':
         # Store the ExperimentData to a csv file

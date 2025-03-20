@@ -12,10 +12,10 @@ import xarray as xr
 from pathos.helpers import mp
 
 # Locals
-from f3dasm import Block, ExperimentData, logger
+from f3dasm import Block, ExperimentData, create_sampler, logger
 from f3dasm._src.datageneration.datagenerator_factory import \
-    _datagenerator_factory
-from f3dasm._src.optimization.optimizer_factory import _optimizer_factory
+    create_datagenerator
+from f3dasm._src.optimization.optimizer_factory import create_optimizer
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import FUNCTIONS_2D, FUNCTIONS_7D
 from f3dasm.design import Domain, make_nd_continuous_domain
@@ -54,9 +54,9 @@ class OptimizationResult:
         self.seeds = seeds
         self.opt_time = opt_time
 
-        self.func = _datagenerator_factory(
+        self.func = create_datagenerator(
             data_generator=self.data_generator, **kwargs)
-        self.optimizer = _optimizer_factory(optimizer=optimizer)
+        self.optimizer = create_optimizer(optimizer=optimizer)
         self._log()
 
     def _log(self):
@@ -64,7 +64,7 @@ class OptimizationResult:
         logger.info(
             (f"Optimized {self.data_generator} \
                 function (seed={self.func.seed}, "
-             f"dim={len(self.data[0].domain)}, "
+             f"dim={len(self.data[0]._domain)}, "
              f"noise={self.func.noise}) "
              f"with {self.optimizer.__class__.__name__} optimizer for "
              f"{len(self.data)} realizations ({self.opt_time:.3f} s).")
@@ -84,7 +84,7 @@ class OptimizationResult:
         xarr.attrs['function_seed']: int = self.func.seed
         xarr.attrs['function_name']: str = self.data_generator
         xarr.attrs['function_noise']: str = self.func.noise
-        xarr.attrs['function_dimensionality']: int = len(self.data[0].domain)
+        xarr.attrs['function_dimensionality']: int = len(self.data[0]._domain)
 
         # Global minimum function
         _, g = self.func.get_global_minimum(d=self.func.dimensionality)
@@ -137,20 +137,23 @@ def run_optimization(
     if hyperparameters is None:
         hyperparameters = {}
 
-    # Set function seed
-    data_generator = _datagenerator_factory(
+    sampler = create_sampler(sampler='random', seed=seed)
+    _data_generator = create_datagenerator(
         data_generator=data_generator, **kwargs)
+    _optimizer = create_optimizer(
+        optimizer=optimizer, **hyperparameters, seed=seed)
 
-    optimizer = _optimizer_factory(optimizer=optimizer, **hyperparameters)
+    data = ExperimentData(domain=domain)
 
     # Sample
-    data = ExperimentData.from_sampling(
-        sampler=sampler, domain=domain, n_samples=number_of_samples, seed=seed)
+    data = sampler.call(data=data, n_samples=number_of_samples)
 
-    data.evaluate(data_generator, mode='sequential', **kwargs)
-    data.optimize(optimizer=optimizer, data_generator=data_generator,
-                  iterations=iterations, kwargs=kwargs,
-                  hyperparameters=hyperparameters)
+    _data_generator.arm(data=data)
+
+    data = _data_generator.call(data=data, mode='sequential')
+
+    data.optimize(optimizer=_optimizer, data_generator=_data_generator,
+                  iterations=iterations)
 
     return data
 
@@ -273,9 +276,9 @@ def test_run_multiple_realizations(data_generator: str, optimizer: str, dimensio
     else:
         PARALLELIZATION = True
 
-    data_generator_ = _datagenerator_factory(
+    data_generator_ = create_datagenerator(
         data_generator=data_generator, **kwargs)
-    optimizer_ = _optimizer_factory(optimizer=optimizer)
+    optimizer_ = create_optimizer(optimizer=optimizer)
 
     opt_type = optimizer_.type if hasattr(optimizer_, 'type') else None
     if opt_type == 'evosax':

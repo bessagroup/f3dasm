@@ -8,7 +8,7 @@ Module for optimization
 from typing import Callable, List
 
 from .numpy_implementations import random_search
-from .optimizer_factory import _optimizer_factory, available_optimizers
+from .optimizer_factory import available_optimizers, create_optimizer
 from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 # Local
@@ -28,7 +28,7 @@ __status__ = 'Stable'
 
 
 __all__ = [
-    '_optimizer_factory',
+    'create_optimizer',
     'cg',
     'lbfgsb',
     'nelder_mead',

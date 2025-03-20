@@ -2,7 +2,7 @@ from typing import Callable
 
 import pytest
 
-from f3dasm import ExperimentData
+from f3dasm import ExperimentData, create_sampler
 from f3dasm.design import Domain
 
 
@@ -13,7 +13,10 @@ def experiment_data() -> ExperimentData:
 
     experiment_data = ExperimentData(domain=domain)
 
-    experiment_data.sample(sampler='random', n_samples=10, seed=2023)
+    sampler = create_sampler(sampler='random', seed=2023)
+
+    experiment_data = sampler.call(data=experiment_data, n_samples=100)
+
     return experiment_data
 
 

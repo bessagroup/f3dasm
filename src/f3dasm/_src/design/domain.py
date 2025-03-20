@@ -20,6 +20,7 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 # Local
+from ..errors import DecodeError, EmptyFileError
 from .parameter import (CategoricalParameter, CategoricalType,
                         ConstantParameter, ContinuousParameter,
                         DiscreteParameter, LoadFunction, Parameter,
@@ -103,6 +104,20 @@ class Domain:
 
         return Domain(input_space=combined_space,
                       output_space={**self.output_space, **__o.output_space})
+
+    def _copy(self) -> Domain:
+        """
+        Return a copy of the Domain object
+
+        Returns
+        -------
+        Domain
+            Copy of the Domain object
+        """
+        return Domain(
+            input_space={k: v._copy() for k, v in self.input_space.items()},
+            output_space={k: v._copy() for k, v in self.output_space.items()}
+        )
 
     @property
     def input_names(self) -> List[str]:
@@ -193,14 +208,20 @@ class Domain:
         >>> domain = Domain.from_json('domain.json')
         """
         # convert filename to Path object
-        filename = Path(filename)
+        filename = Path(filename).with_suffix('.json')
 
         # Check if filename exists
-        if not filename.with_suffix('.json').exists():
+        if not filename.exists():
             raise FileNotFoundError(f"Domain file {filename} does not exist.")
 
-        with open(filename.with_suffix('.json'), 'r') as f:
-            domain_dict = json.load(f)
+        if filename.stat().st_size == 0:
+            raise EmptyFileError(filename)
+
+        try:
+            with open(filename, 'r') as f:
+                domain_dict = json.load(f)
+        except json.JSONDecodeError:
+            raise DecodeError(filename)
 
         input_space = {k: Parameter.from_dict(
             v) for k, v in domain_dict['input_space'].items()}

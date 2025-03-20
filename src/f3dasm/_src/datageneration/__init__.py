@@ -9,7 +9,7 @@ from typing import List
 
 # Local
 from ..core import DataGenerator
-from .datagenerator_factory import _datagenerator_factory
+from .datagenerator_factory import create_datagenerator
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,5 +22,5 @@ __status__ = 'Stable'
 
 __all__ = [
     'DataGenerator',
-    '_datagenerator_factory'
+    'create_datagenerator'
 ]

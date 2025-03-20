@@ -39,7 +39,8 @@ class ScipyOptimizer(Block):
         self.data.add_experiments(
             type(self.data)(domain=self.data.domain,
                             input_data=np.atleast_2d(xk),
-                            project_dir=self.data.project_dir)
+                            project_dir=self.data.project_dir),
+            in_place=True
         )
 
     def call(self, data: ExperimentData, **kwargs):
@@ -61,8 +62,7 @@ class ScipyOptimizer(Block):
         def fun(x):
             x_ = ExperimentSample.from_numpy(input_array=x,
                                              domain=self.data.domain)
-            sample = data_generator._run(
-                x_, domain=self.data.domain)
+            sample = data_generator.execute(experiment_sample=x_)
             _, y = sample.to_numpy()
             return float(y)
 
@@ -114,12 +114,13 @@ class ScipyOptimizer(Block):
 
         new_samples = self.data.select(self.data.index[1:])
 
-        new_samples.evaluate(data_generator=data_generator,
-                             mode='sequential', **kwargs)
+        data_generator.arm(data=new_samples)
+
+        new_samples = data_generator.call(data=new_samples, mode='sequential')
 
         if overwrite:
             self.data.add_experiments(
-                data.select([self.data.index[-1]]))
+                data.select([self.data.index[-1]]), in_place=True)
 
         elif not overwrite:
             # If x_new is empty, repeat best x0 to fill up total iteration
@@ -128,16 +129,15 @@ class ScipyOptimizer(Block):
                     n_samples=1)
 
                 for repetition in range(iterations):
-                    self.data.add_experiments(repeated_sample)
+                    self.data.add_experiments(repeated_sample, in_place=True)
 
             # Repeat last iteration to fill up total iteration
             if len(self.data) < n_data_before_iterate + iterations:
                 last_design = self.data.get_experiment_sample(len(self.data)-1)
 
                 while len(self.data) < n_data_before_iterate + iterations:
-                    self.data.add_experiments(last_design)
+                    self.data.add_experiments(last_design, in_place=True)
 
-        self.data.evaluate(data_generator=data_generator,
-                           mode='sequential', **kwargs)
+        self.data = data_generator.call(data=self.data, mode='sequential')
 
         return self.data
