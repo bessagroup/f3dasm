@@ -73,7 +73,7 @@ def experiment_data_with_output() -> ExperimentData:
     data = f.call(data=data)
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
     return data
 
 
@@ -94,7 +94,7 @@ def experiment_data_without_output() -> ExperimentData:
 
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
     return data
 
 
@@ -124,7 +124,7 @@ def edata_expected_with_output() -> ExperimentData:
     # data.evaluate(data_generator=f, output_names=['y'])
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
 
     return data
 
@@ -147,7 +147,7 @@ def edata_expected_without_output() -> ExperimentData:
 
     data.round(3)
 
-    data.set_project_dir('./test_project')
+    data = data.set_project_dir('./test_project')
 
     return data
 

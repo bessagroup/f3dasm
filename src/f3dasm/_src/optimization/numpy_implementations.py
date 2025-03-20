@@ -44,7 +44,7 @@ class NumpyOptimizer(Block):
         )
 
         # return the data
-        return type(data)(domain=data.domain,
+        return type(data)(domain=data.domain._copy(),
                           input_data=x_new,
                           )
 

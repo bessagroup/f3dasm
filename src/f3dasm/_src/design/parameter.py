@@ -151,6 +151,24 @@ class Parameter:
         """
         return self
 
+    def _copy(self) -> Parameter:
+        """
+        Create a copy of the Parameter object.
+
+        Returns
+        -------
+        Parameter
+            A copy of the Parameter object.
+
+        Examples
+        --------
+        >>> param = Parameter(to_disk=True)
+        >>> param_copy = param._copy()
+        """
+        return Parameter(to_disk=self.to_disk,
+                         store_function=self.store_function,
+                         load_function=self.load_function)
+
     def to_dict(self) -> dict:
         """
         Convert the Parameter object to a dictionary.
@@ -295,6 +313,22 @@ class ConstantParameter(Parameter):
         if isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to constant!")
 
+    def _copy(self) -> ConstantParameter:
+        """
+        Create a copy of the ConstantParameter object.
+
+        Returns
+        -------
+        ConstantParameter
+            A copy of the ConstantParameter object.
+
+        Examples
+        --------
+        >>> param = ConstantParameter(value=5)
+        >>> param_copy = param._copy()
+        """
+        return ConstantParameter(value=self.value)
+
     def to_categorical(self) -> CategoricalParameter:
         """
         Convert the constant parameter to a categorical parameter.
@@ -415,7 +449,26 @@ class ContinuousParameter(Parameter):
                 f"upper_bound={self.upper_bound})")
             )
 
-    def to_discrete(self, step: int = 1) -> "DiscreteParameter":
+    def _copy(self) -> ContinuousParameter:
+        """
+        Create a copy of the ContinuousParameter object.
+
+        Returns
+        -------
+        ContinuousParameter
+            A copy of the ContinuousParameter object.
+
+        Examples
+        --------
+        >>> param = ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        >>> param_copy = param._copy()
+        """
+        return ContinuousParameter(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound, log=self.log
+        )
+
+    def to_discrete(self, step: int = 1) -> DiscreteParameter:
         """
         Convert the continuous parameter to a discrete parameter.
 
@@ -521,6 +574,26 @@ class DiscreteParameter(Parameter):
                 == __o.upper_bound and self.step
                 == __o.step)
 
+    def _copy(self) -> DiscreteParameter:
+        """
+        Create a copy of the DiscreteParameter object.
+
+        Returns
+        -------
+        DiscreteParameter
+            A copy of the DiscreteParameter object.
+
+        Examples
+        --------
+        >>> param = DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
+        >>> param_copy = param._copy()
+        """
+        return DiscreteParameter(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound,
+            step=self.step
+        )
+
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError("Upper bound must be greater than lower bound.")
@@ -573,7 +646,7 @@ class CategoricalParameter(Parameter):
         return (f"{self.__class__.__name__}"
                 f"(categories={list(self.categories)})")
 
-    def __add__(self, other: Parameter) -> "CategoricalParameter":
+    def __add__(self, other: Parameter) -> CategoricalParameter:
         if isinstance(other, CategoricalParameter):
             joint_categories = list(set(self.categories + other.categories))
         elif isinstance(other, ConstantParameter):
@@ -594,6 +667,22 @@ class CategoricalParameter(Parameter):
     def _check_duplicates(self):
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
+
+    def _copy(self) -> CategoricalParameter:
+        """
+        Create a copy of the CategoricalParameter object.
+
+        Returns
+        -------
+        CategoricalParameter
+            A copy of the CategoricalParameter object.
+
+        Examples
+        --------
+        >>> param = CategoricalParameter(categories=['a', 'b', 'c'])
+        >>> param_copy = param._copy()
+        """
+        return CategoricalParameter(categories=self.categories)
 
     def to_dict(self) -> dict:
         param_dict = super().to_dict()

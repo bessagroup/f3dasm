@@ -147,13 +147,15 @@ def process(config):
         max_waiting_time=120)
 
     simulator_lin_buckle.arm(data=data)
-    data = simulator_lin_buckle.call(data=data, pass_id=True, mode=config.mode)
+    data: ExperimentData = simulator_lin_buckle.call(
+        data=data, pass_id=True, mode=config.mode)
 
     data.store()
-    data.mark_all('open')
+    data = data.mark_all('open')
 
     simulator_riks.arm(data=data)
-    data = simulator_riks.call(data=data, pass_id=True, mode=config.mode)
+    data: ExperimentData = simulator_riks.call(
+        data=data, pass_id=True, mode=config.mode)
 
     if config.mode == 'sequential':
         # Store the ExperimentData to a csv file

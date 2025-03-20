@@ -73,7 +73,8 @@ class CustomSampler(Block):
             samples.append([function_name, dim, noise, seed, budget])
 
         df = pd.DataFrame(
-            samples, columns=data._domain.input_names)[data._domain.input_names]
+            samples,
+            columns=data._domain.input_names)[data._domain.input_names]
 
         return ExperimentData(
             domain=data._domain, input_data=df,
@@ -87,7 +88,8 @@ class BenchmarkOptimizer(DataGenerator):
     def __init__(self, config):
         self.config = config
 
-    def optimize_function(self, experiment_sample: ExperimentSample, optimizer: dict) -> xr.Dataset:
+    def optimize_function(self, experiment_sample: ExperimentSample,
+                          optimizer: dict) -> xr.Dataset:
         seed = experiment_sample.input_data['seed']
         function_name = experiment_sample.input_data['function_name']
         dimensionality = experiment_sample.input_data['dimensionality']

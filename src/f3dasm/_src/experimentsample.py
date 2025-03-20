@@ -8,6 +8,7 @@ A ExperimentSample object contains a single realization of
 
 from __future__ import annotations
 
+from copy import deepcopy
 # Standard
 from enum import Enum
 from pathlib import Path
@@ -170,6 +171,23 @@ class ExperimentSample:
         return (self._input_data == __o._input_data
                 and self._output_data == __o._output_data
                 and self.job_status == __o.job_status)
+
+    def _copy(self) -> ExperimentSample:
+        """
+        Create a copy of the ExperimentSample instance.
+
+        Returns
+        -------
+        ExperimentSample
+            A new ExperimentSample instance with the same input and
+            output data.
+        """
+        return ExperimentSample(
+            input_data=deepcopy(self._input_data),
+            output_data=deepcopy(self._output_data),
+            domain=self.domain._copy(),
+            job_status=self.job_status.name,
+            project_dir=self.project_dir)
 
     @property
     def input_data(self) -> Dict[str, Any]:

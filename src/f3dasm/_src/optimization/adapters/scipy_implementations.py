@@ -39,7 +39,8 @@ class ScipyOptimizer(Block):
         self.data.add_experiments(
             type(self.data)(domain=self.data.domain,
                             input_data=np.atleast_2d(xk),
-                            project_dir=self.data.project_dir)
+                            project_dir=self.data.project_dir),
+            in_place=True
         )
 
     def call(self, data: ExperimentData, **kwargs):
@@ -119,7 +120,7 @@ class ScipyOptimizer(Block):
 
         if overwrite:
             self.data.add_experiments(
-                data.select([self.data.index[-1]]))
+                data.select([self.data.index[-1]]), in_place=True)
 
         elif not overwrite:
             # If x_new is empty, repeat best x0 to fill up total iteration
@@ -128,14 +129,14 @@ class ScipyOptimizer(Block):
                     n_samples=1)
 
                 for repetition in range(iterations):
-                    self.data.add_experiments(repeated_sample)
+                    self.data.add_experiments(repeated_sample, in_place=True)
 
             # Repeat last iteration to fill up total iteration
             if len(self.data) < n_data_before_iterate + iterations:
                 last_design = self.data.get_experiment_sample(len(self.data)-1)
 
                 while len(self.data) < n_data_before_iterate + iterations:
-                    self.data.add_experiments(last_design)
+                    self.data.add_experiments(last_design, in_place=True)
 
         self.data = data_generator.call(data=self.data, mode='sequential')
 

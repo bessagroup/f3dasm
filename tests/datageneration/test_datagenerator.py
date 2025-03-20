@@ -38,7 +38,7 @@ def test_parallelization(mode, tmp_path):
     experiment_data = ExperimentData(domain=domain)
 
     experiment_data = sampler.call(data=experiment_data, n_samples=10)
-    experiment_data.set_project_dir(tmp_path)
+    experiment_data.set_project_dir(tmp_path, in_place=True)
 
     func = create_datagenerator(data_generator='ackley')
 

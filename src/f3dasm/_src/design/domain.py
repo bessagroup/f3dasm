@@ -105,6 +105,20 @@ class Domain:
         return Domain(input_space=combined_space,
                       output_space={**self.output_space, **__o.output_space})
 
+    def _copy(self) -> Domain:
+        """
+        Return a copy of the Domain object
+
+        Returns
+        -------
+        Domain
+            Copy of the Domain object
+        """
+        return Domain(
+            input_space={k: v._copy() for k, v in self.input_space.items()},
+            output_space={k: v._copy() for k, v in self.output_space.items()}
+        )
+
     @property
     def input_names(self) -> List[str]:
         """

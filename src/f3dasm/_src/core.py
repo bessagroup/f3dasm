@@ -148,6 +148,8 @@ class DataGenerator(Block):
         requires the id of the experiment sample to run. By default, this is
         set to False. The id is passed through the 'id' keyword argument.
         """
+        data = data._copy(in_place=False, deep=True)
+
         if mode == 'sequential':
             return self._evaluate_sequential(data=data,
                                              pass_id=pass_id, ** kwargs)

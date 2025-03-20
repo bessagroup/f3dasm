@@ -299,7 +299,7 @@ class RandomUniform(Block):
             axis=1
         )[data.domain.input_names]
 
-        return type(data)(domain=data.domain,
+        return type(data)(domain=data.domain._copy(),
                           input_data=df)
 
 
@@ -397,7 +397,7 @@ class Grid(Block):
                           columns=_iterdict, dtype=object
                           )[data.domain.input_names]
 
-        return type(data)(domain=data.domain,
+        return type(data)(domain=data.domain._copy(),
                           input_data=df)
 
 
@@ -479,7 +479,7 @@ class Sobol(Block):
             axis=1
         )[data.domain.input_names]
 
-        return type(data)(domain=data.domain,
+        return type(data)(domain=data.domain._copy(),
                           input_data=df)
 
 
@@ -564,7 +564,7 @@ class Latin(Block):
             axis=1
         )[data.domain.input_names]
 
-        return type(data)(domain=data.domain,
+        return type(data)(domain=data.domain._copy(),
                           input_data=df)
 
 

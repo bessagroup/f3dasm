@@ -281,6 +281,37 @@ class ExperimentData:
         """
         return self.to_multiindex().__repr__()
 
+    def __deepcopy__(self) -> ExperimentData:
+        """
+        Returns a deep copy of the ExperimentData object.
+
+        Returns
+        -------
+        ExperimentData
+            Deep copy of the ExperimentData object.
+
+        Examples
+        --------
+        >>> from copy import deepcopy
+        >>> copied_data = deepcopy(experiment_data)
+        """
+        return self._copy(in_place=False, deep=True)
+
+    def __copy__(self) -> ExperimentData:
+        """
+        Returns a shallow copy of the ExperimentData object.
+
+        Returns
+        -------
+        ExperimentData
+            Shallow copy of the ExperimentData object.
+
+        Examples
+        --------
+        >>> from copy import copy
+        >>> copied_data = copy(experiment_data)
+        """
+        return self._copy(in_place=False, deep=False)
     #                                                                Properties
     # =========================================================================
 
@@ -340,6 +371,34 @@ class ExperimentData:
 
     #                                                  Alternative constructors
     # =========================================================================
+
+    @classmethod
+    def _from_attributes(cls: Type[ExperimentData],
+                         domain: Domain,
+                         data: Dict[int, ExperimentSample],
+                         project_dir: Path) -> ExperimentData:
+        """
+        Create an ExperimentData object from attributes.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain of the data.
+        data : dict of int to ExperimentSample
+            The data of the experiment.
+        project_dir : Path
+            The project directory.
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object containing the loaded data.
+        """
+        experiment_data = cls()
+        experiment_data.data = data
+        experiment_data._domain = domain
+        experiment_data.project_dir = project_dir
+        return experiment_data
 
     @classmethod
     def from_file(cls: Type[ExperimentData],
@@ -496,6 +555,42 @@ class ExperimentData:
     #                                                                    Export
     # =========================================================================
 
+    def _copy(self, in_place: bool = False,
+              deep: bool = True) -> ExperimentData:
+        """
+        Create a copy of the ExperimentData object.
+
+        Parameters
+        ----------
+        in_place : bool, optional
+            If True, no copy is made and the object itself is returned,
+            by default False.
+        deep : bool, optional
+            If True, a deep copy is made, by default True
+
+        Returns
+        -------
+        ExperimentData
+            A copy of the ExperimentData object or the original object
+
+        Examples
+        --------
+        >>> copied_data = experiment_data._copy(in_place=False)
+        """
+        if in_place:
+            return self
+
+        if deep:
+            data_copy = {k: v._copy() for k, v in self.data.items()}
+        else:
+            data_copy = self.data
+
+        return ExperimentData._from_attributes(
+            data=defaultdict(ExperimentSample, data_copy),
+            domain=self._domain._copy(),
+            project_dir=self.project_dir,
+        )
+
     def store(self, project_dir: Optional[Path | str] = None):
         """
         Write the ExperimentData to disk in the project directory.
@@ -528,7 +623,7 @@ class ExperimentData:
         ExperimentData object is written to disk.
         """
         if project_dir is not None:
-            self.set_project_dir(project_dir)
+            self.set_project_dir(project_dir, in_place=True)
 
         subdirectory = self.project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -675,7 +770,8 @@ class ExperimentData:
     # =========================================================================
 
     def add_experiments(self,
-                        data: ExperimentSample | ExperimentData
+                        data: ExperimentSample | ExperimentData,
+                        in_place: bool = False,
                         ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
@@ -685,6 +781,8 @@ class ExperimentData:
         ----------
         data : ExperimentSample or ExperimentData
             Experiment(s) to add.
+        in_place : bool, optional
+            If True, the data is added in place, by default False.
 
         Raises
         ------
@@ -696,11 +794,13 @@ class ExperimentData:
         >>> experiment_data.add_experiments(new_sample)
         >>> experiment_data.add_experiments(new_data)
         """
+        d = self._copy(in_place=in_place)
+
         if isinstance(data, ExperimentSample):
-            self._add_experiment_sample(data)
+            d._add_experiment_sample(data)
 
         elif isinstance(data, ExperimentData):
-            self._add(data)
+            d._add(data)
 
         else:
             raise ValueError((
@@ -708,7 +808,12 @@ class ExperimentData:
                 f"ExperimentData object, not {type(data)} ")
             )
 
-    def remove_rows_bottom(self, number_of_rows: int):
+        if in_place:
+            return None
+        else:
+            return d
+
+    def remove_rows_bottom(self, number_of_rows: int, in_place: bool = False):
         """
         Remove a number of rows from the end of the ExperimentData object.
 
@@ -716,14 +821,23 @@ class ExperimentData:
         ----------
         number_of_rows : int
             Number of rows to remove from the bottom.
+        in_place : bool, optional
+            If True, the rows are removed in place, by default False.
 
         Examples
         --------
         >>> experiment_data.remove_rows_bottom(3)
         """
+        d = self._copy(in_place=in_place)
+
         # remove the last n rows
         for i in range(number_of_rows):
-            self.data.pop(self.index[-1])
+            d.data.pop(self.index[-1])
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def reset_index(self) -> ExperimentData:
         """
@@ -792,7 +906,7 @@ class ExperimentData:
         last_key = max(self.index) if self else -1
         self.data[last_key + 1] = experiment_sample
 
-    def replace_nan(self, value: Any):
+    def replace_nan(self, value: Any, in_place: bool = False):
         """
         Replace all NaN values in the output data with the given value.
 
@@ -800,15 +914,23 @@ class ExperimentData:
         ----------
         value : Any
             The value to replace NaNs with.
+        in_place : bool, optional
+            If True, the NaN values are replaced in place, by default False.
 
         Examples
         --------
         >>> experiment_data.replace_nan(0)
         """
-        for _, es in self:
+        d = self._copy(in_place=in_place)
+        for _, es in d:
             es.replace_nan(value)
 
-    def round(self, decimals: int):
+        if in_place:
+            return None
+        else:
+            return d
+
+    def round(self, decimals: int, in_place: bool = False):
         """
         Round all output data to the given number of decimals.
 
@@ -821,8 +943,15 @@ class ExperimentData:
         --------
         >>> experiment_data.round(2)
         """
+        d = self._copy(in_place=in_place)
+
         for _, es in self:
             es.round(decimals)
+
+        if in_place:
+            return None
+        else:
+            return d
 
     # TODO: Create tests for this
     def sort(self, criterion: Callable[[ExperimentSample], Any],
@@ -947,7 +1076,8 @@ class ExperimentData:
         return all(es.is_status('finished') for _, es in self)
 
     def mark(self, indices: int | Iterable[int],
-             status: Literal['open', 'in_progress', 'finished', 'error']):
+             status: Literal['open', 'in_progress', 'finished', 'error'],
+             in_place: bool = False):
         """
         Mark the jobs at the given indices with the given status.
 
@@ -967,13 +1097,21 @@ class ExperimentData:
         --------
         >>> experiment_data.mark([0, 1], 'finished')
         """
+        d = self._copy(in_place=in_place)
+
         if isinstance(indices, int):
             indices = [indices]
         for i in indices:
-            self.data[i].mark(status)
+            d.data[i].mark(status)
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def mark_all(self,
-                 status: Literal['open', 'in_progress', 'finished', 'error']):
+                 status: Literal['open', 'in_progress', 'finished', 'error'],
+                 in_place: bool = False):
         """
         Mark all the experiments with the given status.
 
@@ -991,8 +1129,15 @@ class ExperimentData:
         --------
         >>> experiment_data.mark_all('finished')
         """
-        for _, es in self:
+        d = self._copy(in_place=in_place)
+
+        for _, es in d:
             es.mark(status)
+
+        if in_place:
+            return None
+        else:
+            return d
 
     #                                                              Optimization
     # =========================================================================
@@ -1087,7 +1232,8 @@ class ExperimentData:
 
         if not overwrite:
             x.remove_rows_bottom(
-                number_of_rows=population * n_updates.stop - iterations)
+                number_of_rows=population * n_updates.stop - iterations,
+                in_place=True)
             self._add(experiment_data=x[population:])
 
         else:
@@ -1096,15 +1242,29 @@ class ExperimentData:
     #                                                         Project directory
     # =========================================================================
 
-    def set_project_dir(self, project_dir: Path | str):
+    def set_project_dir(self, project_dir: Path | str,
+                        in_place: bool = False) -> ExperimentData:
         """Set the directory of the f3dasm project folder.
 
         Parameters
         ----------
         project_dir : Path or str
             Path to the project directory
+        in_place : bool, optional
+            If True, the project directory is set in place, by default False
+
+        Returns
+        -------
+        ExperimentData
+            ExperimentData object with the updated project directory
         """
-        self.project_dir = _project_dir_factory(project_dir)
+        d = self._copy(in_place=in_place)
+        d.project_dir = _project_dir_factory(project_dir)
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def move_project_dir(self, project_dir: Path | str):
 
@@ -1113,7 +1273,7 @@ class ExperimentData:
         for _, es in self:
             es.copy_project_dir(Path(project_dir))
 
-        self.set_project_dir(project_dir)
+        self.set_project_dir(project_dir, in_place=True)
 
 # =============================================================================
 
