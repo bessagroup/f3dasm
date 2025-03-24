@@ -832,7 +832,7 @@ class ExperimentData:
 
         # remove the last n rows
         for i in range(number_of_rows):
-            d.data.pop(self.index[-1])
+            d.data.pop(d.index[-1])
 
         if in_place:
             return None
