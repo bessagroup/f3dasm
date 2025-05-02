@@ -6,13 +6,9 @@ Module for the data generator factory.
 
 from __future__ import annotations
 
-# Standard
-from typing import Callable, Dict, List
-
 # Local
 from ..core import Block
-from .numpy_implementations import random_search
-from .scipy_implementations import cg, lbfgsb, nelder_mead
+from .scipy_implementations import OPTIMIZERS
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -22,37 +18,6 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
-
-
-def available_optimizers():
-    """
-    Returns a list of all available built-in optimization algorithms.
-
-    Returns
-    -------
-    List[str]
-        List of all available optimization algorithms
-    """
-    return list(get_optimizer_mapping().keys())
-
-
-def get_optimizer_mapping() -> Dict[str, Block]:
-    # List of available optimizers
-    _OPTIMIZERS: List[Callable] = [
-        cg, lbfgsb, nelder_mead, random_search]
-
-    # Try importing f3dasm_optimize package
-    try:
-        from f3dasm_optimize import optimizers_extension  # NOQA
-        _OPTIMIZERS.extend(optimizers_extension())
-    except ImportError:
-        pass
-
-    OPTIMIZER_MAPPING: Dict[str, Block] = {
-        opt.__name__.lower().replace(' ', '').replace('-', '').replace(
-            '_', ''): opt for opt in _OPTIMIZERS}
-
-    return OPTIMIZER_MAPPING
 
 
 def create_optimizer(optimizer: str, **hyperparameters
@@ -85,10 +50,8 @@ def create_optimizer(optimizer: str, **hyperparameters
         filtered_name = optimizer.lower().replace(
             ' ', '').replace('-', '').replace('_', '')
 
-        OPTIMIZER_MAPPING = get_optimizer_mapping()
-
-        if filtered_name in OPTIMIZER_MAPPING:
-            return OPTIMIZER_MAPPING[filtered_name](
+        if filtered_name in OPTIMIZERS:
+            return OPTIMIZERS[filtered_name](
                 **hyperparameters)
         else:
             raise KeyError(f"Unknown optimizer name: {optimizer}")

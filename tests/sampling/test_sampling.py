@@ -22,7 +22,7 @@ def test_sampling_interface_not_implemented_error():
 
     with pytest.raises(KeyError):
         sampler = create_sampler(sampler='test', seed=seed)
-        _ = sampler.call(data=sampler, n_samples=5)
+        _ = sampler.call(data=samples, n_samples=5)
 
 
 def test_correct_sampling_ran(design3: Domain):

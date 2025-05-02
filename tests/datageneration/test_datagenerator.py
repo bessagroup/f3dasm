@@ -2,10 +2,12 @@ from typing import Callable
 
 import pytest
 
+import numpy as np
+
 from f3dasm import ExperimentData, create_datagenerator, create_sampler
 from f3dasm._src.datageneration.datagenerator_factory import datagenerator
-from f3dasm.datageneration import DataGenerator
-from f3dasm.design import make_nd_continuous_domain
+from f3dasm import DataGenerator
+from f3dasm.design import make_nd_continuous_domain, Domain
 
 pytestmark = pytest.mark.smoke
 
@@ -32,15 +34,16 @@ def test_convert_function2(
 
 @pytest.mark.parametrize("mode", ['sequential', 'parallel'])
 def test_parallelization(mode, tmp_path):
-    domain = make_nd_continuous_domain([[0, 1], [0, 1]])
+    domain = Domain()
+    domain.add_parameter('x')
+    domain.add_output('y')
+    experiment_data = ExperimentData(
+        domain=domain,
+        input_data=[{'x': np.array([0.5, 0.5])}])
 
-    sampler = create_sampler(sampler='random', seed=42)
-    experiment_data = ExperimentData(domain=domain)
-
-    experiment_data = sampler.call(data=experiment_data, n_samples=10)
     experiment_data.set_project_dir(tmp_path, in_place=True)
 
-    func = create_datagenerator(data_generator='ackley')
+    func = create_datagenerator(data_generator='ackley', output_names='y')
 
     func.arm(data=experiment_data)
 
@@ -48,13 +51,14 @@ def test_parallelization(mode, tmp_path):
 
 
 def test_invalid_parallelization_mode():
-    domain = make_nd_continuous_domain([[0, 1], [0, 1]])
+    domain = Domain()
+    domain.add_parameter('x')
+    domain.add_output('y')
+    experiment_data = ExperimentData(
+        domain=domain,
+        input_data=[{'x': np.array([0.5, 0.5])}])
 
-    sampler = create_sampler(sampler='random', seed=42)
-    experiment_data = ExperimentData(domain=domain)
-
-    experiment_data = sampler.call(data=experiment_data, n_samples=10)
-    func = create_datagenerator(data_generator='ackley')
+    func = create_datagenerator(data_generator='ackley', output_names='y')
 
     with pytest.raises(ValueError):
         experiment_data = func.call(data=experiment_data,
