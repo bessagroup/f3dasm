@@ -74,6 +74,9 @@ package = true
 packages = ["src"]
 
 [dependency-groups]
+all = [
+    "optuna>=4.4.0",
+]
 dev = [
     "build>=1.2.2.post1",
     "hypothesis>=6.113.0",
