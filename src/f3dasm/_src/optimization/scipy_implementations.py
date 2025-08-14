@@ -11,8 +11,9 @@ from typing import Callable, Optional
 from scipy.optimize import Bounds, OptimizeResult, minimize
 
 # Locals
-from ..core import Block, ExperimentData
+from ..core import Block
 from ..datagenerator import DataGenerator
+from ..experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -30,21 +31,27 @@ warnings.filterwarnings(
 
 
 class ScipyOptimizer(Block):
-    def __init__(self, method: str, bounds: Optional[Bounds] = None,
+    def __init__(self,  data_generator: DataGenerator, method: str, bounds: Optional[Bounds] = None,
                  tol: Optional[float] = None,
                  **hyperparameters):
+        self.data_generator = data_generator
         self.bounds = bounds
         self.method = method
         self.tol = tol
         self.hyperparameters = hyperparameters
 
-    def arm(self, data: ExperimentData):
+        self._fun = data_generator.f
+        self._output_names = data_generator.output_names
+
+    def arm(self, data: ExperimentData, output_name: str):
+
+        self.output_name = output_name
         input_name = data.domain.input_names[0]
         experiment_sample = data.get_experiment_sample(data.index[-1])
-        self.x0 = experiment_sample.input_data[input_name]
+        self._x0 = experiment_sample.input_data[input_name]
 
-    def call(self, data: ExperimentData, data_generator: DataGenerator,
-             grad_f: Optional[Callable] = None) -> ExperimentData:
+    def call(self, data: ExperimentData, n_iterations: int,
+             grad_f: Optional[Callable] = None, **kwargs) -> ExperimentData:
         history_x, history_y = [], []
 
         def callback(intermediate_result: OptimizeResult) -> None:
@@ -52,12 +59,11 @@ class ScipyOptimizer(Block):
                 {input_name: intermediate_result.x for input_name
                  in data.domain.input_names})
             history_y.append(
-                {output_name: intermediate_result.fun for output_name
-                 in data_generator.output_names})
+                {self.output_name: intermediate_result.fun})
 
         _ = minimize(
-            fun=data_generator.f,
-            x0=self.x0,
+            fun=self._fun,
+            x0=self._x0,
             method=self.method,
             jac=grad_f,
             bounds=self.bounds,
