@@ -13,7 +13,6 @@ optimization, sampling, and simulation.
 #                                                                       Modules
 # =============================================================================
 
-from .__version__ import __version__
 from ._src._argparser import HPC_JOBID
 from ._src.core import Block
 from ._src.datageneration.datagenerator_factory import create_datagenerator
@@ -32,10 +31,6 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-
-# Log welcome message and the version of f3dasm
-logger.info(f"Imported f3dasm (version: {__version__})")
-
 __all__ = [
     'ExperimentData',
     'ExperimentSample',
@@ -44,6 +39,7 @@ __all__ = [
     'create_optimizer',
     'create_sampler',
     'Block',
+    'DataGenerator',
     'logger',
     'HPC_JOBID',
 ]
