@@ -12,7 +12,7 @@ from __future__ import annotations
 import pickle
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional, Type
+from typing import Any, Callable, Mapping, Optional
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -289,7 +289,7 @@ def figure_load(path: str) -> np.ndarray:
     return plt.imread(_path)
 
 
-STORE_FUNCTION_MAPPING: Mapping[Type, Callable] = {
+STORE_FUNCTION_MAPPING: Mapping[type, Callable] = {
     np.ndarray: numpy_store,
     pd.DataFrame: pandas_store,
     pd.Series: pandas_store,

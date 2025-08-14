@@ -13,7 +13,7 @@ import json
 import math
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Sequence, Type
+from typing import Any, Literal, Optional, Sequence
 
 # Third-party core
 import numpy as np
@@ -53,8 +53,8 @@ class Domain:
         Dict of output parameters, by default None
     """
 
-    def __init__(self, input_space: Dict[str, Parameter] = None,
-                 output_space: Dict[str, Parameter] = None):
+    def __init__(self, input_space: dict[str, Parameter] = None,
+                 output_space: dict[str, Parameter] = None):
         self.input_space = input_space if input_space is not None else {}
         self.output_space = output_space if output_space is not None else {}
 
@@ -126,7 +126,7 @@ class Domain:
         )
 
     @property
-    def input_names(self) -> List[str]:
+    def input_names(self) -> list[str]:
         """
         Retrieve the input space names
 
@@ -138,7 +138,7 @@ class Domain:
         return list(self.input_space.keys())
 
     @property
-    def output_names(self) -> List[str]:
+    def output_names(self) -> list[str]:
         """
         Retrieve the output space names
 
@@ -195,7 +195,7 @@ class Domain:
 # =============================================================================
 
     @classmethod
-    def from_file(cls: Type[Domain], filename: Path | str) -> Domain:
+    def from_file(cls: type[Domain], filename: Path | str) -> Domain:
         """
         Create a Domain object from a JSON file.
 
@@ -237,7 +237,7 @@ class Domain:
         return cls(input_space=input_space, output_space=output_space)
 
     @classmethod
-    def from_yaml(cls: Type[Domain], cfg: DictConfig) -> Domain:
+    def from_yaml(cls: type[Domain], cfg: DictConfig) -> Domain:
         """Initialize a Domain from a Hydra YAML configuration file key
 
 
@@ -293,8 +293,8 @@ class Domain:
         return domain
 
     @classmethod
-    def from_data(cls, input_data: List[Dict[str, Any]],
-                  output_data: List[Dict[str, Any]]
+    def from_data(cls, input_data: list[dict[str, Any]],
+                  output_data: list[dict[str, Any]]
                   ) -> Domain:
         """
         Initialize a Domain from input and output data.
@@ -606,7 +606,7 @@ class Domain:
                 for _, parameter in self.continuous.input_space.items()]
         )
 
-    def _filter(self, type: Type[Parameter]) -> Domain:
+    def _filter(self, type: type[Parameter]) -> Domain:
         """Filter the parameters of the domain by type
 
         Parameters
@@ -642,7 +642,7 @@ class Domain:
 # =============================================================================
 
 
-def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
+def make_nd_continuous_domain(bounds: np.ndarray | list[list[float]],
                               dimensionality: Optional[int] = None) -> Domain:
     """Create a continuous domain.
 

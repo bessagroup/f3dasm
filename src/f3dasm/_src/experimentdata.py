@@ -19,15 +19,11 @@ from time import sleep
 from typing import (
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Literal,
     Optional,
     Protocol,
-    Tuple,
-    Type,
 )
 
 # Third-party
@@ -85,10 +81,10 @@ class ExperimentData:
             domain: Optional[Domain] = None,
             input_data: Optional[
                 pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
+                | list[dict[str, Any]] | str | Path] = None,
             output_data: Optional[
                 pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
+                | list[dict[str, Any]] | str | Path] = None,
             jobs: Optional[pd.Series] = None,
             project_dir: Optional[Path] = None):
         """
@@ -177,7 +173,7 @@ class ExperimentData:
         """
         return len(self.data)
 
-    def __iter__(self) -> Iterator[Tuple[int, ExperimentSample]]:
+    def __iter__(self) -> Iterator[tuple[int, ExperimentSample]]:
         """
         Returns an iterator over the ExperimentData object.
 
@@ -390,9 +386,9 @@ class ExperimentData:
     # =========================================================================
 
     @classmethod
-    def _from_attributes(cls: Type[ExperimentData],
+    def _from_attributes(cls: type[ExperimentData],
                          domain: Domain,
-                         data: Dict[int, ExperimentSample],
+                         data: dict[int, ExperimentSample],
                          project_dir: Path) -> ExperimentData:
         """
         Create an ExperimentData object from attributes.
@@ -418,7 +414,7 @@ class ExperimentData:
         return experiment_data
 
     @classmethod
-    def from_file(cls: Type[ExperimentData],
+    def from_file(cls: type[ExperimentData],
                   project_dir: Path | str,
                   wait_for_creation: bool = False,
                   max_tries: int = MAX_TRIES) -> ExperimentData:
@@ -484,7 +480,7 @@ class ExperimentData:
             return cls(**config)
 
     @classmethod
-    def from_data(cls, data: Optional[Dict[int, ExperimentSample]] = None,
+    def from_data(cls, data: Optional[dict[int, ExperimentSample]] = None,
                   domain: Optional[Domain] = None,
                   project_dir: Optional[Path] = None) -> ExperimentData:
         """
@@ -656,7 +652,7 @@ class ExperimentData:
         self._domain.store(subdirectory / DOMAIN_FILENAME)
         self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
 
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+    def to_numpy(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Convert the ExperimentData object to a tuple of numpy arrays.
 
@@ -674,7 +670,7 @@ class ExperimentData:
         return df_input.to_numpy(), df_output.to_numpy()
 
     def to_pandas(self, keep_references: bool = False
-                  ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                  ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Convert the ExperimentData object to pandas DataFrames.
 
@@ -848,7 +844,7 @@ class ExperimentData:
         d = self._copy(in_place=in_place)
 
         # remove the last n rows
-        for i in range(number_of_rows):
+        for _i in range(number_of_rows):
             d.data.pop(d.index[-1])
 
         if in_place:
@@ -1046,7 +1042,7 @@ class ExperimentData:
         self._domain += experiment_sample.domain
         self.data[idx] = experiment_sample
 
-    def get_open_job(self) -> Tuple[int, ExperimentSample]:
+    def get_open_job(self) -> tuple[int, ExperimentSample]:
         """
         Get the first open job in the ExperimentData object.
 
@@ -1255,7 +1251,7 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
 
 
 def convert_numpy_to_dataframe_with_domain(
-        array: np.ndarray, names: Optional[List[str]],
+        array: np.ndarray, names: Optional[list[str]],
         mode: Literal['input', 'output']
 ) -> pd.DataFrame:
     """
@@ -1314,8 +1310,8 @@ def merge_dicts(list_of_dicts):
     return dict(merged_dict)
 
 
-def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
-                  ) -> List[Dict[str, Any]]:
+def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
+                  ) -> list[dict[str, Any]]:
     """
     Convert the DataTypes to a list of dictionaries
 
@@ -1369,12 +1365,12 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
     raise ValueError(f"Data type {type(data)} not supported")
 
 
-def data_factory(input_data: List[Dict[str, Any]],
-                 output_data: List[Dict[str, Any]],
+def data_factory(input_data: list[dict[str, Any]],
+                 output_data: list[dict[str, Any]],
                  domain: Domain,
                  jobs: pd.Series,
                  project_dir: Path,
-                 ) -> Dict[int, ExperimentSample]:
+                 ) -> dict[int, ExperimentSample]:
     """
     Convert the input and output data to a defaultdictionary
     of ExperimentSamples
@@ -1414,7 +1410,7 @@ def data_factory(input_data: List[Dict[str, Any]],
     return defaultdict(ExperimentSample, data)
 
 
-def remove_nan_and_none_keys_inplace(data_list: List[Dict[str, Any]]) -> None:
+def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
     for data in data_list:
         keys_to_remove = [k for k, v in data.items() if v is None or (
             isinstance(v, float) and np.isnan(v))]

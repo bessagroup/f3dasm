@@ -27,11 +27,12 @@ dependencies = [
     "xarray>=2023.1.0",
 ]
 
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 
 [tool.ruff]
 line-length = 79
+
 
 [tool.ruff.lint]
 select = [
@@ -47,6 +48,20 @@ ignore = [
     "E3",
     "E731",
     "C901",
+    "UP045",
+]
+
+exclude = [
+    "__pycache__",
+    "dist",
+	"*.egg",
+	"docs/source",
+	"tests",
+	".git",
+	"experiments/*",
+	"notebooks",
+	"tests/*",
+    "studies/*",
 ]
 
 [tool.uv]

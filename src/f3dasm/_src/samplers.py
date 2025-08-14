@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 from itertools import product
-from typing import Dict, Literal, Optional
+from typing import Literal, Optional
 
 # Third-party
 import numpy as np
@@ -338,7 +338,7 @@ class Grid(Block):
 
     def call(self, data: ExperimentData,
              stepsize_continuous_parameters:
-             Optional[Dict[str, float] | float] = None,
+             Optional[dict[str, float] | float] = None,
              **kwargs) -> ExperimentData:
         """
         Sample data using the Grid method.
@@ -591,7 +591,7 @@ def latin(seed: Optional[int] = None, **kwargs) -> Block:
 
 _SAMPLERS = [random, latin, sobol, grid]
 
-SAMPLER_MAPPING: Dict[str, Block] = {
+SAMPLER_MAPPING: dict[str, Block] = {
     sampler.__name__.lower(): sampler for sampler in _SAMPLERS}
 
 #                                                              Factory function

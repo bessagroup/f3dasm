@@ -12,7 +12,7 @@ import traceback
 from abc import abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Iterable
 
 # Third-party
 from filelock import FileLock
@@ -170,7 +170,7 @@ class DataGenerator(Block):
                     ({'experiment_sample': experiment_sample,
                       '_job_number': job_number, **kwargs},))
 
-        def f(options: Dict[str, Any]) -> Tuple[int, ExperimentSample, int]:
+        def f(options: dict[str, Any]) -> tuple[int, ExperimentSample, int]:
             job_number = options.pop('_job_number')
             try:
 
@@ -196,8 +196,8 @@ class DataGenerator(Block):
 
         with mp.Pool() as pool:
             # maybe implement pool.starmap_async ?
-            _experiment_samples: List[
-                Tuple[int, ExperimentSample, int]] = pool.starmap(f, options)
+            _experiment_samples: list[
+                tuple[int, ExperimentSample, int]] = pool.starmap(f, options)
 
         for job_number, experiment_sample in _experiment_samples:
             data.store_experimentsample(
@@ -310,10 +310,10 @@ class DataGenerator(Block):
 # =============================================================================
 
 
-def get_open_job(experiment_data_type: Type[ExperimentData],
+def get_open_job(experiment_data_type: type[ExperimentData],
                  project_dir: Path, lockfile: FileLock,
                  wait_for_creation: bool, max_tries: int,
-                 ) -> Tuple[int, ExperimentSample]:
+                 ) -> tuple[int, ExperimentSample]:
 
     with lockfile:
         data: ExperimentData = experiment_data_type.from_file(
@@ -328,7 +328,7 @@ def get_open_job(experiment_data_type: Type[ExperimentData],
 
 
 def store_experiment_sample(
-    experiment_data_type: Type[ExperimentData],
+    experiment_data_type: type[ExperimentData],
         project_dir: Path, lockfile: FileLock, wait_for_creation: bool,
         max_tries: int, idx: int, experiment_sample: ExperimentSample) -> None:
 
