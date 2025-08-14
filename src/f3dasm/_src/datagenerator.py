@@ -1,5 +1,5 @@
 """
-This module contains the core blocks and protocols for the f3dasm package.
+This module contains the DataGenerator abstraction.
 """
 #                                                                       Modules
 # =============================================================================
