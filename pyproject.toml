@@ -49,6 +49,8 @@ ignore = [
     "E731",
     "C901",
     "UP045",
+    "B027",
+    "B012",
 ]
 
 exclude = [
@@ -62,6 +64,7 @@ exclude = [
 	"notebooks",
 	"tests/*",
     "studies/*",
+    "docs/*",
 ]
 
 [tool.uv]

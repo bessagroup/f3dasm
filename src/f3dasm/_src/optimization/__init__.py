@@ -4,9 +4,6 @@ Module for optimization
 #                                                                       Modules
 # =============================================================================
 
-# Standard
-from typing import Callable, List
-
 from .optimizer_factory import create_optimizer
 
 # Local

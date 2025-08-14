@@ -10,9 +10,10 @@ from __future__ import annotations
 import inspect
 import traceback
 from abc import abstractmethod
+from collections.abc import Iterable
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 # Third-party
 from filelock import FileLock

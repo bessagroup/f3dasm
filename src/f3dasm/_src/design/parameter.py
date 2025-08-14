@@ -7,7 +7,8 @@ from __future__ import annotations
 
 # Standard
 import pickle
-from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
+from collections.abc import Iterable
+from typing import Any, ClassVar, Optional, Protocol, Union
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -114,7 +115,7 @@ class Parameter:
         if not to_disk and (
                 store_function is not None or load_function is not None):
             raise ValueError("If 'to_disk' is False, 'store_function' and"
-                              "load_function' must be None."
+                             "load_function' must be None."
                              )
 
         self.to_disk = to_disk
@@ -350,8 +351,8 @@ class ConstantParameter(Parameter):
         """Check if the value is hashable."""
         try:
             hash(self.value)
-        except TypeError:
-            raise TypeError("The value must be hashable.")
+        except TypeError as exc:
+            raise TypeError("The value must be hashable.") from exc
 
     def __str__(self):
         return f"ConstantParameter(value={self.value})"

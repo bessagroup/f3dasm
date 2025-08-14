@@ -11,8 +11,9 @@ from __future__ import annotations
 # Standard
 import pickle
 import shutil
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Optional
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -468,11 +469,11 @@ def copy_object(object_path: Path,
                 / object_path.parent / f"{stem}{suffix}").exists():
             try:
                 stem = str(int(stem) + 1)  # Increment stem as integer
-            except ValueError:
+            except ValueError as exc:
                 raise ValueError(
                     f"Filename {object_path.name} cannot be converted "
                     f"to an integer."
-                )
+                ) from exc
 
         object_path = object_path.parent / f"{stem}{suffix}"
         new_location = new_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path

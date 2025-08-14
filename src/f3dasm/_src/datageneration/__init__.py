@@ -5,7 +5,6 @@ Module for data-generation
 # =============================================================================
 
 # Standard
-from typing import List
 
 # Local
 from ..datagenerator import DataGenerator

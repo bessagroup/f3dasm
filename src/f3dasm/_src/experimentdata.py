@@ -12,19 +12,12 @@ from __future__ import annotations
 # Standard
 import random
 from collections import defaultdict
+from collections.abc import Iterable, Iterator
 from copy import copy
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Literal,
-    Optional,
-    Protocol,
-)
+from typing import Any, Callable, Literal, Optional, Protocol
 
 # Third-party
 import numpy as np
@@ -445,9 +438,9 @@ class ExperimentData:
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / project_dir
-            except ValueError:  # get_original_cwd() hydra initialization error
+            except ValueError as exc:  # get_original_cwd() error
                 raise FileNotFoundError(
-                    f"Cannot find the folder {project_dir} !")
+                    f"Cannot find the folder {project_dir} !") from exc
 
             return _from_file_attempt(project_dir=filename_with_path,
                                       wait_for_creation=wait_for_creation,
@@ -1236,10 +1229,10 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
             )
             sleep(random.uniform(0.5, 2.5))
 
-        except FileNotFoundError:
+        except FileNotFoundError as exc:
             if not wait_for_creation:
                 raise FileNotFoundError(
-                    f"File {subdirectory} not found")
+                    f"File {subdirectory} not found") from exc
 
             tries += 1
             logger.debug(
@@ -1348,8 +1341,8 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
 
         try:
             df = pd.read_csv(filepath, header=0, index_col=0)
-        except pd.errors.EmptyDataError:
-            raise DecodeError(filepath)
+        except pd.errors.EmptyDataError as exc:
+            raise DecodeError(filepath) from exc
 
         return _dict_factory(df)
 
@@ -1440,8 +1433,8 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         try:
             df = pd.read_csv(filepath,
                              header=0, index_col=0).squeeze()
-        except pd.errors.EmptyDataError:
-            raise DecodeError(filepath)
+        except pd.errors.EmptyDataError as exc:
+            raise DecodeError(filepath) from exc
 
         # If the jobs is jut one value, it is parsed as a string
         # So, make sure that we return a pd.Series either way!

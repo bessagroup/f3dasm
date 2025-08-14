@@ -11,9 +11,10 @@ from __future__ import annotations
 # Standard
 import json
 import math
+from collections.abc import Sequence
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, Literal, Optional
 
 # Third-party core
 import numpy as np
@@ -226,8 +227,8 @@ class Domain:
         try:
             with open(filename) as f:
                 domain_dict = json.load(f)
-        except json.JSONDecodeError:
-            raise DecodeError(filename)
+        except json.JSONDecodeError as exc:
+            raise DecodeError(filename) from exc
 
         input_space = {k: Parameter.from_dict(
             v) for k, v in domain_dict['input_space'].items()}

@@ -98,8 +98,8 @@ class ExperimentSample:
             self.job_status = JobStatus[job_status]
         # If nan is given as key, there is a problem with the decoding of
         # the jobs.csv file
-        except KeyError:
-            raise DecodeError()
+        except KeyError as exc:
+            raise DecodeError() from exc
 
         self.project_dir = project_dir
 
