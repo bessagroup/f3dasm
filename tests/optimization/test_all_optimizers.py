@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
-from f3dasm import ExperimentData, create_sampler
-from f3dasm._src.datageneration.datagenerator_factory import \
-    create_datagenerator
-from f3dasm._src.optimization.optimizer_factory import create_optimizer
-from f3dasm import DataGenerator
+from f3dasm import ExperimentData
 from f3dasm._src.datageneration.benchmarkfunctions import BENCHMARK_FUNCTIONS
-from f3dasm.design import make_nd_continuous_domain
-from f3dasm._src.optimization.optimizer_factory import OPTIMIZERS
-
+from f3dasm._src.datageneration.datagenerator_factory import (
+    create_datagenerator,
+)
+from f3dasm._src.optimization.optimizer_factory import (
+    OPTIMIZERS,
+    create_optimizer,
+)
 
 pytestmark = pytest.mark.smoke
 

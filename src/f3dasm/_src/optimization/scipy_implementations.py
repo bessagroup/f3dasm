@@ -4,15 +4,16 @@ from __future__ import annotations
 
 # Standard
 import warnings
-from typing import Optional, Callable
 from functools import partial
+from typing import Callable, Optional
 
 # Third-party core
-from scipy.optimize import minimize, OptimizeResult, Bounds
+from scipy.optimize import Bounds, OptimizeResult, minimize
 
 # Locals
 from ..core import Block, ExperimentData
 from ..datagenerator import DataGenerator
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'

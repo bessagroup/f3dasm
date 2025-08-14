@@ -1,13 +1,15 @@
 from typing import Callable
 
+import numpy as np
 import pytest
 
-import numpy as np
-
-from f3dasm import ExperimentData, create_datagenerator, create_sampler
+from f3dasm import (
+    DataGenerator,
+    ExperimentData,
+    create_datagenerator,
+)
 from f3dasm._src.datageneration.datagenerator_factory import datagenerator
-from f3dasm import DataGenerator
-from f3dasm.design import make_nd_continuous_domain, Domain
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

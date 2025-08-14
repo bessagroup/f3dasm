@@ -21,10 +21,16 @@ from omegaconf import DictConfig, OmegaConf
 
 # Local
 from ..errors import DecodeError, EmptyFileError
-from .parameter import (CategoricalParameter, CategoricalType,
-                        ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, LoadFunction, Parameter,
-                        StoreFunction)
+from .parameter import (
+    CategoricalParameter,
+    CategoricalType,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    LoadFunction,
+    Parameter,
+    StoreFunction,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -218,7 +224,7 @@ class Domain:
             raise EmptyFileError(filename)
 
         try:
-            with open(filename, 'r') as f:
+            with open(filename) as f:
                 domain_dict = json.load(f)
         except json.JSONDecodeError:
             raise DecodeError(filename)

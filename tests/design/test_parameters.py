@@ -2,10 +2,13 @@ import pickle
 
 import pytest
 
-from f3dasm._src.design.parameter import (CategoricalParameter,
-                                          ConstantParameter,
-                                          ContinuousParameter,
-                                          DiscreteParameter, Parameter)
+from f3dasm._src.design.parameter import (
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    Parameter,
+)
 
 pytestmark = pytest.mark.smoke
 

@@ -1,9 +1,8 @@
+import numpy as np
 import pytest
 
-from f3dasm import ExperimentData, create_sampler
-from f3dasm._src.design.parameter import ContinuousParameter
+from f3dasm import ExperimentData
 from f3dasm.design import Domain
-import numpy as np
 
 DIM = 2
 

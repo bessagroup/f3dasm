@@ -7,21 +7,38 @@ Last modified on 2020-09-30 07:59:40
 
 # imports
 
-from __future__ import division
 
 # standard library
 import itertools
 
 import mesh
+
 # third-party
 import numpy as np
 from abaqus import backwardCompatibility, mdb
-from abaqusConstants import (ANALYTIC_RIGID_SURFACE, B31, BEFORE_ANALYSIS,
-                             BUCKLING_MODES, CARTESIAN, CONSTANT,
-                             DEFORMABLE_BODY, DURING_ANALYSIS, FINER,
-                             FROM_SECTION, IMPRINT, ISOTROPIC, KINEMATIC,
-                             LINEAR, MIDDLE_SURFACE, N1_COSINES, OFF, ON,
-                             THREE_D, WHOLE_SURFACE)
+from abaqusConstants import (
+    ANALYTIC_RIGID_SURFACE,
+    B31,
+    BEFORE_ANALYSIS,
+    BUCKLING_MODES,
+    CARTESIAN,
+    CONSTANT,
+    DEFORMABLE_BODY,
+    DURING_ANALYSIS,
+    FINER,
+    FROM_SECTION,
+    IMPRINT,
+    ISOTROPIC,
+    KINEMATIC,
+    LINEAR,
+    MIDDLE_SURFACE,
+    N1_COSINES,
+    OFF,
+    ON,
+    THREE_D,
+    WHOLE_SURFACE,
+)
+
 # abaqus
 from caeModules import *  # allow noGui # NOQA
 from part import EdgeArray
@@ -152,11 +169,11 @@ def main(dict):
         selected_vertices = [vertices.findAt((pt,)) for pt in long_pts]
         all_edges.append(EdgeArray([edges.findAt(pt) for pt in long_pts]))
         # individual sets
-        long_name = 'LONGERON-{}'.format(i_vertex)
+        long_name = f'LONGERON-{i_vertex}'
         part_longerons.Set(edges=all_edges[-1], name=long_name)
         # joints
         for i_storey, vertex in enumerate(selected_vertices):
-            joint_name = 'JOINT-{}-{}'.format(i_storey, i_vertex)
+            joint_name = f'JOINT-{i_storey}-{i_vertex}'
             part_longerons.Set(vertices=vertex, name=joint_name)
 
     name = 'ALL_LONGERONS'
@@ -169,7 +186,7 @@ def main(dict):
     for i_storey in range(0, n_storeys + 1):
         selected_vertices.append([])
         for i_vertex in range(0, n_longerons):
-            name = 'JOINT-{}-{}'.format(i_storey, i_vertex)
+            name = f'JOINT-{i_storey}-{i_vertex}'
             selected_vertices[-1].append(part_longerons.sets[name].vertices)
 
     name = 'BOTTOM_JOINTS'
@@ -223,7 +240,7 @@ def main(dict):
     # section orientation
     for i_vertex, pts in enumerate(longeron_points):
         dir_vec_n1 = np.array(pts[0]) - (0., 0., 0.)
-        longeron_name = 'LONGERON-{}'.format(i_vertex)
+        longeron_name = f'LONGERON-{i_vertex}'
         region = part_longerons.sets[longeron_name]
         part_longerons.assignBeamSectionOrientation(
             region=region, method=N1_COSINES, n1=dir_vec_n1)
@@ -265,12 +282,12 @@ def main(dict):
                 0., 0., i * mast_height + sign * 1.1 * mast_radius))
         modelAssembly.Set(
             referencePoints=(modelAssembly.referencePoints[rp.id],),
-            name='Z{}_REF_POINT'.format(position))
+            name=f'Z{position}_REF_POINT')
 
     # add constraints for loading
     instance_longerons = modelAssembly.instances[longerons_name]
     instance_surf = modelAssembly.instances[surface_name]
-    ref_points = [modelAssembly.sets['Z{}_REF_POINT'.format(position)]
+    ref_points = [modelAssembly.sets[f'Z{position}_REF_POINT']
                   for position in ref_point_positions]
 
     # bottom point and analytic surface
@@ -284,7 +301,7 @@ def main(dict):
     for i_vertex in range(0, n_longerons):
         origin = joints[0, i_vertex, :]
         point2 = joints[0, i_vertex - 1, :]
-        name = 'LOCAL_DATUM_{}'.format(i_vertex)
+        name = f'LOCAL_DATUM_{i_vertex}'
         datums.append(part_longerons.DatumCsysByThreePoints(
             origin=origin, point2=point2, name=name, coordSysType=CARTESIAN,
             point1=(0.0, 0.0, 0.0)))
@@ -293,11 +310,11 @@ def main(dict):
     for i_vertex in range(n_longerons):
         datum = instance_longerons.datums[datums[i_vertex].id]
         for i, i_storey in enumerate([0, n_storeys]):
-            joint_name = 'JOINT-{}-{}'.format(i_storey, i_vertex)
+            joint_name = f'JOINT-{i_storey}-{i_vertex}'
             slave_region = instance_longerons.sets[joint_name]
             master_region = ref_points[i]
             constraint_name = 'CONSTRAINT-%s-%i-%i' % (
-                'Z{}_REF_POINT'.format(ref_point_positions[i]),
+                f'Z{ref_point_positions[i]}_REF_POINT',
                 i_storey, i_vertex)
             model.Coupling(name=constraint_name, controlPoint=master_region,
                            surface=slave_region, influenceRadius=WHOLE_SURFACE,
@@ -311,7 +328,7 @@ def main(dict):
     model.BuckleStep(step_name, numEigen=20, previous='Initial', minEigen=0.)
 
     # set bcs (displacement)
-    region_name = 'Z{}_REF_POINT'.format(ref_point_positions[0])
+    region_name = f'Z{ref_point_positions[0]}_REF_POINT'
     loaded_region = modelAssembly.sets[region_name]
     model.DisplacementBC('BC_FIX', createStepName=step_name,
                          region=loaded_region, u1=0., u2=0., u3=0.,
@@ -319,7 +336,7 @@ def main(dict):
 
     # set bcs (load)
     applied_load = -1.
-    region_name = 'Z{}_REF_POINT'.format(ref_point_positions[-1])
+    region_name = f'Z{ref_point_positions[-1]}_REF_POINT'
     loaded_region = modelAssembly.sets[region_name]
     model.ConcentratedForce('APPLIED_FORCE', createStepName=step_name,
                             region=loaded_region, cf3=applied_load)
@@ -329,7 +346,7 @@ def main(dict):
     modelJob.writeInput(consistencyChecking=OFF)
 
     # ask for node file
-    with open('{}.inp'.format(job_number), 'r') as file:
+    with open(f'{job_number}.inp') as file:
         lines = file.readlines()
 
     line_cmp = '** {}\n'.format('OUTPUT REQUESTS')
@@ -339,13 +356,13 @@ def main(dict):
 
     insert_line = i + 2
     for line in reversed(['*NODE FILE, frequency=1', 'U']):
-        lines.insert(insert_line, '{}\n'.format(line))
+        lines.insert(insert_line, f'{line}\n')
 
-    with open('{}.inp'.format(job_number), 'w') as file:
+    with open(f'{job_number}.inp', 'w') as file:
         file.writelines(lines)
 
     # # create job
-    modelJob = mdb.JobFromInputFile(inputFileName='{}.inp'.format(job_number),
+    modelJob = mdb.JobFromInputFile(inputFileName=f'{job_number}.inp',
                                     name=job_number)
     # modelJob.submit(consistencyChecking=OFF)
     # modelJob.waitForCompletion()

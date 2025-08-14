@@ -2,10 +2,12 @@ import numpy as np
 import pytest
 
 from f3dasm._src.design.domain import _domain_factory
-from f3dasm._src.design.parameter import (CategoricalParameter,
-                                          ConstantParameter,
-                                          ContinuousParameter,
-                                          DiscreteParameter)
+from f3dasm._src.design.parameter import (
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 pytestmark = pytest.mark.smoke

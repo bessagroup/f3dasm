@@ -9,10 +9,10 @@ from __future__ import annotations
 # Standard
 import inspect
 import traceback
+from abc import abstractmethod
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Type, Iterable
-from abc import abstractmethod
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
 # Third-party
 from filelock import FileLock
@@ -20,12 +20,16 @@ from pathos.helpers import mp
 
 # Local
 from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
+from .core import Block
 from .experimentdata import ExperimentData
 from .experimentsample import ExperimentSample
-from .core import Block
 from .logger import logger
-from .mpi_utils import (mpi_get_open_job, mpi_lock_manager,
-                        mpi_store_experiment_sample, mpi_terminate_worker)
+from .mpi_utils import (
+    mpi_get_open_job,
+    mpi_lock_manager,
+    mpi_store_experiment_sample,
+    mpi_terminate_worker,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -428,11 +432,11 @@ def datagenerator(output_names: Iterable[str]
     """
 
     if not output_names:
-        raise ValueError((
+        raise ValueError(
             "If you provide a function as a data generator, you must "
             "provide the names of the return arguments with the `output_names`"
             "attribute."
-        ))
+        )
 
     # If the output names is a single string, convert it to a list
     if isinstance(output_names, str):

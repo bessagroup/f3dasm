@@ -9,6 +9,7 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 from copy import deepcopy
+
 # Standard
 from enum import Enum
 from pathlib import Path

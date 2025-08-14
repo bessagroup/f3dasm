@@ -1,10 +1,12 @@
-from f3dasm.design import Domain
-from f3dasm import ExperimentData
-import xarray as xr
-import pytest
-import pandas as pd
-import numpy as np
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
+import xarray as xr
+
+from f3dasm import ExperimentData
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

@@ -16,8 +16,19 @@ from copy import copy
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Protocol, Tuple, Type)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    Type,
+)
 
 # Third-party
 import numpy as np
@@ -27,9 +38,15 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -803,9 +820,9 @@ class ExperimentData:
             d._add(data)
 
         else:
-            raise ValueError((
+            raise ValueError(
                 f"The input to this function should be an ExperimentSample or "
-                f"ExperimentData object, not {type(data)} ")
+                f"ExperimentData object, not {type(data)} "
             )
 
         if in_place:
@@ -1217,10 +1234,10 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
                 project_dir=project_dir)
         except (EmptyFileError, DecodeError):
             tries += 1
-            logger.debug((
+            logger.debug(
                 f"Error reading a file, retrying"
                 f" {tries+1}/{MAX_TRIES}"
-            ))
+            )
             sleep(random.uniform(0.5, 2.5))
 
         except FileNotFoundError:
@@ -1229,9 +1246,9 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
                     f"File {subdirectory} not found")
 
             tries += 1
-            logger.debug((
+            logger.debug(
                 f"FileNotFoundError({subdirectory}), sleeping!"
-            ))
+            )
             sleep(random.uniform(9.5, 11.0))
 
     raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)

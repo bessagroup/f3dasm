@@ -113,8 +113,8 @@ class Parameter:
 
         if not to_disk and (
                 store_function is not None or load_function is not None):
-            raise ValueError(("If 'to_disk' is False, 'store_function' and"
-                              "load_function' must be None.")
+            raise ValueError("If 'to_disk' is False, 'store_function' and"
+                              "load_function' must be None."
                              )
 
         self.to_disk = to_disk
@@ -403,14 +403,14 @@ class ContinuousParameter(Parameter):
         self.log = log
 
         if self.log and self.lower_bound <= 0.0:
-            raise ValueError((
+            raise ValueError(
                 f"The `lower_bound` value must be larger than 0 for a "
                 f"log distribution (low={self.lower_bound}, "
                 f"high={self.upper_bound})."
-            ))
+            )
         self._validate_range()
 
-    def __add__(self, other: Parameter) -> "ContinuousParameter":
+    def __add__(self, other: Parameter) -> ContinuousParameter:
         if not isinstance(other, ContinuousParameter):
             raise ValueError(
                 "Cannot add non-continuous parameter to continuous!")
@@ -443,10 +443,10 @@ class ContinuousParameter(Parameter):
 
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
-            raise ValueError((
+            raise ValueError(
                 f"The `upper_bound` value must be larger than `lower_bound`. "
                 f"(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound})")
+                f"upper_bound={self.upper_bound})"
             )
 
     def _copy(self) -> ContinuousParameter:
@@ -557,7 +557,7 @@ class DiscreteParameter(Parameter):
         return (f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound}, step={self.step})")
 
-    def __add__(self, other: Parameter) -> "DiscreteParameter":
+    def __add__(self, other: Parameter) -> DiscreteParameter:
         if isinstance(other, CategoricalParameter):
             return other + self
         if isinstance(other, ConstantParameter):

@@ -7,7 +7,6 @@ This module defines the logging settings for the f3dasm package.
 # Standard
 import logging
 
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'

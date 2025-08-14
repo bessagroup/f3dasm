@@ -469,9 +469,9 @@ def copy_object(object_path: Path,
             try:
                 stem = str(int(stem) + 1)  # Increment stem as integer
             except ValueError:
-                raise ValueError((
+                raise ValueError(
                     f"Filename {object_path.name} cannot be converted "
-                    f"to an integer.")
+                    f"to an integer."
                 )
 
         object_path = object_path.parent / f"{stem}{suffix}"
