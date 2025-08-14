@@ -95,7 +95,7 @@ pythonpath = [".", "src"]
 addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=80.00"
 minversion = "6.0"
 testpaths = [
-    "tests,"
+    "tests",
 ]
 markers = [
     "smoke",
@@ -105,3 +105,39 @@ markers = [
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "tests/",
+    "**/__init__.py",
+]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # TYPE_CHECKING is used for type hinting, don't complain about it:
+    "if TYPE_CHECKING:",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "coverage_html_report"
