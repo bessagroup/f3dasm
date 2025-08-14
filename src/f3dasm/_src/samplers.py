@@ -212,7 +212,7 @@ def sample_latin_hypercube(
 
 
 def sample_sobol_sequence(
-        domain: Domain, n_samples: int, **kwargs) -> np.ndarray:
+        domain: Domain, n_samples: int, dimensionality: int, **kwargs) -> np.ndarray:
     """
     Sample with Sobol sequence sampling.
 
@@ -222,6 +222,8 @@ def sample_sobol_sequence(
         The domain object containing the input space.
     n_samples : int
         The number of samples to generate.
+    dimensionality : int
+        The dimensionality of the input space.
     **kwargs : dict
         Additional parameters for sampling.
 
@@ -230,7 +232,7 @@ def sample_sobol_sequence(
     np.ndarray
         The sampled data.
     """
-    samples = sobol_sequence.sample(N=n_samples, D=len(domain))
+    samples = sobol_sequence.sample(N=n_samples, D=dimensionality)
 
     # stretch samples
     samples = _stretch_samples(domain, samples)
@@ -453,7 +455,8 @@ class Sobol(Block):
             The sampled data.
         """
         _continuous = sample_sobol_sequence(
-            domain=data.domain.continuous, n_samples=n_samples)
+            domain=data.domain.continuous, n_samples=n_samples,
+            dimensionality=len(data.domain.continuous))
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,

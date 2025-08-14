@@ -4,13 +4,10 @@ import pytest
 
 from f3dasm import ExperimentData
 from f3dasm._src.datageneration.benchmarkfunctions import BENCHMARK_FUNCTIONS
-from f3dasm._src.datageneration.datagenerator_factory import (
-    create_datagenerator,
-)
-from f3dasm._src.optimization.optimizer_factory import (
-    OPTIMIZERS,
-    create_optimizer,
-)
+from f3dasm._src.datageneration.datagenerator_factory import \
+    create_datagenerator
+from f3dasm._src.optimization.optimizer_factory import (OPTIMIZERS,
+                                                        create_optimizer)
 
 pytestmark = pytest.mark.smoke
 
@@ -31,7 +28,8 @@ def test_all_optimizers_and_functions(
 
     samples = _benchmark_function.call(data=data)
 
-    _optimizer.arm(data=samples)
+    _optimizer.arm(data=samples,  data_generator=_benchmark_function,
+                   output_name='y')
 
     data1 = _optimizer.call(data=samples, data_generator=_benchmark_function,
                             )

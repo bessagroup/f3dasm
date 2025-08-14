@@ -4,11 +4,18 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
+# Standard
 from __future__ import annotations
 
 # Local
 from ..core import Block
-from .scipy_implementations import OPTIMIZERS
+from ._imports import try_import
+
+with try_import() as _optuna_imports:
+    from .optuna_implementations import tpesampler
+
+with try_import() as _scipy_imports:
+    from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -19,7 +26,18 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+OPTIMIZERS = {}
 
+if _scipy_imports.is_successful():
+    OPTIMIZERS['cg'] = cg,
+    OPTIMIZERS['neldermead'] = nelder_mead,
+    OPTIMIZERS['lbfgsb'] = lbfgsb,
+
+if _optuna_imports.is_successful():
+    OPTIMIZERS['tpesampler'] = tpesampler
+
+
+# =============================================================================
 def create_optimizer(optimizer: str, **hyperparameters
                      ) -> Block:
     """
@@ -45,6 +63,7 @@ def create_optimizer(optimizer: str, **hyperparameters
     TypeError
         If the given type is not recognized.
     """
+
     if isinstance(optimizer, str):
 
         filtered_name = optimizer.lower().replace(

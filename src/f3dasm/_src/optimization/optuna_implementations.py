@@ -2,7 +2,11 @@
 # =============================================================================
 from __future__ import annotations
 
+# Standard
+from functools import partial
+
 # Third-party
+import numpy as np
 import optuna
 
 # Locals
@@ -10,6 +14,7 @@ from ..core import Block
 from ..datagenerator import DataGenerator
 from ..design import Domain
 from ..design.parameter import (
+    ArrayParameter,
     CategoricalParameter,
     ConstantParameter,
     ContinuousParameter,
@@ -26,28 +31,49 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-# optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-# =============================================================================
-
 
 class OptunaOptimizer(Block):
+    """
+    Optuna-based optimizer block for experiment design and optimization.
 
-    def __init__(self, data_generator: DataGenerator, algorithm_cls, seed: int, **hyperparameters):
+    This class wraps Optuna's optimization logic and integrates it with the
+    experiment data and domain definitions from f3dasm.
+    """
+
+    def __init__(self, optuna_sampler: optuna.distributions.BaseDistribution):
+        """
+        Initialize the OptunaOptimizer.
+
+        Parameters
+        ----------
+        optuna_sampler : optuna.distributions.BaseDistribution
+            The Optuna sampler to use for the optimization process.
+        """
+        self.optuna_sampler = optuna_sampler
+
+    def arm(self, data: ExperimentData, data_generator: DataGenerator,
+            output_name: str):
+        """
+        Prepare the optimizer with experiment data, data generator,
+        and output name.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data containing previous trials.
+        data_generator : DataGenerator
+            The data generator used to evaluate new samples.
+        output_name : str
+            The name of the output variable to optimize.
+        """
         self.data_generator = data_generator
-        self.algorithm_cls = algorithm_cls
-        self.seed = seed
-        self.hyperparameters = hyperparameters
-
-    def arm(self, data: ExperimentData, output_name: str):
-
         self.output_name = output_name
         self.distributions = domain_to_optuna_distributions(
             data.domain)
 
         # Set algorithm
         self.study = optuna.create_study(
-            sampler=self.algorithm_cls(seed=self.seed, **self.hyperparameters)
+            sampler=self.optuna_sampler
         )
 
         # Add existing trials to the study
@@ -62,8 +88,22 @@ class OptunaOptimizer(Block):
 
     def _step(self, data: ExperimentData, **kwargs) -> ExperimentData:
         """
-        Perform a single step of the optimization process.
-        This method is called by the `call` method.
+        Perform a single optimization step.
+
+        This method suggests a new experiment sample, evaluates it, and adds
+        the result to the Optuna study.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The current experiment data.
+        **kwargs
+            Additional arguments passed to the data generator.
+
+        Returns
+        -------
+        ExperimentData
+            The updated experiment data including the new sample.
         """
         trial = self.study.ask()
         new_es = self._suggest_experimentsample(
@@ -79,6 +119,10 @@ class OptunaOptimizer(Block):
         new_experiment_data = self.data_generator.call(
             data=new_experiment_data, **kwargs)
 
+        # TODO: extract last es
+        new_es = new_experiment_data.get_experiment_sample(
+            new_experiment_data.index[-1])
+
         self.study.add_trial(
             optuna.trial.create_trial(
                 params=new_es.input_data,
@@ -89,13 +133,46 @@ class OptunaOptimizer(Block):
 
         return new_experiment_data
 
-    def call(self, data: ExperimentData, n_iterations: int, **kwargs) -> ExperimentData:
+    def call(self, data: ExperimentData,
+             n_iterations: int, **kwargs) -> ExperimentData:
+        """
+        Run the optimization for a specified number of iterations.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The initial experiment data.
+        n_iterations : int
+            Number of optimization steps to perform.
+        **kwargs
+            Additional arguments passed to each optimization step.
+
+        Returns
+        -------
+        ExperimentData
+            The experiment data after optimization.
+        """
         for _ in range(n_iterations):
             data += self._step(data, **kwargs)
-
         return data
-    def _suggest_experimentsample(self, trial: optuna.Trial, domain: Domain
-                                  ) -> ExperimentSample:
+
+    def _suggest_experimentsample(self, trial: optuna.Trial,
+                                  domain: Domain) -> ExperimentSample:
+        """
+        Suggest a new experiment sample using Optuna trial and domain.
+
+        Parameters
+        ----------
+        trial : optuna.Trial
+            The Optuna trial object for suggesting parameters.
+        domain : Domain
+            The domain describing the input space.
+
+        Returns
+        -------
+        ExperimentSample
+            The suggested experiment sample.
+        """
         optuna_dict = {}
         for name, parameter in domain.input_space.items():
             if isinstance(parameter, ContinuousParameter):
@@ -115,30 +192,87 @@ class OptunaOptimizer(Block):
             elif isinstance(parameter, ConstantParameter):
                 optuna_dict[name] = trial.suggest_categorical(
                     name=name, choices=[parameter.value])
-
-        return ExperimentSample(input_data=optuna_dict,
-                                domain=domain)
+            elif isinstance(parameter, ArrayParameter):
+                values = []
+                for i in parameter.dimensionality:
+                    values.append(trial.suggest_float(
+                        name=f"{name}_{i}",
+                        low=parameter.lower_bound,
+                        high=parameter.upper_bound)
+                    )
+                optuna_dict[name] = np.array(values)
+            else:
+                raise TypeError(
+                    f"Unsupported parameter type: {type(parameter)} "
+                    f"for {name}")
+        return ExperimentSample(input_data=optuna_dict, domain=domain)
 
 
 def domain_to_optuna_distributions(domain: Domain) -> dict:
+    """
+    Convert a domain object to Optuna distributions.
+
+    Parameters
+    ----------
+    domain : Domain
+        The domain describing the input space.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping parameter names to Optuna distributions.
+    """
     optuna_distributions = {}
     for name, parameter in domain.input_space.items():
-        if parameter._type == 'float':
-            optuna_distributions[
-                name] = optuna.distributions.FloatDistribution(
+        if isinstance(parameter, ContinuousParameter):
+            optuna_distributions[name] = \
+                optuna.distributions.FloatDistribution(
                 low=parameter.lower_bound,
                 high=parameter.upper_bound, log=parameter.log)
-        elif parameter._type == 'int':
-            optuna_distributions[
-                name] = optuna.distributions.IntDistribution(
+        elif isinstance(parameter, DiscreteParameter):
+            optuna_distributions[name] = \
+                optuna.distributions.IntDistribution(
                 low=parameter.lower_bound,
                 high=parameter.upper_bound, step=parameter.step)
-        elif parameter._type == 'category':
-            optuna_distributions[
-                name] = optuna.distributions.CategoricalDistribution(
+        elif isinstance(parameter, CategoricalParameter):
+            optuna_distributions[name] = \
+                optuna.distributions.CategoricalDistribution(
                 parameter.categories)
-        elif parameter._type == 'object':
-            optuna_distributions[
-                name] = optuna.distributions.CategoricalDistribution(
+        elif isinstance(parameter, ConstantParameter):
+            optuna_distributions[name] = \
+                optuna.distributions.CategoricalDistribution(
                 choices=[parameter.value])
+        elif isinstance(parameter, ArrayParameter):
+            for i in parameter.dimensionality:
+                optuna_distributions[f"{name}_{i}"] = \
+                    optuna.distributions.FloatDistribution(
+                        low=parameter.lower_bound,
+                        high=parameter.upper_bound)
+        else:
+            raise TypeError(
+                f"Unsupported parameter type: {type(parameter)} for {name}")
     return optuna_distributions
+
+
+def optuna_optimizer(
+        optuna_sampler: optuna.distributions.BaseDistribution) -> Block:
+    """Create an Optuna optimizer block.
+
+    Parameters
+    ----------
+    optuna_sampler
+        The Optuna sampler to use for the optimization.
+
+    Returns
+    -------
+    Block
+        An instance of the OptunaOptimizer block.
+    """
+    return OptunaOptimizer(optuna_sampler=optuna_sampler)
+
+
+# =============================================================================
+
+tpesampler = partial(
+    OptunaOptimizer, optuna_sampler=optuna.samplers.TPESampler()
+)

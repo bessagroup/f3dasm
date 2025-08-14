@@ -693,5 +693,118 @@ class CategoricalParameter(Parameter):
 # =============================================================================
 
 
+class ArrayParameter(Parameter):
+    """
+    Create a search space parameter that is an array.
+
+    Parameters
+    ----------
+    dimensionality : Iterable[int]
+        The dimensions of the array.
+    lower_bound : float, optional
+        The lower bound of the parameter. Defaults to -inf.
+    upper_bound : float, optional
+        The upper bound of the parameter. Defaults to inf.
+
+    Raises
+    ------
+    ValueError
+        If `dimensionality` is empty or contains non-positive integers.
+        If `upper_bound` is less than or equal to `lower_bound`.
+
+    Examples
+    --------
+    >>> param = ArrayParameter(dimensionality=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    >>> print(param)
+    ArrayParameter(dimensionality=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    """
+
+    def __init__(self, dimensionality: Iterable[int],
+                 lower_bound: float = float('-inf'),
+                 upper_bound: float = float('inf')):
+        super().__init__()
+        self.dimensionality = tuple(int(d) for d in dimensionality)
+        if not self.dimensionality or any(d <= 0 for d in self.dimensionality):
+            raise ValueError("Dimensionality must be a non-empty iterable of "
+                             "positive integers.")
+        self.lower_bound = float(lower_bound)
+        self.upper_bound = float(upper_bound)
+        self._validate_range()
+
+    def _validate_range(self):
+        if self.upper_bound <= self.lower_bound:
+            raise ValueError(
+                f"The `upper_bound` value must be larger than `lower_bound`. "
+                f"(lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})"
+            )
+
+    def __str__(self):
+        return (f"ArrayParameter(dimensionality={self.dimensionality}, "
+                f"lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})")
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}"
+                f"(dimensionality={self.dimensionality}, "
+                f"lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})")
+
+    def __eq__(self, other: Parameter) -> bool:
+        if not isinstance(other, ArrayParameter):
+            return False
+        return (self.dimensionality == other.dimensionality and
+                self.lower_bound == other.lower_bound and
+                self.upper_bound == other.upper_bound)
+
+    def _copy(self) -> ArrayParameter:
+        """
+        Create a copy of the ArrayParameter object.
+
+        Returns
+        -------
+        ArrayParameter
+            A copy of the ArrayParameter object.
+
+        Examples
+        --------
+        >>> param = ArrayParameter(dimensionality=[3, 4], 
+        lower_bound=0.0, upper_bound=1.0)
+        >>> param_copy = param._copy()
+        """
+        return ArrayParameter(
+            dimensionality=self.dimensionality,
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound
+        )
+
+    def to_dict(self) -> dict:
+        param_dict = super().to_dict()
+        param_dict['type'] = 'array'
+        param_dict['dimensionality'] = self.dimensionality
+        param_dict['lower_bound'] = self.lower_bound
+        param_dict['upper_bound'] = self.upper_bound
+        return param_dict
+
+    def to_continuous(self) -> list[ContinuousParameter]:
+        """
+        Convert the ArrayParameter to a list of ContinuousParameters.
+
+        Returns
+        -------
+        list[ContinuousParameter]
+            A list of ContinuousParameters for each dimension.
+
+        Examples
+        --------
+        >>> param = ArrayParameter(dimensionality=[3, 4], 
+        lower_bound=0.0, upper_bound=1.0)
+        >>> continuous_params = param.to_continuous()
+        """
+        return [ContinuousParameter(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound) for _ in self.dimensionality]
+
+
 PARAMETERS = [CategoricalParameter, ConstantParameter,
-              ContinuousParameter, DiscreteParameter]
+              ContinuousParameter, DiscreteParameter, ArrayParameter]

@@ -23,6 +23,7 @@ from omegaconf import DictConfig, OmegaConf
 # Local
 from ..errors import DecodeError, EmptyFileError
 from .parameter import (
+    ArrayParameter,
     CategoricalParameter,
     CategoricalType,
     ConstantParameter,
@@ -192,6 +193,16 @@ class Domain:
             Domain object containing the constant parameters
         """
         return self._filter(ConstantParameter)
+
+    @property
+    def array(self) -> Domain:
+        """Filter the array parameters of the domain
+        Returns
+        -------
+        Domain
+            Domain object containing the array parameters
+        """
+        return self._filter(ArrayParameter)
 #                                                      Alternative constructors
 # =============================================================================
 

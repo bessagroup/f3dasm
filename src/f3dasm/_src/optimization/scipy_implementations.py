@@ -31,26 +31,25 @@ warnings.filterwarnings(
 
 
 class ScipyOptimizer(Block):
-    def __init__(self,  data_generator: DataGenerator, method: str, bounds: Optional[Bounds] = None,
+    def __init__(self, method: str, bounds: Optional[Bounds] = None,
                  tol: Optional[float] = None,
                  **hyperparameters):
-        self.data_generator = data_generator
         self.bounds = bounds
         self.method = method
         self.tol = tol
         self.hyperparameters = hyperparameters
 
-        self._fun = data_generator.f
-        self._output_names = data_generator.output_names
+    def arm(self, data: ExperimentData, data_generator: DataGenerator,
+            output_name: str):
 
-    def arm(self, data: ExperimentData, output_name: str):
+        self.data_generator = data_generator
 
         self.output_name = output_name
         input_name = data.domain.input_names[0]
         experiment_sample = data.get_experiment_sample(data.index[-1])
         self._x0 = experiment_sample.input_data[input_name]
 
-    def call(self, data: ExperimentData, n_iterations: int,
+    def call(self, data: ExperimentData, n_iterations: Optional[int] = None,
              grad_f: Optional[Callable] = None, **kwargs) -> ExperimentData:
         history_x, history_y = [], []
 
@@ -62,7 +61,7 @@ class ScipyOptimizer(Block):
                 {self.output_name: intermediate_result.fun})
 
         _ = minimize(
-            fun=self._fun,
+            fun=self.data_generator.f,
             x0=self._x0,
             method=self.method,
             jac=grad_f,
@@ -80,8 +79,9 @@ class ScipyOptimizer(Block):
 # =============================================================================
 
 
-OPTIMIZERS = {
-    'cg': partial(ScipyOptimizer, method='CG'),
-    'neldermead': partial(ScipyOptimizer, method='Nelder-Mead'),
-    'lbfgsb': partial(ScipyOptimizer, method='L-BFGS-B'),
-}
+cg = partial(ScipyOptimizer, method='CG')
+nelder_mead = partial(ScipyOptimizer, method='Nelder-Mead')
+lbfgsb = partial(ScipyOptimizer, method='L-BFGS-B')
+
+"""Dictionary of available SciPy optimizers."""
+# =============================================================================
