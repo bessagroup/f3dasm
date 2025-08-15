@@ -31,16 +31,6 @@ __status__ = 'Stable'
 
 # =============================================================================
 
-if not _scipy_imports.is_successful():
-    cg = partial(faulty_optimizer, name='cg', missing_package='scipy')
-    lbfgsb = partial(faulty_optimizer, name='lbfgsb', missing_package='scipy')
-    nelder_mead = partial(
-        faulty_optimizer, name='nelder_mead', missing_package='scipy')
-
-if not _optuna_imports.is_successful():
-    tpesampler = partial(
-        faulty_optimizer, name='tpesampler', missing_package='optuna')
-
 __all__ = [
     'create_optimizer',
     "OptunaOptimizer",

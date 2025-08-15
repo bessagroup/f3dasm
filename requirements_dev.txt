@@ -1,6 +1,9 @@
 # Core package requirements
 -r ./requirements.txt
 
+# Additional dependencies
+optuna
+
 # Linting
 flake8
 
