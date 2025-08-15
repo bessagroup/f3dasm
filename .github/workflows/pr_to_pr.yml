@@ -40,10 +40,7 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: Install package dependencies
         run: |
-          pip install -r requirements.txt
-      - name: Install test dependencies
-        run: |
-          pip install -r tests/requirements.txt
+          pip install -r requirements_dev.txt
       - name: Test with pytest (excluding abaqus tests)
         run: |
           python -m pytest -S abaqus
@@ -60,11 +57,6 @@ jobs:
       - name: Install package requirements
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Install Sphinx
-        run: python -m pip install -U sphinx
-      - name: Install Sphinx requirements
-        run: |
           pip install -r requirements_dev.txt
       - name: Build documentation
         uses: r-lib/actions/setup-pandoc@v2
