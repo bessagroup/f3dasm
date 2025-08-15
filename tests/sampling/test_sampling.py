@@ -54,6 +54,7 @@ def test_correct_sampling_ran(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth,
@@ -91,6 +92,7 @@ def test_correct_sampling_sobol(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth, check_dtype=False)
@@ -128,6 +130,7 @@ def test_correct_sampling_lhs(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth, check_dtype=False)

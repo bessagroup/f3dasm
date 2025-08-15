@@ -886,6 +886,9 @@ class ExperimentData:
         # TODO: Reset isnt necessary, only copy
         copy_other = experiment_data.reset_index()
 
+        if not copy_self.data:
+            return copy_other
+
         for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
             copy_self.data[i] = es_self + es_other
 

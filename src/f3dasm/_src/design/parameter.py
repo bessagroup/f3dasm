@@ -714,18 +714,20 @@ class ArrayParameter(Parameter):
 
     Examples
     --------
-    >>> param = ArrayParameter(dimensionality=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    >>> param = ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     >>> print(param)
-    ArrayParameter(dimensionality=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
 
-    def __init__(self, dimensionality: Iterable[int],
+    def __init__(self, shape: Union[int, Iterable[int]],
                  lower_bound: float = float('-inf'),
                  upper_bound: float = float('inf')):
         super().__init__()
-        self.dimensionality = tuple(int(d) for d in dimensionality)
-        if not self.dimensionality or any(d <= 0 for d in self.dimensionality):
-            raise ValueError("Dimensionality must be a non-empty iterable of "
+        if isinstance(shape, int):
+            shape = [shape]
+        self.shape = tuple(int(d) for d in shape)
+        if not self.shape or any(d <= 0 for d in self.shape):
+            raise ValueError("Shape must be a non-empty iterable of "
                              "positive integers.")
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
@@ -740,20 +742,20 @@ class ArrayParameter(Parameter):
             )
 
     def __str__(self):
-        return (f"ArrayParameter(dimensionality={self.dimensionality}, "
+        return (f"ArrayParameter(shape={self.shape}, "
                 f"lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound})")
 
     def __repr__(self):
         return (f"{self.__class__.__name__}"
-                f"(dimensionality={self.dimensionality}, "
+                f"(shape={self.shape}, "
                 f"lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound})")
 
     def __eq__(self, other: Parameter) -> bool:
         if not isinstance(other, ArrayParameter):
             return False
-        return (self.dimensionality == other.dimensionality and
+        return (self.shape == other.shape and
                 self.lower_bound == other.lower_bound and
                 self.upper_bound == other.upper_bound)
 
@@ -768,12 +770,12 @@ class ArrayParameter(Parameter):
 
         Examples
         --------
-        >>> param = ArrayParameter(dimensionality=[3, 4], 
+        >>> param = ArrayParameter(shape=[3, 4],
         lower_bound=0.0, upper_bound=1.0)
         >>> param_copy = param._copy()
         """
         return ArrayParameter(
-            dimensionality=self.dimensionality,
+            shape=self.shape,
             lower_bound=self.lower_bound,
             upper_bound=self.upper_bound
         )
@@ -781,7 +783,7 @@ class ArrayParameter(Parameter):
     def to_dict(self) -> dict:
         param_dict = super().to_dict()
         param_dict['type'] = 'array'
-        param_dict['dimensionality'] = self.dimensionality
+        param_dict['shape'] = self.shape
         param_dict['lower_bound'] = self.lower_bound
         param_dict['upper_bound'] = self.upper_bound
         return param_dict
@@ -797,13 +799,13 @@ class ArrayParameter(Parameter):
 
         Examples
         --------
-        >>> param = ArrayParameter(dimensionality=[3, 4], 
+        >>> param = ArrayParameter(shape=[3, 4],
         lower_bound=0.0, upper_bound=1.0)
         >>> continuous_params = param.to_continuous()
         """
         return [ContinuousParameter(
             lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound) for _ in self.dimensionality]
+            upper_bound=self.upper_bound) for _ in self.shape]
 
 
 PARAMETERS = [CategoricalParameter, ConstantParameter,

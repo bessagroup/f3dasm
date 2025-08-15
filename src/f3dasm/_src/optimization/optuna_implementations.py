@@ -194,7 +194,7 @@ class OptunaOptimizer(Block):
                     name=name, choices=[parameter.value])
             elif isinstance(parameter, ArrayParameter):
                 values = []
-                for i in parameter.dimensionality:
+                for i in parameter.shape:
                     values.append(trial.suggest_float(
                         name=f"{name}_{i}",
                         low=parameter.lower_bound,
@@ -243,7 +243,7 @@ def domain_to_optuna_distributions(domain: Domain) -> dict:
                 optuna.distributions.CategoricalDistribution(
                 choices=[parameter.value])
         elif isinstance(parameter, ArrayParameter):
-            for i in parameter.dimensionality:
+            for i in parameter.shape:
                 optuna_distributions[f"{name}_{i}"] = \
                     optuna.distributions.FloatDistribution(
                         low=parameter.lower_bound,
