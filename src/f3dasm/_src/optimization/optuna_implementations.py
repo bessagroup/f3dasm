@@ -45,7 +45,13 @@ class OptunaOptimizer(Block):
 
         Parameters
         ----------
-        optuna_sampler : optuna.distributions.BaseDistribution
+    def __init__(self, optuna_sampler: optuna.samplers.BaseSampler):
+        """
+        Initialize the OptunaOptimizer.
+
+        Parameters
+        ----------
+        optuna_sampler : optuna.samplers.BaseSampler
             The Optuna sampler to use for the optimization process.
         """
         self.optuna_sampler = optuna_sampler
