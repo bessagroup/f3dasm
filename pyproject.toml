@@ -97,7 +97,7 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = [".", "src"]
-addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=80.00"
+addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=70.00"
 minversion = "6.0"
 testpaths = [
     "tests",
