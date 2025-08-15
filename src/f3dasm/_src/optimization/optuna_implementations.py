@@ -12,13 +12,9 @@ import optuna
 from ..core import Block
 from ..datagenerator import DataGenerator
 from ..design import Domain
-from ..design.parameter import (
-    ArrayParameter,
-    CategoricalParameter,
-    ConstantParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-)
+from ..design.parameter import (ArrayParameter, CategoricalParameter,
+                                ConstantParameter, ContinuousParameter,
+                                DiscreteParameter)
 from ..experimentdata import ExperimentData, ExperimentSample
 
 #                                                          Authorship & Credits
@@ -39,12 +35,6 @@ class OptunaOptimizer(Block):
     experiment data and domain definitions from f3dasm.
     """
 
-    def __init__(self, optuna_sampler: optuna.distributions.BaseDistribution):
-        """
-        Initialize the OptunaOptimizer.
-
-        Parameters
-        ----------
     def __init__(self, optuna_sampler: optuna.samplers.BaseSampler):
         """
         Initialize the OptunaOptimizer.
