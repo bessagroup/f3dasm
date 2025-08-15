@@ -761,9 +761,9 @@ class ArrayParameter(Parameter):
     def __eq__(self, other: Parameter) -> bool:
         if not isinstance(other, ArrayParameter):
             return False
-        return (self.shape == other.shape and
-                self.lower_bound == other.lower_bound and
-                self.upper_bound == other.upper_bound)
+        return (
+            self.shape == other.shape and self.lower_bound
+            == other.lower_bound and self.upper_bound == other.upper_bound)
 
     def _copy(self) -> ArrayParameter:
         """
