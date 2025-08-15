@@ -6,7 +6,6 @@ from __future__ import annotations
 from functools import partial
 
 # Third-party
-import numpy as np
 import optuna
 
 # Locals
