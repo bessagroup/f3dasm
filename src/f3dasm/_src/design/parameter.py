@@ -260,6 +260,12 @@ class Parameter:
             return ConstantParameter(
                 value=param_dict.get('value')
             )
+        elif param_type == 'array':
+            return ArrayParameter(
+                shape=param_dict.get('shape', ()),
+                lower_bound=param_dict.get('lower_bound', float('-inf')),
+                upper_bound=param_dict.get('upper_bound', float('inf'))
+            )
         else:
             raise ValueError(f"Unknown parameter type: {param_type}")
 
@@ -719,7 +725,7 @@ class ArrayParameter(Parameter):
     ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
 
-    def __init__(self, shape: Union[int, Iterable[int]],
+    def __init__(self, shape: int | Iterable[int],
                  lower_bound: float = float('-inf'),
                  upper_bound: float = float('inf')):
         super().__init__()

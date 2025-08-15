@@ -250,7 +250,8 @@ def sample_latin_hypercube(
 
 
 def sample_sobol_sequence(
-        domain: Domain, n_samples: int, dimensionality: int, **kwargs) -> np.ndarray:
+        domain: Domain, n_samples: int,
+        dimensionality: int, **kwargs) -> np.ndarray:
     """
     Sample with Sobol sequence sampling.
 
@@ -364,22 +365,6 @@ class RandomUniform(Block):
 
         return d
 
-        # df = pd.concat(
-        #     [pd.DataFrame(_continuous,
-        #                   columns=data.domain.continuous.input_names),
-        #      pd.DataFrame(
-        #          _discrete, columns=data.domain.discrete.input_names),
-        #      pd.DataFrame(
-        #         _categorical,
-        #         columns=data.domain.categorical.input_names),
-        #      pd.DataFrame(_constant,
-        #                   columns=data.domain.constant.input_names)],
-        #     axis=1
-        # )[data.domain.input_names]
-
-        # return type(data)(domain=data.domain._copy(),
-        #                   input_data=df)
-
 
 def random(seed: Optional[int] = None, **kwargs) -> Block:
     """
@@ -475,8 +460,8 @@ class Grid(Block):
                           columns=_iterdict, dtype=object
                           )[data.domain.input_names]
 
-        return type(data)(domain=data.domain._copy(),
-                          input_data=df)
+        return ExperimentData(domain=data.domain._copy(),
+                              input_data=df)
 
 
 def grid(**kwargs) -> Block:

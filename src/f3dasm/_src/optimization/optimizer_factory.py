@@ -29,9 +29,9 @@ __status__ = 'Stable'
 OPTIMIZERS = {}
 
 if _scipy_imports.is_successful():
-    OPTIMIZERS['cg'] = cg,
-    OPTIMIZERS['neldermead'] = nelder_mead,
-    OPTIMIZERS['lbfgsb'] = lbfgsb,
+    OPTIMIZERS['cg'] = cg
+    OPTIMIZERS['neldermead'] = nelder_mead
+    OPTIMIZERS['lbfgsb'] = lbfgsb
 
 if _optuna_imports.is_successful():
     OPTIMIZERS['tpesampler'] = tpesampler

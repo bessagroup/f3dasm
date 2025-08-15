@@ -193,14 +193,10 @@ class OptunaOptimizer(Block):
                 optuna_dict[name] = trial.suggest_categorical(
                     name=name, choices=[parameter.value])
             elif isinstance(parameter, ArrayParameter):
-                values = []
-                for i in parameter.shape:
-                    values.append(trial.suggest_float(
-                        name=f"{name}_{i}",
-                        low=parameter.lower_bound,
-                        high=parameter.upper_bound)
-                    )
-                optuna_dict[name] = np.array(values)
+                raise ValueError(
+                    "ArrayParameter is not supported in Optuna trials. "
+                    "Please use a different parameter types in your Domain."
+                )
             else:
                 raise TypeError(
                     f"Unsupported parameter type: {type(parameter)} "
@@ -243,11 +239,10 @@ def domain_to_optuna_distributions(domain: Domain) -> dict:
                 optuna.distributions.CategoricalDistribution(
                 choices=[parameter.value])
         elif isinstance(parameter, ArrayParameter):
-            for i in parameter.shape:
-                optuna_distributions[f"{name}_{i}"] = \
-                    optuna.distributions.FloatDistribution(
-                        low=parameter.lower_bound,
-                        high=parameter.upper_bound)
+            raise ValueError(
+                "ArrayParameter is not supported in Optuna trials. "
+                "Please use a different parameter types in your Domain."
+            )
         else:
             raise TypeError(
                 f"Unsupported parameter type: {type(parameter)} for {name}")

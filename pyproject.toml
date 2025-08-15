@@ -81,6 +81,7 @@ dev = [
     "build>=1.2.2.post1",
     "hypothesis>=6.113.0",
     "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.7",
     "nbsphinx>=0.9.7",
     "optuna>=4.4.0",
     "pytest>=8.3.5",

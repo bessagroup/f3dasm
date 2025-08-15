@@ -14,7 +14,7 @@ import math
 from collections.abc import Sequence
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 # Third-party core
 import numpy as np
@@ -514,9 +514,9 @@ class Domain:
         """
         self._add(name, ConstantParameter(value))
 
-    def add_array(self, name: str, shape: Union[int, Sequence[int]],
-                  lower_bound: float = -np.inf,
-                  upper_bound: float = np.inf):
+    def add_array(self, name: str, shape: int | Sequence[int],
+                  low: float = -np.inf,
+                  high: float = np.inf):
         """Add a new array input parameter to the domain.
 
         Parameters
@@ -525,9 +525,9 @@ class Domain:
             Name of the input parameter.
         shape : Sequence[int] or int
             Shape of the array input parameter.
-        lower_bound : float, optional
+        low : float, optional
             Lower bound of the input parameter, by default -np.inf.
-        upper_bound : float, optional
+        high : float, optional
             Upper bound of the input parameter, by default np.inf.
 
         Example
@@ -535,13 +535,13 @@ class Domain:
         >>> domain = Domain()
         >>> domain.add_array('param1', [3, 4], 0., 1.)
         >>> domain.input_space
-        {'param1': ArrayParameter(shape=[3, 4], lower_bound=0.0, 
+        {'param1': ArrayParameter(shape=[3, 4], lower_bound=0.0,
         upper_bound=1.0)}
         """
         self._add(name, ArrayParameter(
             shape=shape,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound))
+            lower_bound=low,
+            upper_bound=high))
 
     def add(self, name: str,
             type: Literal['float', 'int', 'category', 'constant', 'array'],

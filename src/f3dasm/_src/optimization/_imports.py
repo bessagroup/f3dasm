@@ -11,7 +11,7 @@ from __future__ import annotations
 
 # Standard
 from types import TracebackType
-from typing import Optional, Tuple, Type
+from typing import Optional
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -84,7 +84,7 @@ class _DeferredImportExceptionContextManager:
                     f"error: {exc_value}."
                 )
             else:
-                assert False
+                raise AssertionError()
 
             self._deferred = (exc_value, message)
             return True
