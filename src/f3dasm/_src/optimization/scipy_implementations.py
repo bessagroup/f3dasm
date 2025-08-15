@@ -8,12 +8,15 @@ from functools import partial
 from typing import Callable, Optional
 
 # Third-party core
-from scipy.optimize import Bounds, OptimizeResult, minimize
+import scipy.optimize
 
 # Locals
 from ..core import Block
 from ..datagenerator import DataGenerator
 from ..experimentdata import ExperimentData
+
+# from scipy.optimize import Bounds, OptimizeResult, minimize
+
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -31,12 +34,11 @@ warnings.filterwarnings(
 
 
 class ScipyOptimizer(Block):
-    def __init__(self, method: str, bounds: Optional[Bounds] = None,
-                 tol: Optional[float] = None,
+    def __init__(self, method: str,
+                 bounds: Optional[scipy.optimize.Bounds] = None,
                  **hyperparameters):
         self.bounds = bounds
         self.method = method
-        self.tol = tol
         self.hyperparameters = hyperparameters
 
     def arm(self, data: ExperimentData, data_generator: DataGenerator,
@@ -53,14 +55,15 @@ class ScipyOptimizer(Block):
              grad_f: Optional[Callable] = None, **kwargs) -> ExperimentData:
         history_x, history_y = [], []
 
-        def callback(intermediate_result: OptimizeResult) -> None:
+        def callback(intermediate_result: scipy.optimize.OptimizeResult,
+                     ) -> None:
             history_x.append(
                 {input_name: intermediate_result.x for input_name
                  in data.domain.input_names})
             history_y.append(
                 {self.output_name: intermediate_result.fun})
 
-        _ = minimize(
+        _ = scipy.optimize.minimize(
             fun=self.data_generator.f,
             x0=self._x0,
             method=self.method,
@@ -68,7 +71,7 @@ class ScipyOptimizer(Block):
             bounds=self.bounds,
             options={**self.hyperparameters},
             callback=callback,
-            tol=self.tol)
+        )
 
         return ExperimentData(
             domain=data.domain,
@@ -83,5 +86,4 @@ cg = partial(ScipyOptimizer, method='CG')
 nelder_mead = partial(ScipyOptimizer, method='Nelder-Mead')
 lbfgsb = partial(ScipyOptimizer, method='L-BFGS-B')
 
-"""Dictionary of available SciPy optimizers."""
 # =============================================================================

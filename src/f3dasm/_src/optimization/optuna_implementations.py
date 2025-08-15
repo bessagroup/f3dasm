@@ -106,7 +106,7 @@ class OptunaOptimizer(Block):
             The updated experiment data including the new sample.
         """
         trial = self.study.ask()
-        new_es = self._suggest_experimentsample(
+        new_es = _suggest_experimentsample(
             trial=trial, domain=data.domain)
 
         new_experiment_data = ExperimentData.from_data(
@@ -156,52 +156,53 @@ class OptunaOptimizer(Block):
             data += self._step(data, **kwargs)
         return data
 
-    def _suggest_experimentsample(self, trial: optuna.Trial,
-                                  domain: Domain) -> ExperimentSample:
-        """
-        Suggest a new experiment sample using Optuna trial and domain.
 
-        Parameters
-        ----------
-        trial : optuna.Trial
-            The Optuna trial object for suggesting parameters.
-        domain : Domain
-            The domain describing the input space.
+def _suggest_experimentsample(trial: optuna.Trial,
+                              domain: Domain) -> ExperimentSample:
+    """
+    Suggest a new experiment sample using Optuna trial and domain.
 
-        Returns
-        -------
-        ExperimentSample
-            The suggested experiment sample.
-        """
-        optuna_dict = {}
-        for name, parameter in domain.input_space.items():
-            if isinstance(parameter, ContinuousParameter):
-                optuna_dict[name] = trial.suggest_float(
-                    name=name,
-                    low=parameter.lower_bound,
-                    high=parameter.upper_bound, log=parameter.log)
-            elif isinstance(parameter, DiscreteParameter):
-                optuna_dict[name] = trial.suggest_int(
-                    name=name,
-                    low=parameter.lower_bound,
-                    high=parameter.upper_bound, step=parameter.step)
-            elif isinstance(parameter, CategoricalParameter):
-                optuna_dict[name] = trial.suggest_categorical(
-                    name=name,
-                    choices=parameter.categories)
-            elif isinstance(parameter, ConstantParameter):
-                optuna_dict[name] = trial.suggest_categorical(
-                    name=name, choices=[parameter.value])
-            elif isinstance(parameter, ArrayParameter):
-                raise ValueError(
-                    "ArrayParameter is not supported in Optuna trials. "
-                    "Please use a different parameter types in your Domain."
-                )
-            else:
-                raise TypeError(
-                    f"Unsupported parameter type: {type(parameter)} "
-                    f"for {name}")
-        return ExperimentSample(input_data=optuna_dict, domain=domain)
+    Parameters
+    ----------
+    trial : optuna.Trial
+        The Optuna trial object for suggesting parameters.
+    domain : Domain
+        The domain describing the input space.
+
+    Returns
+    -------
+    ExperimentSample
+        The suggested experiment sample.
+    """
+    optuna_dict = {}
+    for name, parameter in domain.input_space.items():
+        if isinstance(parameter, ContinuousParameter):
+            optuna_dict[name] = trial.suggest_float(
+                name=name,
+                low=parameter.lower_bound,
+                high=parameter.upper_bound, log=parameter.log)
+        elif isinstance(parameter, DiscreteParameter):
+            optuna_dict[name] = trial.suggest_int(
+                name=name,
+                low=parameter.lower_bound,
+                high=parameter.upper_bound, step=parameter.step)
+        elif isinstance(parameter, CategoricalParameter):
+            optuna_dict[name] = trial.suggest_categorical(
+                name=name,
+                choices=parameter.categories)
+        elif isinstance(parameter, ConstantParameter):
+            optuna_dict[name] = trial.suggest_categorical(
+                name=name, choices=[parameter.value])
+        elif isinstance(parameter, ArrayParameter):
+            raise ValueError(
+                "ArrayParameter is not supported in Optuna trials. "
+                "Please use a different parameter types in your Domain."
+            )
+        else:
+            raise TypeError(
+                f"Unsupported parameter type: {type(parameter)} "
+                f"for {name}")
+    return ExperimentSample(input_data=optuna_dict, domain=domain)
 
 
 def domain_to_optuna_distributions(domain: Domain) -> dict:

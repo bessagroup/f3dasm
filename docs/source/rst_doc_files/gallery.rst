@@ -50,6 +50,17 @@ The :mod:`f3dasm` package comes with built-in implementations of the :class:`~f3
 
     ../notebooks/builtins/*
 
+Integration with 3rd party libraries
+------------------------------------
+
+The :mod:`f3dasm` is mend to be integrated with 3rd party libraries to extend its functionality.
+
+.. nblinkgallery::
+    :name: integration
+    :glob:
+
+    ../notebooks/integration/*
+
 Integration with hydra
 ----------------------
 
