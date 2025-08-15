@@ -22,7 +22,7 @@ def test_sampling_interface_not_implemented_error():
 
     with pytest.raises(KeyError):
         sampler = create_sampler(sampler='test', seed=seed)
-        _ = sampler.call(data=sampler, n_samples=5)
+        _ = sampler.call(data=samples, n_samples=5)
 
 
 def test_correct_sampling_ran(design3: Domain):
@@ -54,6 +54,7 @@ def test_correct_sampling_ran(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth,
@@ -91,6 +92,7 @@ def test_correct_sampling_sobol(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth, check_dtype=False)
@@ -128,6 +130,7 @@ def test_correct_sampling_lhs(design3: Domain):
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
+    df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
     assert_frame_equal(df_input, df_ground_truth, check_dtype=False)

@@ -1,28 +1,32 @@
+import numpy as np
 import pytest
 
-from f3dasm import ExperimentData, create_sampler
-from f3dasm._src.design.parameter import ContinuousParameter
+from f3dasm import ExperimentData
 from f3dasm.design import Domain
+
+DIM = 2
 
 
 @pytest.fixture(scope="package")
 def data():
-    seed = 42
-    N = 50  # Number of samples
+    domain = Domain()
+    domain.add_array('x', shape=DIM, low=0.0, high=1.0)
+    domain.add_output('y')
 
-    # Define the parameters
-    input_parameters = {
-        "x1": ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        "x2": ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-        "x3": ContinuousParameter(lower_bound=0.6, upper_bound=7.3),
-    }
+    x0 = np.array([0.5]*DIM)
+    return ExperimentData(
+        domain=domain,
+        input_data=[{'x': x0}],
+    )
 
-    # Create the design space
-    design = Domain(input_space=input_parameters)
 
-    data = ExperimentData(domain=design)
+@pytest.fixture(scope="package")
+def data2():
+    domain = Domain()
+    domain.add_float('x0', low=0.0, high=1.0)
+    domain.add_output('y')
 
-    sampler = create_sampler(sampler='random', seed=seed)
-    sampler.arm(data=data)
-
-    return sampler.call(data=data, n_samples=N)
+    return ExperimentData(
+        domain=domain,
+        input_data=[{'x0': 0.5}],
+    )

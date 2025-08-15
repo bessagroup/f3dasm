@@ -12,12 +12,12 @@ from __future__ import annotations
 # Standard
 import random
 from collections import defaultdict
+from collections.abc import Iterable, Iterator
 from copy import copy
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
-from typing import (Any, Callable, Dict, Iterable, Iterator, List, Literal,
-                    Optional, Protocol, Tuple, Type)
+from typing import Any, Callable, Literal, Optional, Protocol
 
 # Third-party
 import numpy as np
@@ -27,9 +27,15 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -68,10 +74,10 @@ class ExperimentData:
             domain: Optional[Domain] = None,
             input_data: Optional[
                 pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
+                | list[dict[str, Any]] | str | Path] = None,
             output_data: Optional[
                 pd.DataFrame | np.ndarray
-                | List[Dict[str, Any]] | str | Path] = None,
+                | list[dict[str, Any]] | str | Path] = None,
             jobs: Optional[pd.Series] = None,
             project_dir: Optional[Path] = None):
         """
@@ -160,7 +166,7 @@ class ExperimentData:
         """
         return len(self.data)
 
-    def __iter__(self) -> Iterator[Tuple[int, ExperimentSample]]:
+    def __iter__(self) -> Iterator[tuple[int, ExperimentSample]]:
         """
         Returns an iterator over the ExperimentData object.
 
@@ -373,9 +379,9 @@ class ExperimentData:
     # =========================================================================
 
     @classmethod
-    def _from_attributes(cls: Type[ExperimentData],
+    def _from_attributes(cls: type[ExperimentData],
                          domain: Domain,
-                         data: Dict[int, ExperimentSample],
+                         data: dict[int, ExperimentSample],
                          project_dir: Path) -> ExperimentData:
         """
         Create an ExperimentData object from attributes.
@@ -401,7 +407,7 @@ class ExperimentData:
         return experiment_data
 
     @classmethod
-    def from_file(cls: Type[ExperimentData],
+    def from_file(cls: type[ExperimentData],
                   project_dir: Path | str,
                   wait_for_creation: bool = False,
                   max_tries: int = MAX_TRIES) -> ExperimentData:
@@ -432,9 +438,9 @@ class ExperimentData:
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / project_dir
-            except ValueError:  # get_original_cwd() hydra initialization error
+            except ValueError as exc:  # get_original_cwd() error
                 raise FileNotFoundError(
-                    f"Cannot find the folder {project_dir} !")
+                    f"Cannot find the folder {project_dir} !") from exc
 
             return _from_file_attempt(project_dir=filename_with_path,
                                       wait_for_creation=wait_for_creation,
@@ -467,7 +473,7 @@ class ExperimentData:
             return cls(**config)
 
     @classmethod
-    def from_data(cls, data: Optional[Dict[int, ExperimentSample]] = None,
+    def from_data(cls, data: Optional[dict[int, ExperimentSample]] = None,
                   domain: Optional[Domain] = None,
                   project_dir: Optional[Path] = None) -> ExperimentData:
         """
@@ -639,7 +645,7 @@ class ExperimentData:
         self._domain.store(subdirectory / DOMAIN_FILENAME)
         self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
 
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+    def to_numpy(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Convert the ExperimentData object to a tuple of numpy arrays.
 
@@ -657,7 +663,7 @@ class ExperimentData:
         return df_input.to_numpy(), df_output.to_numpy()
 
     def to_pandas(self, keep_references: bool = False
-                  ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                  ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Convert the ExperimentData object to pandas DataFrames.
 
@@ -803,9 +809,9 @@ class ExperimentData:
             d._add(data)
 
         else:
-            raise ValueError((
+            raise ValueError(
                 f"The input to this function should be an ExperimentSample or "
-                f"ExperimentData object, not {type(data)} ")
+                f"ExperimentData object, not {type(data)} "
             )
 
         if in_place:
@@ -831,8 +837,8 @@ class ExperimentData:
         d = self._copy(in_place=in_place)
 
         # remove the last n rows
-        for i in range(number_of_rows):
-            d.data.pop(self.index[-1])
+        for _i in range(number_of_rows):
+            d.data.pop(d.index[-1])
 
         if in_place:
             return None
@@ -879,6 +885,9 @@ class ExperimentData:
         copy_self = self.reset_index()
         # TODO: Reset isnt necessary, only copy
         copy_other = experiment_data.reset_index()
+
+        if not copy_self.data:
+            return copy_other
 
         for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
             copy_self.data[i] = es_self + es_other
@@ -1029,7 +1038,7 @@ class ExperimentData:
         self._domain += experiment_sample.domain
         self.data[idx] = experiment_sample
 
-    def get_open_job(self) -> Tuple[int, ExperimentSample]:
+    def get_open_job(self) -> tuple[int, ExperimentSample]:
         """
         Get the first open job in the ExperimentData object.
 
@@ -1139,106 +1148,6 @@ class ExperimentData:
         else:
             return d
 
-    #                                                              Optimization
-    # =========================================================================
-
-    def optimize(self, optimizer: Block,
-                 data_generator: DataGenerator,
-                 iterations: int,
-                 x0_selection: Literal['best', 'random',
-                                       'last',
-                                       'new'] | ExperimentData = 'best',
-                 kwargs: Optional[Dict[str, Any]] = None,
-                 sampler: Optional[Block] = None,
-                 overwrite: bool = False) -> None:
-        """
-        Optimize the ExperimentData object.
-
-        Parameters
-        ----------
-        optimizer : Block
-            Optimizer object.
-        data_generator : DataGenerator
-            DataGenerator object.
-        iterations : int
-            Number of iterations.
-        x0_selection : {'best', 'random', 'last', 'new'} or ExperimentData
-            How to select the initial design, by default 'best'.
-        sampler : Block, optional
-            Sampler to use if x0_selection is 'new', by default None.
-        overwrite : bool, optional
-            If True, the optimizer will overwrite the current data, by default
-            False.
-
-        Raises
-        ------
-        ValueError
-            If an invalid x0_selection is specified.
-
-        Examples
-        --------
-        >>> experiment_data.optimize(optimizer, data_generator, iterations=10)
-        """
-        if kwargs is None:
-            kwargs = {}
-
-        population = optimizer.population if hasattr(
-            optimizer, 'population') else 1
-
-        opt_type = optimizer.type if hasattr(optimizer, 'type') else None
-
-        if iterations < population and x0_selection == 'new':
-            raise ValueError(
-                f'For creating new samples, the total number of '
-                f'requested iterations ({iterations}) cannot be '
-                f'smaller than the population size '
-                f'({population})')
-
-        x0 = x0_factory(experiment_data=self, mode=x0_selection,
-                        n_samples=population, sampler=sampler)
-
-        x0 = data_generator.call(data=x0, mode='sequential')
-
-        if len(x0) < population:
-            raise ValueError((
-                f"There are {len(self.data)} samples available, "
-                f"need {population} for initial population!"
-            ))
-
-        optimizer.arm(data=x0)
-        data_generator.arm(data=x0)
-
-        x = x0
-
-        n_updates = range(
-            iterations // population + (iterations % population > 0))
-
-        if opt_type == 'scipy':
-            # Scipy optimizers work differently since they are not
-            # able to output a single update step
-            optimizer._iterate(data=x, data_generator=data_generator,
-                               iterations=iterations, kwargs=kwargs,
-                               overwrite=overwrite)
-        else:
-            for _ in n_updates:
-                if overwrite:
-                    x = optimizer.call(data=x,
-                                       grad_fn=data_generator.dfdx)
-                else:
-                    x += optimizer.call(data=x,
-                                        grad_fn=data_generator.dfdx)
-                x = data_generator.call(data=x, mode='sequential',
-                                        **kwargs)
-
-        if not overwrite:
-            x.remove_rows_bottom(
-                number_of_rows=population * n_updates.stop - iterations,
-                in_place=True)
-            self._add(experiment_data=x[population:])
-
-        else:
-            self._add(experiment_data=x)
-
     #                                                         Project directory
     # =========================================================================
 
@@ -1276,66 +1185,6 @@ class ExperimentData:
         self.set_project_dir(project_dir, in_place=True)
 
 # =============================================================================
-
-
-def x0_factory(experiment_data: ExperimentData,
-               mode: str | ExperimentData, n_samples: int,
-               sampler: Block) -> ExperimentData:
-    """Set the initial population to the best n samples of the given data
-
-    Parameters
-    ----------
-    experiment_data : ExperimentData
-        Data to be used for the initial population
-    mode : str
-        Mode of selecting the initial population, by default 'best'
-        The following modes are available:
-
-            - best: select the best n samples
-            - new: create n new samples
-            - random: select n random samples
-            - last: select the last n samples
-    n_samples : int
-        Number of samples to select
-    sampler : Block or str
-        Sampler object containing the sampling strategy or one of the
-        built-in sampler names. Used if mode is 'new'
-
-    Returns
-    -------
-    ExperimentData
-        Initial population of the optimization
-
-    Raises
-    ------
-    ValueError
-        Raises when the mode is not recognized
-    """
-    if isinstance(mode, ExperimentData):
-        x0 = mode
-
-    if mode == 'new':
-        sampler.arm(data=experiment_data)
-        x0 = sampler.call(data=experiment_data, n_samples=n_samples)
-
-    elif mode == 'best':
-        x0 = experiment_data.get_n_best_output(n_samples)
-
-    elif mode == 'random':
-        x0 = experiment_data.select(
-            np.random.choice(
-                experiment_data.index,
-                size=n_samples, replace=False))
-
-    elif mode == 'last':
-        x0 = experiment_data.select(
-            experiment_data.index[-n_samples:])
-
-    else:
-        raise ValueError(
-            f'Unknown selection mode {mode}, use best, random or last')
-
-    return x0.reset_index()
 
 
 def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
@@ -1377,28 +1226,28 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
                 project_dir=project_dir)
         except (EmptyFileError, DecodeError):
             tries += 1
-            logger.debug((
+            logger.debug(
                 f"Error reading a file, retrying"
                 f" {tries+1}/{MAX_TRIES}"
-            ))
+            )
             sleep(random.uniform(0.5, 2.5))
 
-        except FileNotFoundError:
+        except FileNotFoundError as exc:
             if not wait_for_creation:
                 raise FileNotFoundError(
-                    f"File {subdirectory} not found")
+                    f"File {subdirectory} not found") from exc
 
             tries += 1
-            logger.debug((
+            logger.debug(
                 f"FileNotFoundError({subdirectory}), sleeping!"
-            ))
+            )
             sleep(random.uniform(9.5, 11.0))
 
     raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)
 
 
 def convert_numpy_to_dataframe_with_domain(
-        array: np.ndarray, names: Optional[List[str]],
+        array: np.ndarray, names: Optional[list[str]],
         mode: Literal['input', 'output']
 ) -> pd.DataFrame:
     """
@@ -1457,8 +1306,8 @@ def merge_dicts(list_of_dicts):
     return dict(merged_dict)
 
 
-def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
-                  ) -> List[Dict[str, Any]]:
+def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
+                  ) -> list[dict[str, Any]]:
     """
     Convert the DataTypes to a list of dictionaries
 
@@ -1495,8 +1344,8 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
 
         try:
             df = pd.read_csv(filepath, header=0, index_col=0)
-        except pd.errors.EmptyDataError:
-            raise DecodeError(filepath)
+        except pd.errors.EmptyDataError as exc:
+            raise DecodeError(filepath) from exc
 
         return _dict_factory(df)
 
@@ -1512,12 +1361,12 @@ def _dict_factory(data: pd.DataFrame | List[Dict[str, Any]] | None | Path | str
     raise ValueError(f"Data type {type(data)} not supported")
 
 
-def data_factory(input_data: List[Dict[str, Any]],
-                 output_data: List[Dict[str, Any]],
+def data_factory(input_data: list[dict[str, Any]],
+                 output_data: list[dict[str, Any]],
                  domain: Domain,
                  jobs: pd.Series,
                  project_dir: Path,
-                 ) -> Dict[int, ExperimentSample]:
+                 ) -> dict[int, ExperimentSample]:
     """
     Convert the input and output data to a defaultdictionary
     of ExperimentSamples
@@ -1557,7 +1406,7 @@ def data_factory(input_data: List[Dict[str, Any]],
     return defaultdict(ExperimentSample, data)
 
 
-def remove_nan_and_none_keys_inplace(data_list: List[Dict[str, Any]]) -> None:
+def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
     for data in data_list:
         keys_to_remove = [k for k, v in data.items() if v is None or (
             isinstance(v, float) and np.isnan(v))]
@@ -1587,8 +1436,8 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
         try:
             df = pd.read_csv(filepath,
                              header=0, index_col=0).squeeze()
-        except pd.errors.EmptyDataError:
-            raise DecodeError(filepath)
+        except pd.errors.EmptyDataError as exc:
+            raise DecodeError(filepath) from exc
 
         # If the jobs is jut one value, it is parsed as a string
         # So, make sure that we return a pd.Series either way!

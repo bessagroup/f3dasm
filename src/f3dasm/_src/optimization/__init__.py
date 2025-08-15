@@ -5,14 +5,19 @@ Module for optimization
 # =============================================================================
 
 # Standard
-from typing import Callable, List
+from functools import partial
 
-from .numpy_implementations import random_search
-from .optimizer_factory import available_optimizers, create_optimizer
-from .scipy_implementations import cg, lbfgsb, nelder_mead
+from ._imports import try_import
 
 # Local
+from .errors import faulty_optimizer
+from .optimizer_factory import create_optimizer
 
+with try_import() as _optuna_imports:
+    from .optuna_implementations import tpesampler
+
+with try_import() as _scipy_imports:
+    from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -26,12 +31,11 @@ __status__ = 'Stable'
 
 # =============================================================================
 
-
 __all__ = [
     'create_optimizer',
+    "OptunaOptimizer",
+    'tpesampler',
     'cg',
     'lbfgsb',
     'nelder_mead',
-    'random_search',
-    'available_optimizers',
 ]

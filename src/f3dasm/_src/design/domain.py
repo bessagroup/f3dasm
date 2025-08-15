@@ -11,9 +11,10 @@ from __future__ import annotations
 # Standard
 import json
 import math
+from collections.abc import Sequence
 from itertools import zip_longest
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Sequence, Type
+from typing import Any, Literal, Optional
 
 # Third-party core
 import numpy as np
@@ -21,10 +22,17 @@ from omegaconf import DictConfig, OmegaConf
 
 # Local
 from ..errors import DecodeError, EmptyFileError
-from .parameter import (CategoricalParameter, CategoricalType,
-                        ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, LoadFunction, Parameter,
-                        StoreFunction)
+from .parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    CategoricalType,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    LoadFunction,
+    Parameter,
+    StoreFunction,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -47,8 +55,8 @@ class Domain:
         Dict of output parameters, by default None
     """
 
-    def __init__(self, input_space: Dict[str, Parameter] = None,
-                 output_space: Dict[str, Parameter] = None):
+    def __init__(self, input_space: dict[str, Parameter] = None,
+                 output_space: dict[str, Parameter] = None):
         self.input_space = input_space if input_space is not None else {}
         self.output_space = output_space if output_space is not None else {}
 
@@ -120,7 +128,7 @@ class Domain:
         )
 
     @property
-    def input_names(self) -> List[str]:
+    def input_names(self) -> list[str]:
         """
         Retrieve the input space names
 
@@ -132,7 +140,7 @@ class Domain:
         return list(self.input_space.keys())
 
     @property
-    def output_names(self) -> List[str]:
+    def output_names(self) -> list[str]:
         """
         Retrieve the output space names
 
@@ -185,11 +193,21 @@ class Domain:
             Domain object containing the constant parameters
         """
         return self._filter(ConstantParameter)
+
+    @property
+    def array(self) -> Domain:
+        """Filter the array parameters of the domain
+        Returns
+        -------
+        Domain
+            Domain object containing the array parameters
+        """
+        return self._filter(ArrayParameter)
 #                                                      Alternative constructors
 # =============================================================================
 
     @classmethod
-    def from_file(cls: Type[Domain], filename: Path | str) -> Domain:
+    def from_file(cls: type[Domain], filename: Path | str) -> Domain:
         """
         Create a Domain object from a JSON file.
 
@@ -218,10 +236,10 @@ class Domain:
             raise EmptyFileError(filename)
 
         try:
-            with open(filename, 'r') as f:
+            with open(filename) as f:
                 domain_dict = json.load(f)
-        except json.JSONDecodeError:
-            raise DecodeError(filename)
+        except json.JSONDecodeError as exc:
+            raise DecodeError(filename) from exc
 
         input_space = {k: Parameter.from_dict(
             v) for k, v in domain_dict['input_space'].items()}
@@ -231,7 +249,7 @@ class Domain:
         return cls(input_space=input_space, output_space=output_space)
 
     @classmethod
-    def from_yaml(cls: Type[Domain], cfg: DictConfig) -> Domain:
+    def from_yaml(cls: type[Domain], cfg: DictConfig) -> Domain:
         """Initialize a Domain from a Hydra YAML configuration file key
 
 
@@ -287,8 +305,8 @@ class Domain:
         return domain
 
     @classmethod
-    def from_data(cls, input_data: List[Dict[str, Any]],
-                  output_data: List[Dict[str, Any]]
+    def from_data(cls, input_data: list[dict[str, Any]],
+                  output_data: list[dict[str, Any]]
                   ) -> Domain:
         """
         Initialize a Domain from input and output data.
@@ -496,8 +514,37 @@ class Domain:
         """
         self._add(name, ConstantParameter(value))
 
+    def add_array(self, name: str, shape: int | Sequence[int],
+                  low: float = -np.inf,
+                  high: float = np.inf):
+        """Add a new array input parameter to the domain.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter.
+        shape : Sequence[int] or int
+            Shape of the array input parameter.
+        low : float, optional
+            Lower bound of the input parameter, by default -np.inf.
+        high : float, optional
+            Upper bound of the input parameter, by default np.inf.
+
+        Example
+        -------
+        >>> domain = Domain()
+        >>> domain.add_array('param1', [3, 4], 0., 1.)
+        >>> domain.input_space
+        {'param1': ArrayParameter(shape=[3, 4], lower_bound=0.0,
+        upper_bound=1.0)}
+        """
+        self._add(name, ArrayParameter(
+            shape=shape,
+            lower_bound=low,
+            upper_bound=high))
+
     def add(self, name: str,
-            type: Literal['float', 'int', 'category', 'constant'],
+            type: Literal['float', 'int', 'category', 'constant', 'array'],
             **kwargs):
         """Add a new input parameter to the domain.
 
@@ -532,6 +579,8 @@ class Domain:
             self.add_category(name, **kwargs)
         elif type == 'constant':
             self.add_constant(name, **kwargs)
+        elif type == 'array':
+            self.add_array(name, **kwargs)
         else:
             raise ValueError(
                 f"Unknown type {type}!"
@@ -600,7 +649,7 @@ class Domain:
                 for _, parameter in self.continuous.input_space.items()]
         )
 
-    def _filter(self, type: Type[Parameter]) -> Domain:
+    def _filter(self, type: type[Parameter]) -> Domain:
         """Filter the parameters of the domain by type
 
         Parameters
@@ -636,7 +685,7 @@ class Domain:
 # =============================================================================
 
 
-def make_nd_continuous_domain(bounds: np.ndarray | List[List[float]],
+def make_nd_continuous_domain(bounds: np.ndarray | list[list[float]],
                               dimensionality: Optional[int] = None) -> Domain:
     """Create a continuous domain.
 

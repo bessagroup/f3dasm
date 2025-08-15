@@ -3,12 +3,20 @@ from typing import Callable, Dict
 import numpy as np
 import pytest
 from hypothesis import given, settings
-from hypothesis.strategies import (SearchStrategy, composite, floats, integers,
-                                   text)
+from hypothesis.strategies import (
+    SearchStrategy,
+    composite,
+    floats,
+    integers,
+    text,
+)
 
-from f3dasm._src.design.parameter import (CategoricalParameter,
-                                          ContinuousParameter,
-                                          DiscreteParameter, Parameter)
+from f3dasm._src.design.parameter import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    Parameter,
+)
 from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke

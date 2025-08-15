@@ -5,10 +5,9 @@ Module for data-generation
 # =============================================================================
 
 # Standard
-from typing import List
 
 # Local
-from ..core import DataGenerator
+from ..datagenerator import DataGenerator
 from .datagenerator_factory import create_datagenerator
 
 #                                                          Authorship & Credits

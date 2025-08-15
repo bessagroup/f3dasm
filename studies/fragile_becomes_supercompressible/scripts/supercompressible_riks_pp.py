@@ -8,6 +8,7 @@ Last modified on 2020-09-23 07:10:39
 import pickle
 
 import numpy as np
+
 # imports
 from abaqus import session  # NOQA
 

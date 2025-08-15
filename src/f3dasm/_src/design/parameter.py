@@ -7,7 +7,8 @@ from __future__ import annotations
 
 # Standard
 import pickle
-from typing import Any, ClassVar, Iterable, Optional, Protocol, Union
+from collections.abc import Iterable
+from typing import Any, ClassVar, Optional, Protocol, Union
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -113,8 +114,8 @@ class Parameter:
 
         if not to_disk and (
                 store_function is not None or load_function is not None):
-            raise ValueError(("If 'to_disk' is False, 'store_function' and"
-                              "load_function' must be None.")
+            raise ValueError("If 'to_disk' is False, 'store_function' and"
+                             "load_function' must be None."
                              )
 
         self.to_disk = to_disk
@@ -259,6 +260,12 @@ class Parameter:
             return ConstantParameter(
                 value=param_dict.get('value')
             )
+        elif param_type == 'array':
+            return ArrayParameter(
+                shape=param_dict.get('shape', ()),
+                lower_bound=param_dict.get('lower_bound', float('-inf')),
+                upper_bound=param_dict.get('upper_bound', float('inf'))
+            )
         else:
             raise ValueError(f"Unknown parameter type: {param_type}")
 
@@ -350,8 +357,8 @@ class ConstantParameter(Parameter):
         """Check if the value is hashable."""
         try:
             hash(self.value)
-        except TypeError:
-            raise TypeError("The value must be hashable.")
+        except TypeError as exc:
+            raise TypeError("The value must be hashable.") from exc
 
     def __str__(self):
         return f"ConstantParameter(value={self.value})"
@@ -403,14 +410,14 @@ class ContinuousParameter(Parameter):
         self.log = log
 
         if self.log and self.lower_bound <= 0.0:
-            raise ValueError((
+            raise ValueError(
                 f"The `lower_bound` value must be larger than 0 for a "
                 f"log distribution (low={self.lower_bound}, "
                 f"high={self.upper_bound})."
-            ))
+            )
         self._validate_range()
 
-    def __add__(self, other: Parameter) -> "ContinuousParameter":
+    def __add__(self, other: Parameter) -> ContinuousParameter:
         if not isinstance(other, ContinuousParameter):
             raise ValueError(
                 "Cannot add non-continuous parameter to continuous!")
@@ -443,10 +450,10 @@ class ContinuousParameter(Parameter):
 
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
-            raise ValueError((
+            raise ValueError(
                 f"The `upper_bound` value must be larger than `lower_bound`. "
                 f"(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound})")
+                f"upper_bound={self.upper_bound})"
             )
 
     def _copy(self) -> ContinuousParameter:
@@ -557,7 +564,7 @@ class DiscreteParameter(Parameter):
         return (f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound}, step={self.step})")
 
-    def __add__(self, other: Parameter) -> "DiscreteParameter":
+    def __add__(self, other: Parameter) -> DiscreteParameter:
         if isinstance(other, CategoricalParameter):
             return other + self
         if isinstance(other, ConstantParameter):
@@ -692,5 +699,120 @@ class CategoricalParameter(Parameter):
 # =============================================================================
 
 
+class ArrayParameter(Parameter):
+    """
+    Create a search space parameter that is an array.
+
+    Parameters
+    ----------
+    dimensionality : Iterable[int]
+        The dimensions of the array.
+    lower_bound : float, optional
+        The lower bound of the parameter. Defaults to -inf.
+    upper_bound : float, optional
+        The upper bound of the parameter. Defaults to inf.
+
+    Raises
+    ------
+    ValueError
+        If `dimensionality` is empty or contains non-positive integers.
+        If `upper_bound` is less than or equal to `lower_bound`.
+
+    Examples
+    --------
+    >>> param = ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    >>> print(param)
+    ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    """
+
+    def __init__(self, shape: int | Iterable[int],
+                 lower_bound: float = float('-inf'),
+                 upper_bound: float = float('inf')):
+        super().__init__()
+        if isinstance(shape, int):
+            shape = [shape]
+        self.shape = tuple(int(d) for d in shape)
+        if not self.shape or any(d <= 0 for d in self.shape):
+            raise ValueError("Shape must be a non-empty iterable of "
+                             "positive integers.")
+        self.lower_bound = float(lower_bound)
+        self.upper_bound = float(upper_bound)
+        self._validate_range()
+
+    def _validate_range(self):
+        if self.upper_bound <= self.lower_bound:
+            raise ValueError(
+                f"The `upper_bound` value must be larger than `lower_bound`. "
+                f"(lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})"
+            )
+
+    def __str__(self):
+        return (f"ArrayParameter(shape={self.shape}, "
+                f"lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})")
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}"
+                f"(shape={self.shape}, "
+                f"lower_bound={self.lower_bound}, "
+                f"upper_bound={self.upper_bound})")
+
+    def __eq__(self, other: Parameter) -> bool:
+        if not isinstance(other, ArrayParameter):
+            return False
+        return (
+            self.shape == other.shape and self.lower_bound
+            == other.lower_bound and self.upper_bound == other.upper_bound)
+
+    def _copy(self) -> ArrayParameter:
+        """
+        Create a copy of the ArrayParameter object.
+
+        Returns
+        -------
+        ArrayParameter
+            A copy of the ArrayParameter object.
+
+        Examples
+        --------
+        >>> param = ArrayParameter(shape=[3, 4],
+        lower_bound=0.0, upper_bound=1.0)
+        >>> param_copy = param._copy()
+        """
+        return ArrayParameter(
+            shape=self.shape,
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound
+        )
+
+    def to_dict(self) -> dict:
+        param_dict = super().to_dict()
+        param_dict['type'] = 'array'
+        param_dict['shape'] = self.shape
+        param_dict['lower_bound'] = self.lower_bound
+        param_dict['upper_bound'] = self.upper_bound
+        return param_dict
+
+    def to_continuous(self) -> list[ContinuousParameter]:
+        """
+        Convert the ArrayParameter to a list of ContinuousParameters.
+
+        Returns
+        -------
+        list[ContinuousParameter]
+            A list of ContinuousParameters for each dimension.
+
+        Examples
+        --------
+        >>> param = ArrayParameter(shape=[3, 4],
+        lower_bound=0.0, upper_bound=1.0)
+        >>> continuous_params = param.to_continuous()
+        """
+        return [ContinuousParameter(
+            lower_bound=self.lower_bound,
+            upper_bound=self.upper_bound) for _ in self.shape]
+
+
 PARAMETERS = [CategoricalParameter, ConstantParameter,
-              ContinuousParameter, DiscreteParameter]
+              ContinuousParameter, DiscreteParameter, ArrayParameter]

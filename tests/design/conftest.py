@@ -1,9 +1,11 @@
 import pandas as pd
 import pytest
 
-from f3dasm._src.design.parameter import (CategoricalParameter,
-                                          ContinuousParameter,
-                                          DiscreteParameter)
+from f3dasm._src.design.parameter import (
+    CategoricalParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 from f3dasm.design import Domain
 
 

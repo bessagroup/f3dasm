@@ -9,10 +9,11 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 from copy import deepcopy
+
 # Standard
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type
+from typing import Any, Callable, Literal, Optional
 
 # Third-party
 import autograd.numpy as np
@@ -38,8 +39,8 @@ class JobStatus(Enum):
 
 
 class ExperimentSample:
-    def __init__(self, input_data: Optional[Dict[str, Any]] = None,
-                 output_data: Optional[Dict[str, Any]] = None,
+    def __init__(self, input_data: Optional[dict[str, Any]] = None,
+                 output_data: Optional[dict[str, Any]] = None,
                  domain: Optional[Domain] = None,
                  job_status: Optional[str] = None,
                  project_dir: Optional[Path] = None):
@@ -97,8 +98,8 @@ class ExperimentSample:
             self.job_status = JobStatus[job_status]
         # If nan is given as key, there is a problem with the decoding of
         # the jobs.csv file
-        except KeyError:
-            raise DecodeError()
+        except KeyError as exc:
+            raise DecodeError() from exc
 
         self.project_dir = project_dir
 
@@ -190,7 +191,7 @@ class ExperimentSample:
             project_dir=self.project_dir)
 
     @property
-    def input_data(self) -> Dict[str, Any]:
+    def input_data(self) -> dict[str, Any]:
         """
         Get the input data of the experiment.
 
@@ -202,7 +203,7 @@ class ExperimentSample:
         return {k: self._get_input(k) for k in self._input_data}
 
     @property
-    def output_data(self) -> Dict[str, Any]:
+    def output_data(self) -> dict[str, Any]:
         """
         Get the output data of the experiment.
 
@@ -217,7 +218,7 @@ class ExperimentSample:
     # =========================================================================
 
     @classmethod
-    def from_numpy(cls: Type[ExperimentSample], input_array: np.ndarray,
+    def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray,
                    domain: Optional[Domain] = None) -> ExperimentSample:
         """
         Create an ExperimentSample instance from a numpy array.
@@ -397,7 +398,7 @@ class ExperimentSample:
         >>> sample.input_data['param1']
         0
         """
-        def replace_nan_in_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+        def replace_nan_in_dict(data: dict[str, Any]) -> dict[str, Any]:
             return {k: (replacement_value if np.isnan(v) else v)
                     for k, v in data.items()}
 
@@ -421,7 +422,7 @@ class ExperimentSample:
         >>> sample.input_data['param1']
         1.23
         """
-        def round_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+        def round_dict(data: dict[str, Any]) -> dict[str, Any]:
             return {k: round(v, decimals) if isinstance(v, (int, float))
                     else v for k, v in data.items()}
 
@@ -455,7 +456,7 @@ class ExperimentSample:
     #                                                                 Exporting
     # =========================================================================
 
-    def to_multiindex(self) -> Dict[Tuple[str, str], Any]:
+    def to_multiindex(self) -> dict[tuple[str, str], Any]:
         """
         Convert the experiment sample to a multiindex dictionary.
         Used to display the data prettily as a table in a Jupyter notebook.
@@ -477,7 +478,7 @@ class ExperimentSample:
                 **{('output', k): v for k, v in self._output_data.items()},
                 }
 
-    def to_numpy(self) -> Tuple[np.ndarray, np.ndarray]:
+    def to_numpy(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Convert the experiment sample to numpy arrays.
 
@@ -496,7 +497,7 @@ class ExperimentSample:
                 np.array(list(self.output_data.values()))
                 )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the experiment sample to a dictionary.
 
@@ -517,8 +518,8 @@ class ExperimentSample:
     # =========================================================================
 
     def store(self, name: str, object: Any, to_disk: bool = False,
-              store_function: Optional[Type[Callable]] = None,
-              load_function: Optional[Type[Callable]] = None):
+              store_function: Optional[type[Callable]] = None,
+              load_function: Optional[type[Callable]] = None):
         """
         Store an object in the experiment sample.
 

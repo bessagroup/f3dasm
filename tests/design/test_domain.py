@@ -1,14 +1,15 @@
 import json
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from f3dasm._src.design.domain import Domain
-from f3dasm._src.design.parameter import (CategoricalParameter,
-                                          ConstantParameter,
-                                          ContinuousParameter,
-                                          DiscreteParameter)
+from f3dasm._src.design.parameter import (
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 
 pytestmark = pytest.mark.smoke
 
@@ -207,7 +208,7 @@ def test_domain_store(tmp_path):
     json_file = tmp_path / "domain.json"
     domain.store(json_file)
 
-    with open(json_file, 'r') as f:
+    with open(json_file) as f:
         data = json.load(f)
 
     assert 'input_space' in data

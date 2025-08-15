@@ -178,7 +178,7 @@ def test_store_to_disk(sample_domain, tmp_path):
         return path
 
     def dummy_load_function(path):
-        with open(path, 'r') as f:
+        with open(path) as f:
             return f.read()
 
     sample = ExperimentSample(domain=sample_domain, project_dir=tmp_path)

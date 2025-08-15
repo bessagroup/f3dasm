@@ -4,6 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
+SPHINXBUILD_UV = uv run sphinx-build
 PAPER         =
 SOURCEDIR	  = source
 BUILDDIR      = build
@@ -50,10 +51,21 @@ html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(SOURCEDIR) $(BUILDDIR)/html 
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
-	
+
+uv-html:
+	$(SPHINXBUILD_UV) -b html $(ALLSPHINXOPTS) $(SOURCEDIR) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+	@echo "You can now view the documentation at http://localhost:8000"
+	@echo "Run 'python -m http.server' in the $(BUILDDIR)/html directory to start a local server."
+
 html-open:
 	make html
 	xdg-open ./$(BUILDDIR)/html/index.html
+
+uv-html-open:
+	make uv-html
+	open ./$(BUILDDIR)/html/index.html
 
 clean-autosummary:
 	-rm -rf ./$(SOURCEDIR)/$(APIDOCDIR)/*.rst

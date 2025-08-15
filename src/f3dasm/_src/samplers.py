@@ -7,7 +7,7 @@ from __future__ import annotations
 
 # Standard
 from itertools import product
-from typing import Dict, Literal, Optional
+from typing import Literal, Optional
 
 # Third-party
 import numpy as np
@@ -178,6 +178,44 @@ def sample_np_random_uniform(
     return samples
 
 
+def sample_np_random_uniform_array(
+        domain: Domain, n_samples: int,
+        seed: Optional[int] = None, **kwargs) -> np.ndarray:
+    """
+    Sample with numpy random uniform distribution for array parameters.
+
+    Parameters
+    ----------
+    domain : Domain
+        The domain object containing the input space.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for sampling.
+
+    Returns
+    -------
+    np.ndarray
+        The sampled data.
+    """
+    samples = []
+    rng = np.random.default_rng(seed)
+    for _ in range(n_samples):
+        s = {}
+        for name, param in domain.input_space.items():
+            sample = rng.uniform(low=0.0, high=1.0, size=param.shape)
+            # stretch samples
+            sample = (sample * (
+                param.upper_bound - param.lower_bound) + param.lower_bound
+            )
+            s[name] = sample
+        samples.append(s)
+
+    return samples
+
+
 def sample_latin_hypercube(
         domain: Domain, n_samples: int,
         seed: Optional[int] = None, **kwargs) -> np.ndarray:
@@ -212,7 +250,8 @@ def sample_latin_hypercube(
 
 
 def sample_sobol_sequence(
-        domain: Domain, n_samples: int, **kwargs) -> np.ndarray:
+        domain: Domain, n_samples: int,
+        dimensionality: int, **kwargs) -> np.ndarray:
     """
     Sample with Sobol sequence sampling.
 
@@ -222,6 +261,8 @@ def sample_sobol_sequence(
         The domain object containing the input space.
     n_samples : int
         The number of samples to generate.
+    dimensionality : int
+        The dimensionality of the input space.
     **kwargs : dict
         Additional parameters for sampling.
 
@@ -230,7 +271,7 @@ def sample_sobol_sequence(
     np.ndarray
         The sampled data.
     """
-    samples = sobol_sequence.sample(N=n_samples, D=len(domain))
+    samples = sobol_sequence.sample(N=n_samples, D=dimensionality)
 
     # stretch samples
     samples = _stretch_samples(domain, samples)
@@ -276,31 +317,53 @@ class RandomUniform(Block):
             domain=data.domain.continuous, n_samples=n_samples,
             seed=self.seed)
 
+        data_continuous = ExperimentData(input_data=pd.DataFrame(
+            _continuous,
+            columns=data.domain.continuous.input_names),
+            domain=data.domain.continuous)
+
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
             seed=self.seed)
+
+        data_discrete = ExperimentData(input_data=pd.DataFrame(
+            _discrete,
+            columns=data.domain.discrete.input_names),
+            domain=data.domain.discrete)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
             seed=self.seed)
 
+        data_categorical = ExperimentData(input_data=pd.DataFrame(
+            _categorical,
+            columns=data.domain.categorical.input_names),
+            domain=data.domain.categorical)
+
         _constant = sample_constant(data.domain.constant, n_samples)
 
-        df = pd.concat(
-            [pd.DataFrame(_continuous,
-                          columns=data.domain.continuous.input_names),
-             pd.DataFrame(
-                 _discrete, columns=data.domain.discrete.input_names),
-             pd.DataFrame(
-                _categorical,
-                columns=data.domain.categorical.input_names),
-             pd.DataFrame(_constant,
-                          columns=data.domain.constant.input_names)],
-            axis=1
-        )[data.domain.input_names]
+        data_constant = ExperimentData(input_data=pd.DataFrame(
+            _constant,
+            columns=data.domain.constant.input_names),
+            domain=data.domain.constant)
 
-        return type(data)(domain=data.domain._copy(),
-                          input_data=df)
+        _array = sample_np_random_uniform_array(
+            domain=data.domain.array, n_samples=n_samples,
+            seed=self.seed
+        )
+
+        data_array = ExperimentData(
+            input_data=_array,
+            domain=data.domain.array,
+        )
+
+        d = ExperimentData()
+
+        for _d in [data_continuous, data_discrete,
+                   data_categorical, data_constant, data_array]:
+            d = d.join(_d)
+
+        return d
 
 
 def random(seed: Optional[int] = None, **kwargs) -> Block:
@@ -338,7 +401,7 @@ class Grid(Block):
 
     def call(self, data: ExperimentData,
              stepsize_continuous_parameters:
-             Optional[Dict[str, float] | float] = None,
+             Optional[dict[str, float] | float] = None,
              **kwargs) -> ExperimentData:
         """
         Sample data using the Grid method.
@@ -397,8 +460,8 @@ class Grid(Block):
                           columns=_iterdict, dtype=object
                           )[data.domain.input_names]
 
-        return type(data)(domain=data.domain._copy(),
-                          input_data=df)
+        return ExperimentData(domain=data.domain._copy(),
+                              input_data=df)
 
 
 def grid(**kwargs) -> Block:
@@ -453,34 +516,56 @@ class Sobol(Block):
             The sampled data.
         """
         _continuous = sample_sobol_sequence(
-            domain=data.domain.continuous, n_samples=n_samples)
+            domain=data.domain.continuous, n_samples=n_samples,
+            dimensionality=len(data.domain.continuous))
+
+        data_continuous = ExperimentData(input_data=pd.DataFrame(
+            _continuous,
+            columns=data.domain.continuous.input_names),
+            domain=data.domain.continuous)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
             seed=self.seed)
 
+        data_discrete = ExperimentData(input_data=pd.DataFrame(
+            _discrete,
+            columns=data.domain.discrete.input_names),
+            domain=data.domain.discrete)
+
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
             seed=self.seed)
 
-        _constant = sample_constant(
-            domain=data.domain.constant, n_samples=n_samples)
+        data_categorical = ExperimentData(input_data=pd.DataFrame(
+            _categorical,
+            columns=data.domain.categorical.input_names),
+            domain=data.domain.categorical)
 
-        df = pd.concat(
-            [pd.DataFrame(_continuous,
-                          columns=data.domain.continuous.input_names),
-             pd.DataFrame(
-                 _discrete, columns=data.domain.discrete.input_names),
-             pd.DataFrame(
-                _categorical,
-                columns=data.domain.categorical.input_names),
-             pd.DataFrame(_constant,
-                          columns=data.domain.constant.input_names)],
-            axis=1
-        )[data.domain.input_names]
+        _constant = sample_constant(data.domain.constant, n_samples)
 
-        return type(data)(domain=data.domain._copy(),
-                          input_data=df)
+        data_constant = ExperimentData(input_data=pd.DataFrame(
+            _constant,
+            columns=data.domain.constant.input_names),
+            domain=data.domain.constant)
+
+        _array = sample_np_random_uniform_array(
+            domain=data.domain.array, n_samples=n_samples,
+            seed=self.seed
+        )
+
+        data_array = ExperimentData(
+            input_data=_array,
+            domain=data.domain.array,
+        )
+
+        d = ExperimentData()
+
+        for _d in [data_continuous, data_discrete,
+                   data_categorical, data_constant, data_array]:
+            d = d.join(_d)
+
+        return d
 
 
 def sobol(seed: Optional[int] = None, **kwargs) -> Block:
@@ -540,32 +625,53 @@ class Latin(Block):
             domain=data.domain.continuous, n_samples=n_samples,
             seed=self.seed)
 
+        data_continuous = ExperimentData(input_data=pd.DataFrame(
+            _continuous,
+            columns=data.domain.continuous.input_names),
+            domain=data.domain.continuous)
+
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
             seed=self.seed)
+
+        data_discrete = ExperimentData(input_data=pd.DataFrame(
+            _discrete,
+            columns=data.domain.discrete.input_names),
+            domain=data.domain.discrete)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
             seed=self.seed)
 
-        _constant = sample_constant(
-            domain=data.domain.constant, n_samples=n_samples)
+        data_categorical = ExperimentData(input_data=pd.DataFrame(
+            _categorical,
+            columns=data.domain.categorical.input_names),
+            domain=data.domain.categorical)
 
-        df = pd.concat(
-            [pd.DataFrame(_continuous,
-                          columns=data.domain.continuous.input_names),
-             pd.DataFrame(
-                 _discrete, columns=data.domain.discrete.input_names),
-             pd.DataFrame(
-                _categorical,
-                columns=data.domain.categorical.input_names),
-             pd.DataFrame(_constant,
-                          columns=data.domain.constant.input_names)],
-            axis=1
-        )[data.domain.input_names]
+        _constant = sample_constant(data.domain.constant, n_samples)
 
-        return type(data)(domain=data.domain._copy(),
-                          input_data=df)
+        data_constant = ExperimentData(input_data=pd.DataFrame(
+            _constant,
+            columns=data.domain.constant.input_names),
+            domain=data.domain.constant)
+
+        _array = sample_np_random_uniform_array(
+            domain=data.domain.array, n_samples=n_samples,
+            seed=self.seed
+        )
+
+        data_array = ExperimentData(
+            input_data=_array,
+            domain=data.domain.array,
+        )
+
+        d = ExperimentData()
+
+        for _d in [data_continuous, data_discrete,
+                   data_categorical, data_constant, data_array]:
+            d = d.join(_d)
+
+        return d
 
 
 def latin(seed: Optional[int] = None, **kwargs) -> Block:
@@ -591,7 +697,7 @@ def latin(seed: Optional[int] = None, **kwargs) -> Block:
 
 _SAMPLERS = [random, latin, sobol, grid]
 
-SAMPLER_MAPPING: Dict[str, Block] = {
+SAMPLER_MAPPING: dict[str, Block] = {
     sampler.__name__.lower(): sampler for sampler in _SAMPLERS}
 
 #                                                              Factory function

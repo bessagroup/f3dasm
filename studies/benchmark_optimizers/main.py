@@ -29,8 +29,14 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from f3dasm import (Block, ExperimentData, ExperimentSample,
-                    create_datagenerator, create_optimizer, create_sampler)
+from f3dasm import (
+    Block,
+    ExperimentData,
+    ExperimentSample,
+    create_datagenerator,
+    create_optimizer,
+    create_sampler,
+)
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
 from f3dasm.design import Domain, make_nd_continuous_domain

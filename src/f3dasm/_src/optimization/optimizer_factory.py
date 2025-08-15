@@ -4,15 +4,18 @@ Module for the data generator factory.
 #                                                                       Modules
 # =============================================================================
 
-from __future__ import annotations
-
 # Standard
-from typing import Callable, Dict, List
+from __future__ import annotations
 
 # Local
 from ..core import Block
-from .numpy_implementations import random_search
-from .scipy_implementations import cg, lbfgsb, nelder_mead
+from ._imports import try_import
+
+with try_import() as _optuna_imports:
+    from .optuna_implementations import tpesampler
+
+with try_import() as _scipy_imports:
+    from .scipy_implementations import cg, lbfgsb, nelder_mead
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -23,38 +26,18 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
+OPTIMIZERS = {}
 
-def available_optimizers():
-    """
-    Returns a list of all available built-in optimization algorithms.
+if _scipy_imports.is_successful():
+    OPTIMIZERS['cg'] = cg
+    OPTIMIZERS['neldermead'] = nelder_mead
+    OPTIMIZERS['lbfgsb'] = lbfgsb
 
-    Returns
-    -------
-    List[str]
-        List of all available optimization algorithms
-    """
-    return list(get_optimizer_mapping().keys())
+if _optuna_imports.is_successful():
+    OPTIMIZERS['tpesampler'] = tpesampler
 
 
-def get_optimizer_mapping() -> Dict[str, Block]:
-    # List of available optimizers
-    _OPTIMIZERS: List[Callable] = [
-        cg, lbfgsb, nelder_mead, random_search]
-
-    # Try importing f3dasm_optimize package
-    try:
-        from f3dasm_optimize import optimizers_extension  # NOQA
-        _OPTIMIZERS.extend(optimizers_extension())
-    except ImportError:
-        pass
-
-    OPTIMIZER_MAPPING: Dict[str, Block] = {
-        opt.__name__.lower().replace(' ', '').replace('-', '').replace(
-            '_', ''): opt for opt in _OPTIMIZERS}
-
-    return OPTIMIZER_MAPPING
-
-
+# =============================================================================
 def create_optimizer(optimizer: str, **hyperparameters
                      ) -> Block:
     """
@@ -80,15 +63,14 @@ def create_optimizer(optimizer: str, **hyperparameters
     TypeError
         If the given type is not recognized.
     """
+
     if isinstance(optimizer, str):
 
         filtered_name = optimizer.lower().replace(
             ' ', '').replace('-', '').replace('_', '')
 
-        OPTIMIZER_MAPPING = get_optimizer_mapping()
-
-        if filtered_name in OPTIMIZER_MAPPING:
-            return OPTIMIZER_MAPPING[filtered_name](
+        if filtered_name in OPTIMIZERS:
+            return OPTIMIZERS[filtered_name](
                 **hyperparameters)
         else:
             raise KeyError(f"Unknown optimizer name: {optimizer}")
