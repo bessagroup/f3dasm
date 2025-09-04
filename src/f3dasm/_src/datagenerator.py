@@ -491,7 +491,13 @@ def datagenerator(output_names: Iterable[str]
 
                 # Store outputs in the experiment sample
                 for name, value in zip(output_names, _output):
-                    experiment_sample.store(name=name, object=value)
+                    if name in experiment_sample.domain.output_names:
+                        to_disk = experiment_sample.domain.output_space[name].\
+                            to_disk
+                    else:
+                        to_disk = False
+                    experiment_sample.store(
+                        name=name, object=value, to_disk=to_disk)
 
                 return experiment_sample
 
