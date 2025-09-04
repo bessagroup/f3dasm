@@ -105,3 +105,7 @@ Copyright 2025, Martin van der Schelling
 All rights reserved.
 
 This project is licensed under the BSD 3-Clause License. See [LICENSE](https://github.com/bessagroup/f3dasm/blob/main/LICENSE) for the full license text.
+
+## Acknowledgements
+
+Miguel A. Bessa gratefully acknowledges the financial support from the European Union’s Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 'LIGHTEN – Ultralight membrane structures toward a sustainable environment' H2020-MSCA-ITN-2020-LIGHTEN-956547.
