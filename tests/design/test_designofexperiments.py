@@ -2,12 +2,10 @@ import numpy as np
 import pytest
 
 from f3dasm._src.design.domain import _domain_factory
-from f3dasm._src.design.parameter import (
-    CategoricalParameter,
-    ConstantParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-)
+from f3dasm._src.design.parameter import (CategoricalParameter,
+                                          ConstantParameter,
+                                          ContinuousParameter,
+                                          DiscreteParameter)
 from f3dasm.design import Domain, make_nd_continuous_domain
 
 pytestmark = pytest.mark.smoke
@@ -172,12 +170,6 @@ def test_add_output_that_exists_with_exist_ok():
 def test_domain_factory_with_invalid_input():
     with pytest.raises(TypeError):
         _domain_factory(domain=0)
-
-
-def test_eq_different_types():
-    domain = Domain()
-    with pytest.raises(TypeError):
-        domain == 0
 
 
 def test_add_different_types():

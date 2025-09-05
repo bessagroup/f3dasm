@@ -7,7 +7,6 @@ Module for data-generation
 # Standard
 
 # Local
-from ..datagenerator import DataGenerator
 from .datagenerator_factory import create_datagenerator
 
 #                                                          Authorship & Credits
@@ -20,6 +19,5 @@ __status__ = 'Stable'
 # =============================================================================
 
 __all__ = [
-    'DataGenerator',
     'create_datagenerator'
 ]

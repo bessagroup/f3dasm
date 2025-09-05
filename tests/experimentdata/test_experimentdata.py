@@ -71,7 +71,7 @@ def experiment_data_with_output() -> ExperimentData:
         return 0.0
 
     data = f.call(data=data)
-    data.round(3)
+    data = data.round(3)
 
     data = data.set_project_dir('./test_project')
     return data
@@ -92,7 +92,7 @@ def experiment_data_without_output() -> ExperimentData:
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
         domain=data._domain)
 
-    data.round(3)
+    data = data.round(3)
 
     data = data.set_project_dir('./test_project')
     return data
@@ -122,7 +122,7 @@ def edata_expected_with_output() -> ExperimentData:
 
     data = f.call(data=data)
     # data.evaluate(data_generator=f, output_names=['y'])
-    data.round(3)
+    data = data.round(3)
 
     data = data.set_project_dir('./test_project')
 
@@ -145,7 +145,7 @@ def edata_expected_without_output() -> ExperimentData:
         input_data=np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]),
         domain=data._domain)
 
-    data.round(3)
+    data = data.round(3)
 
     data = data.set_project_dir('./test_project')
 
@@ -273,7 +273,7 @@ def test_experimentdata_creation_with_output(
     if domain is None:
         experiment_data._domain = edata_domain_with_output()
 
-    experiment_data.round(3)
+    experiment_data = experiment_data.round(3)
     assert experiment_data == edata_expected_with_output
 
 
@@ -312,5 +312,5 @@ def test_experimentdata_creation_without_output(
     if domain is None:
         experiment_data._domain = edata_domain_without_output()
 
-    experiment_data.round(3)
+    experiment_data = experiment_data.round(3)
     assert experiment_data == edata_expected_without_output

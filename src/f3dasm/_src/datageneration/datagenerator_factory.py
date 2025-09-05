@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 # Local
-from ..datagenerator import DataGenerator, datagenerator
+from ..core import DataGenerator, datagenerator
 from .benchmarkfunctions import BENCHMARK_FUNCTIONS
 
 #                                                          Authorship & Credits

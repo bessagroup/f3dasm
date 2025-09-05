@@ -5,12 +5,9 @@ Module for optimization
 # =============================================================================
 
 # Standard
-from functools import partial
-
 from ._imports import try_import
 
 # Local
-from .errors import faulty_optimizer
 from .optimizer_factory import create_optimizer
 
 with try_import() as _optuna_imports:

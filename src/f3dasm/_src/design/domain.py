@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -22,17 +23,10 @@ from omegaconf import DictConfig, OmegaConf
 
 # Local
 from ..errors import DecodeError, EmptyFileError
-from .parameter import (
-    ArrayParameter,
-    CategoricalParameter,
-    CategoricalType,
-    ConstantParameter,
-    ContinuousParameter,
-    DiscreteParameter,
-    LoadFunction,
-    Parameter,
-    StoreFunction,
-)
+from .parameter import (ArrayParameter, CategoricalParameter, CategoricalType,
+                        ConstantParameter, ContinuousParameter,
+                        DiscreteParameter, LoadFunction, Parameter,
+                        StoreFunction)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -44,35 +38,23 @@ __status__ = 'Stable'
 # =============================================================================
 
 
+@dataclass
 class Domain:
     """Main class for defining the domain of the design of experiments.
 
     Parameters
     ----------
     input_space : Dict[str, Parameter], optional
-        Dict of input parameters, by default None
+        Dict of input parameters, by default empty dict
     output_space : Dict[str, Parameter], optional
-        Dict of output parameters, by default None
+        Dict of output parameters, by default empty dict
     """
-
-    def __init__(self, input_space: dict[str, Parameter] = None,
-                 output_space: dict[str, Parameter] = None):
-        self.input_space = input_space if input_space is not None else {}
-        self.output_space = output_space if output_space is not None else {}
+    input_space: dict[str, Parameter] = field(default_factory=dict)
+    output_space: dict[str, Parameter] = field(default_factory=dict)
 
     def __len__(self) -> int:
         """The len() method returns the number of input parameters"""
         return len(self.input_space)
-
-    def __eq__(self, __o: Domain) -> bool:
-        """Custom equality comparison for Domain objects."""
-
-        if not isinstance(__o, Domain):
-            raise TypeError(f"Cannot compare Domain with \
-                {type(__o)}")
-        return (
-            self.input_space == __o.input_space
-            and self.output_space == __o.output_space)
 
     def __bool__(self) -> bool:
         """Check if the Domain object is empty"""

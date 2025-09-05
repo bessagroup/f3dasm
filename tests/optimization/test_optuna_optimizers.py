@@ -30,7 +30,7 @@ def test_optuna_optimizer():
     f.arm(data)
     data = f.call(data)
 
-    optimizer.arm(data, data_generator=f, output_name='y')
+    optimizer.arm(data, data_generator=f, input_name=None, output_name='y')
 
     data = optimizer.call(data, n_iterations=10)
 

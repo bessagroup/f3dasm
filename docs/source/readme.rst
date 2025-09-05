@@ -81,3 +81,8 @@ Copyright 2025, Martin van der Schelling
 All rights reserved.
 
 :mod:`f3dasm` is a free and open-source software published under a :doc:`BSD 3-Clause License <./license>`.
+
+Acknowledgements
+----------------
+
+Miguel A. Bessa gratefully acknowledges the financial support from the European Union’s Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 'LIGHTEN – Ultralight membrane structures toward a sustainable environment' H2020-MSCA-ITN-2020-LIGHTEN-95654

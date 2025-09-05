@@ -14,9 +14,8 @@ optimization, sampling, and simulation.
 # =============================================================================
 
 from ._src._argparser import HPC_JOBID
-from ._src.core import Block
+from ._src.core import Block, DataGenerator, Optimizer, datagenerator
 from ._src.datageneration.datagenerator_factory import create_datagenerator
-from ._src.datagenerator import DataGenerator, datagenerator
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.logger import logger
@@ -39,6 +38,7 @@ __all__ = [
     'create_optimizer',
     'create_sampler',
     'Block',
+    'Optimizer',
     'DataGenerator',
     'logger',
     'HPC_JOBID',
