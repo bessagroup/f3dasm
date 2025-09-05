@@ -30,6 +30,7 @@ def test_scipyminimize(
     samples = _benchmark_function.call(data=data)
 
     _optimizer.arm(data=samples,  data_generator=_benchmark_function,
+                   input_name='x',
                    output_name='y')
 
     data1 = _optimizer.call(data=samples, data_generator=_benchmark_function,

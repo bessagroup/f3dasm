@@ -4,17 +4,21 @@ from __future__ import annotations
 
 # Standard
 from functools import partial
+from typing import Optional
 
 # Third-party
 import optuna
 
 # Locals
-from ..core import Block
-from ..datagenerator import DataGenerator
+from ..core import DataGenerator, Optimizer
 from ..design import Domain
-from ..design.parameter import (ArrayParameter, CategoricalParameter,
-                                ConstantParameter, ContinuousParameter,
-                                DiscreteParameter)
+from ..design.parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 from ..experimentdata import ExperimentData, ExperimentSample
 
 #                                                          Authorship & Credits
@@ -27,7 +31,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 
-class OptunaOptimizer(Block):
+class OptunaOptimizer(Optimizer):
     """
     Optuna-based optimizer block for experiment design and optimization.
 
@@ -47,7 +51,7 @@ class OptunaOptimizer(Block):
         self.optuna_sampler = optuna_sampler
 
     def arm(self, data: ExperimentData, data_generator: DataGenerator,
-            output_name: str):
+            output_name: str, input_name: Optional[str] = None):
         """
         Prepare the optimizer with experiment data, data generator,
         and output name.
@@ -58,6 +62,8 @@ class OptunaOptimizer(Block):
             The experiment data containing previous trials.
         data_generator : DataGenerator
             The data generator used to evaluate new samples.
+        input_name : str
+            The name of the input variable to optimize.
         output_name : str
             The name of the output variable to optimize.
         """
@@ -246,7 +252,7 @@ def domain_to_optuna_distributions(domain: Domain) -> dict:
 
 
 def optuna_optimizer(
-        optuna_sampler: optuna.distributions.BaseDistribution) -> Block:
+        optuna_sampler: optuna.distributions.BaseDistribution) -> Optimizer:
     """Create an Optuna optimizer block.
 
     Parameters

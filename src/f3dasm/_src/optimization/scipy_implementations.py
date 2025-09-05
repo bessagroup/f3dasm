@@ -11,12 +11,8 @@ from typing import Callable, Optional
 import scipy.optimize
 
 # Locals
-from ..core import Block
-from ..datagenerator import DataGenerator
+from ..core import DataGenerator, Optimizer
 from ..experimentdata import ExperimentData
-
-# from scipy.optimize import Bounds, OptimizeResult, minimize
-
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -33,7 +29,7 @@ warnings.filterwarnings(
 # =============================================================================
 
 
-class ScipyOptimizer(Block):
+class ScipyOptimizer(Optimizer):
     def __init__(self, method: str,
                  bounds: Optional[scipy.optimize.Bounds] = None,
                  **hyperparameters):
@@ -42,12 +38,12 @@ class ScipyOptimizer(Block):
         self.hyperparameters = hyperparameters
 
     def arm(self, data: ExperimentData, data_generator: DataGenerator,
-            output_name: str):
+            input_name: str, output_name: str):
 
         self.data_generator = data_generator
-
         self.output_name = output_name
-        input_name = data.domain.input_names[0]
+        self.input_name = input_name
+
         experiment_sample = data.get_experiment_sample(data.index[-1])
         self._x0 = experiment_sample.input_data[input_name]
 
@@ -58,8 +54,7 @@ class ScipyOptimizer(Block):
         def callback(intermediate_result: scipy.optimize.OptimizeResult,
                      ) -> None:
             history_x.append(
-                {input_name: intermediate_result.x for input_name
-                 in data.domain.input_names})
+                {self.input_name: intermediate_result.x})
             history_y.append(
                 {self.output_name: intermediate_result.fun})
 
