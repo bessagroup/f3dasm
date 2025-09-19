@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
 # Third-party
-import autograd.numpy as np
+import numpy as np
 
 # Local
 from ._io import copy_object, load_object, store_to_disk

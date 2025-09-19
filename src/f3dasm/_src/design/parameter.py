@@ -10,6 +10,8 @@ import pickle
 from collections.abc import Iterable
 from typing import Any, ClassVar, Optional, Protocol, Union
 
+import numpy as np
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
@@ -707,9 +709,9 @@ class ArrayParameter(Parameter):
     ----------
     dimensionality : Iterable[int]
         The dimensions of the array.
-    lower_bound : float, optional
+    lower_bound : float | np.ndarray, optional
         The lower bound of the parameter. Defaults to -inf.
-    upper_bound : float, optional
+    upper_bound : float | np.ndarray, optional
         The upper bound of the parameter. Defaults to inf.
 
     Raises
@@ -726,26 +728,26 @@ class ArrayParameter(Parameter):
     """
 
     def __init__(self, shape: int | Iterable[int],
-                 lower_bound: float = float('-inf'),
-                 upper_bound: float = float('inf')):
+                 lower_bound: float | np.ndarray = float('-inf'),
+                 upper_bound: float | np.ndarray = float('inf')):
         super().__init__()
+
         if isinstance(shape, int):
             shape = [shape]
+
         self.shape = tuple(int(d) for d in shape)
+
         if not self.shape or any(d <= 0 for d in self.shape):
             raise ValueError("Shape must be a non-empty iterable of "
                              "positive integers.")
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        self._validate_range()
 
-    def _validate_range(self):
-        if self.upper_bound <= self.lower_bound:
-            raise ValueError(
-                f"The `upper_bound` value must be larger than `lower_bound`. "
-                f"(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound})"
-            )
+        if isinstance(lower_bound, (float, int)):
+            lower_bound = np.full(self.shape, float(lower_bound))
+        if isinstance(upper_bound, (float, int)):
+            upper_bound = np.full(self.shape, float(upper_bound))
+
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
 
     def __str__(self):
         return (f"ArrayParameter(shape={self.shape}, "
@@ -793,25 +795,6 @@ class ArrayParameter(Parameter):
         param_dict['lower_bound'] = self.lower_bound
         param_dict['upper_bound'] = self.upper_bound
         return param_dict
-
-    def to_continuous(self) -> list[ContinuousParameter]:
-        """
-        Convert the ArrayParameter to a list of ContinuousParameters.
-
-        Returns
-        -------
-        list[ContinuousParameter]
-            A list of ContinuousParameters for each dimension.
-
-        Examples
-        --------
-        >>> param = ArrayParameter(shape=[3, 4],
-        lower_bound=0.0, upper_bound=1.0)
-        >>> continuous_params = param.to_continuous()
-        """
-        return [ContinuousParameter(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound) for _ in self.shape]
 
 
 PARAMETERS = [CategoricalParameter, ConstantParameter,
