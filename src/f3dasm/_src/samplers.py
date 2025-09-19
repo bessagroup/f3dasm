@@ -255,8 +255,11 @@ def sample_latin_hypercube(
 
 
 def sample_latin_hypercube_array(
-        domain: Domain, n_samples: int,
-        seed: Optional[int] = None, **kwargs) -> np.ndarray:
+    domain: Domain,
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> list[dict[str, np.ndarray]]:
     """
     Sample with Latin Hypercube sampling for array parameters.
 
@@ -273,22 +276,26 @@ def sample_latin_hypercube_array(
 
     Returns
     -------
-    np.ndarray
-        The sampled data.
+    list of dict[str, np.ndarray]
+        A list of samples, where each sample is a dictionary
+        mapping parameter names to arrays.
     """
     samples = []
+
     for name, param in domain.array.input_space.items():
+        lb = np.ravel(param.lower_bound)
+        ub = np.ravel(param.upper_bound)
         problem = {
             "num_vars": prod(param.shape),
             "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": [[param.lower_bound, param.upper_bound]
-                       ] * prod(param.shape),
+            "bounds": list(zip(lb, ub)),  # per-dimension bounds
         }
 
         s = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
-        s = s.reshape((n_samples, ) + param.shape)
+        s = s.reshape((n_samples,) + param.shape)
         samples.append(s)
 
+    # combine into list of dicts
     samples_dict = []
     for i in range(n_samples):
         _s = {}
@@ -332,9 +339,16 @@ def sample_sobol_sequence(
     return samples
 
 
+def next_power_of_two(x: int) -> int:
+    return 1 if x <= 1 else 2**(x - 1).bit_length()
+
+
 def sample_sobol_sequence_array(
-        domain: Domain, n_samples: int,
-        seed: Optional[int] = None, **kwargs) -> np.ndarray:
+    domain: Domain,
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> list[dict[str, np.ndarray]]:
     """
     Sample with Sobol Sequence sampling for array parameters.
 
@@ -351,22 +365,33 @@ def sample_sobol_sequence_array(
 
     Returns
     -------
-    np.ndarray
-        The sampled data.
+    list of dict[str, np.ndarray]
+        A list of samples, where each sample is a dictionary
+        mapping parameter names to arrays.
     """
     samples = []
+
     for name, param in domain.array.input_space.items():
+        lb = np.ravel(param.lower_bound)
+        ub = np.ravel(param.upper_bound)
+
         problem = {
             "num_vars": prod(param.shape),
             "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": [[param.lower_bound, param.upper_bound]
-                       ] * prod(param.shape),
+            "bounds": list(zip(lb, ub)),
         }
-        N = ceil(n_samples / (prod(param.shape) + 2))
 
-        s = salib_sobol.sample(problem=problem, N=N, seed=seed,
-                               calc_second_order=False)
-        s = s[:n_samples].reshape((n_samples, ) + param.shape)
+        # N must be power of 2
+        N = next_power_of_two(ceil(n_samples / (prod(param.shape) + 2)))
+
+        s = salib_sobol.sample(
+            problem=problem,
+            N=N,
+            seed=seed,
+            calc_second_order=False,
+        )
+
+        s = s[:n_samples].reshape((n_samples,) + param.shape)
         samples.append(s)
 
     samples_dict = []
@@ -377,6 +402,7 @@ def sample_sobol_sequence_array(
         samples_dict.append(_s)
 
     return samples_dict
+
 
 #                                                             Built-in samplers
 # =============================================================================
