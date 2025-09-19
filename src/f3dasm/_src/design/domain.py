@@ -507,9 +507,9 @@ class Domain:
             Name of the input parameter.
         shape : Sequence[int] or int
             Shape of the array input parameter.
-        low : float, optional
+        low : float | np.ndarray, optional
             Lower bound of the input parameter, by default -np.inf.
-        high : float, optional
+        high : float | np.ndarray, optional
             Upper bound of the input parameter, by default np.inf.
 
         Example
