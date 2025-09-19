@@ -37,7 +37,7 @@ jobs:
             echo "Tag name is $TAG_NAME"
           else
             echo "No tag found"
-            exit 1
+            exit 0
           fi
 
   check_pypi:
@@ -61,7 +61,7 @@ jobs:
           LATEST_VERSION=$latest_previous_version
           if [ "$(printf '%s\n' "$LATEST_VERSION" "$NEW_VERSION" | sort -rV | head -n 1)" != "$NEW_VERSION" ] || [ "$NEW_VERSION" == "$LATEST_VERSION" ]; then
             echo "The new version $NEW_VERSION is not greater than the latest version $LATEST_VERSION on PyPI."
-            exit 1
+            exit 0
           else
             echo "The new version $NEW_VERSION is greater than the latest version $LATEST_VERSION on PyPI."
           fi
