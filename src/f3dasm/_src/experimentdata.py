@@ -1022,7 +1022,7 @@ class ExperimentData:
         ----------
         experiment_sample : ExperimentSample
             The ExperimentSample object to store.
-        id : int
+        idx : int
             The index of the ExperimentSample object.
 
         Examples

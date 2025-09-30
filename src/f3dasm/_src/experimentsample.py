@@ -9,7 +9,6 @@ A ExperimentSample object contains a single realization of
 from __future__ import annotations
 
 from copy import deepcopy
-
 # Standard
 from enum import Enum
 from pathlib import Path
@@ -226,8 +225,6 @@ class ExperimentSample:
 
         Parameters
         ----------
-        cls : Type[ExperimentSample]
-            The class type.
         input_array : np.ndarray
             Numpy array containing input data.
         domain : Optional[Domain]
@@ -258,7 +255,7 @@ class ExperimentSample:
 
         return cls(input_data={input_name: v for input_name, v in
                                zip(domain.input_space.keys(),
-                                   input_array.flatten())},
+                                   input_array.flatten(), strict=True)},
                    domain=domain,)
     #                                                                   Getters
     # =========================================================================

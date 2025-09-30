@@ -1,0 +1,30 @@
+{
+    "input_space": {
+        "x0": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.0,
+            "upper_bound": 1.0,
+            "log": false
+        },
+        "x1": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.0,
+            "upper_bound": 1.0,
+            "log": false
+        }
+    },
+    "output_space": {
+        "y": {
+            "type": "object",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null
+        }
+    }
+}
