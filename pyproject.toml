@@ -1,6 +1,6 @@
 [project]
 name = "f3dasm"
-version = "2.1.0"
+version = "2.1.1"
 description = "f3dasm - Framework for Data-driven Development and Analysis of Structures and Materials"
 readme = "README.md"
 authors = [
