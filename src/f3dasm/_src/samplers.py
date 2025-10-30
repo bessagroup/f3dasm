@@ -288,7 +288,7 @@ def sample_latin_hypercube_array(
         problem = {
             "num_vars": prod(param.shape),
             "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": list(zip(lb, ub)),  # per-dimension bounds
+            "bounds": list(zip(lb, ub, strict=False)),  # per-dimension bounds
         }
 
         s = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
@@ -378,7 +378,7 @@ def sample_sobol_sequence_array(
         problem = {
             "num_vars": prod(param.shape),
             "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": list(zip(lb, ub)),
+            "bounds": list(zip(lb, ub, strict=False)),
         }
 
         # N must be power of 2
@@ -550,7 +550,7 @@ class Grid(Block):
         if not continuous.input_space:
             discrete_space = continuous.input_space
 
-        elif isinstance(stepsize_continuous_parameters, (float, int)):
+        elif isinstance(stepsize_continuous_parameters, float | int):
             discrete_space = {name: param.to_discrete(
                 step=stepsize_continuous_parameters)
                 for name, param in continuous.input_space.items()}

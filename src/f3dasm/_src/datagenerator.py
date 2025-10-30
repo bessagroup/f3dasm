@@ -8,9 +8,10 @@ from __future__ import annotations
 
 # Standard
 import traceback
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 # Third-party
 from filelock import FileLock

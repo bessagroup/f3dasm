@@ -11,9 +11,9 @@ from __future__ import annotations
 # Standard
 import pickle
 import shutil
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 # Third-party
 import matplotlib.pyplot as plt

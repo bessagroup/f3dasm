@@ -66,7 +66,7 @@ class _DeferredImportExceptionContextManager:
             them from propagating.
 
         """
-        if isinstance(exc_value, (ImportError, SyntaxError)):
+        if isinstance(exc_value, ImportError | SyntaxError):
             if isinstance(exc_value, ImportError):
                 message = (
                     f"Tried to import '{exc_value.name}' but failed. \

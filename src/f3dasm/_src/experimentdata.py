@@ -12,12 +12,12 @@ from __future__ import annotations
 # Standard
 import random
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
-from typing import Any, Callable, Literal, Optional, Protocol
+from typing import Any, Literal, Optional, Protocol
 
 # Third-party
 import numpy as np
@@ -27,9 +27,15 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -883,7 +889,8 @@ class ExperimentData:
         if not copy_self.data:
             return copy_other
 
-        for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
+        for (i, es_self), (_, es_other) in zip(copy_self, copy_other,
+                                               strict=False):
             copy_self.data[i] = es_self + es_other
 
         copy_self._domain += copy_other._domain
@@ -1327,7 +1334,7 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
     if data is None:
         return []
 
-    elif isinstance(data, (Path, str)):
+    elif isinstance(data, Path | str):
         filepath = Path(data).with_suffix('.csv')
 
         if not filepath.exists():
@@ -1417,7 +1424,7 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
     elif jobs is None:
         return pd.Series()
 
-    elif isinstance(jobs, (Path, str)):
+    elif isinstance(jobs, Path | str):
 
         filepath = Path(jobs).with_suffix('.csv')
 

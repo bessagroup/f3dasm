@@ -8,11 +8,13 @@ A ExperimentSample object contains a single realization of
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from copy import deepcopy
+
 # Standard
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal, Optional
 
 # Third-party
 import numpy as np
@@ -420,7 +422,7 @@ class ExperimentSample:
         1.23
         """
         def round_dict(data: dict[str, Any]) -> dict[str, Any]:
-            return {k: round(v, decimals) if isinstance(v, (int, float))
+            return {k: round(v, decimals) if isinstance(v, int | float)
                     else v for k, v in data.items()}
 
         self._input_data = round_dict(self._input_data)
@@ -577,7 +579,7 @@ class ExperimentSample:
 
             # If the parameter is to be stored on disk, store it
             # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
+            if parameter.to_disk and not isinstance(value, Path | str):
                 storage_location = store_to_disk(
                     project_dir=self.project_dir,
                     object=value, name=name,
@@ -590,7 +592,7 @@ class ExperimentSample:
 
             # If the parameter is to be stored on disk, store it
             # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, (Path, str)):
+            if parameter.to_disk and not isinstance(value, Path | str):
                 storage_location = store_to_disk(
                     project_dir=self.project_dir,
                     object=value, name=name,

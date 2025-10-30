@@ -4,8 +4,9 @@ from __future__ import annotations
 
 # Standard
 import warnings
+from collections.abc import Callable
 from functools import partial
-from typing import Callable, Optional
+from typing import Optional
 
 # Third-party core
 import scipy.optimize

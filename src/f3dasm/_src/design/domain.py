@@ -23,10 +23,17 @@ from omegaconf import DictConfig, OmegaConf
 
 # Local
 from ..errors import DecodeError, EmptyFileError
-from .parameter import (ArrayParameter, CategoricalParameter, CategoricalType,
-                        ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, LoadFunction, Parameter,
-                        StoreFunction)
+from .parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    CategoricalType,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    LoadFunction,
+    Parameter,
+    StoreFunction,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -739,7 +746,7 @@ def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
         return Domain()
 
     # If domain is a path, load the domain from the file
-    elif isinstance(domain, (Path, str)):
+    elif isinstance(domain, Path | str):
         return Domain.from_file(Path(domain))
 
     # If the domain is a hydra DictConfig, convert it to a Domain object

@@ -21,7 +21,7 @@ __status__ = 'Stable'
 #
 # =============================================================================
 
-CategoricalType = Union[None, int, float, str]
+CategoricalType = Union[None, int, float, str]  # noqa
 
 # =============================================================================
 
@@ -741,9 +741,9 @@ class ArrayParameter(Parameter):
             raise ValueError("Shape must be a non-empty iterable of "
                              "positive integers.")
 
-        if isinstance(lower_bound, (float, int)):
+        if isinstance(lower_bound, float | int):
             lower_bound = np.full(self.shape, float(lower_bound))
-        if isinstance(upper_bound, (float, int)):
+        if isinstance(upper_bound, float | int):
             upper_bound = np.full(self.shape, float(upper_bound))
 
         self.lower_bound = lower_bound

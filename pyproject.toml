@@ -64,6 +64,7 @@ exclude = [
 	"tests/*",
     "studies/*",
     "docs/*",
+    "docs_old/*",
 ]
 
 [tool.uv]

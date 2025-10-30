@@ -9,9 +9,9 @@ from __future__ import annotations
 # Standard
 import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 # Third-party
 from hydra.utils import instantiate
@@ -302,7 +302,7 @@ def datagenerator(output_names: Iterable[str]
                     _output = (_output,)
 
                 # Store outputs in the experiment sample
-                for name, value in zip(output_names, _output):
+                for name, value in zip(output_names, _output, strict=False):
                     if name in experiment_sample.domain.output_names:
                         to_disk = experiment_sample.domain.output_space[name].\
                             to_disk
