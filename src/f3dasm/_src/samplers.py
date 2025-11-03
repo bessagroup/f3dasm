@@ -482,6 +482,7 @@ class RandomUniform(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
+            project_dir=data.project_dir
         )
 
         d = ExperimentData()
@@ -588,7 +589,7 @@ class Grid(Block):
                           )[data.domain.input_names]
 
         return ExperimentData(domain=data.domain._copy(),
-                              input_data=df)
+                              input_data=df, project_dir=data.project_dir)
 
 
 def grid(**kwargs) -> Block:
@@ -649,7 +650,8 @@ class Sobol(Block):
         data_continuous = ExperimentData(input_data=pd.DataFrame(
             _continuous,
             columns=data.domain.continuous.input_names),
-            domain=data.domain.continuous)
+            domain=data.domain.continuous,
+            project_dir=data.project_dir)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
@@ -658,7 +660,8 @@ class Sobol(Block):
         data_discrete = ExperimentData(input_data=pd.DataFrame(
             _discrete,
             columns=data.domain.discrete.input_names),
-            domain=data.domain.discrete)
+            domain=data.domain.discrete,
+            project_dir=data.project_dir)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
@@ -667,14 +670,16 @@ class Sobol(Block):
         data_categorical = ExperimentData(input_data=pd.DataFrame(
             _categorical,
             columns=data.domain.categorical.input_names),
-            domain=data.domain.categorical)
+            domain=data.domain.categorical,
+            project_dir=data.project_dir)
 
         _constant = sample_constant(data.domain.constant, n_samples)
 
         data_constant = ExperimentData(input_data=pd.DataFrame(
             _constant,
             columns=data.domain.constant.input_names),
-            domain=data.domain.constant)
+            domain=data.domain.constant,
+            project_dir=data.project_dir)
 
         _array = sample_sobol_sequence_array(
             domain=data.domain.array, n_samples=n_samples,
@@ -684,9 +689,10 @@ class Sobol(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
+            project_dir=data.project_dir
         )
 
-        d = ExperimentData()
+        d = ExperimentData(project_dir=data.project_dir)
 
         for _d in [data_continuous, data_discrete,
                    data_categorical, data_constant, data_array]:
@@ -755,7 +761,8 @@ class Latin(Block):
         data_continuous = ExperimentData(input_data=pd.DataFrame(
             _continuous,
             columns=data.domain.continuous.input_names),
-            domain=data.domain.continuous)
+            domain=data.domain.continuous,
+            project_dir=data.project_dir)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
@@ -764,7 +771,8 @@ class Latin(Block):
         data_discrete = ExperimentData(input_data=pd.DataFrame(
             _discrete,
             columns=data.domain.discrete.input_names),
-            domain=data.domain.discrete)
+            domain=data.domain.discrete,
+            project_dir=data.project_dir)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
@@ -773,14 +781,16 @@ class Latin(Block):
         data_categorical = ExperimentData(input_data=pd.DataFrame(
             _categorical,
             columns=data.domain.categorical.input_names),
-            domain=data.domain.categorical)
+            domain=data.domain.categorical,
+            project_dir=data.project_dir)
 
         _constant = sample_constant(data.domain.constant, n_samples)
 
         data_constant = ExperimentData(input_data=pd.DataFrame(
             _constant,
             columns=data.domain.constant.input_names),
-            domain=data.domain.constant)
+            domain=data.domain.constant,
+            project_dir=data.project_dir)
 
         _array = sample_latin_hypercube_array(
             domain=data.domain.array, n_samples=n_samples,
@@ -790,9 +800,10 @@ class Latin(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
+            project_dir=data.project_dir
         )
 
-        d = ExperimentData()
+        d = ExperimentData(project_dir=data.project_dir)
 
         for _d in [data_continuous, data_discrete,
                    data_categorical, data_constant, data_array]:
