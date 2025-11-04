@@ -18,10 +18,10 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 from .datagenerator import (
-    _evaluate_cluster,
-    _evaluate_mpi,
-    _evaluate_multiprocessing,
-    _evaluate_sequential,
+    evaluate_cluster,
+    evaluate_mpi,
+    evaluate_multiprocessing,
+    evaluate_sequential,
 )
 
 # Local
@@ -185,22 +185,22 @@ class DataGenerator:
         data = data._copy(in_place=False, deep=True)
 
         if mode == 'sequential':
-            return _evaluate_sequential(
+            return evaluate_sequential(
                 execute_fn=self.execute,
                 data=data,
                 pass_id=pass_id, ** kwargs)
         elif mode == 'parallel':
-            return _evaluate_multiprocessing(
+            return evaluate_multiprocessing(
                 execute_fn=self.execute,
                 data=data,
                 pass_id=pass_id, **kwargs)
         elif mode.lower() == "cluster":
-            return _evaluate_cluster(
+            return evaluate_cluster(
                 execute_fn=self.execute,
                 data=data,
                 pass_id=pass_id, **kwargs)
         elif mode.lower() == "mpi":
-            return _evaluate_mpi(
+            return evaluate_mpi(
                 execute_fn=self.execute,
                 data=data,
                 pass_id=pass_id, **kwargs)

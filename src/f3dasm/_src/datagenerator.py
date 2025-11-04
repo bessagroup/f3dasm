@@ -74,7 +74,7 @@ def _run_sample(
 # =========================================================================
 
 
-def _evaluate_sequential(
+def evaluate_sequential(
         execute_fn: Callable[..., ExperimentSample],
         data: ExperimentData,
         pass_id: bool,
@@ -83,13 +83,19 @@ def _evaluate_sequential(
 
     Parameters
     ----------
+    execute_fn : Callable[..., ExperimentSample]
+        The function to be executed on each ExperimentSample
+    data : ExperimentData
+        The ExperimentData object containing the samples to be processed
+    pass_id : bool
+        Whether to pass the job index to the execute function
     kwargs : dict
         Any keyword arguments that need to be supplied to the function
 
-    Raises
-    ------
-    NoOpenJobsError
-        Raised when there are no open jobs left
+    Returns
+    -------
+    ExperimentData
+        The updated ExperimentData object
     """
 
     while True:
@@ -112,12 +118,32 @@ def _evaluate_sequential(
     return data
 
 
-def _evaluate_multiprocessing(
+def evaluate_multiprocessing(
         execute_fn: Callable[..., ExperimentSample],
         data: ExperimentData,
         pass_id: bool,
         nodes: int = mp.cpu_count(),
         **kwargs) -> ExperimentData:
+    """Run the operation using multiprocessing
+
+    Parameters
+    ----------
+    execute_fn : Callable[..., ExperimentSample]
+        The function to be executed on each ExperimentSample
+    data : ExperimentData
+        The ExperimentData object containing the samples to be processed
+    pass_id : bool
+        Whether to pass the job index to the execute function
+    nodes : int, optional
+        The number of parallel processes to use, by default mp.cpu_count()
+    kwargs : dict
+        Any keyword arguments that need to be supplied to the function
+
+    Returns
+    -------
+    ExperimentData
+        The updated ExperimentData object
+    """
     work_items: list[dict[str, Any]] = []
 
     while True:
@@ -152,7 +178,7 @@ def _evaluate_multiprocessing(
     return data
 
 
-def _evaluate_cluster(
+def evaluate_cluster(
     execute_fn: Callable[..., ExperimentSample],
     data: ExperimentData,
     pass_id: bool,
@@ -160,6 +186,28 @@ def _evaluate_cluster(
     max_tries: int = MAX_TRIES,
     **kwargs
 ) -> None:
+    """
+    Run the operation on a cluster using file locks to manage access to the
+    ExperimentData.
+
+    Parameters
+    ----------
+
+    execute_fn : Callable[..., ExperimentSample]
+        The function to be executed on each ExperimentSample
+    data : ExperimentData
+        The ExperimentData object containing the samples to be processed
+    pass_id : bool
+        Whether to pass the job index to the execute function
+    wait_for_creation : bool, optional
+        Whether to wait for the ExperimentData file to be created, by default
+        False
+    max_tries : int, optional
+        The maximum number of tries to access the ExperimentData file, by
+        default MAX_TRIES
+    kwargs : dict
+        Any keyword arguments that need to be supplied to the function
+    """
 
     # Creat lockfile
     lock_path = (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
@@ -167,13 +215,13 @@ def _evaluate_cluster(
     lockfile = FileLock(lock_path)
 
     cluster_get_open_job = partial(
-        get_open_job,
+        _get_open_job,
         project_dir=data.project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
         lockfile=lockfile)
     cluster_store_experiment_sample = partial(
-        store_experiment_sample,
+        _store_experiment_sample,
         project_dir=data.project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
@@ -200,7 +248,7 @@ def _evaluate_cluster(
     lock_path.unlink(missing_ok=True)
 
 
-def _evaluate_mpi(
+def evaluate_mpi(
     execute_fn: Callable[..., ExperimentSample],
     comm,
     data: ExperimentData,
@@ -208,6 +256,29 @@ def _evaluate_mpi(
     wait_for_creation: bool = False,
     max_tries: int = MAX_TRIES, **kwargs
 ) -> None:
+    """
+    Run the operation on a cluster using MPI to manage access to the
+    ExperimentData.
+
+    Parameters
+    ----------
+    execute_fn : Callable[..., ExperimentSample]
+        The function to be executed on each ExperimentSample
+    comm : MPI.Comm
+        The MPI communicator
+    data : ExperimentData
+        The ExperimentData object containing the samples to be processed
+    pass_id : bool
+        Whether to pass the job index to the execute function
+    wait_for_creation : bool, optional
+        Whether to wait for the ExperimentData file to be created, by default
+        False
+    max_tries : int, optional
+        The maximum number of tries to access the ExperimentData file, by
+        default MAX_TRIES
+    kwargs : dict
+        Any keyword arguments that need to be supplied to the function
+    """
     rank = comm.Get_rank()
     size = comm.Get_size()
 
@@ -227,7 +298,7 @@ def _evaluate_mpi(
 # =============================================================================
 
 
-def get_open_job(
+def _get_open_job(
         project_dir: Path,
         lockfile: FileLock,
         wait_for_creation: bool,
@@ -245,7 +316,7 @@ def get_open_job(
     return idx, es
 
 
-def store_experiment_sample(
+def _store_experiment_sample(
         project_dir: Path,
         lockfile: FileLock,
         wait_for_creation: bool,
