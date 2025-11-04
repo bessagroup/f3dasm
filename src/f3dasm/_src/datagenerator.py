@@ -38,12 +38,47 @@ __status__ = 'Alpha'
 #
 # =============================================================================
 
+
+def _run_sample(
+    execute_fn: Callable[..., ExperimentSample],
+    experiment_sample: ExperimentSample,
+    job_number: int | None = None,
+    pass_id: bool = False,
+    **kwargs: Any,
+) -> ExperimentSample:
+    """Run `execute_fn` on a single ExperimentSample, handle exceptions and
+    mark/store status on the sample object before returning it.
+
+    This helper is purposely simple so it is picklable for multiprocessing.
+    """
+    try:
+        logger.debug(f"Running experiment_sample {job_number}")
+        if pass_id and job_number is not None:
+            experiment_sample = execute_fn(
+                experiment_sample=experiment_sample, id=job_number, **kwargs)
+        else:
+            experiment_sample = execute_fn(
+                experiment_sample=experiment_sample, **kwargs)
+
+        experiment_sample.store_experimentsample_references(idx=job_number)
+        experiment_sample.mark("finished")
+
+    except Exception:
+        error_msg = f"Error in experiment_sample {job_number}: "
+        error_traceback = traceback.format_exc()
+        logger.error(f"{error_msg}\n{error_traceback}")
+        experiment_sample.mark("error")
+
+    return experiment_sample
+
 # =========================================================================
 
 
-def _evaluate_sequential(execute_fn: Callable, data: ExperimentData,
-                         pass_id: bool,
-                         **kwargs) -> ExperimentData:
+def _evaluate_sequential(
+        execute_fn: Callable[..., ExperimentSample],
+        data: ExperimentData,
+        pass_id: bool,
+        **kwargs) -> ExperimentData:
     """Run the operation sequentially
 
     Parameters
@@ -60,153 +95,116 @@ def _evaluate_sequential(execute_fn: Callable, data: ExperimentData,
     while True:
         job_number, experiment_sample = data.get_open_job()
         if job_number is None:
-            logger.debug("No Open jobs left!")
+            logger.debug("No open jobs left!")
             break
 
-        try:
-            if pass_id:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, id=job_number,
-                    **kwargs)
-            else:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, **kwargs)
+        experiment_sample = _run_sample(
+            execute_fn=execute_fn,
+            experiment_sample=experiment_sample,
+            job_number=job_number,
+            pass_id=pass_id,
+            **kwargs,
+        )
 
-            experiment_sample.store_experimentsample_references(
-                idx=job_number)
-
-            experiment_sample.mark('finished')
-
-        except Exception:
-            error_msg = f"Error in experiment_sample {job_number}: "
-            error_traceback = traceback.format_exc()
-            logger.error(f"{error_msg}\n{error_traceback}")
-            experiment_sample.mark('error')
-            continue
-
-        finally:
-            data.store_experimentsample(
-                idx=job_number, experiment_sample=experiment_sample,
-            )
+        data.store_experimentsample(
+            idx=job_number, experiment_sample=experiment_sample,
+        )
     return data
 
 
 def _evaluate_multiprocessing(
-    execute_fn: Callable, data: ExperimentData, pass_id: bool,
-        nodes: int = mp.cpu_count(), **kwargs) -> ExperimentData:
-    options = []
+        execute_fn: Callable[..., ExperimentSample],
+        data: ExperimentData,
+        pass_id: bool,
+        nodes: int = mp.cpu_count(),
+        **kwargs) -> ExperimentData:
+    work_items: list[dict[str, Any]] = []
 
     while True:
         job_number, experiment_sample = data.get_open_job()
         if job_number is None:
+            logger.debug("No open jobs left!")
             break
 
-        if pass_id:
-            options.append(
-                ({'experiment_sample': experiment_sample,
-                    '_job_number': job_number, 'id': job_number, **kwargs},))
-        else:
-            options.append(
-                ({'experiment_sample': experiment_sample,
-                    '_job_number': job_number, **kwargs},))
+        item = {"experiment_sample": experiment_sample,
+                "job_number": job_number, **kwargs}
 
-    def f(options: dict[str, Any]) -> tuple[int, ExperimentSample, int]:
-        job_number = options.pop('_job_number')
-        try:
+        work_items.append(item)
 
-            logger.debug(
-                f"Running experiment_sample "
-                f"{job_number}")
+    def _worker(options: dict[str, Any]) -> tuple[int, ExperimentSample]:
+        es = _run_sample(
+            execute_fn=execute_fn,
+            pass_id=pass_id,
+            **options)
+        return options["job_number"], es
 
-            experiment_sample: ExperimentSample = execute_fn(**options)
-            experiment_sample.store_experimentsample_references(
+    if work_items:
+        with mp.Pool(nodes) as pool:
+            # maybe implement pool.starmap_async ?
+            results: list[tuple[int, ExperimentSample, int]
+                          ] = pool.map(_worker, work_items)
+
+        for job_number, experiment_sample in results:
+            data.store_experimentsample(
+                experiment_sample=experiment_sample,
                 idx=job_number)
-            # exit_code = 0
-            experiment_sample.mark('finished')
-
-        except Exception:
-            error_msg = f"Error in experiment_sample {job_number}: "
-            error_traceback = traceback.format_exc()
-            logger.error(f"{error_msg}\n{error_traceback}")
-            experiment_sample.mark('error')
-            # exit_code = 1
-
-        finally:
-            return (job_number, experiment_sample)
-
-    with mp.Pool() as pool:
-        # maybe implement pool.starmap_async ?
-        _experiment_samples: list[
-            tuple[int, ExperimentSample, int]] = pool.starmap(f, options)
-
-    for job_number, experiment_sample in _experiment_samples:
-        data.store_experimentsample(
-            experiment_sample=experiment_sample,
-            idx=job_number)
 
     return data
 
 
 def _evaluate_cluster(
-    execute_fn: Callable, data: ExperimentData, pass_id: bool,
-        wait_for_creation: bool = False,
-        max_tries: int = MAX_TRIES, **kwargs
+    execute_fn: Callable[..., ExperimentSample],
+    data: ExperimentData,
+    pass_id: bool,
+    wait_for_creation: bool = False,
+    max_tries: int = MAX_TRIES,
+    **kwargs
 ) -> None:
 
     # Creat lockfile
-    lockfile = FileLock(
-        (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-         ).with_suffix('.lock'))
+    lock_path = (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+                 ).with_suffix('.lock')
+    lockfile = FileLock(lock_path)
 
     cluster_get_open_job = partial(
-        get_open_job, experiment_data_type=type(data),
+        get_open_job,
         project_dir=data.project_dir,
-        wait_for_creation=wait_for_creation, max_tries=max_tries,
+        wait_for_creation=wait_for_creation,
+        max_tries=max_tries,
         lockfile=lockfile)
     cluster_store_experiment_sample = partial(
-        store_experiment_sample, experiment_data_type=type(data),
+        store_experiment_sample,
         project_dir=data.project_dir,
-        wait_for_creation=wait_for_creation, max_tries=max_tries,
+        wait_for_creation=wait_for_creation,
+        max_tries=max_tries,
         lockfile=lockfile)
 
     while True:
         job_number, experiment_sample = cluster_get_open_job()
         if job_number is None:
-            logger.debug("No Open jobs left!")
+            logger.debug("No open jobs left!")
             break
 
-        try:
-            if pass_id:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, id=job_number,
-                    **kwargs)
-            else:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, **kwargs)
+        experiment_sample = _run_sample(
+            execute_fn=execute_fn,
+            experiment_sample=experiment_sample,
+            job_number=job_number,
+            pass_id=pass_id,
+            **kwargs,
+        )
 
-            experiment_sample.store_experimentsample_references(
-                idx=job_number)
-
-            experiment_sample.mark('finished')
-
-        except Exception:
-            error_msg = f"Error in experiment_sample {job_number}: "
-            error_traceback = traceback.format_exc()
-            logger.error(f"{error_msg}\n{error_traceback}")
-            experiment_sample.mark('error')
-            continue
-
-        finally:
-            cluster_store_experiment_sample(
-                idx=job_number, experiment_sample=experiment_sample)
+        cluster_store_experiment_sample(
+            idx=job_number, experiment_sample=experiment_sample)
 
     # Remove lockfile
-    (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-     ).with_suffix('.lock').unlink(missing_ok=True)
+    lock_path.unlink(missing_ok=True)
 
 
 def _evaluate_mpi(
-    execute_fn: Callable, comm, data: ExperimentData, pass_id: bool,
+    execute_fn: Callable[..., ExperimentSample],
+    comm,
+    data: ExperimentData,
+    pass_id: bool,
     wait_for_creation: bool = False,
     max_tries: int = MAX_TRIES, **kwargs
 ) -> None:
@@ -216,23 +214,27 @@ def _evaluate_mpi(
     if rank == 0:
         mpi_lock_manager(comm=comm, size=size)
     else:
-        mpi_worker(comm=comm, data=data, execute_fn=execute_fn,
-                   pass_id=pass_id,
-                   wait_for_creation=wait_for_creation,
-                   max_tries=max_tries,
-                   **kwargs)
+        mpi_worker(
+            comm=comm,
+            data=data,
+            execute_fn=execute_fn,
+            pass_id=pass_id,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+            **kwargs)
 
 
 # =============================================================================
 
 
-def get_open_job(experiment_data_type: type[ExperimentData],
-                 project_dir: Path, lockfile: FileLock,
-                 wait_for_creation: bool, max_tries: int,
-                 ) -> tuple[int, ExperimentSample]:
+def get_open_job(
+        project_dir: Path,
+        lockfile: FileLock,
+        wait_for_creation: bool,
+        max_tries: int) -> tuple[int, ExperimentSample]:
 
     with lockfile:
-        data: ExperimentData = experiment_data_type.from_file(
+        data = ExperimentData.from_file(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
@@ -244,12 +246,15 @@ def get_open_job(experiment_data_type: type[ExperimentData],
 
 
 def store_experiment_sample(
-    experiment_data_type: type[ExperimentData],
-        project_dir: Path, lockfile: FileLock, wait_for_creation: bool,
-        max_tries: int, idx: int, experiment_sample: ExperimentSample) -> None:
+        project_dir: Path,
+        lockfile: FileLock,
+        wait_for_creation: bool,
+        max_tries: int,
+        idx: int,
+        experiment_sample: ExperimentSample) -> None:
 
     with lockfile:
-        data: ExperimentData = experiment_data_type.from_file(
+        data = ExperimentData.from_file(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
@@ -267,12 +272,12 @@ def mpi_worker(
 ) -> None:
 
     cluster_get_open_job = partial(
-        mpi_get_open_job, experiment_data_type=type(data),
+        mpi_get_open_job, experiment_data_type=ExperimentData,
         project_dir=data.project_dir,
         wait_for_creation=wait_for_creation, max_tries=max_tries,
         comm=comm)
     cluster_store_experiment_sample = partial(
-        mpi_store_experiment_sample, experiment_data_type=type(data),
+        mpi_store_experiment_sample, experiment_data_type=ExperimentData,
         project_dir=data.project_dir,
         wait_for_creation=wait_for_creation, max_tries=max_tries,
         comm=comm)
@@ -280,32 +285,18 @@ def mpi_worker(
     while True:
         job_number, experiment_sample = cluster_get_open_job()
         if job_number is None:
-            logger.debug("No Open jobs left!")
+            logger.debug("No open jobs left!")
             break
 
-        try:
-            if pass_id:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, id=job_number,
-                    **kwargs)
-            else:
-                experiment_sample: ExperimentSample = execute_fn(
-                    experiment_sample=experiment_sample, **kwargs)
+        experiment_sample = _run_sample(
+            execute_fn=execute_fn,
+            experiment_sample=experiment_sample,
+            job_number=job_number,
+            pass_id=pass_id,
+            **kwargs,
+        )
 
-            experiment_sample.store_experimentsample_references(
-                idx=job_number)
-
-            experiment_sample.mark('finished')
-
-        except Exception:
-            error_msg = f"Error in experiment_sample {job_number}: "
-            error_traceback = traceback.format_exc()
-            logger.error(f"{error_msg}\n{error_traceback}")
-            experiment_sample.mark('error')
-            continue
-
-        finally:
-            cluster_store_experiment_sample(
-                idx=job_number, experiment_sample=experiment_sample)
+        cluster_store_experiment_sample(
+            idx=job_number, experiment_sample=experiment_sample)
 
     mpi_terminate_worker(comm)
