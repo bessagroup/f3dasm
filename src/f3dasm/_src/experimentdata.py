@@ -27,15 +27,9 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (
-    DOMAIN_FILENAME,
-    EXPERIMENTDATA_SUBFOLDER,
-    INPUT_DATA_FILENAME,
-    JOBS_FILENAME,
-    MAX_TRIES,
-    OUTPUT_DATA_FILENAME,
-    _project_dir_factory,
-)
+from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
+                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
+                  OUTPUT_DATA_FILENAME, _project_dir_factory)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -887,6 +881,7 @@ class ExperimentData:
         copy_other = experiment_data.reset_index()
 
         if not copy_self.data:
+            copy_other._domain += copy_self._domain
             return copy_other
 
         for (i, es_self), (_, es_other) in zip(copy_self, copy_other,
