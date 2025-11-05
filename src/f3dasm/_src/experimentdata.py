@@ -27,9 +27,16 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    ToDiskValue,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -132,7 +139,7 @@ class ExperimentData:
 
         _data = data_factory(
             input_data=_input_data, output_data=_output_data,
-            domain=_domain, jobs=_jobs, project_dir=_project_dir
+            jobs=_jobs, project_dir=_project_dir
         )
 
         self.data = _data
@@ -1031,7 +1038,12 @@ class ExperimentData:
         --------
         >>> experiment_data.store_experimentsample(sample, 0)
         """
-        self._domain += experiment_sample.domain
+        experiment_sample, domain = _store(
+            experiment_sample=experiment_sample,
+            idx=idx,
+            domain=self._domain,
+        )
+        self._domain = domain
         self.data[idx] = experiment_sample
 
     def get_open_job(self) -> tuple[int, ExperimentSample]:
@@ -1359,7 +1371,6 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
 
 def data_factory(input_data: list[dict[str, Any]],
                  output_data: list[dict[str, Any]],
-                 domain: Domain,
                  jobs: pd.Series,
                  project_dir: Path,
                  ) -> dict[int, ExperimentSample]:
@@ -1391,9 +1402,8 @@ def data_factory(input_data: list[dict[str, Any]],
     input_data = remove_nan_and_none_keys_inplace(input_data)
     output_data = remove_nan_and_none_keys_inplace(output_data)
     # Combine the two lists into a dictionary of ExperimentSamples
-    data = {index: ExperimentSample(input_data=experiment_input,
-                                    output_data=experiment_output,
-                                    domain=domain,
+    data = {index: ExperimentSample(_input_data=experiment_input,
+                                    _output_data=experiment_output,
                                     job_status=job_status,
                                     project_dir=project_dir)
             for index, (experiment_input, experiment_output, job_status) in
@@ -1444,3 +1454,59 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
 
     else:
         raise ValueError(f"Jobs type {type(jobs)} not supported")
+
+
+def _store(
+        experiment_sample: ExperimentSample,
+        idx: int,
+        domain: Domain,) -> tuple[ExperimentSample, Domain]:
+    for name, value in experiment_sample._output_data.items():
+        # If the value is a ToDiskValue, we need to store it
+        if isinstance(value, ToDiskValue):
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._output_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name
+                )
+
+    for name, value in experiment_sample._input_data.items():
+        if isinstance(value, ToDiskValue):
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._input_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name
+                )
+
+    return experiment_sample, domain

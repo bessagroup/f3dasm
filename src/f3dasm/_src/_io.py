@@ -8,10 +8,12 @@ operations.
 
 from __future__ import annotations
 
-# Standard
 import pickle
 import shutil
 from collections.abc import Callable, Mapping
+
+# Standard
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -480,3 +482,50 @@ def copy_object(object_path: Path,
 
     shutil.copy2(old_location, new_location)
     return str(object_path)
+
+
+@dataclass
+class ReferenceValue:
+    reference: Path
+    load_function: Callable[[Path], Any]
+
+    def load(self, project_dir: Path) -> Any:
+        return load_object(
+            project_dir=project_dir,
+            path=self.reference,
+            load_function=self.load_function,
+        )
+
+    def __repr__(self) -> str:
+        return self.reference.__repr__()
+
+    def __str__(self) -> str:
+        return self.reference.__str__()
+
+
+@dataclass
+class ToDiskValue:
+    object: Any
+    name: str
+    store_function: Callable[[Any, Path], Path]
+    load_function: Callable[[Path], Any]
+
+    def store(self, project_dir: Path, idx: int) -> Path:
+        if isinstance(self.object, str | Path):
+            return Path(self.object)
+
+        store_location = store_to_disk(
+            project_dir=project_dir,
+            object=self,
+            name=self.name,
+            id=idx,
+            store_function=self.store_function,
+        )
+
+        return Path(store_location)
+
+    def to_reference(self, reference: Path) -> ReferenceValue:
+        return ReferenceValue(
+            reference=reference,
+            load_function=self.load_function,
+        )

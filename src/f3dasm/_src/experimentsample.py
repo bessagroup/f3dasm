@@ -10,17 +10,18 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import dataclass, field
 
 # Standard
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 # Third-party
 import numpy as np
 
 # Local
-from ._io import copy_object, load_object, store_to_disk
+from ._io import ReferenceValue, ToDiskValue, load_object, store_to_disk
 from .design.domain import Domain
 from .errors import DecodeError
 
@@ -39,70 +40,50 @@ class JobStatus(Enum):
     ERROR = 3
 
 
+@dataclass
 class ExperimentSample:
-    def __init__(self, input_data: Optional[dict[str, Any]] = None,
-                 output_data: Optional[dict[str, Any]] = None,
-                 domain: Optional[Domain] = None,
-                 job_status: Optional[str] = None,
-                 project_dir: Optional[Path] = None):
-        """
-        Realization of a single experiment in the design-of-experiment.
+    _input_data: dict[str, Any] = field(default_factory=dict)
+    _output_data: dict[str, Any] = field(default_factory=dict)
+    job_status: str | None = None
+    project_dir: Path = field(default_factory=Path.cwd())
+    """
+    Realization of a single experiment in the design-of-experiment.
 
-        Parameters
-        ----------
-        input_data : Optional[Dict[str, Any]]
-            Input parameters of one experiment.
-            The key is the name of the parameter.
-        output_data : Optional[Dict[str, Any]]
-            Output parameters of one experiment.
-            The key is the name of the parameter.
-        domain : Optional[Domain]
-            Domain of the experiment, by default None.
-        job_status : Optional[str]
-            Job status of the experiment, by default None.
-        project_dir : Optional[Path]
-            Directory of the project, by default None.
+    Parameters
+    ----------
+    _input_data : Optional[Dict[str, Any]]
+        Input parameters of one experiment.
+        The key is the name of the parameter.
+    _output_data : Optional[Dict[str, Any]]
+        Output parameters of one experiment.
+        The key is the name of the parameter.
+    job_status : Optional[str]
+        Job status of the experiment, by default None.
+    project_dir : Optional[Path]
+        Directory of the project, by default None.
 
-        Examples
-        --------
-        >>> sample = ExperimentSample(
-        ...     input_data={'param1': 1.0},
-        ...     output_data={'result1': 2.0}
-        ... )
-        >>> print(sample)
-        ExperimentSample(input_data={'param1': 1.0},
-        output_data={'result1': 2.0}, job_status=JobStatus.OPEN)
-        """
-        if input_data is None:
-            input_data = dict()
+    Examples
+    --------
+    >>> sample = ExperimentSample(
+    ...     _input_data={'param1': 1.0},
+    ...     _output_data={'result1': 2.0}
+    ... )
+    >>> print(sample)
+    ExperimentSample(input_data={'param1': 1.0},
+    output_data={'result1': 2.0}, job_status=JobStatus.OPEN)
+    """
 
-        if output_data is None:
-            output_data = dict()
+    def __post_init__(self):
+        """Handle defaults and consistency checks after dataclass init."""
+        # Infer job_status if not provided
+        if self.job_status is None:
+            self.job_status = "FINISHED" if self._output_data else "OPEN"
 
-        if domain is None:
-            domain = Domain()
-
-        if job_status is None:
-            if output_data:
-                job_status = 'FINISHED'
-            else:
-                job_status = 'OPEN'
-
-        if project_dir is None:
-            project_dir = Path.cwd()
-
-        self._input_data = input_data
-        self._output_data = output_data
-        self.domain = domain
-
+        # Convert string job_status to JobStatus enum
         try:
-            self.job_status = JobStatus[job_status]
-        # If nan is given as key, there is a problem with the decoding of
-        # the jobs.csv file
+            self.job_status = JobStatus[self.job_status]
         except KeyError as exc:
             raise DecodeError() from exc
-
-        self.project_dir = project_dir
 
     def __repr__(self):
         """
@@ -152,7 +133,6 @@ class ExperimentSample:
         return ExperimentSample(
             input_data={**self._input_data, **__o._input_data},
             output_data={**self._output_data, **__o._output_data},
-            domain=self.domain + __o.domain,
             project_dir=self.project_dir,
         )
 
@@ -187,7 +167,6 @@ class ExperimentSample:
         return ExperimentSample(
             input_data=deepcopy(self._input_data),
             output_data=deepcopy(self._output_data),
-            domain=self.domain._copy(),
             job_status=self.job_status.name,
             project_dir=self.project_dir)
 
@@ -201,7 +180,8 @@ class ExperimentSample:
         Dict[str, Any]
             Input data of the experiment.
         """
-        return {k: self._get_input(k) for k in self._input_data}
+        return {k: _get_value(value=v, project_dir=self.project_dir)
+                for k, v in self._input_data.items()}
 
     @property
     def output_data(self) -> dict[str, Any]:
@@ -213,54 +193,13 @@ class ExperimentSample:
         Dict[str, Any]
             Output data of the experiment.
         """
-        return {k: self._get_output(k) for k in self._output_data}
-
-    #                                                  Alternative constructors
-    # =========================================================================
+        return {k: _get_value(value=v, project_dir=self.project_dir)
+                for k, v in self._output_data.items()}
 
     @classmethod
     def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray,
-                   domain: Optional[Domain] = None) -> ExperimentSample:
-        """
-        Create an ExperimentSample instance from a numpy array.
-        The input data will be stored in the input space of the domain.
-
-        Parameters
-        ----------
-        input_array : np.ndarray
-            Numpy array containing input data.
-        domain : Optional[Domain]
-            Domain of the experiment, by default None.
-
-        Returns
-        -------
-        ExperimentSample
-            A new ExperimentSample instance.
-
-        Notes
-        -----
-        If no domain is provided, the default names will be 'x0', 'x1', etc.
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> sample = ExperimentSample.from_numpy(np.array([1.0, 2.0]))
-        >>> print(sample)
-        ExperimentSample(input_data={'x0': 1.0, 'x1': 2.0},
-        output_data={}, job_status=JobStatus.OPEN)
-        """
-        if domain is None:
-            n_dim = input_array.flatten().shape[0]
-            domain = Domain()
-            for i in range(n_dim):
-                domain.add_float(name=f'x{i}')
-
-        return cls(input_data={input_name: v for input_name, v in
-                               zip(domain.input_space.keys(),
-                                   input_array.flatten(), strict=True)},
-                   domain=domain,)
-    #                                                                   Getters
-    # =========================================================================
+                   domain: Domain | None = None) -> ExperimentSample:
+        raise NotImplementedError()
 
     def get(self, name: str) -> Any:
         """
@@ -287,72 +226,15 @@ class ExperimentSample:
         >>> sample.get('param1')
         1.0
         """
-        value = self._get_input(name)
+        value = self._input_data.get(name, None)
+        if value is None:
+            value = self._output_data.get(name, None)
 
-        if value is not None:
-            return value
+        if value is None:
+            raise KeyError(
+                f"Parameter '{name}' not found in input or output data.")
 
-        value = self._get_output(name)
-
-        if value is not None:
-            return value
-
-        raise KeyError(f"Parameter {name} not found in input or output data.")
-
-    def _get_input(self, name: str) -> Any:
-        """
-        Get the value of an input parameter by name.
-
-        Parameters
-        ----------
-        name : str
-            The name of the input parameter.
-
-        Returns
-        -------
-        Any
-            The value of the input parameter, or None if not found.
-        """
-        if name not in self.domain.input_names:
-            return None
-
-        parameter = self.domain.input_space[name]
-
-        if parameter.to_disk:
-            return load_object(project_dir=self.project_dir,
-                               path=self._input_data[name],
-                               load_function=parameter.load_function)
-        else:
-            return self._input_data[name]
-
-    def _get_output(self, name: str) -> Any:
-        """
-        Get the value of an output parameter by name.
-
-        Parameters
-        ----------
-        name : str
-            The name of the output parameter.
-
-        Returns
-        -------
-        Any
-            The value of the output parameter, or None if not found.
-        """
-        if name not in self.domain.output_names:
-            return None
-
-        parameter = self.domain.output_space[name]
-
-        if parameter.to_disk:
-            return load_object(project_dir=self.project_dir,
-                               path=self._output_data[name],
-                               load_function=parameter.load_function)
-        else:
-            return self._output_data[name]
-
-    #                                                                   Setters
-    # =========================================================================
+        return _get_value(value=value, project_dir=self.project_dir)
 
     def mark(self,
              status: Literal['open', 'in_progress', 'finished', 'error']):
@@ -428,32 +310,8 @@ class ExperimentSample:
         self._input_data = round_dict(self._input_data)
         self._output_data = round_dict(self._output_data)
 
-    def copy_project_dir(self, project_dir: Path):
-        for key, value in self._input_data.items():
-            # If the parameter is stored on disk, update the path
-            if isinstance(value, str) and self.domain.\
-                    input_space[key].to_disk:
-                new_value = copy_object(object_path=Path(value),
-                                        old_project_dir=self.project_dir,
-                                        new_project_dir=project_dir)
-                # Update the path in the input data
-                self._input_data[key] = new_value
-
-        for key, value in self._output_data.items():
-            # If the parameter is stored on disk, update the path
-            if isinstance(value, str) and self.domain.\
-                    output_space[key].to_disk:
-                new_value = copy_object(object_path=Path(value),
-                                        old_project_dir=self.project_dir,
-                                        new_project_dir=project_dir)
-                # Update the path in the input data
-
-                self._output_data[key] = new_value
-
-        self.project_dir = project_dir
-
-    #                                                                 Exporting
-    # =========================================================================
+    def copy_project_dir(self, project_path: Path):
+        raise NotImplementedError()
 
     def to_multiindex(self) -> dict[tuple[str, str], Any]:
         """
@@ -513,12 +371,9 @@ class ExperimentSample:
         """
         return {**self.input_data, **self.output_data}
 
-    #                                                                   Storing
-    # =========================================================================
-
     def store(self, name: str, object: Any, to_disk: bool = False,
-              store_function: Optional[type[Callable]] = None,
-              load_function: Optional[type[Callable]] = None):
+              store_function: Callable | None = None,
+              load_function: Callable | None = None):
         """
         Store an object in the experiment sample.
 
@@ -561,44 +416,16 @@ class ExperimentSample:
             def load_function(path: str) -> Any:
                 ...
         """
-        if name not in self.domain.output_names:
-            self.domain.add_output(name=name, to_disk=to_disk,
-                                   store_function=store_function,
-                                   load_function=load_function)
-
-        self._output_data[name] = object
+        value = object if not to_disk else ToDiskValue(
+            object=object,
+            name=name,
+            store_function=store_function,
+            load_function=load_function)
+        self._output_data[name] = value
 
     def store_experimentsample_references(self, idx: int):
-        for name, value in self._output_data.items():
-
-            # # If the output parameter is not in the domain, add it
-            # if name not in self.domain.output_names:
-            #     self.domain.add_output(name=name, to_disk=True)
-
-            parameter = self.domain.output_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, Path | str):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir,
-                    object=value, name=name,
-                    id=idx, store_function=parameter.store_function)
-
-                self._output_data[name] = Path(storage_location)
-
-        for name, value in self._input_data.items():
-            parameter = self.domain.input_space[name]
-
-            # If the parameter is to be stored on disk, store it
-            # Also check if the value is not already a reference!
-            if parameter.to_disk and not isinstance(value, Path | str):
-                storage_location = store_to_disk(
-                    project_dir=self.project_dir,
-                    object=value, name=name,
-                    id=idx, store_function=parameter.store_function)
-
-                self._input_data[name] = Path(storage_location)
+        # TODO fix this
+        raise NotImplementedError()
 
     #                                                                Job status
     # =========================================================================
@@ -625,3 +452,8 @@ class ExperimentSample:
         True
         """
         return self.job_status == JobStatus[status.upper()]
+
+
+def _get_value(value: Any, project_dir: Path) -> Any:
+    return value if not isinstance(
+        value, ReferenceValue) else value.load(project_dir)

@@ -21,6 +21,32 @@ class ExperimentSample:
     _output_data: dict[str, Any] = field(default_factory=dict)
     job_status: str | None = None
     project_dir: Path = field(default_factory=Path.cwd())
+    """
+    Realization of a single experiment in the design-of-experiment.
+
+    Parameters
+    ----------
+    _input_data : Optional[Dict[str, Any]]
+        Input parameters of one experiment.
+        The key is the name of the parameter.
+    _output_data : Optional[Dict[str, Any]]
+        Output parameters of one experiment.
+        The key is the name of the parameter.
+    job_status : Optional[str]
+        Job status of the experiment, by default None.
+    project_dir : Optional[Path]
+        Directory of the project, by default None.
+
+    Examples
+    --------
+    >>> sample = ExperimentSample(
+    ...     _input_data={'param1': 1.0},
+    ...     _output_data={'result1': 2.0}
+    ... )
+    >>> print(sample)
+    ExperimentSample(input_data={'param1': 1.0},
+    output_data={'result1': 2.0}, job_status=JobStatus.OPEN)
+    """
 
     def __post_init__(self):
         """Handle defaults and consistency checks after dataclass init."""
@@ -121,11 +147,27 @@ class ExperimentSample:
 
     @property
     def input_data(self) -> dict[str, Any]:
+        """
+        Get the input data of the experiment.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Input data of the experiment.
+        """
         return {k: _get_value(value=v, project_dir=self.project_dir)
                 for k, v in self._input_data.items()}
 
     @property
     def output_data(self) -> dict[str, Any]:
+        """
+        Get the output data of the experiment.
+
+        Returns
+        -------
+        Dict[str, Any]
+            Output data of the experiment.
+        """
         return {k: _get_value(value=v, project_dir=self.project_dir)
                 for k, v in self._output_data.items()}
 
@@ -135,6 +177,30 @@ class ExperimentSample:
         raise NotImplementedError()
 
     def get(self, name: str) -> Any:
+        """
+        Get the value of a parameter by name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the parameter.
+
+        Returns
+        -------
+        Any
+            The value of the parameter.
+
+        Raises
+        ------
+        KeyError
+            If the parameter is not found in input or output data.
+
+        Examples
+        --------
+        >>> sample = ExperimentSample(input_data={'param1': 1.0})
+        >>> sample.get('param1')
+        1.0
+        """
         value = self._input_data.get(name, None)
         if value is None:
             value = self._output_data.get(name, None)
