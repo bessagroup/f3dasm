@@ -29,14 +29,8 @@ import pandas as pd
 import xarray as xr
 
 # Local
-from f3dasm import (
-    Block,
-    ExperimentData,
-    ExperimentSample,
-    create_datagenerator,
-    create_optimizer,
-    create_sampler,
-)
+from f3dasm import (Block, ExperimentData, ExperimentSample,
+                    create_datagenerator, create_optimizer, create_sampler)
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
 from f3dasm.design import Domain, make_nd_continuous_domain
@@ -84,7 +78,7 @@ class CustomSampler(Block):
 
         return ExperimentData(
             domain=data._domain, input_data=df,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
 #                                                          Custom datagenerator
 # =============================================================================

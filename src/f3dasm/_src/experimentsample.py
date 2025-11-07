@@ -45,7 +45,7 @@ class ExperimentSample:
     _input_data: dict[str, Any] = field(default_factory=dict)
     _output_data: dict[str, Any] = field(default_factory=dict)
     job_status: str | None = None
-    project_dir: Path = field(default_factory=Path.cwd())
+    project_dir: Path = field(default_factory=Path.cwd)
     """
     Realization of a single experiment in the design-of-experiment.
 
@@ -84,6 +84,11 @@ class ExperimentSample:
             self.job_status = JobStatus[self.job_status]
         except KeyError as exc:
             raise DecodeError() from exc
+
+        if self._output_data is None:
+            self._output_data = {}
+        if self._input_data is None:
+            self._input_data = {}
 
     def __repr__(self):
         """
@@ -131,8 +136,8 @@ class ExperimentSample:
         output_data={'result1': 2.0}, job_status=JobStatus.FINISHED)
         """
         return ExperimentSample(
-            input_data={**self._input_data, **__o._input_data},
-            output_data={**self._output_data, **__o._output_data},
+            _input_data={**self._input_data, **__o._input_data},
+            _output_data={**self._output_data, **__o._output_data},
             project_dir=self.project_dir,
         )
 
@@ -165,8 +170,8 @@ class ExperimentSample:
             output data.
         """
         return ExperimentSample(
-            input_data=deepcopy(self._input_data),
-            output_data=deepcopy(self._output_data),
+            _input_data=deepcopy(self._input_data),
+            _output_data=deepcopy(self._output_data),
             job_status=self.job_status.name,
             project_dir=self.project_dir)
 
@@ -199,7 +204,44 @@ class ExperimentSample:
     @classmethod
     def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray,
                    domain: Domain | None = None) -> ExperimentSample:
-        raise NotImplementedError()
+        """
+        Create an ExperimentSample instance from a numpy array.
+        The input data will be stored in the input space of the domain.
+
+        Parameters
+        ----------
+        input_array : np.ndarray
+            Numpy array containing input data.
+        domain : Optional[Domain]
+            Domain of the experiment, by default None.
+
+        Returns
+        -------
+        ExperimentSample
+            A new ExperimentSample instance.
+
+        Notes
+        -----
+        If no domain is provided, the default names will be 'x0', 'x1', etc.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> sample = ExperimentSample.from_numpy(np.array([1.0, 2.0]))
+        >>> print(sample)
+        ExperimentSample(input_data={'x0': 1.0, 'x1': 2.0},
+        output_data={}, job_status=JobStatus.OPEN)
+        """
+        if domain is None:
+            n_dim = input_array.flatten().shape[0]
+            domain = Domain()
+            for i in range(n_dim):
+                domain.add_float(name=f'x{i}')
+
+        return cls(_input_data={input_name: v for input_name, v in
+                                zip(domain.input_space.keys(),
+                                    input_array.flatten(), strict=True)},
+                   )
 
     def get(self, name: str) -> Any:
         """
@@ -373,7 +415,8 @@ class ExperimentSample:
 
     def store(self, name: str, object: Any, to_disk: bool = False,
               store_function: Callable | None = None,
-              load_function: Callable | None = None):
+              load_function: Callable | None = None,
+              which: Literal['input', 'output'] = 'output'):
         """
         Store an object in the experiment sample.
 
@@ -391,6 +434,9 @@ class ExperimentSample:
         load_function : Optional[Type[Callable]], optional
             The function to use for loading the object from disk,
             by default None.
+        which : Literal['input', 'output'], optional
+            Specify whether to store the object in input or output data,
+            by default 'output'.
 
         Notes
         -----
@@ -421,12 +467,31 @@ class ExperimentSample:
             name=name,
             store_function=store_function,
             load_function=load_function)
-        self._output_data[name] = value
 
-    def store_experimentsample_references(self, idx: int):
-        # TODO fix this
-        raise NotImplementedError()
+        if which == 'input':
+            self._input_data[name] = value
+        elif which == 'output':
+            self._output_data[name] = value
+        else:
+            raise ValueError(f"Invalid value for 'which': {which}. "
+                             f"Expected 'input' or 'output'.")
 
+    def store_experimentsample_references(self, domain: Domain):
+        for name, value in self._input_data.items():
+            input_parameter = domain.input_space.get(name, None)
+            if input_parameter is not None and input_parameter.to_disk:
+                self.store(name=name, object=value, to_disk=True,
+                           store_function=input_parameter.store_function,
+                           load_function=input_parameter.load_function,
+                           which='input')
+
+        for name, value in self._output_data.items():
+            output_parameter = domain.output_space.get(name, None)
+            if output_parameter is not None and output_parameter.to_disk:
+                self.store(name=name, object=value, to_disk=True,
+                           store_function=output_parameter.store_function,
+                           load_function=output_parameter.load_function,
+                           which='output')
     #                                                                Job status
     # =========================================================================
 
@@ -457,3 +522,58 @@ class ExperimentSample:
 def _get_value(value: Any, project_dir: Path) -> Any:
     return value if not isinstance(
         value, ReferenceValue) else value.load(project_dir)
+
+
+def _store(
+        experiment_sample: ExperimentSample, idx: int, domain: Domain,
+) -> ExperimentSample:
+    for name, value in experiment_sample._output_data.items():
+        # If the value is a ToDiskValue, we need to store it
+        if isinstance(value, ToDiskValue):
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._output_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name
+                )
+
+    for name, value in experiment_sample._input_data.items():
+        if isinstance(value, ToDiskValue):
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._input_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name
+                )
+
+    return experiment_sample, domain

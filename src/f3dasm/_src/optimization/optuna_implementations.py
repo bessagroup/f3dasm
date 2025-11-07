@@ -113,7 +113,7 @@ class OptunaOptimizer(Optimizer):
         new_experiment_data = ExperimentData.from_data(
             data={0: new_es},
             domain=data.domain,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         # Evaluate the sample with the data generator
         self.data_generator.arm(data=new_experiment_data)
@@ -203,7 +203,7 @@ def _suggest_experimentsample(trial: optuna.Trial,
             raise TypeError(
                 f"Unsupported parameter type: {type(parameter)} "
                 f"for {name}")
-    return ExperimentSample(input_data=optuna_dict, domain=domain)
+    return ExperimentSample(_input_data=optuna_dict)
 
 
 def domain_to_optuna_distributions(domain: Domain) -> dict:

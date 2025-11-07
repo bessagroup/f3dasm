@@ -72,7 +72,7 @@ class LogNormalSampler(Block):
                           columns=self.domain.input_names)
         return ExperimentData(domain=data._domain,
                               input_data=df,
-                              project_dir=data.project_dir)
+                              project_dir=data._project_dir)
 
 # =============================================================================
 

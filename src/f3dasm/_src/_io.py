@@ -496,8 +496,8 @@ class ReferenceValue:
             load_function=self.load_function,
         )
 
-    def __repr__(self) -> str:
-        return self.reference.__repr__()
+    # def __repr__(self) -> str:
+    #     return self.reference.__repr__()
 
     def __str__(self) -> str:
         return self.reference.__str__()
@@ -516,7 +516,7 @@ class ToDiskValue:
 
         store_location = store_to_disk(
             project_dir=project_dir,
-            object=self,
+            object=self.object,
             name=self.name,
             id=idx,
             store_function=self.store_function,

@@ -448,7 +448,7 @@ class RandomUniform(Block):
             _continuous,
             columns=data.domain.continuous.input_names),
             domain=data.domain.continuous,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
@@ -458,7 +458,7 @@ class RandomUniform(Block):
             _discrete,
             columns=data.domain.discrete.input_names),
             domain=data.domain.discrete,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
@@ -468,7 +468,7 @@ class RandomUniform(Block):
             _categorical,
             columns=data.domain.categorical.input_names),
             domain=data.domain.categorical,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _constant = sample_constant(data.domain.constant, n_samples)
 
@@ -476,7 +476,7 @@ class RandomUniform(Block):
             _constant,
             columns=data.domain.constant.input_names),
             domain=data.domain.constant,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _array = sample_np_random_uniform_array(
             domain=data.domain.array, n_samples=n_samples,
@@ -486,10 +486,10 @@ class RandomUniform(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
-            project_dir=data.project_dir
+            project_dir=data._project_dir
         )
 
-        d = ExperimentData(project_dir=data.project_dir,
+        d = ExperimentData(project_dir=data._project_dir,
                            domain=data.domain._copy())
 
         for _d in [data_continuous, data_discrete,
@@ -594,7 +594,7 @@ class Grid(Block):
                           )[data.domain.input_names]
 
         return ExperimentData(domain=data.domain._copy(),
-                              input_data=df, project_dir=data.project_dir)
+                              input_data=df, project_dir=data._project_dir)
 
 
 def grid(**kwargs) -> Block:
@@ -656,7 +656,7 @@ class Sobol(Block):
             _continuous,
             columns=data.domain.continuous.input_names),
             domain=data.domain.continuous,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
@@ -666,7 +666,7 @@ class Sobol(Block):
             _discrete,
             columns=data.domain.discrete.input_names),
             domain=data.domain.discrete,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
@@ -676,7 +676,7 @@ class Sobol(Block):
             _categorical,
             columns=data.domain.categorical.input_names),
             domain=data.domain.categorical,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _constant = sample_constant(data.domain.constant, n_samples)
 
@@ -684,7 +684,7 @@ class Sobol(Block):
             _constant,
             columns=data.domain.constant.input_names),
             domain=data.domain.constant,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _array = sample_sobol_sequence_array(
             domain=data.domain.array, n_samples=n_samples,
@@ -694,10 +694,10 @@ class Sobol(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
-            project_dir=data.project_dir
+            project_dir=data._project_dir
         )
 
-        d = ExperimentData(project_dir=data.project_dir,
+        d = ExperimentData(project_dir=data._project_dir,
                            domain=data.domain._copy())
 
         for _d in [data_continuous, data_discrete,
@@ -768,7 +768,7 @@ class Latin(Block):
             _continuous,
             columns=data.domain.continuous.input_names),
             domain=data.domain.continuous,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _discrete = sample_np_random_choice_range(
             domain=data.domain.discrete, n_samples=n_samples,
@@ -778,7 +778,7 @@ class Latin(Block):
             _discrete,
             columns=data.domain.discrete.input_names),
             domain=data.domain.discrete,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _categorical = sample_np_random_choice(
             domain=data.domain.categorical, n_samples=n_samples,
@@ -788,7 +788,7 @@ class Latin(Block):
             _categorical,
             columns=data.domain.categorical.input_names),
             domain=data.domain.categorical,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _constant = sample_constant(data.domain.constant, n_samples)
 
@@ -796,7 +796,7 @@ class Latin(Block):
             _constant,
             columns=data.domain.constant.input_names),
             domain=data.domain.constant,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
         _array = sample_latin_hypercube_array(
             domain=data.domain.array, n_samples=n_samples,
@@ -806,10 +806,10 @@ class Latin(Block):
         data_array = ExperimentData(
             input_data=_array,
             domain=data.domain.array,
-            project_dir=data.project_dir
+            project_dir=data._project_dir
         )
 
-        d = ExperimentData(project_dir=data.project_dir,
+        d = ExperimentData(project_dir=data._project_dir,
                            domain=data.domain._copy())
 
         for _d in [data_continuous, data_discrete,

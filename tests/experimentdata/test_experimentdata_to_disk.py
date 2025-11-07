@@ -6,6 +6,7 @@ import pytest
 import xarray as xr
 
 from f3dasm import ExperimentData
+from f3dasm._src._io import ReferenceValue
 from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
@@ -51,7 +52,7 @@ def test_custom_object(domain_with_custom_object, tmp_path):
 
     assert isinstance(data.data[0].input_data['custom_in'], CustomObject)
     assert isinstance(data.data[0].output_data['custom_out'], CustomObject)
-    assert isinstance(data.data[0]._input_data['custom_in'], Path)
+    assert isinstance(data.data[0]._input_data['custom_in'], ReferenceValue)
 
 
 def test_numpy_array_object(tmp_path):
@@ -63,7 +64,7 @@ def test_numpy_array_object(tmp_path):
         domain=domain, input_data=input_data, project_dir=tmp_path)
 
     assert isinstance(data.data[0].input_data['x'], np.ndarray)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
     assert np.allclose(data.data[0].input_data['x'], x)
 
 
@@ -76,7 +77,7 @@ def test_pandas_dataframe_object(tmp_path):
         domain=domain, input_data=input_data, project_dir=tmp_path)
 
     assert isinstance(data.data[0].input_data['x'], pd.DataFrame)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
     pd.testing.assert_frame_equal(data.data[0].input_data['x'], x)
 
 
@@ -89,7 +90,7 @@ def test_xarray_object(tmp_path):
         domain=domain, input_data=input_data, project_dir=tmp_path)
 
     assert isinstance(data.data[0].input_data['x'], pd.DataFrame)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
     pd.testing.assert_frame_equal(data.data[0].input_data['x'], x)
 
 
@@ -111,7 +112,7 @@ def test_xarray_dataarray_object(tmp_path):
 
     # Assertions
     assert isinstance(data.data[0].input_data['x'], xr.DataArray)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
     xr.testing.assert_equal(data.data[0].input_data['x'], x)
 
 
@@ -133,7 +134,7 @@ def test_xarray_dataset_object(tmp_path):
 
     # Assertions
     assert isinstance(data.data[0].input_data['x'], xr.Dataset)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
     xr.testing.assert_equal(data.data[0].input_data['x'], x)
 
 
@@ -149,4 +150,4 @@ def test_xarray_pickle_object(tmp_path):
 
     # Assertions
     assert isinstance(data.data[0].input_data['x'], CustomObject)
-    assert isinstance(data.data[0]._input_data['x'], Path)
+    assert isinstance(data.data[0]._input_data['x'], ReferenceValue)
