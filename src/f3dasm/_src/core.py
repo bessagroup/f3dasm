@@ -23,6 +23,7 @@ from .datagenerator import (
     evaluate_multiprocessing,
     evaluate_sequential,
 )
+from .design.domain import Domain
 
 # Local
 from .experimentdata import ExperimentData
@@ -208,7 +209,7 @@ class DataGenerator:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
 
-def datagenerator(output_names: Iterable[str]
+def datagenerator(output_names: Iterable[str], domain: Domain | None = None
                   ) -> Callable[[Callable[..., Any]], DataGenerator]:
     """
     Decorator to convert a function into a `DataGenerator` subclass.
@@ -223,6 +224,10 @@ def datagenerator(output_names: Iterable[str]
         A list of names for the returned values of the decorated function.
         The function's return values will be stored in the `ExperimentSample`
         object under these names.
+    domain : Domain, optional
+        The domain describing the input and output space. If provided, it can
+        be used for saving the data to disk or other domain-specific
+        operations.
 
     Returns
     -------
@@ -250,6 +255,9 @@ def datagenerator(output_names: Iterable[str]
             "provide the names of the return arguments with the `output_names`"
             "attribute."
         )
+
+    if domain is None:
+        domain = Domain()
 
     # If the output names is a single string, convert it to a list
     if isinstance(output_names, str):
@@ -303,8 +311,16 @@ def datagenerator(output_names: Iterable[str]
 
                 # Store outputs in the experiment sample
                 for name, value in zip(output_names, _output, strict=False):
-                    experiment_sample.store(
-                        name=name, object=value)
+                    if name in domain.output_names:
+                        parameter = domain.output_space[name]
+                        experiment_sample.store(
+                            name=name, object=value,
+                            to_disk=parameter.to_disk,
+                            store_function=parameter.store_function,
+                            load_function=parameter.load_function,
+                        )
+                    else:
+                        experiment_sample.store(name=name, object=value)
 
                 return experiment_sample
 

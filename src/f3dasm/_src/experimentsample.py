@@ -21,7 +21,7 @@ from typing import Any, Literal
 import numpy as np
 
 # Local
-from ._io import ReferenceValue, ToDiskValue, load_object, store_to_disk
+from ._io import ReferenceValue, ToDiskValue
 from .design.domain import Domain
 from .errors import DecodeError
 
@@ -141,6 +141,8 @@ class ExperimentSample:
             project_dir=self.project_dir,
         )
 
+    # TODO: the self.project_dir should also be compared, but it
+    # breaks some tests
     def __eq__(self, __o: ExperimentSample) -> bool:
         """
         Check if two ExperimentSample instances are equal.
@@ -157,7 +159,8 @@ class ExperimentSample:
         """
         return (self._input_data == __o._input_data
                 and self._output_data == __o._output_data
-                and self.job_status == __o.job_status)
+                and self.job_status == __o.job_status
+                )
 
     def _copy(self) -> ExperimentSample:
         """
@@ -352,9 +355,6 @@ class ExperimentSample:
         self._input_data = round_dict(self._input_data)
         self._output_data = round_dict(self._output_data)
 
-    def copy_project_dir(self, project_path: Path):
-        raise NotImplementedError()
-
     def to_multiindex(self) -> dict[tuple[str, str], Any]:
         """
         Convert the experiment sample to a multiindex dictionary.
@@ -477,6 +477,34 @@ class ExperimentSample:
                              f"Expected 'input' or 'output'.")
 
     def store_experimentsample_references(self, domain: Domain):
+        """
+        Store references to input and output data in the experiment sample
+        based on the domain.
+
+        Parameters
+        ----------
+        domain : Domain
+            The domain describing the input and output spaces.
+
+        Notes
+        -----
+        This method checks the domain for parameters that should be stored
+        on disk. If a parameter is marked to be stored on disk, the method
+        will store the corresponding value in the experiment sample using
+        the `store` method.
+
+        Examples
+        --------
+        >>> domain = Domain()
+        >>> domain.add_float(name='param1', to_disk=True)
+        >>> sample = ExperimentSample(
+        ...     _input_data={'param1': 1.0, 'param2': 2.0},
+        ...     _output_data={'result1': 3.0}
+        ... )
+        >>> sample.store_experimentsample_references(domain)
+        >>> isinstance(sample._input_data['param1'], ToDiskValue)
+        True
+        """
         for name, value in self._input_data.items():
             input_parameter = domain.input_space.get(name, None)
             if input_parameter is not None and input_parameter.to_disk:
@@ -520,60 +548,19 @@ class ExperimentSample:
 
 
 def _get_value(value: Any, project_dir: Path) -> Any:
+    """
+    Retrieve the actual value, loading from disk if necessary.
+
+    Parameters
+    ----------
+    value : Any
+        The value to retrieve, which may be a ReferenceValue.
+    project_dir : Path
+        The project directory for loading from disk.
+    Returns
+    -------
+    Any
+        The actual value, loaded from disk if it was a ReferenceValue.
+    """
     return value if not isinstance(
         value, ReferenceValue) else value.load(project_dir)
-
-
-def _store(
-        experiment_sample: ExperimentSample, idx: int, domain: Domain,
-) -> ExperimentSample:
-    for name, value in experiment_sample._output_data.items():
-        # If the value is a ToDiskValue, we need to store it
-        if isinstance(value, ToDiskValue):
-            if name not in domain.output_space:
-                domain.add_output(
-                    name=name,
-                    to_disk=True,
-                    store_function=value.store_function,
-                    load_function=value.load_function)
-            # Store the value on disk
-            reference = value.store(
-                project_dir=experiment_sample.project_dir,
-                idx=idx,
-            )
-
-            # Update the experiment sample to reference the stored location
-            experiment_sample._output_data[name] = value.to_reference(
-                reference=reference)
-
-        else:
-            if name not in domain.output_space:
-                domain.add_output(
-                    name=name
-                )
-
-    for name, value in experiment_sample._input_data.items():
-        if isinstance(value, ToDiskValue):
-            if name not in domain.input_space:
-                domain.add_parameter(
-                    name=name,
-                    to_disk=True,
-                    store_function=value.store_function,
-                    load_function=value.load_function)
-            # Store the value on disk
-            reference = value.store(
-                project_dir=experiment_sample.project_dir,
-                idx=idx,
-            )
-
-            # Update the experiment sample to reference the stored location
-            experiment_sample._input_data[name] = value.to_reference(
-                reference=reference)
-
-        else:
-            if name not in domain.input_space:
-                domain.add_parameter(
-                    name=name
-                )
-
-    return experiment_sample, domain

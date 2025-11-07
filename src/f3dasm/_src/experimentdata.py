@@ -39,7 +39,7 @@ from ._io import (
 )
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
-from .experimentsample import ExperimentSample, _store
+from .experimentsample import ExperimentSample
 from .logger import logger
 
 #                                                          Authorship & Credits
@@ -147,12 +147,7 @@ class ExperimentData:
         self._project_dir = _project_dir
 
         # Store to_disk objects so that the references are kept only
-        for idx, experiment_sample in self:
-            experiment_sample.store_experimentsample_references(
-                domain=self._domain)
-            self.store_experimentsample(
-                experiment_sample=experiment_sample, idx=idx,
-                domain=self.domain)
+        self.store_objects()
 
     def __len__(self):
         """
@@ -665,6 +660,9 @@ class ExperimentData:
         # Create the experimentdata subfolder if it does not exist
         subdirectory.mkdir(parents=True, exist_ok=True)
 
+        # # Store all objects to keep references
+        # self.store_objects()
+
         df_input, df_output = self.to_pandas(keep_references=True)
 
         df_input.to_csv(
@@ -1054,7 +1052,7 @@ class ExperimentData:
             self, experiment_sample: ExperimentSample, idx: int,
             domain: Domain | None = None):
         """
-        Store an ExperimentSample object in the ExperimentData object and 
+        Store an ExperimentSample object in the ExperimentData object and
         update the Domain object.
 
         Parameters
@@ -1076,6 +1074,15 @@ class ExperimentData:
 
         self._domain = domain
         self.data[idx] = experiment_sample
+
+    def store_objects(self):
+        # Store to_disk objects so that the references are kept only
+        for idx, experiment_sample in self:
+            experiment_sample.store_experimentsample_references(
+                domain=self.domain)
+            self.store_experimentsample(
+                experiment_sample=experiment_sample, idx=idx,
+                domain=self.domain)
 
     def get_open_job(self) -> tuple[int, ExperimentSample, Domain]:
         """
@@ -1476,3 +1483,58 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
 
     else:
         raise ValueError(f"Jobs type {type(jobs)} not supported")
+
+
+def _store(
+        experiment_sample: ExperimentSample, idx: int, domain: Domain,
+) -> ExperimentSample:
+    for name, value in experiment_sample._output_data.items():
+        # If the value is a ToDiskValue, we need to store it
+        if isinstance(value, ToDiskValue):
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._output_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name
+                )
+
+    for name, value in experiment_sample._input_data.items():
+        if isinstance(value, ToDiskValue):
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._input_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name
+                )
+
+    return experiment_sample, domain

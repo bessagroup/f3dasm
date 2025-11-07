@@ -20,8 +20,8 @@ from pathos.helpers import mp
 # Local
 from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
 from .design.domain import Domain
-from .experimentdata import ExperimentData
-from .experimentsample import ExperimentSample, _store
+from .experimentdata import ExperimentData, _store
+from .experimentsample import ExperimentSample
 from .logger import logger
 from .mpi_utils import (
     mpi_get_open_job,
@@ -166,7 +166,8 @@ def evaluate_multiprocessing(
 
         work_items.append(item)
 
-    def _worker(options: dict[str, Any]) -> tuple[int, ExperimentSample, Domain]:
+    def _worker(options: dict[str, Any]
+                ) -> tuple[int, ExperimentSample, Domain]:
         es, domain = _run_sample(
             execute_fn=execute_fn,
             pass_id=pass_id,

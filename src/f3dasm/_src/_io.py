@@ -347,9 +347,9 @@ def _project_dir_factory(project_dir: Path | str | None) -> Path:
             not {type(project_dir).__name__}")
 
 
-def store_to_disk(project_dir: Path, object: Any,
-                  name: str, id: int,
-                  store_function: Optional[Callable] = None) -> str:
+def store_object(project_dir: Path, object: Any,
+                 name: str, id: int,
+                 store_function: Optional[Callable] = None) -> str:
     """
     Store an object to disk.
 
@@ -483,6 +483,8 @@ def copy_object(object_path: Path,
     shutil.copy2(old_location, new_location)
     return str(object_path)
 
+# =============================================================================
+
 
 @dataclass
 class ReferenceValue:
@@ -495,9 +497,6 @@ class ReferenceValue:
             path=self.reference,
             load_function=self.load_function,
         )
-
-    # def __repr__(self) -> str:
-    #     return self.reference.__repr__()
 
     def __str__(self) -> str:
         return self.reference.__str__()
@@ -514,7 +513,7 @@ class ToDiskValue:
         if isinstance(self.object, str | Path):
             return Path(self.object)
 
-        store_location = store_to_disk(
+        store_location = store_object(
             project_dir=project_dir,
             object=self.object,
             name=self.name,
