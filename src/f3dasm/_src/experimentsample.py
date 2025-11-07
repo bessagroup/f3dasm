@@ -22,7 +22,6 @@ import numpy as np
 
 # Local
 from ._io import ReferenceValue, ToDiskValue
-from .design.domain import Domain
 from .errors import DecodeError
 
 #                                                          Authorship & Credits
@@ -39,25 +38,28 @@ class JobStatus(Enum):
     FINISHED = 2
     ERROR = 3
 
+    def __str__(self) -> str:
+        return self.name
+
 
 @dataclass
 class ExperimentSample:
-    _input_data: dict[str, Any] = field(default_factory=dict)
-    _output_data: dict[str, Any] = field(default_factory=dict)
-    job_status: str | None = None
+    _input_data: dict[str, Any] | None = field(default_factory=dict)
+    _output_data: dict[str, Any] | None = field(default_factory=dict)
+    job_status: JobStatus | None | str = None
     project_dir: Path = field(default_factory=Path.cwd)
     """
     Realization of a single experiment in the design-of-experiment.
 
     Parameters
     ----------
-    _input_data : Optional[Dict[str, Any]]
+    _input_data : dict[str, Any] | None
         Input parameters of one experiment.
         The key is the name of the parameter.
-    _output_data : Optional[Dict[str, Any]]
+    _output_data : dict[str, Any] | None
         Output parameters of one experiment.
         The key is the name of the parameter.
-    job_status : Optional[str]
+    job_status : JobStatus | None
         Job status of the experiment, by default None.
     project_dir : Optional[Path]
         Directory of the project, by default None.
@@ -77,13 +79,15 @@ class ExperimentSample:
         """Handle defaults and consistency checks after dataclass init."""
         # Infer job_status if not provided
         if self.job_status is None:
-            self.job_status = "FINISHED" if self._output_data else "OPEN"
+            self.job_status = JobStatus.FINISHED if self._output_data \
+                else JobStatus.OPEN
 
-        # Convert string job_status to JobStatus enum
-        try:
-            self.job_status = JobStatus[self.job_status]
-        except KeyError as exc:
-            raise DecodeError() from exc
+        if isinstance(self.job_status, str):
+            # Convert string job_status to JobStatus enum
+            try:
+                self.job_status = JobStatus[self.job_status]
+            except KeyError as exc:
+                raise DecodeError() from exc
 
         if self._output_data is None:
             self._output_data = {}
@@ -175,7 +179,7 @@ class ExperimentSample:
         return ExperimentSample(
             _input_data=deepcopy(self._input_data),
             _output_data=deepcopy(self._output_data),
-            job_status=self.job_status.name,
+            job_status=self.job_status,
             project_dir=self.project_dir)
 
     @property
@@ -205,18 +209,15 @@ class ExperimentSample:
                 for k, v in self._output_data.items()}
 
     @classmethod
-    def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray,
-                   domain: Domain | None = None) -> ExperimentSample:
+    def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray
+                   ) -> ExperimentSample:
         """
         Create an ExperimentSample instance from a numpy array.
-        The input data will be stored in the input space of the domain.
 
         Parameters
         ----------
         input_array : np.ndarray
             Numpy array containing input data.
-        domain : Optional[Domain]
-            Domain of the experiment, by default None.
 
         Returns
         -------
@@ -225,7 +226,7 @@ class ExperimentSample:
 
         Notes
         -----
-        If no domain is provided, the default names will be 'x0', 'x1', etc.
+        The default names will be 'x0', 'x1', etc.
 
         Examples
         --------
@@ -235,16 +236,10 @@ class ExperimentSample:
         ExperimentSample(input_data={'x0': 1.0, 'x1': 2.0},
         output_data={}, job_status=JobStatus.OPEN)
         """
-        if domain is None:
-            n_dim = input_array.flatten().shape[0]
-            domain = Domain()
-            for i in range(n_dim):
-                domain.add_float(name=f'x{i}')
-
-        return cls(_input_data={input_name: v for input_name, v in
-                                zip(domain.input_space.keys(),
-                                    input_array.flatten(), strict=True)},
-                   )
+        return cls(
+            _input_data={f"x{i}": v for i,
+                         v in enumerate(input_array.flatten())},
+        )
 
     def get(self, name: str) -> Any:
         """
@@ -303,10 +298,15 @@ class ExperimentSample:
         >>> sample.job_status
         <JobStatus.FINISHED: 2>
         """
-        if status.upper() not in JobStatus.__members__:
-            raise ValueError(f"Invalid status: {status}")
+        try:
+            # Look up enum member
+            self.job_status = JobStatus[status.upper()]
 
-        self.job_status = JobStatus[status.upper()]
+        # If the status is invalid, raise ValueError
+        except KeyError as exc:
+            valid = ", ".join(s.lower() for s in JobStatus.__members__)
+            raise ValueError(
+                f"Invalid status '{status}'. Must be one of: {valid}") from exc
 
     def replace_nan(self, replacement_value: Any):
         """
@@ -476,50 +476,6 @@ class ExperimentSample:
             raise ValueError(f"Invalid value for 'which': {which}. "
                              f"Expected 'input' or 'output'.")
 
-    def store_experimentsample_references(self, domain: Domain):
-        """
-        Store references to input and output data in the experiment sample
-        based on the domain.
-
-        Parameters
-        ----------
-        domain : Domain
-            The domain describing the input and output spaces.
-
-        Notes
-        -----
-        This method checks the domain for parameters that should be stored
-        on disk. If a parameter is marked to be stored on disk, the method
-        will store the corresponding value in the experiment sample using
-        the `store` method.
-
-        Examples
-        --------
-        >>> domain = Domain()
-        >>> domain.add_float(name='param1', to_disk=True)
-        >>> sample = ExperimentSample(
-        ...     _input_data={'param1': 1.0, 'param2': 2.0},
-        ...     _output_data={'result1': 3.0}
-        ... )
-        >>> sample.store_experimentsample_references(domain)
-        >>> isinstance(sample._input_data['param1'], ToDiskValue)
-        True
-        """
-        for name, value in self._input_data.items():
-            input_parameter = domain.input_space.get(name, None)
-            if input_parameter is not None and input_parameter.to_disk:
-                self.store(name=name, object=value, to_disk=True,
-                           store_function=input_parameter.store_function,
-                           load_function=input_parameter.load_function,
-                           which='input')
-
-        for name, value in self._output_data.items():
-            output_parameter = domain.output_space.get(name, None)
-            if output_parameter is not None and output_parameter.to_disk:
-                self.store(name=name, object=value, to_disk=True,
-                           store_function=output_parameter.store_function,
-                           load_function=output_parameter.load_function,
-                           which='output')
     #                                                                Job status
     # =========================================================================
 

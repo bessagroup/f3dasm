@@ -65,7 +65,6 @@ def _run_sample(
         experiment_sample, domain = _store(
             experiment_sample=experiment_sample, idx=job_number,
             domain=domain)
-        # experiment_sample.store_experimentsample_references(idx=job_number)
         experiment_sample.mark("finished")
 
     except Exception:
@@ -118,9 +117,8 @@ def evaluate_sequential(
             **kwargs,
         )
 
-        data.store_experimentsample(
-            idx=job_number, experiment_sample=experiment_sample, domain=domain
-        )
+        data.domain = domain
+        data.data[job_number] = experiment_sample
 
     return data
 
@@ -181,9 +179,12 @@ def evaluate_multiprocessing(
                           ] = pool.map(_worker, work_items)
 
         for job_number, experiment_sample, domain in results:
-            data.store_experimentsample(
-                experiment_sample=experiment_sample,
-                idx=job_number, domain=domain)
+            # data.store_experimentsample(
+            #     experiment_sample=experiment_sample,
+            #     idx=job_number, domain=domain)
+
+            data.domain = domain
+            data.data[job_number] = experiment_sample
 
     return data
 
@@ -341,8 +342,8 @@ def _store_experiment_sample(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        data.store_experimentsample(experiment_sample=experiment_sample,
-                                    idx=idx)
+        data.domain = domain
+        data.data[idx] = experiment_sample
         data.store(project_dir)
 
 

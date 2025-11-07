@@ -496,6 +496,7 @@ class RandomUniform(Block):
                    data_categorical, data_constant, data_array]:
             d = d.join(_d)
 
+        # TODO: do we need this ?
         d.store_objects()
 
         return d

@@ -1076,13 +1076,62 @@ class ExperimentData:
         self.data[idx] = experiment_sample
 
     def store_objects(self):
+        self.store_experimentsample_references()
         # Store to_disk objects so that the references are kept only
         for idx, experiment_sample in self:
-            experiment_sample.store_experimentsample_references(
-                domain=self.domain)
             self.store_experimentsample(
                 experiment_sample=experiment_sample, idx=idx,
                 domain=self.domain)
+
+    def store_experimentsample_references(self):
+        """
+        Store references to input and output data in the experiment sample
+        based on the domain.
+
+        Parameters
+        ----------
+        experiment_sample : ExperimentSample
+            The experiment sample to store references for.
+        domain : Domain
+            The domain describing the input and output spaces.
+
+        Notes
+        -----
+        This method checks the domain for parameters that should be stored
+        on disk. If a parameter is marked to be stored on disk, the method
+        will store the corresponding value in the experiment sample using
+        the `store` method.
+
+        Examples
+        --------
+        >>> domain = Domain()
+        >>> domain.add_float(name='param1', to_disk=True)
+        >>> sample = ExperimentSample(
+        ...     _input_data={'param1': 1.0, 'param2': 2.0},
+        ...     _output_data={'result1': 3.0}
+        ... )
+        >>> sample.store_experimentsample_references(domain)
+        >>> isinstance(sample._input_data['param1'], ToDiskValue)
+        True
+        """
+        for _, es in self:
+            for name, value in es._input_data.items():
+                input_parameter = self.domain.input_space.get(name, None)
+                if input_parameter is not None and input_parameter.to_disk:
+                    es.store(
+                        name=name, object=value, to_disk=True,
+                        store_function=input_parameter.store_function,
+                        load_function=input_parameter.load_function,
+                        which='input')
+
+            for name, value in es._output_data.items():
+                output_parameter = self.domain.output_space.get(name, None)
+                if output_parameter is not None and output_parameter.to_disk:
+                    es.store(
+                        name=name, object=value, to_disk=True,
+                        store_function=output_parameter.store_function,
+                        load_function=output_parameter.load_function,
+                        which='output')
 
     def get_open_job(self) -> tuple[int, ExperimentSample, Domain]:
         """

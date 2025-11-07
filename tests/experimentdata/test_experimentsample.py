@@ -45,8 +45,8 @@ def test_default_initialization(sample_domain):
 
 def test_from_numpy(sample_domain):
     array = np.array([1.0, 2.0])
-    sample = ExperimentSample.from_numpy(array, sample_domain)
-    assert sample.input_data == {'x1': 1.0, 'x2': 2.0}
+    sample = ExperimentSample.from_numpy(array)
+    assert sample.input_data == {'x0': 1.0, 'x1': 2.0}
     assert sample.output_data == {}
 
 

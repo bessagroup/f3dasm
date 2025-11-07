@@ -188,8 +188,9 @@ def mpi_store_experiment_sample(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        data.store_experimentsample(experiment_sample=experiment_sample,
-                                    idx=idx, domain=domain)
+        data.domain = domain
+        data.data[idx] = experiment_sample
+
         data.store(project_dir)
 
     finally:
