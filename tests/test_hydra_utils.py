@@ -21,15 +21,9 @@ def sample_config():
 
 @pytest.fixture
 def experiment_sample():
-
-    domain = Domain()
-    domain.add_parameter('parameter1')
-    domain.add_parameter('nested.parameter3')
-    domain.add_output('parameter2')
     return ExperimentSample(
-        input_data={'parameter1': 10, 'nested.parameter3': 30},
-        output_data={'parameter2': 20},
-        domain=domain
+        _input_data={'parameter1': 10, 'nested.parameter3': 30},
+        _output_data={'parameter2': 20},
     )
 
 

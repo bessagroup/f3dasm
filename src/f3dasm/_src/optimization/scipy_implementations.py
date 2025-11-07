@@ -73,7 +73,7 @@ class ScipyOptimizer(Optimizer):
             domain=data.domain,
             input_data=history_x,
             output_data=history_y,
-            project_dir=data.project_dir)
+            project_dir=data._project_dir)
 
 # =============================================================================
 

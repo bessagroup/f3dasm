@@ -19,7 +19,8 @@ from pathos.helpers import mp
 
 # Local
 from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
-from .experimentdata import ExperimentData
+from .design.domain import Domain
+from .experimentdata import ExperimentData, _store
 from .experimentsample import ExperimentSample
 from .logger import logger
 from .mpi_utils import (
@@ -42,10 +43,11 @@ __status__ = 'Alpha'
 def _run_sample(
     execute_fn: Callable[..., ExperimentSample],
     experiment_sample: ExperimentSample,
+    domain: Domain,
     job_number: int | None = None,
     pass_id: bool = False,
     **kwargs: Any,
-) -> ExperimentSample:
+) -> tuple[ExperimentSample, Domain]:
     """Run `execute_fn` on a single ExperimentSample, handle exceptions and
     mark/store status on the sample object before returning it.
 
@@ -60,7 +62,9 @@ def _run_sample(
             experiment_sample = execute_fn(
                 experiment_sample=experiment_sample, **kwargs)
 
-        experiment_sample.store_experimentsample_references(idx=job_number)
+        experiment_sample, domain = _store(
+            experiment_sample=experiment_sample, idx=job_number,
+            domain=domain)
         experiment_sample.mark("finished")
 
     except Exception:
@@ -69,7 +73,7 @@ def _run_sample(
         logger.error(f"{error_msg}\n{error_traceback}")
         experiment_sample.mark("error")
 
-    return experiment_sample
+    return experiment_sample, domain
 
 # =========================================================================
 
@@ -99,22 +103,23 @@ def evaluate_sequential(
     """
 
     while True:
-        job_number, experiment_sample = data.get_open_job()
+        job_number, experiment_sample, domain = data.get_open_job()
         if job_number is None:
             logger.debug("No open jobs left!")
             break
 
-        experiment_sample = _run_sample(
+        experiment_sample, domain = _run_sample(
             execute_fn=execute_fn,
             experiment_sample=experiment_sample,
+            domain=domain,
             job_number=job_number,
             pass_id=pass_id,
             **kwargs,
         )
 
-        data.store_experimentsample(
-            idx=job_number, experiment_sample=experiment_sample,
-        )
+        data.domain = domain
+        data.data[job_number] = experiment_sample
+
     return data
 
 
@@ -147,33 +152,39 @@ def evaluate_multiprocessing(
     work_items: list[dict[str, Any]] = []
 
     while True:
-        job_number, experiment_sample = data.get_open_job()
+        job_number, experiment_sample, domain = data.get_open_job()
         if job_number is None:
             logger.debug("No open jobs left!")
             break
 
         item = {"experiment_sample": experiment_sample,
-                "job_number": job_number, **kwargs}
+                "job_number": job_number,
+                "domain": domain,
+                **kwargs}
 
         work_items.append(item)
 
-    def _worker(options: dict[str, Any]) -> tuple[int, ExperimentSample]:
-        es = _run_sample(
+    def _worker(options: dict[str, Any]
+                ) -> tuple[int, ExperimentSample, Domain]:
+        es, domain = _run_sample(
             execute_fn=execute_fn,
             pass_id=pass_id,
             **options)
-        return options["job_number"], es
+        return options["job_number"], es, domain
 
     if work_items:
         with mp.Pool(nodes) as pool:
             # maybe implement pool.starmap_async ?
-            results: list[tuple[int, ExperimentSample, int]
+            results: list[tuple[int, ExperimentSample, Domain]
                           ] = pool.map(_worker, work_items)
 
-        for job_number, experiment_sample in results:
-            data.store_experimentsample(
-                experiment_sample=experiment_sample,
-                idx=job_number)
+        for job_number, experiment_sample, domain in results:
+            # data.store_experimentsample(
+            #     experiment_sample=experiment_sample,
+            #     idx=job_number, domain=domain)
+
+            data.domain = domain
+            data.data[job_number] = experiment_sample
 
     return data
 
@@ -210,39 +221,40 @@ def evaluate_cluster(
     """
 
     # Creat lockfile
-    lock_path = (data.project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+    lock_path = (data._project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
                  ).with_suffix('.lock')
     lockfile = FileLock(lock_path)
 
     cluster_get_open_job = partial(
         _get_open_job,
-        project_dir=data.project_dir,
+        project_dir=data._project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
         lockfile=lockfile)
     cluster_store_experiment_sample = partial(
         _store_experiment_sample,
-        project_dir=data.project_dir,
+        project_dir=data._project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
         lockfile=lockfile)
 
     while True:
-        job_number, experiment_sample = cluster_get_open_job()
+        job_number, experiment_sample, domain = cluster_get_open_job()
         if job_number is None:
             logger.debug("No open jobs left!")
             break
 
-        experiment_sample = _run_sample(
+        experiment_sample, domain = _run_sample(
             execute_fn=execute_fn,
             experiment_sample=experiment_sample,
+            domain=domain,
             job_number=job_number,
             pass_id=pass_id,
             **kwargs,
         )
 
         cluster_store_experiment_sample(
-            idx=job_number, experiment_sample=experiment_sample)
+            idx=job_number, experiment_sample=experiment_sample, domain=domain)
 
     # Remove lockfile
     lock_path.unlink(missing_ok=True)
@@ -309,11 +321,11 @@ def _get_open_job(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        idx, es = data.get_open_job()
+        idx, es, domain = data.get_open_job()
 
         data.store(project_dir)
 
-    return idx, es
+    return idx, es, domain
 
 
 def _store_experiment_sample(
@@ -322,16 +334,33 @@ def _store_experiment_sample(
         wait_for_creation: bool,
         max_tries: int,
         idx: int,
-        experiment_sample: ExperimentSample) -> None:
+        experiment_sample: ExperimentSample,
+        domain: Domain) -> None:
 
     with lockfile:
         data = ExperimentData.from_file(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        data.store_experimentsample(experiment_sample=experiment_sample,
-                                    idx=idx)
+        data.domain = domain
+        data.data[idx] = experiment_sample
         data.store(project_dir)
+
+
+def _get_domain(
+        project_dir: Path,
+        lockfile: FileLock,
+        wait_for_creation: bool,
+        max_tries: int) -> Domain:
+
+    with lockfile:
+        data = ExperimentData.from_file(
+            project_dir=project_dir, wait_for_creation=wait_for_creation,
+            max_tries=max_tries)
+
+        domain = data.domain
+
+    return domain
 
 
 def mpi_worker(
@@ -344,30 +373,31 @@ def mpi_worker(
 
     cluster_get_open_job = partial(
         mpi_get_open_job, experiment_data_type=ExperimentData,
-        project_dir=data.project_dir,
+        project_dir=data._project_dir,
         wait_for_creation=wait_for_creation, max_tries=max_tries,
         comm=comm)
     cluster_store_experiment_sample = partial(
         mpi_store_experiment_sample, experiment_data_type=ExperimentData,
-        project_dir=data.project_dir,
+        project_dir=data._project_dir,
         wait_for_creation=wait_for_creation, max_tries=max_tries,
         comm=comm)
 
     while True:
-        job_number, experiment_sample = cluster_get_open_job()
+        job_number, experiment_sample, domain = cluster_get_open_job()
         if job_number is None:
             logger.debug("No open jobs left!")
             break
 
-        experiment_sample = _run_sample(
+        experiment_sample, domain = _run_sample(
             execute_fn=execute_fn,
             experiment_sample=experiment_sample,
+            domain=domain,
             job_number=job_number,
             pass_id=pass_id,
             **kwargs,
         )
 
         cluster_store_experiment_sample(
-            idx=job_number, experiment_sample=experiment_sample)
+            idx=job_number, experiment_sample=experiment_sample, domain=domain)
 
     mpi_terminate_worker(comm)

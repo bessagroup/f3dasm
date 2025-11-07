@@ -27,9 +27,16 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    ToDiskValue,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
@@ -132,16 +139,15 @@ class ExperimentData:
 
         _data = data_factory(
             input_data=_input_data, output_data=_output_data,
-            domain=_domain, jobs=_jobs, project_dir=_project_dir
+            jobs=_jobs, project_dir=_project_dir
         )
 
         self.data = _data
         self._domain = _domain
-        self.project_dir = _project_dir
+        self._project_dir = _project_dir
 
         # Store to_disk objects so that the references are kept only
-        for id, experiment_sample in self:
-            experiment_sample.store_experimentsample_references(idx=id)
+        self.store_objects()
 
     def __len__(self):
         """
@@ -224,7 +230,7 @@ class ExperimentData:
         True
         """
         return (self.data == __o.data and self._domain == __o._domain
-                and self.project_dir == __o.project_dir)
+                and self._project_dir == __o._project_dir)
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
         """
@@ -247,7 +253,7 @@ class ExperimentData:
         return ExperimentData.from_data(
             data={k: self.data[k] for k in self.index[key]},
             domain=self._domain,
-            project_dir=self.project_dir)
+            project_dir=self._project_dir)
 
     def _repr_html_(self) -> str:
         """
@@ -366,8 +372,32 @@ class ExperimentData:
             The domain to set.
         """
         self._domain = domain
+
+    @property
+    def project_dir(self) -> Path:
+        """
+        Returns the project directory of the ExperimentData object.
+
+        Returns
+        -------
+        Path
+            The project directory.
+        """
+        return self._project_dir
+
+    @project_dir.setter
+    def project_dir(self, project_dir: Path | str):
+        """
+        Sets the project directory of the ExperimentData object.
+
+        Parameters
+        ----------
+        project_dir : Path or str
+            The project directory to set.
+        """
+        self._project_dir = _project_dir_factory(project_dir)
         for _, es in self:
-            es.domain = domain
+            es.project_dir = self._project_dir
 
     #                                                  Alternative constructors
     # =========================================================================
@@ -397,7 +427,7 @@ class ExperimentData:
         experiment_data = cls()
         experiment_data.data = data
         experiment_data._domain = domain
-        experiment_data.project_dir = project_dir
+        experiment_data._project_dir = project_dir
         return experiment_data
 
     @classmethod
@@ -501,7 +531,7 @@ class ExperimentData:
 
         experiment_data.data = defaultdict(ExperimentSample, data)
         experiment_data._domain = domain
-        experiment_data.project_dir = _project_dir_factory(project_dir)
+        experiment_data._project_dir = _project_dir_factory(project_dir)
         return experiment_data
 
     #                                                         Selecting subsets
@@ -588,7 +618,7 @@ class ExperimentData:
         return ExperimentData._from_attributes(
             data=defaultdict(ExperimentSample, data_copy),
             domain=self._domain._copy(),
-            project_dir=self.project_dir,
+            project_dir=self._project_dir,
         )
 
     def store(self, project_dir: Optional[Path | str] = None):
@@ -625,10 +655,13 @@ class ExperimentData:
         if project_dir is not None:
             self.set_project_dir(project_dir, in_place=True)
 
-        subdirectory = self.project_dir / EXPERIMENTDATA_SUBFOLDER
+        subdirectory = self._project_dir / EXPERIMENTDATA_SUBFOLDER
 
         # Create the experimentdata subfolder if it does not exist
         subdirectory.mkdir(parents=True, exist_ok=True)
+
+        # # Store all objects to keep references
+        # self.store_objects()
 
         df_input, df_output = self.to_pandas(keep_references=True)
 
@@ -856,7 +889,7 @@ class ExperimentData:
         return ExperimentData.from_data(
             data={i: v for i, v in enumerate(self.data.values())},
             domain=self._domain,
-            project_dir=self.project_dir)
+            project_dir=self._project_dir)
 
     def join(self, experiment_data: ExperimentData) -> ExperimentData:
         """
@@ -989,7 +1022,7 @@ class ExperimentData:
         return ExperimentData.from_data(
             data=sorted_data,
             domain=self._domain,
-            project_dir=self.project_dir
+            project_dir=self._project_dir
         )
 
     #                                                          ExperimentSample
@@ -1016,9 +1049,11 @@ class ExperimentData:
         return self.data[id]
 
     def store_experimentsample(
-            self, experiment_sample: ExperimentSample, idx: int):
+            self, experiment_sample: ExperimentSample, idx: int,
+            domain: Domain | None = None):
         """
-        Store an ExperimentSample object in the ExperimentData object.
+        Store an ExperimentSample object in the ExperimentData object and
+        update the Domain object.
 
         Parameters
         ----------
@@ -1031,17 +1066,81 @@ class ExperimentData:
         --------
         >>> experiment_data.store_experimentsample(sample, 0)
         """
-        self._domain += experiment_sample.domain
+        experiment_sample, domain = _store(
+            experiment_sample=experiment_sample,
+            idx=idx,
+            domain=domain if domain is not None else self.domain,
+        )
+
+        self._domain = domain
         self.data[idx] = experiment_sample
 
-    def get_open_job(self) -> tuple[int, ExperimentSample]:
+    def store_objects(self):
+        self.store_experimentsample_references()
+        # Store to_disk objects so that the references are kept only
+        for idx, experiment_sample in self:
+            self.store_experimentsample(
+                experiment_sample=experiment_sample, idx=idx,
+                domain=self.domain)
+
+    def store_experimentsample_references(self):
+        """
+        Store references to input and output data in the experiment sample
+        based on the domain.
+
+        Parameters
+        ----------
+        experiment_sample : ExperimentSample
+            The experiment sample to store references for.
+        domain : Domain
+            The domain describing the input and output spaces.
+
+        Notes
+        -----
+        This method checks the domain for parameters that should be stored
+        on disk. If a parameter is marked to be stored on disk, the method
+        will store the corresponding value in the experiment sample using
+        the `store` method.
+
+        Examples
+        --------
+        >>> domain = Domain()
+        >>> domain.add_float(name='param1', to_disk=True)
+        >>> sample = ExperimentSample(
+        ...     _input_data={'param1': 1.0, 'param2': 2.0},
+        ...     _output_data={'result1': 3.0}
+        ... )
+        >>> sample.store_experimentsample_references(domain)
+        >>> isinstance(sample._input_data['param1'], ToDiskValue)
+        True
+        """
+        for _, es in self:
+            for name, value in es._input_data.items():
+                input_parameter = self.domain.input_space.get(name, None)
+                if input_parameter is not None and input_parameter.to_disk:
+                    es.store(
+                        name=name, object=value, to_disk=True,
+                        store_function=input_parameter.store_function,
+                        load_function=input_parameter.load_function,
+                        which='input')
+
+            for name, value in es._output_data.items():
+                output_parameter = self.domain.output_space.get(name, None)
+                if output_parameter is not None and output_parameter.to_disk:
+                    es.store(
+                        name=name, object=value, to_disk=True,
+                        store_function=output_parameter.store_function,
+                        load_function=output_parameter.load_function,
+                        which='output')
+
+    def get_open_job(self) -> tuple[int, ExperimentSample, Domain]:
         """
         Get the first open job in the ExperimentData object.
 
         Returns
         -------
-        tuple of int and ExperimentSample
-            The index and ExperimentSample of the first open job.
+        tuple of int, ExperimentSample and the Domain
+            The index, ExperimentSample and Domain of the first open job.
 
         Notes
         -----
@@ -1057,9 +1156,9 @@ class ExperimentData:
         for id, es in self:
             if es.is_status('open'):
                 es.mark('in_progress')
-                return id, es
+                return id, es, self.domain
 
-        return None, ExperimentSample()
+        return None, ExperimentSample(), self.domain
 
     #                                                                      Jobs
     # =========================================================================
@@ -1164,21 +1263,12 @@ class ExperimentData:
             ExperimentData object with the updated project directory
         """
         d = self._copy(in_place=in_place)
-        d.project_dir = _project_dir_factory(project_dir)
+        d._project_dir = _project_dir_factory(project_dir)
 
         if in_place:
             return None
         else:
             return d
-
-    def move_project_dir(self, project_dir: Path | str):
-
-        Path(project_dir).mkdir(parents=True, exist_ok=True)
-
-        for _, es in self:
-            es.copy_project_dir(Path(project_dir))
-
-        self.set_project_dir(project_dir, in_place=True)
 
 # =============================================================================
 
@@ -1359,7 +1449,6 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
 
 def data_factory(input_data: list[dict[str, Any]],
                  output_data: list[dict[str, Any]],
-                 domain: Domain,
                  jobs: pd.Series,
                  project_dir: Path,
                  ) -> dict[int, ExperimentSample]:
@@ -1391,9 +1480,8 @@ def data_factory(input_data: list[dict[str, Any]],
     input_data = remove_nan_and_none_keys_inplace(input_data)
     output_data = remove_nan_and_none_keys_inplace(output_data)
     # Combine the two lists into a dictionary of ExperimentSamples
-    data = {index: ExperimentSample(input_data=experiment_input,
-                                    output_data=experiment_output,
-                                    domain=domain,
+    data = {index: ExperimentSample(_input_data=experiment_input,
+                                    _output_data=experiment_output,
                                     job_status=job_status,
                                     project_dir=project_dir)
             for index, (experiment_input, experiment_output, job_status) in
@@ -1444,3 +1532,58 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
 
     else:
         raise ValueError(f"Jobs type {type(jobs)} not supported")
+
+
+def _store(
+        experiment_sample: ExperimentSample, idx: int, domain: Domain,
+) -> ExperimentSample:
+    for name, value in experiment_sample._output_data.items():
+        # If the value is a ToDiskValue, we need to store it
+        if isinstance(value, ToDiskValue):
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._output_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name
+                )
+
+    for name, value in experiment_sample._input_data.items():
+        if isinstance(value, ToDiskValue):
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function)
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._input_data[name] = value.to_reference(
+                reference=reference)
+
+        else:
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name
+                )
+
+    return experiment_sample, domain

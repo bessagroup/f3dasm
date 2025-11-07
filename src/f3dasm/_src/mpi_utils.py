@@ -141,7 +141,7 @@ def mpi_get_open_job(comm: Comm, experiment_data_type,
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        idx, es = data.get_open_job()
+        idx, es, domain = data.get_open_job()
 
         data.store(project_dir)
 
@@ -149,13 +149,13 @@ def mpi_get_open_job(comm: Comm, experiment_data_type,
         logger.debug(f"Process {comm.Get_rank()} releasing lock")
         comm.send(None, dest=MASTER_RANK, tag=LOCK_RELEASE)
 
-    return idx, es
+    return idx, es, domain
 
 
 def mpi_store_experiment_sample(
     comm: Comm, experiment_data_type,
         project_dir: Path, wait_for_creation: bool,
-        max_tries: int, idx: int, experiment_sample) -> None:
+        max_tries: int, idx: int, experiment_sample, domain) -> None:
     """
     Request and acquire an MPI lock to store an experiment sample.
 
@@ -188,8 +188,9 @@ def mpi_store_experiment_sample(
             project_dir=project_dir, wait_for_creation=wait_for_creation,
             max_tries=max_tries)
 
-        data.store_experimentsample(experiment_sample=experiment_sample,
-                                    idx=idx)
+        data.domain = domain
+        data.data[idx] = experiment_sample
+
         data.store(project_dir)
 
     finally:
