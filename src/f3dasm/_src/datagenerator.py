@@ -309,6 +309,55 @@ def evaluate_mpi(
 
 # =============================================================================
 
+def evaluate_cluster_array(
+    execute_fn: Callable[..., ExperimentSample],
+    data: ExperimentData,
+    job_number: int,
+    pass_id: bool,
+    **kwargs
+) -> None:
+    """
+    Run the operation on a cluster using file locks to manage access to the
+    ExperimentData.
+
+    Parameters
+    ----------
+
+    execute_fn : Callable[..., ExperimentSample]
+        The function to be executed on each ExperimentSample
+    data : ExperimentData
+        The ExperimentData object containing the samples to be processed
+    pass_id : bool
+        Whether to pass the job index to the execute function
+    kwargs : dict
+        Any keyword arguments that need to be supplied to the function
+    """
+
+    # Retrieve the experiment sample
+    experiment_sample = data.get_experiment_sample(job_number)
+
+    # Mark as in progress
+    experiment_sample.mark("in_progress")
+
+    # Store the experiment sample to disk
+    experiment_sample.store_as_json(idx=job_number)
+
+    # Run the experiment sample
+    experiment_sample, _ = _run_sample(
+        execute_fn=execute_fn,
+        experiment_sample=experiment_sample,
+        domain=data.domain,
+        job_number=job_number,
+        pass_id=pass_id,
+        **kwargs,
+    )
+
+    # Update the experiment sample to disk
+    experiment_sample.store_as_json(idx=job_number)
+
+
+# =============================================================================
+
 
 def _get_open_job(
         project_dir: Path,

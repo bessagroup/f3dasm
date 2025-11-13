@@ -37,6 +37,7 @@ __status__ = 'Stable'
 # =============================================================================
 
 EXPERIMENTDATA_SUBFOLDER = "experiment_data"
+EXPERIMENTSAMPLE_SUBFOLDER = "experiment_sample"
 
 LOCK_FILENAME = "lock"
 DOMAIN_FILENAME = "domain"
@@ -500,6 +501,21 @@ class ReferenceValue:
 
     def __str__(self) -> str:
         return self.reference.__str__()
+
+    def to_json(self) -> dict:
+        """Convert this ReferenceValue into a JSON-serializable dict."""
+        return {
+            "__type__": "ReferenceValue",
+            "reference": str(self.reference),
+            "load_function": pickle.dumps(self.load_function).hex(),
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> ReferenceValue:
+        """Reconstruct a ReferenceValue from a JSON dict."""
+        reference = Path(data["reference"])
+        load_function = pickle.loads(bytes.fromhex(data["load_function"]))
+        return cls(reference=reference, load_function=load_function)
 
 
 @dataclass

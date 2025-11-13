@@ -8,6 +8,7 @@ A ExperimentSample object contains a single realization of
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
@@ -21,7 +22,7 @@ from typing import Any, Literal
 import numpy as np
 
 # Local
-from ._io import ReferenceValue, ToDiskValue
+from ._io import EXPERIMENTSAMPLE_SUBFOLDER, ReferenceValue, ToDiskValue
 from .errors import DecodeError
 
 #                                                          Authorship & Credits
@@ -239,6 +240,51 @@ class ExperimentSample:
         return cls(
             _input_data={f"x{i}": v for i,
                          v in enumerate(input_array.flatten())},
+        )
+
+    @classmethod
+    def from_json(cls, path: Path) -> ExperimentSample:
+        """
+        Create an ExperimentSample instance from a JSON file.
+
+        Parameters
+        ----------
+        path : Path
+            Path to the JSON file.
+
+        Returns
+        -------
+        ExperimentSample
+            A new ExperimentSample instance.
+
+        Examples
+        --------
+        >>> sample = ExperimentSample.from_json(Path("sample.json"))
+        >>> print(sample)
+        ExperimentSample(input_data={'param1': 1.0},
+        output_data={'result1': 2.0}, job_status=JobStatus.FINISHED)
+        """
+        with open(path) as f:
+            data = json.load(f)
+
+        def restore(obj):
+            if (isinstance(obj, dict) and
+                    obj.get("__type__") == "ReferenceValue"):
+                return ReferenceValue.from_json(obj)
+            return obj
+
+        # Recursively apply restoration
+        def walk(d):
+            if isinstance(d, dict):
+                return {k: walk(restore(v)) for k, v in d.items()}
+            else:
+                return d
+
+        return cls(
+            _input_data=walk(data["input_data"]),
+            _output_data=walk(data["output_data"]),
+            job_status=data["job_status"],
+            project_dir=Path(data["project_dir"]),
         )
 
     def get(self, name: str) -> Any:
@@ -475,6 +521,28 @@ class ExperimentSample:
         else:
             raise ValueError(f"Invalid value for 'which': {which}. "
                              f"Expected 'input' or 'output'.")
+
+    def store_as_json(self, idx: int):
+        def default_serializer(obj):
+            if isinstance(obj, Path):
+                return str(obj)
+            if isinstance(obj, ReferenceValue):
+                return obj.to_json()
+            return str(obj)
+
+        data = {
+            "input_data": self._input_data,
+            "output_data": self._output_data,
+            "job_status": self.job_status.name,
+            "project_dir": self.project_dir,
+        }
+
+        file_path = (self.project_dir / EXPERIMENTSAMPLE_SUBFOLDER /
+                     f"{idx}").with_suffix(".json")
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(file_path, "w") as f:
+            json.dump(data, f, indent=2, default=default_serializer)
 
     #                                                                Job status
     # =========================================================================

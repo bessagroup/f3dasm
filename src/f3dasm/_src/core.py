@@ -19,6 +19,7 @@ from omegaconf import DictConfig
 
 from .datagenerator import (
     evaluate_cluster,
+    evaluate_cluster_array,
     evaluate_mpi,
     evaluate_multiprocessing,
     evaluate_sequential,
@@ -177,6 +178,7 @@ class DataGenerator:
             - 'parallel': Run the data generator in parallel
             - 'cluster': Run the data generator on a cluster
             - 'mpi': Run the data generator using MPI
+            - 'cluster_array': Run the data generator on a cluster array
 
         The 'pass_id' parameter is used to pass the id of the experiment sample
         to the execute function. This is useful when the execute function
@@ -202,6 +204,11 @@ class DataGenerator:
                 pass_id=pass_id, **kwargs)
         elif mode.lower() == "mpi":
             return evaluate_mpi(
+                execute_fn=self.execute,
+                data=data,
+                pass_id=pass_id, **kwargs)
+        elif mode.lower() == "cluster_array":
+            return evaluate_cluster_array(
                 execute_fn=self.execute,
                 data=data,
                 pass_id=pass_id, **kwargs)

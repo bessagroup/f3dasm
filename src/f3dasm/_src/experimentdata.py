@@ -30,6 +30,7 @@ from omegaconf import DictConfig
 from ._io import (
     DOMAIN_FILENAME,
     EXPERIMENTDATA_SUBFOLDER,
+    EXPERIMENTSAMPLE_SUBFOLDER,
     INPUT_DATA_FILENAME,
     JOBS_FILENAME,
     MAX_TRIES,
@@ -1132,6 +1133,27 @@ class ExperimentData:
                         store_function=output_parameter.store_function,
                         load_function=output_parameter.load_function,
                         which='output')
+
+    def update_from_experimentssample_json(self, in_place: bool = False):
+
+        d = self._copy(in_place=in_place)
+
+        for json_file in (
+                d.project_dir / EXPERIMENTSAMPLE_SUBFOLDER).glob('*.json'):
+            try:
+                idx = int(json_file.stem)
+                es = ExperimentSample.from_json(json_file)
+                d.data[idx] = es
+
+            except Exception as exc:
+                logger.warning(
+                    f"Could not load ExperimentSample from {json_file}: {exc}"
+                )
+
+        if in_place:
+            return None
+        else:
+            return d
 
     def get_open_job(self) -> tuple[int, ExperimentSample, Domain]:
         """
