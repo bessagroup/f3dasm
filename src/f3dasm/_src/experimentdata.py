@@ -1,7 +1,7 @@
 """
 The ExperimentData object is the main object used to store implementations
- of a design-of-experiments, keep track of results, perform optimization and
- extract data for machine learning purposes.
+of a design-of-experiments, keep track of results, perform optimization and
+extract data for machine learning purposes.
 """
 
 #                                                                       Modules
@@ -360,6 +360,14 @@ class ExperimentData:
 
     @property
     def domain(self) -> Domain:
+        """
+        Returns the domain of the ExperimentData object.
+
+        Returns
+        -------
+        Domain
+            The domain of the ExperimentData object.
+        """
         return self._domain
 
     @domain.setter
@@ -1089,13 +1097,6 @@ class ExperimentData:
         Store references to input and output data in the experiment sample
         based on the domain.
 
-        Parameters
-        ----------
-        experiment_sample : ExperimentSample
-            The experiment sample to store references for.
-        domain : Domain
-            The domain describing the input and output spaces.
-
         Notes
         -----
         This method checks the domain for parameters that should be stored
@@ -1111,7 +1112,7 @@ class ExperimentData:
         ...     _input_data={'param1': 1.0, 'param2': 2.0},
         ...     _output_data={'result1': 3.0}
         ... )
-        >>> sample.store_experimentsample_references(domain)
+        >>> sample.store_experimentsample_references()
         >>> isinstance(sample._input_data['param1'], ToDiskValue)
         True
         """
@@ -1484,8 +1485,6 @@ def data_factory(input_data: list[dict[str, Any]],
         The input data of the experiments
     output_data : List[Dict[str, Any]]
         The output data of the experiments
-    domain : Domain
-        The domain of the data
     jobs : pd.Series
         The status of all the jobs
     project_dir : Path

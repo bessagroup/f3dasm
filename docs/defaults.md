@@ -75,7 +75,7 @@ data_generation_block.arm(data=experiment_data)
 experiment_data = data_generation_block.call(data=experiment_data)
 ```
 
-## Implemented samples
+## Implemented samplers
 
 The following built-in implementations of samplers can be used in the data-driven process.
 
@@ -88,80 +88,36 @@ The following built-in implementations of samplers can be used in the data-drive
 
 ## Implemented benchmark functions
 
-### Convex functions
-
-| Name                    | Key-word                    | Function                                                |
-| ----------------------- | --------------------------- | ------------------------------------------------------- |
-| Ackley N. 2             | `"Ackley N. 2"`             | `f3dasm.datageneration.functions.ackleyn2`              |
-| Bohachevsky N. 1        | `"Bohachevsky N. 1"`        | `f3dasm.datageneration.functions.bohachevskyn1`         |
-| Booth                   | `"Booth"`                   | `f3dasm.datageneration.functions.booth`                 |
-| Brent                   | `"Brent"`                   | `f3dasm.datageneration.functions.brent`                 |
-| Brown                   | `"Brown"`                   | `f3dasm.datageneration.functions.brown`                 |
-| Bukin N. 6              | `"Bukin N. 6"`              | `f3dasm.datageneration.functions.bukinn6`               |
-| Dixon Price             | `"Dixon Price"`             | `f3dasm.datageneration.functions.dixonprice`            |
-| Exponential             | `"Exponential"`             | `f3dasm.datageneration.functions.exponential`           |
-| Matyas                  | `"Matyas"`                  | `f3dasm.datageneration.functions.matyas`                |
-| McCormick               | `"McCormick"`               | `f3dasm.datageneration.functions.mccormick`             |
-| Powell                  | `"Powell"`                  | `f3dasm.datageneration.functions.powell`                |
-| Rotated Hyper-Ellipsoid | `"Rotated Hyper-Ellipsoid"` | `f3dasm.datageneration.functions.rotatedhyperellipsoid` |
-| Schwefel 2.20           | `"Schwefel 2.20"`           | `f3dasm.datageneration.functions.schwefel2_20`          |
-| Schwefel 2.21           | `"Schwefel 2.21"`           | `f3dasm.datageneration.functions.schwefel2_21`          |
-| Schwefel 2.22           | `"Schwefel 2.22"`           | `f3dasm.datageneration.functions.schwefel2_22`          |
-| Schwefel 2.23           | `"Schwefel 2.23"`           | `f3dasm.datageneration.functions.schwefel2_23`          |
-| Sphere                  | `"Sphere"`                  | `f3dasm.datageneration.functions.sphere`                |
-| Sum Squares             | `"Sum Squares"`             | `f3dasm.datageneration.functions.sumsquares`            |
-| Thevenot                | `"Thevenot"`                | `f3dasm.datageneration.functions.thevenot`              |
-| Trid                    | `"Trid"`                    | `f3dasm.datageneration.functions.trid`                  |
-
-### Seperable functions
-
-| Name             | Key-word             | Function                                         |
-| ---------------- | -------------------- | ------------------------------------------------ |
-| Ackley           | `"Ackley"`           | `f3dasm.datageneration.functions.ackley`         |
-| Bohachevsky N. 1 | `"Bohachevsky N. 1"` | `f3dasm.datageneration.functions.bohachevskyn1`  |
-| Easom            | `"Easom"`            | `f3dasm.datageneration.functions.easom`          |
-| Egg Crate        | `"Egg Crate"`        | `f3dasm.datageneration.functions.eggcrate`       |
-| Exponential      | `"Exponential"`      | `f3dasm.datageneration.functions.exponential`    |
-| Griewank         | `"Griewank"`         | `f3dasm.datageneration.functions.griewank`       |
-| Michalewicz      | `"Michalewicz"`      | `f3dasm.datageneration.functions.michalewicz`    |
-| Powell           | `"Powell"`           | `f3dasm.datageneration.functions.powell`         |
-| Qing             | `"Qing"`             | `f3dasm.datageneration.functions.qing`           |
-| Quartic          | `"Quartic"`          | `f3dasm.datageneration.functions.quartic`        |
-| Rastrigin        | `"Rastrigin"`        | `f3dasm.datageneration.functions.rastrigin`      |
-| Schwefel         | `"Schwefel"`         | `f3dasm.datageneration.functions.schwefel`       |
-| Schwefel 2.20    | `"Schwefel 2.20"`    | `f3dasm.datageneration.functions.schwefel2_20`   |
-| Schwefel 2.21    | `"Schwefel 2.21"`    | `f3dasm.datageneration.functions.schwefel2_21`   |
-| Schwefel 2.22    | `"Schwefel 2.22"`    | `f3dasm.datageneration.functions.schwefel2_22`   |
-| Schwefel 2.23    | `"Schwefel 2.23"`    | `f3dasm.datageneration.functions.schwefel2_23`   |
-| Sphere           | `"Sphere"`           | `f3dasm.datageneration.functions.sphere`         |
-| Styblinski Tank  | `"Styblinski Tank"`  | `f3dasm.datageneration.functions.styblinskitang` |
-| Sum Squares      | `"Sum Squares"`      | `f3dasm.datageneration.functions.sumsquares`     |
-| Thevenot         | `"Thevenot"`         | `f3dasm.datageneration.functions.thevenot`       |
-| Xin She Yang     | `"Xin She Yang"`     | `f3dasm.datageneration.functions.xin_she_yang`   |
+| Name                    | Key-word                | Function                                                |
+| ----------------------- | ----------------------- | ------------------------------------------------------- |
+| Ackley                  | `"ackley"`              | `f3dasm.datageneration.functions.ackley`                |
+| Beale                   | `"beale"`               | `f3dasm.datageneration.functions.beale`                 |
+| Booth                   | `"booth"`               | `f3dasm.datageneration.functions.booth`                 |
+| Branin                  | `"branin"`              | `f3dasm.datageneration.functions.branin`                |
+| Cross-in-Tray           | `"crossintray"`         | `f3dasm.datageneration.functions.crossintray`           |
+| Dixon Price             | `"dixonprice"`          | `f3dasm.datageneration.functions.dixonprice`            |
+| Easom                   | `"easom"`               | `f3dasm.datageneration.functions.easom`                 |
+| Eggholder               | `"eggholder"`           | `f3dasm.datageneration.functions.eggholder`             |
+| Griewank                | `"griewank"`            | `f3dasm.datageneration.functions.griewank`              |
+| Levy                    | `"levy"`                | `f3dasm.datageneration.functions.levy`                  |
+| Rastrigin               | `"rastrigin"`           | `f3dasm.datageneration.functions.rastrigin`             |
+| Rosenbrock              | `"rosenbrock"`          | `f3dasm.datageneration.functions.rosenbrock`            |
+| Rotated Hyper-Ellipsoid | `"rotatedhyperellipsoid"` | `f3dasm.datageneration.functions.rotatedhyperellipsoid` |
+| Schwefel                | `"schwefel"`            | `f3dasm.datageneration.functions.schwefel`              |
+| Sphere                  | `"sphere"`              | `f3dasm.datageneration.functions.sphere`                |
+| Styblinski-Tang         | `"styblinskitang"`      | `f3dasm.datageneration.functions.styblinskitang`        |
+| Three-Hump              | `"threehump"`           | `f3dasm.datageneration.functions.threehump`             |
+| Zakharov                | `"zakharov"`            | `f3dasm.datageneration.functions.zakharov`              |
 
 
-### Multimodal functions
-
-| Name             | Key-word             | Function                                        |
-| ---------------- | -------------------- | ----------------------------------------------- |
-| Ackley           | `"Ackley"`           | `f3dasm.datageneration.functions.ackley`        |
-| Ackley N. 3      | `"Ackley N. 3"`      | `f3dasm.datageneration.functions.ackleyn3`      |
-| Ackley N. 4      | `"Ackley N. 4"`      | `f3dasm.datageneration.functions.ackleyn4`      |
-| Adjiman          | `"Adjiman"`          | `f3dasm.datageneration.functions.adjiman`       |
-| Bartels          | `"Bartels"`          | `f3dasm.datageneration.functions.bartels`       |
-| Beale            | `"Beale"`            | `f3dasm.datageneration.functions.beale`         |
-| Bird             | `"Bird"`             | `f3dasm.datageneration.functions.bird`          |
-| Bohachevsky N. 2 | `"Bohachevsky N. 2"` | `f3dasm.datageneration.functions.bohachevskyn2` |
-| ...              | ...                  | ...                                             |
 
 ## Implemented optimizers
 
 The following implementations of optimizers can be found under the f3dasm.optimization module.
-These are ported from scipy-optimize
 
-| Name               | Key-word          | Function                            | Reference                                                                                                 |
-| ------------------ | ----------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Conjugate Gradient | `"cg"`            | `f3dasm.optimization.cg`            | [scipy.minimize CG](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html)                 |
-| L-BFGS-B           | `"lbfgsb"`        | `f3dasm.optimization.lbfgsb`        | [scipy.minimize L-BFGS-B](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html)       |
-| Nelder Mead        | `"nelder_mead"`   | `f3dasm.optimization.nelder_mead`   | [scipy.minimize NelderMead](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html) |
-| Random search      | `"random_search"` | `f3dasm.optimization.random_search` | [numpy](https://numpy.org/doc/)                                                                           |
+| Name               | Key-word        | Function                          | Reference                                                                                                 |
+| ------------------ | ---------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Conjugate Gradient | `"cg"`           | `f3dasm.optimization.cg`          | [scipy.minimize CG](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cg.html)                 |
+| L-BFGS-B           | `"lbfgsb"`       | `f3dasm.optimization.lbfgsb`      | [scipy.minimize L-BFGS-B](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html)       |
+| Nelder Mead        | `"neldermead"`   | `f3dasm.optimization.nelder_mead` | [scipy.minimize NelderMead](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html) |
+| TPE Sampler        | `"tpe"`          | `f3dasm.optimization.tpesampler`  | [Optuna TPE Sampler](https://optuna.readthedocs.io/en/stable/_modules/optuna/samplers/_tpe/sampler.html) |

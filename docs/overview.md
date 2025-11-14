@@ -25,7 +25,7 @@ This work generalizes the original closed-source framework proposed by Bessa and
 - **Machine learning**, in which a surrogate model is trained to fit experimental findings.
 - **Optimization**, where we try to iteratively improve the design.
 
-![Data-driven process](./img/data-driven-process.png){: align="center" width="100%" }
+![Data-driven process](./img/data-driven-process.png)
 
 ---
 
@@ -43,7 +43,7 @@ This work generalizes the original closed-source framework proposed by Bessa and
   The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
 
 - **Built-in defaults**  
-  The framework includes a collection of [benchmark functions](#implemented-benchmark-functions), [optimization algorithms](#implemented-optimizers), and [sampling strategies](#implemented-samplers) to get you started right away!
+  The framework includes a collection of [benchmark functions](defaults.md#implemented-benchmark-functions), [optimization algorithms](defaults.md#implemented-optimizers), and [sampling strategies](defaults.md#implemented-samplers) to get you started right away!
 
 - **Hydra integration**  
   The framework is integrated with [Hydra](https://hydra.cc/) configuration manager, to easily manage and run experiments.

@@ -18,7 +18,7 @@ The best way to get started is to:
 
 * Read the [overview](overview.md) section, containing a brief introduction to the framework and a statement of need.
 * Follow the [installation instructions](installation.md) to get going!
-* Check out the [tutorials](tutorials.md) section, containing a collection of examples to get you familiar with the framework.
+* Check out the tutorials section, containing a collection of examples to get you familiar with the framework.
 
 ---
 

@@ -3,7 +3,7 @@
 PACKAGEDIR := dist
 COVERAGEREPORTDIR := coverage_html_report
 
-.PHONY: help init init-dev test test-smoke test-smoke-html test-html build upload upload-testpypi uv-test
+.PHONY: help init init-dev test test-smoke test-smoke-html test-html build upload upload-testpypi
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of:"
@@ -12,7 +12,6 @@ help:
 	@echo "  test                Run the tests with pytest"
 	@echo "  test-html           Run the tests with pytest and open the HTML coverage report"
 	@echo "  test-smoke          Run the smoke tests with pytest"
-	@echo "  uv-test             Run the smoke tests with uv and pytest"
 	@echo "  test-smoke-html     Run the smoke tests with pytest and open the HTML coverage report"
 	@echo "  build               Build the package"
 	@echo "  upload              Upload the package to the PyPi index"
@@ -25,12 +24,6 @@ init-dev:
 	pip install -r requirements_dev
 
 test:
-	pytest
-
-test-smoke:
-	pytest -v -s -m smoke
-
-uv-test:
 	uv run pytest -v -s -m smoke
 
 test-smoke-html:

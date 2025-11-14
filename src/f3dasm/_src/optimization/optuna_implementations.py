@@ -270,6 +270,14 @@ def optuna_optimizer(
 
 # =============================================================================
 
-tpesampler = partial(
-    OptunaOptimizer, optuna_sampler=optuna.samplers.TPESampler()
-)
+def tpesampler() -> Optimizer:
+    """Create an Optuna TPE sampler optimizer block.
+
+    Returns
+    -------
+    Block
+        An instance of the OptunaOptimizer block with TPE sampler.
+    """
+    return OptunaOptimizer(
+        optuna_sampler=optuna.samplers.TPESampler()
+    )

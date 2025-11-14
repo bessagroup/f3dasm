@@ -23,7 +23,7 @@ theme:
              name: Switch to light mode
     icon:
         repo: fontawesome/brands/github  # GitHub logo in top right
-        # logo: "material/circle-opacity"  # Equinox logo in top left
+        # logo: "material/circle-opacity"  # Logo in top left
     # favicon: "_static/favicon.png"
     # custom_dir: "docs/_overrides"  # Overriding part of the HTML
 
@@ -89,7 +89,7 @@ plugins:
                     show_overloads: false
                     show_root_heading: true
                     show_signature_annotations: true
-                    show_source: false
+                    show_source: true
                     show_symbol_type_heading: true
                     show_symbol_type_toc: true
                     filters:
@@ -121,6 +121,10 @@ nav:
             - 'notebooks/hydra/usehydra.ipynb'
         - defaults.md
     - API Reference:
-        - 'api.md'
+        - 'api/design.md'
+        - 'api/experimentdata.md'
+        - 'api/datageneration.md'
+        - 'api/defaults.md'
+        - 'api/hydra_tools.md'
     - License:
         - 'license.md'

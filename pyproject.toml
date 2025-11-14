@@ -75,6 +75,7 @@ packages = ["src"]
 
 [dependency-groups]
 all = [
+    "abaqus2py>=1.0.0",
     "optuna>=4.4.0",
 ]
 dev = [
