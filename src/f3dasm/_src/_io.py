@@ -8,6 +8,7 @@ operations.
 
 from __future__ import annotations
 
+import logging
 import pickle
 import shutil
 from collections.abc import Callable, Mapping
@@ -23,14 +24,16 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# Local
-from .logger import logger
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Stable'
+# =============================================================================
+
+logger = logging.getLogger('f3dasm')
+
+
 # =============================================================================
 
 #                                                  Global folder and file names

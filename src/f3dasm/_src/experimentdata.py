@@ -9,6 +9,8 @@ extract data for machine learning purposes.
 
 from __future__ import annotations
 
+import logging
+
 # Standard
 import random
 from collections import defaultdict
@@ -41,7 +43,6 @@ from ._io import (
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
-from .logger import logger
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -51,6 +52,8 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+logger = logging.getLogger('f3dasm')
 
 #                                                                      Protocol
 # =============================================================================

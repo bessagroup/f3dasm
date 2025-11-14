@@ -5,6 +5,7 @@ This module defines tools for using MPI in a distributed fashion.
 # =============================================================================
 
 # Standard
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -20,16 +21,18 @@ if TYPE_CHECKING:
 else:
     Comm = object
 
-# Local
-from .logger import logger
-
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
 __credits__ = ['Martin van der Schelling']
 __status__ = 'Under development'
 # =============================================================================
-#
+
+logger = logging.getLogger('f3dasm')
+
+# =============================================================================
+
+
 #                                                                     Constants
 # =============================================================================
 

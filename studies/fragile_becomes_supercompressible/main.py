@@ -22,6 +22,7 @@ process
 from pathlib import Path
 from time import sleep
 from typing import Optional
+import logging
 
 # Third-party
 import hydra
@@ -30,7 +31,6 @@ import pandas as pd
 from abaqus2py import F3DASMAbaqusSimulator
 
 from f3dasm import Block, ExperimentData
-from f3dasm import logger as f3dasm_logger
 from f3dasm.design import Domain
 
 #                                                          Authorship & Credits
@@ -41,6 +41,8 @@ __status__ = 'Stable'
 # =============================================================================
 #
 # =============================================================================
+
+logger = logging.getLogger('f3dasm')
 
 
 #                                                         Custom sampler method
@@ -172,7 +174,7 @@ def main(config):
         Configuration parameters defined in config.yaml
     """
 
-    f3dasm_logger.setLevel(config.log_level)
+    logger.setLevel(config.log_level)
     # Execute the initial_script for the first job
     if config.hpc.jobid == 0:
         pre_processing(config)

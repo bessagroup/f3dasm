@@ -6,6 +6,8 @@ This module contains the DataGenerator abstraction.
 
 from __future__ import annotations
 
+import logging
+
 # Standard
 import traceback
 from collections.abc import Callable
@@ -22,7 +24,6 @@ from ._io import EXPERIMENTDATA_SUBFOLDER, LOCK_FILENAME, MAX_TRIES
 from .design.domain import Domain
 from .experimentdata import ExperimentData, _store
 from .experimentsample import ExperimentSample
-from .logger import logger
 from .mpi_utils import (
     mpi_get_open_job,
     mpi_lock_manager,
@@ -37,6 +38,10 @@ __credits__ = ['Martin van der Schelling']
 __status__ = 'Alpha'
 # =============================================================================
 #
+# =============================================================================
+
+logger = logging.getLogger('f3dasm')
+
 # =============================================================================
 
 
