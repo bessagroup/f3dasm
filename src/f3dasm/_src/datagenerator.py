@@ -33,14 +33,14 @@ from .mpi_utils import (
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Alpha'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
 
-logger = logging.getLogger('f3dasm')
+logger = logging.getLogger("f3dasm")
 
 # =============================================================================
 
@@ -62,14 +62,16 @@ def _run_sample(
         logger.debug(f"Running experiment_sample {job_number}")
         if pass_id and job_number is not None:
             experiment_sample = execute_fn(
-                experiment_sample=experiment_sample, id=job_number, **kwargs)
+                experiment_sample=experiment_sample, id=job_number, **kwargs
+            )
         else:
             experiment_sample = execute_fn(
-                experiment_sample=experiment_sample, **kwargs)
+                experiment_sample=experiment_sample, **kwargs
+            )
 
         experiment_sample, domain = _store(
-            experiment_sample=experiment_sample, idx=job_number,
-            domain=domain)
+            experiment_sample=experiment_sample, idx=job_number, domain=domain
+        )
         experiment_sample.mark("finished")
 
     except Exception:
@@ -80,14 +82,16 @@ def _run_sample(
 
     return experiment_sample, domain
 
+
 # =========================================================================
 
 
 def evaluate_sequential(
-        execute_fn: Callable[..., ExperimentSample],
-        data: ExperimentData,
-        pass_id: bool,
-        **kwargs) -> ExperimentData:
+    execute_fn: Callable[..., ExperimentSample],
+    data: ExperimentData,
+    pass_id: bool,
+    **kwargs,
+) -> ExperimentData:
     """Run the operation sequentially
 
     Parameters
@@ -129,11 +133,12 @@ def evaluate_sequential(
 
 
 def evaluate_multiprocessing(
-        execute_fn: Callable[..., ExperimentSample],
-        data: ExperimentData,
-        pass_id: bool,
-        nodes: int = mp.cpu_count(),
-        **kwargs) -> ExperimentData:
+    execute_fn: Callable[..., ExperimentSample],
+    data: ExperimentData,
+    pass_id: bool,
+    nodes: int = mp.cpu_count(),
+    **kwargs,
+) -> ExperimentData:
     """Run the operation using multiprocessing
 
     Parameters
@@ -162,26 +167,29 @@ def evaluate_multiprocessing(
             logger.debug("No open jobs left!")
             break
 
-        item = {"experiment_sample": experiment_sample,
-                "job_number": job_number,
-                "domain": domain,
-                **kwargs}
+        item = {
+            "experiment_sample": experiment_sample,
+            "job_number": job_number,
+            "domain": domain,
+            **kwargs,
+        }
 
         work_items.append(item)
 
-    def _worker(options: dict[str, Any]
-                ) -> tuple[int, ExperimentSample, Domain]:
+    def _worker(
+        options: dict[str, Any],
+    ) -> tuple[int, ExperimentSample, Domain]:
         es, domain = _run_sample(
-            execute_fn=execute_fn,
-            pass_id=pass_id,
-            **options)
+            execute_fn=execute_fn, pass_id=pass_id, **options
+        )
         return options["job_number"], es, domain
 
     if work_items:
         with mp.Pool(nodes) as pool:
             # maybe implement pool.starmap_async ?
-            results: list[tuple[int, ExperimentSample, Domain]
-                          ] = pool.map(_worker, work_items)
+            results: list[tuple[int, ExperimentSample, Domain]] = pool.map(
+                _worker, work_items
+            )
 
         for job_number, experiment_sample, domain in results:
             # data.store_experimentsample(
@@ -200,7 +208,7 @@ def evaluate_cluster(
     pass_id: bool,
     wait_for_creation: bool = False,
     max_tries: int = MAX_TRIES,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Run the operation on a cluster using file locks to manage access to the
@@ -226,8 +234,9 @@ def evaluate_cluster(
     """
 
     # Creat lockfile
-    lock_path = (data._project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
-                 ).with_suffix('.lock')
+    lock_path = (
+        data._project_dir / EXPERIMENTDATA_SUBFOLDER / LOCK_FILENAME
+    ).with_suffix(".lock")
     lockfile = FileLock(lock_path)
 
     cluster_get_open_job = partial(
@@ -235,13 +244,15 @@ def evaluate_cluster(
         project_dir=data._project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
-        lockfile=lockfile)
+        lockfile=lockfile,
+    )
     cluster_store_experiment_sample = partial(
         _store_experiment_sample,
         project_dir=data._project_dir,
         wait_for_creation=wait_for_creation,
         max_tries=max_tries,
-        lockfile=lockfile)
+        lockfile=lockfile,
+    )
 
     while True:
         job_number, experiment_sample, domain = cluster_get_open_job()
@@ -259,7 +270,8 @@ def evaluate_cluster(
         )
 
         cluster_store_experiment_sample(
-            idx=job_number, experiment_sample=experiment_sample, domain=domain)
+            idx=job_number, experiment_sample=experiment_sample, domain=domain
+        )
 
     # Remove lockfile
     lock_path.unlink(missing_ok=True)
@@ -271,7 +283,8 @@ def evaluate_mpi(
     data: ExperimentData,
     pass_id: bool,
     wait_for_creation: bool = False,
-    max_tries: int = MAX_TRIES, **kwargs
+    max_tries: int = MAX_TRIES,
+    **kwargs,
 ) -> None:
     """
     Run the operation on a cluster using MPI to manage access to the
@@ -309,17 +322,19 @@ def evaluate_mpi(
             pass_id=pass_id,
             wait_for_creation=wait_for_creation,
             max_tries=max_tries,
-            **kwargs)
+            **kwargs,
+        )
 
 
 # =============================================================================
+
 
 def evaluate_cluster_array(
     execute_fn: Callable[..., ExperimentSample],
     data: ExperimentData,
     job_number: int,
     pass_id: bool,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Run the operation on a cluster using file locks to manage access to the
@@ -365,15 +380,17 @@ def evaluate_cluster_array(
 
 
 def _get_open_job(
-        project_dir: Path,
-        lockfile: FileLock,
-        wait_for_creation: bool,
-        max_tries: int) -> tuple[int, ExperimentSample]:
-
+    project_dir: Path,
+    lockfile: FileLock,
+    wait_for_creation: bool,
+    max_tries: int,
+) -> tuple[int, ExperimentSample]:
     with lockfile:
         data = ExperimentData.from_file(
-            project_dir=project_dir, wait_for_creation=wait_for_creation,
-            max_tries=max_tries)
+            project_dir=project_dir,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+        )
 
         idx, es, domain = data.get_open_job()
 
@@ -383,18 +400,20 @@ def _get_open_job(
 
 
 def _store_experiment_sample(
-        project_dir: Path,
-        lockfile: FileLock,
-        wait_for_creation: bool,
-        max_tries: int,
-        idx: int,
-        experiment_sample: ExperimentSample,
-        domain: Domain) -> None:
-
+    project_dir: Path,
+    lockfile: FileLock,
+    wait_for_creation: bool,
+    max_tries: int,
+    idx: int,
+    experiment_sample: ExperimentSample,
+    domain: Domain,
+) -> None:
     with lockfile:
         data = ExperimentData.from_file(
-            project_dir=project_dir, wait_for_creation=wait_for_creation,
-            max_tries=max_tries)
+            project_dir=project_dir,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+        )
 
         data.domain = domain
         data.data[idx] = experiment_sample
@@ -402,15 +421,17 @@ def _store_experiment_sample(
 
 
 def _get_domain(
-        project_dir: Path,
-        lockfile: FileLock,
-        wait_for_creation: bool,
-        max_tries: int) -> Domain:
-
+    project_dir: Path,
+    lockfile: FileLock,
+    wait_for_creation: bool,
+    max_tries: int,
+) -> Domain:
     with lockfile:
         data = ExperimentData.from_file(
-            project_dir=project_dir, wait_for_creation=wait_for_creation,
-            max_tries=max_tries)
+            project_dir=project_dir,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+        )
 
         domain = data.domain
 
@@ -418,23 +439,30 @@ def _get_domain(
 
 
 def mpi_worker(
-    comm, data: ExperimentData,
-        execute_fn: Callable,
-        pass_id: bool,
-        wait_for_creation: bool = False,
-        max_tries: int = MAX_TRIES, **kwargs
+    comm,
+    data: ExperimentData,
+    execute_fn: Callable,
+    pass_id: bool,
+    wait_for_creation: bool = False,
+    max_tries: int = MAX_TRIES,
+    **kwargs,
 ) -> None:
-
     cluster_get_open_job = partial(
-        mpi_get_open_job, experiment_data_type=ExperimentData,
+        mpi_get_open_job,
+        experiment_data_type=ExperimentData,
         project_dir=data._project_dir,
-        wait_for_creation=wait_for_creation, max_tries=max_tries,
-        comm=comm)
+        wait_for_creation=wait_for_creation,
+        max_tries=max_tries,
+        comm=comm,
+    )
     cluster_store_experiment_sample = partial(
-        mpi_store_experiment_sample, experiment_data_type=ExperimentData,
+        mpi_store_experiment_sample,
+        experiment_data_type=ExperimentData,
         project_dir=data._project_dir,
-        wait_for_creation=wait_for_creation, max_tries=max_tries,
-        comm=comm)
+        wait_for_creation=wait_for_creation,
+        max_tries=max_tries,
+        comm=comm,
+    )
 
     while True:
         job_number, experiment_sample, domain = cluster_get_open_job()
@@ -452,6 +480,7 @@ def mpi_worker(
         )
 
         cluster_store_experiment_sample(
-            idx=job_number, experiment_sample=experiment_sample, domain=domain)
+            idx=job_number, experiment_sample=experiment_sample, domain=domain
+        )
 
     mpi_terminate_worker(comm)

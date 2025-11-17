@@ -15,13 +15,13 @@ def test_sampling_interface_not_implemented_error():
 
     # Define the parameters
     x1 = ContinuousParameter(lower_bound=2.4, upper_bound=10.3)
-    space = {'x1': x1}
+    space = {"x1": x1}
 
     design = Domain(space)
     samples = ExperimentData(domain=design)
 
     with pytest.raises(KeyError):
-        sampler = create_sampler(sampler='test', seed=seed)
+        sampler = create_sampler(sampler="test", seed=seed)
         _ = sampler.call(data=samples, n_samples=5)
 
 
@@ -29,13 +29,15 @@ def test_correct_sampling_ran(design3: Domain):
     seed = 42
     numsamples = 5
 
-    ground_truth_samples = np.array([
-        [8.514253, 11, 172.516686, 'test1', 6.352606],
-        [7.909207, 63, 44.873872, 'test3', 7.13667],
-        [8.413004, 54, 301.079612, 'test2', 1.458361],
-        [5.958049, 38, 147.306508, 'test2', 6.809325],
-        [7.486534, 37, 314.668625, 'test2', 3.570875]
-    ])
+    ground_truth_samples = np.array(
+        [
+            [8.514253, 11, 172.516686, "test1", 6.352606],
+            [7.909207, 63, 44.873872, "test3", 7.13667],
+            [8.413004, 54, 301.079612, "test2", 1.458361],
+            [5.958049, 38, 147.306508, "test2", 6.809325],
+            [7.486534, 37, 314.668625, "test2", 3.570875],
+        ]
+    )
 
     df_ground_truth = pd.DataFrame(data=ground_truth_samples)
     df_ground_truth = df_ground_truth.astype(
@@ -50,15 +52,20 @@ def test_correct_sampling_ran(design3: Domain):
 
     samples = ExperimentData(domain=design3)
 
-    sampler = create_sampler(sampler='random', seed=seed)
+    sampler = create_sampler(sampler="random", seed=seed)
     samples = sampler.call(data=samples, n_samples=numsamples)
 
     df_input, _ = samples.to_pandas()
     df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
-    assert_frame_equal(df_input, df_ground_truth,
-                       check_dtype=False, check_exact=False, rtol=1e-6)
+    assert_frame_equal(
+        df_input,
+        df_ground_truth,
+        check_dtype=False,
+        check_exact=False,
+        rtol=1e-6,
+    )
 
 
 def test_correct_sampling_sobol(design3: Domain):
@@ -87,7 +94,7 @@ def test_correct_sampling_sobol(design3: Domain):
     )
 
     samples = ExperimentData(domain=design3)
-    sampler = create_sampler(sampler='sobol', seed=seed)
+    sampler = create_sampler(sampler="sobol", seed=seed)
 
     samples = sampler.call(data=samples, n_samples=numsamples)
 
@@ -125,7 +132,7 @@ def test_correct_sampling_lhs(design3: Domain):
 
     samples = ExperimentData(domain=design3)
 
-    sampler = create_sampler(sampler='latin', seed=seed)
+    sampler = create_sampler(sampler="latin", seed=seed)
 
     samples = sampler.call(data=samples, n_samples=numsamples)
 

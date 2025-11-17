@@ -1,6 +1,4 @@
-
-def faulty_optimizer(name: str,
-                     missing_package: str, *args, **kwargs) -> None:
+def faulty_optimizer(name: str, missing_package: str, *args, **kwargs) -> None:
     """
     A placeholder function to indicate that the optimizer is faulty.
     If you try to use this optimizer, it will raise an error.

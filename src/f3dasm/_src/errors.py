@@ -22,8 +22,9 @@ class EmptyFileError(Exception):
 class DecodeError(Exception):
     """Exception raised when opening a file gives errors"""
 
-    def __init__(self, file_path: str | Path = '',
-                 message: str = "Error decoding file"):
+    def __init__(
+        self, file_path: str | Path = "", message: str = "Error decoding file"
+    ):
         """
         Initializes the EmptyFileError.
 
@@ -39,8 +40,12 @@ class DecodeError(Exception):
 class ReachMaximumTriesError(Exception):
     """Exception raised when a function reaches its maximum number of tries."""
 
-    def __init__(self, file_path: str | Path, max_tries: int,
-                 message: str = "Reached maximum number of tries"):
+    def __init__(
+        self,
+        file_path: str | Path,
+        max_tries: int,
+        message: str = "Reached maximum number of tries",
+    ):
         """
         Initializes the ReachMaximumTriesError.
 
@@ -56,8 +61,7 @@ class ReachMaximumTriesError(Exception):
 class TimeOutError(Exception):
     """Exception raised when a function takes too long."""
 
-    def __init__(self, timeout: int,
-                 message: str = "Reached time-out"):
+    def __init__(self, timeout: int, message: str = "Reached time-out"):
         """
         Initializes the TimeOutError.
 
@@ -66,6 +70,7 @@ class TimeOutError(Exception):
             message (str): A custom error message.
         """
         self.timeout = timeout
-        self.message = (f"{message}: function timed-out after "
-                        f"{self.timeout} seconds")
+        self.message = (
+            f"{message}: function timed-out after {self.timeout} seconds"
+        )
         super().__init__(self.message)

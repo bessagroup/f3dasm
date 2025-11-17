@@ -16,15 +16,16 @@ from ..experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
 
 warnings.filterwarnings(
-    "ignore", message="^OptimizeWarning: Unknown solver options.*")
+    "ignore", message="^OptimizeWarning: Unknown solver options.*"
+)
 
 # =============================================================================
 
@@ -61,15 +62,23 @@ class ScipyOptimizer(Optimizer):
         Name of the input variable being optimized.
     """
 
-    def __init__(self, method: str,
-                 bounds: Optional[scipy.optimize.Bounds] = None,
-                 **hyperparameters):
+    def __init__(
+        self,
+        method: str,
+        bounds: Optional[scipy.optimize.Bounds] = None,
+        **hyperparameters,
+    ):
         self.bounds = bounds
         self.method = method
         self.hyperparameters = hyperparameters
 
-    def arm(self, data: ExperimentData, data_generator: DataGenerator,
-            input_name: str, output_name: str):
+    def arm(
+        self,
+        data: ExperimentData,
+        data_generator: DataGenerator,
+        input_name: str,
+        output_name: str,
+    ):
         """Prepare the optimizer with initial data and configuration.
 
         Parameters
@@ -90,8 +99,13 @@ class ScipyOptimizer(Optimizer):
         experiment_sample = data.get_experiment_sample(data.index[-1])
         self._x0 = experiment_sample.input_data[input_name]
 
-    def call(self, data: ExperimentData, n_iterations: Optional[int] = None,
-             grad_f: Optional[Callable] = None, **kwargs) -> ExperimentData:
+    def call(
+        self,
+        data: ExperimentData,
+        n_iterations: Optional[int] = None,
+        grad_f: Optional[Callable] = None,
+        **kwargs,
+    ) -> ExperimentData:
         """Execute the optimization algorithm.
 
         Parameters
@@ -116,12 +130,11 @@ class ScipyOptimizer(Optimizer):
         """
         history_x, history_y = [], []
 
-        def callback(intermediate_result: scipy.optimize.OptimizeResult,
-                     ) -> None:
-            history_x.append(
-                {self.input_name: intermediate_result.x})
-            history_y.append(
-                {self.output_name: intermediate_result.fun})
+        def callback(
+            intermediate_result: scipy.optimize.OptimizeResult,
+        ) -> None:
+            history_x.append({self.input_name: intermediate_result.x})
+            history_y.append({self.output_name: intermediate_result.fun})
 
         _ = scipy.optimize.minimize(
             fun=self.data_generator.f,
@@ -137,13 +150,16 @@ class ScipyOptimizer(Optimizer):
             domain=data.domain,
             input_data=history_x,
             output_data=history_y,
-            project_dir=data._project_dir)
+            project_dir=data._project_dir,
+        )
+
 
 # =============================================================================
 
 
-def cg(bounds: Optional[scipy.optimize.Bounds] = None,
-       **hyperparameters) -> ScipyOptimizer:
+def cg(
+    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+) -> ScipyOptimizer:
     """Create a Conjugate Gradient optimizer.
 
     Uses the Conjugate Gradient (CG) algorithm from scipy.optimize.minimize.
@@ -170,11 +186,12 @@ def cg(bounds: Optional[scipy.optimize.Bounds] = None,
     --------
     scipy.optimize.minimize : The underlying scipy minimize function.
     """
-    return ScipyOptimizer(method='CG', bounds=bounds, **hyperparameters)
+    return ScipyOptimizer(method="CG", bounds=bounds, **hyperparameters)
 
 
-def nelder_mead(bounds: Optional[scipy.optimize.Bounds] = None,
-                **hyperparameters) -> ScipyOptimizer:
+def nelder_mead(
+    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+) -> ScipyOptimizer:
     """Create a Nelder-Mead optimizer.
 
     Uses the Nelder-Mead simplex algorithm from scipy.optimize.minimize.
@@ -203,12 +220,14 @@ def nelder_mead(bounds: Optional[scipy.optimize.Bounds] = None,
     --------
     scipy.optimize.minimize : The underlying scipy minimize function.
     """
-    return ScipyOptimizer(method='Nelder-Mead', bounds=bounds,
-                          **hyperparameters)
+    return ScipyOptimizer(
+        method="Nelder-Mead", bounds=bounds, **hyperparameters
+    )
 
 
-def lbfgsb(bounds: Optional[scipy.optimize.Bounds] = None,
-           **hyperparameters) -> ScipyOptimizer:
+def lbfgsb(
+    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+) -> ScipyOptimizer:
     """Create an L-BFGS-B optimizer.
 
     Uses the Limited-memory BFGS with Box constraints (L-BFGS-B) algorithm
@@ -236,8 +255,7 @@ def lbfgsb(bounds: Optional[scipy.optimize.Bounds] = None,
     --------
     scipy.optimize.minimize : The underlying scipy minimize function.
     """
-    return ScipyOptimizer(method='L-BFGS-B', bounds=bounds,
-                          **hyperparameters)
+    return ScipyOptimizer(method="L-BFGS-B", bounds=bounds, **hyperparameters)
 
 
 # =============================================================================

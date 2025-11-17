@@ -27,9 +27,9 @@ from .errors import DecodeError
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 
 
@@ -80,8 +80,9 @@ class ExperimentSample:
         """Handle defaults and consistency checks after dataclass init."""
         # Infer job_status if not provided
         if self.job_status is None:
-            self.job_status = JobStatus.FINISHED if self._output_data \
-                else JobStatus.OPEN
+            self.job_status = (
+                JobStatus.FINISHED if self._output_data else JobStatus.OPEN
+            )
 
         if isinstance(self.job_status, str):
             # Convert string job_status to JobStatus enum
@@ -104,10 +105,12 @@ class ExperimentSample:
         str
             String representation of the ExperimentSample instance.
         """
-        return (f"ExperimentSample("
-                f"input_data={self.input_data}, "
-                f"output_data={self.output_data}, "
-                f"job_status={self.job_status})")
+        return (
+            f"ExperimentSample("
+            f"input_data={self.input_data}, "
+            f"output_data={self.output_data}, "
+            f"job_status={self.job_status})"
+        )
 
     def __add__(self, __o: ExperimentSample) -> ExperimentSample:
         """
@@ -162,10 +165,11 @@ class ExperimentSample:
         bool
             True if the instances are equal, False otherwise.
         """
-        return (self._input_data == __o._input_data
-                and self._output_data == __o._output_data
-                and self.job_status == __o.job_status
-                )
+        return (
+            self._input_data == __o._input_data
+            and self._output_data == __o._output_data
+            and self.job_status == __o.job_status
+        )
 
     def _copy(self) -> ExperimentSample:
         """
@@ -181,7 +185,8 @@ class ExperimentSample:
             _input_data=deepcopy(self._input_data),
             _output_data=deepcopy(self._output_data),
             job_status=self.job_status,
-            project_dir=self.project_dir)
+            project_dir=self.project_dir,
+        )
 
     @property
     def input_data(self) -> dict[str, Any]:
@@ -193,8 +198,10 @@ class ExperimentSample:
         Dict[str, Any]
             Input data of the experiment.
         """
-        return {k: _get_value(value=v, project_dir=self.project_dir)
-                for k, v in self._input_data.items()}
+        return {
+            k: _get_value(value=v, project_dir=self.project_dir)
+            for k, v in self._input_data.items()
+        }
 
     @property
     def output_data(self) -> dict[str, Any]:
@@ -206,12 +213,15 @@ class ExperimentSample:
         Dict[str, Any]
             Output data of the experiment.
         """
-        return {k: _get_value(value=v, project_dir=self.project_dir)
-                for k, v in self._output_data.items()}
+        return {
+            k: _get_value(value=v, project_dir=self.project_dir)
+            for k, v in self._output_data.items()
+        }
 
     @classmethod
-    def from_numpy(cls: type[ExperimentSample], input_array: np.ndarray
-                   ) -> ExperimentSample:
+    def from_numpy(
+        cls: type[ExperimentSample], input_array: np.ndarray
+    ) -> ExperimentSample:
         """
         Create an ExperimentSample instance from a numpy array.
 
@@ -238,8 +248,9 @@ class ExperimentSample:
         output_data={}, job_status=JobStatus.OPEN)
         """
         return cls(
-            _input_data={f"x{i}": v for i,
-                         v in enumerate(input_array.flatten())},
+            _input_data={
+                f"x{i}": v for i, v in enumerate(input_array.flatten())
+            },
         )
 
     @classmethod
@@ -268,8 +279,10 @@ class ExperimentSample:
             data = json.load(f)
 
         def restore(obj):
-            if (isinstance(obj, dict) and
-                    obj.get("__type__") == "ReferenceValue"):
+            if (
+                isinstance(obj, dict)
+                and obj.get("__type__") == "ReferenceValue"
+            ):
                 return ReferenceValue.from_json(obj)
             return obj
 
@@ -318,12 +331,14 @@ class ExperimentSample:
 
         if value is None:
             raise KeyError(
-                f"Parameter '{name}' not found in input or output data.")
+                f"Parameter '{name}' not found in input or output data."
+            )
 
         return _get_value(value=value, project_dir=self.project_dir)
 
-    def mark(self,
-             status: Literal['open', 'in_progress', 'finished', 'error']):
+    def mark(
+        self, status: Literal["open", "in_progress", "finished", "error"]
+    ):
         """
         Mark the job status of the experiment.
 
@@ -352,7 +367,8 @@ class ExperimentSample:
         except KeyError as exc:
             valid = ", ".join(s.lower() for s in JobStatus.__members__)
             raise ValueError(
-                f"Invalid status '{status}'. Must be one of: {valid}") from exc
+                f"Invalid status '{status}'. Must be one of: {valid}"
+            ) from exc
 
     def replace_nan(self, replacement_value: Any):
         """
@@ -370,9 +386,12 @@ class ExperimentSample:
         >>> sample.input_data['param1']
         0
         """
+
         def replace_nan_in_dict(data: dict[str, Any]) -> dict[str, Any]:
-            return {k: (replacement_value if np.isnan(v) else v)
-                    for k, v in data.items()}
+            return {
+                k: (replacement_value if np.isnan(v) else v)
+                for k, v in data.items()
+            }
 
         self._input_data = replace_nan_in_dict(self._input_data)
         self._output_data = replace_nan_in_dict(self._output_data)
@@ -394,9 +413,12 @@ class ExperimentSample:
         >>> sample.input_data['param1']
         1.23
         """
+
         def round_dict(data: dict[str, Any]) -> dict[str, Any]:
-            return {k: round(v, decimals) if isinstance(v, int | float)
-                    else v for k, v in data.items()}
+            return {
+                k: round(v, decimals) if isinstance(v, int | float) else v
+                for k, v in data.items()
+            }
 
         self._input_data = round_dict(self._input_data)
         self._output_data = round_dict(self._output_data)
@@ -418,10 +440,11 @@ class ExperimentSample:
         >>> sample.to_multiindex()
         {('jobs', ''): 'open', ('input', 'param1'): 1.0}
         """
-        return {('jobs', ''): self.job_status.name.lower(),
-                **{('input', k): v for k, v in self._input_data.items()},
-                **{('output', k): v for k, v in self._output_data.items()},
-                }
+        return {
+            ("jobs", ""): self.job_status.name.lower(),
+            **{("input", k): v for k, v in self._input_data.items()},
+            **{("output", k): v for k, v in self._output_data.items()},
+        }
 
     def to_numpy(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -438,9 +461,10 @@ class ExperimentSample:
         >>> sample.to_numpy()
         (array([1.]), array([]))
         """
-        return (np.array(list(self.input_data.values())),
-                np.array(list(self.output_data.values()))
-                )
+        return (
+            np.array(list(self.input_data.values())),
+            np.array(list(self.output_data.values())),
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """
@@ -459,10 +483,15 @@ class ExperimentSample:
         """
         return {**self.input_data, **self.output_data}
 
-    def store(self, name: str, object: Any, to_disk: bool = False,
-              store_function: Callable | None = None,
-              load_function: Callable | None = None,
-              which: Literal['input', 'output'] = 'output'):
+    def store(
+        self,
+        name: str,
+        object: Any,
+        to_disk: bool = False,
+        store_function: Callable | None = None,
+        load_function: Callable | None = None,
+        which: Literal["input", "output"] = "output",
+    ):
         """
         Store an object in the experiment sample.
 
@@ -508,19 +537,26 @@ class ExperimentSample:
             def load_function(path: str) -> Any:
                 ...
         """
-        value = object if not to_disk else ToDiskValue(
-            object=object,
-            name=name,
-            store_function=store_function,
-            load_function=load_function)
+        value = (
+            object
+            if not to_disk
+            else ToDiskValue(
+                object=object,
+                name=name,
+                store_function=store_function,
+                load_function=load_function,
+            )
+        )
 
-        if which == 'input':
+        if which == "input":
             self._input_data[name] = value
-        elif which == 'output':
+        elif which == "output":
             self._output_data[name] = value
         else:
-            raise ValueError(f"Invalid value for 'which': {which}. "
-                             f"Expected 'input' or 'output'.")
+            raise ValueError(
+                f"Invalid value for 'which': {which}. "
+                f"Expected 'input' or 'output'."
+            )
 
     def store_as_json(self, idx: int):
         def default_serializer(obj):
@@ -537,8 +573,9 @@ class ExperimentSample:
             "project_dir": self.project_dir,
         }
 
-        file_path = (self.project_dir / EXPERIMENTSAMPLE_SUBFOLDER /
-                     f"{idx}").with_suffix(".json")
+        file_path = (
+            self.project_dir / EXPERIMENTSAMPLE_SUBFOLDER / f"{idx}"
+        ).with_suffix(".json")
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "w") as f:
@@ -586,5 +623,8 @@ def _get_value(value: Any, project_dir: Path) -> Any:
     Any
         The actual value, loaded from disk if it was a ReferenceValue.
     """
-    return value if not isinstance(
-        value, ReferenceValue) else value.load(project_dir)
+    return (
+        value
+        if not isinstance(value, ReferenceValue)
+        else value.load(project_dir)
+    )

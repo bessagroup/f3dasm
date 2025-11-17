@@ -17,14 +17,19 @@ def pytest_addoption(parser):
 
 def pytest_runtest_setup(item):
     """Pytest setup"""
-    dependency_names = [mark.args[0] for mark in item.iter_markers(name="requires_dependency")]
+    dependency_names = [
+        mark.args[0] for mark in item.iter_markers(name="requires_dependency")
+    ]
     if not dependency_names:
         return
 
-    if item.config.getoption("-S") in dependency_names or item.config.getoption("-S") == "all":
+    if (
+        item.config.getoption("-S") in dependency_names
+        or item.config.getoption("-S") == "all"
+    ):
         pytest.skip(f"test skipped: requires dependency {dependency_names!r}")
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def setup_logging():
-    logging.getLogger('tensorflow').setLevel(logging.WARNING)
+    logging.getLogger("tensorflow").setLevel(logging.WARNING)

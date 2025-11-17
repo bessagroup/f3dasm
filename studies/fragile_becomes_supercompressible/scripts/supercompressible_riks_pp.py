@@ -1,9 +1,9 @@
-'''
+"""
 Created on 2020-09-22 16:07:04
 Last modified on 2020-09-23 07:10:39
 
 @author: L. F. Pereira (lfpereira@fe.up.pt))
-'''
+"""
 
 import pickle
 
@@ -26,9 +26,9 @@ def main(odb):
     riks_results = {}
 
     # reference point data
-    variables = ['U', 'UR', 'RF', 'RM']
-    set_name = 'ZTOP_REF_POINT'
-    step_name = 'RIKS_STEP'
+    variables = ["U", "UR", "RF", "RM"]
+    set_name = "ZTOP_REF_POINT"
+    step_name = "RIKS_STEP"
     step = odb.steps[step_name]
     directions = (1, 2, 3)
     nodes = odb.rootAssembly.nodeSets[set_name].nodes[0]
@@ -36,15 +36,21 @@ def main(odb):
     for variable in variables:
         y = []
         for node in nodes:
-            instance_name = node.instanceName if \
-                node.instanceName else 'ASSEMBLY'
-            name = 'Node ' + instance_name + '.' + str(node.label)
+            instance_name = (
+                node.instanceName if node.instanceName else "ASSEMBLY"
+            )
+            name = "Node " + instance_name + "." + str(node.label)
             historyOutputs = step.historyRegions[name].historyOutputs
             node_data = []
             for direction in directions:
                 node_data.append(
-                    [data[1] for data in historyOutputs['%s%i' % (
-                        variable, direction)].data])
+                    [
+                        data[1]
+                        for data in historyOutputs[
+                            "%s%i" % (variable, direction)
+                        ].data
+                    ]
+                )
             y.append(node_data)
         riks_results[variable] = np.array(y[0])
 
@@ -65,5 +71,5 @@ def main(odb):
 
     # riks_results[variable] = np.array(values)
 
-    with open('results.pkl', 'wb') as file:
+    with open("results.pkl", "wb") as file:
         pickle.dump(riks_results, file)

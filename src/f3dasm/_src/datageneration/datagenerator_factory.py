@@ -6,7 +6,6 @@ DataGenerator objects.
 #                                                                       Modules
 # =============================================================================
 
-
 from __future__ import annotations
 
 # Standard
@@ -27,7 +26,7 @@ __status__ = "Stable"
 
 
 def create_datagenerator(
-        data_generator: str, output_names: str | Iterable[str], **parameters
+    data_generator: str, output_names: str | Iterable[str], **parameters
 ) -> DataGenerator:
     """
     Create a DataGenerator block from one of the built-in data generators.
@@ -56,13 +55,18 @@ def create_datagenerator(
     """
     # If the data generator is a string, check if it is a known data generator
     if isinstance(data_generator, str):
-
-        filtered_name = data_generator.lower().replace(
-            ' ', '').replace('-', '').replace('_', '').replace('.', '')
+        filtered_name = (
+            data_generator.lower()
+            .replace(" ", "")
+            .replace("-", "")
+            .replace("_", "")
+            .replace(".", "")
+        )
 
         if filtered_name in BENCHMARK_FUNCTIONS:
             return datagenerator(output_names=output_names)(
-                BENCHMARK_FUNCTIONS[filtered_name])
+                BENCHMARK_FUNCTIONS[filtered_name]
+            )
 
         else:
             raise KeyError(f"Unknown data generator name: {data_generator}")
@@ -70,5 +74,6 @@ def create_datagenerator(
     # If the data generator is not a known type, raise an error
     else:
         raise TypeError(f"Unknown data generator type: {type(data_generator)}")
+
 
 # =============================================================================

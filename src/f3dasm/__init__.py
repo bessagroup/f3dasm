@@ -22,20 +22,20 @@ from ._src.samplers import create_sampler
 
 #                                                        Authorship and Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 #
 # =============================================================================
 
 __all__ = [
-    'ExperimentData',
-    'ExperimentSample',
-    'create_datagenerator',
-    'datagenerator',
-    'create_optimizer',
-    'create_sampler',
-    'Block',
-    'Optimizer',
-    'DataGenerator',
+    "ExperimentData",
+    "ExperimentSample",
+    "create_datagenerator",
+    "datagenerator",
+    "create_optimizer",
+    "create_sampler",
+    "Block",
+    "Optimizer",
+    "DataGenerator",
 ]

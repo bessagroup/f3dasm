@@ -1,0 +1,9 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.0
+    hooks:
+      - id: ruff-format # formatter
+        types_or: [python, pyi, jupyter, toml]
+      - id: ruff-check # linter
+        types_or: [python, pyi, jupyter, toml]
+        args: [--fix]

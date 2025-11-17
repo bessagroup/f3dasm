@@ -14,24 +14,28 @@ pytestmark = pytest.mark.smoke
 
 
 def store_function(obj, path):
-    with open(path, 'wb') as f:
+    with open(path, "wb") as f:
         pickle.dump(obj, f)
     return path
 
 
 def load_function(path):
-    with open(path, 'rb') as f:
+    with open(path, "rb") as f:
         return pickle.load(f)
+
 
 # Test Parameter Base Class
 
 
-@pytest.mark.parametrize("to_disk, store_function, load_function, raises", [
-    (False, None, None, False),
-    (True, store_function, load_function, False),
-    (False, store_function, None, True),
-    (False, None, load_function, True),
-])
+@pytest.mark.parametrize(
+    "to_disk, store_function, load_function, raises",
+    [
+        (False, None, None, False),
+        (True, store_function, load_function, False),
+        (False, store_function, None, True),
+        (False, None, load_function, True),
+    ],
+)
 def test_parameter_init(to_disk, store_function, load_function, raises):
     if raises:
         with pytest.raises(ValueError):
@@ -69,44 +73,60 @@ def test_parameter_add():
 def test_parameter_to_dict():
     param = Parameter(to_disk=True)
     param_dict = param.to_dict()
-    assert param_dict['type'] == 'object'
-    assert param_dict['to_disk'] is True
+    assert param_dict["type"] == "object"
+    assert param_dict["to_disk"] is True
 
 
 def test_parameter_from_dict():
-    param_dict = {'type': 'object', 'to_disk': True, 'store_function': None,
-                  'load_function': None}
+    param_dict = {
+        "type": "object",
+        "to_disk": True,
+        "store_function": None,
+        "load_function": None,
+    }
     param = Parameter.from_dict(param_dict)
     assert param.to_disk is True
 
 
 def test_parameter_with_functions_to_dict():
-    param = Parameter(to_disk=True, store_function=store_function,
-                      load_function=load_function)
+    param = Parameter(
+        to_disk=True,
+        store_function=store_function,
+        load_function=load_function,
+    )
     param_dict = param.to_dict()
-    assert param_dict['store_function'] is not None
-    assert param_dict['load_function'] is not None
+    assert param_dict["store_function"] is not None
+    assert param_dict["load_function"] is not None
 
 
 def test_parameter_with_functions_from_dict():
-    param = Parameter(to_disk=True, store_function=store_function,
-                      load_function=load_function)
+    param = Parameter(
+        to_disk=True,
+        store_function=store_function,
+        load_function=load_function,
+    )
     param_dict = param.to_dict()
     loaded_param = Parameter.from_dict(param_dict)
     assert loaded_param.to_disk is True
-    assert pickle.dumps(
-        loaded_param.store_function) == pickle.dumps(store_function)
-    assert pickle.dumps(
-        loaded_param.load_function) == pickle.dumps(load_function)
+    assert pickle.dumps(loaded_param.store_function) == pickle.dumps(
+        store_function
+    )
+    assert pickle.dumps(loaded_param.load_function) == pickle.dumps(
+        load_function
+    )
+
 
 # Test ConstantParameter
 
 
-@pytest.mark.parametrize("value, raises", [
-    (5, False),
-    ("test", False),
-    ({"a": 1}, True),
-])
+@pytest.mark.parametrize(
+    "value, raises",
+    [
+        (5, False),
+        ("test", False),
+        ({"a": 1}, True),
+    ],
+)
 def test_constant_parameter_init(value, raises):
     if raises:
         with pytest.raises(TypeError):
@@ -139,16 +159,20 @@ def test_constant_parameter_eq():
     param2 = ConstantParameter(42)
     assert param1 == param2
 
+
 # Test ContinuousParameter
 
 
-@pytest.mark.parametrize("lower_bound, upper_bound, log, raises", [
-    (0.0, 10.0, False, False),
-    (0.0, 10.0, True, True),
-    (0.0, 0.0, False, True),
-    (10.0, 5.0, False, True),
-    (-1.0, 5.0, True, True),
-])
+@pytest.mark.parametrize(
+    "lower_bound, upper_bound, log, raises",
+    [
+        (0.0, 10.0, False, False),
+        (0.0, 10.0, True, True),
+        (0.0, 0.0, False, True),
+        (10.0, 5.0, False, True),
+        (-1.0, 5.0, True, True),
+    ],
+)
 def test_continuous_parameter_init(lower_bound, upper_bound, log, raises):
     if raises:
         with pytest.raises(ValueError):
@@ -171,14 +195,18 @@ def test_continuous_parameter_to_discrete():
 
 def test_continuous_parameter_str():
     param = ContinuousParameter(0.0, 10.0, log=False)
-    assert str(
-        param) == "ContinuousParameter(lower_bound=0.0, upper_bound=10.0, log=False)"
+    assert (
+        str(param)
+        == "ContinuousParameter(lower_bound=0.0, upper_bound=10.0, log=False)"
+    )
 
 
 def test_continuous_parameter_repr():
     param = ContinuousParameter(0.0, 10.0, log=False)
-    assert repr(
-        param) == "ContinuousParameter(lower_bound=0.0, upper_bound=10.0, log=False)"
+    assert (
+        repr(param)
+        == "ContinuousParameter(lower_bound=0.0, upper_bound=10.0, log=False)"
+    )
 
 
 def test_continuous_parameter_eq():
@@ -186,14 +214,18 @@ def test_continuous_parameter_eq():
     param2 = ContinuousParameter(0.0, 10.0, log=False)
     assert param1 == param2
 
+
 # Test DiscreteParameter
 
 
-@pytest.mark.parametrize("lower_bound, upper_bound, step, raises", [
-    (0, 10, 1, False),
-    (10, 0, 1, True),
-    (0, 10, -1, True),
-])
+@pytest.mark.parametrize(
+    "lower_bound, upper_bound, step, raises",
+    [
+        (0, 10, 1, False),
+        (10, 0, 1, True),
+        (0, 10, -1, True),
+    ],
+)
 def test_discrete_parameter_init(lower_bound, upper_bound, step, raises):
     if raises:
         with pytest.raises(ValueError):
@@ -207,13 +239,18 @@ def test_discrete_parameter_init(lower_bound, upper_bound, step, raises):
 
 def test_discrete_parameter_str():
     param = DiscreteParameter(0, 10, 2)
-    assert str(param) == "DiscreteParameter(lower_bound=0, upper_bound=10, step=2)"
+    assert (
+        str(param)
+        == "DiscreteParameter(lower_bound=0, upper_bound=10, step=2)"
+    )
 
 
 def test_discrete_parameter_repr():
     param = DiscreteParameter(0, 10, 2)
-    assert repr(
-        param) == "DiscreteParameter(lower_bound=0, upper_bound=10, step=2)"
+    assert (
+        repr(param)
+        == "DiscreteParameter(lower_bound=0, upper_bound=10, step=2)"
+    )
 
 
 def test_discrete_parameter_eq():
@@ -221,14 +258,18 @@ def test_discrete_parameter_eq():
     param2 = DiscreteParameter(0, 10, 2)
     assert param1 == param2
 
+
 # Test CategoricalParameter
 
 
-@pytest.mark.parametrize("categories, raises", [
-    (["a", "b", "c"], False),
-    ([1, 2, 3], False),
-    (["a", "a", "b"], True),
-])
+@pytest.mark.parametrize(
+    "categories, raises",
+    [
+        (["a", "b", "c"], False),
+        ([1, 2, 3], False),
+        (["a", "a", "b"], True),
+    ],
+)
 def test_categorical_parameter_init(categories, raises):
     if raises:
         with pytest.raises(ValueError):
