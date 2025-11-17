@@ -4,10 +4,10 @@
 
 
 To get a feeling for a data-driven experiment, two benchmark studies are available to run with the `f3dasm` package.  
-In order to run a study, you need to have the `f3dasm[benchmark]` extra requirements installed:
+In order to run a study, you need to have the `f3dasm[all]` extra requirements installed:
 
 ```bash
-pip install f3dasm[benchmark]
+pip install f3dasm[all]
 ```
 
 ## Folder structure and files of a study

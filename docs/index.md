@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./img/f3dasm_logo_long.png" width="70%" />
+  <img src="./img/logo.png" width="70%" />
 </p>
 
 ---

@@ -18,6 +18,8 @@ def ackley(x: np.ndarray, a: float = 20., b: float = 0.2,
            c: float = 2 * np.pi):
     """Ackley function
 
+    ![Ackley function surface](../img/functions/ackley.png){ width=30% }
+
     Parameters
     ----------
     x : np.ndarray
@@ -42,6 +44,8 @@ def ackley(x: np.ndarray, a: float = 20., b: float = 0.2,
 def beale(x: np.ndarray):
     """Beale function
 
+    ![Beale function surface](../img/functions/beale.png){ width=30% }
+
     Parameters
     ----------
     x : np.ndarray
@@ -61,6 +65,9 @@ def beale(x: np.ndarray):
 def bohachevsky(x: np.ndarray):
     """Bohachevsky N. 1 function
 
+    ![Bohachevsky function surface](
+        ../img/functions/bohachevsky.png){ width=30% }
+
     Parameters
     ----------
     x : np.ndarray
@@ -79,6 +86,9 @@ def bohachevsky(x: np.ndarray):
 def booth(x: np.ndarray):
     """Booth function
 
+    ![Booth function surface](../img/functions/booth.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -96,6 +106,9 @@ def booth(x: np.ndarray):
 def branin(x: np.ndarray, a=1, b=5.1 / (4 * np.pi**2), c=5 / np.pi,
            r=6, s=10, t=1 / (8 * np.pi)):
     """Branin function
+
+    ![Branin function surface](../img/functions/branin.png){ width=30% }
+
 
     Parameters
     ----------
@@ -127,6 +140,9 @@ def branin(x: np.ndarray, a=1, b=5.1 / (4 * np.pi**2), c=5 / np.pi,
 def bukin(x: np.ndarray):
     """Bukin N. 6 function
 
+    ![Bukin function surface](../img/functions/bukin.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -143,6 +159,10 @@ def bukin(x: np.ndarray):
 
 def crossintray(x: np.ndarray):
     """Cross-in-Tray function
+
+    ![Cross-in-tray function surface](
+        ../img/functions/crossintray.png){ width=30% }
+
 
     Parameters
     ----------
@@ -161,6 +181,10 @@ def crossintray(x: np.ndarray):
 
 def dixonprice(x: np.ndarray):
     """Dixon Price function
+
+    ![dixonprice function surface](
+        ../img/functions/dixonprice.png){ width=30% }
+
 
     Parameters
     ----------
@@ -181,6 +205,9 @@ def dixonprice(x: np.ndarray):
 def drop_wave(x: np.ndarray):
     """Drop-Wave function
 
+    ![drop-wave function surface](../img/functions/drop_wave.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -198,6 +225,9 @@ def drop_wave(x: np.ndarray):
 
 def easom(x: np.ndarray):
     """Easom function
+
+    ![Easom function surface](../img/functions/easom.png){ width=30% }
+
 
     Parameters
     ----------
@@ -217,6 +247,9 @@ def easom(x: np.ndarray):
 def eggholder(x: np.ndarray):
     """Egg Holder function
 
+    ![Eggholder function surface](../img/functions/eggholder.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -234,6 +267,9 @@ def eggholder(x: np.ndarray):
 
 def griewank(x: np.ndarray):
     """Griewank function
+
+    ![griewank function surface](../img/functions/griewank.png){ width=30% }
+
 
     Parameters
     ----------
@@ -254,6 +290,10 @@ def griewank(x: np.ndarray):
 def holder_table(x: np.ndarray):
     """Holder-Table function
 
+    ![Holder-Table function surface](
+        ../img/functions/holder_table.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -271,6 +311,9 @@ def holder_table(x: np.ndarray):
 
 def levy(x: np.ndarray):
     """Levy function
+
+    ![Levy function surface](../img/functions/levy.png){ width=30% }
+
 
     Parameters
     ----------
@@ -293,6 +336,9 @@ def levy(x: np.ndarray):
 def rastrigin(x: np.ndarray):
     """Rastrigin function
 
+    ![Rastrigin function surface](../img/functions/rastrigin.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -310,6 +356,10 @@ def rastrigin(x: np.ndarray):
 
 def rosenbrock(x: np.ndarray):
     """Rosenbrock function
+
+    ![Rosenbrock function surface](
+        ../img/functions/rosenbrock.png){ width=30% }
+
 
     Parameters
     ----------
@@ -329,6 +379,10 @@ def rosenbrock(x: np.ndarray):
 def rotatedhyperellipsoid(x: np.ndarray):
     """Rotated Hyper-Ellipsoid function
 
+    ![Rotated Hyper-Ellipsoid function surface](
+        ../img/functions/rotatedhyperellipsoid.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -347,6 +401,9 @@ def rotatedhyperellipsoid(x: np.ndarray):
 def schwefel(x: np.ndarray):
     """Schwefel function
 
+    ![Schwefel function surface](../img/functions/schwefel.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -363,7 +420,11 @@ def schwefel(x: np.ndarray):
 
 
 def sphere(x: np.ndarray):
-    """Sphere function
+    """Sphere funct
+
+    ![Sphere function surface](
+        ../img/functions/sphere.png){ width=30% }
+
 
     Parameters
     ----------
@@ -382,6 +443,10 @@ def sphere(x: np.ndarray):
 def styblinskitang(x: np.ndarray):
     """Styblinski-Tang function
 
+    ![styblinski-tang function surface](
+        ../img/functions/styblinskitang.png){ width=30% }
+
+
     Parameters
     ----------
     x : np.ndarray
@@ -398,6 +463,9 @@ def styblinskitang(x: np.ndarray):
 
 def threehump(x: np.ndarray):
     """Three-Hump function
+
+    ![Threehump function surface](../img/functions/threehump.png){ width=30% }
+
 
     Parameters
     ----------
@@ -416,6 +484,9 @@ def threehump(x: np.ndarray):
 
 def zakharov(x: np.ndarray):
     """Zakharov function
+
+    ![Zakharov function surface](../img/functions/zakharov.png){ width=30% }
+
 
     Parameters
     ----------
@@ -458,4 +529,29 @@ BENCHMARK_FUNCTIONS = {
     'styblinskitang': styblinskitang,
     'threehump': threehump,
     'zakharov': zakharov
+}
+
+BENCHMARK_BOUNDS = {
+    'ackley': (-32.768, 32.768),
+    'beale': (-4.5, 4.5),
+    'bohachevsky': (-100, 100),
+    'booth': (-10, 10),
+    'branin': (-5, 10),  # is actually  [-5, 10] x [0, 15]
+    'bukin': (-15, -5),
+    'crossintray': (-10, 10),
+    'dixonprice': (-10, 10),
+    'dropwave': (-5.12, 5.12),
+    'easom': (-100, 100),
+    'eggholder': (-512, 512),
+    'griewank': (-600, 600),
+    'holdertable': (-10, 10),
+    'levy': (-10, 10),
+    'rastrigin': (-5.12, 5.12),
+    'rosenbrock': (-5, 10),
+    'rotatedhyperellipsoid': (-65.536, 65.536),
+    'schwefel': (-500, 500),
+    'sphere': (-5.12, 5.12),
+    'styblinskitang': (-5, 5),
+    'threehump': (-5, 5),
+    'zakharov': (-5, 10)
 }

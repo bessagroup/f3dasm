@@ -3,11 +3,11 @@
 There are different ways to install `f3dasm`:
 
 - [Install the latest official release](#install-the-latest-release). This is the best approach for most users who just want to use the package.  
-- [Build the package from source](#installing-from-source). This is for users who wish to contribute to the project.
+- [Build the package from source](#install-from-source). This is for users who wish to contribute to the project.
 
 ---
 
-## Installing the latest release
+## Install the latest release
 
 `f3dasm` is purely Python code and compatible with:
 
@@ -27,7 +27,7 @@ f3dasm is also available on [conda-forge](https://anaconda.org/conda-forge/f3das
 conda install conda-forge::f3dasm
 ```
 
-## Installing from source
+## Install from source
 
 The Python PyPI package (pip install f3dasm) contains the code that is used when installing the package as a *user*. It contains only the main branch version. Installing the package from source is mainly for *developers* and besides the source code it includes:
 

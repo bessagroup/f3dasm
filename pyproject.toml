@@ -9,8 +9,21 @@ authors = [
 maintainers = [
     {name = "M.P. van der Schelling", email = "m.p.vanderschelling@tudelft.nl"}
 ]
-classifiers = [
 
+classifiers = [
+  "License :: OSI Approved :: BSD License",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS"
 ]
 
 license = {text = "BSD-3-Clause"}
@@ -27,6 +40,10 @@ dependencies = [
 ]
 
 requires-python = ">=3.10"
+
+[project.urls]
+Repository = "https://github.com/bessagroup/f3dasm"
+Documentation = "https://f3dasm.readthedocs.io/"
 
 
 [tool.ruff]
@@ -79,22 +96,9 @@ all = [
     "optuna>=4.4.0",
 ]
 dev = [
-    "build>=1.2.2.post1",
     "hypothesis>=6.113.0",
-    "ipykernel>=6.29.5",
-    "ipywidgets>=8.1.7",
-    "mkdocs-material>=9.6.20",
-    "nbsphinx>=0.9.7",
-    "optuna>=4.4.0",
     "pytest>=8.3.5",
     "pytest-cov>=5.0.0",
-    "setuptools>=75.3.2",
-    "sphinx>=7.1.2",
-    "sphinx-autodoc-typehints>=2.0.1",
-    "sphinx-book-theme>=0.0.39",
-    "sphinx-tabs==3.4.4",
-    "sphinxcontrib-bibtex>=2.5.0",
-    "wheel>=0.45.1",
 ]
 docs = [
     "mkdocs-gen-files>=0.5.0",
