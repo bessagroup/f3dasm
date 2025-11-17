@@ -126,19 +126,9 @@ def process(config):
     # Retrieve the ExperimentData object
     max_tries = 500
     tries = 0
-
-    while tries < max_tries:
-        try:
-            data = ExperimentData.from_file(project_dir)
-            break  # Break out of the loop if successful
-        except FileNotFoundError:
-            tries += 1
-            sleep(10)
-
-    if tries == max_tries:
-        raise FileNotFoundError(
-            f"Could not open ExperimentData after {max_tries} attempts."
-        )
+    data = ExperimentData.from_file(
+        project_dir, wait_for_creation=True, max_tries=500
+    )
 
     simulator_lin_buckle = F3DASMAbaqusSimulator(
         py_file=config.scripts.lin_buckle_pre,
@@ -182,19 +172,8 @@ def main(config):
     """
 
     logger.setLevel(config.log_level)
-    # Execute the initial_script for the first job
-    if config.hpc.jobid == 0:
-        pre_processing(config)
-        post_processing(config)
-
-    elif config.hpc.jobid == -1:  # Sequential
-        pre_processing(config)
-        process(config)
-        post_processing(config)
-
-    else:
-        sleep(3 * config.hpc.jobid)  # To asynchronize the jobs
-        process(config)
+    pre_processing(config)
+    post_processing(config)
 
 
 if __name__ == "__main__":
