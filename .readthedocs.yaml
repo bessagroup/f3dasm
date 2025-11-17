@@ -7,7 +7,7 @@
    jobs:
      pre_install:
        - python -m pip install --upgrade pip
-       - python -m pip install '.[docs]'
+       - python -m pip install '.[docs,all]'
 
  mkdocs:
    configuration: mkdocs.yml
