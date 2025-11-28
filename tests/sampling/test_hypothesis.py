@@ -23,10 +23,15 @@ pytestmark = pytest.mark.smoke
 
 
 @composite
-def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1, max_value: int = 20):
+def design_space(
+    draw: Callable[[SearchStrategy[int]], int],
+    min_value: int = 1,
+    max_value: int = 20,
+):
     number_of_input_parameters = draw(integers(min_value, max_value))
-    _name = text(alphabet="abcdefghijklmnopqrstuvwxyz",
-                 min_size=10, max_size=10)
+    _name = text(
+        alphabet="abcdefghijklmnopqrstuvwxyz", min_size=10, max_size=10
+    )
 
     def get_space(number_of_parameters: int) -> Dict[str, Parameter]:
         space = {}
@@ -47,7 +52,8 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
                 )
 
                 space[name] = ContinuousParameter(
-                    lower_bound=lower_bound, upper_bound=upper_bound)
+                    lower_bound=lower_bound, upper_bound=upper_bound
+                )
 
             elif parameter == "DiscreteSpace":
                 lower_bound, upper_bound = (
@@ -56,7 +62,8 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
                 )
 
                 space[name] = DiscreteParameter(
-                    lower_bound=lower_bound, upper_bound=upper_bound)
+                    lower_bound=lower_bound, upper_bound=upper_bound
+                )
             elif parameter == "CategoricalSpace":
                 categories = ["test1", "test2"]
                 space[name] = CategoricalParameter(categories=categories)
@@ -74,8 +81,8 @@ def design_space(draw: Callable[[SearchStrategy[int]], int], min_value: int = 1,
 def test_check_length_input_when_adding_parameter(design: Domain):
     length_input_space = len(design.input_space)
     parameter = DiscreteParameter()
-    kwargs = {'low': parameter.lower_bound, 'high': parameter.upper_bound}
-    design.add(name="test", type='int', **kwargs)
+    kwargs = {"low": parameter.lower_bound, "high": parameter.upper_bound}
+    design.add(name="test", type="int", **kwargs)
     assert length_input_space + 1 == (len(design.input_space))
 
 

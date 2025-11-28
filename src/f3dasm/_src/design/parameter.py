@@ -14,14 +14,14 @@ import numpy as np
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
 
-CategoricalType = Union[None, int, float, str]
+CategoricalType = Union[None, int, float, str]  # noqa
 
 # =============================================================================
 
@@ -74,11 +74,15 @@ class LoadFunction(Protocol):
 
 class Parameter:
     """Interface class of a search space parameter."""
+
     _type: ClassVar[str] = "object"
 
-    def __init__(self, to_disk: bool = False,
-                 store_function: Optional[StoreFunction] = None,
-                 load_function: Optional[LoadFunction] = None):
+    def __init__(
+        self,
+        to_disk: bool = False,
+        store_function: Optional[StoreFunction] = None,
+        load_function: Optional[LoadFunction] = None,
+    ):
         """
         Initialize the Parameter.
 
@@ -115,10 +119,12 @@ class Parameter:
         """
 
         if not to_disk and (
-                store_function is not None or load_function is not None):
-            raise ValueError("If 'to_disk' is False, 'store_function' and"
-                             "load_function' must be None."
-                             )
+            store_function is not None or load_function is not None
+        ):
+            raise ValueError(
+                "If 'to_disk' is False, 'store_function' and"
+                "load_function' must be None."
+            )
 
         self.to_disk = to_disk
         self.store_function = store_function
@@ -168,9 +174,11 @@ class Parameter:
         >>> param = Parameter(to_disk=True)
         >>> param_copy = param._copy()
         """
-        return Parameter(to_disk=self.to_disk,
-                         store_function=self.store_function,
-                         load_function=self.load_function)
+        return Parameter(
+            to_disk=self.to_disk,
+            store_function=self.store_function,
+            load_function=self.load_function,
+        )
 
     def to_dict(self) -> dict:
         """
@@ -195,17 +203,19 @@ class Parameter:
 
         """
         param_dict = {
-            'type': self._type,
-            'to_disk': self.to_disk,
-            'store_function': None,
-            'load_function': None
+            "type": self._type,
+            "to_disk": self.to_disk,
+            "store_function": None,
+            "load_function": None,
         }
         if self.store_function:
-            param_dict['store_function'] = pickle.dumps(
-                self.store_function).hex()
+            param_dict["store_function"] = pickle.dumps(
+                self.store_function
+            ).hex()
         if self.load_function:
-            param_dict['load_function'] = pickle.dumps(
-                self.load_function).hex()
+            param_dict["load_function"] = pickle.dumps(
+                self.load_function
+            ).hex()
         return param_dict
 
     @classmethod
@@ -228,48 +238,51 @@ class Parameter:
         >>> param_dict = {'type': 'object', 'to_disk': False}
         >>> param = Parameter.from_dict(param_dict)
         """
-        param_type = param_dict['type']
+        param_type = param_dict["type"]
         store_function = None
         load_function = None
-        if param_dict['store_function']:
+        if param_dict["store_function"]:
             store_function = pickle.loads(
-                bytes.fromhex(param_dict['store_function']))
-        if param_dict['load_function']:
+                bytes.fromhex(param_dict["store_function"])
+            )
+        if param_dict["load_function"]:
             load_function = pickle.loads(
-                bytes.fromhex(param_dict['load_function']))
+                bytes.fromhex(param_dict["load_function"])
+            )
 
-        if param_type == 'object':
-            return Parameter(to_disk=param_dict['to_disk'],
-                             store_function=store_function,
-                             load_function=load_function)
-        elif param_type == 'float':
+        if param_type == "object":
+            return Parameter(
+                to_disk=param_dict["to_disk"],
+                store_function=store_function,
+                load_function=load_function,
+            )
+        elif param_type == "float":
             return ContinuousParameter(
-                lower_bound=param_dict.get('lower_bound', float('-inf')),
-                upper_bound=param_dict.get('upper_bound', float('inf')),
-                log=param_dict.get('log', False)
+                lower_bound=param_dict.get("lower_bound", float("-inf")),
+                upper_bound=param_dict.get("upper_bound", float("inf")),
+                log=param_dict.get("log", False),
             )
-        elif param_type == 'int':
+        elif param_type == "int":
             return DiscreteParameter(
-                lower_bound=param_dict.get('lower_bound', 0),
-                upper_bound=param_dict.get('upper_bound', 1),
-                step=param_dict.get('step', 1)
+                lower_bound=param_dict.get("lower_bound", 0),
+                upper_bound=param_dict.get("upper_bound", 1),
+                step=param_dict.get("step", 1),
             )
-        elif param_type == 'category':
+        elif param_type == "category":
             return CategoricalParameter(
-                categories=param_dict.get('categories', [])
+                categories=param_dict.get("categories", [])
             )
-        elif param_type == 'constant':
-            return ConstantParameter(
-                value=param_dict.get('value')
-            )
-        elif param_type == 'array':
+        elif param_type == "constant":
+            return ConstantParameter(value=param_dict.get("value"))
+        elif param_type == "array":
             return ArrayParameter(
-                shape=param_dict.get('shape', ()),
-                lower_bound=param_dict.get('lower_bound', float('-inf')),
-                upper_bound=param_dict.get('upper_bound', float('inf'))
+                shape=param_dict.get("shape", ()),
+                lower_bound=param_dict.get("lower_bound", float("-inf")),
+                upper_bound=param_dict.get("upper_bound", float("inf")),
             )
         else:
             raise ValueError(f"Unknown parameter type: {param_type}")
+
 
 # =============================================================================
 
@@ -311,7 +324,8 @@ class ConstantParameter(Parameter):
                 return self
             else:
                 return CategoricalParameter(
-                    categories=[self.value, other.value])
+                    categories=[self.value, other.value]
+                )
 
         if isinstance(other, CategoricalParameter):
             return self.to_categorical() + other
@@ -351,8 +365,8 @@ class ConstantParameter(Parameter):
 
     def to_dict(self):
         param_dict = super().to_dict()
-        param_dict['type'] = 'constant'
-        param_dict['value'] = self.value
+        param_dict["type"] = "constant"
+        param_dict["value"] = self.value
         return param_dict
 
     def _validate_hashable(self):
@@ -373,6 +387,7 @@ class ConstantParameter(Parameter):
             return False
 
         return self.value == __o.value
+
 
 # =============================================================================
 
@@ -402,10 +417,15 @@ class ContinuousParameter(Parameter):
     >>> print(param)
     ContinuousParameter(lower_bound=0.0, upper_bound=1.0, log=False)
     """
+
     _type: ClassVar[str] = "float"
 
-    def __init__(self, lower_bound: float = float('-inf'),
-                 upper_bound: float = float('inf'), log: bool = False):
+    def __init__(
+        self,
+        lower_bound: float = float("-inf"),
+        upper_bound: float = float("inf"),
+        log: bool = False,
+    ):
         super().__init__()
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
@@ -422,33 +442,44 @@ class ContinuousParameter(Parameter):
     def __add__(self, other: Parameter) -> ContinuousParameter:
         if not isinstance(other, ContinuousParameter):
             raise ValueError(
-                "Cannot add non-continuous parameter to continuous!")
+                "Cannot add non-continuous parameter to continuous!"
+            )
         if self.log != other.log:
             raise ValueError(
-                "Cannot add continuous parameters with different log scales!")
-        if self.lower_bound > other.upper_bound or \
-                other.lower_bound > self.upper_bound:
+                "Cannot add continuous parameters with different log scales!"
+            )
+        if (
+            self.lower_bound > other.upper_bound
+            or other.lower_bound > self.upper_bound
+        ):
             raise ValueError("Ranges do not coincide, cannot add")
 
         return ContinuousParameter(
             lower_bound=min(self.lower_bound, other.lower_bound),
-            upper_bound=max(self.upper_bound, other.upper_bound)
+            upper_bound=max(self.upper_bound, other.upper_bound),
         )
 
     def __str__(self):
-        return (f"ContinuousParameter(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound}, log={self.log})")
+        return (
+            f"ContinuousParameter(lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound}, log={self.log})"
+        )
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound}, log={self.log})")
+        return (
+            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound}, log={self.log})"
+        )
 
     def __eq__(self, __o: Parameter) -> bool:
         if not isinstance(__o, ContinuousParameter):
             return False
 
-        return (self.lower_bound == __o.lower_bound and self.upper_bound
-                == __o.upper_bound and self.log == __o.log)
+        return (
+            self.lower_bound == __o.lower_bound
+            and self.upper_bound == __o.upper_bound
+            and self.log == __o.log
+        )
 
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
@@ -474,7 +505,8 @@ class ContinuousParameter(Parameter):
         """
         return ContinuousParameter(
             lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound, log=self.log
+            upper_bound=self.upper_bound,
+            log=self.log,
         )
 
     def to_discrete(self, step: int = 1) -> DiscreteParameter:
@@ -508,16 +540,17 @@ class ContinuousParameter(Parameter):
         return DiscreteParameter(
             lower_bound=self.lower_bound,
             upper_bound=self.upper_bound,
-            step=step
+            step=step,
         )
 
     def to_dict(self) -> dict:
         param_dict = super().to_dict()
-        param_dict['type'] = 'float'
-        param_dict['lower_bound'] = self.lower_bound
-        param_dict['upper_bound'] = self.upper_bound
-        param_dict['log'] = self.log
+        param_dict["type"] = "float"
+        param_dict["lower_bound"] = self.lower_bound
+        param_dict["upper_bound"] = self.upper_bound
+        param_dict["log"] = self.log
         return param_dict
+
 
 # =============================================================================
 
@@ -548,8 +581,9 @@ class DiscreteParameter(Parameter):
     DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
     """
 
-    def __init__(self, lower_bound: int = 0,
-                 upper_bound: int = 1, step: int = 1):
+    def __init__(
+        self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1
+    ):
         super().__init__()
         self.lower_bound = int(lower_bound)
         self.upper_bound = int(upper_bound)
@@ -559,12 +593,16 @@ class DiscreteParameter(Parameter):
         self._validate_range()
 
     def __str__(self):
-        return (f"DiscreteParameter(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound}, step={self.step})")
+        return (
+            f"DiscreteParameter(lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound}, step={self.step})"
+        )
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound}, step={self.step})")
+        return (
+            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound}, step={self.step})"
+        )
 
     def __add__(self, other: Parameter) -> DiscreteParameter:
         if isinstance(other, CategoricalParameter):
@@ -579,9 +617,11 @@ class DiscreteParameter(Parameter):
         if not isinstance(__o, DiscreteParameter):
             return False
 
-        return (self.lower_bound == __o.lower_bound and self.upper_bound
-                == __o.upper_bound and self.step
-                == __o.step)
+        return (
+            self.lower_bound == __o.lower_bound
+            and self.upper_bound == __o.upper_bound
+            and self.step == __o.step
+        )
 
     def _copy(self) -> DiscreteParameter:
         """
@@ -600,7 +640,7 @@ class DiscreteParameter(Parameter):
         return DiscreteParameter(
             lower_bound=self.lower_bound,
             upper_bound=self.upper_bound,
-            step=self.step
+            step=self.step,
         )
 
     def _validate_range(self):
@@ -611,10 +651,10 @@ class DiscreteParameter(Parameter):
 
     def to_dict(self):
         param_dict = super().to_dict()
-        param_dict['type'] = 'int'
-        param_dict['lower_bound'] = self.lower_bound
-        param_dict['upper_bound'] = self.upper_bound
-        param_dict['step'] = self.step
+        param_dict["type"] = "int"
+        param_dict["lower_bound"] = self.lower_bound
+        param_dict["upper_bound"] = self.upper_bound
+        param_dict["step"] = self.step
         return param_dict
 
 
@@ -641,6 +681,7 @@ class CategoricalParameter(Parameter):
     >>> print(param)
     CategoricalParameter(categories=['a', 'b', 'c'])
     """
+
     _type: ClassVar[str] = "object"
 
     def __init__(self, categories: Iterable[Any]):
@@ -652,8 +693,7 @@ class CategoricalParameter(Parameter):
         return f"CategoricalParameter(categories={self.categories})"
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}"
-                f"(categories={list(self.categories)})")
+        return f"{self.__class__.__name__}(categories={list(self.categories)})"
 
     def __add__(self, other: Parameter) -> CategoricalParameter:
         if isinstance(other, CategoricalParameter):
@@ -661,13 +701,20 @@ class CategoricalParameter(Parameter):
         elif isinstance(other, ConstantParameter):
             joint_categories = list(set(self.categories + [other.value]))
         elif isinstance(other, DiscreteParameter):
-            joint_categories = list(set(self.categories + list(range(
-                other.lower_bound, other.upper_bound, other.step))))
+            joint_categories = list(
+                set(
+                    self.categories
+                    + list(
+                        range(other.lower_bound, other.upper_bound, other.step)
+                    )
+                )
+            )
         elif isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to categorical!")
         else:
             raise ValueError(
-                f"Cannot add parameter of type {type(other)} to categorical.")
+                f"Cannot add parameter of type {type(other)} to categorical."
+            )
         return CategoricalParameter(joint_categories)
 
     def __eq__(self, other: CategoricalParameter) -> bool:
@@ -695,9 +742,11 @@ class CategoricalParameter(Parameter):
 
     def to_dict(self) -> dict:
         param_dict = super().to_dict()
-        param_dict['type'] = 'category'
-        param_dict['categories'] = self.categories
+        param_dict["type"] = "category"
+        param_dict["categories"] = self.categories
         return param_dict
+
+
 # =============================================================================
 
 
@@ -727,9 +776,12 @@ class ArrayParameter(Parameter):
     ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
 
-    def __init__(self, shape: int | Iterable[int],
-                 lower_bound: float | np.ndarray = float('-inf'),
-                 upper_bound: float | np.ndarray = float('inf')):
+    def __init__(
+        self,
+        shape: int | Iterable[int],
+        lower_bound: float | np.ndarray = float("-inf"),
+        upper_bound: float | np.ndarray = float("inf"),
+    ):
         super().__init__()
 
         if isinstance(shape, int):
@@ -738,34 +790,41 @@ class ArrayParameter(Parameter):
         self.shape = tuple(int(d) for d in shape)
 
         if not self.shape or any(d <= 0 for d in self.shape):
-            raise ValueError("Shape must be a non-empty iterable of "
-                             "positive integers.")
+            raise ValueError(
+                "Shape must be a non-empty iterable of positive integers."
+            )
 
-        if isinstance(lower_bound, (float, int)):
+        if isinstance(lower_bound, float | int):
             lower_bound = np.full(self.shape, float(lower_bound))
-        if isinstance(upper_bound, (float, int)):
+        if isinstance(upper_bound, float | int):
             upper_bound = np.full(self.shape, float(upper_bound))
 
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
 
     def __str__(self):
-        return (f"ArrayParameter(shape={self.shape}, "
-                f"lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound})")
+        return (
+            f"ArrayParameter(shape={self.shape}, "
+            f"lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound})"
+        )
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}"
-                f"(shape={self.shape}, "
-                f"lower_bound={self.lower_bound}, "
-                f"upper_bound={self.upper_bound})")
+        return (
+            f"{self.__class__.__name__}"
+            f"(shape={self.shape}, "
+            f"lower_bound={self.lower_bound}, "
+            f"upper_bound={self.upper_bound})"
+        )
 
     def __eq__(self, other: Parameter) -> bool:
         if not isinstance(other, ArrayParameter):
             return False
         return (
-            self.shape == other.shape and self.lower_bound
-            == other.lower_bound and self.upper_bound == other.upper_bound)
+            self.shape == other.shape
+            and self.lower_bound == other.lower_bound
+            and self.upper_bound == other.upper_bound
+        )
 
     def _copy(self) -> ArrayParameter:
         """
@@ -785,17 +844,22 @@ class ArrayParameter(Parameter):
         return ArrayParameter(
             shape=self.shape,
             lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound
+            upper_bound=self.upper_bound,
         )
 
     def to_dict(self) -> dict:
         param_dict = super().to_dict()
-        param_dict['type'] = 'array'
-        param_dict['shape'] = self.shape
-        param_dict['lower_bound'] = self.lower_bound
-        param_dict['upper_bound'] = self.upper_bound
+        param_dict["type"] = "array"
+        param_dict["shape"] = self.shape
+        param_dict["lower_bound"] = self.lower_bound
+        param_dict["upper_bound"] = self.upper_bound
         return param_dict
 
 
-PARAMETERS = [CategoricalParameter, ConstantParameter,
-              ContinuousParameter, DiscreteParameter, ArrayParameter]
+PARAMETERS = [
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    ArrayParameter,
+]

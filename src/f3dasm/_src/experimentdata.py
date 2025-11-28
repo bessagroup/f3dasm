@@ -1,7 +1,7 @@
 """
 The ExperimentData object is the main object used to store implementations
- of a design-of-experiments, keep track of results, perform optimization and
- extract data for machine learning purposes.
+of a design-of-experiments, keep track of results, perform optimization and
+extract data for machine learning purposes.
 """
 
 #                                                                       Modules
@@ -9,15 +9,17 @@ The ExperimentData object is the main object used to store implementations
 
 from __future__ import annotations
 
+import logging
+
 # Standard
 import random
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from copy import copy
 from itertools import zip_longest
 from pathlib import Path
 from time import sleep
-from typing import Any, Callable, Literal, Optional, Protocol
+from typing import Any, Literal, Optional, Protocol
 
 # Third-party
 import numpy as np
@@ -27,37 +29,44 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 
 # Local
-from ._io import (DOMAIN_FILENAME, EXPERIMENTDATA_SUBFOLDER,
-                  INPUT_DATA_FILENAME, JOBS_FILENAME, MAX_TRIES,
-                  OUTPUT_DATA_FILENAME, _project_dir_factory)
+from ._io import (
+    DOMAIN_FILENAME,
+    EXPERIMENTDATA_SUBFOLDER,
+    EXPERIMENTSAMPLE_SUBFOLDER,
+    INPUT_DATA_FILENAME,
+    JOBS_FILENAME,
+    MAX_TRIES,
+    OUTPUT_DATA_FILENAME,
+    ToDiskValue,
+    _project_dir_factory,
+)
 from .design.domain import Domain, _domain_factory
 from .errors import DecodeError, EmptyFileError, ReachMaximumTriesError
 from .experimentsample import ExperimentSample
-from .logger import logger
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
+
+logger = logging.getLogger("f3dasm")
 
 #                                                                      Protocol
 # =============================================================================
 
 
 class Block(Protocol):
-    def arm(self, data: ExperimentData) -> None:
-        ...
+    def arm(self, data: ExperimentData) -> None: ...
 
-    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
-        ...
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData: ...
 
 
-class DataGenerator(Block):
-    ...
+class DataGenerator(Block): ...
+
 
 # =============================================================================
 
@@ -65,15 +74,16 @@ class DataGenerator(Block):
 class ExperimentData:
     def __init__(
         self,
-            domain: Optional[Domain] = None,
-            input_data: Optional[
-                pd.DataFrame | np.ndarray
-                | list[dict[str, Any]] | str | Path] = None,
-            output_data: Optional[
-                pd.DataFrame | np.ndarray
-                | list[dict[str, Any]] | str | Path] = None,
-            jobs: Optional[pd.Series] = None,
-            project_dir: Optional[Path] = None):
+        domain: Optional[Domain] = None,
+        input_data: Optional[
+            pd.DataFrame | np.ndarray | list[dict[str, Any]] | str | Path
+        ] = None,
+        output_data: Optional[
+            pd.DataFrame | np.ndarray | list[dict[str, Any]] | str | Path
+        ] = None,
+        jobs: Optional[pd.Series] = None,
+        project_dir: Optional[Path] = None,
+    ):
         """
         Main object to store implementations of a design-of-experiments, keep
         track of results, perform optimization and extract data for machine
@@ -110,16 +120,14 @@ class ExperimentData:
         # names from the domain
         if isinstance(input_data, np.ndarray):
             input_data = convert_numpy_to_dataframe_with_domain(
-                array=input_data,
-                names=_domain.input_names,
-                mode='input')
+                array=input_data, names=_domain.input_names, mode="input"
+            )
 
         # Same with output data
         if isinstance(output_data, np.ndarray):
             output_data = convert_numpy_to_dataframe_with_domain(
-                array=output_data,
-                names=_domain.output_names,
-                mode='output')
+                array=output_data, names=_domain.output_names, mode="output"
+            )
 
         _input_data = _dict_factory(data=input_data)
         _output_data = _dict_factory(data=output_data)
@@ -127,21 +135,23 @@ class ExperimentData:
         # If the domain is empty, try to infer it from the input_data
         # and output_data
         if not _domain:
-            _domain = Domain.from_data(input_data=_input_data,
-                                       output_data=_output_data)
+            _domain = Domain.from_data(
+                input_data=_input_data, output_data=_output_data
+            )
 
         _data = data_factory(
-            input_data=_input_data, output_data=_output_data,
-            domain=_domain, jobs=_jobs, project_dir=_project_dir
+            input_data=_input_data,
+            output_data=_output_data,
+            jobs=_jobs,
+            project_dir=_project_dir,
         )
 
         self.data = _data
         self._domain = _domain
-        self.project_dir = _project_dir
+        self._project_dir = _project_dir
 
         # Store to_disk objects so that the references are kept only
-        for id, experiment_sample in self:
-            experiment_sample.store_experimentsample_references(idx=id)
+        self.store_objects()
 
     def __len__(self):
         """
@@ -223,8 +233,11 @@ class ExperimentData:
         >>> experiment_data1 == experiment_data2
         True
         """
-        return (self.data == __o.data and self._domain == __o._domain
-                and self.project_dir == __o.project_dir)
+        return (
+            self.data == __o.data
+            and self._domain == __o._domain
+            and self._project_dir == __o._project_dir
+        )
 
     def __getitem__(self, key: int | Iterable[int]) -> ExperimentData:
         """
@@ -247,7 +260,8 @@ class ExperimentData:
         return ExperimentData.from_data(
             data={k: self.data[k] for k in self.index[key]},
             domain=self._domain,
-            project_dir=self.project_dir)
+            project_dir=self._project_dir,
+        )
 
     def _repr_html_(self) -> str:
         """
@@ -312,6 +326,7 @@ class ExperimentData:
         >>> copied_data = copy(experiment_data)
         """
         return self._copy(in_place=False, deep=False)
+
     #                                                                Properties
     # =========================================================================
 
@@ -353,6 +368,14 @@ class ExperimentData:
 
     @property
     def domain(self) -> Domain:
+        """
+        Returns the domain of the ExperimentData object.
+
+        Returns
+        -------
+        Domain
+            The domain of the ExperimentData object.
+        """
         return self._domain
 
     @domain.setter
@@ -366,17 +389,43 @@ class ExperimentData:
             The domain to set.
         """
         self._domain = domain
+
+    @property
+    def project_dir(self) -> Path:
+        """
+        Returns the project directory of the ExperimentData object.
+
+        Returns
+        -------
+        Path
+            The project directory.
+        """
+        return self._project_dir
+
+    @project_dir.setter
+    def project_dir(self, project_dir: Path | str):
+        """
+        Sets the project directory of the ExperimentData object.
+
+        Parameters
+        ----------
+        project_dir : Path or str
+            The project directory to set.
+        """
+        self._project_dir = _project_dir_factory(project_dir)
         for _, es in self:
-            es.domain = domain
+            es.project_dir = self._project_dir
 
     #                                                  Alternative constructors
     # =========================================================================
 
     @classmethod
-    def _from_attributes(cls: type[ExperimentData],
-                         domain: Domain,
-                         data: dict[int, ExperimentSample],
-                         project_dir: Path) -> ExperimentData:
+    def _from_attributes(
+        cls: type[ExperimentData],
+        domain: Domain,
+        data: dict[int, ExperimentSample],
+        project_dir: Path,
+    ) -> ExperimentData:
         """
         Create an ExperimentData object from attributes.
 
@@ -397,14 +446,16 @@ class ExperimentData:
         experiment_data = cls()
         experiment_data.data = data
         experiment_data._domain = domain
-        experiment_data.project_dir = project_dir
+        experiment_data._project_dir = project_dir
         return experiment_data
 
     @classmethod
-    def from_file(cls: type[ExperimentData],
-                  project_dir: Path | str,
-                  wait_for_creation: bool = False,
-                  max_tries: int = MAX_TRIES) -> ExperimentData:
+    def from_file(
+        cls: type[ExperimentData],
+        project_dir: Path | str,
+        wait_for_creation: bool = False,
+        max_tries: int = MAX_TRIES,
+    ) -> ExperimentData:
         """
         Create an ExperimentData object from .csv and .json files.
 
@@ -426,19 +477,24 @@ class ExperimentData:
             project_dir = Path(project_dir)
 
         try:
-            return _from_file_attempt(project_dir=project_dir,
-                                      wait_for_creation=wait_for_creation,
-                                      max_tries=max_tries)
+            return _from_file_attempt(
+                project_dir=project_dir,
+                wait_for_creation=wait_for_creation,
+                max_tries=max_tries,
+            )
         except FileNotFoundError:
             try:
                 filename_with_path = Path(get_original_cwd()) / project_dir
             except ValueError as exc:  # get_original_cwd() error
                 raise FileNotFoundError(
-                    f"Cannot find the folder {project_dir} !") from exc
+                    f"Cannot find the folder {project_dir} !"
+                ) from exc
 
-            return _from_file_attempt(project_dir=filename_with_path,
-                                      wait_for_creation=wait_for_creation,
-                                      max_tries=max_tries)
+            return _from_file_attempt(
+                project_dir=filename_with_path,
+                wait_for_creation=wait_for_creation,
+                max_tries=max_tries,
+            )
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> ExperimentData:
@@ -460,16 +516,19 @@ class ExperimentData:
         >>> experiment_data = ExperimentData.from_yaml(config)
         """
         # Option 1: From existing ExperimentData files
-        if 'from_file' in config:
+        if "from_file" in config:
             return cls.from_file(config.from_file)
 
         else:
             return cls(**config)
 
     @classmethod
-    def from_data(cls, data: Optional[dict[int, ExperimentSample]] = None,
-                  domain: Optional[Domain] = None,
-                  project_dir: Optional[Path] = None) -> ExperimentData:
+    def from_data(
+        cls,
+        data: Optional[dict[int, ExperimentSample]] = None,
+        domain: Optional[Domain] = None,
+        project_dir: Optional[Path] = None,
+    ) -> ExperimentData:
         """
         Create an ExperimentData object from existing data.
 
@@ -501,7 +560,7 @@ class ExperimentData:
 
         experiment_data.data = defaultdict(ExperimentSample, data)
         experiment_data._domain = domain
-        experiment_data.project_dir = _project_dir_factory(project_dir)
+        experiment_data._project_dir = _project_dir_factory(project_dir)
         return experiment_data
 
     #                                                         Selecting subsets
@@ -528,8 +587,7 @@ class ExperimentData:
         return self[indices]
 
     def select_with_status(
-            self,
-            status: Literal['open', 'in_progress', 'finished', 'error']
+        self, status: Literal["open", "in_progress", "finished", "error"]
     ) -> ExperimentData:
         """
         Select a subset of the ExperimentData object with a given status.
@@ -555,8 +613,9 @@ class ExperimentData:
     #                                                                    Export
     # =========================================================================
 
-    def _copy(self, in_place: bool = False,
-              deep: bool = True) -> ExperimentData:
+    def _copy(
+        self, in_place: bool = False, deep: bool = True
+    ) -> ExperimentData:
         """
         Create a copy of the ExperimentData object.
 
@@ -588,7 +647,7 @@ class ExperimentData:
         return ExperimentData._from_attributes(
             data=defaultdict(ExperimentSample, data_copy),
             domain=self._domain._copy(),
-            project_dir=self.project_dir,
+            project_dir=self._project_dir,
         )
 
     def store(self, project_dir: Optional[Path | str] = None):
@@ -625,19 +684,24 @@ class ExperimentData:
         if project_dir is not None:
             self.set_project_dir(project_dir, in_place=True)
 
-        subdirectory = self.project_dir / EXPERIMENTDATA_SUBFOLDER
+        subdirectory = self._project_dir / EXPERIMENTDATA_SUBFOLDER
 
         # Create the experimentdata subfolder if it does not exist
         subdirectory.mkdir(parents=True, exist_ok=True)
 
+        # # Store all objects to keep references
+        # self.store_objects()
+
         df_input, df_output = self.to_pandas(keep_references=True)
 
         df_input.to_csv(
-            (subdirectory / INPUT_DATA_FILENAME).with_suffix('.csv'))
+            (subdirectory / INPUT_DATA_FILENAME).with_suffix(".csv")
+        )
         df_output.to_csv(
-            (subdirectory / OUTPUT_DATA_FILENAME).with_suffix('.csv'))
+            (subdirectory / OUTPUT_DATA_FILENAME).with_suffix(".csv")
+        )
         self._domain.store(subdirectory / DOMAIN_FILENAME)
-        self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix('.csv'))
+        self.jobs.to_csv((subdirectory / JOBS_FILENAME).with_suffix(".csv"))
 
     def to_numpy(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -656,8 +720,9 @@ class ExperimentData:
         df_input, df_output = self.to_pandas(keep_references=False)
         return df_input.to_numpy(), df_output.to_numpy()
 
-    def to_pandas(self, keep_references: bool = False
-                  ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def to_pandas(
+        self, keep_references: bool = False
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Convert the ExperimentData object to pandas DataFrames.
 
@@ -679,17 +744,21 @@ class ExperimentData:
         """
         if keep_references:
             return (
-                pd.DataFrame([es._input_data for _, es in self],
-                             index=self.index),
-                pd.DataFrame([es._output_data for _, es in self],
-                             index=self.index)
+                pd.DataFrame(
+                    [es._input_data for _, es in self], index=self.index
+                ),
+                pd.DataFrame(
+                    [es._output_data for _, es in self], index=self.index
+                ),
             )
         else:
             return (
-                pd.DataFrame([es.input_data for _, es in self],
-                             index=self.index),
-                pd.DataFrame([es.output_data for _, es in self],
-                             index=self.index)
+                pd.DataFrame(
+                    [es.input_data for _, es in self], index=self.index
+                ),
+                pd.DataFrame(
+                    [es.output_data for _, es in self], index=self.index
+                ),
             )
 
     def to_xarray(self, keep_references: bool = False) -> xr.Dataset:
@@ -713,18 +782,23 @@ class ExperimentData:
         """
         df_input, df_output = self.to_pandas(keep_references=keep_references)
 
-        da_input = xr.DataArray(df_input, dims=['iterations', 'input_dim'],
-                                coords={'iterations': self.index,
-                                        'input_dim': df_input.columns})
+        da_input = xr.DataArray(
+            df_input,
+            dims=["iterations", "input_dim"],
+            coords={"iterations": self.index, "input_dim": df_input.columns},
+        )
 
-        da_output = xr.DataArray(df_output, dims=['iterations', 'output_dim'],
-                                 coords={'iterations': self.index,
-                                         'output_dim': df_output.columns})
+        da_output = xr.DataArray(
+            df_output,
+            dims=["iterations", "output_dim"],
+            coords={"iterations": self.index, "output_dim": df_output.columns},
+        )
 
-        return xr.Dataset({'input': da_input, 'output': da_output})
+        return xr.Dataset({"input": da_input, "output": da_output})
 
-    def get_n_best_output(self, n_samples: int,
-                          output_name: Optional[str] = 'y') -> ExperimentData:
+    def get_n_best_output(
+        self, n_samples: int, output_name: Optional[str] = "y"
+    ) -> ExperimentData:
         """
         Get the n best samples from the output data. Lower values are better.
 
@@ -769,10 +843,11 @@ class ExperimentData:
     #                                                     Append or remove data
     # =========================================================================
 
-    def add_experiments(self,
-                        data: ExperimentSample | ExperimentData,
-                        in_place: bool = False,
-                        ) -> None:
+    def add_experiments(
+        self,
+        data: ExperimentSample | ExperimentData,
+        in_place: bool = False,
+    ) -> None:
         """
         Add an ExperimentSample or ExperimentData to the ExperimentData
         attribute.
@@ -856,7 +931,8 @@ class ExperimentData:
         return ExperimentData.from_data(
             data={i: v for i, v in enumerate(self.data.values())},
             domain=self._domain,
-            project_dir=self.project_dir)
+            project_dir=self._project_dir,
+        )
 
     def join(self, experiment_data: ExperimentData) -> ExperimentData:
         """
@@ -881,9 +957,12 @@ class ExperimentData:
         copy_other = experiment_data.reset_index()
 
         if not copy_self.data:
+            copy_other._domain += copy_self._domain
             return copy_other
 
-        for (i, es_self), (_, es_other) in zip(copy_self, copy_other):
+        for (i, es_self), (_, es_other) in zip(
+            copy_self, copy_other, strict=False
+        ):
             copy_self.data[i] = es_self + es_other
 
         copy_self._domain += copy_other._domain
@@ -899,8 +978,8 @@ class ExperimentData:
 
         # Update keys of other dict
         other_updated_data = {
-            last_key + 1 + i: v for i, v in enumerate(
-                copy_other.data.values())}
+            last_key + 1 + i: v for i, v in enumerate(copy_other.data.values())
+        }
 
         self.data.update(other_updated_data)
         self._domain += copy_other._domain
@@ -957,8 +1036,11 @@ class ExperimentData:
             return d
 
     # TODO: Create tests for this
-    def sort(self, criterion: Callable[[ExperimentSample], Any],
-             reverse: bool = False) -> ExperimentData:
+    def sort(
+        self,
+        criterion: Callable[[ExperimentSample], Any],
+        reverse: bool = False,
+    ) -> ExperimentData:
         """
         Sort the ExperimentData object based on a criterion.
 
@@ -981,13 +1063,16 @@ class ExperimentData:
         """
 
         sorted_data = dict(
-            sorted(self.data.items(), key=lambda item: criterion(
-                item[1]), reverse=reverse)
+            sorted(
+                self.data.items(),
+                key=lambda item: criterion(item[1]),
+                reverse=reverse,
+            )
         )
         return ExperimentData.from_data(
             data=sorted_data,
             domain=self._domain,
-            project_dir=self.project_dir
+            project_dir=self._project_dir,
         )
 
     #                                                          ExperimentSample
@@ -1014,32 +1099,123 @@ class ExperimentData:
         return self.data[id]
 
     def store_experimentsample(
-            self, experiment_sample: ExperimentSample, idx: int):
+        self,
+        experiment_sample: ExperimentSample,
+        idx: int,
+        domain: Domain | None = None,
+    ):
         """
-        Store an ExperimentSample object in the ExperimentData object.
+        Store an ExperimentSample object in the ExperimentData object and
+        update the Domain object.
 
         Parameters
         ----------
         experiment_sample : ExperimentSample
             The ExperimentSample object to store.
-        id : int
+        idx : int
             The index of the ExperimentSample object.
 
         Examples
         --------
         >>> experiment_data.store_experimentsample(sample, 0)
         """
-        self._domain += experiment_sample.domain
+        experiment_sample, domain = _store(
+            experiment_sample=experiment_sample,
+            idx=idx,
+            domain=domain if domain is not None else self.domain,
+        )
+
+        self._domain = domain
         self.data[idx] = experiment_sample
 
-    def get_open_job(self) -> tuple[int, ExperimentSample]:
+    def store_objects(self):
+        self.store_experimentsample_references()
+        # Store to_disk objects so that the references are kept only
+        for idx, experiment_sample in self:
+            self.store_experimentsample(
+                experiment_sample=experiment_sample,
+                idx=idx,
+                domain=self.domain,
+            )
+
+    def store_experimentsample_references(self):
+        """
+        Store references to input and output data in the experiment sample
+        based on the domain.
+
+        Notes
+        -----
+        This method checks the domain for parameters that should be stored
+        on disk. If a parameter is marked to be stored on disk, the method
+        will store the corresponding value in the experiment sample using
+        the `store` method.
+
+        Examples
+        --------
+        >>> domain = Domain()
+        >>> domain.add_float(name='param1', to_disk=True)
+        >>> sample = ExperimentSample(
+        ...     _input_data={'param1': 1.0, 'param2': 2.0},
+        ...     _output_data={'result1': 3.0}
+        ... )
+        >>> sample.store_experimentsample_references()
+        >>> isinstance(sample._input_data['param1'], ToDiskValue)
+        True
+        """
+        for _, es in self:
+            for name, value in es._input_data.items():
+                input_parameter = self.domain.input_space.get(name, None)
+                if input_parameter is not None and input_parameter.to_disk:
+                    es.store(
+                        name=name,
+                        object=value,
+                        to_disk=True,
+                        store_function=input_parameter.store_function,
+                        load_function=input_parameter.load_function,
+                        which="input",
+                    )
+
+            for name, value in es._output_data.items():
+                output_parameter = self.domain.output_space.get(name, None)
+                if output_parameter is not None and output_parameter.to_disk:
+                    es.store(
+                        name=name,
+                        object=value,
+                        to_disk=True,
+                        store_function=output_parameter.store_function,
+                        load_function=output_parameter.load_function,
+                        which="output",
+                    )
+
+    def update_from_experimentssample_json(self, in_place: bool = False):
+        d = self._copy(in_place=in_place)
+
+        for json_file in (d.project_dir / EXPERIMENTSAMPLE_SUBFOLDER).glob(
+            "*.json"
+        ):
+            try:
+                idx = int(json_file.stem)
+                es = ExperimentSample.from_json(json_file)
+                d.data[idx] = es
+
+            except Exception as exc:
+                logger.warning(
+                    f"Could not load ExperimentSample from {json_file}: {exc}"
+                )
+
+        if in_place:
+            return None
+        else:
+            return d
+
+    def get_open_job(self) -> tuple[int, ExperimentSample, Domain]:
         """
         Get the first open job in the ExperimentData object.
 
         Returns
         -------
-        tuple of int and ExperimentSample
-            The index and ExperimentSample of the first open job.
+        tuple of int, ExperimentSample and the Domain
+            The index, ExperimentSample and Domain of the first open job.
 
         Notes
         -----
@@ -1053,11 +1229,11 @@ class ExperimentData:
         >>> job_id, job_sample = experiment_data.get_open_job()
         """
         for id, es in self:
-            if es.is_status('open'):
-                es.mark('in_progress')
-                return id, es
+            if es.is_status("open"):
+                es.mark("in_progress")
+                return id, es, self.domain
 
-        return None, ExperimentSample()
+        return None, ExperimentSample(), self.domain
 
     #                                                                      Jobs
     # =========================================================================
@@ -1076,11 +1252,14 @@ class ExperimentData:
         >>> experiment_data.is_all_finished()
         True
         """
-        return all(es.is_status('finished') for _, es in self)
+        return all(es.is_status("finished") for _, es in self)
 
-    def mark(self, indices: int | Iterable[int],
-             status: Literal['open', 'in_progress', 'finished', 'error'],
-             in_place: bool = False):
+    def mark(
+        self,
+        indices: int | Iterable[int],
+        status: Literal["open", "in_progress", "finished", "error"],
+        in_place: bool = False,
+    ):
         """
         Mark the jobs at the given indices with the given status.
 
@@ -1112,9 +1291,11 @@ class ExperimentData:
         else:
             return d
 
-    def mark_all(self,
-                 status: Literal['open', 'in_progress', 'finished', 'error'],
-                 in_place: bool = False):
+    def mark_all(
+        self,
+        status: Literal["open", "in_progress", "finished", "error"],
+        in_place: bool = False,
+    ):
         """
         Mark all the experiments with the given status.
 
@@ -1145,8 +1326,9 @@ class ExperimentData:
     #                                                         Project directory
     # =========================================================================
 
-    def set_project_dir(self, project_dir: Path | str,
-                        in_place: bool = False) -> ExperimentData:
+    def set_project_dir(
+        self, project_dir: Path | str, in_place: bool = False
+    ) -> ExperimentData:
         """Set the directory of the f3dasm project folder.
 
         Parameters
@@ -1162,28 +1344,22 @@ class ExperimentData:
             ExperimentData object with the updated project directory
         """
         d = self._copy(in_place=in_place)
-        d.project_dir = _project_dir_factory(project_dir)
+        d._project_dir = _project_dir_factory(project_dir)
 
         if in_place:
             return None
         else:
             return d
 
-    def move_project_dir(self, project_dir: Path | str):
-
-        Path(project_dir).mkdir(parents=True, exist_ok=True)
-
-        for _, es in self:
-            es.copy_project_dir(Path(project_dir))
-
-        self.set_project_dir(project_dir, in_place=True)
 
 # =============================================================================
 
 
-def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
-                       wait_for_creation: bool = False
-                       ) -> ExperimentData:
+def _from_file_attempt(
+    project_dir: Path,
+    max_tries: int = MAX_TRIES,
+    wait_for_creation: bool = False,
+) -> ExperimentData:
     """Attempt to create an ExperimentData object
     from .csv and .pkl files.
 
@@ -1217,32 +1393,32 @@ def _from_file_attempt(project_dir: Path, max_tries: int = MAX_TRIES,
                 input_data=subdirectory / INPUT_DATA_FILENAME,
                 output_data=subdirectory / OUTPUT_DATA_FILENAME,
                 jobs=subdirectory / JOBS_FILENAME,
-                project_dir=project_dir)
+                project_dir=project_dir,
+            )
         except (EmptyFileError, DecodeError):
             tries += 1
             logger.debug(
-                f"Error reading a file, retrying"
-                f" {tries+1}/{MAX_TRIES}"
+                f"Error reading a file, retrying {tries + 1}/{MAX_TRIES}"
             )
             sleep(random.uniform(0.5, 2.5))
 
         except FileNotFoundError as exc:
             if not wait_for_creation:
                 raise FileNotFoundError(
-                    f"File {subdirectory} not found") from exc
+                    f"File {subdirectory} not found"
+                ) from exc
 
             tries += 1
-            logger.debug(
-                f"FileNotFoundError({subdirectory}), sleeping!"
-            )
+            logger.debug(f"FileNotFoundError({subdirectory}), sleeping!")
             sleep(random.uniform(9.5, 11.0))
 
     raise ReachMaximumTriesError(file_path=subdirectory, max_tries=max_tries)
 
 
 def convert_numpy_to_dataframe_with_domain(
-        array: np.ndarray, names: Optional[list[str]],
-        mode: Literal['input', 'output']
+    array: np.ndarray,
+    names: Optional[list[str]],
+    mode: Literal["input", "output"],
 ) -> pd.DataFrame:
     """
     Convert a numpy array to a pandas DataFrame with the domain names
@@ -1262,17 +1438,16 @@ def convert_numpy_to_dataframe_with_domain(
         The converted data as a pandas DataFrame
     """
     if not names:
-        if mode == 'input':
-            names = [f'x{i}' for i in range(array.shape[1])]
-        elif mode == 'output':
+        if mode == "input":
+            names = [f"x{i}" for i in range(array.shape[1])]
+        elif mode == "output":
             if array.shape[1] == 1:
-                names = ['y']
+                names = ["y"]
             else:
-                names = [f'y{i}' for i in range(array.shape[1])]
+                names = [f"y{i}" for i in range(array.shape[1])]
 
         else:
-            raise ValueError(
-                f"Unknown mode {mode}, use 'input' or 'output'")
+            raise ValueError(f"Unknown mode {mode}, use 'input' or 'output'")
 
     return pd.DataFrame(array, columns=names)
 
@@ -1284,12 +1459,13 @@ def merge_dicts(list_of_dicts):
     all_keys = sorted({key for d in list_of_dicts for key in d})
 
     # Define the desired order for the first element of the tuple
-    order = {'jobs': 0, 'input': 1, 'output': 2}
+    order = {"jobs": 0, "input": 1, "output": 2}
 
     # Sort the keys first by the defined order then alphabetically within
     # each group
-    sorted_keys = sorted(all_keys, key=lambda k: (
-        order.get(k[0], float('inf')), k))
+    sorted_keys = sorted(
+        all_keys, key=lambda k: (order.get(k[0], float("inf")), k)
+    )
 
     # Iterate over each dictionary and insert None for missing keys
     for d in list_of_dicts:
@@ -1300,8 +1476,9 @@ def merge_dicts(list_of_dicts):
     return dict(merged_dict)
 
 
-def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
-                  ) -> list[dict[str, Any]]:
+def _dict_factory(
+    data: pd.DataFrame | list[dict[str, Any]] | None | Path | str,
+) -> list[dict[str, Any]]:
     """
     Convert the DataTypes to a list of dictionaries
 
@@ -1327,8 +1504,8 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
     if data is None:
         return []
 
-    elif isinstance(data, (Path, str)):
-        filepath = Path(data).with_suffix('.csv')
+    elif isinstance(data, Path | str):
+        filepath = Path(data).with_suffix(".csv")
 
         if not filepath.exists():
             raise FileNotFoundError(f"File {filepath} not found")
@@ -1355,12 +1532,12 @@ def _dict_factory(data: pd.DataFrame | list[dict[str, Any]] | None | Path | str
     raise ValueError(f"Data type {type(data)} not supported")
 
 
-def data_factory(input_data: list[dict[str, Any]],
-                 output_data: list[dict[str, Any]],
-                 domain: Domain,
-                 jobs: pd.Series,
-                 project_dir: Path,
-                 ) -> dict[int, ExperimentSample]:
+def data_factory(
+    input_data: list[dict[str, Any]],
+    output_data: list[dict[str, Any]],
+    jobs: pd.Series,
+    project_dir: Path,
+) -> dict[int, ExperimentSample]:
     """
     Convert the input and output data to a defaultdictionary
     of ExperimentSamples
@@ -1371,8 +1548,6 @@ def data_factory(input_data: list[dict[str, Any]],
         The input data of the experiments
     output_data : List[Dict[str, Any]]
         The output data of the experiments
-    domain : Domain
-        The domain of the data
     jobs : pd.Series
         The status of all the jobs
     project_dir : Path
@@ -1389,21 +1564,30 @@ def data_factory(input_data: list[dict[str, Any]],
     input_data = remove_nan_and_none_keys_inplace(input_data)
     output_data = remove_nan_and_none_keys_inplace(output_data)
     # Combine the two lists into a dictionary of ExperimentSamples
-    data = {index: ExperimentSample(input_data=experiment_input,
-                                    output_data=experiment_output,
-                                    domain=domain,
-                                    job_status=job_status,
-                                    project_dir=project_dir)
-            for index, (experiment_input, experiment_output, job_status) in
-            enumerate(zip_longest(input_data, output_data, jobs))}
+    data = {
+        index: ExperimentSample(
+            _input_data=experiment_input,
+            _output_data=experiment_output,
+            job_status=job_status,
+            project_dir=project_dir,
+        )
+        for index, (
+            experiment_input,
+            experiment_output,
+            job_status,
+        ) in enumerate(zip_longest(input_data, output_data, jobs))
+    }
 
     return defaultdict(ExperimentSample, data)
 
 
 def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
     for data in data_list:
-        keys_to_remove = [k for k, v in data.items() if v is None or (
-            isinstance(v, float) and np.isnan(v))]
+        keys_to_remove = [
+            k
+            for k, v in data.items()
+            if v is None or (isinstance(v, float) and np.isnan(v))
+        ]
         for k in keys_to_remove:
             del data[k]
 
@@ -1417,9 +1601,8 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
     elif jobs is None:
         return pd.Series()
 
-    elif isinstance(jobs, (Path, str)):
-
-        filepath = Path(jobs).with_suffix('.csv')
+    elif isinstance(jobs, Path | str):
+        filepath = Path(jobs).with_suffix(".csv")
 
         if not filepath.exists():
             raise FileNotFoundError(f"File {filepath} not found")
@@ -1428,8 +1611,7 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
             raise EmptyFileError(filepath)
 
         try:
-            df = pd.read_csv(filepath,
-                             header=0, index_col=0).squeeze()
+            df = pd.read_csv(filepath, header=0, index_col=0).squeeze()
         except pd.errors.EmptyDataError as exc:
             raise DecodeError(filepath) from exc
 
@@ -1442,3 +1624,60 @@ def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
 
     else:
         raise ValueError(f"Jobs type {type(jobs)} not supported")
+
+
+def _store(
+    experiment_sample: ExperimentSample,
+    idx: int,
+    domain: Domain,
+) -> ExperimentSample:
+    for name, value in experiment_sample._output_data.items():
+        # If the value is a ToDiskValue, we need to store it
+        if isinstance(value, ToDiskValue):
+            if name not in domain.output_space:
+                domain.add_output(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function,
+                )
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._output_data[name] = value.to_reference(
+                reference=reference
+            )
+
+        else:
+            if name not in domain.output_space:
+                domain.add_output(name=name)
+
+    for name, value in experiment_sample._input_data.items():
+        if isinstance(value, ToDiskValue):
+            if name not in domain.input_space:
+                domain.add_parameter(
+                    name=name,
+                    to_disk=True,
+                    store_function=value.store_function,
+                    load_function=value.load_function,
+                )
+            # Store the value on disk
+            reference = value.store(
+                project_dir=experiment_sample.project_dir,
+                idx=idx,
+            )
+
+            # Update the experiment sample to reference the stored location
+            experiment_sample._input_data[name] = value.to_reference(
+                reference=reference
+            )
+
+        else:
+            if name not in domain.input_space:
+                domain.add_parameter(name=name)
+
+    return experiment_sample, domain

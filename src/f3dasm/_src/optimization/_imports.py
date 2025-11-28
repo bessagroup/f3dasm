@@ -15,9 +15,9 @@ from typing import Optional
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling', 'Optuna']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling", "Optuna"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
@@ -66,7 +66,7 @@ class _DeferredImportExceptionContextManager:
             them from propagating.
 
         """
-        if isinstance(exc_value, (ImportError, SyntaxError)):
+        if isinstance(exc_value, ImportError | SyntaxError):
             if isinstance(exc_value, ImportError):
                 message = (
                     f"Tried to import '{exc_value.name}' but failed. \
@@ -110,6 +110,7 @@ class _DeferredImportExceptionContextManager:
         if self._deferred is not None:
             exc_value, message = self._deferred
             raise ImportError(message) from exc_value
+
 
 # =============================================================================
 

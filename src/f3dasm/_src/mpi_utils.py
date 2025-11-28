@@ -5,12 +5,14 @@ This module defines tools for using MPI in a distributed fashion.
 # =============================================================================
 
 # Standard
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 # Third-party
 try:
     from mpi4py import MPI
+
     MPI_AVAILABLE = True
 except ImportError:
     MPI_AVAILABLE = False
@@ -20,16 +22,18 @@ if TYPE_CHECKING:
 else:
     Comm = object
 
-# Local
-from .logger import logger
-
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Under development'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Under development"
 # =============================================================================
-#
+
+logger = logging.getLogger("f3dasm")
+
+# =============================================================================
+
+
 #                                                                     Constants
 # =============================================================================
 
@@ -57,7 +61,8 @@ def mpi_lock_manager(comm: Comm, size: int):
     """
     if not MPI_AVAILABLE:
         raise RuntimeError(
-            "mpi4py is not installed. Install it to use MPI features.")
+            "mpi4py is not installed. Install it to use MPI features."
+        )
 
     # Track which rank holds the lock
     lock_held_by = None
@@ -100,13 +105,18 @@ def mpi_lock_manager(comm: Comm, size: int):
 
     logger.info("Lock manager terminating.")
 
+
 #                                                              MPI Worker tools
 # =============================================================================
 
 
-def mpi_get_open_job(comm: Comm, experiment_data_type,
-                     project_dir: Path, wait_for_creation: bool,
-                     max_tries: int):
+def mpi_get_open_job(
+    comm: Comm,
+    experiment_data_type,
+    project_dir: Path,
+    wait_for_creation: bool,
+    max_tries: int,
+):
     """
     Request and acquire an MPI lock to retrieve an open job
     from the experiment data.
@@ -138,10 +148,12 @@ def mpi_get_open_job(comm: Comm, experiment_data_type,
 
     try:
         data = experiment_data_type.from_file(
-            project_dir=project_dir, wait_for_creation=wait_for_creation,
-            max_tries=max_tries)
+            project_dir=project_dir,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+        )
 
-        idx, es = data.get_open_job()
+        idx, es, domain = data.get_open_job()
 
         data.store(project_dir)
 
@@ -149,13 +161,19 @@ def mpi_get_open_job(comm: Comm, experiment_data_type,
         logger.debug(f"Process {comm.Get_rank()} releasing lock")
         comm.send(None, dest=MASTER_RANK, tag=LOCK_RELEASE)
 
-    return idx, es
+    return idx, es, domain
 
 
 def mpi_store_experiment_sample(
-    comm: Comm, experiment_data_type,
-        project_dir: Path, wait_for_creation: bool,
-        max_tries: int, idx: int, experiment_sample) -> None:
+    comm: Comm,
+    experiment_data_type,
+    project_dir: Path,
+    wait_for_creation: bool,
+    max_tries: int,
+    idx: int,
+    experiment_sample,
+    domain,
+) -> None:
     """
     Request and acquire an MPI lock to store an experiment sample.
 
@@ -185,11 +203,14 @@ def mpi_store_experiment_sample(
 
     try:
         data = experiment_data_type.from_file(
-            project_dir=project_dir, wait_for_creation=wait_for_creation,
-            max_tries=max_tries)
+            project_dir=project_dir,
+            wait_for_creation=wait_for_creation,
+            max_tries=max_tries,
+        )
 
-        data.store_experimentsample(experiment_sample=experiment_sample,
-                                    idx=idx)
+        data.domain = domain
+        data.data[idx] = experiment_sample
+
         data.store(project_dir)
 
     finally:

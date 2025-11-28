@@ -1,7 +1,7 @@
 f3dasm
 ------
 
-<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/main/logo.png" width="800"/></div>
+<div align="center"><img src="https://raw.githubusercontent.com/bessagroup/f3dasm/main/img/logo.png" width="800"/></div>
 
 ***
 
@@ -13,7 +13,7 @@ f3dasm
 [![Documentation Status](https://readthedocs.org/projects/f3dasm/badge/?version=latest)](https://f3dasm.readthedocs.io/en/latest/?badge=latest)
 
 [**Docs**](https://f3dasm.readthedocs.io/)
-| [**Installation**](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html)
+| [**Installation**](https://f3dasm.readthedocs.io/en/latest/installation.html)
 | [**GitHub**](https://github.com/bessagroup/f3dasm)
 | [**PyPI**](https://pypi.org/project/f3dasm/)
 | [**Conda**](https://anaconda.org/conda-forge/f3dasm)
@@ -57,9 +57,9 @@ or
 $ conda install conda-forge::f3dasm
 ```
 
-* Follow the complete [installation instructions](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) to get going!
-* Read the [overview](https://f3dasm.readthedocs.io/en/latest/rst_doc_files/general/installation.html) section, containing a brief introduction to the framework and a statement of need.
-* Check out the [tutorials](https://f3dasm.readthedocs.io/en/latest/auto_examples/index.html) section, containing a collection of examples to get you familiar with the framework.
+* Follow the complete [installation instructions](https://f3dasm.readthedocs.io/en/latest/installation.html) to get going!
+* Read the [overview](https://f3dasm.readthedocs.io/en/latest/installation.html) section, containing a brief introduction to the framework and a statement of need.
+* Check out the tutorials section, containing a collection of examples to get you familiar with the framework.
 
 ## Illustrative benchmarks
 

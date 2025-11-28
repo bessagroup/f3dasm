@@ -1,69 +1,147 @@
 [project]
-name = "f3dasm"
-version = "2.1.0"
-description = "f3dasm - Framework for Data-driven Development and Analysis of Structures and Materials"
-readme = "README.md"
 authors = [
-    {name = "M.P. van der Schelling", email = "m.p.vanderschelling@tudelft.nl"}
-]
-maintainers = [
-    {name = "M.P. van der Schelling", email = "m.p.vanderschelling@tudelft.nl"}
+  {email = "m.p.vanderschelling@tudelft.nl", name = "M.P. van der Schelling"}
 ]
 classifiers = [
-
+  "License :: OSI Approved :: BSD License",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS"
 ]
-
-license = {text = "BSD-3-Clause"}
 dependencies = [
-    "filelock>=3.16.1",
-    "hydra-core>=1.3.2",
-    "matplotlib>=3.7.5",
-    "numpy>=1.24.4",
-    "pandas>=2.0.3",
-    "pathos>=0.3.4",
-    "salib>=1.4.8",
-    "scipy>=1.10.1",
-    "xarray>=2023.1.0",
+  "filelock>=3.16.1",
+  "hydra-core>=1.3.2",
+  "matplotlib>=3.7.5",
+  "numpy>=1.24.4",
+  "pandas>=2.0.3",
+  "pathos>=0.3.4",
+  "salib>=1.5.2",
+  "scipy>=1.10.1",
+  "xarray>=2023.1.0"
+]
+description = "f3dasm - Framework for Data-driven Development and Analysis of Structures and Materials"
+license = {text = "BSD-3-Clause"}
+maintainers = [
+  {email = "m.p.vanderschelling@tudelft.nl", name = "M.P. van der Schelling"}
+]
+name = "f3dasm"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "2.2.0"
+
+[project.optional-dependencies]
+all = [
+  "abaqus2py>=1.0.0",
+  "optuna>=4.4.0"
+]
+dev = [
+  "pre-commit>=4.4.0"
+]
+docs = [
+  "mkdocs-gen-files>=0.5.0",
+  "mkdocs-include-exclude-files>=0.1.0",
+  "mkdocs-ipynb>=0.1.1",
+  "mkdocs-material>=9.6.20",
+  "mkdocstrings>=0.30.1",
+  "mkdocstrings-python>=1.18.2",
+  "pymdown-extensions>=10.16.1"
+]
+test = [
+  "hypothesis>=6.138.0",
+  "pytest>=8.4.1",
+  "pytest-cov>=6.2.1"
 ]
 
-requires-python = ">=3.9"
+[project.urls]
+Documentation = "https://f3dasm.readthedocs.io/"
+Repository = "https://github.com/bessagroup/f3dasm"
 
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover",
+  # Don't complain about missing debug-only code:
+  "def __repr__",
+  "if self.debug",
+  # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError",
+  # TYPE_CHECKING is used for type hinting, don't complain about it:
+  "if TYPE_CHECKING:",
+  # Don't complain if non-runnable code isn't run:
+  "if 0:",
+  "if __name__ == .__main__.:",
+  # Don't complain about abstract methods, they aren't run:
+  "@(abc\\.)?abstractmethod"
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "tests/",
+  "**/__init__.py"
+]
+source = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=70.00"
+markers = [
+  "smoke",
+  "requires_dependency(name): mark the test as it requires a certain dependency"
+]
+minversion = "6.0"
+pythonpath = [".", "src"]
+testpaths = [
+  "tests"
+]
 
 [tool.ruff]
 line-length = 79
 
-
 [tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # Pyflakes
-    "I",   # isort
-    "B",   # flake8-bugbear
-    "UP",  # pyupgrade
+exclude = [
+  "__pycache__",
+  "dist",
+  "*.egg",
+  "docs/source",
+  "tests",
+  ".git",
+  "experiments/*",
+  "notebooks",
+  "tests/*",
+  "studies/*",
+  "docs/*",
+  "docs_old/*"
 ]
 ignore = [
-    "E226",
-    "E3",
-    "E731",
-    "C901",
-    "UP045",
-    "B027",
-    "B012",
+  "E226",
+  "E3",
+  "E731",
+  "C901",
+  "UP045",
+  "B027",
+  "B012"
 ]
-
-exclude = [
-    "__pycache__",
-    "dist",
-	"*.egg",
-	"docs/source",
-	"tests",
-	".git",
-	"experiments/*",
-	"notebooks",
-	"tests/*",
-    "studies/*",
-    "docs/*",
+select = [
+  "E", # pycodestyle errors
+  "W", # pycodestyle warnings
+  "F", # Pyflakes
+  "I", # isort
+  "B", # flake8-bugbear
+  "UP" # pyupgrade
 ]
 
 [tool.uv]
@@ -71,77 +149,3 @@ package = true
 
 [tools.setuptools]
 packages = ["src"]
-
-[dependency-groups]
-all = [
-    "optuna>=4.4.0",
-]
-dev = [
-    "build>=1.2.2.post1",
-    "hypothesis>=6.113.0",
-    "ipykernel>=6.29.5",
-    "ipywidgets>=8.1.7",
-    "nbsphinx>=0.9.7",
-    "optuna>=4.4.0",
-    "pytest>=8.3.5",
-    "pytest-cov>=5.0.0",
-    "setuptools>=75.3.2",
-    "sphinx>=7.1.2",
-    "sphinx-autodoc-typehints>=2.0.1",
-    "sphinx-book-theme>=0.0.39",
-    "sphinx-tabs==3.4.4",
-    "sphinxcontrib-bibtex>=2.5.0",
-    "wheel>=0.45.1",
-]
-
-[tool.pytest.ini_options]
-pythonpath = [".", "src"]
-addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=70.00"
-minversion = "6.0"
-testpaths = [
-    "tests",
-]
-markers = [
-    "smoke",
-    "requires_dependency(name): mark the test as it requires a certain dependency",
-]
-
-[build-system]
-requires = ["setuptools>=43.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.coverage.run]
-branch = true
-source = ["src"]
-omit = [
-    "tests/",
-    "**/__init__.py",
-]
-
-[tool.coverage.report]
-# Regexes for lines to exclude from consideration
-exclude_lines = [
-    # Have to re-enable the standard pragma
-    "pragma: no cover",
-
-    # Don't complain about missing debug-only code:
-    "def __repr__",
-    "if self.debug",
-
-    # Don't complain if tests don't hit defensive assertion code:
-    "raise AssertionError",
-    "raise NotImplementedError",
-
-    # TYPE_CHECKING is used for type hinting, don't complain about it:
-    "if TYPE_CHECKING:",
-
-    # Don't complain if non-runnable code isn't run:
-    "if 0:",
-    "if __name__ == .__main__.:",
-
-    # Don't complain about abstract methods, they aren't run:
-    "@(abc\\.)?abstractmethod",
-]
-
-[tool.coverage.html]
-directory = "coverage_html_report"

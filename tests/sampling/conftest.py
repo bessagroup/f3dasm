@@ -17,7 +17,9 @@ def design():
         "x3": ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
         "x4": CategoricalParameter(categories=["test1", "test2", "test3"]),
         "x5": DiscreteParameter(lower_bound=3, upper_bound=6),
-        "x6": CategoricalParameter(categories=["material1", "material2", "material3"]),
+        "x6": CategoricalParameter(
+            categories=["material1", "material2", "material3"]
+        ),
     }
 
     # Create the design space
@@ -32,9 +34,13 @@ def design2():
         "x1": ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
         "x2": CategoricalParameter(categories=["main"]),
         "x3": ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-        "x4": CategoricalParameter(categories=["test" + str(i) for i in range(80)]),
+        "x4": CategoricalParameter(
+            categories=["test" + str(i) for i in range(80)]
+        ),
         "x5": DiscreteParameter(lower_bound=3, upper_bound=6),
-        "x6": CategoricalParameter(categories=["material" + str(i) for i in range(20)]),
+        "x6": CategoricalParameter(
+            categories=["material" + str(i) for i in range(20)]
+        ),
     }
 
     # Create the design space

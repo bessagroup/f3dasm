@@ -19,9 +19,9 @@ with try_import() as _scipy_imports:
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
@@ -29,17 +29,16 @@ __status__ = 'Stable'
 OPTIMIZERS = {}
 
 if _scipy_imports.is_successful():
-    OPTIMIZERS['cg'] = cg
-    OPTIMIZERS['neldermead'] = nelder_mead
-    OPTIMIZERS['lbfgsb'] = lbfgsb
+    OPTIMIZERS["cg"] = cg
+    OPTIMIZERS["neldermead"] = nelder_mead
+    OPTIMIZERS["lbfgsb"] = lbfgsb
 
 if _optuna_imports.is_successful():
-    OPTIMIZERS['tpesampler'] = tpesampler
+    OPTIMIZERS["tpesampler"] = tpesampler
 
 
 # =============================================================================
-def create_optimizer(optimizer: str, **hyperparameters
-                     ) -> Block:
+def create_optimizer(optimizer: str, **hyperparameters) -> Block:
     """
     Create a optimizer block from one of the built-in optimizers.
 
@@ -65,13 +64,15 @@ def create_optimizer(optimizer: str, **hyperparameters
     """
 
     if isinstance(optimizer, str):
-
-        filtered_name = optimizer.lower().replace(
-            ' ', '').replace('-', '').replace('_', '')
+        filtered_name = (
+            optimizer.lower()
+            .replace(" ", "")
+            .replace("-", "")
+            .replace("_", "")
+        )
 
         if filtered_name in OPTIMIZERS:
-            return OPTIMIZERS[filtered_name](
-                **hyperparameters)
+            return OPTIMIZERS[filtered_name](**hyperparameters)
         else:
             raise KeyError(f"Unknown optimizer name: {optimizer}")
 

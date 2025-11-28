@@ -1,5 +1,3 @@
-
-
 """
 Main entrypoint of the experiment
 
@@ -22,6 +20,7 @@ process
 from pathlib import Path
 from time import sleep
 from typing import Optional
+import logging
 
 # Third-party
 import hydra
@@ -30,17 +29,18 @@ import pandas as pd
 from abaqus2py import F3DASMAbaqusSimulator
 
 from f3dasm import Block, ExperimentData
-from f3dasm import logger as f3dasm_logger
 from f3dasm.design import Domain
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
+
+logger = logging.getLogger("f3dasm")
 
 
 #                                                         Custom sampler method
@@ -67,12 +67,15 @@ class LogNormalSampler(Block):
     def call(self, data: ExperimentData, n_samples: int) -> ExperimentData:
         rng = np.random.default_rng(self.seed)
         sampled_imperfections = rng.lognormal(
-            mean=self.mean, sigma=self.sigma, size=n_samples)
-        df = pd.DataFrame(sampled_imperfections,
-                          columns=self.domain.input_names)
-        return ExperimentData(domain=data._domain,
-                              input_data=df,
-                              project_dir=data.project_dir)
+            mean=self.mean, sigma=self.sigma, size=n_samples
+        )
+        df = pd.DataFrame(
+            sampled_imperfections, columns=self.domain.input_names
+        )
+        return ExperimentData(
+            domain=data._domain, input_data=df, project_dir=data._project_dir
+        )
+
 
 # =============================================================================
 
@@ -80,20 +83,22 @@ class LogNormalSampler(Block):
 def pre_processing(config):
     experimentdata = ExperimentData.from_yaml(config.experimentdata)
 
-    if 'from_sampling' in config.imperfection:
+    if "from_sampling" in config.imperfection:
         log_normal_sampler = LogNormalSampler(
             mean=config.imperfection.mean,
             sigma=config.imperfection.sigma,
-            seed=config.experimentdata.from_sampling.seed)
+            seed=config.experimentdata.from_sampling.seed,
+        )
 
         imperfections = ExperimentData(
-            domain=Domain.from_yaml(config.imperfection.domain))
+            domain=Domain.from_yaml(config.imperfection.domain)
+        )
 
         log_normal_sampler.arm(data=imperfections)
 
         imperfections = log_normal_sampler.call(
             data=imperfections,
-            n_samples=config.experimentdata.from_sampling.n_samples
+            n_samples=config.experimentdata.from_sampling.n_samples,
         )
 
         experimentdata = experimentdata.join(imperfections)
@@ -101,12 +106,11 @@ def pre_processing(config):
     experimentdata.store(Path.cwd())
 
     # Create directories for ABAQUS results
-    (Path.cwd() / 'lin_buckle').mkdir(exist_ok=True)
-    (Path.cwd() / 'riks').mkdir(exist_ok=True)
+    (Path.cwd() / "lin_buckle").mkdir(exist_ok=True)
+    (Path.cwd() / "riks").mkdir(exist_ok=True)
 
 
-def post_processing(config):
-    ...
+def post_processing(config): ...
 
 
 def process(config):
@@ -122,42 +126,37 @@ def process(config):
     # Retrieve the ExperimentData object
     max_tries = 500
     tries = 0
-
-    while tries < max_tries:
-        try:
-            data = ExperimentData.from_file(project_dir)
-            break  # Break out of the loop if successful
-        except FileNotFoundError:
-            tries += 1
-            sleep(10)
-
-    if tries == max_tries:
-        raise FileNotFoundError(f"Could not open ExperimentData after "
-                                f"{max_tries} attempts.")
+    data = ExperimentData.from_file(
+        project_dir, wait_for_creation=True, max_tries=500
+    )
 
     simulator_lin_buckle = F3DASMAbaqusSimulator(
         py_file=config.scripts.lin_buckle_pre,
         post_py_file=config.scripts.lin_buckle_post,
-        working_directory=Path.cwd() / 'lin_buckle',
-        max_waiting_time=60)
+        working_directory=Path.cwd() / "lin_buckle",
+        max_waiting_time=60,
+    )
     simulator_riks = F3DASMAbaqusSimulator(
         py_file=config.scripts.riks_pre,
         post_py_file=config.scripts.riks_post,
-        working_directory=Path.cwd() / 'riks',
-        max_waiting_time=120)
+        working_directory=Path.cwd() / "riks",
+        max_waiting_time=120,
+    )
 
     simulator_lin_buckle.arm(data=data)
     data: ExperimentData = simulator_lin_buckle.call(
-        data=data, pass_id=True, mode=config.mode)
+        data=data, pass_id=True, mode=config.mode
+    )
 
     data.store()
-    data = data.mark_all('open')
+    data = data.mark_all("open")
 
     simulator_riks.arm(data=data)
     data: ExperimentData = simulator_riks.call(
-        data=data, pass_id=True, mode=config.mode)
+        data=data, pass_id=True, mode=config.mode
+    )
 
-    if config.mode == 'sequential':
+    if config.mode == "sequential":
         # Store the ExperimentData to a csv file
         data.store()
 
@@ -172,20 +171,9 @@ def main(config):
         Configuration parameters defined in config.yaml
     """
 
-    f3dasm_logger.setLevel(config.log_level)
-    # Execute the initial_script for the first job
-    if config.hpc.jobid == 0:
-        pre_processing(config)
-        post_processing(config)
-
-    elif config.hpc.jobid == -1:  # Sequential
-        pre_processing(config)
-        process(config)
-        post_processing(config)
-
-    else:
-        sleep(3*config.hpc.jobid)  # To asynchronize the jobs
-        process(config)
+    logger.setLevel(config.log_level)
+    pre_processing(config)
+    post_processing(config)
 
 
 if __name__ == "__main__":

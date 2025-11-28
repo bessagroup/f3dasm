@@ -15,17 +15,19 @@ from .experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Alpha'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
 
 
 def update_config_with_experiment_sample(
-        config: OmegaConf, experiment_sample: ExperimentSample,
-        force_add: bool = False) -> OmegaConf:
+    config: OmegaConf,
+    experiment_sample: ExperimentSample,
+    force_add: bool = False,
+) -> OmegaConf:
     """
     Update the config with the values from the experiment sample.
 

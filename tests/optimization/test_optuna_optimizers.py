@@ -7,8 +7,7 @@ from f3dasm.design import Domain
 
 
 def test_optuna_optimizer():
-
-    @datagenerator(output_names='y')
+    @datagenerator(output_names="y")
     def f(x):
         return x**2 + 1
 
@@ -19,18 +18,18 @@ def test_optuna_optimizer():
     )
 
     domain = Domain()
-    domain.add_float(name='x', low=-10, high=10)
-    domain.add_output('y')
+    domain.add_float(name="x", low=-10, high=10)
+    domain.add_output("y")
     data = ExperimentData(domain=domain)
 
-    sampler = create_sampler('random')
+    sampler = create_sampler("random")
 
     data = sampler.call(data, n_samples=1)
 
     f.arm(data)
     data = f.call(data)
 
-    optimizer.arm(data, data_generator=f, input_name=None, output_name='y')
+    optimizer.arm(data, data_generator=f, input_name=None, output_name="y")
 
     data = optimizer.call(data, n_iterations=10)
 

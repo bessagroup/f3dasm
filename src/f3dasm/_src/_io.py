@@ -8,12 +8,15 @@ operations.
 
 from __future__ import annotations
 
-# Standard
+import logging
 import pickle
 import shutil
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+
+# Standard
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 # Third-party
 import matplotlib.pyplot as plt
@@ -21,20 +24,23 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-# Local
-from .logger import logger
-
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
+# =============================================================================
+
+logger = logging.getLogger("f3dasm")
+
+
 # =============================================================================
 
 #                                                  Global folder and file names
 # =============================================================================
 
 EXPERIMENTDATA_SUBFOLDER = "experiment_data"
+EXPERIMENTSAMPLE_SUBFOLDER = "experiment_sample"
 
 LOCK_FILENAME = "lock"
 DOMAIN_FILENAME = "domain"
@@ -65,8 +71,8 @@ def pickle_store(object: Any, path: str) -> str:
     str
         The path to the stored object.
     """
-    _path = Path(path).with_suffix('.pkl')
-    with open(_path, 'wb') as file:
+    _path = Path(path).with_suffix(".pkl")
+    with open(_path, "wb") as file:
         pickle.dump(object, file)
 
     return str(_path)
@@ -86,8 +92,8 @@ def pickle_load(path: str) -> Any:
     Any
         The loaded object.
     """
-    _path = Path(path).with_suffix('.pkl')
-    with open(_path, 'rb') as file:
+    _path = Path(path).with_suffix(".pkl")
+    with open(_path, "rb") as file:
         return pickle.load(file)
 
 
@@ -107,7 +113,7 @@ def numpy_store(object: np.ndarray, path: str) -> str:
     str
         The path to the stored array.
     """
-    _path = Path(path).with_suffix('.npy')
+    _path = Path(path).with_suffix(".npy")
     np.save(file=_path, arr=object)
     return str(_path)
 
@@ -126,7 +132,7 @@ def numpy_load(path: str) -> np.ndarray:
     np.ndarray
         The loaded array.
     """
-    _path = Path(path).with_suffix('.npy')
+    _path = Path(path).with_suffix(".npy")
     return np.load(file=_path)
 
 
@@ -146,7 +152,7 @@ def pandas_store(object: pd.DataFrame, path: str) -> str:
     str
         The path to the stored DataFrame.
     """
-    _path = Path(path).with_suffix('.csv')
+    _path = Path(path).with_suffix(".csv")
     object.to_csv(_path)
     return str(_path)
 
@@ -165,7 +171,7 @@ def pandas_load(path: str) -> pd.DataFrame:
     pd.DataFrame
         The loaded DataFrame.
     """
-    _path = Path(path).with_suffix('.csv')
+    _path = Path(path).with_suffix(".csv")
     return pd.read_csv(_path, index_col=0, header=0)
 
 
@@ -185,13 +191,14 @@ def xarray_dataset_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
     str
         The path to the stored object.
     """
-    _path = Path(path).with_suffix('.ncs')
+    _path = Path(path).with_suffix(".ncs")
     object.to_netcdf(_path)
     return str(_path)
 
 
-def xarray_dataarray_store(object: xr.DataArray | xr.Dataset, path: str
-                           ) -> str:
+def xarray_dataarray_store(
+    object: xr.DataArray | xr.Dataset, path: str
+) -> str:
     """
     Store an xarray DataArray or Dataset.
 
@@ -207,7 +214,7 @@ def xarray_dataarray_store(object: xr.DataArray | xr.Dataset, path: str
     str
         The path to the stored object.
     """
-    _path = Path(path).with_suffix('.nca')
+    _path = Path(path).with_suffix(".nca")
     object.to_netcdf(_path)
     return str(_path)
 
@@ -227,7 +234,7 @@ def xarray_dataset_load(path: str) -> xr.DataArray | xr.Dataset:
         The loaded Dataset.
     """
     # TODO: open_dataset and open_dataarray?
-    _path = Path(path).with_suffix('.ncs')
+    _path = Path(path).with_suffix(".ncs")
     return xr.open_dataset(_path)
 
 
@@ -246,7 +253,7 @@ def xarray_dataarray_load(path: str) -> xr.DataArray | xr.Dataset:
         The loaded DataArray.
     """
     # TODO: open_dataset and open_dataarray?
-    _path = Path(path).with_suffix('.nca')
+    _path = Path(path).with_suffix(".nca")
     return xr.open_dataarray(_path)
 
 
@@ -266,9 +273,10 @@ def figure_store(object: plt.Figure, path: str) -> str:
     str
         The path to the stored figure.
     """
-    _path = Path(path).with_suffix('.png')
-    object.savefig(_path, dpi=RESOLUTION_MATPLOTLIB_FIGURE,
-                   bbox_inches='tight')
+    _path = Path(path).with_suffix(".png")
+    object.savefig(
+        _path, dpi=RESOLUTION_MATPLOTLIB_FIGURE, bbox_inches="tight"
+    )
     return str(_path)
 
 
@@ -286,7 +294,7 @@ def figure_load(path: str) -> np.ndarray:
     np.ndarray
         The loaded figure.
     """
-    _path = Path(path).with_suffix('.png')
+    _path = Path(path).with_suffix(".png")
     return plt.imread(_path)
 
 
@@ -300,11 +308,11 @@ STORE_FUNCTION_MAPPING: Mapping[type, Callable] = {
 }
 
 LOAD_FUNCTION_MAPPING: Mapping[str, Callable] = {
-    '.npy': numpy_load,
-    '.csv': pandas_load,
-    '.ncs': xarray_dataset_load,
-    '.nca': xarray_dataarray_load,
-    '.png': figure_load,
+    ".npy": numpy_load,
+    ".csv": pandas_load,
+    ".ncs": xarray_dataset_load,
+    ".nca": xarray_dataarray_load,
+    ".png": figure_load,
 }
 
 #                                                  Loading and saving functions
@@ -342,12 +350,17 @@ def _project_dir_factory(project_dir: Path | str | None) -> Path:
 
     raise TypeError(
         f"project_dir must be of type Path, str or None, \
-            not {type(project_dir).__name__}")
+            not {type(project_dir).__name__}"
+    )
 
 
-def store_to_disk(project_dir: Path, object: Any,
-                  name: str, id: int,
-                  store_function: Optional[Callable] = None) -> str:
+def store_object(
+    project_dir: Path,
+    object: Any,
+    name: str,
+    id: int,
+    store_function: Optional[Callable] = None,
+) -> str:
     """
     Store an object to disk.
 
@@ -389,7 +402,8 @@ def store_to_disk(project_dir: Path, object: Any,
             store_function = pickle_store
             logger.debug(
                 f"Object type {object_type} is not natively supported. "
-                f"The default pickle storage method will be used.")
+                f"The default pickle storage method will be used."
+            )
 
         else:
             store_function = STORE_FUNCTION_MAPPING[object_type]
@@ -398,12 +412,16 @@ def store_to_disk(project_dir: Path, object: Any,
     absolute_path = Path(store_function(object, path))
 
     # Return the path relative from the the project directory
-    return str(absolute_path.relative_to(
-        project_dir / EXPERIMENTDATA_SUBFOLDER))
+    return str(
+        absolute_path.relative_to(project_dir / EXPERIMENTDATA_SUBFOLDER)
+    )
 
 
-def load_object(project_dir: Path, path: str | Path,
-                load_function: Optional[Callable] = None) -> Any:
+def load_object(
+    project_dir: Path,
+    path: str | Path,
+    load_function: Optional[Callable] = None,
+) -> Any:
     """
     Load an object from disk from a given path and storing method.
 
@@ -443,7 +461,8 @@ def load_object(project_dir: Path, path: str | Path,
             load_function = pickle_load
             logger.debug(
                 f"Object type '{suffix}' is not natively supported. "
-                f"The default pickle load method will be used.")
+                f"The default pickle load method will be used."
+            )
 
         else:
             load_function = LOAD_FUNCTION_MAPPING[suffix]
@@ -452,9 +471,9 @@ def load_object(project_dir: Path, path: str | Path,
     return load_function(_path)
 
 
-def copy_object(object_path: Path,
-                old_project_dir: Path, new_project_dir: Path) -> str:
-
+def copy_object(
+    object_path: Path, old_project_dir: Path, new_project_dir: Path
+) -> str:
     old_location = old_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
     new_location = new_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
 
@@ -463,10 +482,13 @@ def copy_object(object_path: Path,
 
     # Check if we do not overwrite an object at new_location
     if new_location.exists():
-
         stem, suffix = object_path.stem, object_path.suffix
-        while (new_project_dir / EXPERIMENTDATA_SUBFOLDER
-                / object_path.parent / f"{stem}{suffix}").exists():
+        while (
+            new_project_dir
+            / EXPERIMENTDATA_SUBFOLDER
+            / object_path.parent
+            / f"{stem}{suffix}"
+        ).exists():
             try:
                 stem = str(int(stem) + 1)  # Increment stem as integer
             except ValueError as exc:
@@ -480,3 +502,65 @@ def copy_object(object_path: Path,
 
     shutil.copy2(old_location, new_location)
     return str(object_path)
+
+
+# =============================================================================
+
+
+@dataclass
+class ReferenceValue:
+    reference: Path
+    load_function: Callable[[Path], Any]
+
+    def load(self, project_dir: Path) -> Any:
+        return load_object(
+            project_dir=project_dir,
+            path=self.reference,
+            load_function=self.load_function,
+        )
+
+    def __str__(self) -> str:
+        return self.reference.__str__()
+
+    def to_json(self) -> dict:
+        """Convert this ReferenceValue into a JSON-serializable dict."""
+        return {
+            "__type__": "ReferenceValue",
+            "reference": str(self.reference),
+            "load_function": pickle.dumps(self.load_function).hex(),
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> ReferenceValue:
+        """Reconstruct a ReferenceValue from a JSON dict."""
+        reference = Path(data["reference"])
+        load_function = pickle.loads(bytes.fromhex(data["load_function"]))
+        return cls(reference=reference, load_function=load_function)
+
+
+@dataclass
+class ToDiskValue:
+    object: Any
+    name: str
+    store_function: Callable[[Any, Path], Path]
+    load_function: Callable[[Path], Any]
+
+    def store(self, project_dir: Path, idx: int) -> Path:
+        if isinstance(self.object, str | Path):
+            return Path(self.object)
+
+        store_location = store_object(
+            project_dir=project_dir,
+            object=self.object,
+            name=self.name,
+            id=idx,
+            store_function=self.store_function,
+        )
+
+        return Path(store_location)
+
+    def to_reference(self, reference: Path) -> ReferenceValue:
+        return ReferenceValue(
+            reference=reference,
+            load_function=self.load_function,
+        )

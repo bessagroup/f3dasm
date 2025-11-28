@@ -23,16 +23,23 @@ from omegaconf import DictConfig, OmegaConf
 
 # Local
 from ..errors import DecodeError, EmptyFileError
-from .parameter import (ArrayParameter, CategoricalParameter, CategoricalType,
-                        ConstantParameter, ContinuousParameter,
-                        DiscreteParameter, LoadFunction, Parameter,
-                        StoreFunction)
+from .parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    CategoricalType,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+    LoadFunction,
+    Parameter,
+    StoreFunction,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Stable'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
 # =============================================================================
 #
 # =============================================================================
@@ -49,6 +56,7 @@ class Domain:
     output_space : Dict[str, Parameter], optional
         Dict of output parameters, by default empty dict
     """
+
     input_space: dict[str, Parameter] = field(default_factory=dict)
     output_space: dict[str, Parameter] = field(default_factory=dict)
 
@@ -62,17 +70,23 @@ class Domain:
 
     def __str__(self):
         input_space_str = ", ".join(
-            f"{k}: {v}" for k, v in self.input_space.items())
+            f"{k}: {v}" for k, v in self.input_space.items()
+        )
         output_space_str = ", ".join(
-            f"{k}: {v}" for k, v in self.output_space.items())
-        return (f"Domain(\n"
-                f"  Input Space: {{ {input_space_str} }}\n"
-                f"  Output Space: {{ {output_space_str} }}\n)")
+            f"{k}: {v}" for k, v in self.output_space.items()
+        )
+        return (
+            f"Domain(\n"
+            f"  Input Space: {{ {input_space_str} }}\n"
+            f"  Output Space: {{ {output_space_str} }}\n)"
+        )
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}("
-                f"input_space={repr(self.input_space)}, "
-                f"output_space={repr(self.output_space)})")
+        return (
+            f"{self.__class__.__name__}("
+            f"input_space={repr(self.input_space)}, "
+            f"output_space={repr(self.output_space)})"
+        )
 
     def __add__(self, __o: Domain) -> Domain:
         if not isinstance(__o, Domain):
@@ -82,8 +96,9 @@ class Domain:
         # Merge values for keys that are present in both dictionaries
         for key in self.input_space.keys():
             if key in __o.input_space:
-                combined_space[key] = self.input_space[key] + \
-                    __o.input_space[key]
+                combined_space[key] = (
+                    self.input_space[key] + __o.input_space[key]
+                )
             else:
                 combined_space[key] = self.input_space[key]
 
@@ -92,8 +107,10 @@ class Domain:
             if key not in self.input_space:
                 combined_space[key] = __o.input_space[key]
 
-        return Domain(input_space=combined_space,
-                      output_space={**self.output_space, **__o.output_space})
+        return Domain(
+            input_space=combined_space,
+            output_space={**self.output_space, **__o.output_space},
+        )
 
     def _copy(self) -> Domain:
         """
@@ -106,7 +123,7 @@ class Domain:
         """
         return Domain(
             input_space={k: v._copy() for k, v in self.input_space.items()},
-            output_space={k: v._copy() for k, v in self.output_space.items()}
+            output_space={k: v._copy() for k, v in self.output_space.items()},
         )
 
     @property
@@ -185,8 +202,9 @@ class Domain:
             Domain object containing the array parameters
         """
         return self._filter(ArrayParameter)
-#                                                      Alternative constructors
-# =============================================================================
+
+    #                                                  Alternative constructors
+    # =========================================================================
 
     @classmethod
     def from_file(cls: type[Domain], filename: Path | str) -> Domain:
@@ -208,7 +226,7 @@ class Domain:
         >>> domain = Domain.from_json('domain.json')
         """
         # convert filename to Path object
-        filename = Path(filename).with_suffix('.json')
+        filename = Path(filename).with_suffix(".json")
 
         # Check if filename exists
         if not filename.exists():
@@ -223,10 +241,14 @@ class Domain:
         except json.JSONDecodeError as exc:
             raise DecodeError(filename) from exc
 
-        input_space = {k: Parameter.from_dict(
-            v) for k, v in domain_dict['input_space'].items()}
-        output_space = {k: Parameter.from_dict(
-            v) for k, v in domain_dict['output_space'].items()}
+        input_space = {
+            k: Parameter.from_dict(v)
+            for k, v in domain_dict["input_space"].items()
+        }
+        output_space = {
+            k: Parameter.from_dict(v)
+            for k, v in domain_dict["output_space"].items()
+        }
 
         return cls(input_space=input_space, output_space=output_space)
 
@@ -264,10 +286,11 @@ class Domain:
         Domain
             Domain object
         """
+
         def process_input(items):
             for key, value in items.items():
                 _dict = OmegaConf.to_container(value, resolve=True)
-                domain.add(name=key, type=_dict.pop('type', None), **_dict)
+                domain.add(name=key, type=_dict.pop("type", None), **_dict)
 
         def process_output(items):
             for key, value in items.items():
@@ -276,20 +299,22 @@ class Domain:
 
         domain = cls()
 
-        if 'input' in cfg:
+        if "input" in cfg:
             process_input(cfg.input)
         else:
             process_input(cfg)
 
-        if 'output' in cfg:
+        if "output" in cfg:
             process_output(cfg.output)
 
         return domain
 
     @classmethod
-    def from_data(cls, input_data: list[dict[str, Any]],
-                  output_data: list[dict[str, Any]]
-                  ) -> Domain:
+    def from_data(
+        cls,
+        input_data: list[dict[str, Any]],
+        output_data: list[dict[str, Any]],
+    ) -> Domain:
         """
         Initialize a Domain from input and output data.
 
@@ -307,8 +332,8 @@ class Domain:
         """
         all_input_parameters, all_output_parameters = set(), set()
         for experiment_input, experiment_output in zip_longest(
-                input_data, output_data, fillvalue={}):
-
+            input_data, output_data, fillvalue={}
+        ):
             all_input_parameters.update(experiment_input.keys())
             all_output_parameters.update(experiment_output.keys())
 
@@ -320,8 +345,8 @@ class Domain:
 
         return cls(input_space=input_space, output_space=output_space)
 
-#                                                                        Export
-# =============================================================================
+    #                                                                    Export
+    # =========================================================================
 
     def store(self, filename: Path | str) -> None:
         """
@@ -337,16 +362,18 @@ class Domain:
         >>> domain.to_json('domain.json')
         """
         domain_dict = {
-            'input_space': {k: v.to_dict()
-                            for k, v in self.input_space.items()},
-            'output_space': {k: v.to_dict()
-                             for k, v in self.output_space.items()}
+            "input_space": {
+                k: v.to_dict() for k, v in self.input_space.items()
+            },
+            "output_space": {
+                k: v.to_dict() for k, v in self.output_space.items()
+            },
         }
-        with open(Path(filename).with_suffix('.json'), 'w') as f:
+        with open(Path(filename).with_suffix(".json"), "w") as f:
             json.dump(domain_dict, f, indent=4)
 
-#                                                  Append and remove parameters
-# =============================================================================
+    #                                              Append and remove parameters
+    # =========================================================================
 
     def _add(self, name: str, parameter: Parameter):
         """
@@ -363,14 +390,18 @@ class Domain:
         if name in self.input_space:
             raise KeyError(
                 f"Parameter {name} already exists in the domain! \
-                     Choose a different name.")
+                     Choose a different name."
+            )
 
         self.input_space[name] = parameter
 
-    def add_parameter(self, name: str,
-                      to_disk=False,
-                      store_function: Optional[StoreFunction] = None,
-                      load_function: Optional[LoadFunction] = None):
+    def add_parameter(
+        self,
+        name: str,
+        to_disk=False,
+        store_function: Optional[StoreFunction] = None,
+        load_function: Optional[LoadFunction] = None,
+    ):
         """Add a new parameter to the domain.
 
         Parameters
@@ -390,9 +421,14 @@ class Domain:
         {'param1': Parameter(store_function=store_function,
         load_function=load_function)}
         """
-        self._add(name, Parameter(store_function=store_function,
-                                  load_function=load_function,
-                                  to_disk=to_disk))
+        self._add(
+            name,
+            Parameter(
+                store_function=store_function,
+                load_function=load_function,
+                to_disk=to_disk,
+            ),
+        )
 
     def add_int(self, name: str, low: int, high: int, step: int = 1):
         """Add a new discrete input parameter to the domain.
@@ -425,8 +461,13 @@ class Domain:
         else:
             self._add(name, DiscreteParameter(low, high, step))
 
-    def add_float(self, name: str, low: float = -np.inf, high: float = np.inf,
-                  log: bool = False):
+    def add_float(
+        self,
+        name: str,
+        low: float = -np.inf,
+        high: float = np.inf,
+        log: bool = False,
+    ):
         """Add a new continuous input parameter to the domain.
 
         Parameters
@@ -496,9 +537,13 @@ class Domain:
         """
         self._add(name, ConstantParameter(value))
 
-    def add_array(self, name: str, shape: int | Sequence[int],
-                  low: float = -np.inf,
-                  high: float = np.inf):
+    def add_array(
+        self,
+        name: str,
+        shape: int | Sequence[int],
+        low: float = -np.inf,
+        high: float = np.inf,
+    ):
         """Add a new array input parameter to the domain.
 
         Parameters
@@ -520,14 +565,17 @@ class Domain:
         {'param1': ArrayParameter(shape=[3, 4], lower_bound=0.0,
         upper_bound=1.0)}
         """
-        self._add(name, ArrayParameter(
-            shape=shape,
-            lower_bound=low,
-            upper_bound=high))
+        self._add(
+            name,
+            ArrayParameter(shape=shape, lower_bound=low, upper_bound=high),
+        )
 
-    def add(self, name: str,
-            type: Literal['float', 'int', 'category', 'constant', 'array'],
-            **kwargs):
+    def add(
+        self,
+        name: str,
+        type: Literal["float", "int", "category", "constant", "array"],
+        **kwargs,
+    ):
         """Add a new input parameter to the domain.
 
         Parameters
@@ -553,25 +601,30 @@ class Domain:
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
 
-        if type == 'float':
+        if type == "float":
             self.add_float(name, **kwargs)
-        elif type == 'int':
+        elif type == "int":
             self.add_int(name, **kwargs)
-        elif type == 'category':
+        elif type == "category":
             self.add_category(name, **kwargs)
-        elif type == 'constant':
+        elif type == "constant":
             self.add_constant(name, **kwargs)
-        elif type == 'array':
+        elif type == "array":
             self.add_array(name, **kwargs)
         else:
             raise ValueError(
                 f"Unknown type {type}!"
-                f"Possible types are: 'float', 'int', 'category', 'constant'.")
+                f"Possible types are: 'float', 'int', 'category', 'constant'."
+            )
 
-    def add_output(self, name: str, to_disk: bool = False,
-                   exist_ok: bool = False,
-                   store_function: Optional[StoreFunction] = None,
-                   load_function: Optional[LoadFunction] = None):
+    def add_output(
+        self,
+        name: str,
+        to_disk: bool = False,
+        exist_ok: bool = False,
+        store_function: Optional[StoreFunction] = None,
+        load_function: Optional[LoadFunction] = None,
+    ):
         """Add a new output parameter to the domain.
 
         Parameters
@@ -595,14 +648,18 @@ class Domain:
             if not exist_ok:
                 raise KeyError(
                     f"Parameter {name} already exists in the domain! \
-                        Choose a different name.")
+                        Choose a different name."
+                )
             return
 
-        self.output_space[name] = Parameter(to_disk=to_disk,
-                                            store_function=store_function,
-                                            load_function=load_function)
-#                                                                       Getters
-# =============================================================================
+        self.output_space[name] = Parameter(
+            to_disk=to_disk,
+            store_function=store_function,
+            load_function=load_function,
+        )
+
+    #                                                                   Getters
+    # =========================================================================
 
     def get_bounds(self) -> np.ndarray:
         """Return the boundary constraints of the continuous input parameters
@@ -627,8 +684,10 @@ class Domain:
             [ 0., 10.]])
         """
         return np.array(
-            [[parameter.lower_bound, parameter.upper_bound]
-                for _, parameter in self.continuous.input_space.items()]
+            [
+                [parameter.lower_bound, parameter.upper_bound]
+                for _, parameter in self.continuous.input_space.items()
+            ]
         )
 
     def _filter(self, type: type[Parameter]) -> Domain:
@@ -659,16 +718,21 @@ class Domain:
         """
         return Domain(
             input_space={
-                name: parameter for name, parameter in self.input_space.items()
-                if isinstance(parameter, type)}
+                name: parameter
+                for name, parameter in self.input_space.items()
+                if isinstance(parameter, type)
+            }
         )
+
 
 #                                                                 Miscellaneous
 # =============================================================================
 
 
-def make_nd_continuous_domain(bounds: np.ndarray | list[list[float]],
-                              dimensionality: Optional[int] = None) -> Domain:
+def make_nd_continuous_domain(
+    bounds: np.ndarray | list[list[float]],
+    dimensionality: Optional[int] = None,
+) -> Domain:
     """Create a continuous domain.
 
     Parameters
@@ -711,7 +775,8 @@ def make_nd_continuous_domain(bounds: np.ndarray | list[list[float]],
 
     for dim in range(dimensionality):
         input_space[f"x{dim}"] = ContinuousParameter(
-            lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1])
+            lower_bound=bounds[dim, 0], upper_bound=bounds[dim, 1]
+        )
 
     return Domain(input_space=input_space)
 
@@ -739,7 +804,7 @@ def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
         return Domain()
 
     # If domain is a path, load the domain from the file
-    elif isinstance(domain, (Path, str)):
+    elif isinstance(domain, Path | str):
         return Domain.from_file(Path(domain))
 
     # If the domain is a hydra DictConfig, convert it to a Domain object
@@ -749,4 +814,5 @@ def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
     else:
         raise TypeError(
             f"Domain must be of type Domain, DictConfig "
-            f"or None, not {type(domain)}")
+            f"or None, not {type(domain)}"
+        )

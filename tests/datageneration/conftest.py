@@ -9,11 +9,11 @@ from f3dasm.design import Domain
 @pytest.fixture(scope="package")
 def experiment_data() -> ExperimentData:
     domain = Domain()
-    domain.add_float('x', low=0.0, high=1.0)
+    domain.add_float("x", low=0.0, high=1.0)
 
     experiment_data = ExperimentData(domain=domain)
 
-    sampler = create_sampler(sampler='random', seed=2023)
+    sampler = create_sampler(sampler="random", seed=2023)
 
     experiment_data = sampler.call(data=experiment_data, n_samples=100)
 

@@ -9,20 +9,22 @@ from __future__ import annotations
 # Standard
 import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 # Third-party
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 from .datagenerator import (
-    _evaluate_cluster,
-    _evaluate_mpi,
-    _evaluate_multiprocessing,
-    _evaluate_sequential,
+    evaluate_cluster,
+    evaluate_cluster_array,
+    evaluate_mpi,
+    evaluate_multiprocessing,
+    evaluate_sequential,
 )
+from .design.domain import Domain
 
 # Local
 from .experimentdata import ExperimentData
@@ -30,9 +32,9 @@ from .experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
-__author__ = 'Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)'
-__credits__ = ['Martin van der Schelling']
-__status__ = 'Alpha'
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Alpha"
 # =============================================================================
 #
 # =============================================================================
@@ -80,8 +82,9 @@ class Block(ABC):
         pass
 
     @classmethod
-    def from_yaml(cls, init_config: DictConfig,
-                  call_config: Optional[DictConfig] = None) -> Block:
+    def from_yaml(
+        cls, init_config: DictConfig, call_config: Optional[DictConfig] = None
+    ) -> Block:
         """
         Create a block from a YAML configuration.
 
@@ -103,6 +106,7 @@ class Block(ABC):
 
         return block
 
+
 # =============================================================================
 
 
@@ -115,8 +119,9 @@ class DataGenerator:
     # =========================================================================
 
     @abstractmethod
-    def execute(self, experiment_sample: ExperimentSample,
-                **kwargs) -> ExperimentSample:
+    def execute(
+        self, experiment_sample: ExperimentSample, **kwargs
+    ) -> ExperimentSample:
         """Interface function that handles the execution of the data generator
 
         Parameters
@@ -142,9 +147,13 @@ class DataGenerator:
             "implemented by the user."
         )
 
-    def call(self, data: ExperimentData | str,
-             mode: str = 'sequential', pass_id: bool = False, **kwargs
-             ) -> ExperimentData:
+    def call(
+        self,
+        data: ExperimentData | str,
+        mode: str = "sequential",
+        pass_id: bool = False,
+        **kwargs,
+    ) -> ExperimentData:
         """
         Evaluate the data generator.
 
@@ -176,6 +185,7 @@ class DataGenerator:
             - 'parallel': Run the data generator in parallel
             - 'cluster': Run the data generator on a cluster
             - 'mpi': Run the data generator using MPI
+            - 'cluster_array': Run the data generator on a cluster array
 
         The 'pass_id' parameter is used to pass the id of the experiment sample
         to the execute function. This is useful when the execute function
@@ -184,32 +194,33 @@ class DataGenerator:
         """
         data = data._copy(in_place=False, deep=True)
 
-        if mode == 'sequential':
-            return _evaluate_sequential(
-                execute_fn=self.execute,
-                data=data,
-                pass_id=pass_id, ** kwargs)
-        elif mode == 'parallel':
-            return _evaluate_multiprocessing(
-                execute_fn=self.execute,
-                data=data,
-                pass_id=pass_id, **kwargs)
+        if mode == "sequential":
+            return evaluate_sequential(
+                execute_fn=self.execute, data=data, pass_id=pass_id, **kwargs
+            )
+        elif mode == "parallel":
+            return evaluate_multiprocessing(
+                execute_fn=self.execute, data=data, pass_id=pass_id, **kwargs
+            )
         elif mode.lower() == "cluster":
-            return _evaluate_cluster(
-                execute_fn=self.execute,
-                data=data,
-                pass_id=pass_id, **kwargs)
+            return evaluate_cluster(
+                execute_fn=self.execute, data=data, pass_id=pass_id, **kwargs
+            )
         elif mode.lower() == "mpi":
-            return _evaluate_mpi(
-                execute_fn=self.execute,
-                data=data,
-                pass_id=pass_id, **kwargs)
+            return evaluate_mpi(
+                execute_fn=self.execute, data=data, pass_id=pass_id, **kwargs
+            )
+        elif mode.lower() == "cluster_array":
+            return evaluate_cluster_array(
+                execute_fn=self.execute, data=data, pass_id=pass_id, **kwargs
+            )
         else:
             raise ValueError(f"Invalid parallelization mode specified: {mode}")
 
 
-def datagenerator(output_names: Iterable[str]
-                  ) -> Callable[[Callable[..., Any]], DataGenerator]:
+def datagenerator(
+    output_names: Iterable[str], domain: Domain | None = None
+) -> Callable[[Callable[..., Any]], DataGenerator]:
     """
     Decorator to convert a function into a `DataGenerator` subclass.
 
@@ -223,6 +234,10 @@ def datagenerator(output_names: Iterable[str]
         A list of names for the returned values of the decorated function.
         The function's return values will be stored in the `ExperimentSample`
         object under these names.
+    domain : Domain, optional
+        The domain describing the input and output space. If provided, it can
+        be used for saving the data to disk or other domain-specific
+        operations.
 
     Returns
     -------
@@ -251,6 +266,9 @@ def datagenerator(output_names: Iterable[str]
             "attribute."
         )
 
+    if domain is None:
+        domain = Domain()
+
     # If the output names is a single string, convert it to a list
     if isinstance(output_names, str):
         output_names = [output_names]
@@ -263,8 +281,9 @@ def datagenerator(output_names: Iterable[str]
             Auto-generated DataGenerator subclass from a decorated function.
             """
 
-            def execute(self, experiment_sample: ExperimentSample,
-                        **kwargs: Any) -> ExperimentSample:
+            def execute(
+                self, experiment_sample: ExperimentSample, **kwargs: Any
+            ) -> ExperimentSample:
                 """
                 Executes the data generation process by calling the decorated
                 function.
@@ -283,16 +302,21 @@ def datagenerator(output_names: Iterable[str]
                     The modified `ExperimentSample` instance with new stored
                     outputs.
                 """
-                _input = {name: val.default for name, val in
-                          signature.parameters.items()
-                          if val.default is not inspect.Parameter.empty
-                          }
+                _input = {
+                    name: val.default
+                    for name, val in signature.parameters.items()
+                    if val.default is not inspect.Parameter.empty
+                }
 
                 _input.update(kwargs)
 
-                _input.update({name: experiment_sample.input_data[name] for
-                               name in experiment_sample.input_data
-                               if name in signature.parameters})
+                _input.update(
+                    {
+                        name: experiment_sample.input_data[name]
+                        for name in experiment_sample.input_data
+                        if name in signature.parameters
+                    }
+                )
 
                 # Call the function
                 _output = f(**_input)
@@ -302,14 +326,18 @@ def datagenerator(output_names: Iterable[str]
                     _output = (_output,)
 
                 # Store outputs in the experiment sample
-                for name, value in zip(output_names, _output):
-                    if name in experiment_sample.domain.output_names:
-                        to_disk = experiment_sample.domain.output_space[name].\
-                            to_disk
+                for name, value in zip(output_names, _output, strict=False):
+                    if name in domain.output_names:
+                        parameter = domain.output_space[name]
+                        experiment_sample.store(
+                            name=name,
+                            object=value,
+                            to_disk=parameter.to_disk,
+                            store_function=parameter.store_function,
+                            load_function=parameter.load_function,
+                        )
                     else:
-                        to_disk = False
-                    experiment_sample.store(
-                        name=name, object=value, to_disk=to_disk)
+                        experiment_sample.store(name=name, object=value)
 
                 return experiment_sample
 
@@ -320,16 +348,23 @@ def datagenerator(output_names: Iterable[str]
 
     return decorator
 
+
 # =============================================================================
 
 
 class Optimizer(ABC):
     @abstractmethod
-    def arm(self, data: ExperimentData, data_generator: DataGenerator,
-            input_name: str, output_name: str) -> None:
+    def arm(
+        self,
+        data: ExperimentData,
+        data_generator: DataGenerator,
+        input_name: str,
+        output_name: str,
+    ) -> None:
         pass
 
     @abstractmethod
-    def call(self, data: ExperimentData, n_iterations: int,
-             **kwargs) -> ExperimentData:
+    def call(
+        self, data: ExperimentData, n_iterations: int, **kwargs
+    ) -> ExperimentData:
         pass
