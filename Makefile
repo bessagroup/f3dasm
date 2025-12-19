@@ -3,7 +3,7 @@
 PACKAGEDIR := dist
 COVERAGEREPORTDIR := coverage_html_report
 
-.PHONY: help init init-dev test test-smoke test-smoke-html test-html build upload upload-testpypi
+.PHONY: help init init-dev test test-smoke test-smoke-html test-html build upload upload-testpypi docs lint
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of:"
@@ -16,6 +16,8 @@ help:
 	@echo "  build               Build the package"
 	@echo "  upload              Upload the package to the PyPi index"
 	@echo "  upload-testpypi     Upload the package to the PyPi-test index"
+	@echo "  docs                Build the documentation with mkdocs"
+	@echo "  lint                Lint the code with ruff"
 
 init:
 	pip install -r requirements.txt
@@ -35,8 +37,7 @@ test-html:
 	xdg-open ./$(COVERAGEREPORTDIR)/index.html
 
 build:
-	-rm -rf $(PACKAGEDIR)/*
-	python -m build
+	uv build
 
 upload-testpypi:
 	$(MAKE) build
@@ -45,3 +46,9 @@ upload-testpypi:
 upload:
 	$(MAKE) build
 	twine upload $(PACKAGEDIR)/* --verbose
+
+docs:
+	mkdocs build
+
+lint:
+	ruff check
