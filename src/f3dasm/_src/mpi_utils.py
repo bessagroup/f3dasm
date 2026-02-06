@@ -14,7 +14,7 @@ try:
     from mpi4py import MPI
 
     MPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     MPI_AVAILABLE = False
 
 if TYPE_CHECKING:

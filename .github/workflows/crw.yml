@@ -1,0 +1,11 @@
+name: Code Release Week
+
+on:
+    pull_request:
+
+jobs:
+    run-crw:
+        if: contains(github.event.pull_request.labels.*.name, 'code release week')
+        uses: bessagroup/.github/.github/workflows/code-release-week.yml@main
+        with:
+            python-version: "3.12"
