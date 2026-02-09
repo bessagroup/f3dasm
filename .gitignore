@@ -140,3 +140,6 @@ notebook/
 
 # Mkdocs
 site/
+
+# Agents
+.github/agents/*
