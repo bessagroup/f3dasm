@@ -131,12 +131,38 @@ class Parameter:
         self.load_function = load_function
 
     def __str__(self):
+        """Return a string representation of the Parameter.
+
+        Returns
+        -------
+        str
+            String representation of the Parameter.
+        """
         return f"Parameter(type={self._type}, to_disk={self.to_disk})"
 
     def __repr__(self):
+        """Return a representation of the Parameter.
+
+        Returns
+        -------
+        str
+            Representation string of the Parameter.
+        """
         return f"{self.__class__.__name__}(to_disk={self.to_disk})"
 
     def __eq__(self, __o: Parameter):
+        """Check equality between two Parameters.
+
+        Parameters
+        ----------
+        __o : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if parameters have the same to_disk attribute.
+        """
         return self.to_disk == __o.to_disk
 
     def __add__(self, __o: Parameter) -> Parameter:
@@ -191,16 +217,15 @@ class Parameter:
 
         Notes
         -----
-        The dictionary representation of the Parameter object contains the
-        type of the parameter, whether it should be saved to disk, and the
-        store and load functions. The functions are stored as hex strings.
+        The dictionary representation of the Parameter object contains
+        the type of the parameter, whether it should be saved to disk,
+        and the store and load functions. The functions are stored as
+        hex strings.
 
         Examples
         --------
         >>> param = Parameter(to_disk=True)
         >>> param_dict = param.to_dict()
-
-
         """
         param_dict = {
             "type": self._type,
@@ -319,6 +344,24 @@ class ConstantParameter(Parameter):
         self._validate_hashable()
 
     def __add__(self, other: Parameter):
+        """Add two ConstantParameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        ConstantParameter or CategoricalParameter
+            Returns self if values are equal, otherwise returns a
+            CategoricalParameter containing both values.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter.
+        """
         if isinstance(other, ConstantParameter):
             if self.value == other.value:
                 return self
@@ -364,25 +407,64 @@ class ConstantParameter(Parameter):
         return CategoricalParameter(categories=[self.value])
 
     def to_dict(self):
+        """Convert to dictionary representation.
+
+        Returns
+        -------
+        dict
+            Dictionary containing type, to_disk, and value.
+        """
         param_dict = super().to_dict()
         param_dict["type"] = "constant"
         param_dict["value"] = self.value
         return param_dict
 
     def _validate_hashable(self):
-        """Check if the value is hashable."""
+        """Check if the value is hashable.
+
+        Raises
+        ------
+        TypeError
+            If the value is not hashable.
+        """
         try:
             hash(self.value)
         except TypeError as exc:
             raise TypeError("The value must be hashable.") from exc
 
     def __str__(self):
+        """Return string representation.
+
+        Returns
+        -------
+        str
+            String representation of the ConstantParameter.
+        """
         return f"ConstantParameter(value={self.value})"
 
     def __repr__(self):
+        """Return detailed representation.
+
+        Returns
+        -------
+        str
+            Detailed representation of the ConstantParameter.
+        """
         return f"{self.__class__.__name__}(value={repr(self.value)})"
 
     def __eq__(self, __o: Parameter) -> bool:
+        """Check equality with another Parameter.
+
+        Parameters
+        ----------
+        __o : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if both are ConstantParameters with equal values.
+        """
         if not isinstance(__o, ConstantParameter):
             return False
 
@@ -440,6 +522,24 @@ class ContinuousParameter(Parameter):
         self._validate_range()
 
     def __add__(self, other: Parameter) -> ContinuousParameter:
+        """Add two ContinuousParameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        ContinuousParameter
+            Combined continuous parameter with merged bounds.
+
+        Raises
+        ------
+        ValueError
+            If other is not a ContinuousParameter, has different log
+            scale, or ranges do not overlap.
+        """
         if not isinstance(other, ContinuousParameter):
             raise ValueError(
                 "Cannot add non-continuous parameter to continuous!"
@@ -460,18 +560,44 @@ class ContinuousParameter(Parameter):
         )
 
     def __str__(self):
+        """Return string representation.
+
+        Returns
+        -------
+        str
+            String representation of the ContinuousParameter.
+        """
         return (
             f"ContinuousParameter(lower_bound={self.lower_bound}, "
             f"upper_bound={self.upper_bound}, log={self.log})"
         )
 
     def __repr__(self):
+        """Return detailed representation.
+
+        Returns
+        -------
+        str
+            Detailed representation of the ContinuousParameter.
+        """
         return (
             f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
             f"upper_bound={self.upper_bound}, log={self.log})"
         )
 
     def __eq__(self, __o: Parameter) -> bool:
+        """Check equality with another Parameter.
+
+        Parameters
+        ----------
+        __o : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if both are ContinuousParameters with equal attributes.
+        """
         if not isinstance(__o, ContinuousParameter):
             return False
 
@@ -593,18 +719,49 @@ class DiscreteParameter(Parameter):
         self._validate_range()
 
     def __str__(self):
+        """Return string representation.
+
+        Returns
+        -------
+        str
+            String representation of the DiscreteParameter.
+        """
         return (
             f"DiscreteParameter(lower_bound={self.lower_bound}, "
             f"upper_bound={self.upper_bound}, step={self.step})"
         )
 
     def __repr__(self):
+        """Return detailed representation.
+
+        Returns
+        -------
+        str
+            Detailed representation of the DiscreteParameter.
+        """
         return (
             f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
             f"upper_bound={self.upper_bound}, step={self.step})"
         )
 
     def __add__(self, other: Parameter) -> DiscreteParameter:
+        """Add two Parameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        DiscreteParameter or CategoricalParameter
+            Combined parameter based on types.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter.
+        """
         if isinstance(other, CategoricalParameter):
             return other + self
         if isinstance(other, ConstantParameter):
@@ -690,12 +847,43 @@ class CategoricalParameter(Parameter):
         self._check_duplicates()
 
     def __str__(self):
+        """Return string representation.
+
+        Returns
+        -------
+        str
+            String representation of the CategoricalParameter.
+        """
         return f"CategoricalParameter(categories={self.categories})"
 
     def __repr__(self):
+        """Return detailed representation.
+
+        Returns
+        -------
+        str
+            Detailed representation of the CategoricalParameter.
+        """
         return f"{self.__class__.__name__}(categories={list(self.categories)})"
 
     def __add__(self, other: Parameter) -> CategoricalParameter:
+        """Add two Parameters to create a combined categorical.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        CategoricalParameter
+            Combined categorical parameter with merged categories.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter or unsupported type.
+        """
         if isinstance(other, CategoricalParameter):
             joint_categories = list(set(self.categories + other.categories))
         elif isinstance(other, ConstantParameter):
@@ -718,9 +906,28 @@ class CategoricalParameter(Parameter):
         return CategoricalParameter(joint_categories)
 
     def __eq__(self, other: CategoricalParameter) -> bool:
+        """Check equality with another CategoricalParameter.
+
+        Parameters
+        ----------
+        other : CategoricalParameter
+            The other parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if both have the same categories (order-independent).
+        """
         return set(self.categories) == set(other.categories)
 
     def _check_duplicates(self):
+        """Check for duplicate categories.
+
+        Raises
+        ------
+        ValueError
+            If categories contain duplicates.
+        """
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
@@ -756,22 +963,23 @@ class ArrayParameter(Parameter):
 
     Parameters
     ----------
-    dimensionality : Iterable[int]
+    shape : int or Iterable[int]
         The dimensions of the array.
-    lower_bound : float | np.ndarray, optional
-        The lower bound of the parameter. Defaults to -inf.
-    upper_bound : float | np.ndarray, optional
-        The upper bound of the parameter. Defaults to inf.
+    lower_bound : float or np.ndarray, optional
+        The lower bound of the parameter, by default -inf.
+    upper_bound : float or np.ndarray, optional
+        The upper bound of the parameter, by default inf.
 
     Raises
     ------
     ValueError
-        If `dimensionality` is empty or contains non-positive integers.
+        If `shape` is empty or contains non-positive integers.
         If `upper_bound` is less than or equal to `lower_bound`.
 
     Examples
     --------
-    >>> param = ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    >>> param = ArrayParameter(shape=[3, 4],
+    lower_bound=0.0, upper_bound=1.0)
     >>> print(param)
     ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
@@ -803,6 +1011,13 @@ class ArrayParameter(Parameter):
         self.upper_bound = upper_bound
 
     def __str__(self):
+        """Return string representation.
+
+        Returns
+        -------
+        str
+            String representation of the ArrayParameter.
+        """
         return (
             f"ArrayParameter(shape={self.shape}, "
             f"lower_bound={self.lower_bound}, "
@@ -810,6 +1025,13 @@ class ArrayParameter(Parameter):
         )
 
     def __repr__(self):
+        """Return detailed representation.
+
+        Returns
+        -------
+        str
+            Detailed representation of the ArrayParameter.
+        """
         return (
             f"{self.__class__.__name__}"
             f"(shape={self.shape}, "
@@ -818,6 +1040,18 @@ class ArrayParameter(Parameter):
         )
 
     def __eq__(self, other: Parameter) -> bool:
+        """Check equality with another Parameter.
+
+        Parameters
+        ----------
+        other : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if both are ArrayParameters with equal attributes.
+        """
         if not isinstance(other, ArrayParameter):
             return False
         return (

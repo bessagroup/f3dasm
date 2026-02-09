@@ -47,28 +47,49 @@ __status__ = "Stable"
 
 @dataclass
 class Domain:
-    """Main class for defining the domain of the design of experiments.
+    """Main class for defining the domain of the design of
+    experiments.
 
     Parameters
     ----------
-    input_space : Dict[str, Parameter], optional
-        Dict of input parameters, by default empty dict
-    output_space : Dict[str, Parameter], optional
-        Dict of output parameters, by default empty dict
+    input_space : dict[str, Parameter], optional
+        Dict of input parameters, by default empty dict.
+    output_space : dict[str, Parameter], optional
+        Dict of output parameters, by default empty dict.
     """
 
     input_space: dict[str, Parameter] = field(default_factory=dict)
     output_space: dict[str, Parameter] = field(default_factory=dict)
 
     def __len__(self) -> int:
-        """The len() method returns the number of input parameters"""
+        """The len() method returns the number of input parameters.
+
+        Returns
+        -------
+        int
+            Number of input parameters.
+        """
         return len(self.input_space)
 
     def __bool__(self) -> bool:
-        """Check if the Domain object is empty"""
+        """Check if the Domain object is empty.
+
+        Returns
+        -------
+        bool
+            False if both input and output spaces are empty, True
+            otherwise.
+        """
         return bool(self.input_space) or bool(self.output_space)
 
     def __str__(self):
+        """Return a string representation of the Domain.
+
+        Returns
+        -------
+        str
+            String representation showing input and output spaces.
+        """
         input_space_str = ", ".join(
             f"{k}: {v}" for k, v in self.input_space.items()
         )
@@ -82,6 +103,13 @@ class Domain:
         )
 
     def __repr__(self):
+        """Return a representation of the Domain.
+
+        Returns
+        -------
+        str
+            Representation string of the Domain object.
+        """
         return (
             f"{self.__class__.__name__}("
             f"input_space={repr(self.input_space)}, "
@@ -89,6 +117,28 @@ class Domain:
         )
 
     def __add__(self, __o: Domain) -> Domain:
+        """Add two Domain objects together.
+
+        Parameters
+        ----------
+        __o : Domain
+            The other Domain object to add.
+
+        Returns
+        -------
+        Domain
+            Combined Domain with merged input and output spaces.
+
+        Raises
+        ------
+        TypeError
+            If __o is not a Domain object.
+
+        Notes
+        -----
+        For parameters that exist in both domains, their values are
+        combined using the parameter's __add__ method.
+        """
         if not isinstance(__o, Domain):
             raise TypeError(f"Cannot add Domain with {type(__o)}")
 
@@ -114,12 +164,12 @@ class Domain:
 
     def _copy(self) -> Domain:
         """
-        Return a copy of the Domain object
+        Return a copy of the Domain object.
 
         Returns
         -------
         Domain
-            Copy of the Domain object
+            Copy of the Domain object.
         """
         return Domain(
             input_space={k: v._copy() for k, v in self.input_space.items()},
@@ -129,77 +179,79 @@ class Domain:
     @property
     def input_names(self) -> list[str]:
         """
-        Retrieve the input space names
+        Retrieve the input space names.
 
         Returns
         -------
-        List[str]
-            List of the names of the input parameters
+        list[str]
+            List of the names of the input parameters.
         """
         return list(self.input_space.keys())
 
     @property
     def output_names(self) -> list[str]:
         """
-        Retrieve the output space names
+        Retrieve the output space names.
 
         Returns
         -------
-        List[str]
-            List of the names of the output parameters"""
+        list[str]
+            List of the names of the output parameters.
+        """
         return list(self.output_space.keys())
 
     @property
     def continuous(self) -> Domain:
-        """Filter the continuous parameters of the domain
+        """Filter the continuous parameters of the domain.
 
         Returns
         -------
         Domain
-            Domain object containing the continuous parameters
+            Domain object containing the continuous parameters.
         """
         return self._filter(ContinuousParameter)
 
     @property
     def discrete(self) -> Domain:
-        """Filter the discrete parameters of the domain
+        """Filter the discrete parameters of the domain.
 
         Returns
         -------
         Domain
-            Domain object containing the discrete parameters
+            Domain object containing the discrete parameters.
         """
         return self._filter(DiscreteParameter)
 
     @property
     def categorical(self) -> Domain:
-        """Filter the categorical parameters of the domain
+        """Filter the categorical parameters of the domain.
 
         Returns
         -------
         Domain
-            Domain object containing the categorical parameters
+            Domain object containing the categorical parameters.
         """
         return self._filter(CategoricalParameter)
 
     @property
     def constant(self) -> Domain:
-        """Filter the constant parameters of the domain
+        """Filter the constant parameters of the domain.
 
         Returns
         -------
         Domain
-            Domain object containing the constant parameters
+            Domain object containing the constant parameters.
         """
         return self._filter(ConstantParameter)
 
     @property
     def array(self) -> Domain:
-        """Filter the array parameters of the domain
+        """Filter the array parameters of the domain.
+
         Returns
         -------
         Domain
-            Domain object containing the array parameters
+            Domain object containing the array parameters.
         """
         return self._filter(ArrayParameter)
 
@@ -254,10 +306,19 @@ class Domain:
 
     @classmethod
     def from_yaml(cls: type[Domain], cfg: DictConfig) -> Domain:
-        """Initialize a Domain from a Hydra YAML configuration file key
+        """Initialize a Domain from a Hydra YAML configuration file key.
 
+        Parameters
+        ----------
+        cfg : DictConfig
+            YAML dictionary key of the domain.
 
-        Note
+        Returns
+        -------
+        Domain
+            Domain object.
+
+        Notes
         ----
         The YAML file should have the following structure:
 
@@ -274,17 +335,6 @@ class Domain:
                 output:
                     <parameter_name>:
                         to_disk: <bool>
-
-
-        Parameters
-        ----------
-        cfg : DictConfig
-            YAML dictionary key of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object
         """
 
         def process_input(items):
@@ -320,9 +370,9 @@ class Domain:
 
         Parameters
         ----------
-        input_data : List[Dict[str, Any]]
+        input_data : list[dict[str, Any]]
             List of dictionaries containing the input parameters.
-        output_data : List[Dict[str, Any]]
+        output_data : list[dict[str, Any]]
             List of dictionaries containing the output parameters.
 
         Returns
@@ -408,12 +458,14 @@ class Domain:
         ----------
         name : str
             Name of the input parameter.
+        to_disk : bool, optional
+            Whether to store the parameter to disk, by default False.
         store_function : StoreFunction, optional
             Function to store the parameter, by default None.
         load_function : LoadFunction, optional
             Function to load the parameter, by default None.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_parameter('param1', store_function, load_function)
@@ -444,17 +496,17 @@ class Domain:
         step : int, optional
             Step size of the input parameter, by default 1.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_int('param1', 0, 10, 2)
         >>> domain.input_space
         {'param1': DiscreteParameter(lower_bound=0, upper_bound=10, step=2)}
 
-        Note
-        ----
+        Notes
+        -----
         If the lower and upper bound are equal, then a constant parameter
-        will be added to the domain!
+        will be added to the domain.
         """
         if low == high:
             self.add_constant(name, low)
@@ -475,13 +527,13 @@ class Domain:
         name : str
             Name of the input parameter.
         low : float, optional
-            Lower bound of the input parameter. By default -np.inf.
-        high : float
-            Upper bound of the input parameter. By default np.inf.
+            Lower bound of the input parameter, by default -np.inf.
+        high : float, optional
+            Upper bound of the input parameter, by default np.inf.
         log : bool, optional
             Whether to use a logarithmic scale, by default False.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_float('param1', 0., 10., log=True)
@@ -489,10 +541,10 @@ class Domain:
         {'param1': ContinuousParameter(lower_bound=0.,
          upper_bound=10., log=True)}
 
-        Note
-        ----
+        Notes
+        -----
         If the lower and upper bound are equal, then a constant parameter
-        will be added to the domain!
+        will be added to the domain.
         """
         if math.isclose(low, high):
             self.add_constant(name, low)
@@ -506,10 +558,10 @@ class Domain:
         ----------
         name : str
             Name of the input parameter.
-        categories : List[Any]
+        categories : Sequence[CategoricalType]
             Categories of the input parameter.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_category('param1', [0, 1, 2])
@@ -528,7 +580,7 @@ class Domain:
         value : Any
             Value of the input parameter.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_constant('param1', 0)
@@ -552,12 +604,12 @@ class Domain:
             Name of the input parameter.
         shape : Sequence[int] or int
             Shape of the array input parameter.
-        low : float | np.ndarray, optional
+        low : float or np.ndarray, optional
             Lower bound of the input parameter, by default -np.inf.
-        high : float | np.ndarray, optional
+        high : float or np.ndarray, optional
             Upper bound of the input parameter, by default np.inf.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_array('param1', [3, 4], 0., 1.)
@@ -580,10 +632,9 @@ class Domain:
 
         Parameters
         ----------
-
         name : str
             Name of the input parameter.
-        type : Literal['float', 'int', 'category', 'constant']
+        type : {'float', 'int', 'category', 'constant', 'array'}
             Type of the input parameter.
         **kwargs
             Keyword arguments for the input parameter.
@@ -593,7 +644,7 @@ class Domain:
         ValueError
             If the type is not known.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain._new_add('param1', 'float', low=0., high=1.)
@@ -631,13 +682,18 @@ class Domain:
         ----------
         name : str
             Name of the output parameter.
-        to_disk : bool
-            Whether to store the output parameter on disk, by default False.
-        exist_ok: bool
-            Whether to raise an error if the output parameter already exists,
+        to_disk : bool, optional
+            Whether to store the output parameter on disk,
             by default False.
+        exist_ok : bool, optional
+            Whether to raise an error if the output parameter
+            already exists, by default False.
+        store_function : StoreFunction, optional
+            Function to store the parameter, by default None.
+        load_function : LoadFunction, optional
+            Function to load the parameter, by default None.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.add_output('param1', True)
@@ -662,14 +718,16 @@ class Domain:
     # =========================================================================
 
     def get_bounds(self) -> np.ndarray:
-        """Return the boundary constraints of the continuous input parameters
+        """Return the boundary constraints of the continuous input
+        parameters.
 
         Returns
         -------
-            numpy array with lower and upper bound for each \
-            continuous input dimension
+        np.ndarray
+            Numpy array with lower and upper bound for each continuous
+            input dimension.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.input_space = {
@@ -691,19 +749,19 @@ class Domain:
         )
 
     def _filter(self, type: type[Parameter]) -> Domain:
-        """Filter the parameters of the domain by type
+        """Filter the parameters of the domain by type.
 
         Parameters
         ----------
-        type : Type[Parameter]
-            Type of the parameters to be filtered
+        type : type[Parameter]
+            Type of the parameters to be filtered.
 
         Returns
         -------
         Domain
-            Domain with the filtered parameters
+            Domain with the filtered parameters.
 
-        Example
+        Examples
         -------
         >>> domain = Domain()
         >>> domain.input_space = {
@@ -737,30 +795,30 @@ def make_nd_continuous_domain(
 
     Parameters
     ----------
-    bounds : numpy.ndarray
-        A 2D numpy array of shape (dimensionality, 2) specifying the lower
-        and upper bounds of every dimension.
-    dimensionality : int
-        The number of dimensions, optional. If not given, it is inferred
-        from the shape of the bounds. Argument is still present for legacy
-        reasons.
+    bounds : np.ndarray or list[list[float]]
+        A 2D numpy array of shape (dimensionality, 2) specifying
+        the lower and upper bounds of every dimension.
+    dimensionality : int, optional
+        The number of dimensions. If not given, it is inferred
+        from the shape of the bounds. Argument is still present
+        for legacy reasons.
 
     Returns
     -------
     Domain
-        A continuous domain with a continuous input.
+        A continuous domain with continuous input parameters.
 
-    Note
-    ----
-    This function creates a Domain object consisting of \
-    continuous input parameters.
+    Notes
+    -----
+    This function creates a Domain object consisting of continuous
+    input parameters.
 
-    The lower and upper bounds of each input dimension are specified \
+    The lower and upper bounds of each input dimension are specified
     in the `bounds` parameter.
 
-    The input parameters are named "x0", "x1" ..
+    The input parameters are named "x0", "x1", etc.
 
-    Example
+    Examples
     -------
     >>> bounds = np.array([[-5.0, 5.0], [-2.0, 2.0]])
     >>> dimensionality = 2
@@ -787,13 +845,18 @@ def _domain_factory(domain: Domain | DictConfig | Path | str) -> Domain:
 
     Parameters
     ----------
-    domain : Domain | DictConfig | Path | str
+    domain : Domain or DictConfig or Path or str or None
         The domain to be converted to a Domain object.
 
     Returns
     -------
     Domain
-        Domain object
+        Domain object.
+
+    Raises
+    ------
+    TypeError
+        If domain type is not supported.
     """
     # If domain is already a Domain object, return it
     if isinstance(domain, Domain):
