@@ -57,6 +57,29 @@ def _run_sample(
     mark/store status on the sample object before returning it.
 
     This helper is purposely simple so it is picklable for multiprocessing.
+
+    Parameters
+    ----------
+    execute_fn : Callable[..., ExperimentSample]
+        The function to execute on the experiment sample.
+    experiment_sample : ExperimentSample
+        The experiment sample to process.
+    domain : Domain
+        The domain of the experiment data.
+    job_number : int or None, optional
+        The index of the job, passed to `execute_fn` when `pass_id` is True,
+        by default None.
+    pass_id : bool, optional
+        Whether to pass `job_number` as the `id` keyword argument to
+        `execute_fn`, by default False.
+    **kwargs : Any
+        Additional keyword arguments forwarded to `execute_fn`.
+
+    Returns
+    -------
+    tuple[ExperimentSample, Domain]
+        The updated experiment sample (marked 'finished' or 'error') and the
+        (possibly updated) domain.
     """
     try:
         logger.debug(f"Running experiment_sample {job_number}")
@@ -342,15 +365,16 @@ def evaluate_cluster_array(
 
     Parameters
     ----------
-
     execute_fn : Callable[..., ExperimentSample]
-        The function to be executed on each ExperimentSample
+        The function to be executed on each ExperimentSample.
     data : ExperimentData
-        The ExperimentData object containing the samples to be processed
+        The ExperimentData object containing the samples to be processed.
+    job_number : int
+        The index of the specific job (array element) to run.
     pass_id : bool
-        Whether to pass the job index to the execute function
-    kwargs : dict
-        Any keyword arguments that need to be supplied to the function
+        Whether to pass the job index to the execute function.
+    **kwargs : dict
+        Any keyword arguments that need to be supplied to the function.
     """
 
     # Retrieve the experiment sample
@@ -385,6 +409,25 @@ def _get_open_job(
     wait_for_creation: bool,
     max_tries: int,
 ) -> tuple[int, ExperimentSample]:
+    """Load ExperimentData under a file lock and retrieve an open job.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory where experiment data is stored.
+    lockfile : FileLock
+        File lock used to serialise access to the experiment data on disk.
+    wait_for_creation : bool
+        Whether to wait for the experiment data file to be created if it does
+        not yet exist.
+    max_tries : int
+        Maximum number of attempts to access the experiment data file.
+
+    Returns
+    -------
+    tuple[int, ExperimentSample, Domain]
+        The job index, the experiment sample, and the domain.
+    """
     with lockfile:
         data = ExperimentData.from_file(
             project_dir=project_dir,
@@ -408,6 +451,26 @@ def _store_experiment_sample(
     experiment_sample: ExperimentSample,
     domain: Domain,
 ) -> None:
+    """Store a processed experiment sample to disk under a file lock.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory where experiment data is stored.
+    lockfile : FileLock
+        File lock used to serialise access to the experiment data on disk.
+    wait_for_creation : bool
+        Whether to wait for the experiment data file to be created if it does
+        not yet exist.
+    max_tries : int
+        Maximum number of attempts to access the experiment data file.
+    idx : int
+        Index of the experiment sample within the ExperimentData.
+    experiment_sample : ExperimentSample
+        The processed experiment sample to write back to disk.
+    domain : Domain
+        The (possibly updated) domain to persist alongside the data.
+    """
     with lockfile:
         data = ExperimentData.from_file(
             project_dir=project_dir,
@@ -426,6 +489,25 @@ def _get_domain(
     wait_for_creation: bool,
     max_tries: int,
 ) -> Domain:
+    """Load ExperimentData under a file lock and return its domain.
+
+    Parameters
+    ----------
+    project_dir : Path
+        Path to the project directory where experiment data is stored.
+    lockfile : FileLock
+        File lock used to serialise access to the experiment data on disk.
+    wait_for_creation : bool
+        Whether to wait for the experiment data file to be created if it does
+        not yet exist.
+    max_tries : int
+        Maximum number of attempts to access the experiment data file.
+
+    Returns
+    -------
+    Domain
+        The domain of the loaded experiment data.
+    """
     with lockfile:
         data = ExperimentData.from_file(
             project_dir=project_dir,
@@ -447,6 +529,30 @@ def mpi_worker(
     max_tries: int = MAX_TRIES,
     **kwargs,
 ) -> None:
+    """Run the execution loop for an MPI worker process.
+
+    Repeatedly fetches an open job via MPI-coordinated locking, runs
+    `execute_fn` on it, and writes the result back until no open jobs remain.
+
+    Parameters
+    ----------
+    comm : MPI.Comm
+        The MPI communicator.
+    data : ExperimentData
+        The experiment data object (used for project directory and type info).
+    execute_fn : Callable
+        The function to execute on each ExperimentSample.
+    pass_id : bool
+        Whether to pass the job index as `id` to `execute_fn`.
+    wait_for_creation : bool, optional
+        Whether to wait for the experiment data file to be created if it does
+        not yet exist, by default False.
+    max_tries : int, optional
+        Maximum number of attempts to access the experiment data file, by
+        default MAX_TRIES.
+    **kwargs : dict
+        Additional keyword arguments forwarded to `execute_fn`.
+    """
     cluster_get_open_job = partial(
         mpi_get_open_job,
         experiment_data_type=ExperimentData,
