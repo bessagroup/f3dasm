@@ -9,6 +9,7 @@ The Domain is a set of Parameter instances that make up
 from __future__ import annotations
 
 # Standard
+import copy
 import json
 import math
 from collections.abc import Sequence
@@ -172,8 +173,10 @@ class Domain:
             Copy of the Domain object.
         """
         return Domain(
-            input_space={k: v._copy() for k, v in self.input_space.items()},
-            output_space={k: v._copy() for k, v in self.output_space.items()},
+            input_space={k: copy.copy(v) for k, v in self.input_space.items()},
+            output_space={
+                k: copy.copy(v) for k, v in self.output_space.items()
+            },
         )
 
     @property
