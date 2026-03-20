@@ -20,8 +20,16 @@ from SALib.sample import sobol as salib_sobol
 from SALib.sample import sobol_sequence
 
 # Locals
-from .design.domain import Domain
+from .design.domain import Domain, Parameter
+from .design.parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 from .experimentdata import Block, ExperimentData
+from .experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -32,501 +40,237 @@ __status__ = "Stable"
 #
 # =============================================================================
 
-#                                                             Utility functions
-# =============================================================================
 
+class Sampler(Block):
+    sample_mapping: dict[Parameter, callable]
 
-def _stretch_samples(domain: Domain, samples: np.ndarray) -> np.ndarray:
-    """Stretch samples to their boundaries
-
-    Parameters
-    ----------
-    domain : Domain
-        domain object
-    samples : np.ndarray
-        samples to stretch
-
-    Returns
-    -------
-    np.ndarray
-        stretched samples
-    """
-    for dim, param in enumerate(domain.input_space.values()):
-        samples[:, dim] = (
-            samples[:, dim] * (param.upper_bound - param.lower_bound)
-            + param.lower_bound
-        )
-
-        # If param.log is True, take the 10** of the samples
-        if param.log:
-            samples[:, dim] = 10 ** samples[:, dim]
-
-    return samples
-
-
-def sample_constant(domain: Domain, n_samples: int) -> np.ndarray:
-    """
-    Sample the constant parameters.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    samples = np.array([param.value for param in domain.input_space.values()])
-    return np.tile(samples, (n_samples, 1))
-
-
-def sample_np_random_choice(
-    domain: Domain, n_samples: int, seed: Optional[int] = None, **kwargs
-) -> np.ndarray:
-    """
-    Sample with numpy random choice.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    rng = np.random.default_rng(seed)
-    samples = np.empty(shape=(n_samples, len(domain)), dtype=object)
-    for dim, param in enumerate(domain.input_space.values()):
-        samples[:, dim] = rng.choice(param.categories, size=n_samples)
-
-    return samples
-
-
-def sample_np_random_choice_range(
-    domain: Domain, n_samples: int, seed: Optional[int] = None, **kwargs
-) -> np.ndarray:
-    """
-    Sample with numpy random choice within a range of values.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    samples = np.empty(shape=(n_samples, len(domain)), dtype=np.int32)
-    rng = np.random.default_rng(seed)
-    for dim, param in enumerate(domain.input_space.values()):
-        samples[:, dim] = rng.choice(
-            range(param.lower_bound, param.upper_bound + 1, param.step),
-            size=n_samples,
-        )
-
-    return samples
-
-
-def sample_np_random_uniform(
-    domain: Domain, n_samples: int, seed: Optional[int] = None, **kwargs
-) -> np.ndarray:
-    """
-    Sample with numpy random uniform distribution.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    rng = np.random.default_rng(seed)
-    samples = rng.uniform(low=0.0, high=1.0, size=(n_samples, len(domain)))
-
-    # stretch samples
-    samples = _stretch_samples(domain, samples)
-    return samples
-
-
-def sample_np_random_uniform_array(
-    domain: Domain, n_samples: int, seed: Optional[int] = None, **kwargs
-) -> np.ndarray:
-    """
-    Sample with numpy random uniform distribution for array parameters.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    samples = []
-    rng = np.random.default_rng(seed)
-    for _ in range(n_samples):
-        s = {}
-        for name, param in domain.input_space.items():
-            sample = rng.uniform(low=0.0, high=1.0, size=param.shape)
-            # stretch samples
-            sample = (
-                sample * (param.upper_bound - param.lower_bound)
-                + param.lower_bound
-            )
-            s[name] = sample
-        samples.append(s)
-
-    return samples
-
-
-def sample_latin_hypercube(
-    domain: Domain, n_samples: int, seed: Optional[int] = None, **kwargs
-) -> np.ndarray:
-    """
-    Sample with Latin Hypercube sampling.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-    if len(domain) == 0:
-        return np.empty((n_samples, 0))
-
-    problem = {
-        "num_vars": len(domain),
-        "names": domain.input_names,
-        "bounds": [
-            [s.lower_bound, s.upper_bound] for s in domain.input_space.values()
-        ],
-    }
-
-    samples = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
-    return samples
-
-
-def sample_latin_hypercube_array(
-    domain: Domain,
-    n_samples: int,
-    seed: Optional[int] = None,
-    **kwargs,
-) -> list[dict[str, np.ndarray]]:
-    """
-    Sample with Latin Hypercube sampling for array parameters.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    list of dict[str, np.ndarray]
-        A list of samples, where each sample is a dictionary
-        mapping parameter names to arrays.
-    """
-    samples = []
-
-    for name, param in domain.array.input_space.items():
-        lb = np.ravel(param.lower_bound)
-        ub = np.ravel(param.upper_bound)
-        problem = {
-            "num_vars": prod(param.shape),
-            "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": list(zip(lb, ub, strict=False)),  # per-dimension bounds
-        }
-
-        s = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
-        s = s.reshape((n_samples,) + param.shape)
-        samples.append(s)
-
-    # combine into list of dicts
-    samples_dict = []
-    for i in range(n_samples):
-        _s = {}
-        for idx, name in enumerate(domain.array.input_names):
-            _s[name] = samples[idx][i]
-        samples_dict.append(_s)
-
-    return samples_dict
-
-
-def sample_sobol_sequence(
-    domain: Domain, n_samples: int, dimensionality: int, **kwargs
-) -> np.ndarray:
-    """
-    Sample with Sobol sequence sampling.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    dimensionality : int
-        The dimensionality of the input space.
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    np.ndarray
-        The sampled data.
-    """
-
-    if len(domain) == 0:
-        return np.empty((n_samples, 0))
-
-    samples = sobol_sequence.sample(N=n_samples, D=dimensionality)
-
-    # stretch samples
-    samples = _stretch_samples(domain, samples)
-    return samples
-
-
-def next_power_of_two(x: int) -> int:
-    """Return the smallest power of two greater than or equal to x.
-
-    Parameters
-    ----------
-    x : int
-        A positive integer.
-
-    Returns
-    -------
-    int
-        The smallest power of two that is >= x.
-    """
-    return 1 if x <= 1 else 2 ** (x - 1).bit_length()
-
-
-def sample_sobol_sequence_array(
-    domain: Domain,
-    n_samples: int,
-    seed: Optional[int] = None,
-    **kwargs,
-) -> list[dict[str, np.ndarray]]:
-    """
-    Sample with Sobol Sequence sampling for array parameters.
-
-    Parameters
-    ----------
-    domain : Domain
-        The domain object containing the input space.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for sampling.
-
-    Returns
-    -------
-    list of dict[str, np.ndarray]
-        A list of samples, where each sample is a dictionary
-        mapping parameter names to arrays.
-    """
-    samples = []
-
-    for name, param in domain.array.input_space.items():
-        lb = np.ravel(param.lower_bound)
-        ub = np.ravel(param.upper_bound)
-
-        problem = {
-            "num_vars": prod(param.shape),
-            "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": list(zip(lb, ub, strict=False)),
-        }
-
-        # N must be power of 2
-        N = next_power_of_two(ceil(n_samples / (prod(param.shape) + 2)))
-
-        s = salib_sobol.sample(
-            problem=problem,
-            N=N,
-            seed=seed,
-            calc_second_order=False,
-        )
-
-        s = s[:n_samples].reshape((n_samples,) + param.shape)
-        samples.append(s)
-
-    samples_dict = []
-    for i in range(n_samples):
-        _s = {}
-        for idx, name in enumerate(domain.array.input_names):
-            _s[name] = samples[idx][i]
-        samples_dict.append(_s)
-
-    return samples_dict
-
-
-#                                                             Built-in samplers
-# =============================================================================
-
-
-class RandomUniform(Block):
     def __init__(self, seed: Optional[int], **parameters):
-        """
-        Initialize the RandomUniform sampler.
-
-        Parameters
-        ----------
-        seed : Optional[int]
-            The random seed.
-        **parameters : dict
-            Additional parameters for the sampler.
-        """
         self.seed = seed
         self.parameters = parameters
 
     def call(
         self, data: ExperimentData, n_samples: int, **kwargs
     ) -> ExperimentData:
-        """
-        Sample data using the RandomUniform method.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data object providing the domain and project dir.
-        n_samples : int
-            The number of samples to generate.
-        **kwargs : dict
-            Additional parameters for sampling.
-
-        Returns
-        -------
-        ExperimentData
-            A new ExperimentData object containing the sampled input data.
-        """
-        _continuous = sample_np_random_uniform(
-            domain=data.domain.continuous, n_samples=n_samples, seed=self.seed
-        )
-
-        data_continuous = ExperimentData(
-            input_data=pd.DataFrame(
-                _continuous, columns=data.domain.continuous.input_names
-            ),
-            domain=data.domain.continuous,
-            project_dir=data._project_dir,
-        )
-
-        _discrete = sample_np_random_choice_range(
-            domain=data.domain.discrete, n_samples=n_samples, seed=self.seed
-        )
-
-        data_discrete = ExperimentData(
-            input_data=pd.DataFrame(
-                _discrete, columns=data.domain.discrete.input_names
-            ),
-            domain=data.domain.discrete,
-            project_dir=data._project_dir,
-        )
-
-        _categorical = sample_np_random_choice(
-            domain=data.domain.categorical, n_samples=n_samples, seed=self.seed
-        )
-
-        data_categorical = ExperimentData(
-            input_data=pd.DataFrame(
-                _categorical, columns=data.domain.categorical.input_names
-            ),
-            domain=data.domain.categorical,
-            project_dir=data._project_dir,
-        )
-
-        _constant = sample_constant(data.domain.constant, n_samples)
-
-        data_constant = ExperimentData(
-            input_data=pd.DataFrame(
-                _constant, columns=data.domain.constant.input_names
-            ),
-            domain=data.domain.constant,
-            project_dir=data._project_dir,
-        )
-
-        _array = sample_np_random_uniform_array(
-            domain=data.domain.array, n_samples=n_samples, seed=self.seed
-        )
-
-        data_array = ExperimentData(
-            input_data=_array,
-            domain=data.domain.array,
-            project_dir=data._project_dir,
-        )
-
         d = ExperimentData(
             project_dir=data._project_dir, domain=data.domain._copy()
         )
 
-        for _d in [
-            data_continuous,
-            data_discrete,
-            data_categorical,
-            data_constant,
-            data_array,
-        ]:
-            d = d.join(_d)
+        for param_type, sampler_func in self.sample_mapping.items():
+            filtered_domain = d.domain._filter(param_type)
+            if filtered_domain.input_space:
+                experiment_samples: dict[int, ExperimentSample] = sampler_func(
+                    input_space=filtered_domain.input_space,
+                    n_samples=n_samples,
+                    seed=self.seed,
+                    **self.parameters,
+                )
 
-        # TODO: do we need this ?
-        d.store_objects()
+                samples = ExperimentData.from_data(
+                    data=experiment_samples,
+                    domain=filtered_domain,
+                    project_dir=data._project_dir,
+                )
 
+                d = d.join(samples)
         return d
+
+
+#                                                               Random Sampling
+# =============================================================================
+
+
+def random_sample_continuous_parameters(
+    input_space: dict[str, ContinuousParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample continuous parameters randomly.
+
+    Parameters
+    ----------
+    input_space : dict[str, ContinuousParameter]
+        A dictionary mapping parameter names to ContinuousParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    rng = np.random.default_rng(seed)
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: rng.uniform(low=param.lower_bound, high=param.upper_bound)
+            for name, param in input_space.items()
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def random_sample_discrete_parameters(
+    input_space: dict[str, DiscreteParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample discrete parameters randomly.
+
+    Parameters
+    ----------
+    input_space : dict[str, DiscreteParameter]
+        A dictionary mapping parameter names to DiscreteParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    rng = np.random.default_rng(seed)
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: rng.choice(
+                range(param.lower_bound, param.upper_bound + 1, param.step)
+            )
+            for name, param in input_space.items()
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def random_sample_categorical_parameters(
+    input_space: dict[str, CategoricalParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample categorical parameters randomly.
+
+    Parameters
+    ----------
+    input_space : dict[str, CategoricalParameter]
+        A dictionary mapping parameter names to CategoricalParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    rng = np.random.default_rng(seed)
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: rng.choice(param.categories)
+            for name, param in input_space.items()
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def random_sample_constant_parameters(
+    input_space: dict[str, ConstantParameter],
+    n_samples: int,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample constant parameters.
+
+    Parameters
+    ----------
+    input_space : dict[str, ConstantParameter]
+        A dictionary mapping parameter names to ConstantParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: param.value for name, param in input_space.items()
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def random_sample_array_parameters(
+    input_space: dict[str, ArrayParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample array parameters randomly.
+
+    Parameters
+    ----------
+    input_space : dict[str, ArrayParameter]
+        A dictionary mapping parameter names to ArrayParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    rng = np.random.default_rng(seed)
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: rng.uniform(
+                low=param.lower_bound, high=param.upper_bound, size=param.shape
+            )
+            for name, param in input_space.items()
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+random_sample_mapping: dict[Parameter, callable] = {
+    ContinuousParameter: random_sample_continuous_parameters,
+    DiscreteParameter: random_sample_discrete_parameters,
+    CategoricalParameter: random_sample_categorical_parameters,
+    ConstantParameter: random_sample_constant_parameters,
+    ArrayParameter: random_sample_array_parameters,
+}
+
+
+class RandomUniform(Sampler):
+    sample_mapping: dict[Parameter, callable] = random_sample_mapping
 
 
 def random(seed: Optional[int] = None, **kwargs) -> Block:
@@ -546,6 +290,292 @@ def random(seed: Optional[int] = None, **kwargs) -> Block:
         An Block instance of a random uniform sampler.
     """
     return RandomUniform(seed=seed, **kwargs)
+
+
+# =============================================================================
+
+
+def latin_sample_continuous_parameters(
+    input_space: dict[str, ContinuousParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample continuous parameters with Latin Hypercube sampling.
+
+    Parameters
+    ----------
+    input_space : dict[str, ContinuousParameter]
+        A dictionary mapping parameter names to ContinuousParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    # This is just a wrapper around the sample_latin_hypercube function that
+    # converts the output to the desired format.
+    problem = {
+        "num_vars": len(input_space),
+        "names": list(input_space.keys()),
+        "bounds": [
+            [param.lower_bound, param.upper_bound]
+            for param in input_space.values()
+        ],
+    }
+
+    samples_array = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
+
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: samples_array[i, idx]
+            for idx, name in enumerate(input_space.keys())
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def latin_sample_array_parameters(
+    input_space: dict[str, ArrayParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample array parameters with Latin Hypercube sampling.
+
+    Parameters
+    ----------
+    input_space : dict[str, ArrayParameter]
+        A dictionary mapping parameter names to ArrayParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    samples = []
+    for name, param in input_space.items():
+        lb = np.ravel(param.lower_bound)
+        ub = np.ravel(param.upper_bound)
+        problem = {
+            "num_vars": prod(param.shape),
+            "names": [f"{name}{i}" for i in range(prod(param.shape))],
+            "bounds": list(zip(lb, ub, strict=False)),  # per-dimension bounds
+        }
+
+        s = salib_latin.sample(problem=problem, N=n_samples, seed=seed)
+        s = s.reshape((n_samples,) + param.shape)
+        samples.append(s)
+
+    samples_dict = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: samples[idx][i]
+            for idx, name in enumerate(input_space.keys())
+        }
+        samples_dict[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples_dict
+
+
+latin_sample_mapping: dict[Parameter, callable] = {
+    ContinuousParameter: latin_sample_continuous_parameters,
+    DiscreteParameter: random_sample_discrete_parameters,
+    CategoricalParameter: random_sample_categorical_parameters,
+    ConstantParameter: random_sample_constant_parameters,
+    ArrayParameter: latin_sample_array_parameters,
+}
+
+
+class Latin(Sampler):
+    sample_mapping: dict[Parameter, callable] = latin_sample_mapping
+
+
+def latin(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Create a Latin Hypercube sampler.
+
+    Parameters
+    ----------
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        An Block instance of a latin hypercube sampler.
+    """
+    return Latin(seed=seed, **kwargs)
+
+
+#                                                                         Sobol
+# =============================================================================
+
+
+def sobol_sample_continuous_parameters(
+    input_space: dict[str, ContinuousParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample continuous parameters with Sobol sequence sampling.
+
+    Parameters
+    ----------
+    input_space : dict[str, ContinuousParameter]
+        A dictionary mapping parameter names to ContinuousParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    sobol_seq = sobol_sequence.sample(N=n_samples, D=len(input_space))
+
+    lower = np.array([input_space[name].lower_bound for name in input_space])
+    upper = np.array([input_space[name].upper_bound for name in input_space])
+    samples_array = lower + sobol_seq * (upper - lower)
+
+    samples = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: samples_array[i, idx]
+            for idx, name in enumerate(input_space.keys())
+        }
+        samples[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples
+
+
+def sobol_sample_array_parameters(
+    input_space: dict[str, ArrayParameter],
+    n_samples: int,
+    seed: Optional[int] = None,
+    **kwargs,
+) -> dict[int, ExperimentSample]:
+    """
+    Sample array parameters with Sobol sequence sampling.
+
+    Parameters
+    ----------
+    input_space : dict[str, ArrayParameter]
+        A dictionary mapping parameter names to ArrayParameter objects.
+    n_samples : int
+        The number of samples to generate.
+    seed : Optional[int], optional
+        The random seed, by default None
+
+    Returns
+    -------
+    dict[int, ExperimentSample]
+        A dictionary mapping sample indices to ExperimentSample objects
+        containing the sampled values.
+    """
+    samples = []
+    for name, param in input_space.items():
+        lb = np.ravel(param.lower_bound)
+        ub = np.ravel(param.upper_bound)
+        problem = {
+            "num_vars": prod(param.shape),
+            "names": [f"{name}{i}" for i in range(prod(param.shape))],
+            "bounds": list(zip(lb, ub, strict=False)),
+        }
+
+        N = next_power_of_two(ceil(n_samples / (prod(param.shape) + 2)))
+
+        s = salib_sobol.sample(
+            problem=problem,
+            N=N,
+            seed=seed,
+            calc_second_order=False,
+        )
+
+        s = s[:n_samples].reshape((n_samples,) + param.shape)
+        samples.append(s)
+
+    samples_dict = {}
+    for i in range(n_samples):
+        sample_values = {
+            name: samples[idx][i]
+            for idx, name in enumerate(input_space.keys())
+        }
+        samples_dict[i] = ExperimentSample(_input_data=sample_values)
+
+    return samples_dict
+
+
+sobol_sample_mapping: dict[Parameter, callable] = {
+    ContinuousParameter: sobol_sample_continuous_parameters,
+    DiscreteParameter: random_sample_discrete_parameters,
+    CategoricalParameter: random_sample_categorical_parameters,
+    ConstantParameter: random_sample_constant_parameters,
+    ArrayParameter: sobol_sample_array_parameters,
+}
+
+
+class Sobol(Sampler):
+    sample_mapping: dict[Parameter, callable] = sobol_sample_mapping
+
+
+def sobol(seed: Optional[int] = None, **kwargs) -> Block:
+    """
+    Create a Sobol sampler.
+
+    Parameters
+    ----------
+    seed : Optional[int], optional
+        The random seed, by default None
+    **kwargs : dict
+        Additional parameters for the sampler.
+
+    Returns
+    -------
+    Block
+        A Block instance of a sobol sequence sampler.
+    """
+    return Sobol(seed=seed, **kwargs)
+
+
+#                                                             Utility functions
+# =============================================================================
+
+
+def next_power_of_two(x: int) -> int:
+    """Return the smallest power of two greater than or equal to x.
+
+    Parameters
+    ----------
+    x : int
+        A positive integer.
+
+    Returns
+    -------
+    int
+        The smallest power of two that is >= x.
+    """
+    return 1 if x <= 1 else 2 ** (x - 1).bit_length()
 
 
 # =============================================================================
@@ -667,266 +697,6 @@ def grid(**kwargs) -> Block:
         A Block instance of a grid sampler.
     """
     return Grid(**kwargs)
-
-
-# =============================================================================
-
-
-class Sobol(Block):
-    def __init__(self, seed: Optional[int], **parameters):
-        """
-        Initialize the Sobol sampler.
-
-        Parameters
-        ----------
-        seed : Optional[int]
-            The random seed.
-        **parameters : dict
-            Additional parameters for the sampler.
-        """
-        self.seed = seed
-        self.parameters = parameters
-
-    def call(
-        self, data: ExperimentData, n_samples: int, **kwargs
-    ) -> ExperimentData:
-        """
-        Sample data using the Sobol method.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data object providing the domain and project dir.
-        n_samples : int
-            The number of samples to generate.
-        **kwargs : dict
-            Additional parameters for sampling.
-
-        Returns
-        -------
-        ExperimentData
-            A new ExperimentData object containing the sampled input data.
-        """
-        _continuous = sample_sobol_sequence(
-            domain=data.domain.continuous,
-            n_samples=n_samples,
-            dimensionality=len(data.domain.continuous),
-        )
-
-        data_continuous = ExperimentData(
-            input_data=pd.DataFrame(
-                _continuous, columns=data.domain.continuous.input_names
-            ),
-            domain=data.domain.continuous,
-            project_dir=data._project_dir,
-        )
-
-        _discrete = sample_np_random_choice_range(
-            domain=data.domain.discrete, n_samples=n_samples, seed=self.seed
-        )
-
-        data_discrete = ExperimentData(
-            input_data=pd.DataFrame(
-                _discrete, columns=data.domain.discrete.input_names
-            ),
-            domain=data.domain.discrete,
-            project_dir=data._project_dir,
-        )
-
-        _categorical = sample_np_random_choice(
-            domain=data.domain.categorical, n_samples=n_samples, seed=self.seed
-        )
-
-        data_categorical = ExperimentData(
-            input_data=pd.DataFrame(
-                _categorical, columns=data.domain.categorical.input_names
-            ),
-            domain=data.domain.categorical,
-            project_dir=data._project_dir,
-        )
-
-        _constant = sample_constant(data.domain.constant, n_samples)
-
-        data_constant = ExperimentData(
-            input_data=pd.DataFrame(
-                _constant, columns=data.domain.constant.input_names
-            ),
-            domain=data.domain.constant,
-            project_dir=data._project_dir,
-        )
-
-        _array = sample_sobol_sequence_array(
-            domain=data.domain.array, n_samples=n_samples, seed=self.seed
-        )
-
-        data_array = ExperimentData(
-            input_data=_array,
-            domain=data.domain.array,
-            project_dir=data._project_dir,
-        )
-
-        d = ExperimentData(
-            project_dir=data._project_dir, domain=data.domain._copy()
-        )
-
-        for _d in [
-            data_continuous,
-            data_discrete,
-            data_categorical,
-            data_constant,
-            data_array,
-        ]:
-            d = d.join(_d)
-
-        return d
-
-
-def sobol(seed: Optional[int] = None, **kwargs) -> Block:
-    """
-    Create a Sobol sampler.
-
-    Parameters
-    ----------
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for the sampler.
-
-    Returns
-    -------
-    Block
-        A Block instance of a sobol sequence sampler.
-    """
-    return Sobol(seed=seed, **kwargs)
-
-
-# =============================================================================
-
-
-class Latin(Block):
-    def __init__(self, seed: Optional[int], **parameters):
-        """
-        Initialize the Latin sampler.
-
-        Parameters
-        ----------
-        seed : Optional[int]
-            The random seed.
-        **parameters : dict
-            Additional parameters for the sampler.
-        """
-        self.seed = seed
-        self.parameters = parameters
-
-    def call(
-        self, data: ExperimentData, n_samples: int, **kwargs
-    ) -> ExperimentData:
-        """
-        Sample data using the Latin Hypercube method.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data object providing the domain and project dir.
-        n_samples : int
-            The number of samples to generate.
-        **kwargs : dict
-            Additional parameters for sampling.
-
-        Returns
-        -------
-        ExperimentData
-            A new ExperimentData object containing the sampled input data.
-        """
-        _continuous = sample_latin_hypercube(
-            domain=data.domain.continuous, n_samples=n_samples, seed=self.seed
-        )
-
-        data_continuous = ExperimentData(
-            input_data=pd.DataFrame(
-                _continuous, columns=data.domain.continuous.input_names
-            ),
-            domain=data.domain.continuous,
-            project_dir=data._project_dir,
-        )
-
-        _discrete = sample_np_random_choice_range(
-            domain=data.domain.discrete, n_samples=n_samples, seed=self.seed
-        )
-
-        data_discrete = ExperimentData(
-            input_data=pd.DataFrame(
-                _discrete, columns=data.domain.discrete.input_names
-            ),
-            domain=data.domain.discrete,
-            project_dir=data._project_dir,
-        )
-
-        _categorical = sample_np_random_choice(
-            domain=data.domain.categorical, n_samples=n_samples, seed=self.seed
-        )
-
-        data_categorical = ExperimentData(
-            input_data=pd.DataFrame(
-                _categorical, columns=data.domain.categorical.input_names
-            ),
-            domain=data.domain.categorical,
-            project_dir=data._project_dir,
-        )
-
-        _constant = sample_constant(data.domain.constant, n_samples)
-
-        data_constant = ExperimentData(
-            input_data=pd.DataFrame(
-                _constant, columns=data.domain.constant.input_names
-            ),
-            domain=data.domain.constant,
-            project_dir=data._project_dir,
-        )
-
-        _array = sample_latin_hypercube_array(
-            domain=data.domain.array, n_samples=n_samples, seed=self.seed
-        )
-
-        data_array = ExperimentData(
-            input_data=_array,
-            domain=data.domain.array,
-            project_dir=data._project_dir,
-        )
-
-        d = ExperimentData(
-            project_dir=data._project_dir, domain=data.domain._copy()
-        )
-
-        for _d in [
-            data_continuous,
-            data_discrete,
-            data_categorical,
-            data_constant,
-            data_array,
-        ]:
-            d = d.join(_d)
-
-        return d
-
-
-def latin(seed: Optional[int] = None, **kwargs) -> Block:
-    """
-    Create a Latin Hypercube sampler.
-
-    Parameters
-    ----------
-    seed : Optional[int], optional
-        The random seed, by default None
-    **kwargs : dict
-        Additional parameters for the sampler.
-
-    Returns
-    -------
-    Block
-        An Block instance of a latin hypercube sampler.
-    """
-    return Latin(seed=seed, **kwargs)
 
 
 # =============================================================================

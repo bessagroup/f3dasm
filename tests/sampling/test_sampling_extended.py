@@ -5,9 +5,7 @@ import pytest
 
 from f3dasm import ExperimentData, create_sampler
 from f3dasm._src.samplers import (
-    _stretch_samples,
     next_power_of_two,
-    sample_constant,
 )
 from f3dasm.design import Domain
 
@@ -131,21 +129,6 @@ def test_sobol_sample_count():
     sampler = create_sampler(sampler="sobol", seed=42)
     result = sampler.call(data=data, n_samples=16)
     assert len(result) == 16
-
-
-# ======================= sample_constant =======================
-
-
-def test_sample_constant():
-    domain = Domain()
-    domain.add_constant("c0", 42)
-    domain.add_constant("c1", "hello")
-
-    samples = sample_constant(domain, n_samples=5)
-    assert samples.shape == (5, 2)
-    # Values are stored as objects, compare as strings
-    assert all(str(samples[i, 0]) == "42" for i in range(5))
-    assert all(samples[i, 1] == "hello" for i in range(5))
 
 
 # ======================= Sampler with empty domain =======================
