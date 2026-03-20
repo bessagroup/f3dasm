@@ -474,6 +474,32 @@ def load_object(
 def copy_object(
     object_path: Path, old_project_dir: Path, new_project_dir: Path
 ) -> str:
+    """Copy a stored object file from one project directory to another.
+
+    If a file with the same name already exists in the destination, the stem
+    is incremented numerically until a free name is found.
+
+    Parameters
+    ----------
+    object_path : Path
+        Path of the object relative to the experiment data subfolder.
+    old_project_dir : Path
+        Source project directory.
+    new_project_dir : Path
+        Destination project directory.
+
+    Returns
+    -------
+    str
+        The (possibly renamed) path of the copied file, relative to the
+        experiment data subfolder of `new_project_dir`.
+
+    Raises
+    ------
+    ValueError
+        If an existing file's stem cannot be converted to an integer for
+        automatic renaming.
+    """
     old_location = old_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
     new_location = new_project_dir / EXPERIMENTDATA_SUBFOLDER / object_path
 
@@ -509,10 +535,36 @@ def copy_object(
 
 @dataclass
 class ReferenceValue:
+    """A lightweight reference to an object stored on disk.
+
+    Rather than holding the object itself, a ``ReferenceValue`` stores the
+    path (relative to the experiment-data subfolder) and the callable needed
+    to deserialise it.  The actual object is loaded lazily via :meth:`load`.
+
+    Parameters
+    ----------
+    reference : Path
+        Path to the stored object, relative to the experiment data subfolder.
+    load_function : Callable[[Path], Any]
+        Callable that accepts the absolute path and returns the loaded object.
+    """
+
     reference: Path
     load_function: Callable[[Path], Any]
 
     def load(self, project_dir: Path) -> Any:
+        """Load and return the referenced object from disk.
+
+        Parameters
+        ----------
+        project_dir : Path
+            Root project directory used to resolve the relative `reference`.
+
+        Returns
+        -------
+        Any
+            The object loaded from disk.
+        """
         return load_object(
             project_dir=project_dir,
             path=self.reference,
@@ -523,7 +575,14 @@ class ReferenceValue:
         return self.reference.__str__()
 
     def to_json(self) -> dict:
-        """Convert this ReferenceValue into a JSON-serializable dict."""
+        """Convert this ReferenceValue into a JSON-serializable dict.
+
+        Returns
+        -------
+        dict
+            A dict with ``__type__``, ``reference``, and a hex-encoded
+            pickle of ``load_function``.
+        """
         return {
             "__type__": "ReferenceValue",
             "reference": str(self.reference),
@@ -532,7 +591,18 @@ class ReferenceValue:
 
     @classmethod
     def from_json(cls, data: dict) -> ReferenceValue:
-        """Reconstruct a ReferenceValue from a JSON dict."""
+        """Reconstruct a ReferenceValue from a JSON dict.
+
+        Parameters
+        ----------
+        data : dict
+            Dict as produced by :meth:`to_json`.
+
+        Returns
+        -------
+        ReferenceValue
+            The reconstructed instance.
+        """
         reference = Path(data["reference"])
         load_function = pickle.loads(bytes.fromhex(data["load_function"]))
         return cls(reference=reference, load_function=load_function)
@@ -540,12 +610,48 @@ class ReferenceValue:
 
 @dataclass
 class ToDiskValue:
+    """An object that should be persisted to disk as part of an experiment.
+
+    ``ToDiskValue`` holds the object together with the callables needed to
+    serialise and deserialise it.  Calling :meth:`store` writes the object and
+    returns a :class:`ReferenceValue` path; the original in-memory object is
+    then replaced by that lightweight reference.
+
+    Parameters
+    ----------
+    object : Any
+        The in-memory object to persist.
+    name : str
+        Parameter name used to construct the storage path.
+    store_function : Callable[[Any, Path], Path]
+        Callable that writes `object` to disk and returns the path.
+    load_function : Callable[[Path], Any]
+        Callable that reads and returns the object from disk.
+    """
+
     object: Any
     name: str
     store_function: Callable[[Any, Path], Path]
     load_function: Callable[[Path], Any]
 
     def store(self, project_dir: Path, idx: int) -> Path:
+        """Write the object to disk and return the stored path.
+
+        If the object is already a string or :class:`Path` (i.e. it was
+        previously stored), the path is returned as-is without re-writing.
+
+        Parameters
+        ----------
+        project_dir : Path
+            Root project directory used to build the storage path.
+        idx : int
+            Experiment-sample index used as the file name.
+
+        Returns
+        -------
+        Path
+            Path of the stored file, relative to the experiment data subfolder.
+        """
         if isinstance(self.object, str | Path):
             return Path(self.object)
 
@@ -560,6 +666,18 @@ class ToDiskValue:
         return Path(store_location)
 
     def to_reference(self, reference: Path) -> ReferenceValue:
+        """Convert this value to a :class:`ReferenceValue` after storing.
+
+        Parameters
+        ----------
+        reference : Path
+            The path returned by :meth:`store`.
+
+        Returns
+        -------
+        ReferenceValue
+            A lightweight reference that can load the object on demand.
+        """
         return ReferenceValue(
             reference=reference,
             load_function=self.load_function,

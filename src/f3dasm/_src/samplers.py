@@ -339,6 +339,18 @@ def sample_sobol_sequence(
 
 
 def next_power_of_two(x: int) -> int:
+    """Return the smallest power of two greater than or equal to x.
+
+    Parameters
+    ----------
+    x : int
+        A positive integer.
+
+    Returns
+    -------
+    int
+        The smallest power of two that is >= x.
+    """
     return 1 if x <= 1 else 2 ** (x - 1).bit_length()
 
 
@@ -430,6 +442,8 @@ class RandomUniform(Block):
 
         Parameters
         ----------
+        data : ExperimentData
+            The experiment data object providing the domain and project dir.
         n_samples : int
             The number of samples to generate.
         **kwargs : dict
@@ -437,8 +451,8 @@ class RandomUniform(Block):
 
         Returns
         -------
-        pd.DataFrame
-            The sampled data.
+        ExperimentData
+            A new ExperimentData object containing the sampled input data.
         """
         _continuous = sample_np_random_uniform(
             domain=data.domain.continuous, n_samples=n_samples, seed=self.seed
@@ -562,15 +576,19 @@ class Grid(Block):
 
         Parameters
         ----------
-        stepsize_continuous_parameters : Optional[Dict[str, float] | float]
-            The step size for continuous parameters.
+        data : ExperimentData
+            The experiment data object providing the domain and project dir.
+        stepsize_continuous_parameters : dict[str, float] or float, optional
+            Step size for continuous parameters. If a single float, the same
+            step size is used for all continuous parameters. If a dict, maps
+            parameter names to individual step sizes.
         **kwargs : dict
             Additional parameters for sampling.
 
         Returns
         -------
-        pd.DataFrame
-            The sampled data.
+        ExperimentData
+            A new ExperimentData object containing the sampled input data.
         """
         continuous = data.domain.continuous
 
@@ -638,13 +656,15 @@ def grid(**kwargs) -> Block:
     """
     Create a Grid sampler.
 
+    Parameters
+    ----------
     **kwargs : dict
         Additional parameters for the sampler.
 
     Returns
     -------
     Block
-        An Block instance of a grid sampler.
+        A Block instance of a grid sampler.
     """
     return Grid(**kwargs)
 
@@ -659,8 +679,6 @@ class Sobol(Block):
 
         Parameters
         ----------
-        n_samples : int
-            The number of samples to generate.
         seed : Optional[int]
             The random seed.
         **parameters : dict
@@ -677,6 +695,8 @@ class Sobol(Block):
 
         Parameters
         ----------
+        data : ExperimentData
+            The experiment data object providing the domain and project dir.
         n_samples : int
             The number of samples to generate.
         **kwargs : dict
@@ -684,8 +704,8 @@ class Sobol(Block):
 
         Returns
         -------
-        pd.DataFrame
-            The sampled data.
+        ExperimentData
+            A new ExperimentData object containing the sampled input data.
         """
         _continuous = sample_sobol_sequence(
             domain=data.domain.continuous,
@@ -806,6 +826,8 @@ class Latin(Block):
 
         Parameters
         ----------
+        data : ExperimentData
+            The experiment data object providing the domain and project dir.
         n_samples : int
             The number of samples to generate.
         **kwargs : dict
@@ -813,8 +835,8 @@ class Latin(Block):
 
         Returns
         -------
-        pd.DataFrame
-            The sampled data.
+        ExperimentData
+            A new ExperimentData object containing the sampled input data.
         """
         _continuous = sample_latin_hypercube(
             domain=data.domain.continuous, n_samples=n_samples, seed=self.seed
@@ -890,7 +912,7 @@ class Latin(Block):
 
 def latin(seed: Optional[int] = None, **kwargs) -> Block:
     """
-    Create a lating hypercube sampler.
+    Create a Latin Hypercube sampler.
 
     Parameters
     ----------

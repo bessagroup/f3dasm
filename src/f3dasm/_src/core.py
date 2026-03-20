@@ -41,8 +41,26 @@ __status__ = "Alpha"
 
 
 class Block(ABC):
-    """
-    Abstract base class representing an operation in the data-driven process
+    """Abstract base class representing a single operation in a data-driven
+    pipeline.
+
+    A Block transforms an :class:`ExperimentData` object and returns the
+    updated result. Subclasses must implement the :meth:`call` method.
+    Optionally, they may override :meth:`arm` to perform any one-time setup
+    (e.g. fitting a surrogate model) before the block is executed.
+
+    The built-in samplers (:class:`RandomUniform`, :class:`Latin`,
+    :class:`Sobol`, :class:`Grid`) and the :class:`DataGenerator` are all
+    examples of Block subclasses.
+
+    Examples
+    --------
+    Define a custom block:
+
+    >>> class MyBlock(Block):
+    ...     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+    ...         # transform data here
+    ...         return data
     """
 
     def arm(self, data: ExperimentData) -> None:
@@ -111,9 +129,41 @@ class Block(ABC):
 
 
 class DataGenerator:
-    """Base class for a data generator"""
+    """Base class for generating output data for experiment samples.
+
+    Subclasses must implement the :meth:`execute` method, which receives a
+    single :class:`ExperimentSample` and returns it after storing the computed
+    outputs.  The :meth:`call` method drives execution across a full
+    :class:`ExperimentData` object and supports several parallelisation
+    backends (sequential, multiprocessing, cluster file-lock, MPI).
+
+    Examples
+    --------
+    Define a custom data generator:
+
+    >>> class MyDataGenerator(DataGenerator):
+    ...     def execute(
+    ...         self, experiment_sample: ExperimentSample, **kwargs
+    ...     ) -> ExperimentSample:
+    ...         x0 = experiment_sample.input_data['x0']
+    ...         experiment_sample.store('y', x0 ** 2)
+    ...         return experiment_sample
+    """
 
     def arm(self, data: ExperimentData) -> None:
+        """Prepare the data generator before execution.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data that the generator will operate on.
+
+        Notes
+        -----
+        Override this method in a subclass to perform one-time setup that
+        requires access to the full :class:`ExperimentData` (e.g. fitting a
+        surrogate model). The default implementation does nothing.
+        """
         pass
 
     # =========================================================================
@@ -353,6 +403,14 @@ def datagenerator(
 
 
 class Optimizer(ABC):
+    """Abstract base class for optimization algorithms.
+
+    An Optimizer iteratively suggests new input configurations, evaluates them
+    via a :class:`DataGenerator`, and updates its internal state.  Subclasses
+    must implement :meth:`arm` (one-time setup) and :meth:`call` (the
+    optimization loop).
+    """
+
     @abstractmethod
     def arm(
         self,
@@ -361,10 +419,39 @@ class Optimizer(ABC):
         input_name: str,
         output_name: str,
     ) -> None:
+        """Prepare the optimizer with the experiment data and data generator.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data used to initialize the optimizer state.
+        data_generator : DataGenerator
+            The data generator used to evaluate candidate solutions.
+        input_name : str
+            Name of the input parameter column the optimizer controls.
+        output_name : str
+            Name of the output parameter column the optimizer minimizes.
+        """
         pass
 
     @abstractmethod
     def call(
         self, data: ExperimentData, n_iterations: int, **kwargs
     ) -> ExperimentData:
+        """Run the optimization loop for a given number of iterations.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to optimize.
+        n_iterations : int
+            Number of optimization iterations to perform.
+        **kwargs : dict
+            Additional keyword arguments forwarded to the underlying optimizer.
+
+        Returns
+        -------
+        ExperimentData
+            The experiment data updated with the results of all iterations.
+        """
         pass

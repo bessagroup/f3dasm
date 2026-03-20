@@ -275,7 +275,7 @@ class Domain:
 
         Examples
         --------
-        >>> domain = Domain.from_json('domain.json')
+        >>> domain = Domain.from_file('domain.json')
         """
         # convert filename to Path object
         filename = Path(filename).with_suffix(".json")
@@ -409,7 +409,7 @@ class Domain:
 
         Examples
         --------
-        >>> domain.to_json('domain.json')
+        >>> domain.store('domain.json')
         """
         domain_dict = {
             "input_space": {
@@ -647,7 +647,7 @@ class Domain:
         Examples
         -------
         >>> domain = Domain()
-        >>> domain._new_add('param1', 'float', low=0., high=1.)
+        >>> domain.add('param1', 'float', low=0., high=1.)
         >>> domain.input_space
         {'param1': ContinuousParameter(lower_bound=0., upper_bound=1.)}
         """
@@ -697,8 +697,8 @@ class Domain:
         -------
         >>> domain = Domain()
         >>> domain.add_output('param1', True)
-        >>> domain.input_space
-        {'param1': OutputParameter(to_disk=True)}
+        >>> domain.output_space
+        {'param1': Parameter(to_disk=True)}
         """
         if name in self.output_space:
             if not exist_ok:
@@ -769,7 +769,7 @@ class Domain:
         ...     'param2': DiscreteParameter(lower_bound=0, upper_bound=8),
         ...     'param3': CategoricalParameter(categories=['cat1', 'cat2'])
         ... }
-        >>> filtered_domain = domain.filter_parameters(ContinuousParameter)
+        >>> filtered_domain = domain._filter(ContinuousParameter)
         >>> filtered_domain.input_space
         {'param1': ContinuousParameter(lower_bound=0, upper_bound=1)}
 

@@ -193,6 +193,8 @@ def mpi_store_experiment_sample(
         Index of the experiment sample.
     experiment_sample : Any
         The experiment sample data to be stored.
+    domain : Any
+        The (possibly updated) domain to persist alongside the data.
     """
     logger.debug(f"Process {comm.Get_rank()} requesting lock")
     comm.send(None, dest=MASTER_RANK, tag=LOCK_REQUEST)
