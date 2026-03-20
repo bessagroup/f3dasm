@@ -9,7 +9,7 @@ from __future__ import annotations
 import copy  # noqa: F401
 import pickle
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional, Protocol, Union
 
 import numpy as np
@@ -414,6 +414,7 @@ class ConstantParameter(Parameter):
 # =============================================================================
 
 
+@dataclass
 class ContinuousParameter(Parameter):
     """
     A search space parameter that is continuous.
@@ -441,18 +442,14 @@ class ContinuousParameter(Parameter):
     """
 
     _type: ClassVar[str] = "float"
+    lower_bound: float = field(default_factory=lambda: float("-inf"))
+    upper_bound: float = field(default_factory=lambda: float("inf"))
+    log: bool = False
 
-    def __init__(
-        self,
-        lower_bound: float = float("-inf"),
-        upper_bound: float = float("inf"),
-        log: bool = False,
-    ):
+    def __post_init__(self):
         super().__init__()
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        self.log = log
-
+        self.lower_bound = float(self.lower_bound)
+        self.upper_bound = float(self.upper_bound)
         if self.log and self.lower_bound <= 0.0:
             raise ValueError(
                 f"The `lower_bound` value must be larger than 0 for a "
@@ -499,54 +496,6 @@ class ContinuousParameter(Parameter):
             upper_bound=max(self.upper_bound, other.upper_bound),
         )
 
-    def __str__(self):
-        """Return string representation.
-
-        Returns
-        -------
-        str
-            String representation of the ContinuousParameter.
-        """
-        return (
-            f"ContinuousParameter(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, log={self.log})"
-        )
-
-    def __repr__(self):
-        """Return detailed representation.
-
-        Returns
-        -------
-        str
-            Detailed representation of the ContinuousParameter.
-        """
-        return (
-            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, log={self.log})"
-        )
-
-    def __eq__(self, __o: Parameter) -> bool:
-        """Check equality with another Parameter.
-
-        Parameters
-        ----------
-        __o : Parameter
-            The other Parameter to compare.
-
-        Returns
-        -------
-        bool
-            True if both are ContinuousParameters with equal attributes.
-        """
-        if not isinstance(__o, ContinuousParameter):
-            return False
-
-        return (
-            self.lower_bound == __o.lower_bound
-            and self.upper_bound == __o.upper_bound
-            and self.log == __o.log
-        )
-
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError(
@@ -554,26 +503,6 @@ class ContinuousParameter(Parameter):
                 f"(lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound})"
             )
-
-    def _copy(self) -> ContinuousParameter:
-        """
-        Create a copy of the ContinuousParameter object.
-
-        Returns
-        -------
-        ContinuousParameter
-            A copy of the ContinuousParameter object.
-
-        Examples
-        --------
-        >>> param = ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
-        >>> param_copy = param._copy()
-        """
-        return ContinuousParameter(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-            log=self.log,
-        )
 
     def to_discrete(self, step: int = 1) -> DiscreteParameter:
         """
@@ -609,18 +538,11 @@ class ContinuousParameter(Parameter):
             step=step,
         )
 
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "float"
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        param_dict["log"] = self.log
-        return param_dict
-
 
 # =============================================================================
 
 
+@dataclass
 class DiscreteParameter(Parameter):
     """
     Create a search space parameter that is discrete.
@@ -648,42 +570,15 @@ class DiscreteParameter(Parameter):
     """
 
     _type: ClassVar[str] = "int"
+    lower_bound: int = 0
+    upper_bound: int = 1
+    step: int = 1
 
-    def __init__(
-        self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1
-    ):
+    def __post_init__(self):
         super().__init__()
-        self.lower_bound = int(lower_bound)
-        self.upper_bound = int(upper_bound)
-        self.step = step
-
+        self.lower_bound = int(self.lower_bound)
+        self.upper_bound = int(self.upper_bound)
         self._validate_range()
-
-    def __str__(self):
-        """Return string representation.
-
-        Returns
-        -------
-        str
-            String representation of the DiscreteParameter.
-        """
-        return (
-            f"DiscreteParameter(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, step={self.step})"
-        )
-
-    def __repr__(self):
-        """Return detailed representation.
-
-        Returns
-        -------
-        str
-            Detailed representation of the DiscreteParameter.
-        """
-        return (
-            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, step={self.step})"
-        )
 
     def __add__(self, other: Parameter) -> DiscreteParameter:
         """Add two Parameters.
@@ -711,49 +606,11 @@ class DiscreteParameter(Parameter):
             raise ValueError("Cannot add continuous parameter to discrete!")
         return self  # Assuming the same discrete parameters are being added.
 
-    def __eq__(self, __o: Parameter) -> bool:
-        if not isinstance(__o, DiscreteParameter):
-            return False
-
-        return (
-            self.lower_bound == __o.lower_bound
-            and self.upper_bound == __o.upper_bound
-            and self.step == __o.step
-        )
-
-    def _copy(self) -> DiscreteParameter:
-        """
-        Create a copy of the DiscreteParameter object.
-
-        Returns
-        -------
-        DiscreteParameter
-            A copy of the DiscreteParameter object.
-
-        Examples
-        --------
-        >>> param = DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
-        >>> param_copy = param._copy()
-        """
-        return DiscreteParameter(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-            step=self.step,
-        )
-
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError("Upper bound must be greater than lower bound.")
         if self.step <= 0:
             raise ValueError("Step size must be positive.")
-
-    def to_dict(self):
-        param_dict = super().to_dict()
-        param_dict["type"] = "int"
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        param_dict["step"] = self.step
-        return param_dict
 
 
 # =============================================================================
