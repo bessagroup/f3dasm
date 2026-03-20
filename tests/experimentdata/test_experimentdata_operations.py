@@ -97,9 +97,7 @@ def test_add_two_experiment_data(experiment_data, domain_3d):
 
 
 def test_add_experiment_sample(experiment_data):
-    sample = ExperimentSample(
-        _input_data={"x0": 0.5, "x1": 0.5, "x2": 0.5}
-    )
+    sample = ExperimentSample(_input_data={"x0": 0.5, "x1": 0.5, "x2": 0.5})
     result = experiment_data.add_experiments(sample)
     assert len(result) == 6
 
@@ -110,9 +108,7 @@ def test_add_experiments_invalid_type(experiment_data):
 
 
 def test_add_experiments_in_place(experiment_data):
-    sample = ExperimentSample(
-        _input_data={"x0": 0.5, "x1": 0.5, "x2": 0.5}
-    )
+    sample = ExperimentSample(_input_data={"x0": 0.5, "x1": 0.5, "x2": 0.5})
     result = experiment_data.add_experiments(sample, in_place=True)
     assert result is None
     assert len(experiment_data) == 6
@@ -171,9 +167,7 @@ def test_join_empty_with_nonempty():
     domain.add_float("x0", 0.0, 1.0)
 
     empty = ExperimentData(domain=domain)
-    nonempty = ExperimentData(
-        domain=domain, input_data=[{"x0": 0.5}]
-    )
+    nonempty = ExperimentData(domain=domain, input_data=[{"x0": 0.5}])
 
     result = empty.join(nonempty)
     assert len(result) == 1
@@ -401,9 +395,7 @@ def test_init_with_domain():
 
 
 def test_init_from_list_of_dicts():
-    data = ExperimentData(
-        input_data=[{"x0": 1.0}, {"x0": 2.0}]
-    )
+    data = ExperimentData(input_data=[{"x0": 1.0}, {"x0": 2.0}])
     assert len(data) == 2
 
 

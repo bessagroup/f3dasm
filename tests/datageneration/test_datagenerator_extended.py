@@ -84,9 +84,7 @@ def test_evaluate_sequential_processes_all_samples():
         experiment_sample.store("y", x0 * 2)
         return experiment_sample
 
-    data = ExperimentData(
-        input_data=[{"x0": 1.0}, {"x0": 2.0}, {"x0": 3.0}]
-    )
+    data = ExperimentData(input_data=[{"x0": 1.0}, {"x0": 2.0}, {"x0": 3.0}])
     result = evaluate_sequential(
         execute_fn=execute_fn, data=data, pass_id=False
     )
@@ -100,12 +98,8 @@ def test_evaluate_sequential_processes_all_samples():
 
 def test_create_datagenerator_from_string():
     """Create a DataGenerator from a benchmark function name."""
-    gen = create_datagenerator(
-        data_generator="sphere", output_names="y"
-    )
-    sample = ExperimentSample(
-        _input_data={"x": np.array([1.0, 1.0])}
-    )
+    gen = create_datagenerator(data_generator="sphere", output_names="y")
+    sample = ExperimentSample(_input_data={"x": np.array([1.0, 1.0])})
     result = gen.execute(sample)
     assert result.output_data["y"] == 2.0
 

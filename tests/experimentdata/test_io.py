@@ -107,17 +107,13 @@ def test_project_dir_factory_invalid_type():
 
 def test_store_object_numpy(tmp_path):
     arr = np.array([1, 2, 3])
-    path = store_object(
-        project_dir=tmp_path, object=arr, name="test", id=0
-    )
+    path = store_object(project_dir=tmp_path, object=arr, name="test", id=0)
     assert path.endswith(".npy")
 
 
 def test_store_object_unknown_type_falls_back_to_pickle(tmp_path):
     obj = {"custom": True}
-    path = store_object(
-        project_dir=tmp_path, object=obj, name="test", id=0
-    )
+    path = store_object(project_dir=tmp_path, object=obj, name="test", id=0)
     assert path.endswith(".pkl")
 
 
@@ -172,9 +168,7 @@ def test_copy_object(tmp_path):
     new_dir = tmp_path / "new"
 
     arr = np.array([1, 2, 3])
-    rel_path = store_object(
-        project_dir=old_dir, object=arr, name="test", id=0
-    )
+    rel_path = store_object(project_dir=old_dir, object=arr, name="test", id=0)
     copied_path = copy_object(
         object_path=Path(rel_path),
         old_project_dir=old_dir,

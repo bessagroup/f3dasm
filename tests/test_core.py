@@ -121,7 +121,7 @@ def test_datagenerator_decorator():
 
     @datagenerator(output_names="y")
     def f(x0):
-        return x0 ** 2
+        return x0**2
 
     assert isinstance(f, DataGenerator)
 
@@ -131,7 +131,7 @@ def test_datagenerator_decorator_multiple_outputs():
 
     @datagenerator(output_names=["y0", "y1"])
     def f(x0):
-        return x0, x0 ** 2
+        return x0, x0**2
 
     sample = ExperimentSample(_input_data={"x0": 3.0})
     result = f.execute(sample)
@@ -153,7 +153,7 @@ def test_datagenerator_decorator_sequential_execution():
 
     @datagenerator(output_names="y")
     def f(x0):
-        return x0 ** 2
+        return x0**2
 
     data = ExperimentData(input_data=[{"x0": 2.0}, {"x0": 3.0}])
     result = f.call(data)
