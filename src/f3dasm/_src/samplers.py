@@ -20,7 +20,7 @@ from SALib.sample import sobol as salib_sobol
 from SALib.sample import sobol_sequence
 
 # Locals
-from .design.domain import Domain, Parameter
+from .design.domain import Parameter
 from .design.parameter import (
     ArrayParameter,
     CategoricalParameter,
@@ -558,6 +558,137 @@ def sobol(seed: Optional[int] = None, **kwargs) -> Block:
     return Sobol(seed=seed, **kwargs)
 
 
+#                                                                          Grid
+# =============================================================================
+
+
+def grid_values_continuous_parameters(
+    input_space: dict[str, ContinuousParameter],
+    stepsize_continuous_parameters: Optional[dict[str, float] | float] = None,
+    **kwargs,
+) -> dict[str, np.ndarray]:
+    """
+    Return grid values for continuous parameters.
+
+    Parameters
+    ----------
+    input_space : dict[str, ContinuousParameter]
+        A dictionary mapping parameter names to ContinuousParameter objects.
+    stepsize_continuous_parameters : dict[str, float] or float, optional
+        Step size for continuous parameters. If a single float, the same step
+        size is used for all parameters. If a dict, maps parameter names to
+        individual step sizes.
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        A dictionary mapping parameter names to arrays of grid values.
+    """
+    if isinstance(stepsize_continuous_parameters, float | int):
+        return {
+            name: np.arange(
+                start=param.lower_bound,
+                stop=param.upper_bound,
+                step=stepsize_continuous_parameters,
+            )
+            for name, param in input_space.items()
+        }
+
+    if isinstance(stepsize_continuous_parameters, dict):
+        if len(stepsize_continuous_parameters) != len(input_space):
+            raise ValueError(
+                "If you specify the stepsize for continuous parameters, "
+                "stepsize_continuous_parameters should contain all "
+                "continuous parameters"
+            )
+        discrete_space = {
+            name: input_space[name].to_discrete(step=step)
+            for name, step in stepsize_continuous_parameters.items()
+        }
+        return {
+            name: np.arange(
+                start=param.lower_bound,
+                stop=param.upper_bound,
+                step=param.step,
+            )
+            for name, param in discrete_space.items()
+        }
+
+    # stepsize_continuous_parameters is None — no continuous values
+    return {}
+
+
+def grid_values_discrete_parameters(
+    input_space: dict[str, DiscreteParameter],
+    **kwargs,
+) -> dict[str, range]:
+    """
+    Return grid values for discrete parameters.
+
+    Parameters
+    ----------
+    input_space : dict[str, DiscreteParameter]
+        A dictionary mapping parameter names to DiscreteParameter objects.
+
+    Returns
+    -------
+    dict[str, range]
+        A dictionary mapping parameter names to ranges of grid values.
+    """
+    return {
+        name: range(param.lower_bound, param.upper_bound + 1, param.step)
+        for name, param in input_space.items()
+    }
+
+
+def grid_values_categorical_parameters(
+    input_space: dict[str, CategoricalParameter],
+    **kwargs,
+) -> dict[str, list]:
+    """
+    Return grid values for categorical parameters.
+
+    Parameters
+    ----------
+    input_space : dict[str, CategoricalParameter]
+        A dictionary mapping parameter names to CategoricalParameter objects.
+
+    Returns
+    -------
+    dict[str, list]
+        A dictionary mapping parameter names to lists of categories.
+    """
+    return {name: param.categories for name, param in input_space.items()}
+
+
+def grid_values_constant_parameters(
+    input_space: dict[str, ConstantParameter],
+    **kwargs,
+) -> dict[str, list]:
+    """
+    Return grid values for constant parameters.
+
+    Parameters
+    ----------
+    input_space : dict[str, ConstantParameter]
+        A dictionary mapping parameter names to ConstantParameter objects.
+
+    Returns
+    -------
+    dict[str, list]
+        A dictionary mapping parameter names to single-element lists.
+    """
+    return {name: [param.value] for name, param in input_space.items()}
+
+
+grid_value_mapping: dict[Parameter, callable] = {
+    ContinuousParameter: grid_values_continuous_parameters,
+    DiscreteParameter: grid_values_discrete_parameters,
+    CategoricalParameter: grid_values_categorical_parameters,
+    ConstantParameter: grid_values_constant_parameters,
+}
+
+
 #                                                             Utility functions
 # =============================================================================
 
@@ -582,25 +713,31 @@ def next_power_of_two(x: int) -> int:
 
 
 class Grid(Block):
-    def __init__(self, **parameters):
+    value_mapping: dict[Parameter, callable] = grid_value_mapping
+
+    def __init__(
+        self,
+        stepsize_continuous_parameters: Optional[
+            dict[str, float] | float
+        ] = None,
+        **parameters,
+    ):
         """
         Initialize the Grid sampler.
 
         Parameters
         ----------
+        stepsize_continuous_parameters : dict[str, float] or float, optional
+            Step size for continuous parameters. If a single float, the same
+            step size is used for all continuous parameters. If a dict, maps
+            parameter names to individual step sizes.
         **parameters : dict
-            Additional parameters for the sampler.
+            Additional parameters passed to value functions.
         """
+        self.stepsize_continuous_parameters = stepsize_continuous_parameters
         self.parameters = parameters
 
-    def call(
-        self,
-        data: ExperimentData,
-        stepsize_continuous_parameters: Optional[
-            dict[str, float] | float
-        ] = None,
-        **kwargs,
-    ) -> ExperimentData:
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
         """
         Sample data using the Grid method.
 
@@ -608,72 +745,37 @@ class Grid(Block):
         ----------
         data : ExperimentData
             The experiment data object providing the domain and project dir.
-        stepsize_continuous_parameters : dict[str, float] or float, optional
-            Step size for continuous parameters. If a single float, the same
-            step size is used for all continuous parameters. If a dict, maps
-            parameter names to individual step sizes.
         **kwargs : dict
-            Additional parameters for sampling.
+            Additional parameters (unused, kept for interface consistency).
 
         Returns
         -------
         ExperimentData
-            A new ExperimentData object containing the sampled input data.
+            A new ExperimentData object containing all grid combinations.
         """
-        continuous = data.domain.continuous
-
-        if not continuous.input_space:
-            discrete_space = continuous.input_space
-
-        elif isinstance(stepsize_continuous_parameters, float | int):
-            discrete_space = {
-                name: param.to_discrete(step=stepsize_continuous_parameters)
-                for name, param in continuous.input_space.items()
-            }
-
-        elif isinstance(stepsize_continuous_parameters, dict):
-            discrete_space = {
-                key: continuous.input_space[key].to_discrete(step=value)
-                for key, value in stepsize_continuous_parameters.items()
-            }
-
-            if len(discrete_space) != len(data.domain.continuous):
-                raise ValueError(
-                    "If you specify the stepsize for continuous parameters, \
-                    the stepsize_continuous_parameters should \
-                    contain all continuous parameters"
+        _iterdict = {}
+        for param_type, values_func in self.value_mapping.items():
+            filtered = data.domain._filter(param_type)
+            if filtered.input_space:
+                _iterdict.update(
+                    values_func(
+                        input_space=filtered.input_space,
+                        stepsize_continuous_parameters=(
+                            self.stepsize_continuous_parameters
+                        ),
+                        **self.parameters,
+                    )
                 )
 
-        continuous_to_discrete = Domain(discrete_space)
-
-        _iterdict = {}
-
-        for k, v in data.domain.categorical.input_space.items():
-            _iterdict[k] = v.categories
-
-        for (
-            k,
-            v,
-        ) in data.domain.discrete.input_space.items():
-            _iterdict[k] = range(v.lower_bound, v.upper_bound + 1, v.step)
-
-        for (
-            k,
-            v,
-        ) in continuous_to_discrete.input_space.items():
-            _iterdict[k] = np.arange(
-                start=v.lower_bound, stop=v.upper_bound, step=v.step
-            )
-
-        for (
-            k,
-            v,
-        ) in data.domain.constant.input_space.items():
-            _iterdict[k] = [v.value]
+        # Preserve domain order and drop any parameter types
+        # that yielded nothing
+        _iterdict = {
+            k: _iterdict[k] for k in data.domain.input_names if k in _iterdict
+        }
 
         df = pd.DataFrame(
             list(product(*_iterdict.values())), columns=_iterdict, dtype=object
-        )[data.domain.input_names]
+        )
 
         return ExperimentData(
             domain=data.domain._copy(),
@@ -682,12 +784,19 @@ class Grid(Block):
         )
 
 
-def grid(**kwargs) -> Block:
+def grid(
+    stepsize_continuous_parameters: Optional[dict[str, float] | float] = None,
+    **kwargs,
+) -> Block:
     """
     Create a Grid sampler.
 
     Parameters
     ----------
+    stepsize_continuous_parameters : dict[str, float] or float, optional
+        Step size for continuous parameters. If a single float, the same
+        step size is used for all continuous parameters. If a dict, maps
+        parameter names to individual step sizes.
     **kwargs : dict
         Additional parameters for the sampler.
 
@@ -696,7 +805,9 @@ def grid(**kwargs) -> Block:
     Block
         A Block instance of a grid sampler.
     """
-    return Grid(**kwargs)
+    return Grid(
+        stepsize_continuous_parameters=stepsize_continuous_parameters, **kwargs
+    )
 
 
 # =============================================================================
