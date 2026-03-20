@@ -8,7 +8,6 @@ from __future__ import annotations
 # Standard
 import copy  # noqa: F401
 import pickle
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional, Protocol, Union
 
@@ -616,6 +615,7 @@ class DiscreteParameter(Parameter):
 # =============================================================================
 
 
+@dataclass(eq=False)
 class CategoricalParameter(Parameter):
     """
     Create a search space parameter that is categorical.
@@ -638,31 +638,12 @@ class CategoricalParameter(Parameter):
     """
 
     _type: ClassVar[str] = "category"
+    categories: list[Any] = field(default_factory=list)
 
-    def __init__(self, categories: Iterable[Any]):
+    def __post_init__(self):
         super().__init__()
-        self.categories = categories
+        self.categories = list(self.categories)
         self._check_duplicates()
-
-    def __str__(self):
-        """Return string representation.
-
-        Returns
-        -------
-        str
-            String representation of the CategoricalParameter.
-        """
-        return f"CategoricalParameter(categories={self.categories})"
-
-    def __repr__(self):
-        """Return detailed representation.
-
-        Returns
-        -------
-        str
-            Detailed representation of the CategoricalParameter.
-        """
-        return f"{self.__class__.__name__}(categories={list(self.categories)})"
 
     def __add__(self, other: Parameter) -> CategoricalParameter:
         """Add two Parameters to create a combined categorical.
@@ -729,32 +710,11 @@ class CategoricalParameter(Parameter):
         if len(self.categories) != len(set(self.categories)):
             raise ValueError("Categories contain duplicates!")
 
-    def _copy(self) -> CategoricalParameter:
-        """
-        Create a copy of the CategoricalParameter object.
-
-        Returns
-        -------
-        CategoricalParameter
-            A copy of the CategoricalParameter object.
-
-        Examples
-        --------
-        >>> param = CategoricalParameter(categories=['a', 'b', 'c'])
-        >>> param_copy = param._copy()
-        """
-        return CategoricalParameter(categories=self.categories)
-
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "category"
-        param_dict["categories"] = self.categories
-        return param_dict
-
 
 # =============================================================================
 
 
+@dataclass(eq=False)
 class ArrayParameter(Parameter):
     """
     Create a search space parameter that is an array.
@@ -772,72 +732,34 @@ class ArrayParameter(Parameter):
     ------
     ValueError
         If `shape` is empty or contains non-positive integers.
-        If `upper_bound` is less than or equal to `lower_bound`.
 
     Examples
     --------
-    >>> param = ArrayParameter(shape=[3, 4],
-    lower_bound=0.0, upper_bound=1.0)
-    >>> print(param)
-    ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
+    >>> param = ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
 
     _type: ClassVar[str] = "array"
+    shape: Any = field(default_factory=tuple)
+    lower_bound: Any = field(default_factory=lambda: float("-inf"))
+    upper_bound: Any = field(default_factory=lambda: float("inf"))
 
-    def __init__(
-        self,
-        shape: int | Iterable[int],
-        lower_bound: float | np.ndarray = float("-inf"),
-        upper_bound: float | np.ndarray = float("inf"),
-    ):
+    def __post_init__(self):
         super().__init__()
 
-        if isinstance(shape, int):
-            shape = [shape]
-
-        self.shape = tuple(int(d) for d in shape)
+        if isinstance(self.shape, int):
+            self.shape = (self.shape,)
+        else:
+            self.shape = tuple(int(d) for d in self.shape)
 
         if not self.shape or any(d <= 0 for d in self.shape):
             raise ValueError(
                 "Shape must be a non-empty iterable of positive integers."
             )
 
-        if isinstance(lower_bound, float | int):
-            lower_bound = np.full(self.shape, float(lower_bound))
-        if isinstance(upper_bound, float | int):
-            upper_bound = np.full(self.shape, float(upper_bound))
-
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-
-    def __str__(self):
-        """Return string representation.
-
-        Returns
-        -------
-        str
-            String representation of the ArrayParameter.
-        """
-        return (
-            f"ArrayParameter(shape={self.shape}, "
-            f"lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound})"
-        )
-
-    def __repr__(self):
-        """Return detailed representation.
-
-        Returns
-        -------
-        str
-            Detailed representation of the ArrayParameter.
-        """
-        return (
-            f"{self.__class__.__name__}"
-            f"(shape={self.shape}, "
-            f"lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound})"
-        )
+        if isinstance(self.lower_bound, float | int):
+            self.lower_bound = np.full(self.shape, float(self.lower_bound))
+        if isinstance(self.upper_bound, float | int):
+            self.upper_bound = np.full(self.shape, float(self.upper_bound))
 
     def __eq__(self, other: Parameter) -> bool:
         """Check equality with another Parameter.
@@ -856,38 +778,9 @@ class ArrayParameter(Parameter):
             return False
         return (
             self.shape == other.shape
-            and self.lower_bound == other.lower_bound
-            and self.upper_bound == other.upper_bound
+            and np.array_equal(self.lower_bound, other.lower_bound)
+            and np.array_equal(self.upper_bound, other.upper_bound)
         )
-
-    def _copy(self) -> ArrayParameter:
-        """
-        Create a copy of the ArrayParameter object.
-
-        Returns
-        -------
-        ArrayParameter
-            A copy of the ArrayParameter object.
-
-        Examples
-        --------
-        >>> param = ArrayParameter(shape=[3, 4],
-        lower_bound=0.0, upper_bound=1.0)
-        >>> param_copy = param._copy()
-        """
-        return ArrayParameter(
-            shape=self.shape,
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-        )
-
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "array"
-        param_dict["shape"] = self.shape
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        return param_dict
 
 
 PARAMETERS = [
