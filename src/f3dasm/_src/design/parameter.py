@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy  # noqa: F401
 import pickle
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any, ClassVar, Optional, Protocol, Union
 
 import numpy as np
@@ -139,7 +140,9 @@ class Parameter:
         str
             String representation of the Parameter.
         """
-        return f"Parameter(type={self._type}, to_disk={self.to_disk})"
+        if type(self) is Parameter:
+            return f"Parameter(type={self._type}, to_disk={self.to_disk})"
+        return repr(self)
 
     def __repr__(self):
         """Return a representation of the Parameter.
@@ -313,6 +316,7 @@ class Parameter:
 # =============================================================================
 
 
+@dataclass
 class ConstantParameter(Parameter):
     """
     Create a search space parameter that is constant.
@@ -325,7 +329,7 @@ class ConstantParameter(Parameter):
     Attributes
     ----------
     _type : str
-        The type of the parameter, which is always 'object'.
+        The type of the parameter, which is always 'constant'.
 
     Raises
     ------
@@ -340,10 +344,10 @@ class ConstantParameter(Parameter):
     """
 
     _type: ClassVar[str] = "constant"
+    value: Any  # required, no default
 
-    def __init__(self, value: Any):
+    def __post_init__(self):
         super().__init__()
-        self.value = value
         self._validate_hashable()
 
     def __add__(self, other: Parameter):
@@ -382,22 +386,6 @@ class ConstantParameter(Parameter):
         if isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to constant!")
 
-    def _copy(self) -> ConstantParameter:
-        """
-        Create a copy of the ConstantParameter object.
-
-        Returns
-        -------
-        ConstantParameter
-            A copy of the ConstantParameter object.
-
-        Examples
-        --------
-        >>> param = ConstantParameter(value=5)
-        >>> param_copy = param._copy()
-        """
-        return ConstantParameter(value=self.value)
-
     def to_categorical(self) -> CategoricalParameter:
         """
         Convert the constant parameter to a categorical parameter.
@@ -408,19 +396,6 @@ class ConstantParameter(Parameter):
             The converted categorical parameter.
         """
         return CategoricalParameter(categories=[self.value])
-
-    def to_dict(self):
-        """Convert to dictionary representation.
-
-        Returns
-        -------
-        dict
-            Dictionary containing type, to_disk, and value.
-        """
-        param_dict = super().to_dict()
-        param_dict["type"] = "constant"
-        param_dict["value"] = self.value
-        return param_dict
 
     def _validate_hashable(self):
         """Check if the value is hashable.
@@ -434,44 +409,6 @@ class ConstantParameter(Parameter):
             hash(self.value)
         except TypeError as exc:
             raise TypeError("The value must be hashable.") from exc
-
-    def __str__(self):
-        """Return string representation.
-
-        Returns
-        -------
-        str
-            String representation of the ConstantParameter.
-        """
-        return f"ConstantParameter(value={self.value})"
-
-    def __repr__(self):
-        """Return detailed representation.
-
-        Returns
-        -------
-        str
-            Detailed representation of the ConstantParameter.
-        """
-        return f"{self.__class__.__name__}(value={repr(self.value)})"
-
-    def __eq__(self, __o: Parameter) -> bool:
-        """Check equality with another Parameter.
-
-        Parameters
-        ----------
-        __o : Parameter
-            The other Parameter to compare.
-
-        Returns
-        -------
-        bool
-            True if both are ConstantParameters with equal values.
-        """
-        if not isinstance(__o, ConstantParameter):
-            return False
-
-        return self.value == __o.value
 
 
 # =============================================================================
