@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 # Standard
+import copy  # noqa: F401
 import pickle
 from collections.abc import Iterable
 from typing import Any, ClassVar, Optional, Protocol, Union
@@ -337,6 +338,8 @@ class ConstantParameter(Parameter):
     >>> print(param)
     ConstantParameter(value=5)
     """
+
+    _type: ClassVar[str] = "constant"
 
     def __init__(self, value: Any):
         super().__init__()
@@ -707,6 +710,8 @@ class DiscreteParameter(Parameter):
     DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
     """
 
+    _type: ClassVar[str] = "int"
+
     def __init__(
         self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1
     ):
@@ -714,7 +719,6 @@ class DiscreteParameter(Parameter):
         self.lower_bound = int(lower_bound)
         self.upper_bound = int(upper_bound)
         self.step = step
-        self._type = "int"
 
         self._validate_range()
 
@@ -839,7 +843,7 @@ class CategoricalParameter(Parameter):
     CategoricalParameter(categories=['a', 'b', 'c'])
     """
 
-    _type: ClassVar[str] = "object"
+    _type: ClassVar[str] = "category"
 
     def __init__(self, categories: Iterable[Any]):
         super().__init__()
@@ -983,6 +987,8 @@ class ArrayParameter(Parameter):
     >>> print(param)
     ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
+
+    _type: ClassVar[str] = "array"
 
     def __init__(
         self,
