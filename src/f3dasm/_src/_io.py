@@ -273,10 +273,17 @@ def figure_store(object: plt.Figure, path: str) -> str:
     str
         The path to the stored figure.
     """
-    _path = Path(path).with_suffix(".png")
+    _path = Path(path)
+
     object.savefig(
-        _path, dpi=RESOLUTION_MATPLOTLIB_FIGURE, bbox_inches="tight"
+        _path.with_suffix(".pdf"),
+        format="pdf",
+        bbox_inches="tight",
+        pad_inches=0.01,
+        transparent=True,
+        dpi=RESOLUTION_MATPLOTLIB_FIGURE,
     )
+
     return str(_path)
 
 
@@ -294,7 +301,7 @@ def figure_load(path: str) -> np.ndarray:
     np.ndarray
         The loaded figure.
     """
-    _path = Path(path).with_suffix(".png")
+    _path = Path(path).with_suffix(".pdf")
     return plt.imread(_path)
 
 
