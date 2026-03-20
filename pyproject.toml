@@ -36,7 +36,7 @@ maintainers = [
 name = "f3dasm"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2.2.2"
+version = "2.2.3"
 
 [project.optional-dependencies]
 all = [

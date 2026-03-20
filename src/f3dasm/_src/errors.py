@@ -10,9 +10,12 @@ class EmptyFileError(Exception):
         """
         Initializes the EmptyFileError.
 
-        Args:
-            file_path (str | Path): The path to the empty file.
-            message (str): A custom error message.
+        Parameters
+        ----------
+        file_path : str or Path
+            The path to the empty file.
+        message : str, optional
+            A custom error message, by default "File is empty".
         """
         self.file_path = Path(file_path)  # Ensure it's a Path object
         self.message = f"{message}: {self.file_path}"
@@ -26,11 +29,14 @@ class DecodeError(Exception):
         self, file_path: str | Path = "", message: str = "Error decoding file"
     ):
         """
-        Initializes the EmptyFileError.
+        Initializes the DecodeError.
 
-        Args:
-            file_path (str | Path): The path to faulty file.
-            message (str): A custom error message.
+        Parameters
+        ----------
+        file_path : str or Path, optional
+            The path to faulty file, by default "".
+        message : str, optional
+            A custom error message, by default "Error decoding file".
         """
         self.file_path = file_path  # Ensure it's a Path object
         self.message = f"{message}: {self.file_path}"
@@ -49,9 +55,15 @@ class ReachMaximumTriesError(Exception):
         """
         Initializes the ReachMaximumTriesError.
 
-        Args:
-            max_tries (int): The maximum number of tries.
-            message (str): A custom error message.
+        Parameters
+        ----------
+        file_path : str or Path
+            The path to the file that was being accessed.
+        max_tries : int
+            The maximum number of tries.
+        message : str, optional
+            A custom error message,
+            by default "Reached maximum number of tries".
         """
         self.max_tries = max_tries
         self.message = f"{message} for {file_path}: {self.max_tries}"
@@ -65,9 +77,12 @@ class TimeOutError(Exception):
         """
         Initializes the TimeOutError.
 
-        Args:
-            max_tries (int): The maximum number of tries.
-            message (str): A custom error message.
+        Parameters
+        ----------
+        timeout : int
+            The timeout duration in seconds.
+        message : str, optional
+            A custom error message, by default "Reached time-out".
         """
         self.timeout = timeout
         self.message = (

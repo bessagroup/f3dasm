@@ -463,6 +463,12 @@ class ExperimentData:
         ----------
         project_dir : Path or str
             User defined path of the experimentdata directory.
+        wait_for_creation : bool, optional
+            If True, wait for files to be created if not found,
+            by default False.
+        max_tries : int, optional
+            Maximum number of attempts to read the files,
+            by default MAX_TRIES.
 
         Returns
         -------
@@ -1020,6 +1026,8 @@ class ExperimentData:
         ----------
         decimals : int
             Number of decimals to round to.
+        in_place : bool, optional
+            If True, round values in place, by default False.
 
         Examples
         --------
@@ -1188,6 +1196,25 @@ class ExperimentData:
                     )
 
     def update_from_experimentssample_json(self, in_place: bool = False):
+        """
+        Update the ExperimentData from ExperimentSample JSON files.
+
+        Parameters
+        ----------
+        in_place : bool, optional
+            If True, update in place, by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            Updated ExperimentData object, or None if in_place is True.
+
+        Notes
+        -----
+        This method loads ExperimentSample objects from JSON files in
+        the EXPERIMENTSAMPLE_SUBFOLDER directory. If loading fails for
+        any file, a warning is logged and the process continues.
+        """
         d = self._copy(in_place=in_place)
 
         for json_file in (d.project_dir / EXPERIMENTSAMPLE_SUBFOLDER).glob(
@@ -1360,17 +1387,17 @@ def _from_file_attempt(
     max_tries: int = MAX_TRIES,
     wait_for_creation: bool = False,
 ) -> ExperimentData:
-    """Attempt to create an ExperimentData object
-    from .csv and .pkl files.
+    """Attempt to create an ExperimentData object from .csv and .json
+    files.
 
     Parameters
     ----------
     project_dir : Path
         Name of the user-defined directory where the files are stored.
     max_tries : int, optional
-        Maximum number of tries to read the files, by default MAX_TRIES
+        Maximum number of tries to read the files, by default MAX_TRIES.
     wait_for_creation : bool, optional
-        If True, wait for the files to be created, by default False
+        If True, wait for the files to be created, by default False.
 
     Returns
     -------
@@ -1381,6 +1408,8 @@ def _from_file_attempt(
     ------
     FileNotFoundError
         If the files cannot be found.
+    ReachMaximumTriesError
+        If maximum number of tries is exceeded.
     """
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -1421,21 +1450,26 @@ def convert_numpy_to_dataframe_with_domain(
     mode: Literal["input", "output"],
 ) -> pd.DataFrame:
     """
-    Convert a numpy array to a pandas DataFrame with the domain names
+    Convert a numpy array to a pandas DataFrame with the domain names.
 
     Parameters
     ----------
     array : np.ndarray
-        The numpy array to be converted
-    names : List[str], optional
-        The names of the columns, by default None
-    mode : str
-        The mode of the data, either 'input' or 'output'
+        The numpy array to be converted.
+    names : list[str], optional
+        The names of the columns, by default None.
+    mode : {'input', 'output'}
+        The mode of the data, either 'input' or 'output'.
 
     Returns
     -------
     pd.DataFrame
-        The converted data as a pandas DataFrame
+        The converted data as a pandas DataFrame.
+
+    Raises
+    ------
+    ValueError
+        If mode is not 'input' or 'output'.
     """
     if not names:
         if mode == "input":
@@ -1453,6 +1487,26 @@ def convert_numpy_to_dataframe_with_domain(
 
 
 def merge_dicts(list_of_dicts):
+    """
+    Merge a list of dictionaries with ordered keys and None padding.
+
+    Parameters
+    ----------
+    list_of_dicts : list[dict]
+        List of dictionaries to merge.
+
+    Returns
+    -------
+    dict
+        Merged dictionary with keys ordered by category ('jobs', 'input',
+        'output') and all values padded with None for missing keys.
+
+    Notes
+    -----
+    Keys are sorted first by category order (jobs=0, input=1, output=2),
+    then alphabetically within each group. Missing keys in any dictionary
+    are filled with None values.
+    """
     merged_dict = defaultdict(list)
 
     # Get all unique keys from all dictionaries
@@ -1480,22 +1534,28 @@ def _dict_factory(
     data: pd.DataFrame | list[dict[str, Any]] | None | Path | str,
 ) -> list[dict[str, Any]]:
     """
-    Convert the DataTypes to a list of dictionaries
+    Convert the DataTypes to a list of dictionaries.
 
     Parameters
     ----------
-    data : pd.DataFrame | List[Dict[str, Any]] | None | Path | str
-        The data to be converted
+    data : pd.DataFrame or list[dict[str, Any]] or None or Path or str
+        The data to be converted.
 
     Returns
     -------
-    List[Dict[str, Any]]
-        The converted data as a list of dictionaries
+    list[dict[str, Any]]
+        The converted data as a list of dictionaries.
 
     Raises
     ------
     ValueError
-        Raised when the data type is not supported
+        Raised when the data type is not supported.
+    FileNotFoundError
+        If the file path does not exist.
+    EmptyFileError
+        If the file is empty.
+    DecodeError
+        If the file cannot be decoded.
 
     Notes
     -----
@@ -1539,26 +1599,29 @@ def data_factory(
     project_dir: Path,
 ) -> dict[int, ExperimentSample]:
     """
-    Convert the input and output data to a defaultdictionary
-    of ExperimentSamples
+    Convert the input and output data to a defaultdict of
+    ExperimentSamples.
 
     Parameters
     ----------
-    input_data : List[Dict[str, Any]]
-        The input data of the experiments
-    output_data : List[Dict[str, Any]]
-        The output data of the experiments
+    input_data : list[dict[str, Any]]
+        The input data of the experiments.
+    output_data : list[dict[str, Any]]
+        The output data of the experiments.
     jobs : pd.Series
-        The status of all the jobs
+        The status of all the jobs.
     project_dir : Path
-        The project directory of the data
-
+        The project directory of the data.
 
     Returns
     -------
-    Dict[int, ExperimentSample]
-        The converted data as a defaultdict of ExperimentSamples
+    dict[int, ExperimentSample]
+        The converted data as a defaultdict of ExperimentSamples.
 
+    Notes
+    -----
+    NaN and None values are removed from input and output data before
+    creating ExperimentSample objects.
     """
     # remove all key-value pairs that have a None or np.nan value
     input_data = remove_nan_and_none_keys_inplace(input_data)
@@ -1582,6 +1645,25 @@ def data_factory(
 
 
 def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
+    """
+    Remove keys with NaN or None values from dictionaries in place.
+
+    Parameters
+    ----------
+    data_list : list[dict[str, Any]]
+        List of dictionaries to clean.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        The same list with NaN and None keys removed from each
+        dictionary.
+
+    Notes
+    -----
+    This function modifies the dictionaries in place. Keys are removed
+    if their values are None or NaN (for float values).
+    """
     for data in data_list:
         keys_to_remove = [
             k
@@ -1595,6 +1677,37 @@ def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
 
 
 def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
+    """
+    Convert jobs data to a pandas Series.
+
+    Parameters
+    ----------
+    jobs : pd.Series or str or Path or None
+        The jobs data to convert. Can be a Series, path to a CSV file,
+        or None.
+
+    Returns
+    -------
+    pd.Series
+        The jobs data as a pandas Series.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file path does not exist.
+    EmptyFileError
+        If the file is empty.
+    DecodeError
+        If the file cannot be decoded.
+    ValueError
+        If the jobs type is not supported.
+
+    Notes
+    -----
+    If jobs is None, an empty Series is returned. If jobs is already
+    a Series, it is returned as-is. If jobs is a path, the CSV file
+    is read and converted to a Series.
+    """
     if isinstance(jobs, pd.Series):
         return jobs
 
@@ -1631,6 +1744,31 @@ def _store(
     idx: int,
     domain: Domain,
 ) -> ExperimentSample:
+    """
+    Store an ExperimentSample and update the Domain accordingly.
+
+    Parameters
+    ----------
+    experiment_sample : ExperimentSample
+        The experiment sample to store.
+    idx : int
+        The index of the experiment sample.
+    domain : Domain
+        The domain to update with new parameters or outputs.
+
+    Returns
+    -------
+    tuple of (ExperimentSample, Domain)
+        The updated experiment sample and domain.
+
+    Notes
+    -----
+    This function processes both input and output data. For values that
+    are ToDiskValue instances, it stores them to disk and updates the
+    experiment sample with a reference. It also ensures that all
+    parameters and outputs are added to the domain if not already
+    present.
+    """
     for name, value in experiment_sample._output_data.items():
         # If the value is a ToDiskValue, we need to store it
         if isinstance(value, ToDiskValue):
