@@ -47,14 +47,12 @@ def test_parameter_init(to_disk, store_function, load_function, raises):
         assert param.load_function == load_function
 
 
-def test_parameter_str():
-    param = Parameter()
-    assert str(param) == "Parameter(type=object, to_disk=False)"
-
-
 def test_parameter_repr():
     param = Parameter()
-    assert repr(param) == "Parameter(to_disk=False)"
+    assert (
+        repr(param)
+        == "Parameter(to_disk=False, store_function=None, load_function=None)"
+    )
 
 
 def test_parameter_eq():

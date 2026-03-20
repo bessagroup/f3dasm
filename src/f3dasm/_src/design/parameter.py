@@ -8,6 +8,7 @@ from __future__ import annotations
 # Standard
 import pickle
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any, ClassVar, Optional, Protocol, Union
 
 import numpy as np
@@ -72,69 +73,24 @@ class LoadFunction(Protocol):
 # =============================================================================
 
 
+@dataclass(eq=False)
 class Parameter:
     """Interface class of a search space parameter."""
 
     _type: ClassVar[str] = "object"
 
-    def __init__(
-        self,
-        to_disk: bool = False,
-        store_function: Optional[StoreFunction] = None,
-        load_function: Optional[LoadFunction] = None,
-    ):
-        """
-        Initialize the Parameter.
+    to_disk: bool = False
+    store_function: Optional[StoreFunction] = None
+    load_function: Optional[LoadFunction] = None
 
-        Parameters
-        ----------
-        to_disk : bool, optional
-            Whether the parameter should be saved to disk. Defaults to False.
-        store_function : Optional[StoreFunction], optional
-            Function to store the parameter to disk. Defaults to None.
-        load_function : Optional[LoadFunction], optional
-            Function to load the parameter from disk. Defaults to None.
-
-        Raises
-        ------
-        ValueError
-            If `to_disk` is False but either `store_function` or
-            `load_function` is not None.
-
-        Notes
-        -----
-        The `store_function` and `load_function` parameters are used to store
-        the parameter to disk and load it from disk, respectively. f3dasm has
-        built-in support for some common datatypes (numpy array, pandas
-        DataFrame, xarray Dataarray and Dataset), for those data types the
-        `store_function` and `load_function` are automatically set. If the
-        parameter is not one of these types, the user must provide a custom
-        `store_function` and `load_function`.
-
-        Examples
-        --------
-        >>> param = Parameter(to_disk=True)
-        >>> print(param)
-        Parameter(type=object, to_disk=True)
-        """
-
-        if not to_disk and (
-            store_function is not None or load_function is not None
+    def __post_init__(self):
+        if not self.to_disk and (
+            self.store_function is not None or self.load_function is not None
         ):
             raise ValueError(
                 "If 'to_disk' is False, 'store_function' and"
                 "load_function' must be None."
             )
-
-        self.to_disk = to_disk
-        self.store_function = store_function
-        self.load_function = load_function
-
-    def __str__(self):
-        return f"Parameter(type={self._type}, to_disk={self.to_disk})"
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(to_disk={self.to_disk})"
 
     def __eq__(self, __o: Parameter):
         return self.to_disk == __o.to_disk
