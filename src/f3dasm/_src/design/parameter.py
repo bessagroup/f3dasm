@@ -7,6 +7,7 @@ from __future__ import annotations
 
 # Standard
 import copy  # noqa: F401
+import dataclasses
 import pickle
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional, Protocol, Union
@@ -230,21 +231,24 @@ class Parameter:
         >>> param = Parameter(to_disk=True)
         >>> param_dict = param.to_dict()
         """
-        param_dict = {
+        d: dict = {
             "type": self._type,
             "to_disk": self.to_disk,
-            "store_function": None,
-            "load_function": None,
+            "store_function": (
+                pickle.dumps(self.store_function).hex()
+                if self.store_function
+                else None
+            ),
+            "load_function": (
+                pickle.dumps(self.load_function).hex()
+                if self.load_function
+                else None
+            ),
         }
-        if self.store_function:
-            param_dict["store_function"] = pickle.dumps(
-                self.store_function
-            ).hex()
-        if self.load_function:
-            param_dict["load_function"] = pickle.dumps(
-                self.load_function
-            ).hex()
-        return param_dict
+        if dataclasses.is_dataclass(self):
+            for f in dataclasses.fields(self):
+                d[f.name] = getattr(self, f.name)
+        return d
 
     @classmethod
     def from_dict(cls, param_dict: dict) -> Parameter:
@@ -263,17 +267,18 @@ class Parameter:
 
         Examples
         --------
-        >>> param_dict = {'type': 'object', 'to_disk': False}
+        >>> param_dict = {'type': 'object', 'to_disk': False,
+        ...               'store_function': None, 'load_function': None}
         >>> param = Parameter.from_dict(param_dict)
         """
         param_type = param_dict["type"]
         store_function = None
         load_function = None
-        if param_dict["store_function"]:
+        if param_dict.get("store_function"):
             store_function = pickle.loads(
                 bytes.fromhex(param_dict["store_function"])
             )
-        if param_dict["load_function"]:
+        if param_dict.get("load_function"):
             load_function = pickle.loads(
                 bytes.fromhex(param_dict["load_function"])
             )
@@ -284,32 +289,13 @@ class Parameter:
                 store_function=store_function,
                 load_function=load_function,
             )
-        elif param_type == "float":
-            return ContinuousParameter(
-                lower_bound=param_dict.get("lower_bound", float("-inf")),
-                upper_bound=param_dict.get("upper_bound", float("inf")),
-                log=param_dict.get("log", False),
-            )
-        elif param_type == "int":
-            return DiscreteParameter(
-                lower_bound=param_dict.get("lower_bound", 0),
-                upper_bound=param_dict.get("upper_bound", 1),
-                step=param_dict.get("step", 1),
-            )
-        elif param_type == "category":
-            return CategoricalParameter(
-                categories=param_dict.get("categories", [])
-            )
-        elif param_type == "constant":
-            return ConstantParameter(value=param_dict.get("value"))
-        elif param_type == "array":
-            return ArrayParameter(
-                shape=param_dict.get("shape", ()),
-                lower_bound=param_dict.get("lower_bound", float("-inf")),
-                upper_bound=param_dict.get("upper_bound", float("inf")),
-            )
-        else:
+
+        param_cls = _PARAM_REGISTRY.get(param_type)
+        if param_cls is None:
             raise ValueError(f"Unknown parameter type: {param_type}")
+        fields = {f.name for f in dataclasses.fields(param_cls)}
+        kwargs = {k: v for k, v in param_dict.items() if k in fields}
+        return param_cls(**kwargs)
 
 
 # =============================================================================
@@ -790,3 +776,7 @@ PARAMETERS = [
     DiscreteParameter,
     ArrayParameter,
 ]
+
+_PARAM_REGISTRY: dict[str, type[Parameter]] = {
+    cls._type: cls for cls in PARAMETERS
+}
