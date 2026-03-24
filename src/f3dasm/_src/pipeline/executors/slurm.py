@@ -58,7 +58,6 @@ class SlurmExecutor(Executor):
         pipeline: Pipeline,
         project_dir: str | Path | None = None,
         project_job: str | None = None,
-        n_jobs: int | None = None,
     ) -> str:
         """Submit the pipeline to SLURM.
 
@@ -77,9 +76,6 @@ class SlurmExecutor(Executor):
         project_job : str, optional
             Project job ID for resumption. If ``None``, the first
             submitted SLURM job ID is used.
-        n_jobs : int, optional
-            Number of jobs for array steps. If ``None``, the
-            executor reads from ``jobs.csv`` at submission time.
 
         Returns
         -------
@@ -131,13 +127,13 @@ class SlurmExecutor(Executor):
                 label=label,
                 project_dir=resolved_dir,
                 project_job=resolved_job,
-                n_jobs=n_jobs,
+                n_jobs=step.array_jobs,
                 # TODO n_jobs needs to represent the number of experiments
                 iteration=iteration,
             )
 
             # Write script to disk for auditability
-            script_dir: Path = resolved_dir / "slurm_scripts"
+            script_dir: Path = run_dir / "slurm_scripts"
             script_dir.mkdir(parents=True, exist_ok=True)
             script_path: Path = (script_dir / f"{label}").with_suffix(".sh")
             script_path.write_text(script)
