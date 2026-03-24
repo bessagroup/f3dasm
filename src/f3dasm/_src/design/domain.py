@@ -203,61 +203,6 @@ class Domain:
         """
         return list(self.output_space.keys())
 
-    @property
-    def continuous(self) -> Domain:
-        """Filter the continuous parameters of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object containing the continuous parameters.
-        """
-        return self._filter(ContinuousParameter)
-
-    @property
-    def discrete(self) -> Domain:
-        """Filter the discrete parameters of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object containing the discrete parameters.
-        """
-        return self._filter(DiscreteParameter)
-
-    @property
-    def categorical(self) -> Domain:
-        """Filter the categorical parameters of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object containing the categorical parameters.
-        """
-        return self._filter(CategoricalParameter)
-
-    @property
-    def constant(self) -> Domain:
-        """Filter the constant parameters of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object containing the constant parameters.
-        """
-        return self._filter(ConstantParameter)
-
-    @property
-    def array(self) -> Domain:
-        """Filter the array parameters of the domain.
-
-        Returns
-        -------
-        Domain
-            Domain object containing the array parameters.
-        """
-        return self._filter(ArrayParameter)
-
     #                                                  Alternative constructors
     # =========================================================================
 
@@ -747,7 +692,7 @@ class Domain:
         return np.array(
             [
                 [parameter.lower_bound, parameter.upper_bound]
-                for _, parameter in self.continuous.input_space.items()
+                for _, parameter in self.input_space.items()
             ]
         )
 
