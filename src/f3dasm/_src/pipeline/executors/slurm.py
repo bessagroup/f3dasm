@@ -7,10 +7,12 @@ from __future__ import annotations
 
 # Standard
 import logging
-import pickle
 import subprocess
 import time
 from pathlib import Path
+
+# Third-party
+import cloudpickle
 
 # Local
 from ..pipeline import Pipeline, Step
@@ -104,7 +106,7 @@ class SlurmExecutor(Executor):
 
         pipeline_path: Path = run_dir / ".pipeline.pkl"
         with open(pipeline_path, "wb") as f:
-            pickle.dump(pipeline, f)
+            cloudpickle.dump(pipeline, f)
         logger.info(f"Pipeline serialized to {pipeline_path}")
 
         # Create the log directory for SLURM output files.

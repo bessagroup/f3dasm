@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import argparse
 import logging
-import pickle
 import sys
 from pathlib import Path
+
+import cloudpickle
 
 from ..core import Block, DataGenerator
 from ..experimentdata import ExperimentData
@@ -85,7 +86,7 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     with open(pipeline_path, "rb") as f:
-        pipeline: Pipeline = pickle.load(f)  # noqa: S301
+        pipeline: Pipeline = cloudpickle.load(f)  # noqa: S301
 
     # --- Find the requested step by name ---
     step: Step | None = _find_step(pipeline, args.step)
