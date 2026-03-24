@@ -190,7 +190,7 @@ def _execute_step(
         result: ExperimentData = block.call(data=data, **step.kwargs)
         result.store(run_dir)
     elif callable(block):
-        block(project_dir=run_dir)
+        block(project_dir=run_dir, **step.kwargs)
     else:
         raise TypeError(
             f"Step {step.name!r} has an unsupported block type: {type(block)}"
