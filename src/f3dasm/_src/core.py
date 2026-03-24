@@ -99,6 +99,23 @@ class Block(ABC):
         """
         pass
 
+    def __rshift__(self, other: Block) -> ChainedBlock:
+        """Chain two blocks with the ``>>`` operator.
+
+        Parameters
+        ----------
+        other : Block
+            The block to execute after this one.
+
+        Returns
+        -------
+        ChainedBlock
+            A new block that runs ``self`` then ``other``.
+        """
+        if isinstance(other, ChainedBlock):
+            return ChainedBlock(blocks=[self, *other.blocks])
+        return ChainedBlock(blocks=[self, other])
+
     @classmethod
     def from_yaml(
         cls, init_config: DictConfig, call_config: Optional[DictConfig] = None
@@ -123,6 +140,51 @@ class Block(ABC):
             block.call = partial(block.call, **call_config)
 
         return block
+
+
+class ChainedBlock(Block):
+    """A block that runs multiple blocks in sequence.
+
+    Created automatically by the ``>>`` operator on
+    :class:`Block` instances.
+
+    Parameters
+    ----------
+    blocks : list[Block]
+        The blocks to execute in order.
+    """
+
+    def __init__(self, blocks: list[Block]) -> None:
+        self.blocks = blocks
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Execute all chained blocks in order.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments for each block.
+
+        Returns
+        -------
+        ExperimentData
+            The processed experiment data.
+        """
+        for block in self.blocks:
+            data = block.call(data=data, **kwargs)
+        return data
+
+    def arm(self, data: ExperimentData) -> None:
+        """Arm all chained blocks."""
+        for block in self.blocks:
+            block.arm(data)
+
+    def __rshift__(self, other: Block) -> ChainedBlock:
+        if isinstance(other, ChainedBlock):
+            return ChainedBlock(blocks=[*self.blocks, *other.blocks])
+        return ChainedBlock(blocks=[*self.blocks, other])
 
 
 # =============================================================================
@@ -199,7 +261,7 @@ class DataGenerator:
 
     def call(
         self,
-        data: ExperimentData | str,
+        data: ExperimentData,
         mode: str = "sequential",
         pass_id: bool = False,
         **kwargs,
@@ -209,7 +271,7 @@ class DataGenerator:
 
         Parameters
         ----------
-        data : ExperimentData | str
+        data : ExperimentData
             The experiment data to process.
         mode : str, optional
             The mode of evaluation, by default 'sequential'
