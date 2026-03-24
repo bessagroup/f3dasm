@@ -53,7 +53,6 @@ class LocalExecutor(Executor):
         pipeline: Pipeline,
         project_dir: str | Path | None = None,
         project_job: str | None = None,
-        from_step: str | None = None,
     ) -> str:
         """Execute the pipeline locally.
 
@@ -65,8 +64,6 @@ class LocalExecutor(Executor):
             Working directory. Defaults to cwd.
         project_job : str, optional
             Project job ID. Generated if not provided.
-        from_step : str, optional
-            Step name to resume from (skips earlier steps).
 
         Returns
         -------
@@ -82,16 +79,8 @@ class LocalExecutor(Executor):
         # Flatten the pipeline into a linear sequence of
         # (step, iteration_index, total_iterations) tuples.
         flat_steps: list[tuple[Step, int, int]] = pipeline._flatten()
-        skip: bool = from_step is not None
 
         for step, iteration, n_iterations in flat_steps:
-            # Skip steps until we reach the resume point
-            if skip:
-                if step.name == from_step:
-                    skip = False
-                else:
-                    continue
-
             if n_iterations > 1:
                 logger.info(
                     f"[iter {iteration + 1}/{n_iterations}] "

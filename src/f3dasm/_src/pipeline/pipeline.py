@@ -68,6 +68,7 @@ class Step:
     parallel: bool = False
     resources: SlurmResources = field(default_factory=SlurmResources)
     dependency: Literal["afterok", "afterany"] = "afterok"
+    array_jobs: int | None = None
     kwargs: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

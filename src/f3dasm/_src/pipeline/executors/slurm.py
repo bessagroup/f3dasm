@@ -58,7 +58,6 @@ class SlurmExecutor(Executor):
         pipeline: Pipeline,
         project_dir: str | Path | None = None,
         project_job: str | None = None,
-        from_step: str | None = None,
         n_jobs: int | None = None,
     ) -> str:
         """Submit the pipeline to SLURM.
@@ -78,8 +77,6 @@ class SlurmExecutor(Executor):
         project_job : str, optional
             Project job ID for resumption. If ``None``, the first
             submitted SLURM job ID is used.
-        from_step : str, optional
-            Step name to resume from (skips earlier steps).
         n_jobs : int, optional
             Number of jobs for array steps. If ``None``, the
             executor reads from ``jobs.csv`` at submission time.
@@ -117,17 +114,9 @@ class SlurmExecutor(Executor):
 
         # Flatten the pipeline into linear step sequence
         flat_steps: list[tuple[Step, int, int]] = pipeline._flatten()
-        skip: bool = from_step is not None
         prev_job_id: str | None = None
 
         for step, iteration, n_iterations in flat_steps:
-            # Skip steps until we reach the resume point
-            if skip:
-                if step.name == from_step:
-                    skip = False
-                else:
-                    continue
-
             # Build a unique label for this submission
             # (e.g. "run_loop2" for iteration 2 of a loop)
             label: str = step.name
@@ -143,6 +132,7 @@ class SlurmExecutor(Executor):
                 project_dir=resolved_dir,
                 project_job=resolved_job,
                 n_jobs=n_jobs,
+                # TODO n_jobs needs to represent the number of experiments
                 iteration=iteration,
             )
 
@@ -292,11 +282,9 @@ def render_sbatch_script(
     ]
 
     # --- Array job configuration (parallel steps only) ---
-    if step.parallel and n_jobs is not None and n_jobs > 0:
+    if step.parallel and n_jobs is not None:
         array_size: int = min(n_jobs, res.max_array_size)
-        lines.append(
-            f"#SBATCH --array=0-{array_size - 1}%{res.max_concurrent}"
-        )
+        lines.append(f"#SBATCH --array=0-{array_size}%{res.max_concurrent}")
 
     # --- Log output paths ---
     log_dir: str = cluster.log_dir.format(project_job=project_job)
