@@ -31,6 +31,10 @@ class Loop:
     Use ``Loop`` inside a :class:`Pipeline`'s ``steps`` list to
     express iterative workflows (e.g. train → evaluate loops).
 
+    In SLURM mode, a self-resubmitting orchestrator script is
+    generated so that only one iteration's jobs are queued at a
+    time, preventing cluster job-count limits from being exceeded.
+
     Parameters
     ----------
     n_iterations : int

@@ -16,6 +16,7 @@ from pathlib import Path
 import cloudpickle
 
 # Local
+from ..loop import Loop
 from ..pipeline import Pipeline, Step
 from ..resources import SlurmCluster, SlurmResources
 from .base import Executor
@@ -32,15 +33,22 @@ __status__ = "Stable"
 
 logger = logging.getLogger("f3dasm")
 
+# Default resources for the orchestrator job (lightweight — it only
+# runs ``sbatch`` commands and exits).
+_DEFAULT_ORCH_RESOURCES = SlurmResources(
+    time="00:10:00", mem="1G", cpus_per_task=1, nodes=1
+)
+
 
 @dataclass
 class SlurmExecutor(Executor):
     """Execute a pipeline by submitting SLURM jobs.
 
-    Each :class:`Step` becomes one ``sbatch`` submission.
-    Dependencies between consecutive steps are expressed via
-    ``--dependency``.  Parallel steps are submitted as array
-    jobs.
+    A single self-resubmitting **orchestrator** script manages the
+    entire pipeline. It uses a ``STEP_COUNT`` (which pipeline
+    element to handle) and a ``LOOP_COUNT`` (current loop
+    iteration) to progress through the pipeline one step or loop
+    iteration at a time.
 
     Parameters
     ----------
@@ -58,10 +66,10 @@ class SlurmExecutor(Executor):
     ) -> str:
         """Submit the pipeline to SLURM.
 
-        Iterates over the flattened pipeline steps, renders an
-        sbatch script for each, writes it to disk, and submits
-        with ``sbatch``. Consecutive steps are chained via SLURM
-        job dependencies (``--dependency=afterok:<id>``).
+        Generates bash scripts for every pipeline element, renders
+        a single orchestrator script, and submits it via
+        ``sbatch``. The orchestrator handles all step submissions
+        and dependency chaining.
 
         Parameters
         ----------
@@ -71,8 +79,8 @@ class SlurmExecutor(Executor):
             Base project directory. Defaults to the cluster's
             scratch directory.
         project_job : str, optional
-            Project job ID for resumption. If ``None``, the first
-            submitted SLURM job ID is used.
+            Project job ID for resumption. If ``None``, a
+            timestamp-based ID is generated.
 
         Returns
         -------
@@ -82,11 +90,6 @@ class SlurmExecutor(Executor):
         resolved_dir: Path = (
             Path(project_dir or self.cluster.scratch_dir) / pipeline.name
         )
-
-        # Resolve the project_job upfront so it can be embedded in
-        # scripts and used as the pickle path before any job is
-        # submitted. When resuming, the caller provides the existing
-        # job ID; otherwise we generate one from the current time.
         resolved_job: str = project_job or str(int(time.time()))
 
         # Create the run directory and serialize the pipeline so
@@ -99,65 +102,71 @@ class SlurmExecutor(Executor):
             cloudpickle.dump(pipeline, f)
         logger.info(f"Pipeline serialized to {pipeline_path}")
 
-        # Create the log directory for SLURM output files.
+        # Create the log and script directories.
         log_dir: Path = resolved_dir / self.cluster.log_dir.format(
             project_job=resolved_job
         )
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Flatten the pipeline into linear step sequence
-        flat_steps: list[tuple[Step, int, int]] = pipeline._flatten()
-        prev_job_id: str | None = None
+        script_dir: Path = run_dir / "slurm_scripts"
+        script_dir.mkdir(parents=True, exist_ok=True)
 
-        for step, iteration, n_iterations in flat_steps:
-            # Build a unique label for this submission
-            # (e.g. "run_loop2" for iteration 2 of a loop)
-            label: str = step.name
-            if n_iterations > 1:
-                label = f"{step.name}_loop{iteration}"
+        # --- Generate step scripts for all pipeline elements ---
+        script_paths: dict[str, str] = {}
+        for i, element in enumerate(pipeline.steps):
+            if isinstance(element, Step):
+                label = element.name
+                script = render_sbatch_script(
+                    step=element,
+                    cluster=self.cluster,
+                    pipeline_name=pipeline.name,
+                    label=label,
+                    project_dir=resolved_dir,
+                    project_job=resolved_job,
+                    n_jobs=element.array_jobs,
+                    iteration=0,
+                )
+                path = script_dir / f"{label}.sh"
+                path.write_text(script)
+                script_paths[label] = str(path)
 
-            # Render the sbatch script for this step
-            script: str = render_sbatch_script(
-                step=step,
-                cluster=self.cluster,
-                pipeline_name=pipeline.name,
-                label=label,
-                project_dir=resolved_dir,
-                project_job=resolved_job,
-                n_jobs=step.array_jobs,
-                # TODO n_jobs needs to represent the number of experiments
-                iteration=iteration,
-            )
+            elif isinstance(element, Loop):
+                for step in element.steps:
+                    label = f"loop{i}_{step.name}"
+                    script = render_sbatch_script(
+                        step=step,
+                        cluster=self.cluster,
+                        pipeline_name=pipeline.name,
+                        label=label,
+                        project_dir=resolved_dir,
+                        project_job=resolved_job,
+                        n_jobs=step.array_jobs,
+                        iteration="$F3DASM_ITERATION",
+                    )
+                    path = script_dir / f"{label}.sh"
+                    path.write_text(script)
+                    script_paths[label] = str(path)
 
-            # Write script to disk for auditability
-            script_dir: Path = run_dir / "slurm_scripts"
-            script_dir.mkdir(parents=True, exist_ok=True)
-            script_path: Path = (script_dir / f"{label}").with_suffix(".sh")
-            script_path.write_text(script)
+        # --- Generate and write the orchestrator ---
+        orch_res = pipeline.orchestrator_resources or _DEFAULT_ORCH_RESOURCES
+        orch_script = render_orchestrator_script(
+            pipeline=pipeline,
+            cluster=self.cluster,
+            orchestrator_resources=orch_res,
+            script_paths=script_paths,
+            log_dir_path=str(log_dir),
+        )
+        orch_path = script_dir / "orchestrator.sh"
+        orch_path.write_text(orch_script)
 
-            # Build and run the sbatch command with dependency
-            # chaining to the previous step
-            cmd: list[str] = ["sbatch"]
-            if prev_job_id is not None:
-                cmd.append(f"--dependency={step.dependency}:{prev_job_id}")
-            cmd.append(str(script_path))
-
-            logger.info(f"Submitting step {label!r}: {' '.join(cmd)}")
-            result: subprocess.CompletedProcess[str] = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            # Parse the SLURM job ID from sbatch stdout
-            # Expected format: "Submitted batch job 12345678"
-            job_id: str = result.stdout.strip().split()[-1]
-            prev_job_id = job_id
-
-            logger.info(
-                f"  -> SLURM job {job_id} ({step.name}, iter={iteration})"
-            )
+        # --- Submit the orchestrator ---
+        cmd: list[str] = ["sbatch", str(orch_path), "0", "0"]
+        logger.info(f"Submitting orchestrator: {' '.join(cmd)}")
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=True
+        )
+        job_id = result.stdout.strip().split()[-1]
+        logger.info(f"  -> SLURM orchestrator job {job_id}")
 
         return resolved_job
 
@@ -166,9 +175,12 @@ class SlurmExecutor(Executor):
         pipeline: Pipeline,
         project_dir: str | Path | None = None,
         project_job: str = "PLACEHOLDER",
-        n_jobs: int = 1,
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting.
+
+        Returns all step scripts and the orchestrator script. For
+        loop body steps, ``$F3DASM_ITERATION`` is used as the
+        iteration placeholder.
 
         Parameters
         ----------
@@ -178,8 +190,6 @@ class SlurmExecutor(Executor):
             Base project directory.
         project_job : str
             Placeholder project job ID.
-        n_jobs : int
-            Number of jobs for parallel steps.
 
         Returns
         -------
@@ -192,24 +202,53 @@ class SlurmExecutor(Executor):
             else Path(self.cluster.scratch_dir)
         ) / pipeline.name
 
+        log_dir_path: str = str(
+            resolved_dir / self.cluster.log_dir.format(project_job=project_job)
+        )
+
         scripts: dict[str, str] = {}
-        flat_steps: list[tuple[Step, int, int]] = pipeline._flatten()
+        # Placeholder paths for the orchestrator (since scripts
+        # are not written to disk in generate_scripts)
+        placeholder_paths: dict[str, str] = {}
 
-        for step, iteration, n_iterations in flat_steps:
-            label: str = step.name
-            if n_iterations > 1:
-                label = f"{step.name}_loop{iteration}"
+        for i, element in enumerate(pipeline.steps):
+            if isinstance(element, Step):
+                label = element.name
+                scripts[label] = render_sbatch_script(
+                    step=element,
+                    cluster=self.cluster,
+                    pipeline_name=pipeline.name,
+                    label=label,
+                    project_dir=resolved_dir,
+                    project_job=project_job,
+                    n_jobs=element.array_jobs,
+                    iteration=0,
+                )
+                placeholder_paths[label] = f"SCRIPT_DIR/{label}.sh"
 
-            scripts[label] = render_sbatch_script(
-                step=step,
-                cluster=self.cluster,
-                pipeline_name=pipeline.name,
-                label=label,
-                project_dir=resolved_dir,
-                project_job=project_job,
-                n_jobs=n_jobs,
-                iteration=iteration,
-            )
+            elif isinstance(element, Loop):
+                for step in element.steps:
+                    label = f"loop{i}_{step.name}"
+                    scripts[label] = render_sbatch_script(
+                        step=step,
+                        cluster=self.cluster,
+                        pipeline_name=pipeline.name,
+                        label=label,
+                        project_dir=resolved_dir,
+                        project_job=project_job,
+                        n_jobs=step.array_jobs,
+                        iteration="$F3DASM_ITERATION",
+                    )
+                    placeholder_paths[label] = f"SCRIPT_DIR/{label}.sh"
+
+        orch_res = pipeline.orchestrator_resources or _DEFAULT_ORCH_RESOURCES
+        scripts["orchestrator"] = render_orchestrator_script(
+            pipeline=pipeline,
+            cluster=self.cluster,
+            orchestrator_resources=orch_res,
+            script_paths=placeholder_paths,
+            log_dir_path=log_dir_path,
+        )
 
         return scripts
 
@@ -226,7 +265,7 @@ def render_sbatch_script(
     project_dir: Path,
     project_job: str,
     n_jobs: int | None,
-    iteration: int,
+    iteration: int | str,
 ) -> str:
     """Render a complete sbatch script for a single step.
 
@@ -251,8 +290,10 @@ def render_sbatch_script(
         Project job identifier.
     n_jobs : int | None
         Number of jobs for array steps.
-    iteration : int
-        Current loop iteration index.
+    iteration : int | str
+        Current loop iteration index. Can be a shell variable
+        reference (e.g. ``"$F3DASM_ITERATION"``) for scripts
+        used inside an orchestrator loop.
 
     Returns
     -------
@@ -328,3 +369,249 @@ def render_sbatch_script(
     lines.append("")
 
     return "\n".join(lines)
+
+
+def render_orchestrator_script(
+    pipeline: Pipeline,
+    cluster: SlurmCluster,
+    orchestrator_resources: SlurmResources,
+    script_paths: dict[str, str],
+    log_dir_path: str,
+) -> str:
+    """Render a self-resubmitting orchestrator for the pipeline.
+
+    The orchestrator manages the entire pipeline using two
+    counters passed as positional arguments:
+
+    - ``STEP_COUNT``: index into the pipeline's top-level
+      elements (Steps and Loops).
+    - ``LOOP_COUNT``: current iteration within a Loop (0 when
+      not inside a loop).
+
+    Each execution handles exactly one action (one Step
+    submission or one Loop iteration), then resubmits itself
+    with ``--dependency`` on the last submitted job. The
+    dependency type is determined by the *next* step's
+    ``Step.dependency`` field.
+
+    Parameters
+    ----------
+    pipeline : Pipeline
+        The full pipeline definition.
+    cluster : SlurmCluster
+        Cluster configuration.
+    orchestrator_resources : SlurmResources
+        SLURM resources for the orchestrator job.
+    script_paths : dict[str, str]
+        Mapping of label to absolute script path on disk.
+    log_dir_path : str
+        Directory for orchestrator log files.
+
+    Returns
+    -------
+    str
+        The rendered orchestrator bash script.
+    """
+    res = orchestrator_resources
+    total_steps = len(pipeline.steps)
+
+    # --- SBATCH header ---
+    lines: list[str] = [
+        "#!/bin/bash",
+        f"#SBATCH --job-name=orchestrator_{pipeline.name}",
+        f"#SBATCH --time={res.time}",
+        f"#SBATCH --mem={res.mem}",
+        f"#SBATCH --cpus-per-task={res.cpus_per_task}",
+        f"#SBATCH --nodes={res.nodes}",
+        f"#SBATCH --partition={cluster.partition}",
+        f"#SBATCH --account={cluster.account}",
+        f"#SBATCH --output={log_dir_path}/orchestrator_%j.out",
+    ]
+
+    for key, val in res.extra_sbatch.items():
+        lines.append(f"#SBATCH --{key}={val}")
+
+    lines.extend(
+        [
+            "",
+            "STEP_COUNT=$1",
+            "LOOP_COUNT=$2",
+            'SELF=$(realpath "$0")',
+            f"TOTAL_STEPS={total_steps}",
+            "",
+            'while [ "$STEP_COUNT" -lt "$TOTAL_STEPS" ]; do',
+            "",
+        ]
+    )
+
+    # --- Generate if/elif blocks for each pipeline element ---
+    for i, element in enumerate(pipeline.steps):
+        # Determine the condition keyword
+        cond = "if" if i == 0 else "elif"
+        lines.append(f'  {cond} [ "$STEP_COUNT" -eq {i} ]; then')
+
+        if isinstance(element, Step):
+            _render_step_block(
+                lines=lines,
+                step=element,
+                step_index=i,
+                pipeline=pipeline,
+                script_paths=script_paths,
+                total_steps=total_steps,
+            )
+
+        elif isinstance(element, Loop):
+            _render_loop_block(
+                lines=lines,
+                loop=element,
+                step_index=i,
+                pipeline=pipeline,
+                script_paths=script_paths,
+                total_steps=total_steps,
+            )
+
+        lines.append("")
+
+    lines.extend(
+        [
+            "  fi",
+            "done",
+            "",
+            'echo "Pipeline complete."',
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def _get_next_dependency(
+    pipeline: Pipeline,
+    current_index: int,
+    total_steps: int,
+) -> str | None:
+    """Get the dependency type for the next element after current_index.
+
+    Returns the ``Step.dependency`` of the next element (or the
+    first inner step of a Loop). Returns ``None`` if there is no
+    next element.
+    """
+    next_idx = current_index + 1
+    if next_idx >= total_steps:
+        return None
+
+    next_element = pipeline.steps[next_idx]
+    if isinstance(next_element, Step):
+        return next_element.dependency
+    elif isinstance(next_element, Loop):
+        if next_element.steps:
+            return next_element.steps[0].dependency
+    return "afterok"
+
+
+def _render_step_block(
+    lines: list[str],
+    step: Step,
+    step_index: int,
+    pipeline: Pipeline,
+    script_paths: dict[str, str],
+    total_steps: int,
+) -> None:
+    """Append bash lines for a Step element in the orchestrator."""
+    label = step.name
+    script_path = script_paths[label]
+
+    lines.extend(
+        [
+            f"    # Step: {step.name}",
+            f'    RESULT=$(sbatch "{script_path}")',
+            "    JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+            f'    echo "Submitted {step.name}: job $JOB_ID"',
+        ]
+    )
+
+    next_step = step_index + 1
+    next_dep = _get_next_dependency(pipeline, step_index, total_steps)
+
+    if next_dep is not None:
+        lines.extend(
+            [
+                f"    STEP_COUNT={next_step}",
+                f"    sbatch --dependency={next_dep}:$JOB_ID"
+                f' "$SELF" $STEP_COUNT $LOOP_COUNT',
+                "    exit 0",
+            ]
+        )
+    else:
+        # Last element in pipeline — don't resubmit
+        lines.append("    exit 0")
+
+
+def _render_loop_block(
+    lines: list[str],
+    loop: Loop,
+    step_index: int,
+    pipeline: Pipeline,
+    script_paths: dict[str, str],
+    total_steps: int,
+) -> None:
+    """Append bash lines for a Loop element in the orchestrator."""
+    n_iters = loop.n_iterations
+
+    lines.extend(
+        [
+            f"    # Loop: {n_iters} iterations",
+            f'    if [ "$LOOP_COUNT" -lt {n_iters} ]; then',
+            "      export F3DASM_ITERATION=$LOOP_COUNT",
+        ]
+    )
+
+    # Submit each inner step with dependency chaining
+    for j, inner_step in enumerate(loop.steps):
+        inner_label = f"loop{step_index}_{inner_step.name}"
+        inner_path = script_paths[inner_label]
+
+        if j == 0:
+            # First inner step: no dependency
+            lines.extend(
+                [
+                    f"      # Inner step: {inner_step.name}",
+                    f'      RESULT=$(sbatch --export=ALL "{inner_path}")',
+                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+                    f'      echo "  Submitted {inner_step.name}'
+                    f' (iter $LOOP_COUNT): job $PREV_JOB_ID"',
+                ]
+            )
+        else:
+            dep = inner_step.dependency
+            lines.extend(
+                [
+                    f"      # Inner step: {inner_step.name}",
+                    f"      RESULT=$(sbatch"
+                    f" --dependency={dep}:$PREV_JOB_ID"
+                    f' --export=ALL "{inner_path}")',
+                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+                    f'      echo "  Submitted {inner_step.name}'
+                    f' (iter $LOOP_COUNT): job $PREV_JOB_ID"',
+                ]
+            )
+
+    # Resubmit orchestrator for next iteration
+    # Use the first inner step's dependency type for iteration
+    # resubmission (determines if next iteration runs on failure)
+    iter_dep = loop.steps[0].dependency if loop.steps else "afterok"
+
+    lines.extend(
+        [
+            "      LOOP_COUNT=$((LOOP_COUNT + 1))",
+            f"      sbatch --dependency={iter_dep}:$PREV_JOB_ID"
+            f' "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "      exit 0",
+            "    else",
+            "      # Loop done — advance to next element",
+            "      LOOP_COUNT=0",
+            f"      STEP_COUNT={step_index + 1}",
+            "      continue",
+            "    fi",
+        ]
+    )

@@ -94,6 +94,10 @@ class Pipeline:
     :class:`Loop` objects. Steps run once; loops repeat their
     inner steps for a given number of iterations.
 
+    In SLURM mode, a single self-resubmitting orchestrator script
+    manages the entire pipeline, submitting one step (or one loop
+    iteration) at a time.
+
     Parameters
     ----------
     name : str
@@ -101,6 +105,11 @@ class Pipeline:
         job prefixes).
     steps : list[Step | Loop]
         The ordered sequence of steps and loops.
+    orchestrator_resources : SlurmResources, optional
+        SLURM resource requirements for the orchestrator job. If
+        ``None``, a lightweight default is used (10 min, 1 GB,
+        1 CPU). The orchestrator only runs ``sbatch`` commands, so
+        minimal resources suffice.
 
     Examples
     --------
@@ -140,6 +149,7 @@ class Pipeline:
 
     name: str = ""
     steps: list[PipelineElement] = field(default_factory=list)
+    orchestrator_resources: SlurmResources | None = None
 
     def _flatten(self) -> list[tuple[Step, int, int]]:
         """Flatten the pipeline into an ordered list of steps.
@@ -221,12 +231,13 @@ class Pipeline:
         cluster: SlurmCluster,
         project_dir: str | None = None,
         project_job: str = "PLACEHOLDER",
-        n_jobs: int = 1,
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting them.
 
         Useful for inspecting or manually editing scripts before
-        submission.
+        submission. For pipelines containing loops, the result
+        includes orchestrator scripts and loop body step scripts
+        with ``$F3DASM_ITERATION`` as the iteration placeholder.
 
         Parameters
         ----------
@@ -236,15 +247,11 @@ class Pipeline:
             Override the project directory.
         project_job : str
             Project job ID to embed in scripts.
-        n_jobs : int
-            Number of jobs for parallel steps.
 
         Returns
         -------
         dict[str, str]
-            Mapping of ``"step_name"`` (or
-            ``"step_name_loopN"``) to the rendered sbatch script
-            content.
+            Mapping of label to rendered sbatch script content.
         """
         from .executors.slurm import SlurmExecutor
 
@@ -253,5 +260,4 @@ class Pipeline:
             pipeline=self,
             project_dir=project_dir,
             project_job=project_job,
-            n_jobs=n_jobs,
         )
