@@ -17,21 +17,38 @@ this entry point deserialises it, looks up the requested step,
 and dispatches execution.
 """
 
+#                                                                       Modules
+# =============================================================================
+
 from __future__ import annotations
 
+# Standard
 import argparse
 import logging
 import sys
 from pathlib import Path
 
+# Third-party
 import cloudpickle
 
+# Local
 from ..core import Block, DataGenerator
 from ..experimentdata import ExperimentData
 from .loop import Loop
 from .pipeline import Pipeline, Step
 
+#                                                          Authorship & Credits
+# =============================================================================
+__author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
+__credits__ = ["Martin van der Schelling"]
+__status__ = "Stable"
+# =============================================================================
+#
+# =============================================================================
+
 logger = logging.getLogger("f3dasm")
+
+# =============================================================================
 
 
 def main(argv: list[str] | None = None) -> None:

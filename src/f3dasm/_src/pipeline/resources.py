@@ -75,8 +75,8 @@ class SlurmCluster:
         Log directory template. May contain ``{project_job}``.
     """
 
-    partition: str = ""
-    account: str = ""
+    partition: str = "batch"
+    account: str = "default"
     scratch_dir: str = "."
     env_setup: list[str] = field(default_factory=list)
     env_vars: dict[str, str] = field(default_factory=dict)

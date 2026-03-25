@@ -42,13 +42,13 @@ class Step:
 
     Parameters
     ----------
-    name : str
-        Human-readable name for this step (used in logs and SLURM
-        job names).
     block : Block | DataGenerator | Callable
         The operation to execute. Can be a :class:`Block`,
         :class:`DataGenerator`, or a plain callable with signature
         ``(project_dir, project_job, **kwargs) -> None``.
+    name : str
+        Human-readable name for this step (used in logs and SLURM
+        job names).
     parallel : bool
         If ``True``, this step is executed as a SLURM array job
         (or with multiprocessing locally). Only meaningful when
@@ -58,13 +58,16 @@ class Step:
     dependency : Literal["afterok", "afterany"]
         SLURM dependency type for the previous step.
         Must be ``"afterok"`` or ``"afterany"``.
+    array_jobs : int, optional
+        If ``parallel=True``, the number of array jobs to submit.
+        Required if the block is a :class:`DataGenerator`.
     kwargs : dict[str, Any]
         Extra keyword arguments forwarded to the block's
         ``call`` method at execution time.
     """
 
+    block: Block | DataGenerator | Callable
     name: str = ""
-    block: Block | DataGenerator | Callable | None = None
     parallel: bool = False
     resources: SlurmResources = field(default_factory=SlurmResources)
     dependency: Literal["afterok", "afterany"] = "afterok"
@@ -164,7 +167,7 @@ class Pipeline:
 
     def run(
         self,
-        mode: str = "local",
+        mode: Literal["local", "slurm"] = "local",
         cluster: SlurmCluster | None = None,
         project_dir: str | None = None,
         project_job: str | None = None,
@@ -173,7 +176,7 @@ class Pipeline:
 
         Parameters
         ----------
-        mode : str
+        mode : Literal["local", "slurm"]
             Execution mode: ``"local"`` or ``"slurm"``.
         cluster : SlurmCluster, optional
             Cluster configuration (required when
@@ -197,7 +200,7 @@ class Pipeline:
         from .executors.slurm import SlurmExecutor
 
         if mode == "local":
-            executor: LocalExecutor | SlurmExecutor = LocalExecutor()
+            executor = LocalExecutor()
         elif mode == "slurm":
             if cluster is None:
                 raise ValueError(
@@ -251,44 +254,4 @@ class Pipeline:
             project_dir=project_dir,
             project_job=project_job,
             n_jobs=n_jobs,
-        )
-
-    def resume(
-        self,
-        project_job: str,
-        from_step: str | None = None,
-        mode: str = "local",
-        cluster: SlurmCluster | None = None,
-        project_dir: str | None = None,
-    ) -> str:
-        """Resume a previously interrupted pipeline.
-
-        Delegates to :meth:`run` with the given ``project_job``
-        and optional ``from_step`` to skip completed phases.
-
-        Parameters
-        ----------
-        project_job : str
-            The project job ID to resume.
-        from_step : str, optional
-            Name of the step to resume from. If ``None``, resumes
-            from the beginning.
-        mode : str
-            Execution mode: ``"local"`` or ``"slurm"``.
-        cluster : SlurmCluster, optional
-            Cluster configuration (required for ``"slurm"``).
-        project_dir : str, optional
-            Override the project directory.
-
-        Returns
-        -------
-        str
-            The project job ID.
-        """
-        return self.run(
-            mode=mode,
-            cluster=cluster,
-            project_dir=project_dir,
-            project_job=project_job,
-            from_step=from_step,
         )

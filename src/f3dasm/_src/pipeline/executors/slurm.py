@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 # Third-party
@@ -32,6 +33,7 @@ __status__ = "Stable"
 logger = logging.getLogger("f3dasm")
 
 
+@dataclass
 class SlurmExecutor(Executor):
     """Execute a pipeline by submitting SLURM jobs.
 
@@ -46,12 +48,7 @@ class SlurmExecutor(Executor):
         Cluster-specific configuration.
     """
 
-    def __init__(self, cluster: SlurmCluster) -> None:
-        self.cluster: SlurmCluster = cluster
-
-    # -----------------------------------------------------------------
-    # Public API
-    # -----------------------------------------------------------------
+    cluster: SlurmCluster
 
     def run(
         self,
@@ -217,9 +214,8 @@ class SlurmExecutor(Executor):
         return scripts
 
 
-# -----------------------------------------------------------------
-# Script rendering (standalone function)
-# -----------------------------------------------------------------
+#                                                              Script rendering
+# =============================================================================
 
 
 def render_sbatch_script(

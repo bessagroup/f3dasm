@@ -8,6 +8,7 @@ from __future__ import annotations
 # Standard
 import logging
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 # Local
@@ -28,7 +29,10 @@ __status__ = "Stable"
 
 logger = logging.getLogger("f3dasm")
 
+# =============================================================================
 
+
+@dataclass
 class LocalExecutor(Executor):
     """Execute a pipeline locally in the current process.
 
@@ -45,8 +49,7 @@ class LocalExecutor(Executor):
         Defaults to ``"cluster"``.
     """
 
-    def __init__(self, parallel_mode: str = "cluster") -> None:
-        self.parallel_mode = parallel_mode
+    parallel_mode: str = "cluster"
 
     def run(
         self,
@@ -130,6 +133,7 @@ def _run_step_locally(
     parallel_mode : str
         Mode for DataGenerator parallel steps.
     """
+    # TODO: is project_job needed here?
     block = step.block
 
     if isinstance(block, DataGenerator):
@@ -152,7 +156,7 @@ def _run_step_locally(
         # ExperimentData from scratch). It receives the run
         # directory and is responsible for creating and storing
         # data on disk.
-        block(project_dir=run_dir)
+        block(project_dir=run_dir, **step.kwargs)
     else:
         raise TypeError(
             f"Step {step.name!r} has an unsupported block type: {type(block)}"
