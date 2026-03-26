@@ -578,6 +578,34 @@ class ReferenceValue:
             load_function=self.load_function,
         )
 
+    def copy_to(
+        self, old_project_dir: Path, new_project_dir: Path
+    ) -> ReferenceValue:
+        """Copy the referenced file to a new project directory.
+
+        Parameters
+        ----------
+        old_project_dir : Path
+            The project directory where this reference currently lives.
+        new_project_dir : Path
+            The project directory to copy the file into.
+
+        Returns
+        -------
+        ReferenceValue
+            A new ReferenceValue with the updated reference path, suitable
+            for use within ``new_project_dir``.
+        """
+        new_reference = copy_object(
+            self.reference, old_project_dir, new_project_dir
+        )
+        return ReferenceValue(
+            reference=Path(new_reference), load_function=self.load_function
+        )
+
+    def __hash__(self) -> int:
+        return hash(self.reference)
+
     def __str__(self) -> str:
         return self.reference.__str__()
 
@@ -610,9 +638,10 @@ class ReferenceValue:
         ReferenceValue
             The reconstructed instance.
         """
-        reference = Path(data["reference"])
-        load_function = pickle.loads(bytes.fromhex(data["load_function"]))
-        return cls(reference=reference, load_function=load_function)
+        return cls(
+            reference=Path(data["reference"]),
+            load_function=pickle.loads(bytes.fromhex(data["load_function"])),
+        )
 
 
 @dataclass

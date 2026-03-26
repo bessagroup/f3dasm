@@ -13,6 +13,7 @@ import logging
 
 # Standard
 import random
+import shutil
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator
 from copy import copy
@@ -37,6 +38,7 @@ from ._io import (
     JOBS_FILENAME,
     MAX_TRIES,
     OUTPUT_DATA_FILENAME,
+    ReferenceValue,
     ToDiskValue,
     _project_dir_factory,
 )
@@ -592,6 +594,148 @@ class ExperimentData:
         """
         return self[indices]
 
+    def select_parameter(self, name: str) -> ExperimentData:
+        """Return an ExperimentData containing only the named parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input or output parameter to select.
+
+        Returns
+        -------
+        ExperimentData
+            New ExperimentData with a single-parameter domain and only the
+            data for that parameter.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in either input or output space.
+
+        Examples
+        --------
+        >>> exp_model = experiment_data.select_parameter('model')
+        """
+        if name in self._domain.input_space:
+            new_domain = Domain(
+                input_space={name: self._domain.input_space[name]}
+            )
+            new_data = {
+                idx: ExperimentSample(
+                    _input_data={name: es._input_data.get(name)},
+                    _output_data={},
+                    job_status=es.job_status,
+                    project_dir=es.project_dir,
+                )
+                for idx, es in self
+            }
+        elif name in self._domain.output_space:
+            new_domain = Domain(
+                output_space={name: self._domain.output_space[name]}
+            )
+            new_data = {
+                idx: ExperimentSample(
+                    _input_data={},
+                    _output_data={name: es._output_data.get(name)},
+                    job_status=es.job_status,
+                    project_dir=es.project_dir,
+                )
+                for idx, es in self
+            }
+        else:
+            raise KeyError(f"Parameter '{name}' not found in domain.")
+
+        return ExperimentData.from_data(
+            data=new_data,
+            domain=new_domain,
+            project_dir=self._project_dir,
+        )
+
+    def move_to_output(self, name: str, in_place: bool = False):
+        """Move a parameter from the input space to the output space.
+
+        The parameter entry is removed from the domain's input space and added
+        to the output space. For every experiment sample, the corresponding
+        value is moved from ``_input_data`` to ``_output_data``.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter to move.
+        in_place : bool, optional
+            If True, the operation is performed in place and None is returned,
+            by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            A new ExperimentData with the parameter moved, or None if
+            ``in_place=True``.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in the input space.
+
+        Examples
+        --------
+        >>> new_data = experiment_data.move_to_output('x0')
+        >>> experiment_data.move_to_output('x0', in_place=True)
+        """
+        d = self._copy(in_place=in_place)
+        if name not in d._domain.input_space:
+            raise KeyError(f"Parameter '{name}' not found in input space.")
+        d._domain.output_space[name] = d._domain.input_space.pop(name)
+        for _, es in d:
+            if name in es._input_data:
+                es._output_data[name] = es._input_data.pop(name)
+        if in_place:
+            return None
+        return d
+
+    def move_to_input(self, name: str, in_place: bool = False):
+        """Move a parameter from the output space to the input space.
+
+        The parameter entry is removed from the domain's output space and added
+        to the input space. For every experiment sample, the corresponding
+        value is moved from ``_output_data`` to ``_input_data``.
+
+        Parameters
+        ----------
+        name : str
+            Name of the output parameter to move.
+        in_place : bool, optional
+            If True, the operation is performed in place and None is returned,
+            by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            A new ExperimentData with the parameter moved, or None if
+            ``in_place=True``.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in the output space.
+
+        Examples
+        --------
+        >>> new_data = experiment_data.move_to_input('y')
+        >>> experiment_data.move_to_input('y', in_place=True)
+        """
+        d = self._copy(in_place=in_place)
+        if name not in d._domain.output_space:
+            raise KeyError(f"Parameter '{name}' not found in output space.")
+        d._domain.input_space[name] = d._domain.output_space.pop(name)
+        for _, es in d:
+            if name in es._output_data:
+                es._input_data[name] = es._output_data.pop(name)
+        if in_place:
+            return None
+        return d
+
     def select_with_status(
         self, status: Literal["open", "in_progress", "finished", "error"]
     ) -> ExperimentData:
@@ -656,7 +800,11 @@ class ExperimentData:
             project_dir=self._project_dir,
         )
 
-    def store(self, project_dir: Optional[Path | str] = None):
+    def store(
+        self,
+        project_dir: Optional[Path | str] = None,
+        copy_references: bool = False,
+    ):
         """
         Write the ExperimentData to disk in the project directory.
 
@@ -665,6 +813,12 @@ class ExperimentData:
         project_dir : Optional[Path | str], optional
             The f3dasm project directory to store the
             ExperimentData object to, by default None.
+        copy_references : bool, optional
+            If True, any :class:`ReferenceValue` objects whose source
+            ``project_dir`` differs from the destination are physically
+            copied into the destination project directory before writing.
+            The in-memory references are updated to point to the new
+            locations, by default False.
 
         Note
         ----
@@ -687,8 +841,25 @@ class ExperimentData:
         access the lock file. This lock file is removed after the
         ExperimentData object is written to disk.
         """
+        old_project_dir = self._project_dir
+
         if project_dir is not None:
             self.set_project_dir(project_dir, in_place=True)
+
+        if copy_references:
+            seen: set[Path] = set()
+            for _, es in self:
+                for value in list(es._input_data.values()) + list(
+                    es._output_data.values()
+                ):
+                    if (
+                        isinstance(value, ReferenceValue)
+                        and value.reference not in seen
+                    ):
+                        seen.add(value.reference)
+                        _copy_reference(
+                            value.reference, old_project_dir, self._project_dir
+                        )
 
         subdirectory = self._project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -1819,3 +1990,48 @@ def _store(
                 domain.add_parameter(name=name)
 
     return experiment_sample, domain
+
+
+def _copy_reference(
+    reference: Path, old_project_dir: Path, new_project_dir: Path
+):
+    """
+    Copy a reference file (possibly extension-less) to a new
+    project directory.
+
+    ``reference`` may lack an extension (e.g. ``Path("model/0")``), because
+    store functions such as :func:`pickle_store` add the suffix themselves.
+    This function globs for ``<stem>.*`` to locate the actual file, then
+    copies it to the same relative path under ``new_project_dir``.
+
+    Parameters
+    ----------
+    reference : Path
+        Path relative to the experiment-data subfolder (may have no suffix).
+    old_project_dir : Path
+        Source project directory.
+    new_project_dir : Path
+        Destination project directory.
+    """
+    old_base = old_project_dir / EXPERIMENTDATA_SUBFOLDER / reference
+
+    # The actual file may carry an extension added by the store function.
+    if old_base.exists():
+        candidates = [old_base]
+    else:
+        candidates = list(old_base.parent.glob(old_base.name + ".*"))
+
+    if not candidates:
+        raise FileNotFoundError(
+            f"No file found for reference '{reference}' in '{old_base.parent}'"
+        )
+
+    for src in candidates:
+        dst = (
+            new_project_dir
+            / EXPERIMENTDATA_SUBFOLDER
+            / reference.parent
+            / src.name
+        )
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)

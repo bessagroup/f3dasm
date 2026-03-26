@@ -95,7 +95,6 @@ class LocalExecutor(Executor):
             _run_step_locally(
                 step=step,
                 run_dir=run_dir,
-                project_job=resolved_job,
                 parallel_mode=self.parallel_mode,
             )
 
@@ -105,7 +104,6 @@ class LocalExecutor(Executor):
 def _run_step_locally(
     step: Step,
     run_dir: Path,
-    project_job: str,
     parallel_mode: str = "cluster",
 ) -> None:
     """Execute a single pipeline step in the local process.
@@ -128,12 +126,9 @@ def _run_step_locally(
         The step to execute.
     run_dir : Path
         The project run directory on disk.
-    project_job : str
-        The project job identifier.
     parallel_mode : str
         Mode for DataGenerator parallel steps.
     """
-    # TODO: is project_job needed here?
     block = step.block
 
     if isinstance(block, DataGenerator):
