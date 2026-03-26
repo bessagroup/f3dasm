@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 # Local
@@ -147,8 +148,8 @@ class Pipeline:
             cluster=SlurmCluster(
                 partition="batch",
                 account="my_account",
-                scratch_dir="/scratch/user",
             ),
+            rootdir="/scratch/user",
         )
     """
 
@@ -185,6 +186,7 @@ class Pipeline:
         mode: Literal["local", "slurm"] = "local",
         cluster: SlurmCluster | None = None,
         project_job: str | None = None,
+        rootdir: Path | str | None = None,
     ) -> str:
         """Execute the pipeline.
 
@@ -200,6 +202,9 @@ class Pipeline:
             (``rootdir / project_job``). Defaults to
             ``str(int(time.time()))``. Pass an existing ID to
             resume a previous run.
+        rootdir : Path | str, optional
+            Root directory under which the job folder is created.
+            Defaults to the current working directory.
 
         Returns
         -------
@@ -210,6 +215,8 @@ class Pipeline:
         # pipeline -> executors -> pipeline
         from .executors.local import LocalExecutor
         from .executors.slurm import SlurmExecutor
+
+        _rootdir: Path | None = Path(rootdir) if rootdir is not None else None
 
         if mode == "local":
             executor = LocalExecutor()
@@ -225,12 +232,14 @@ class Pipeline:
         return executor.run(
             pipeline=self,
             project_job=project_job,
+            rootdir=_rootdir,
         )
 
     def generate_scripts(
         self,
         cluster: SlurmCluster,
         project_job: str = "PLACEHOLDER",
+        rootdir: Path | str | None = None,
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting them.
 
@@ -245,6 +254,9 @@ class Pipeline:
             Cluster configuration.
         project_job : str
             Project job ID to embed in scripts.
+        rootdir : Path | str, optional
+            Root directory under which the job folder is created.
+            Defaults to the current working directory.
 
         Returns
         -------
@@ -253,8 +265,10 @@ class Pipeline:
         """
         from .executors.slurm import SlurmExecutor
 
+        _rootdir: Path | None = Path(rootdir) if rootdir is not None else None
         executor = SlurmExecutor(cluster=cluster)
         return executor.generate_scripts(
             pipeline=self,
             project_job=project_job,
+            rootdir=_rootdir,
         )

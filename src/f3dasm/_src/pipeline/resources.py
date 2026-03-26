@@ -61,8 +61,6 @@ class SlurmCluster:
         SLURM partition name.
     account : str
         SLURM account string.
-    scratch_dir : str
-        Absolute path to the scratch directory on this cluster.
     env_setup : list[str]
         Shell commands to run before the Python command
         (e.g. module loads, ``unset LD_LIBRARY_PATH``).
@@ -77,7 +75,6 @@ class SlurmCluster:
 
     partition: str = "batch"
     account: str = "default"
-    scratch_dir: str = "."
     env_setup: list[str] = field(default_factory=list)
     env_vars: dict[str, str] = field(default_factory=dict)
     runner: str = "python"
