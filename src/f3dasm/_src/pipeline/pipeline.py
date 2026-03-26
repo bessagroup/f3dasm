@@ -61,6 +61,10 @@ class Step:
     array_jobs : int, optional
         If ``parallel=True``, the number of array jobs to submit.
         Required if the block is a :class:`DataGenerator`.
+    project_dir : str
+        Sub-path relative to the job directory where
+        ExperimentData is loaded and stored for this step.
+        Defaults to ``'.'`` (the job directory itself).
     kwargs : dict[str, Any]
         Extra keyword arguments forwarded to the block's
         ``call`` method at execution time.
@@ -72,6 +76,7 @@ class Step:
     resources: SlurmResources = field(default_factory=SlurmResources)
     dependency: Literal["afterok", "afterany"] = "afterok"
     array_jobs: int | None = None
+    project_dir: str = "."
     kwargs: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -179,7 +184,6 @@ class Pipeline:
         self,
         mode: Literal["local", "slurm"] = "local",
         cluster: SlurmCluster | None = None,
-        project_dir: str | None = None,
         project_job: str | None = None,
     ) -> str:
         """Execute the pipeline.
@@ -191,13 +195,11 @@ class Pipeline:
         cluster : SlurmCluster, optional
             Cluster configuration (required when
             ``mode="slurm"``).
-        project_dir : str, optional
-            Override the project directory. Defaults to the current
-            working directory (local) or the cluster scratch
-            directory (SLURM).
         project_job : str, optional
-            Existing project job ID for resumption. If ``None``,
-            a new ID is generated.
+            Job identifier used as the top-level run folder
+            (``rootdir / project_job``). Defaults to
+            ``str(int(time.time()))``. Pass an existing ID to
+            resume a previous run.
 
         Returns
         -------
@@ -222,14 +224,12 @@ class Pipeline:
 
         return executor.run(
             pipeline=self,
-            project_dir=project_dir,
             project_job=project_job,
         )
 
     def generate_scripts(
         self,
         cluster: SlurmCluster,
-        project_dir: str | None = None,
         project_job: str = "PLACEHOLDER",
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting them.
@@ -243,8 +243,6 @@ class Pipeline:
         ----------
         cluster : SlurmCluster
             Cluster configuration.
-        project_dir : str, optional
-            Override the project directory.
         project_job : str
             Project job ID to embed in scripts.
 
@@ -258,6 +256,5 @@ class Pipeline:
         executor = SlurmExecutor(cluster=cluster)
         return executor.generate_scripts(
             pipeline=self,
-            project_dir=project_dir,
             project_job=project_job,
         )

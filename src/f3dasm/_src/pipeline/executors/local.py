@@ -54,7 +54,6 @@ class LocalExecutor(Executor):
     def run(
         self,
         pipeline: Pipeline,
-        project_dir: str | Path | None = None,
         project_job: str | None = None,
     ) -> str:
         """Execute the pipeline locally.
@@ -63,21 +62,19 @@ class LocalExecutor(Executor):
         ----------
         pipeline : Pipeline
             The pipeline to execute.
-        project_dir : str | Path, optional
-            Working directory. Defaults to cwd.
         project_job : str, optional
-            Project job ID. Generated if not provided.
+            Job identifier used as the run folder (``cwd / project_job``).
+            Defaults to a timestamp-based ID.
 
         Returns
         -------
         str
             The project job ID.
         """
-        resolved_dir: Path = Path(project_dir or Path.cwd())
+        rootdir: Path = Path.cwd()
         resolved_job: str = project_job or str(int(time.time()))
-
-        run_dir: Path = resolved_dir / pipeline.name / resolved_job
-        run_dir.mkdir(parents=True, exist_ok=True)
+        job_dir: Path = rootdir / resolved_job
+        job_dir.mkdir(parents=True, exist_ok=True)
 
         # Flatten the pipeline into a linear sequence of
         # (step, iteration_index, total_iterations) tuples.
@@ -92,9 +89,11 @@ class LocalExecutor(Executor):
             else:
                 logger.info(f"Running step: {step.name}")
 
+            step_dir: Path = job_dir / step.project_dir
+            step_dir.mkdir(parents=True, exist_ok=True)
             _run_step_locally(
                 step=step,
-                run_dir=run_dir,
+                run_dir=step_dir,
                 parallel_mode=self.parallel_mode,
             )
 

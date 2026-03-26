@@ -4,17 +4,17 @@ Usage::
 
     python -m f3dasm._src.pipeline.run_step \\
         --step=run \\
-        --project-dir=/scratch/user/experiment \\
-        --project-job=12345678 \\
-        --pipeline-name=my_experiment \\
+        --job-dir=/scratch/user/1711449600 \\
+        --project-dir=. \\
         --iteration=0 \\
         [--job-number=42]
 
 This module is the *only* Python script that SLURM jobs execute.
 The ``SlurmExecutor`` serialises the full :class:`Pipeline` to
-``<project_dir>/<project_job>/.pipeline.pkl`` during submission;
-this entry point deserialises it, looks up the requested step,
-and dispatches execution.
+``<job_dir>/.pipeline.pkl`` during submission; this entry point
+deserialises it, looks up the requested step, and dispatches
+execution. ExperimentData for the step lives at
+``<job_dir>/<project_dir>``.
 """
 
 #                                                                       Modules
@@ -61,22 +61,17 @@ def main(argv: list[str] | None = None) -> None:
         help="Name of the step to run.",
     )
     parser.add_argument(
+        "--job-dir",
+        required=True,
+        type=str,
+        help="Absolute path to the job directory (rootdir/project_job).",
+    )
+    parser.add_argument(
         "--project-dir",
-        required=True,
+        required=False,
         type=str,
-        help="Project directory path.",
-    )
-    parser.add_argument(
-        "--project-job",
-        required=True,
-        type=str,
-        help="Project job identifier.",
-    )
-    parser.add_argument(
-        "--pipeline-name",
-        required=True,
-        type=str,
-        help="Pipeline name.",
+        default=".",
+        help="Relative sub-path within job_dir where ExperimentData lives.",
     )
     parser.add_argument(
         "--iteration",
@@ -93,11 +88,11 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
 
-    project_dir = Path(args.project_dir)
-    project_job: str = args.project_job
+    job_dir: Path = Path(args.job_dir)
+    run_dir: Path = job_dir / args.project_dir
 
     # --- Load the serialized pipeline definition ---
-    pipeline_path: Path = project_dir / project_job / ".pipeline.pkl"
+    pipeline_path: Path = job_dir / ".pipeline.pkl"
     if not pipeline_path.exists():
         logger.error(f"Pipeline file not found: {pipeline_path}")
         sys.exit(1)
@@ -112,11 +107,10 @@ def main(argv: list[str] | None = None) -> None:
         sys.exit(1)
 
     # --- Dispatch execution ---
-    run_dir: Path = project_dir / project_job
+    run_dir.mkdir(parents=True, exist_ok=True)
     _execute_step(
         step=step,
         run_dir=run_dir,
-        project_job=project_job,
         job_number=args.job_number,
     )
 
@@ -151,7 +145,6 @@ def _find_step(pipeline: Pipeline, step_name: str) -> Step | None:
 def _execute_step(
     step: Step,
     run_dir: Path,
-    project_job: str,
     job_number: int | None,
 ) -> None:
     """Execute a single step's block on a cluster node.
@@ -173,9 +166,8 @@ def _execute_step(
     step : Step
         The pipeline step to execute.
     run_dir : Path
-        Path to the run directory on disk.
-    project_job : str
-        The project job identifier.
+        Path to the step's ExperimentData directory on disk
+        (``job_dir / step.project_dir``).
     job_number : int | None
         SLURM array task ID, or ``None`` for non-array jobs.
     """

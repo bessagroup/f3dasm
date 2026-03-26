@@ -61,7 +61,6 @@ class SlurmExecutor(Executor):
     def run(
         self,
         pipeline: Pipeline,
-        project_dir: str | Path | None = None,
         project_job: str | None = None,
     ) -> str:
         """Submit the pipeline to SLURM.
@@ -75,11 +74,9 @@ class SlurmExecutor(Executor):
         ----------
         pipeline : Pipeline
             The pipeline to execute.
-        project_dir : str | Path, optional
-            Base project directory. Defaults to the cluster's
-            scratch directory.
         project_job : str, optional
-            Project job ID for resumption. If ``None``, a
+            Job identifier used as the run folder
+            (``scratch_dir / project_job``). If ``None``, a
             timestamp-based ID is generated.
 
         Returns
@@ -87,28 +84,25 @@ class SlurmExecutor(Executor):
         str
             The project job ID.
         """
-        resolved_dir: Path = (
-            Path(project_dir or self.cluster.scratch_dir) / pipeline.name
-        )
+        rootdir: Path = Path(self.cluster.scratch_dir)
         resolved_job: str = project_job or str(int(time.time()))
 
-        # Create the run directory and serialize the pipeline so
-        # each SLURM node can deserialize it via run_step.py.
-        run_dir: Path = resolved_dir / resolved_job
-        run_dir.mkdir(parents=True, exist_ok=True)
+        # job_dir holds all pipeline artifacts (.pipeline.pkl,
+        # slurm_scripts/, logs/). ExperimentData for each step
+        # lives in job_dir / step.project_dir.
+        job_dir: Path = rootdir / resolved_job
+        job_dir.mkdir(parents=True, exist_ok=True)
 
-        pipeline_path: Path = run_dir / ".pipeline.pkl"
+        pipeline_path: Path = job_dir / ".pipeline.pkl"
         with open(pipeline_path, "wb") as f:
             cloudpickle.dump(pipeline, f)
         logger.info(f"Pipeline serialized to {pipeline_path}")
 
         # Create the log and script directories.
-        log_dir: Path = resolved_dir / self.cluster.log_dir.format(
-            project_job=resolved_job
-        )
+        log_dir: Path = job_dir / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
 
-        script_dir: Path = run_dir / "slurm_scripts"
+        script_dir: Path = job_dir / "slurm_scripts"
         script_dir.mkdir(parents=True, exist_ok=True)
 
         # --- Generate step scripts for all pipeline elements ---
@@ -121,8 +115,7 @@ class SlurmExecutor(Executor):
                     cluster=self.cluster,
                     pipeline_name=pipeline.name,
                     label=label,
-                    project_dir=resolved_dir,
-                    project_job=resolved_job,
+                    job_dir=job_dir,
                     n_jobs=element.array_jobs,
                     iteration=0,
                 )
@@ -138,8 +131,7 @@ class SlurmExecutor(Executor):
                         cluster=self.cluster,
                         pipeline_name=pipeline.name,
                         label=label,
-                        project_dir=resolved_dir,
-                        project_job=resolved_job,
+                        job_dir=job_dir,
                         n_jobs=step.array_jobs,
                         iteration="$F3DASM_ITERATION",
                     )
@@ -173,7 +165,6 @@ class SlurmExecutor(Executor):
     def generate_scripts(
         self,
         pipeline: Pipeline,
-        project_dir: str | Path | None = None,
         project_job: str = "PLACEHOLDER",
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting.
@@ -186,8 +177,6 @@ class SlurmExecutor(Executor):
         ----------
         pipeline : Pipeline
             The pipeline to generate scripts for.
-        project_dir : str | Path, optional
-            Base project directory.
         project_job : str
             Placeholder project job ID.
 
@@ -196,15 +185,9 @@ class SlurmExecutor(Executor):
         dict[str, str]
             Mapping of label to rendered script content.
         """
-        resolved_dir: Path = (
-            Path(project_dir)
-            if project_dir
-            else Path(self.cluster.scratch_dir)
-        ) / pipeline.name
-
-        log_dir_path: str = str(
-            resolved_dir / self.cluster.log_dir.format(project_job=project_job)
-        )
+        rootdir: Path = Path(self.cluster.scratch_dir)
+        job_dir: Path = rootdir / project_job
+        log_dir_path: str = str(job_dir / "logs")
 
         scripts: dict[str, str] = {}
         # Placeholder paths for the orchestrator (since scripts
@@ -219,8 +202,7 @@ class SlurmExecutor(Executor):
                     cluster=self.cluster,
                     pipeline_name=pipeline.name,
                     label=label,
-                    project_dir=resolved_dir,
-                    project_job=project_job,
+                    job_dir=job_dir,
                     n_jobs=element.array_jobs,
                     iteration=0,
                 )
@@ -234,8 +216,7 @@ class SlurmExecutor(Executor):
                         cluster=self.cluster,
                         pipeline_name=pipeline.name,
                         label=label,
-                        project_dir=resolved_dir,
-                        project_job=project_job,
+                        job_dir=job_dir,
                         n_jobs=step.array_jobs,
                         iteration="$F3DASM_ITERATION",
                     )
@@ -262,8 +243,7 @@ def render_sbatch_script(
     cluster: SlurmCluster,
     pipeline_name: str,
     label: str,
-    project_dir: Path,
-    project_job: str,
+    job_dir: Path,
     n_jobs: int | None,
     iteration: int | str,
 ) -> str:
@@ -284,10 +264,9 @@ def render_sbatch_script(
         Name of the pipeline (used in job names).
     label : str
         Unique label for this submission (used in filenames).
-    project_dir : Path
-        Base project directory.
-    project_job : str
-        Project job identifier.
+    job_dir : Path
+        Absolute path to the job directory (``rootdir/project_job``).
+        Pipeline artifacts and per-step ExperimentData live here.
     n_jobs : int | None
         Number of jobs for array steps.
     iteration : int | str
@@ -320,8 +299,7 @@ def render_sbatch_script(
         lines.append(f"#SBATCH --array=0-{array_size}%{res.max_concurrent}")
 
     # --- Log output paths ---
-    log_dir: str = cluster.log_dir.format(project_job=project_job)
-    log_path: str = str(project_dir / log_dir / label)
+    log_path: str = str(job_dir / "logs" / label)
     if step.parallel:
         lines.append(f"#SBATCH --output={log_path}_%A_%a.out")
     else:
@@ -356,9 +334,8 @@ def render_sbatch_script(
     cmd_parts: list[str] = [
         f"{cluster.runner} -m {run_step_module}",
         f"  --step={step.name}",
-        f"  --project-dir={project_dir}",
-        f"  --project-job={project_job}",
-        f"  --pipeline-name={pipeline_name}",
+        f"  --job-dir={job_dir}",
+        f"  --project-dir={step.project_dir}",
         f"  --iteration={iteration}",
     ]
 

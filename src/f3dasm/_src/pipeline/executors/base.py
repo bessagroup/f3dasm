@@ -7,7 +7,6 @@ from __future__ import annotations
 
 # Standard
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 # Local
@@ -32,7 +31,6 @@ class Executor(ABC):
     def run(
         self,
         pipeline: Pipeline,
-        project_dir: str | Path | None = None,
         project_job: str | None = None,
     ) -> str:
         """Execute a pipeline and return the project job ID.
@@ -41,10 +39,9 @@ class Executor(ABC):
         ----------
         pipeline : Pipeline
             The pipeline to execute.
-        project_dir : str | Path, optional
-            Override the project directory.
         project_job : str, optional
-            Existing project job ID for resumption.
+            Existing project job ID for resumption. If ``None``,
+            a timestamp-based ID is generated.
 
         Returns
         -------
