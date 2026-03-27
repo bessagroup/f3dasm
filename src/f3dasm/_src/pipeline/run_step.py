@@ -180,12 +180,18 @@ def _execute_step(
             # Array job: each SLURM task processes one job index.
             # The DataGenerator handles the strided access pattern
             # internally (job_number::max_array_size).
-            block.call(
-                data=data,
-                mode="cluster_array",
-                job_number=job_number,
-                **step.kwargs,
-            )
+            max_array_size = step.resources.max_array_size
+            open_experiments = data.select_with_status("open").index.tolist()
+
+            job_numbers = open_experiments[job_number::max_array_size]
+
+            for job_idx in job_numbers:
+                _ = block.call(
+                    data=data,
+                    mode="cluster_array",
+                    job_number=job_idx,
+                    **step.kwargs,
+                )
         else:
             # Non-parallel DataGenerator on cluster: use file-lock
             # coordination so multiple nodes can safely share the
