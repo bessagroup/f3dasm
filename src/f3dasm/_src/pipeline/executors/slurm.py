@@ -62,6 +62,7 @@ class SlurmExecutor(Executor):
         self,
         pipeline: Pipeline,
         project_job: str | None = None,
+        rootdir: Path | None = None,
     ) -> str:
         """Submit the pipeline to SLURM.
 
@@ -76,15 +77,18 @@ class SlurmExecutor(Executor):
             The pipeline to execute.
         project_job : str, optional
             Job identifier used as the run folder
-            (``scratch_dir / project_job``). If ``None``, a
+            (``rootdir / project_job``). If ``None``, a
             timestamp-based ID is generated.
+        rootdir : Path, optional
+            Root directory under which the job folder is created.
+            Defaults to the current working directory.
 
         Returns
         -------
         str
             The project job ID.
         """
-        rootdir: Path = Path(self.cluster.scratch_dir)
+        rootdir = rootdir if rootdir is not None else Path.cwd()
         resolved_job: str = project_job or str(int(time.time()))
 
         # job_dir holds all pipeline artifacts (.pipeline.pkl,
@@ -166,6 +170,7 @@ class SlurmExecutor(Executor):
         self,
         pipeline: Pipeline,
         project_job: str = "PLACEHOLDER",
+        rootdir: Path | None = None,
     ) -> dict[str, str]:
         """Generate SLURM scripts without submitting.
 
@@ -179,13 +184,16 @@ class SlurmExecutor(Executor):
             The pipeline to generate scripts for.
         project_job : str
             Placeholder project job ID.
+        rootdir : Path, optional
+            Root directory under which the job folder is created.
+            Defaults to the current working directory.
 
         Returns
         -------
         dict[str, str]
             Mapping of label to rendered script content.
         """
-        rootdir: Path = Path(self.cluster.scratch_dir)
+        rootdir = rootdir if rootdir is not None else Path.cwd()
         job_dir: Path = rootdir / project_job
         log_dir_path: str = str(job_dir / "logs")
 

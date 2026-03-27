@@ -55,6 +55,7 @@ class LocalExecutor(Executor):
         self,
         pipeline: Pipeline,
         project_job: str | None = None,
+        rootdir: Path | None = None,
     ) -> str:
         """Execute the pipeline locally.
 
@@ -63,15 +64,19 @@ class LocalExecutor(Executor):
         pipeline : Pipeline
             The pipeline to execute.
         project_job : str, optional
-            Job identifier used as the run folder (``cwd / project_job``).
-            Defaults to a timestamp-based ID.
+            Job identifier used as the run folder
+            (``rootdir / project_job``). Defaults to a
+            timestamp-based ID.
+        rootdir : Path, optional
+            Root directory under which the job folder is created.
+            Defaults to the current working directory.
 
         Returns
         -------
         str
             The project job ID.
         """
-        rootdir: Path = Path.cwd()
+        rootdir = rootdir if rootdir is not None else Path.cwd()
         resolved_job: str = project_job or str(int(time.time()))
         job_dir: Path = rootdir / resolved_job
         job_dir.mkdir(parents=True, exist_ok=True)
