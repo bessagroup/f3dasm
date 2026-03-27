@@ -181,6 +181,63 @@ class Pipeline:
                         flat.append((step, i, element.n_iterations))
         return flat
 
+    def from_step(self, step: int | str) -> Pipeline:
+        """Return a new Pipeline starting from the specified step.
+
+        Parameters
+        ----------
+        step : int | str
+            Step index (int) or step name (str) to start from.
+            When a name is given and the step lives inside a
+            :class:`Loop`, the whole Loop element is included.
+
+        Returns
+        -------
+        Pipeline
+            A new Pipeline containing only the steps from
+            ``step`` onwards, with the same name and resources.
+
+        Raises
+        ------
+        ValueError
+            If a step name is given and no matching step is found.
+
+        Examples
+        --------
+        Resume a pipeline from the ``"run"`` step::
+
+            # Original run
+            job_id = pipeline.run(mode="local")
+
+            # Resume from "run", reusing the same output directory
+            pipeline.from_step("run").run(mode="local", project_job=job_id)
+        """
+        if isinstance(step, int):
+            return Pipeline(
+                name=self.name,
+                steps=self.steps[step:],
+                orchestrator_resources=self.orchestrator_resources,
+            )
+
+        # str: find the PipelineElement that contains the named step
+        for i, element in enumerate(self.steps):
+            if isinstance(element, Step) and element.name == step:
+                return Pipeline(
+                    name=self.name,
+                    steps=self.steps[i:],
+                    orchestrator_resources=self.orchestrator_resources,
+                )
+            elif isinstance(element, Loop):
+                for loop_step in element.steps:
+                    if loop_step.name == step:
+                        return Pipeline(
+                            name=self.name,
+                            steps=self.steps[i:],
+                            orchestrator_resources=self.orchestrator_resources,
+                        )
+
+        raise ValueError(f"Step {step!r} not found in pipeline {self.name!r}.")
+
     def run(
         self,
         mode: Literal["local", "slurm"] = "local",

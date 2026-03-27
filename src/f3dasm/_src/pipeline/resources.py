@@ -9,6 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+# Third-party
+from omegaconf import DictConfig, OmegaConf
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
@@ -79,3 +82,24 @@ class SlurmCluster:
     env_vars: dict[str, str] = field(default_factory=dict)
     runner: str = "python"
     log_dir: str = "logs/{project_job}"
+
+    @classmethod
+    def from_yaml(cls, config: DictConfig) -> SlurmCluster:
+        """Create a SlurmCluster from a Hydra DictConfig.
+
+        Parameters
+        ----------
+        config : DictConfig
+            Hydra DictConfig for the cluster section, e.g. ``cfg.cluster``.
+
+        Returns
+        -------
+        SlurmCluster
+
+        Examples
+        --------
+        >>> cluster = SlurmCluster.from_yaml(cfg.cluster)
+        """
+        _dict = OmegaConf.to_container(config, resolve=True)
+        _dict.pop("enabled", None)
+        return cls(**_dict)
