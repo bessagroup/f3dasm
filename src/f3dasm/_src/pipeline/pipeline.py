@@ -81,6 +81,14 @@ class Step:
     kwargs: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
+        """Validate the dependency type.
+
+        Raises
+        ------
+        ValueError
+            If ``dependency`` is not one of the valid SLURM
+            dependency types.
+        """
         if self.dependency not in VALID_DEPENDENCIES:
             raise ValueError(
                 f"Invalid dependency {self.dependency!r}. "

@@ -62,12 +62,27 @@ logger = logging.getLogger("f3dasm")
 
 
 class Block(Protocol):
+    """Structural typing protocol for pipeline blocks.
+
+    Any object that implements :meth:`arm` and :meth:`call` with
+    the signatures below satisfies this protocol. The concrete
+    abstract base class lives in :mod:`f3dasm._src.core`.
+    """
+
     def arm(self, data: ExperimentData) -> None: ...
 
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData: ...
 
 
-class DataGenerator(Block): ...
+class DataGenerator(Block):
+    """Protocol for data generation blocks.
+
+    Extends :class:`Block` to mark blocks whose primary purpose
+    is executing a data-generating function on each experiment
+    sample.
+    """
+
+    ...
 
 
 # =============================================================================

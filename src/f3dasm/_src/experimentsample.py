@@ -34,12 +34,27 @@ __status__ = "Stable"
 
 
 class JobStatus(Enum):
+    """Possible states of an experiment sample's job.
+
+    Attributes
+    ----------
+    OPEN : int
+        The sample is available for processing.
+    IN_PROGRESS : int
+        The sample is currently being processed.
+    FINISHED : int
+        The sample has been processed successfully.
+    ERROR : int
+        An error occurred during processing.
+    """
+
     OPEN = 0
     IN_PROGRESS = 1
     FINISHED = 2
     ERROR = 3
 
     def __str__(self) -> str:
+        """Return the name of the job status."""
         return self.name
 
 

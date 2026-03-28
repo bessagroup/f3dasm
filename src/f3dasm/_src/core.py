@@ -155,6 +155,13 @@ class ChainedBlock(Block):
     """
 
     def __init__(self, blocks: list[Block]) -> None:
+        """Initialize the chained block.
+
+        Parameters
+        ----------
+        blocks : list[Block]
+            Ordered list of blocks to execute sequentially.
+        """
         self.blocks = blocks
 
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:

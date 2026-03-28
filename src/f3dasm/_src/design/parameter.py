@@ -332,6 +332,13 @@ class ConstantParameter(Parameter):
     value: Any  # required, no default
 
     def __post_init__(self):
+        """Validate that the value is hashable.
+
+        Raises
+        ------
+        TypeError
+            If the value is not hashable.
+        """
         super().__init__()
         self._validate_hashable()
 
@@ -432,6 +439,14 @@ class ContinuousParameter(Parameter):
     log: bool = False
 
     def __post_init__(self):
+        """Cast bounds to float and validate the range.
+
+        Raises
+        ------
+        ValueError
+            If ``log`` is True and ``lower_bound <= 0``, or if
+            ``upper_bound <= lower_bound``.
+        """
         super().__init__()
         self.lower_bound = float(self.lower_bound)
         self.upper_bound = float(self.upper_bound)
@@ -560,6 +575,14 @@ class DiscreteParameter(Parameter):
     step: int = 1
 
     def __post_init__(self):
+        """Cast bounds to int and validate the range.
+
+        Raises
+        ------
+        ValueError
+            If ``upper_bound <= lower_bound`` or
+            ``step <= 0``.
+        """
         super().__init__()
         self.lower_bound = int(self.lower_bound)
         self.upper_bound = int(self.upper_bound)
@@ -627,6 +650,13 @@ class CategoricalParameter(Parameter):
     categories: list[Any] = field(default_factory=list)
 
     def __post_init__(self):
+        """Convert categories to a list and check for duplicates.
+
+        Raises
+        ------
+        ValueError
+            If the categories contain duplicate values.
+        """
         super().__init__()
         self.categories = list(self.categories)
         self._check_duplicates()
@@ -730,6 +760,14 @@ class ArrayParameter(Parameter):
     upper_bound: Any = field(default_factory=lambda: float("inf"))
 
     def __post_init__(self):
+        """Normalize shape and bounds, validating dimensions.
+
+        Raises
+        ------
+        ValueError
+            If ``shape`` is empty or contains non-positive
+            integers.
+        """
         super().__init__()
 
         if isinstance(self.shape, int):

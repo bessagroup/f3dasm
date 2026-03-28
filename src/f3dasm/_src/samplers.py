@@ -42,15 +42,55 @@ __status__ = "Stable"
 
 
 class Sampler(Block):
+    """Abstract base class for sampling strategies.
+
+    Subclasses must define a ``sample_mapping`` class variable that
+    maps :class:`Parameter` types to callable sampling functions.
+    The :meth:`call` method iterates over this mapping to generate
+    samples for each parameter type in the domain.
+
+    Attributes
+    ----------
+    sample_mapping : dict[Parameter, callable]
+        Mapping from parameter types to their sampling functions.
+    """
+
     sample_mapping: dict[Parameter, callable]
 
     def __init__(self, seed: Optional[int], **parameters):
+        """Initialize the sampler.
+
+        Parameters
+        ----------
+        seed : int, optional
+            Random seed for reproducibility.
+        **parameters : dict
+            Additional keyword arguments forwarded to the
+            sampling functions.
+        """
         self.seed = seed
         self.parameters = parameters
 
     def call(
         self, data: ExperimentData, n_samples: int, **kwargs
     ) -> ExperimentData:
+        """Generate samples for each parameter type in the domain.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data providing the domain and
+            project directory.
+        n_samples : int
+            Number of samples to generate.
+        **kwargs : dict
+            Additional keyword arguments (unused).
+
+        Returns
+        -------
+        ExperimentData
+            New experiment data containing the generated samples.
+        """
         d = ExperimentData(
             project_dir=data._project_dir, domain=data.domain._copy()
         )
@@ -270,6 +310,8 @@ random_sample_mapping: dict[Parameter, callable] = {
 
 
 class RandomUniform(Sampler):
+    """Sampler that draws independent uniform random samples."""
+
     sample_mapping: dict[Parameter, callable] = random_sample_mapping
 
 
@@ -402,6 +444,8 @@ latin_sample_mapping: dict[Parameter, callable] = {
 
 
 class Latin(Sampler):
+    """Sampler using Latin Hypercube sampling via SALib."""
+
     sample_mapping: dict[Parameter, callable] = latin_sample_mapping
 
 
@@ -536,6 +580,8 @@ sobol_sample_mapping: dict[Parameter, callable] = {
 
 
 class Sobol(Sampler):
+    """Sampler using Sobol quasi-random sequences via SALib."""
+
     sample_mapping: dict[Parameter, callable] = sobol_sample_mapping
 
 
@@ -713,6 +759,8 @@ def next_power_of_two(x: int) -> int:
 
 
 class Grid(Block):
+    """Sampler that creates a full-factorial grid of design points."""
+
     value_mapping: dict[Parameter, callable] = grid_value_mapping
 
     def __init__(
