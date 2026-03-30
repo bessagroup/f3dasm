@@ -1,3 +1,5 @@
+"""Benchmark optimization test functions for data generation."""
+
 #                                                                       Modules
 # =============================================================================
 
