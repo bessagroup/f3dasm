@@ -4,8 +4,7 @@ import numpy as np
 import pytest
 
 from f3dasm import ExperimentData, ExperimentSample, create_sampler
-from f3dasm._src.experimentsample import JobStatus
-from f3dasm.design import Domain, make_nd_continuous_domain
+from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
 

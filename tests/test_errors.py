@@ -16,10 +16,11 @@ pytestmark = pytest.mark.smoke
 
 class TestEmptyFileError:
     def test_basic(self):
-        err = EmptyFileError("/tmp/test.csv")
+        p = Path("/tmp/test.csv")
+        err = EmptyFileError(str(p))
         assert "File is empty" in str(err)
-        assert "/tmp/test.csv" in str(err)
-        assert err.file_path == Path("/tmp/test.csv")
+        assert str(p) in str(err)
+        assert err.file_path == p
 
     def test_custom_message(self):
         err = EmptyFileError("/tmp/test.csv", message="No data found")

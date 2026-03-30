@@ -1,9 +1,7 @@
 """Extended tests for ExperimentSample: repr, from_json, copy, status."""
 
 import json
-from pathlib import Path
 
-import numpy as np
 import pytest
 
 from f3dasm import ExperimentSample
@@ -15,9 +13,7 @@ pytestmark = pytest.mark.smoke
 
 class TestRepr:
     def test_repr_contains_data(self):
-        sample = ExperimentSample(
-            _input_data={"x": 1}, _output_data={"y": 2}
-        )
+        sample = ExperimentSample(_input_data={"x": 1}, _output_data={"y": 2})
         r = repr(sample)
         assert "ExperimentSample" in r
         assert "x" in r
@@ -105,9 +101,7 @@ class TestNoneData:
         assert sample._output_data == {}
 
     def test_output_data_infers_finished(self):
-        sample = ExperimentSample(
-            _input_data={"x": 1}, _output_data={"y": 2}
-        )
+        sample = ExperimentSample(_input_data={"x": 1}, _output_data={"y": 2})
         assert sample.job_status == JobStatus.FINISHED
 
     def test_no_output_data_infers_open(self):

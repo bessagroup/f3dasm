@@ -22,9 +22,7 @@ class TestFindStep:
         assert _find_step(p, "inner") is inner
 
     def test_step_not_found(self):
-        p = Pipeline(
-            steps=[Step(block=lambda: None, name="a")]
-        )
+        p = Pipeline(steps=[Step(block=lambda: None, name="a")])
         assert _find_step(p, "nonexistent") is None
 
     def test_empty_pipeline(self):

@@ -3,7 +3,10 @@
 import pytest
 
 from f3dasm._src.pipeline.executors.base import Executor
-from f3dasm._src.pipeline.executors.local import LocalExecutor, _run_step_locally
+from f3dasm._src.pipeline.executors.local import (
+    LocalExecutor,
+    _run_step_locally,
+)
 from f3dasm._src.pipeline.pipeline import Pipeline, Step
 
 pytestmark = pytest.mark.smoke

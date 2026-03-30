@@ -41,13 +41,14 @@ def resources():
 
 class TestRenderSbatchScript:
     def test_basic_script(self, cluster, resources):
+        job_dir = Path("/scratch/job1")
         step = Step(block=lambda: None, name="train", resources=resources)
         script = render_sbatch_script(
             step=step,
             cluster=cluster,
             pipeline_name="my_pipe",
             label="train",
-            job_dir=Path("/scratch/job1"),
+            job_dir=job_dir,
             n_jobs=None,
             iteration=0,
         )
@@ -62,7 +63,7 @@ class TestRenderSbatchScript:
         assert "module load python/3.11" in script
         assert 'export MY_VAR="value"' in script
         assert "--step=train" in script
-        assert "--job-dir=/scratch/job1" in script
+        assert f"--job-dir={job_dir}" in script
         assert "--iteration=0" in script
         # Non-parallel: no array or job-number
         assert "--array" not in script
@@ -171,9 +172,7 @@ class TestRenderStepBlock:
     def test_step_with_next(self):
         lines = []
         step = Step(block=lambda: None, name="a")
-        p = Pipeline(
-            steps=[step, Step(block=lambda: None, name="b")]
-        )
+        p = Pipeline(steps=[step, Step(block=lambda: None, name="b")])
         _render_step_block(
             lines=lines,
             step=step,

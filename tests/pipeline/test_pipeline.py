@@ -141,9 +141,7 @@ class TestPipeline:
         assert sub.steps[1].name == "c"
 
     def test_from_step_name_not_found(self):
-        p = Pipeline(
-            name="test", steps=[Step(block=lambda: None, name="a")]
-        )
+        p = Pipeline(name="test", steps=[Step(block=lambda: None, name="a")])
         with pytest.raises(ValueError, match="not found"):
             p.from_step("nonexistent")
 

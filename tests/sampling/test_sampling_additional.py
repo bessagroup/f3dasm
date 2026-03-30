@@ -44,7 +44,7 @@ class TestCreateSampler:
 
     def test_create_sampler_rejects_non_str_non_config(self):
         s = create_sampler("random", seed=42)
-        # Passing a Sampler object raises TypeError (only str/DictConfig accepted)
+        # Sampler object raises TypeError (only str/DictConfig)
         with pytest.raises(TypeError):
             create_sampler(s)
 
