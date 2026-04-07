@@ -113,6 +113,8 @@ nav:
             - 'notebooks/data-driven/carstoppingdistance.ipynb'
             - 'notebooks/data-driven/cluster.ipynb'
             - 'notebooks/data-driven/gridsampler.ipynb'
+        - Pipeline:
+            - 'notebooks/pipeline/pipeline.ipynb'
         - Built-in implementations:
             - 'notebooks/builtins/builtinfunction.ipynb'
             - 'notebooks/builtins/builtinoptimizers.ipynb'
@@ -126,6 +128,7 @@ nav:
         - 'api/design.md'
         - 'api/experimentdata.md'
         - 'api/datageneration.md'
+        - 'api/pipeline.md'
         - 'api/defaults.md'
         - 'api/hydra_tools.md'
     - License:
