@@ -101,29 +101,32 @@ nav:
     - 'index.md'
     - Getting started:
         - 'overview.md'
+        - 'concepts.md'
         - 'installation.md'
         - 'studies.md'
     - Tutorials:
+        - 'Quickstart': 'notebooks/quickstart.ipynb'
         - Design-of-experiments:
-            - 'notebooks/design/domain_creation.ipynb'
-        - Managing experiments:
-            - 'notebooks/experimentdata/experimentdata.ipynb'
-        - Data-driven process:
-            - 'notebooks/data-driven/blocks.ipynb'
-            - 'notebooks/data-driven/carstoppingdistance.ipynb'
-            - 'notebooks/data-driven/cluster.ipynb'
-            - 'notebooks/data-driven/gridsampler.ipynb'
+            - 'Creating a Domain': 'notebooks/design/domain_creation.ipynb'
+        - Experiment Data:
+            - 'Working with ExperimentData': 'notebooks/experimentdata/experimentdata.ipynb'
+        - Blocks & Data Generation:
+            - 'Understanding Blocks': 'notebooks/data-driven/blocks.ipynb'
+            - 'Example: Car Stopping Distance': 'notebooks/data-driven/carstoppingdistance.ipynb'
+            - 'Cluster Execution': 'notebooks/data-driven/cluster.ipynb'
+            - 'Grid Sampling': 'notebooks/data-driven/gridsampler.ipynb'
         - Pipeline:
-            - 'notebooks/pipeline/pipeline.ipynb'
+            - 'Building a Pipeline': 'notebooks/pipeline/pipeline.ipynb'
         - Built-in implementations:
-            - 'notebooks/builtins/builtinfunction.ipynb'
-            - 'notebooks/builtins/builtinoptimizers.ipynb'
-            - 'notebooks/builtins/builtinsamplers.ipynb'
-        - Integration with 3rd party libraries:
-            - 'notebooks/integration/implement_optuna.ipynb'
-            - 'notebooks/integration/implement_scipy.ipynb'
-            - 'notebooks/hydra/usehydra.ipynb'
-        - defaults.md
+            - 'Benchmark Functions': 'notebooks/builtins/builtinfunction.ipynb'
+            - 'Built-in Optimizers': 'notebooks/builtins/builtinoptimizers.ipynb'
+            - 'Built-in Samplers': 'notebooks/builtins/builtinsamplers.ipynb'
+        - Third-Party Integrations:
+            - 'Optuna Integration': 'notebooks/integration/implement_optuna.ipynb'
+            - 'SciPy Integration': 'notebooks/integration/implement_scipy.ipynb'
+            - 'Hydra Configuration': 'notebooks/hydra/usehydra.ipynb'
+    - Reference:
+        - 'Built-in Defaults': 'defaults.md'
     - API Reference:
         - 'api/design.md'
         - 'api/experimentdata.md'
