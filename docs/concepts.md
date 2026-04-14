@@ -122,6 +122,7 @@ Key features:
 - **Sequential and looped execution** — chain steps or repeat them
 - **SLURM support** — run on HPC clusters with `SlurmCluster`
 - **Resumable** — pipelines can be interrupted and resumed
+- **Import path preservation** — local Python imports (`from my_script import func`) are automatically resolved on SLURM compute nodes via shared filesystem
 
 **Learn more:** [Building a Pipeline](notebooks/pipeline/pipeline.ipynb) | [API Reference](api/pipeline.md)
 

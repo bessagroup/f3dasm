@@ -15,6 +15,11 @@ The ``SlurmExecutor`` serialises the full :class:`Pipeline` to
 deserialises it, looks up the requested step, and dispatches
 execution. ExperimentData for the step lives at
 ``<job_dir>/<project_dir>``.
+
+Before deserializing, the submitter's ``sys.path`` is restored
+from ``<job_dir>/.sys_path.json`` (if present). This allows
+``cloudpickle`` to resolve imports from local scripts that were
+on the submitter's Python path but are not installed as packages.
 """
 
 #                                                                       Modules
@@ -24,6 +29,7 @@ from __future__ import annotations
 
 # Standard
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -90,6 +96,20 @@ def main(argv: list[str] | None = None) -> None:
 
     job_dir: Path = Path(args.job_dir)
     run_dir: Path = job_dir / args.project_dir
+
+    # --- Restore the submitter's sys.path for import resolution ---
+    # When the pipeline was submitted, sys.path was saved to
+    # .sys_path.json. Prepend those paths so that cloudpickle can
+    # resolve imports from local scripts (e.g. from my_script
+    # import func) during deserialization.
+    sys_path_path: Path = job_dir / ".sys_path.json"
+    if sys_path_path.exists():
+        with open(sys_path_path) as f:
+            stored_paths: list[str] = json.load(f)
+        for p in reversed(stored_paths):
+            if p not in sys.path:
+                sys.path.insert(0, p)
+        logger.debug("Restored submitter sys.path from %s", sys_path_path)
 
     # --- Load the serialized pipeline definition ---
     pipeline_path: Path = job_dir / ".pipeline.pkl"

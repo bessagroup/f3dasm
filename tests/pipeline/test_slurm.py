@@ -1,10 +1,13 @@
 """Tests for SLURM executor script rendering."""
 
+import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from f3dasm._src.pipeline.executors.slurm import (
+    SlurmExecutor,
     _get_next_dependency,
     _render_loop_block,
     _render_step_block,
@@ -268,8 +271,6 @@ class TestRenderOrchestratorScript:
 
 class TestSlurmExecutorGenerateScripts:
     def test_generate_scripts(self, cluster):
-        from f3dasm._src.pipeline.executors.slurm import SlurmExecutor
-
         step_a = Step(block=lambda: None, name="create")
         inner = Step(block=lambda: None, name="run")
         loop = Loop(n_iterations=3, steps=[inner])
@@ -283,3 +284,47 @@ class TestSlurmExecutorGenerateScripts:
         assert "loop1_run" in scripts
         assert "orchestrator" in scripts
         assert "#!/bin/bash" in scripts["orchestrator"]
+
+
+class TestSysPathSerialization:
+    def test_sys_path_json_written(self, cluster, tmp_path):
+        """SlurmExecutor.run() writes .sys_path.json next to .pipeline.pkl."""
+        step = Step(block=lambda: None, name="train")
+        p = Pipeline(name="test", steps=[step])
+        executor = SlurmExecutor(cluster=cluster)
+
+        mock_result = type(
+            "Result", (), {"stdout": "Submitted batch job 12345"}
+        )()
+        with patch("subprocess.run", return_value=mock_result):
+            job_id = executor.run(
+                pipeline=p, project_job="myjob", rootdir=tmp_path
+            )
+
+        job_dir = tmp_path / job_id
+        sys_path_file = job_dir / ".sys_path.json"
+        assert sys_path_file.exists()
+
+        paths = json.loads(sys_path_file.read_text())
+        assert isinstance(paths, list)
+        assert len(paths) > 0
+        # All entries should be absolute paths (no empty strings
+        # or relative paths).
+        for p in paths:
+            assert p, "empty string should have been resolved"
+            assert Path(p).is_absolute(), f"expected absolute: {p}"
+
+    def test_sys_path_no_duplicates(self, cluster, tmp_path):
+        """Normalized sys.path should not contain duplicates."""
+        step = Step(block=lambda: None, name="train")
+        p = Pipeline(name="test", steps=[step])
+        executor = SlurmExecutor(cluster=cluster)
+
+        mock_result = type(
+            "Result", (), {"stdout": "Submitted batch job 12345"}
+        )()
+        with patch("subprocess.run", return_value=mock_result):
+            executor.run(pipeline=p, project_job="myjob", rootdir=tmp_path)
+
+        paths = json.loads((tmp_path / "myjob" / ".sys_path.json").read_text())
+        assert len(paths) == len(set(paths))

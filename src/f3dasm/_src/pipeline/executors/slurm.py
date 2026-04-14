@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 # Standard
+import json
 import logging
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,6 +52,12 @@ class SlurmExecutor(Executor):
     iteration) to progress through the pipeline one step or loop
     iteration at a time.
 
+    At submission time the submitter's ``sys.path`` is stored as
+    ``.sys_path.json`` alongside ``.pipeline.pkl``. When a SLURM
+    job unpickles the pipeline, these paths are restored so that
+    imports from local scripts resolve correctly. This requires
+    compute nodes to share a filesystem with the submission host.
+
     Parameters
     ----------
     cluster : SlurmCluster
@@ -70,6 +78,12 @@ class SlurmExecutor(Executor):
         a single orchestrator script, and submits it via
         ``sbatch``. The orchestrator handles all step submissions
         and dependency chaining.
+
+        The current ``sys.path`` is normalized (resolved to
+        absolute paths, empty strings expanded to ``cwd``) and
+        stored as ``.sys_path.json`` in the job directory. SLURM
+        jobs restore these paths before deserializing the pipeline
+        so that imports from local scripts work on compute nodes.
 
         Parameters
         ----------
@@ -101,6 +115,23 @@ class SlurmExecutor(Executor):
         with open(pipeline_path, "wb") as f:
             cloudpickle.dump(pipeline, f)
         logger.info(f"Pipeline serialized to {pipeline_path}")
+
+        # Store the submitter's sys.path so that SLURM jobs can
+        # resolve imports from local scripts (e.g. from my_script
+        # import func). Paths are normalized to absolute to avoid
+        # ambiguity when the job runs in a different cwd.
+        resolved_paths: list[str] = []
+        for p in sys.path:
+            canonical = (
+                str(Path(p).resolve()) if p else str(Path.cwd().resolve())
+            )
+            if canonical not in resolved_paths:
+                resolved_paths.append(canonical)
+
+        sys_path_path: Path = job_dir / ".sys_path.json"
+        with open(sys_path_path, "w") as f:
+            json.dump(resolved_paths, f)
+        logger.info(f"sys.path serialized to {sys_path_path}")
 
         # Create the log and script directories.
         log_dir: Path = job_dir / "logs"
