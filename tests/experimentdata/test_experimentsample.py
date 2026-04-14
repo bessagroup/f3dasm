@@ -207,3 +207,45 @@ def test_to_numpy_with_nan(sample_domain):
     input_array, output_array = sample.to_numpy()
     np.testing.assert_array_equal(input_array, [np.nan, 2])
     np.testing.assert_array_equal(output_array, [3])
+
+
+# ======================= store() edge cases =======================
+
+
+def test_store_to_input():
+    sample = ExperimentSample()
+    sample.store("x", 42.0, to_disk=False, which="input")
+    assert sample.input_data["x"] == 42.0
+
+
+def test_store_invalid_which():
+    sample = ExperimentSample()
+    with pytest.raises(ValueError, match="Invalid value for 'which'"):
+        sample.store("x", 42.0, to_disk=False, which="invalid")
+
+
+# ======================= get() priority =======================
+
+
+def test_get_from_input_over_output():
+    sample = ExperimentSample(
+        _input_data={"x": 1.0},
+        _output_data={"x": 2.0},
+    )
+    # get() should return the input value when key exists in both
+    val = sample.get("x")
+    assert val == 1.0
+
+
+# ======================= round with non-numeric =======================
+
+
+def test_round_with_string_values():
+    sample = ExperimentSample(
+        _input_data={"x": 1.2345, "name": "test"},
+        _output_data={"y": 3.6789},
+    )
+    sample.round(2)
+    assert sample._input_data["x"] == 1.23
+    assert sample._input_data["name"] == "test"
+    assert sample._output_data["y"] == 3.68

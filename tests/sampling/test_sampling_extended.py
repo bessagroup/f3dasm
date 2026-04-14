@@ -4,8 +4,22 @@ import numpy as np
 import pytest
 
 from f3dasm import ExperimentData, create_sampler
+from f3dasm._src.design.parameter import (
+    ArrayParameter,
+    CategoricalParameter,
+    ConstantParameter,
+    ContinuousParameter,
+    DiscreteParameter,
+)
 from f3dasm._src.samplers import (
+    Grid,
+    grid_values_categorical_parameters,
+    grid_values_constant_parameters,
+    grid_values_continuous_parameters,
+    grid_values_discrete_parameters,
+    latin_sample_array_parameters,
     next_power_of_two,
+    sobol_sample_array_parameters,
 )
 from f3dasm.design import Domain
 
@@ -168,3 +182,189 @@ def test_sampler_categorical_only():
     assert len(result) == 5
     df, _ = result.to_pandas()
     assert all(v in ["a", "b", "c"] for v in df["cat"])
+
+
+# ======================= Latin array sampling =======================
+
+
+class TestLatinArraySampling:
+    def test_latin_sample_array_parameters_1d(self):
+        input_space = {
+            "arr": ArrayParameter(lower_bound=0.0, upper_bound=1.0, shape=(3,))
+        }
+        samples = latin_sample_array_parameters(
+            input_space=input_space, n_samples=5, seed=42
+        )
+        assert len(samples) == 5
+        for es in samples.values():
+            arr = es.input_data["arr"]
+            assert arr.shape == (3,)
+
+    def test_latin_sample_array_parameters_2d(self):
+        input_space = {
+            "arr": ArrayParameter(
+                lower_bound=0.0, upper_bound=1.0, shape=(2, 2)
+            )
+        }
+        samples = latin_sample_array_parameters(
+            input_space=input_space, n_samples=4, seed=42
+        )
+        assert len(samples) == 4
+        for es in samples.values():
+            arr = es.input_data["arr"]
+            assert arr.shape == (2, 2)
+
+
+# ======================= Sobol array sampling =======================
+
+
+class TestSobolArraySampling:
+    def test_sobol_sample_array_parameters_1d(self):
+        input_space = {
+            "arr": ArrayParameter(lower_bound=0.0, upper_bound=1.0, shape=(3,))
+        }
+        samples = sobol_sample_array_parameters(
+            input_space=input_space, n_samples=4, seed=42
+        )
+        assert len(samples) == 4
+        for es in samples.values():
+            arr = es.input_data["arr"]
+            assert arr.shape == (3,)
+
+    def test_sobol_sample_array_parameters_2d(self):
+        input_space = {
+            "arr": ArrayParameter(
+                lower_bound=0.0, upper_bound=1.0, shape=(2, 2)
+            )
+        }
+        samples = sobol_sample_array_parameters(
+            input_space=input_space, n_samples=4, seed=42
+        )
+        assert len(samples) == 4
+        for es in samples.values():
+            arr = es.input_data["arr"]
+            assert arr.shape == (2, 2)
+
+
+# ======================= Latin/Sobol with ArrayParameter domain =======================
+
+
+def test_latin_sampler_with_array_domain():
+    domain = Domain()
+    domain.add_array("arr", low=0.0, high=1.0, shape=(2,))
+    data = ExperimentData(domain=domain)
+    sampler = create_sampler("latin", seed=42)
+    result = sampler.call(data=data, n_samples=5)
+    assert len(result) == 5
+
+
+def test_sobol_sampler_with_array_domain():
+    domain = Domain()
+    domain.add_array("arr", low=0.0, high=1.0, shape=(2,))
+    data = ExperimentData(domain=domain)
+    sampler = create_sampler("sobol", seed=42)
+    result = sampler.call(data=data, n_samples=4)
+    assert len(result) == 4
+
+
+# ======================= Grid value functions =======================
+
+
+class TestGridValueFunctions:
+    def test_grid_values_continuous_with_float_stepsize(self):
+        input_space = {
+            "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        }
+        result = grid_values_continuous_parameters(
+            input_space=input_space,
+            stepsize_continuous_parameters=0.25,
+        )
+        assert "x" in result
+        assert len(result["x"]) == 4  # 0.0, 0.25, 0.5, 0.75
+
+    def test_grid_values_continuous_with_dict_stepsize(self):
+        input_space = {
+            "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        }
+        result = grid_values_continuous_parameters(
+            input_space=input_space,
+            stepsize_continuous_parameters={"x": 0.5},
+        )
+        assert "x" in result
+        assert len(result["x"]) == 2  # 0.0, 0.5
+
+    def test_grid_values_continuous_dict_mismatched_raises(self):
+        input_space = {
+            "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        }
+        with pytest.raises(ValueError, match="stepsize_continuous_parameters"):
+            grid_values_continuous_parameters(
+                input_space=input_space,
+                stepsize_continuous_parameters={"x": 0.5, "y": 0.5},
+            )
+
+    def test_grid_values_continuous_none_returns_empty(self):
+        input_space = {
+            "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
+        }
+        result = grid_values_continuous_parameters(
+            input_space=input_space,
+            stepsize_continuous_parameters=None,
+        )
+        assert result == {}
+
+    def test_grid_values_discrete(self):
+        input_space = {
+            "d": DiscreteParameter(lower_bound=0, upper_bound=4, step=2)
+        }
+        result = grid_values_discrete_parameters(input_space=input_space)
+        assert "d" in result
+        assert list(result["d"]) == [0, 2, 4]
+
+    def test_grid_values_categorical(self):
+        input_space = {"cat": CategoricalParameter(categories=["a", "b", "c"])}
+        result = grid_values_categorical_parameters(input_space=input_space)
+        assert result == {"cat": ["a", "b", "c"]}
+
+    def test_grid_values_constant(self):
+        input_space = {"c": ConstantParameter(value=42)}
+        result = grid_values_constant_parameters(input_space=input_space)
+        assert result == {"c": [42]}
+
+
+# ======================= Grid sampler integration =======================
+
+
+def test_grid_sampler_mixed_domain():
+    domain = Domain()
+    domain.add_float("x", 0.0, 1.0)
+    domain.add_int("d", 0, 2)
+    domain.add_category("cat", ["a", "b"])
+
+    data = ExperimentData(domain=domain)
+    grid_sampler = Grid(stepsize_continuous_parameters=0.5)
+    result = grid_sampler.call(data=data)
+    # 2 continuous (0.0, 0.5) * 3 discrete (0,1,2) * 2 categorical (a,b) = 12
+    assert len(result) == 12
+
+
+def test_grid_sampler_continuous_only():
+    domain = Domain()
+    domain.add_float("x", 0.0, 1.0)
+    domain.add_float("y", 0.0, 1.0)
+
+    data = ExperimentData(domain=domain)
+    grid_sampler = Grid(stepsize_continuous_parameters=0.5)
+    result = grid_sampler.call(data=data)
+    # 2 * 2 = 4
+    assert len(result) == 4
+
+
+def test_grid_sampler_constant_domain():
+    domain = Domain()
+    domain.add_constant("c", 10)
+
+    data = ExperimentData(domain=domain)
+    grid_sampler = Grid()
+    result = grid_sampler.call(data=data)
+    assert len(result) == 1

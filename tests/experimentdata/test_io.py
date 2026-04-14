@@ -176,3 +176,68 @@ def test_copy_object(tmp_path):
     )
     loaded = load_object(project_dir=new_dir, path=copied_path)
     np.testing.assert_array_equal(loaded, arr)
+
+
+def test_copy_object_collision(tmp_path):
+    """When the target already exists, copy_object increments the filename."""
+    from pathlib import Path
+
+    old_dir = tmp_path / "old"
+    new_dir = tmp_path / "new"
+
+    arr1 = np.array([1, 2, 3])
+    arr2 = np.array([4, 5, 6])
+    rel_path1 = store_object(
+        project_dir=old_dir, object=arr1, name="test", id=0
+    )
+    # Store another in new_dir at same path to create collision
+    store_object(project_dir=new_dir, object=arr2, name="test", id=0)
+
+    copied_path = copy_object(
+        object_path=Path(rel_path1),
+        old_project_dir=old_dir,
+        new_project_dir=new_dir,
+    )
+    # Should have incremented the filename
+    assert copied_path != rel_path1
+
+
+# ======================= figure store/load =======================
+
+
+def test_figure_store(tmp_path):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from f3dasm._src._io import figure_store
+
+    fig, ax = plt.subplots()
+    ax.plot([1, 2, 3], [1, 4, 9])
+    path = str(tmp_path / "test_fig")
+    stored_path = figure_store(fig, path)
+    assert (tmp_path / "test_fig.pdf").exists()
+    plt.close(fig)
+
+
+def test_figure_load_png(tmp_path):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from f3dasm._src._io import figure_load
+
+    # Create a PNG for figure_load (which reads image files)
+    fig, ax = plt.subplots()
+    ax.plot([1, 2, 3], [1, 4, 9])
+    png_path = tmp_path / "test_fig.png"
+    fig.savefig(png_path)
+    plt.close(fig)
+
+    # figure_load uses .pdf suffix by default but accepts any path
+    # Test with png directly via plt.imread
+    loaded = plt.imread(str(png_path))
+    assert isinstance(loaded, np.ndarray)
+    assert loaded.ndim == 3

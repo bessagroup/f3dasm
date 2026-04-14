@@ -420,3 +420,218 @@ def test_set_project_dir(experiment_data, tmp_path):
 def test_set_project_dir_in_place(experiment_data, tmp_path):
     experiment_data.set_project_dir(tmp_path, in_place=True)
     assert experiment_data.project_dir == tmp_path
+
+
+# ======================= from_file retry logic =======================
+
+
+def test_from_file_string_path(experiment_data_with_output, tmp_path):
+    experiment_data_with_output.store(project_dir=tmp_path)
+    loaded = ExperimentData.from_file(project_dir=str(tmp_path))
+    assert len(loaded) == len(experiment_data_with_output)
+
+
+def test_from_file_retry_on_empty_file_error(
+    experiment_data_with_output, tmp_path, monkeypatch
+):
+    experiment_data_with_output.store(project_dir=tmp_path)
+    from f3dasm._src import experimentdata as ed_module
+    from f3dasm._src.errors import EmptyFileError
+
+    call_count = 0
+    original_init = ExperimentData.__init__
+
+    def patched_init(self, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise EmptyFileError("simulated empty file")
+        return original_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(ExperimentData, "__init__", patched_init)
+    monkeypatch.setattr(ed_module, "sleep", lambda _: None)
+
+    loaded = ExperimentData.from_file(project_dir=tmp_path)
+    assert len(loaded) > 0
+
+
+def test_from_file_retry_on_decode_error(
+    experiment_data_with_output, tmp_path, monkeypatch
+):
+    experiment_data_with_output.store(project_dir=tmp_path)
+    from f3dasm._src import experimentdata as ed_module
+    from f3dasm._src.errors import DecodeError
+
+    call_count = 0
+    original_init = ExperimentData.__init__
+
+    def patched_init(self, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise DecodeError("simulated decode error")
+        return original_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(ExperimentData, "__init__", patched_init)
+    monkeypatch.setattr(ed_module, "sleep", lambda _: None)
+
+    loaded = ExperimentData.from_file(project_dir=tmp_path)
+    assert len(loaded) > 0
+
+
+def test_from_file_reaches_max_tries(
+    experiment_data_with_output, tmp_path, monkeypatch
+):
+    experiment_data_with_output.store(project_dir=tmp_path)
+    from f3dasm._src import experimentdata as ed_module
+    from f3dasm._src.errors import EmptyFileError, ReachMaximumTriesError
+
+    def always_fail(self, *args, **kwargs):
+        raise EmptyFileError("always empty")
+
+    monkeypatch.setattr(ExperimentData, "__init__", always_fail)
+    monkeypatch.setattr(ed_module, "sleep", lambda _: None)
+
+    with pytest.raises(ReachMaximumTriesError):
+        ExperimentData.from_file(project_dir=tmp_path, max_tries=2)
+
+
+def test_from_file_not_found_raises(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        ExperimentData.from_file(project_dir=tmp_path / "nonexistent")
+
+
+def test_from_file_wait_for_creation(
+    experiment_data_with_output, tmp_path, monkeypatch
+):
+    experiment_data_with_output.store(project_dir=tmp_path)
+    from f3dasm._src import experimentdata as ed_module
+
+    call_count = 0
+    original_init = ExperimentData.__init__
+
+    def patched_init(self, *args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise FileNotFoundError("simulated missing file")
+        return original_init(self, *args, **kwargs)
+
+    monkeypatch.setattr(ExperimentData, "__init__", patched_init)
+    monkeypatch.setattr(ed_module, "sleep", lambda _: None)
+
+    loaded = ExperimentData.from_file(
+        project_dir=tmp_path, wait_for_creation=True
+    )
+    assert len(loaded) > 0
+
+
+# ======================= from_yaml =======================
+
+
+def test_from_yaml_with_from_file_key(experiment_data_with_output, tmp_path):
+    from omegaconf import DictConfig
+
+    experiment_data_with_output.store(project_dir=tmp_path)
+    config = DictConfig({"from_file": str(tmp_path)})
+    loaded = ExperimentData.from_yaml(config)
+    assert len(loaded) == len(experiment_data_with_output)
+
+
+# ======================= update_from_experimentssample_json =======================
+
+
+def test_update_from_experimentsample_json(
+    experiment_data_with_output, tmp_path
+):
+    from f3dasm._src._io import EXPERIMENTSAMPLE_SUBFOLDER
+
+    experiment_data_with_output.set_project_dir(tmp_path, in_place=True)
+
+    # Create the experiment_sample subfolder and store JSON files
+    subfolder = tmp_path / EXPERIMENTSAMPLE_SUBFOLDER
+    subfolder.mkdir(parents=True, exist_ok=True)
+
+    sample = experiment_data_with_output.get_experiment_sample(0)
+    sample.project_dir = tmp_path
+    sample.store_as_json(idx=0)
+
+    updated = experiment_data_with_output.update_from_experimentssample_json(
+        in_place=False
+    )
+    assert updated is not None
+    assert len(updated) == len(experiment_data_with_output)
+
+
+def test_update_from_experimentsample_json_in_place(
+    experiment_data_with_output, tmp_path
+):
+    from f3dasm._src._io import EXPERIMENTSAMPLE_SUBFOLDER
+
+    experiment_data_with_output.set_project_dir(tmp_path, in_place=True)
+
+    subfolder = tmp_path / EXPERIMENTSAMPLE_SUBFOLDER
+    subfolder.mkdir(parents=True, exist_ok=True)
+
+    sample = experiment_data_with_output.get_experiment_sample(0)
+    sample.project_dir = tmp_path
+    sample.store_as_json(idx=0)
+
+    result = experiment_data_with_output.update_from_experimentssample_json(
+        in_place=True
+    )
+    assert result is None
+
+
+# ======================= mark in_place =======================
+
+
+def test_mark_in_place(experiment_data):
+    result = experiment_data.mark(0, "finished", in_place=True)
+    assert result is None
+    assert (
+        experiment_data.get_experiment_sample(0).job_status
+        == JobStatus.FINISHED
+    )
+
+
+def test_mark_returns_new_when_not_in_place(experiment_data):
+    result = experiment_data.mark(0, "finished", in_place=False)
+    assert result is not None
+    assert result is not experiment_data
+
+
+def test_mark_all_returns_new_when_not_in_place(experiment_data):
+    result = experiment_data.mark_all("finished", in_place=False)
+    assert result is not None
+    assert result is not experiment_data
+
+
+# ======================= numpy conversion edge cases =======================
+
+
+def test_init_from_numpy_output():
+    arr_in = np.array([[1.0, 2.0], [3.0, 4.0]])
+    arr_out = np.array([[10.0], [20.0]])
+    data = ExperimentData(input_data=arr_in, output_data=arr_out)
+    assert len(data) == 2
+
+
+def test_init_from_numpy_output_multi_column():
+    arr_in = np.array([[1.0], [2.0]])
+    arr_out = np.array([[10.0, 20.0], [30.0, 40.0]])
+    data = ExperimentData(input_data=arr_in, output_data=arr_out)
+    _, df_out = data.to_pandas()
+    assert "y0" in df_out.columns
+    assert "y1" in df_out.columns
+
+
+def test_init_from_numpy_with_domain_names():
+    from f3dasm.design import make_nd_continuous_domain
+
+    domain = make_nd_continuous_domain(bounds=[[0.0, 1.0], [0.0, 1.0]])
+    arr_in = np.array([[0.1, 0.2], [0.3, 0.4]])
+    data = ExperimentData(domain=domain, input_data=arr_in)
+    df_in, _ = data.to_pandas()
+    assert "x0" in df_in.columns
+    assert "x1" in df_in.columns

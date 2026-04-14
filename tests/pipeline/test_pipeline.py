@@ -1,10 +1,12 @@
 """Tests for Pipeline and Step dataclasses."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from f3dasm._src.pipeline.loop import Loop
 from f3dasm._src.pipeline.pipeline import VALID_DEPENDENCIES, Pipeline, Step
-from f3dasm._src.pipeline.resources import SlurmResources
+from f3dasm._src.pipeline.resources import SlurmCluster, SlurmResources
 
 pytestmark = pytest.mark.smoke
 
@@ -171,3 +173,40 @@ class TestLoop:
         assert loop.n_iterations == 5
         assert len(loop.steps) == 1
         assert loop.steps[0].name == "s"
+
+
+# ---- Pipeline.run() tests ----
+
+
+class TestPipelineRun:
+    def test_run_local_mode(self):
+        p = Pipeline(name="test", steps=[])
+        with patch(
+            "f3dasm._src.pipeline.executors.local.LocalExecutor"
+        ) as mock_cls:
+            mock_executor = MagicMock()
+            mock_cls.return_value = mock_executor
+            p.run(mode="local")
+            mock_executor.run.assert_called_once()
+
+    def test_run_slurm_mode(self):
+        p = Pipeline(name="test", steps=[])
+        cluster = SlurmCluster(partition="gpu", account="test")
+        with patch(
+            "f3dasm._src.pipeline.executors.slurm.SlurmExecutor"
+        ) as mock_cls:
+            mock_executor = MagicMock()
+            mock_cls.return_value = mock_executor
+            p.run(mode="slurm", cluster=cluster)
+            mock_executor.run.assert_called_once()
+
+    def test_generate_scripts(self, tmp_path):
+        p = Pipeline(name="test", steps=[])
+        cluster = SlurmCluster(partition="gpu", account="test")
+        with patch(
+            "f3dasm._src.pipeline.executors.slurm.SlurmExecutor"
+        ) as mock_cls:
+            mock_executor = MagicMock()
+            mock_cls.return_value = mock_executor
+            p.generate_scripts(cluster=cluster, rootdir=tmp_path)
+            mock_executor.generate_scripts.assert_called_once()

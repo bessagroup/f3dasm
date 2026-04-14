@@ -1,9 +1,17 @@
 """Tests for core Block, DataGenerator, Optimizer ABCs."""
 
+from unittest.mock import patch
+
 import pytest
 
 from f3dasm import ExperimentData
-from f3dasm._src.core import Block, DataGenerator, Optimizer, datagenerator
+from f3dasm._src.core import (
+    Block,
+    ChainedBlock,
+    DataGenerator,
+    Optimizer,
+    datagenerator,
+)
 from f3dasm._src.experimentsample import ExperimentSample
 from f3dasm.design import Domain
 
@@ -160,3 +168,133 @@ def test_datagenerator_decorator_sequential_execution():
     _, df_out = result.to_pandas()
     assert df_out["y"].iloc[0] == 4.0
     assert df_out["y"].iloc[1] == 9.0
+
+
+# ======================= Block >> chaining =======================
+
+
+class TestBlockChaining:
+    def test_rshift_two_blocks(self):
+        class AddOne(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        result = AddOne() >> AddOne()
+        assert isinstance(result, ChainedBlock)
+        assert len(result.blocks) == 2
+
+    def test_rshift_chained_then_block(self):
+        class Noop(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        chained = ChainedBlock([Noop(), Noop()])
+        result = chained >> Noop()
+        assert isinstance(result, ChainedBlock)
+        assert len(result.blocks) == 3
+
+    def test_rshift_chained_then_chained(self):
+        class Noop(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        c1 = ChainedBlock([Noop()])
+        c2 = ChainedBlock([Noop(), Noop()])
+        result = c1 >> c2
+        assert isinstance(result, ChainedBlock)
+        assert len(result.blocks) == 3
+
+    def test_chained_call_runs_all(self):
+        class Counter(Block):
+            count = 0
+
+            def call(self, data, **kwargs):
+                Counter.count += 1
+                return data
+
+        Counter.count = 0
+        chained = ChainedBlock([Counter(), Counter(), Counter()])
+        chained.call(data=ExperimentData())
+        assert Counter.count == 3
+
+    def test_chained_arm_arms_all(self):
+        armed = []
+
+        class Armable(Block):
+            def __init__(self, name):
+                self.name = name
+
+            def arm(self, data):
+                armed.append(self.name)
+
+            def call(self, data, **kwargs):
+                return data
+
+        chained = ChainedBlock([Armable("a"), Armable("b")])
+        chained.arm(data=ExperimentData())
+        assert armed == ["a", "b"]
+
+
+# ======================= DataGenerator mode dispatch =======================
+
+
+class TestDataGeneratorModes:
+    def _make_gen(self):
+        class SimpleGen(DataGenerator):
+            def execute(self, experiment_sample, **kwargs):
+                experiment_sample.store("y", 1.0, to_disk=False)
+                return experiment_sample
+
+        return SimpleGen()
+
+    def test_call_parallel_mode(self):
+        gen = self._make_gen()
+        data = ExperimentData(input_data=[{"x0": 1.0}])
+        result = gen.call(data, mode="parallel", nodes=1)
+        assert len(result) == 1
+
+    def test_call_cluster_mode(self, tmp_path):
+        gen = self._make_gen()
+        data = ExperimentData(input_data=[{"x0": 1.0}])
+        data.set_project_dir(tmp_path, in_place=True)
+        data.store(project_dir=tmp_path)
+        result = gen.call(data, mode="cluster")
+        # evaluate_cluster returns None but data is modified on disk
+        assert result is None
+
+    def test_call_cluster_array_mode(self, tmp_path):
+        gen = self._make_gen()
+        data = ExperimentData(input_data=[{"x0": 1.0}])
+        data.set_project_dir(tmp_path, in_place=True)
+        for es in data.data.values():
+            es.project_dir = tmp_path
+        result = gen.call(data, mode="cluster_array", job_number=0)
+        assert result is None
+
+
+# ======================= datagenerator decorator edge cases =======================
+
+
+def test_datagenerator_decorator_with_defaults():
+    """Decorator should handle functions with default parameters."""
+
+    @datagenerator(output_names="y")
+    def f(x0, scale=2.0):
+        return x0 * scale
+
+    sample = ExperimentSample(_input_data={"x0": 3.0})
+    result = f.execute(sample)
+    assert result.output_data["y"] == 6.0
+
+
+def test_datagenerator_decorator_with_domain():
+    """Decorator with domain should propagate parameter metadata."""
+    domain = Domain()
+    domain.add_float("x0", 0.0, 1.0)
+    domain.add_output("y")
+
+    @datagenerator(output_names="y", domain=domain)
+    def f(x0):
+        return x0**2
+
+    assert isinstance(f, DataGenerator)

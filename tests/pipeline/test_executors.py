@@ -92,3 +92,41 @@ class TestRunStepLocally:
         step = Step(block=42, name="bad_block")
         with pytest.raises(TypeError, match="unsupported block type"):
             _run_step_locally(step=step, run_dir=tmp_path)
+
+    def test_block_step(self, tmp_path):
+        from f3dasm import ExperimentData, create_sampler
+        from f3dasm._src.core import Block
+        from f3dasm.design import Domain
+
+        class DoubleBlock(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        domain = Domain()
+        domain.add_float("x", 0.0, 1.0)
+        data = ExperimentData(domain=domain)
+        sampler = create_sampler("random", seed=42)
+        data = sampler.call(data=data, n_samples=2)
+        data.store(project_dir=tmp_path)
+
+        step = Step(block=DoubleBlock(), name="double")
+        _run_step_locally(step=step, run_dir=tmp_path)
+
+    def test_datagenerator_step(self, tmp_path):
+        from f3dasm import ExperimentData, create_sampler, datagenerator
+        from f3dasm.design import Domain
+
+        @datagenerator(output_names="y")
+        def square(x):
+            return x**2
+
+        domain = Domain()
+        domain.add_float("x", 0.0, 1.0)
+        domain.add_output("y")
+        data = ExperimentData(domain=domain)
+        sampler = create_sampler("random", seed=42)
+        data = sampler.call(data=data, n_samples=2)
+        data.store(project_dir=tmp_path)
+
+        step = Step(block=square, name="gen")
+        _run_step_locally(step=step, run_dir=tmp_path)
