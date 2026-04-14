@@ -1,5 +1,11 @@
 # Design-of-experiments
 
+The `Domain` class defines the parameter space for your experiments, supporting continuous, discrete, categorical, constant, and array parameters.
+
+!!! tip "See also"
+    - Tutorial: [Creating a Domain](../notebooks/design/domain_creation.ipynb)
+    - [Core Concepts: Domain](../concepts.md#domain)
+
 ::: f3dasm.design.Domain
 
 ## Built-in samplers

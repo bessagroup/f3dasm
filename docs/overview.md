@@ -31,22 +31,22 @@ This work generalizes the original closed-source framework proposed by Bessa and
 
 ## Computational framework
 
-`f3dasm` is an [open-source Python package](https://pypi.org/project/f3dasm/) compatible with Python 3.8 or later. Some of the key features are:
+`f3dasm` is an [open-source Python package](https://pypi.org/project/f3dasm/) compatible with Python 3.10 or later. Some of the key features are:
 
 - **Modular design**  
-  The framework introduces flexible interfaces, allowing users to easily integrate their own models and algorithms.
+  The framework introduces flexible interfaces, allowing users to easily integrate their own models and algorithms. See the [Blocks tutorial](notebooks/data-driven/blocks.ipynb) for examples.
 
 - **Automatic data management**  
-  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures.
+  The framework automatically manages I/O processes, saving you time and effort implementing these common procedures. See the [ExperimentData tutorial](notebooks/experimentdata/experimentdata.ipynb).
 
 - **Easy parallelization**  
-  The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing.
+  The framework manages parallelization of experiments, and is compatible with both local and high-performance cluster computing. See the [Cluster Execution tutorial](notebooks/data-driven/cluster.ipynb).
 
 - **Built-in defaults**  
   The framework includes a collection of [benchmark functions](defaults.md#implemented-benchmark-functions), [optimization algorithms](defaults.md#implemented-optimizers), and [sampling strategies](defaults.md#implemented-samplers) to get you started right away!
 
 - **Hydra integration**  
-  The framework is integrated with [Hydra](https://hydra.cc/) configuration manager, to easily manage and run experiments.
+  The framework is integrated with [Hydra](https://hydra.cc/) configuration manager, to easily manage and run experiments. See the [Hydra tutorial](notebooks/hydra/usehydra.ipynb).
 
 Comprehensive [online documentation](https://f3dasm.readthedocs.io/en/latest/) is also available to assist users and developers of the framework.
 
