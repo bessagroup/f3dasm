@@ -17,7 +17,7 @@
 
 ```python
 from f3dasm.design import Domain
-from f3dasm import ExperimentData, create_sampler, create_datagenerator, create_optimizer
+from f3dasm import ExperimentData, create_sampler, create_datagenerator
 
 # Define a 2D parameter space
 domain = Domain()
@@ -26,7 +26,7 @@ domain.add_float(name='x1', low=-1.0, high=1.0)
 
 # Sample, evaluate and optimize
 data = ExperimentData(domain=domain)
-data = create_sampler('random', seed=42)(data=data, n_samples=20)
+data = create_sampler('random', seed=42).call(data=data, n_samples=20)
 
 evaluator = create_datagenerator('sphere')
 evaluator.arm(data=data)

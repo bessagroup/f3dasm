@@ -9,7 +9,7 @@ The built-in blocks can be initialized by either importing the functions directl
 |--------------------------------|-------------------------------|--------------------------------------|
 | Sampling                        | `f3dasm.design`              | `f3dasm.create_sampler`              |
 | Data generation                 | `f3dasm.datageneration`      | `f3dasm.create_datagenerator`        |
-| Optimization                    | `f3dasm.optimization`        | `f3dasm.create_optimizer`            |
+| Optimization                    | `f3dasm.optimization`        | (import factories directly: `cg`, `lbfgsb`, `nelder_mead`, `tpesampler`) |
 
 `f3dasm` provides two ways to use the built-in functionalities:
 
