@@ -3,8 +3,7 @@
 import numpy as np
 import pytest
 
-from f3dasm import ExperimentData, create_sampler
-from f3dasm._src.samplers import Sampler
+from f3dasm import Block, ExperimentData, create_sampler
 from f3dasm.design import Domain
 
 pytestmark = pytest.mark.smoke
@@ -30,9 +29,9 @@ def continuous_domain():
 
 
 class TestCreateSampler:
-    def test_create_sampler_returns_sampler(self):
+    def test_create_sampler_returns_block(self):
         s = create_sampler("random", seed=42)
-        assert isinstance(s, Sampler)
+        assert isinstance(s, Block)
 
     def test_create_sampler_invalid_name(self):
         with pytest.raises(KeyError):

@@ -1,4 +1,4 @@
-"""Tests for core Block, DataGenerator, Optimizer ABCs."""
+"""Tests for core Block, ChainedBlock, LoopBlock, and DataGenerator."""
 
 from unittest.mock import patch
 
@@ -9,7 +9,7 @@ from f3dasm._src.core import (
     Block,
     ChainedBlock,
     DataGenerator,
-    Optimizer,
+    LoopBlock,
     datagenerator,
 )
 from f3dasm._src.experimentsample import ExperimentSample
@@ -101,24 +101,81 @@ def test_datagenerator_call_invalid_mode():
         gen.call(data, mode="invalid_mode")
 
 
-# ======================= Optimizer ABC =======================
+# ======================= LoopBlock =======================
 
 
-def test_optimizer_is_abstract():
-    """Optimizer cannot be instantiated directly."""
-    with pytest.raises(TypeError):
-        Optimizer()
+class TestLoopBlock:
+    def test_loop_repeats_inner_block(self):
+        class Counter(Block):
+            count = 0
 
+            def call(self, data, **kwargs):
+                Counter.count += 1
+                return data
 
-def test_optimizer_subclass_must_implement_arm_and_call():
-    """Optimizer subclass must implement both arm and call."""
+        Counter.count = 0
+        loop = LoopBlock(block=Counter(), n_iterations=5)
+        loop.call(data=ExperimentData())
+        assert Counter.count == 5
 
-    class IncompleteOptimizer(Optimizer):
-        def arm(self, data, data_generator, input_name, output_name):
-            pass
+    def test_loop_zero_iterations_is_noop(self):
+        class Counter(Block):
+            count = 0
 
-    with pytest.raises(TypeError):
-        IncompleteOptimizer()
+            def call(self, data, **kwargs):
+                Counter.count += 1
+                return data
+
+        Counter.count = 0
+        LoopBlock(block=Counter(), n_iterations=0).call(data=ExperimentData())
+        assert Counter.count == 0
+
+    def test_loop_arms_inner_block_once(self):
+        class Armable(Block):
+            arm_count = 0
+
+            def arm(self, data):
+                Armable.arm_count += 1
+
+            def call(self, data, **kwargs):
+                return data
+
+        Armable.arm_count = 0
+        loop = LoopBlock(block=Armable(), n_iterations=10)
+        loop.arm(data=ExperimentData())
+        assert Armable.arm_count == 1
+
+    def test_loop_passes_output_between_iterations(self):
+        class Noop(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        loop = LoopBlock(block=Noop(), n_iterations=3)
+        data = ExperimentData()
+        result = loop.call(data=data)
+        assert result is data
+
+    def test_block_loop_convenience_method(self):
+        class Noop(Block):
+            def call(self, data, **kwargs):
+                return data
+
+        loop = Noop().loop(7)
+        assert isinstance(loop, LoopBlock)
+        assert loop.n_iterations == 7
+
+    def test_chained_loop(self):
+        class Counter(Block):
+            count = 0
+
+            def call(self, data, **kwargs):
+                Counter.count += 1
+                return data
+
+        Counter.count = 0
+        loop = (Counter() >> Counter()).loop(4)
+        loop.call(data=ExperimentData())
+        assert Counter.count == 8
 
 
 # ======================= datagenerator decorator =======================

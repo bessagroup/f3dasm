@@ -2,42 +2,56 @@
 
 import pytest
 
+from f3dasm._src.datageneration.datagenerator_factory import (
+    create_datagenerator,
+)
 from f3dasm._src.optimization._imports import (
     _DeferredImportExceptionContextManager,
     try_import,
 )
 from f3dasm._src.optimization.errors import faulty_optimizer
-from f3dasm._src.optimization.optimizer_factory import create_optimizer
+from f3dasm.optimization import cg, lbfgsb, nelder_mead
 
 pytestmark = pytest.mark.smoke
 
 
-# ======================= create_optimizer =======================
+# ======================= factory functions =======================
 
 
-def test_create_optimizer_invalid_name():
-    with pytest.raises(KeyError):
-        create_optimizer(optimizer="nonexistent_optimizer")
+def _dummy_datagenerator():
+    return create_datagenerator(
+        data_generator="sphere", output_names="y", seed=0
+    )
 
 
-def test_create_optimizer_invalid_type():
-    with pytest.raises(TypeError):
-        create_optimizer(optimizer=12345)
-
-
-def test_create_optimizer_cg():
-    opt = create_optimizer(optimizer="cg")
+def test_cg_factory():
+    opt = cg(
+        data_generator=_dummy_datagenerator(),
+        output_name="y",
+        input_name="x",
+    )
     assert opt is not None
+    assert opt.method == "CG"
 
 
-def test_create_optimizer_lbfgsb():
-    opt = create_optimizer(optimizer="lbfgsb")
+def test_lbfgsb_factory():
+    opt = lbfgsb(
+        data_generator=_dummy_datagenerator(),
+        output_name="y",
+        input_name="x",
+    )
     assert opt is not None
+    assert opt.method == "L-BFGS-B"
 
 
-def test_create_optimizer_neldermead():
-    opt = create_optimizer(optimizer="neldermead")
+def test_nelder_mead_factory():
+    opt = nelder_mead(
+        data_generator=_dummy_datagenerator(),
+        output_name="y",
+        input_name="x",
+    )
     assert opt is not None
+    assert opt.method == "Nelder-Mead"
 
 
 # ======================= faulty_optimizer =======================

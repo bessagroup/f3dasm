@@ -1,4 +1,4 @@
-"""Base class for sampling methods"""
+"""Sampling blocks for building initial design-of-experiments data."""
 
 #                                                                       Modules
 # =============================================================================
@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 # Standard
+from collections.abc import Callable
 from itertools import product
 from math import ceil, prod
 from typing import Literal, Optional
@@ -20,6 +21,7 @@ from SALib.sample import sobol as salib_sobol
 from SALib.sample import sobol_sequence
 
 # Locals
+from .core import Block
 from .design.domain import Parameter
 from .design.parameter import (
     ArrayParameter,
@@ -28,7 +30,7 @@ from .design.parameter import (
     ContinuousParameter,
     DiscreteParameter,
 )
-from .experimentdata import Block, ExperimentData
+from .experimentdata import ExperimentData
 from .experimentsample import ExperimentSample
 
 #                                                          Authorship & Credits
@@ -41,78 +43,60 @@ __status__ = "Stable"
 # =============================================================================
 
 
-class Sampler(Block):
-    """Abstract base class for sampling strategies.
+def _sample_by_parameter_type(
+    data: ExperimentData,
+    n_samples: int,
+    sample_mapping: dict[type[Parameter], Callable],
+    seed: Optional[int],
+    **parameters,
+) -> ExperimentData:
+    """Build ``n_samples`` new rows by dispatching on parameter type.
 
-    Subclasses must define a ``sample_mapping`` class variable that
-    maps :class:`Parameter` types to callable sampling functions.
-    The :meth:`call` method iterates over this mapping to generate
-    samples for each parameter type in the domain.
+    Iterates ``sample_mapping`` and, for each parameter type present in
+    the domain, calls the associated sampling function. The resulting
+    per-type samples are column-joined into a single :class:`ExperimentData`.
 
-    Attributes
+    Parameters
     ----------
-    sample_mapping : dict[Parameter, callable]
-        Mapping from parameter types to their sampling functions.
+    data : ExperimentData
+        Provides the domain and project directory for the new samples.
+    n_samples : int
+        Number of samples to generate.
+    sample_mapping : dict[type[Parameter], callable]
+        Mapping from parameter type to a sampling function.
+    seed : int or None
+        Random seed forwarded to the sampling functions.
+    **parameters : dict
+        Additional keyword arguments forwarded to the sampling functions.
+
+    Returns
+    -------
+    ExperimentData
+        New samples only (the input ``data`` is not included).
     """
+    new_data = ExperimentData(
+        project_dir=data._project_dir, domain=data.domain._copy()
+    )
 
-    sample_mapping: dict[Parameter, callable]
+    for param_type, sampler_func in sample_mapping.items():
+        filtered_domain = new_data.domain._filter(param_type)
+        if filtered_domain.input_space:
+            experiment_samples: dict[int, ExperimentSample] = sampler_func(
+                input_space=filtered_domain.input_space,
+                n_samples=n_samples,
+                seed=seed,
+                **parameters,
+            )
 
-    def __init__(self, seed: Optional[int], **parameters):
-        """Initialize the sampler.
+            samples = ExperimentData.from_data(
+                data=experiment_samples,
+                domain=filtered_domain,
+                project_dir=data._project_dir,
+            )
 
-        Parameters
-        ----------
-        seed : int, optional
-            Random seed for reproducibility.
-        **parameters : dict
-            Additional keyword arguments forwarded to the
-            sampling functions.
-        """
-        self.seed = seed
-        self.parameters = parameters
+            new_data = new_data.join(samples)
 
-    def call(
-        self, data: ExperimentData, n_samples: int, **kwargs
-    ) -> ExperimentData:
-        """Generate samples for each parameter type in the domain.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data providing the domain and
-            project directory.
-        n_samples : int
-            Number of samples to generate.
-        **kwargs : dict
-            Additional keyword arguments (unused).
-
-        Returns
-        -------
-        ExperimentData
-            New experiment data containing the generated samples.
-        """
-        d = ExperimentData(
-            project_dir=data._project_dir, domain=data.domain._copy()
-        )
-
-        for param_type, sampler_func in self.sample_mapping.items():
-            filtered_domain = d.domain._filter(param_type)
-            if filtered_domain.input_space:
-                experiment_samples: dict[int, ExperimentSample] = sampler_func(
-                    input_space=filtered_domain.input_space,
-                    n_samples=n_samples,
-                    seed=self.seed,
-                    **self.parameters,
-                )
-
-                samples = ExperimentData.from_data(
-                    data=experiment_samples,
-                    domain=filtered_domain,
-                    project_dir=data._project_dir,
-                )
-
-                d = d.join(samples)
-        return d
+    return new_data
 
 
 #                                                               Random Sampling
@@ -309,10 +293,61 @@ random_sample_mapping: dict[Parameter, callable] = {
 }
 
 
-class RandomUniform(Sampler):
-    """Sampler that draws independent uniform random samples."""
+class RandomUniform(Block):
+    """Sampler block that draws independent uniform random samples.
 
-    sample_mapping: dict[Parameter, callable] = random_sample_mapping
+    New samples are appended to the input :class:`ExperimentData` via
+    :meth:`ExperimentData.__add__`.
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed for reproducibility.
+    **parameters : dict
+        Additional keyword arguments forwarded to the per-type sampling
+        functions.
+
+    Attributes
+    ----------
+    seed : int or None
+        The random seed.
+    parameters : dict
+        Extra keyword arguments passed to the sampling functions.
+    """
+
+    sample_mapping: dict[type[Parameter], Callable] = random_sample_mapping
+
+    def __init__(self, seed: Optional[int] = None, **parameters):
+        self.seed = seed
+        self.parameters = parameters
+
+    def call(
+        self, data: ExperimentData, n_samples: int, **kwargs
+    ) -> ExperimentData:
+        """Draw ``n_samples`` uniform random samples and append to ``data``.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data providing the domain and project directory.
+        n_samples : int
+            Number of samples to generate.
+        **kwargs : dict
+            Ignored; accepted for chaining compatibility.
+
+        Returns
+        -------
+        ExperimentData
+            ``data`` with the newly drawn samples appended as new rows.
+        """
+        new_data = _sample_by_parameter_type(
+            data=data,
+            n_samples=n_samples,
+            sample_mapping=self.sample_mapping,
+            seed=self.seed,
+            **self.parameters,
+        )
+        return data + new_data
 
 
 def random(seed: Optional[int] = None, **kwargs) -> Block:
@@ -443,10 +478,61 @@ latin_sample_mapping: dict[Parameter, callable] = {
 }
 
 
-class Latin(Sampler):
-    """Sampler using Latin Hypercube sampling via SALib."""
+class Latin(Block):
+    """Sampler block using Latin Hypercube sampling via SALib.
 
-    sample_mapping: dict[Parameter, callable] = latin_sample_mapping
+    New samples are appended to the input :class:`ExperimentData` via
+    :meth:`ExperimentData.__add__`.
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed for reproducibility.
+    **parameters : dict
+        Additional keyword arguments forwarded to the per-type sampling
+        functions.
+
+    Attributes
+    ----------
+    seed : int or None
+        The random seed.
+    parameters : dict
+        Extra keyword arguments passed to the sampling functions.
+    """
+
+    sample_mapping: dict[type[Parameter], Callable] = latin_sample_mapping
+
+    def __init__(self, seed: Optional[int] = None, **parameters):
+        self.seed = seed
+        self.parameters = parameters
+
+    def call(
+        self, data: ExperimentData, n_samples: int, **kwargs
+    ) -> ExperimentData:
+        """Draw ``n_samples`` LHS samples and append to ``data``.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data providing the domain and project directory.
+        n_samples : int
+            Number of samples to generate.
+        **kwargs : dict
+            Ignored; accepted for chaining compatibility.
+
+        Returns
+        -------
+        ExperimentData
+            ``data`` with the newly drawn samples appended as new rows.
+        """
+        new_data = _sample_by_parameter_type(
+            data=data,
+            n_samples=n_samples,
+            sample_mapping=self.sample_mapping,
+            seed=self.seed,
+            **self.parameters,
+        )
+        return data + new_data
 
 
 def latin(seed: Optional[int] = None, **kwargs) -> Block:
@@ -579,10 +665,61 @@ sobol_sample_mapping: dict[Parameter, callable] = {
 }
 
 
-class Sobol(Sampler):
-    """Sampler using Sobol quasi-random sequences via SALib."""
+class Sobol(Block):
+    """Sampler block using Sobol quasi-random sequences via SALib.
 
-    sample_mapping: dict[Parameter, callable] = sobol_sample_mapping
+    New samples are appended to the input :class:`ExperimentData` via
+    :meth:`ExperimentData.__add__`.
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed for reproducibility.
+    **parameters : dict
+        Additional keyword arguments forwarded to the per-type sampling
+        functions.
+
+    Attributes
+    ----------
+    seed : int or None
+        The random seed.
+    parameters : dict
+        Extra keyword arguments passed to the sampling functions.
+    """
+
+    sample_mapping: dict[type[Parameter], Callable] = sobol_sample_mapping
+
+    def __init__(self, seed: Optional[int] = None, **parameters):
+        self.seed = seed
+        self.parameters = parameters
+
+    def call(
+        self, data: ExperimentData, n_samples: int, **kwargs
+    ) -> ExperimentData:
+        """Draw ``n_samples`` Sobol samples and append to ``data``.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data providing the domain and project directory.
+        n_samples : int
+            Number of samples to generate.
+        **kwargs : dict
+            Ignored; accepted for chaining compatibility.
+
+        Returns
+        -------
+        ExperimentData
+            ``data`` with the newly drawn samples appended as new rows.
+        """
+        new_data = _sample_by_parameter_type(
+            data=data,
+            n_samples=n_samples,
+            sample_mapping=self.sample_mapping,
+            seed=self.seed,
+            **self.parameters,
+        )
+        return data + new_data
 
 
 def sobol(seed: Optional[int] = None, **kwargs) -> Block:
@@ -759,9 +896,29 @@ def next_power_of_two(x: int) -> int:
 
 
 class Grid(Block):
-    """Sampler that creates a full-factorial grid of design points."""
+    """Sampler block that creates a full-factorial grid of design points.
 
-    value_mapping: dict[Parameter, callable] = grid_value_mapping
+    New samples are appended to the input :class:`ExperimentData` via
+    :meth:`ExperimentData.__add__`.
+
+    Parameters
+    ----------
+    stepsize_continuous_parameters : dict[str, float] or float, optional
+        Step size for continuous parameters. If a single float, the same
+        step size is used for all continuous parameters. If a dict, maps
+        parameter names to individual step sizes.
+    **parameters : dict
+        Additional parameters passed to value functions.
+
+    Attributes
+    ----------
+    stepsize_continuous_parameters : dict[str, float] or float or None
+        Continuous-parameter step size(s).
+    parameters : dict
+        Extra keyword arguments passed to the value functions.
+    """
+
+    value_mapping: dict[type[Parameter], Callable] = grid_value_mapping
 
     def __init__(
         self,
@@ -770,36 +927,23 @@ class Grid(Block):
         ] = None,
         **parameters,
     ):
-        """
-        Initialize the Grid sampler.
-
-        Parameters
-        ----------
-        stepsize_continuous_parameters : dict[str, float] or float, optional
-            Step size for continuous parameters. If a single float, the same
-            step size is used for all continuous parameters. If a dict, maps
-            parameter names to individual step sizes.
-        **parameters : dict
-            Additional parameters passed to value functions.
-        """
         self.stepsize_continuous_parameters = stepsize_continuous_parameters
         self.parameters = parameters
 
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
-        """
-        Sample data using the Grid method.
+        """Append a full-factorial grid to ``data``.
 
         Parameters
         ----------
         data : ExperimentData
             The experiment data object providing the domain and project dir.
         **kwargs : dict
-            Additional parameters (unused, kept for interface consistency).
+            Ignored; accepted for chaining compatibility.
 
         Returns
         -------
         ExperimentData
-            A new ExperimentData object containing all grid combinations.
+            ``data`` with all grid combinations appended as new rows.
         """
         _iterdict = {}
         for param_type, values_func in self.value_mapping.items():
@@ -825,11 +969,13 @@ class Grid(Block):
             list(product(*_iterdict.values())), columns=_iterdict, dtype=object
         )
 
-        return ExperimentData(
+        new_data = ExperimentData(
             domain=data.domain._copy(),
             input_data=df,
             project_dir=data._project_dir,
         )
+
+        return data + new_data
 
 
 def grid(

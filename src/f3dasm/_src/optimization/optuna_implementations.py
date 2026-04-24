@@ -9,7 +9,7 @@ from typing import Optional
 import optuna
 
 # Locals
-from ..core import DataGenerator, Optimizer
+from ..core import Block
 from ..design import Domain
 from ..design.parameter import (
     ArrayParameter,
@@ -30,55 +30,57 @@ __status__ = "Stable"
 # =============================================================================
 
 
-class OptunaOptimizer(Optimizer):
+class OptunaUpdateStep(Block):
+    """Single-step optimizer update driven by an Optuna sampler.
+
+    One ``call`` performs one ask/append cycle: it registers the previous
+    iteration's evaluated candidate with the Optuna study (if any), asks
+    the sampler for a new candidate, and appends it as an unevaluated row
+    to the returned :class:`ExperimentData`. Wrap in a :class:`LoopBlock`
+    and chain with a :class:`DataGenerator` to drive an optimization loop:
+
+    >>> step = tpesampler(output_name="y") >> data_generator
+    >>> data = step.loop(50).call(initial_data)
+
+    Parameters
+    ----------
+    optuna_sampler : optuna.samplers.BaseSampler
+        The Optuna sampler used for suggestion.
+    output_name : str
+        Name of the output column to minimize.
+
+    Attributes
+    ----------
+    optuna_sampler : optuna.samplers.BaseSampler
+        The configured Optuna sampler.
+    output_name : str
+        Name of the output column being minimized.
+    study : optuna.study.Study
+        The Optuna study (created in :meth:`arm`).
+    distributions : dict
+        Optuna distributions derived from the domain (set in :meth:`arm`).
     """
-    Optuna-based optimizer block for experiment design and optimization.
 
-    This class wraps Optuna's optimization logic and integrates it with the
-    experiment data and domain definitions from f3dasm.
-    """
-
-    def __init__(self, optuna_sampler: optuna.samplers.BaseSampler):
-        """
-        Initialize the OptunaOptimizer.
-
-        Parameters
-        ----------
-        optuna_sampler : optuna.samplers.BaseSampler
-            The Optuna sampler to use for the optimization process.
-        """
-        self.optuna_sampler = optuna_sampler
-
-    def arm(
+    def __init__(
         self,
-        data: ExperimentData,
-        data_generator: DataGenerator,
+        optuna_sampler: optuna.samplers.BaseSampler,
         output_name: str,
-        input_name: Optional[str] = None,
     ):
-        """
-        Prepare the optimizer with experiment data, data generator,
-        and output name.
+        self.optuna_sampler = optuna_sampler
+        self.output_name = output_name
+
+    def arm(self, data: ExperimentData) -> None:
+        """Create the Optuna study and seed it with ``data``'s history.
 
         Parameters
         ----------
         data : ExperimentData
-            The experiment data containing previous trials.
-        data_generator : DataGenerator
-            The data generator used to evaluate new samples.
-        input_name : str
-            The name of the input variable to optimize.
-        output_name : str
-            The name of the output variable to optimize.
+            Experiment data whose already-evaluated rows are registered
+            with the new study as historical trials.
         """
-        self.data_generator = data_generator
-        self.output_name = output_name
         self.distributions = domain_to_optuna_distributions(data.domain)
-
-        # Set algorithm
         self.study = optuna.create_study(sampler=self.optuna_sampler)
 
-        # Add existing trials to the study
         for _, es in data:
             self.study.add_trial(
                 optuna.trial.create_trial(
@@ -88,83 +90,53 @@ class OptunaOptimizer(Optimizer):
                 )
             )
 
-    def _step(self, data: ExperimentData, **kwargs) -> ExperimentData:
-        """
-        Perform a single optimization step.
+        self._pending_trial_index: Optional[int] = None
 
-        This method suggests a new experiment sample, evaluates it, and adds
-        the result to the Optuna study.
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Register the previous iteration's result, ask for one new
+        candidate, and return ``data`` with the candidate appended.
 
         Parameters
         ----------
         data : ExperimentData
-            The current experiment data.
-        **kwargs
-            Additional arguments passed to the data generator.
+            The experiment data. The candidate from the previous
+            iteration (if any) must already be evaluated.
+        **kwargs : dict
+            Ignored; accepted for chaining compatibility.
 
         Returns
         -------
         ExperimentData
-            The updated experiment data including the new sample.
+            ``data`` with one new unevaluated row appended.
         """
+        if self._pending_trial_index is not None:
+            es = data.get_experiment_sample(self._pending_trial_index)
+            self.study.add_trial(
+                optuna.trial.create_trial(
+                    params=es.input_data,
+                    distributions=self.distributions,
+                    value=es.output_data[self.output_name],
+                )
+            )
+            self._pending_trial_index = None
+
         trial = self.study.ask()
         new_es = _suggest_experimentsample(trial=trial, domain=data.domain)
 
-        new_experiment_data = ExperimentData.from_data(
-            data={0: new_es}, domain=data.domain, project_dir=data._project_dir
+        new_data = ExperimentData.from_data(
+            data={0: new_es},
+            domain=data.domain,
+            project_dir=data._project_dir,
         )
-
-        # Evaluate the sample with the data generator
-        self.data_generator.arm(data=new_experiment_data)
-        new_experiment_data = self.data_generator.call(
-            data=new_experiment_data, **kwargs
-        )
-
-        # TODO: extract last es
-        new_es = new_experiment_data.get_experiment_sample(
-            new_experiment_data.index[-1]
-        )
-
-        self.study.add_trial(
-            optuna.trial.create_trial(
-                params=new_es.input_data,
-                distributions=self.distributions,
-                value=new_es.output_data[self.output_name],
-            )
-        )
-
-        return new_experiment_data
-
-    def call(
-        self, data: ExperimentData, n_iterations: int, **kwargs
-    ) -> ExperimentData:
-        """
-        Run the optimization for a specified number of iterations.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The initial experiment data.
-        n_iterations : int
-            Number of optimization steps to perform.
-        **kwargs
-            Additional arguments passed to each optimization step.
-
-        Returns
-        -------
-        ExperimentData
-            The experiment data after optimization.
-        """
-        for _ in range(n_iterations):
-            data += self._step(data, **kwargs)
-        return data
+        merged = data + new_data
+        self._pending_trial_index = merged.index[-1]
+        return merged
 
 
 def _suggest_experimentsample(
     trial: optuna.Trial, domain: Domain
 ) -> ExperimentSample:
-    """
-    Suggest a new experiment sample using Optuna trial and domain.
+    """Suggest a new experiment sample using an Optuna trial and domain.
 
     Parameters
     ----------
@@ -215,8 +187,7 @@ def _suggest_experimentsample(
 
 
 def domain_to_optuna_distributions(domain: Domain) -> dict:
-    """
-    Convert a domain object to Optuna distributions.
+    """Convert a domain to Optuna distributions.
 
     Parameters
     ----------
@@ -269,32 +240,45 @@ def domain_to_optuna_distributions(domain: Domain) -> dict:
 
 
 def optuna_optimizer(
-    optuna_sampler: optuna.distributions.BaseDistribution,
-) -> Optimizer:
-    """Create an Optuna optimizer block.
+    optuna_sampler: optuna.samplers.BaseSampler,
+    output_name: str,
+) -> OptunaUpdateStep:
+    """Create an Optuna-backed update-step block.
 
     Parameters
     ----------
-    optuna_sampler
-        The Optuna sampler to use for the optimization.
+    optuna_sampler : optuna.samplers.BaseSampler
+        The Optuna sampler to use.
+    output_name : str
+        Name of the output column to minimize.
 
     Returns
     -------
-    Block
-        An instance of the OptunaOptimizer block.
+    OptunaUpdateStep
+        Configured update-step block.
     """
-    return OptunaOptimizer(optuna_sampler=optuna_sampler)
+    return OptunaUpdateStep(
+        optuna_sampler=optuna_sampler, output_name=output_name
+    )
 
 
 # =============================================================================
 
 
-def tpesampler() -> Optimizer:
-    """Create an Optuna TPE sampler optimizer block.
+def tpesampler(output_name: str) -> OptunaUpdateStep:
+    """Create an Optuna TPE-sampler update-step block.
+
+    Parameters
+    ----------
+    output_name : str
+        Name of the output column to minimize.
 
     Returns
     -------
-    Block
-        An instance of the OptunaOptimizer block with TPE sampler.
+    OptunaUpdateStep
+        Update-step block wrapping Optuna's TPE sampler.
     """
-    return OptunaOptimizer(optuna_sampler=optuna.samplers.TPESampler())
+    return OptunaUpdateStep(
+        optuna_sampler=optuna.samplers.TPESampler(),
+        output_name=output_name,
+    )

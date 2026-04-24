@@ -49,9 +49,11 @@ class Block(ABC):
     Optionally, they may override :meth:`arm` to perform any one-time setup
     (e.g. fitting a surrogate model) before the block is executed.
 
+    Blocks compose with the ``>>`` operator into a :class:`ChainedBlock`,
+    and can be repeated with :meth:`loop` to produce a :class:`LoopBlock`.
     The built-in samplers (:class:`RandomUniform`, :class:`Latin`,
-    :class:`Sobol`, :class:`Grid`) and the :class:`DataGenerator` are all
-    examples of Block subclasses.
+    :class:`Sobol`, :class:`Grid`), the :class:`DataGenerator`, and the
+    built-in optimizer update steps are all Block subclasses.
 
     Examples
     --------
@@ -115,6 +117,27 @@ class Block(ABC):
         if isinstance(other, ChainedBlock):
             return ChainedBlock(blocks=[self, *other.blocks])
         return ChainedBlock(blocks=[self, other])
+
+    def loop(self, n_iterations: int) -> LoopBlock:
+        """Repeat this block ``n_iterations`` times.
+
+        Parameters
+        ----------
+        n_iterations : int
+            Number of times to run the block.
+
+        Returns
+        -------
+        LoopBlock
+            A new block that runs ``self`` ``n_iterations`` times, passing
+            the output of each iteration as the input to the next.
+
+        Examples
+        --------
+        >>> step = update_step >> data_generator
+        >>> data = step.loop(50).call(initial_data)
+        """
+        return LoopBlock(block=self, n_iterations=n_iterations)
 
     @classmethod
     def from_yaml(
@@ -192,6 +215,52 @@ class ChainedBlock(Block):
         if isinstance(other, ChainedBlock):
             return ChainedBlock(blocks=[*self.blocks, *other.blocks])
         return ChainedBlock(blocks=[*self.blocks, other])
+
+
+class LoopBlock(Block):
+    """A block that repeats an inner block ``n_iterations`` times.
+
+    Each iteration passes the output of the previous call as the input to
+    the next. Typical use is to drive an optimizer update step chained with
+    a data generator:
+
+    >>> loop = (update_step >> data_generator).loop(50)
+    >>> data = loop.call(initial_data)
+
+    Parameters
+    ----------
+    block : Block
+        The inner block to repeat.
+    n_iterations : int
+        Number of iterations to run.
+    """
+
+    def __init__(self, block: Block, n_iterations: int) -> None:
+        self.block = block
+        self.n_iterations = n_iterations
+
+    def arm(self, data: ExperimentData) -> None:
+        """Arm the inner block once before the loop starts."""
+        self.block.arm(data)
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Run the inner block ``n_iterations`` times sequentially.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments forwarded to each iteration.
+
+        Returns
+        -------
+        ExperimentData
+            The experiment data after ``n_iterations`` iterations.
+        """
+        for _ in range(self.n_iterations):
+            data = self.block.call(data=data, **kwargs)
+        return data
 
 
 # =============================================================================
@@ -466,61 +535,3 @@ def datagenerator(
         return data_generator
 
     return decorator
-
-
-# =============================================================================
-
-
-class Optimizer(ABC):
-    """Abstract base class for optimization algorithms.
-
-    An Optimizer iteratively suggests new input configurations, evaluates them
-    via a :class:`DataGenerator`, and updates its internal state.  Subclasses
-    must implement :meth:`arm` (one-time setup) and :meth:`call` (the
-    optimization loop).
-    """
-
-    @abstractmethod
-    def arm(
-        self,
-        data: ExperimentData,
-        data_generator: DataGenerator,
-        input_name: str,
-        output_name: str,
-    ) -> None:
-        """Prepare the optimizer with the experiment data and data generator.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data used to initialize the optimizer state.
-        data_generator : DataGenerator
-            The data generator used to evaluate candidate solutions.
-        input_name : str
-            Name of the input parameter column the optimizer controls.
-        output_name : str
-            Name of the output parameter column the optimizer minimizes.
-        """
-        pass
-
-    @abstractmethod
-    def call(
-        self, data: ExperimentData, n_iterations: int, **kwargs
-    ) -> ExperimentData:
-        """Run the optimization loop for a given number of iterations.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data to optimize.
-        n_iterations : int
-            Number of optimization iterations to perform.
-        **kwargs : dict
-            Additional keyword arguments forwarded to the underlying optimizer.
-
-        Returns
-        -------
-        ExperimentData
-            The experiment data updated with the results of all iterations.
-        """
-        pass
