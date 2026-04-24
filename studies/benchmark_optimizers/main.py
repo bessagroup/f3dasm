@@ -39,6 +39,50 @@ from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
 from f3dasm.design import Domain, make_nd_continuous_domain
 
+#                                                       Optimizer factory lookup
+# =============================================================================
+
+# Names of optimizers that run as per-iteration update steps (ask/tell style)
+# and must be wrapped in a LoopBlock with the data generator. Everything else
+# is treated as a one-shot block whose own call() drives its inner loop.
+_UPDATE_STEP_OPTIMIZERS = {"tpesampler"}
+
+
+def _normalize_optimizer_name(name: str) -> str:
+    return name.lower().replace(" ", "").replace("-", "").replace("_", "")
+
+
+def _build_optimizer_step(
+    name: str,
+    data_generator: DataGenerator,
+    output_name: str,
+    input_name: str,
+    hyperparameters: dict,
+    n_iterations: int,
+) -> Block:
+    """Return the Block that runs the optimizer for ``n_iterations`` steps.
+
+    For ask/tell update-step optimizers (e.g. TPE) the returned block is
+    ``(update_step >> data_generator).loop(n_iterations)``. For scipy
+    one-shot optimizers the returned block is the optimizer itself, which
+    drives its own inner loop via scipy's ``maxiter`` option.
+    """
+    key = _normalize_optimizer_name(name)
+    if key in _UPDATE_STEP_OPTIMIZERS:
+        update_step = create_optimizer(
+            optimizer=key, output_name=output_name, **hyperparameters
+        )
+        return (update_step >> data_generator).loop(n_iterations)
+
+    return create_optimizer(
+        optimizer=key,
+        data_generator=data_generator,
+        output_name=output_name,
+        input_name=input_name,
+        **hyperparameters,
+    )
+
+
 #                                                          Authorship & Credits
 # =============================================================================
 __author__ = "Martin van der Schelling (M.P.vanderSchelling@tudelft.nl)"
@@ -148,16 +192,19 @@ class BenchmarkOptimizer(DataGenerator):
 
             data = data_generator.call(data=data, mode="sequential")
 
-            _optimizer = create_optimizer(
-                optimizer=optimizer["name"], seed=seed + r, **hyperparameters
-            )
+            output_name = next(iter(domain.output_names))
+            input_name = next(iter(domain.input_names))
 
-            data.optimize(
-                optimizer=_optimizer,
+            step = _build_optimizer_step(
+                name=optimizer["name"],
                 data_generator=data_generator,
-                iterations=budget,
-                x0_selection="best",
+                output_name=output_name,
+                input_name=input_name,
+                hyperparameters=hyperparameters,
+                n_iterations=budget,
             )
+            step.arm(data)
+            data = step.call(data=data)
 
             data_list.append(data.to_xarray())
 

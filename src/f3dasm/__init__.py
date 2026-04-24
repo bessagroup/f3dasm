@@ -17,7 +17,7 @@ from ._src.core import (
     Block,
     ChainedBlock,
     DataGenerator,
-    Optimizer,
+    LoopBlock,
     datagenerator,
 )
 from ._src.datageneration.datagenerator_factory import create_datagenerator
@@ -50,7 +50,7 @@ __all__ = [
     "ExperimentData",
     "ExperimentSample",
     "Loop",
-    "Optimizer",
+    "LoopBlock",
     "Pipeline",
     "SlurmCluster",
     "SlurmResources",

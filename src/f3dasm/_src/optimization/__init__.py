@@ -30,7 +30,6 @@ __status__ = "Stable"
 
 __all__ = [
     "create_optimizer",
-    "OptunaOptimizer",
     "tpesampler",
     "cg",
     "lbfgsb",

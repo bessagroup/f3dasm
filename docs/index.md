@@ -17,20 +17,32 @@
 
 ```python
 from f3dasm.design import Domain
-from f3dasm import ExperimentData, create_sampler, create_datagenerator, create_optimizer
+from f3dasm import (
+    ExperimentData,
+    create_sampler,
+    create_datagenerator,
+    create_optimizer,
+)
 
 # Define a 2D parameter space
 domain = Domain()
 domain.add_float(name='x0', low=-1.0, high=1.0)
 domain.add_float(name='x1', low=-1.0, high=1.0)
+domain.add_output('y')
 
 # Sample, evaluate and optimize
 data = ExperimentData(domain=domain)
-data = create_sampler('random', seed=42)(data=data, n_samples=20)
+data = create_sampler('random', seed=42).call(data=data, n_samples=20)
 
-evaluator = create_datagenerator('sphere')
+evaluator = create_datagenerator('sphere', output_names='y')
 evaluator.arm(data=data)
 data = evaluator.call(data=data)
+
+# create_optimizer returns an update-step Block for ask/tell optimizers;
+# chain it with the evaluator and wrap in a LoopBlock for the iterations.
+step = (create_optimizer('tpesampler', output_name='y') >> evaluator).loop(50)
+step.arm(data=data)
+data = step.call(data=data)
 ```
 
 ---

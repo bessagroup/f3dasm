@@ -68,26 +68,48 @@ Key capabilities:
 
 ## Block
 
-A `Block` is the fundamental unit of computation in `f3dasm`. Every operation on your data — sampling, evaluation, optimization — is a Block.
+A `Block` is the fundamental unit of computation in `f3dasm`. Every operation on your data — sampling, evaluation, optimization — is a Block with a uniform signature: `call(data: ExperimentData, **kwargs) -> ExperimentData`.
 
-There are three main types of Blocks:
+Blocks compose with the `>>` operator into a `ChainedBlock`, and can be repeated with `.loop(n)` to produce a `LoopBlock`. Samplers, data generators, and optimizer update steps are all just Blocks — there's no separate `Sampler` or `Optimizer` class hierarchy.
 
-| Type | Purpose | Example |
-|------|---------|---------|
-| **Sampler** | Generate initial experiment designs | Random, Latin Hypercube, Sobol |
-| **DataGenerator** | Evaluate experiments (simulations, models) | Benchmark functions, custom simulators |
-| **Optimizer** | Iteratively improve designs | CG, L-BFGS-B, TPE |
+Built-in Blocks:
 
-You can use built-in Blocks or create your own by subclassing `Block` or using the `@datagenerator` decorator:
+| Category | Examples |
+|----------|---------|
+| Samplers | `RandomUniform`, `Latin`, `Sobol`, `Grid` (and the factories `random`, `latin`, `sobol`, `grid`) |
+| Data generators | `DataGenerator` subclasses or the `@datagenerator` decorator |
+| Optimizer update steps | `tpesampler(output_name=...)` (ask/tell style) |
+| One-shot optimizers | `cg(...)`, `lbfgsb(...)`, `nelder_mead(...)` (scipy's own inner loop) |
+
+You can create your own Block by subclassing:
 
 ```python
-from f3dasm import Block, ExperimentSample
+from f3dasm import Block, ExperimentData
 
-class MySimulation(Block):
-    def execute(self, sample: ExperimentSample) -> ExperimentSample:
-        x = sample.get('x0')
-        sample.store('y', x ** 2)
-        return sample
+class MyBlock(Block):
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        # transform data here
+        return data
+```
+
+### Composing Blocks
+
+Each Block's `call` accepts the same `**kwargs`, which are passed to every block in a chain. Keep sampling and evaluation separate when they need different call-time arguments, and use `>>` to chain blocks whose call-time arguments are compatible:
+
+```python
+from f3dasm import create_optimizer, create_sampler
+
+# Initial design: sample, then evaluate
+data = create_sampler("latin", seed=42).call(data, n_samples=20)
+data = data_generator.call(data)
+
+# Optimize: chain the ask/tell update step with the data generator and
+# wrap the pair in a LoopBlock. create_optimizer returns just the update
+# step for ask/tell optimizers (like "tpesampler").
+update_step = create_optimizer("tpesampler", output_name="y")
+loop = (update_step >> data_generator).loop(50)
+loop.arm(data)
+data = loop.call(data)
 ```
 
 **Learn more:** [Understanding Blocks](notebooks/data-driven/blocks.ipynb) | [Built-in Defaults](defaults.md) | [API Reference](api/datageneration.md)
