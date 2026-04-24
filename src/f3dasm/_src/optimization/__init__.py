@@ -7,6 +7,9 @@ Module for optimization
 # Standard
 from ._imports import try_import
 
+# Local
+from .optimizer_factory import create_optimizer
+
 with try_import() as _optuna_imports:
     from .optuna_implementations import tpesampler
 
@@ -26,6 +29,7 @@ __status__ = "Stable"
 # =============================================================================
 
 __all__ = [
+    "create_optimizer",
     "tpesampler",
     "cg",
     "lbfgsb",

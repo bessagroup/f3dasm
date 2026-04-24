@@ -97,16 +97,17 @@ class MyBlock(Block):
 Each Block's `call` accepts the same `**kwargs`, which are passed to every block in a chain. Keep sampling and evaluation separate when they need different call-time arguments, and use `>>` to chain blocks whose call-time arguments are compatible:
 
 ```python
-from f3dasm import create_sampler
-from f3dasm.optimization import tpesampler
+from f3dasm import create_optimizer, create_sampler
 
 # Initial design: sample, then evaluate
 data = create_sampler("latin", seed=42).call(data, n_samples=20)
 data = data_generator.call(data)
 
 # Optimize: chain the ask/tell update step with the data generator and
-# wrap the pair in a LoopBlock.
-loop = (tpesampler(output_name="y") >> data_generator).loop(50)
+# wrap the pair in a LoopBlock. create_optimizer returns just the update
+# step for ask/tell optimizers (like "tpesampler").
+update_step = create_optimizer("tpesampler", output_name="y")
+loop = (update_step >> data_generator).loop(50)
 loop.arm(data)
 data = loop.call(data)
 ```

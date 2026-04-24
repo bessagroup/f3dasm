@@ -32,12 +32,12 @@ from f3dasm import (
     ExperimentData,
     ExperimentSample,
     create_datagenerator,
+    create_optimizer,
     create_sampler,
 )
 from f3dasm.datageneration import DataGenerator
 from f3dasm.datageneration.functions import get_functions
 from f3dasm.design import Domain, make_nd_continuous_domain
-from f3dasm.optimization import cg, lbfgsb, nelder_mead, tpesampler
 
 #                                                       Optimizer factory lookup
 # =============================================================================
@@ -46,13 +46,6 @@ from f3dasm.optimization import cg, lbfgsb, nelder_mead, tpesampler
 # and must be wrapped in a LoopBlock with the data generator. Everything else
 # is treated as a one-shot block whose own call() drives its inner loop.
 _UPDATE_STEP_OPTIMIZERS = {"tpesampler"}
-
-_OPTIMIZER_FACTORIES = {
-    "cg": cg,
-    "lbfgsb": lbfgsb,
-    "neldermead": nelder_mead,
-    "tpesampler": tpesampler,
-}
 
 
 def _normalize_optimizer_name(name: str) -> str:
@@ -69,25 +62,20 @@ def _build_optimizer_step(
 ) -> Block:
     """Return the Block that runs the optimizer for ``n_iterations`` steps.
 
-    For TPE (and other ask/tell update-step optimizers) the returned block
-    is ``(update_step >> data_generator).loop(n_iterations)``. For scipy
+    For ask/tell update-step optimizers (e.g. TPE) the returned block is
+    ``(update_step >> data_generator).loop(n_iterations)``. For scipy
     one-shot optimizers the returned block is the optimizer itself, which
-    drives its own inner loop via scipy.
+    drives its own inner loop via scipy's ``maxiter`` option.
     """
     key = _normalize_optimizer_name(name)
-    if key not in _OPTIMIZER_FACTORIES:
-        raise KeyError(
-            f"Optimizer {name!r} is not available in f3dasm core. "
-            "CMAES, PSO, Adam and similar live in the f3dasm_optimize "
-            "extension."
-        )
-    factory = _OPTIMIZER_FACTORIES[key]
-
     if key in _UPDATE_STEP_OPTIMIZERS:
-        update_step = factory(output_name=output_name, **hyperparameters)
+        update_step = create_optimizer(
+            optimizer=key, output_name=output_name, **hyperparameters
+        )
         return (update_step >> data_generator).loop(n_iterations)
 
-    return factory(
+    return create_optimizer(
+        optimizer=key,
         data_generator=data_generator,
         output_name=output_name,
         input_name=input_name,

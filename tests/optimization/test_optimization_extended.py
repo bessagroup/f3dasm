@@ -2,6 +2,7 @@
 
 import pytest
 
+from f3dasm import Block, create_optimizer
 from f3dasm._src.datageneration.datagenerator_factory import (
     create_datagenerator,
 )
@@ -10,6 +11,8 @@ from f3dasm._src.optimization._imports import (
     try_import,
 )
 from f3dasm._src.optimization.errors import faulty_optimizer
+from f3dasm._src.optimization.optuna_implementations import OptunaUpdateStep
+from f3dasm._src.optimization.scipy_implementations import ScipyOptimizer
 from f3dasm.optimization import cg, lbfgsb, nelder_mead
 
 pytestmark = pytest.mark.smoke
@@ -52,6 +55,48 @@ def test_nelder_mead_factory():
     )
     assert opt is not None
     assert opt.method == "Nelder-Mead"
+
+
+# ======================= create_optimizer factory =======================
+
+
+def test_create_optimizer_invalid_name():
+    with pytest.raises(KeyError):
+        create_optimizer(optimizer="nonexistent_optimizer")
+
+
+def test_create_optimizer_invalid_type():
+    with pytest.raises(TypeError):
+        create_optimizer(optimizer=12345)
+
+
+def test_create_optimizer_tpesampler_returns_update_step():
+    step = create_optimizer(optimizer="tpesampler", output_name="y")
+    assert isinstance(step, Block)
+    assert isinstance(step, OptunaUpdateStep)
+
+
+def test_create_optimizer_scipy_returns_one_shot_block():
+    step = create_optimizer(
+        optimizer="cg",
+        data_generator=_dummy_datagenerator(),
+        output_name="y",
+        input_name="x",
+    )
+    assert isinstance(step, Block)
+    assert isinstance(step, ScipyOptimizer)
+    assert step.method == "CG"
+
+
+def test_create_optimizer_name_normalization():
+    step = create_optimizer(
+        optimizer="Nelder-Mead",
+        data_generator=_dummy_datagenerator(),
+        output_name="y",
+        input_name="x",
+    )
+    assert isinstance(step, ScipyOptimizer)
+    assert step.method == "Nelder-Mead"
 
 
 # ======================= faulty_optimizer =======================

@@ -23,6 +23,7 @@ from ._src.core import (
 from ._src.datageneration.datagenerator_factory import create_datagenerator
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
+from ._src.optimization.optimizer_factory import create_optimizer
 from ._src.pipeline import (
     CollectArrayResults,
     Loop,
@@ -55,6 +56,7 @@ __all__ = [
     "SlurmResources",
     "Step",
     "create_datagenerator",
+    "create_optimizer",
     "create_sampler",
     "datagenerator",
 ]

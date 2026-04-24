@@ -10,6 +10,8 @@ Factory functions and implementations for built-in samplers, benchmark functions
 
 ::: f3dasm.create_datagenerator
 
+::: f3dasm.create_optimizer
+
 ## Built-in samplers
 
 ::: f3dasm.design.grid
