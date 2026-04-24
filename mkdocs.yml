@@ -115,6 +115,8 @@ nav:
             - 'Example: Car Stopping Distance': 'notebooks/data-driven/carstoppingdistance.ipynb'
             - 'Cluster Execution': 'notebooks/data-driven/cluster.ipynb'
             - 'Grid Sampling': 'notebooks/data-driven/gridsampler.ipynb'
+        - Optimization:
+            - 'Optimization Loops': 'notebooks/optimization/optimization.ipynb'
         - Pipeline:
             - 'Building a Pipeline': 'notebooks/pipeline/pipeline.ipynb'
         - Built-in implementations:
