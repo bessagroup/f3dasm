@@ -196,6 +196,7 @@ def _execute_step(
     if isinstance(block, DataGenerator):
         # Load ExperimentData from disk before dispatching.
         data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
+        block.arm(data)
         if step.parallel and job_number is not None:
             # Array job: each SLURM task processes one job index.
             # The DataGenerator handles the strided access pattern

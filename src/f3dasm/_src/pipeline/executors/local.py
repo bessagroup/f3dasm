@@ -138,6 +138,7 @@ def _run_step_locally(
     if isinstance(block, DataGenerator):
         # Load ExperimentData from disk and run the DataGenerator.
         data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
+        block.arm(data)
         mode: str = parallel_mode if step.parallel else "cluster"
         result: ExperimentData | None = block.call(
             data=data, mode=mode, **step.kwargs
