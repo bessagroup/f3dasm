@@ -35,11 +35,16 @@ __status__ = "Stable"
 
 logger = logging.getLogger("f3dasm")
 
-# Default resources for the orchestrator job (lightweight — it only
-# runs ``sbatch`` commands and exits).
+# Default resources for the orchestrator job (lightweight — it
+# runs ``sbatch`` calls and one short ``count_open`` invocation
+# per parallel step).
 _DEFAULT_ORCH_RESOURCES = SlurmResources(
     time="00:10:00", mem="1G", cpus_per_task=1, nodes=1
 )
+
+# Public ``python -m`` module invoked by the orchestrator to
+# count open experiments at submission time.
+_COUNT_OPEN_MODULE = "f3dasm.pipeline.count_open"
 
 
 @dataclass
@@ -51,6 +56,13 @@ class SlurmExecutor(Executor):
     element to handle) and a ``LOOP_COUNT`` (current loop
     iteration) to progress through the pipeline one step or loop
     iteration at a time.
+
+    Parallel steps are submitted with their array size resolved at
+    submission time from the number of open experiments in the
+    step's ExperimentData on disk. This means the user does not
+    need to declare ``array_jobs`` upfront — the orchestrator
+    invokes :mod:`f3dasm.pipeline.count_open` to compute the array
+    width just before each ``sbatch``.
 
     At submission time the submitter's ``sys.path`` is stored as
     ``.sys_path.json`` alongside ``.pipeline.pkl``. When a SLURM
@@ -151,7 +163,6 @@ class SlurmExecutor(Executor):
                     pipeline_name=pipeline.name,
                     label=label,
                     job_dir=job_dir,
-                    n_jobs=element.array_jobs,
                     iteration=0,
                 )
                 path = script_dir / f"{label}.sh"
@@ -167,7 +178,6 @@ class SlurmExecutor(Executor):
                         pipeline_name=pipeline.name,
                         label=label,
                         job_dir=job_dir,
-                        n_jobs=step.array_jobs,
                         iteration="$F3DASM_ITERATION",
                     )
                     path = script_dir / f"{label}.sh"
@@ -182,6 +192,7 @@ class SlurmExecutor(Executor):
             orchestrator_resources=orch_res,
             script_paths=script_paths,
             log_dir_path=str(log_dir),
+            job_dir=job_dir,
         )
         orch_path = script_dir / "orchestrator.sh"
         orch_path.write_text(orch_script)
@@ -242,7 +253,6 @@ class SlurmExecutor(Executor):
                     pipeline_name=pipeline.name,
                     label=label,
                     job_dir=job_dir,
-                    n_jobs=element.array_jobs,
                     iteration=0,
                 )
                 placeholder_paths[label] = f"SCRIPT_DIR/{label}.sh"
@@ -256,7 +266,6 @@ class SlurmExecutor(Executor):
                         pipeline_name=pipeline.name,
                         label=label,
                         job_dir=job_dir,
-                        n_jobs=step.array_jobs,
                         iteration="$F3DASM_ITERATION",
                     )
                     placeholder_paths[label] = f"SCRIPT_DIR/{label}.sh"
@@ -268,6 +277,7 @@ class SlurmExecutor(Executor):
             orchestrator_resources=orch_res,
             script_paths=placeholder_paths,
             log_dir_path=log_dir_path,
+            job_dir=job_dir,
         )
 
         return scripts
@@ -283,15 +293,19 @@ def render_sbatch_script(
     pipeline_name: str,
     label: str,
     job_dir: Path,
-    n_jobs: int | None,
     iteration: int | str,
 ) -> str:
     """Render a complete sbatch script for a single step.
 
     This is a pure function: it takes all the information it
     needs as arguments and returns the script as a string.
-    The generated script invokes ``f3dasm._src.pipeline.run_step``
-    as its payload.
+    The generated script invokes ``f3dasm.pipeline.run_step`` as
+    its payload.
+
+    For parallel steps the ``#SBATCH --array=`` directive is
+    intentionally omitted from the script; the orchestrator
+    supplies ``--array=`` on the ``sbatch`` command line based on
+    the count of open experiments on disk at submission time.
 
     Parameters
     ----------
@@ -306,8 +320,6 @@ def render_sbatch_script(
     job_dir : Path
         Absolute path to the job directory (``rootdir/project_job``).
         Pipeline artifacts and per-step ExperimentData live here.
-    n_jobs : int | None
-        Number of jobs for array steps.
     iteration : int | str
         Current loop iteration index. Can be a shell variable
         reference (e.g. ``"$F3DASM_ITERATION"``) for scripts
@@ -331,11 +343,6 @@ def render_sbatch_script(
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
     ]
-
-    # --- Array job configuration (parallel steps only) ---
-    if step.parallel and n_jobs is not None:
-        array_size: int = min(n_jobs, res.max_array_size)
-        lines.append(f"#SBATCH --array=0-{array_size}%{res.max_concurrent}")
 
     # --- Log output paths ---
     log_path: str = str(job_dir / "logs" / label)
@@ -369,7 +376,7 @@ def render_sbatch_script(
     # --- Python command ---
     # Invoke the run_step CLI entry point with all necessary
     # context for this step
-    run_step_module: str = "f3dasm._src.pipeline.run_step"
+    run_step_module: str = "f3dasm.pipeline.run_step"
     cmd_parts: list[str] = [
         f"{cluster.runner} -m {run_step_module}",
         f"  --step={step.name}",
@@ -393,6 +400,7 @@ def render_orchestrator_script(
     orchestrator_resources: SlurmResources,
     script_paths: dict[str, str],
     log_dir_path: str,
+    job_dir: Path,
 ) -> str:
     """Render a self-resubmitting orchestrator for the pipeline.
 
@@ -410,6 +418,12 @@ def render_orchestrator_script(
     dependency type is determined by the *next* step's
     ``Step.dependency`` field.
 
+    For parallel steps, the orchestrator invokes
+    :mod:`f3dasm.pipeline.count_open` to size the ``--array=``
+    flag based on the number of open experiments on disk. If
+    there are none, the step is skipped and the next element is
+    resubmitted without a SLURM dependency.
+
     Parameters
     ----------
     pipeline : Pipeline
@@ -422,6 +436,10 @@ def render_orchestrator_script(
         Mapping of label to absolute script path on disk.
     log_dir_path : str
         Directory for orchestrator log files.
+    job_dir : Path
+        Absolute path to the job directory; embedded as the
+        ``JOB_DIR`` bash variable so ``count_open`` can locate
+        each step's ExperimentData.
 
     Returns
     -------
@@ -447,13 +465,28 @@ def render_orchestrator_script(
     for key, val in res.extra_sbatch.items():
         lines.append(f"#SBATCH --{key}={val}")
 
+    lines.append("")
+
+    # The orchestrator runs a short Python invocation
+    # (``count_open``) before each parallel sbatch, so it needs
+    # the same env setup as the worker scripts.
+    for cmd in cluster.env_setup:
+        lines.append(cmd)
+    if cluster.env_setup:
+        lines.append("")
+
+    for key, val in cluster.env_vars.items():
+        lines.append(f'export {key}="{val}"')
+    if cluster.env_vars:
+        lines.append("")
+
     lines.extend(
         [
-            "",
             "STEP_COUNT=$1",
             "LOOP_COUNT=$2",
             'SELF=$(realpath "$0")',
             f"TOTAL_STEPS={total_steps}",
+            f'JOB_DIR="{job_dir}"',
             "",
             'while [ "$STEP_COUNT" -lt "$TOTAL_STEPS" ]; do',
             "",
@@ -472,6 +505,7 @@ def render_orchestrator_script(
                 step=element,
                 step_index=i,
                 pipeline=pipeline,
+                cluster=cluster,
                 script_paths=script_paths,
                 total_steps=total_steps,
             )
@@ -482,6 +516,7 @@ def render_orchestrator_script(
                 loop=element,
                 step_index=i,
                 pipeline=pipeline,
+                cluster=cluster,
                 script_paths=script_paths,
                 total_steps=total_steps,
             )
@@ -525,11 +560,60 @@ def _get_next_dependency(
     return "afterok"
 
 
+def _render_parallel_submit(
+    lines: list[str],
+    *,
+    step: Step,
+    cluster: SlurmCluster,
+    script_path: str,
+    label_for_log: str,
+    job_id_var: str,
+    indent: str,
+    extra_sbatch_flags: str = "",
+) -> None:
+    """Append bash that counts open experiments and sbatches a parallel step.
+
+    On entry: nothing required. On exit: the bash variable named
+    by ``job_id_var`` is either the submitted SLURM job id, or the
+    empty string if there were no open experiments.
+    """
+    res = step.resources
+    project_dir = step.project_dir
+    runner = cluster.runner
+    count_cmd = (
+        f"{runner} -m {_COUNT_OPEN_MODULE} "
+        f'--job-dir="$JOB_DIR" --project-dir="{project_dir}"'
+    )
+    sbatch_flags = (
+        f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent}"
+        f" {extra_sbatch_flags}".rstrip()
+    )
+
+    lines.extend(
+        [
+            f"{indent}N_OPEN=$({count_cmd})",
+            f'{indent}if [ "$N_OPEN" -gt 0 ]; then',
+            f"{indent}  ARRAY_MAX=$(("
+            f" (N_OPEN < {res.max_array_size} ? N_OPEN :"
+            f" {res.max_array_size}) - 1 ))",
+            f'{indent}  RESULT=$(sbatch {sbatch_flags} "{script_path}")',
+            f"{indent}  {job_id_var}=$(echo $RESULT | awk '{{print $NF}}')",
+            f'{indent}  echo "Submitted {label_for_log}:'
+            f' job ${job_id_var} (array 0-$ARRAY_MAX)"',
+            f"{indent}else",
+            f'{indent}  echo "Skipping {label_for_log}: no open experiments"',
+            f'{indent}  {job_id_var}=""',
+            f"{indent}fi",
+        ]
+    )
+
+
 def _render_step_block(
     lines: list[str],
     step: Step,
     step_index: int,
     pipeline: Pipeline,
+    cluster: SlurmCluster,
     script_paths: dict[str, str],
     total_steps: int,
 ) -> None:
@@ -537,24 +621,42 @@ def _render_step_block(
     label = step.name
     script_path = script_paths[label]
 
-    lines.extend(
-        [
-            f"    # Step: {step.name}",
-            f'    RESULT=$(sbatch "{script_path}")',
-            "    JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-            f'    echo "Submitted {step.name}: job $JOB_ID"',
-        ]
-    )
+    lines.append(f"    # Step: {step.name}")
+
+    if step.parallel:
+        _render_parallel_submit(
+            lines=lines,
+            step=step,
+            cluster=cluster,
+            script_path=script_path,
+            label_for_log=step.name,
+            job_id_var="JOB_ID",
+            indent="    ",
+        )
+    else:
+        lines.extend(
+            [
+                f'    RESULT=$(sbatch "{script_path}")',
+                "    JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+                f'    echo "Submitted {step.name}: job $JOB_ID"',
+            ]
+        )
 
     next_step = step_index + 1
     next_dep = _get_next_dependency(pipeline, step_index, total_steps)
 
     if next_dep is not None:
+        lines.append(f"    STEP_COUNT={next_step}")
+        # If the step was skipped (no open experiments), JOB_ID
+        # is empty — resubmit without a SLURM dependency.
         lines.extend(
             [
-                f"    STEP_COUNT={next_step}",
-                f"    sbatch --dependency={next_dep}:$JOB_ID"
-                f' "$SELF" $STEP_COUNT $LOOP_COUNT',
+                '    if [ -n "$JOB_ID" ]; then',
+                f"      sbatch --dependency={next_dep}:$JOB_ID"
+                ' "$SELF" $STEP_COUNT $LOOP_COUNT',
+                "    else",
+                '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
+                "    fi",
                 "    exit 0",
             ]
         )
@@ -568,6 +670,7 @@ def _render_loop_block(
     loop: Loop,
     step_index: int,
     pipeline: Pipeline,
+    cluster: SlurmCluster,
     script_paths: dict[str, str],
     total_steps: int,
 ) -> None:
@@ -579,6 +682,7 @@ def _render_loop_block(
             f"    # Loop: {n_iters} iterations",
             f'    if [ "$LOOP_COUNT" -lt {n_iters} ]; then',
             "      export F3DASM_ITERATION=$LOOP_COUNT",
+            '      PREV_JOB_ID=""',
         ]
     )
 
@@ -586,29 +690,56 @@ def _render_loop_block(
     for j, inner_step in enumerate(loop.steps):
         inner_label = f"loop{step_index}_{inner_step.name}"
         inner_path = script_paths[inner_label]
+        log_label = f"{inner_step.name} (iter $LOOP_COUNT)"
+        dep = inner_step.dependency
 
-        if j == 0:
-            # First inner step: no dependency
+        lines.append(f"      # Inner step: {inner_step.name}")
+
+        if inner_step.parallel:
+            # Build the optional --dependency= flag.
+            if j == 0:
+                dep_flag_setup = ['      DEP_FLAG="--export=ALL"']
+            else:
+                dep_flag_setup = [
+                    '      if [ -n "$PREV_JOB_ID" ]; then',
+                    f'        DEP_FLAG="--dependency={dep}:$PREV_JOB_ID'
+                    ' --export=ALL"',
+                    "      else",
+                    '        DEP_FLAG="--export=ALL"',
+                    "      fi",
+                ]
+            lines.extend(dep_flag_setup)
+            _render_parallel_submit(
+                lines=lines,
+                step=inner_step,
+                cluster=cluster,
+                script_path=inner_path,
+                label_for_log=f"  {log_label}",
+                job_id_var="PREV_JOB_ID",
+                indent="      ",
+                extra_sbatch_flags="$DEP_FLAG",
+            )
+        elif j == 0:
+            # First inner non-parallel step: no carry-in dep
             lines.extend(
                 [
-                    f"      # Inner step: {inner_step.name}",
                     f'      RESULT=$(sbatch --export=ALL "{inner_path}")',
                     "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {inner_step.name}'
-                    f' (iter $LOOP_COUNT): job $PREV_JOB_ID"',
+                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
                 ]
             )
         else:
-            dep = inner_step.dependency
             lines.extend(
                 [
-                    f"      # Inner step: {inner_step.name}",
-                    f"      RESULT=$(sbatch"
+                    '      if [ -n "$PREV_JOB_ID" ]; then',
+                    "        RESULT=$(sbatch"
                     f" --dependency={dep}:$PREV_JOB_ID"
                     f' --export=ALL "{inner_path}")',
+                    "      else",
+                    f'        RESULT=$(sbatch --export=ALL "{inner_path}")',
+                    "      fi",
                     "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {inner_step.name}'
-                    f' (iter $LOOP_COUNT): job $PREV_JOB_ID"',
+                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
                 ]
             )
 
@@ -620,8 +751,12 @@ def _render_loop_block(
     lines.extend(
         [
             "      LOOP_COUNT=$((LOOP_COUNT + 1))",
-            f"      sbatch --dependency={iter_dep}:$PREV_JOB_ID"
-            f' "$SELF" $STEP_COUNT $LOOP_COUNT',
+            '      if [ -n "$PREV_JOB_ID" ]; then',
+            f"        sbatch --dependency={iter_dep}:$PREV_JOB_ID"
+            ' "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "      else",
+            '        sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "      fi",
             "      exit 0",
             "    else",
             "      # Loop done — advance to next element",

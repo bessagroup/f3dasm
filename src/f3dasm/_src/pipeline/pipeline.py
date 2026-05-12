@@ -53,15 +53,15 @@ class Step:
     parallel : bool
         If ``True``, this step is executed as a SLURM array job
         (or with multiprocessing locally). Only meaningful when
-        the block is a :class:`DataGenerator`.
+        the block is a :class:`DataGenerator`. The array size is
+        determined at submission time from the number of open
+        experiments in the step's ExperimentData on disk, capped
+        by ``resources.max_array_size``.
     resources : SlurmResources
         SLURM resource requirements for this step.
     dependency : Literal["afterok", "afterany"]
         SLURM dependency type for the previous step.
         Must be ``"afterok"`` or ``"afterany"``.
-    array_jobs : int, optional
-        If ``parallel=True``, the number of array jobs to submit.
-        Required if the block is a :class:`DataGenerator`.
     project_dir : str
         Sub-path relative to the job directory where
         ExperimentData is loaded and stored for this step.
@@ -76,7 +76,6 @@ class Step:
     parallel: bool = False
     resources: SlurmResources = field(default_factory=SlurmResources)
     dependency: Literal["afterok", "afterany"] = "afterok"
-    array_jobs: int | None = None
     project_dir: str = "."
     kwargs: dict[str, Any] = field(default_factory=dict)
 

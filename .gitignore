@@ -144,3 +144,4 @@ site/
 # Agents
 .github/agents/*
 superpowers/
+CLAUDE.md

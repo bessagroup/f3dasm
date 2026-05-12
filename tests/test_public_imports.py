@@ -30,3 +30,26 @@ def test_import_optimization_scipy():
 def test_import_optimization_optuna():
     optuna = pytest.importorskip("optuna")  # noqa: F841
     from f3dasm.optimization import tpesampler  # noqa: F401
+
+
+def test_import_pipeline():
+    from f3dasm.pipeline import (  # noqa: F401
+        CollectArrayResults,
+        Loop,
+        Pipeline,
+        SlurmCluster,
+        SlurmResources,
+        Step,
+    )
+
+
+def test_import_pipeline_run_step():
+    # Module is invoked as ``python -m f3dasm.pipeline.run_step``
+    # by SLURM jobs, so it must import cleanly and expose ``main``.
+    from f3dasm.pipeline.run_step import main  # noqa: F401
+
+
+def test_import_pipeline_count_open():
+    # Module is invoked as ``python -m f3dasm.pipeline.count_open``
+    # by the SLURM orchestrator to size array submissions.
+    from f3dasm.pipeline.count_open import main  # noqa: F401

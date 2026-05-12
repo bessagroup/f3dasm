@@ -20,7 +20,6 @@ class TestStep:
         assert step.name == ""
         assert step.parallel is False
         assert step.dependency == "afterok"
-        assert step.array_jobs is None
         assert step.project_dir == "."
         assert step.kwargs == {}
         assert isinstance(step.resources, SlurmResources)
@@ -33,7 +32,6 @@ class TestStep:
             parallel=True,
             resources=res,
             dependency="afterany",
-            array_jobs=10,
             project_dir="subdir",
             kwargs={"lr": 0.01},
         )
@@ -41,7 +39,6 @@ class TestStep:
         assert step.parallel is True
         assert step.resources.time == "02:00:00"
         assert step.dependency == "afterany"
-        assert step.array_jobs == 10
         assert step.project_dir == "subdir"
         assert step.kwargs == {"lr": 0.01}
 

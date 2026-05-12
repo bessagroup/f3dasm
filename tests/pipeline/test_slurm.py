@@ -52,7 +52,6 @@ class TestRenderSbatchScript:
             pipeline_name="my_pipe",
             label="train",
             job_dir=job_dir,
-            n_jobs=None,
             iteration=0,
         )
         assert "#!/bin/bash" in script
@@ -72,7 +71,9 @@ class TestRenderSbatchScript:
         assert "--array" not in script
         assert "--job-number" not in script
 
-    def test_parallel_script(self, cluster):
+    def test_parallel_script_no_array_directive(self, cluster):
+        # Array size is supplied on the sbatch command line by the
+        # orchestrator, so the per-step script must NOT bake one in.
         res = SlurmResources(max_array_size=100, max_concurrent=32)
         step = Step(
             block=lambda: None, name="run", resources=res, parallel=True
@@ -83,28 +84,11 @@ class TestRenderSbatchScript:
             pipeline_name="pipe",
             label="run",
             job_dir=Path("/scratch/job1"),
-            n_jobs=50,
             iteration=0,
         )
-        assert "#SBATCH --array=0-50%32" in script
+        assert "#SBATCH --array" not in script
         assert "--job-number=$SLURM_ARRAY_TASK_ID" in script
         assert "%A_%a.out" in script
-
-    def test_parallel_array_capped(self, cluster):
-        res = SlurmResources(max_array_size=10, max_concurrent=5)
-        step = Step(
-            block=lambda: None, name="run", resources=res, parallel=True
-        )
-        script = render_sbatch_script(
-            step=step,
-            cluster=cluster,
-            pipeline_name="pipe",
-            label="run",
-            job_dir=Path("/scratch/job1"),
-            n_jobs=100,
-            iteration=0,
-        )
-        assert "#SBATCH --array=0-10%5" in script
 
     def test_shell_variable_iteration(self, cluster):
         step = Step(block=lambda: None, name="run")
@@ -114,7 +98,6 @@ class TestRenderSbatchScript:
             pipeline_name="pipe",
             label="run",
             job_dir=Path("/scratch/job1"),
-            n_jobs=None,
             iteration="$F3DASM_ITERATION",
         )
         assert "--iteration=$F3DASM_ITERATION" in script
@@ -127,7 +110,6 @@ class TestRenderSbatchScript:
             pipeline_name="pipe",
             label="run",
             job_dir=Path("/scratch/job1"),
-            n_jobs=None,
             iteration=0,
         )
         assert "%j.out" in script
@@ -172,7 +154,7 @@ class TestGetNextDependency:
 
 
 class TestRenderStepBlock:
-    def test_step_with_next(self):
+    def test_step_with_next(self, cluster):
         lines = []
         step = Step(block=lambda: None, name="a")
         p = Pipeline(steps=[step, Step(block=lambda: None, name="b")])
@@ -181,6 +163,7 @@ class TestRenderStepBlock:
             step=step,
             step_index=0,
             pipeline=p,
+            cluster=cluster,
             script_paths={"a": "/scripts/a.sh"},
             total_steps=2,
         )
@@ -189,7 +172,7 @@ class TestRenderStepBlock:
         assert "STEP_COUNT=1" in text
         assert "exit 0" in text
 
-    def test_last_step(self):
+    def test_last_step(self, cluster):
         lines = []
         step = Step(block=lambda: None, name="a")
         p = Pipeline(steps=[step])
@@ -198,6 +181,7 @@ class TestRenderStepBlock:
             step=step,
             step_index=0,
             pipeline=p,
+            cluster=cluster,
             script_paths={"a": "/scripts/a.sh"},
             total_steps=1,
         )
@@ -205,9 +189,38 @@ class TestRenderStepBlock:
         assert "exit 0" in text
         assert "STEP_COUNT" not in text
 
+    def test_parallel_step_resolves_array_at_submit(self, cluster):
+        # A parallel step must (a) call count_open to determine
+        # the array width, (b) sbatch with a runtime --array=
+        # flag, and (c) handle the zero-open case by skipping
+        # submission and resubmitting without a dependency.
+        lines = []
+        res = SlurmResources(max_array_size=900, max_concurrent=64)
+        step = Step(
+            block=lambda: None, name="run", parallel=True, resources=res
+        )
+        p = Pipeline(steps=[step, Step(block=lambda: None, name="post")])
+        _render_step_block(
+            lines=lines,
+            step=step,
+            step_index=0,
+            pipeline=p,
+            cluster=cluster,
+            script_paths={"run": "/scripts/run.sh"},
+            total_steps=2,
+        )
+        text = "\n".join(lines)
+        assert "f3dasm.pipeline.count_open" in text
+        assert "N_OPEN" in text
+        assert "--array=0-${ARRAY_MAX}%64" in text
+        assert "(N_OPEN < 900 ? N_OPEN : 900) - 1" in text
+        # Skip + no-dep resubmit path for empty-open case
+        assert 'JOB_ID=""' in text
+        assert 'if [ -n "$JOB_ID" ]; then' in text
+
 
 class TestRenderLoopBlock:
-    def test_loop_block(self):
+    def test_loop_block(self, cluster):
         lines = []
         inner = Step(block=lambda: None, name="train")
         loop = Loop(n_iterations=5, steps=[inner])
@@ -217,6 +230,7 @@ class TestRenderLoopBlock:
             loop=loop,
             step_index=0,
             pipeline=p,
+            cluster=cluster,
             script_paths={"loop0_train": "/scripts/loop0_train.sh"},
             total_steps=1,
         )
@@ -226,7 +240,7 @@ class TestRenderLoopBlock:
         assert "LOOP_COUNT" in text
         assert "train" in text
 
-    def test_loop_with_multiple_inner_steps(self):
+    def test_loop_with_multiple_inner_steps(self, cluster):
         lines = []
         s1 = Step(block=lambda: None, name="gen")
         s2 = Step(block=lambda: None, name="post", dependency="afterany")
@@ -237,6 +251,7 @@ class TestRenderLoopBlock:
             loop=loop,
             step_index=0,
             pipeline=p,
+            cluster=cluster,
             script_paths={
                 "loop0_gen": "/scripts/loop0_gen.sh",
                 "loop0_post": "/scripts/loop0_post.sh",
@@ -247,6 +262,31 @@ class TestRenderLoopBlock:
         assert "dependency=afterany" in text
         assert "gen" in text
         assert "post" in text
+
+    def test_loop_with_parallel_inner_step(self, cluster):
+        lines = []
+        res = SlurmResources(max_array_size=900, max_concurrent=64)
+        s1 = Step(block=lambda: None, name="gen", parallel=True, resources=res)
+        s2 = Step(block=lambda: None, name="post")
+        loop = Loop(n_iterations=3, steps=[s1, s2])
+        p = Pipeline(steps=[loop])
+        _render_loop_block(
+            lines=lines,
+            loop=loop,
+            step_index=0,
+            pipeline=p,
+            cluster=cluster,
+            script_paths={
+                "loop0_gen": "/scripts/loop0_gen.sh",
+                "loop0_post": "/scripts/loop0_post.sh",
+            },
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        assert "f3dasm.pipeline.count_open" in text
+        assert "--array=0-${ARRAY_MAX}%64" in text
+        # PREV_JOB_ID is set/used conditionally for chaining
+        assert 'if [ -n "$PREV_JOB_ID" ]; then' in text
 
 
 class TestRenderOrchestratorScript:
@@ -260,13 +300,32 @@ class TestRenderOrchestratorScript:
             orchestrator_resources=res,
             script_paths={"create": "/scripts/create.sh"},
             log_dir_path="/logs",
+            job_dir=Path("/scratch/job1"),
         )
         assert "#!/bin/bash" in script
         assert "orchestrator_test" in script
         assert "STEP_COUNT=$1" in script
         assert "LOOP_COUNT=$2" in script
         assert "TOTAL_STEPS=1" in script
+        assert 'JOB_DIR="/scratch/job1"' in script
         assert "Pipeline complete" in script
+
+    def test_orchestrator_inherits_env_setup(self, cluster):
+        # The orchestrator runs count_open before each parallel
+        # sbatch, so it must source the cluster's env_setup.
+        step = Step(block=lambda: None, name="create")
+        p = Pipeline(name="test", steps=[step])
+        res = SlurmResources(time="00:05:00", mem="1G")
+        script = render_orchestrator_script(
+            pipeline=p,
+            cluster=cluster,
+            orchestrator_resources=res,
+            script_paths={"create": "/scripts/create.sh"},
+            log_dir_path="/logs",
+            job_dir=Path("/scratch/job1"),
+        )
+        assert "module load python/3.11" in script
+        assert 'export MY_VAR="value"' in script
 
 
 class TestSlurmExecutorGenerateScripts:
