@@ -20,13 +20,15 @@ classifiers = [
 dependencies = [
   "filelock>=3.16.1",
   "hydra-core>=1.3.2",
+  "langchain-core>=1.4.0",
+  "langgraph>=1.2.0",
   "matplotlib>=3.7.5",
   "numpy>=1.24.4",
   "pandas>=2.0.3",
   "pathos>=0.3.4",
   "salib>=1.5.2",
   "scipy>=1.10.1",
-  "xarray>=2023.1.0"
+  "xarray>=2023.1.0",
 ]
 description = "f3dasm - Framework for Data-driven Development and Analysis of Structures and Materials"
 license = {text = "BSD-3-Clause"}
@@ -39,6 +41,9 @@ requires-python = ">=3.10"
 version = "2.2.2"
 
 [project.optional-dependencies]
+agentic = [
+  "claude-agent-sdk>=0.2.82,<1.0.0"
+]
 all = [
   "abaqus2py>=1.0.0",
   "optuna>=4.4.0"

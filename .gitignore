@@ -140,3 +140,8 @@ notebook/
 
 # Mkdocs
 site/
+# Design specs (local only)
+docs/specs/
+
+# Agentic-f3dasm runtime output
+studies/*/runs/
