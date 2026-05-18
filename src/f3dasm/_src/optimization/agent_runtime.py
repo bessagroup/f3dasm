@@ -24,6 +24,7 @@ from __future__ import annotations
 
 # Standard
 import asyncio
+import json
 import re
 import shutil
 import subprocess
@@ -59,6 +60,7 @@ __all__ = [
     "CHECKPOINT_EVERY",
     "Report",
     "Task",
+    "read_transcript",
 ]
 
 # ---------------------------------------------------------------------------
@@ -620,6 +622,153 @@ def _run_git(
 
 
 # ---------------------------------------------------------------------------
+# Reflexion-style failure classifier (Piece B)
+# ---------------------------------------------------------------------------
+
+
+_REQUIRED_SUBSECTIONS: list[str] = [
+    "Actions taken",
+    "Files touched",
+    "Conclusions",
+    "Numbers",
+]
+
+_CAPABILITY_PHRASES: list[str] = [
+    "i don't have",
+    "i cannot",
+    "i am unable",
+]
+
+
+def _classify_failed_implementer_response(
+    response_text: str,
+) -> str:
+    """Produce a structured REFLECT diagnosis for a failed Implementer reply.
+
+    Parameters
+    ----------
+    response_text : str
+        The raw text returned by the Implementer when no parseable
+        ``## Report`` block was found.
+
+    Returns
+    -------
+    str
+        A string starting with ``REFLECT:`` followed by a one-paragraph
+        verbal diagnosis of the most likely failure cause, a newline, and
+        the first 500 characters of ``response_text``.
+
+    Notes
+    -----
+    Diagnosis categories (checked in order):
+    1. Response shorter than 100 characters — too vague or unactionable.
+    2. Response contains a capability-limit phrase — outside tool set.
+    3. Response has a ``## Report`` heading but missing required subsections.
+    4. Response is >= 100 chars with no ``## Report`` heading at all.
+    5. Default fallback — malformed for an unrecognised reason.
+    """
+    truncated = response_text[:500]
+    lower = response_text.lower()
+
+    if len(response_text) < 100:
+        diagnosis = (
+            "Implementer's response is unusually short; the task may "
+            "have been too vague or unactionable."
+        )
+        return f"REFLECT: {diagnosis}\n{truncated}"
+
+    for phrase in _CAPABILITY_PHRASES:
+        if phrase in lower:
+            diagnosis = (
+                "Implementer reports a capability limit. Check whether "
+                "the task asked for something outside its tool set."
+            )
+            return f"REFLECT: {diagnosis}\n{truncated}"
+
+    has_report_heading = bool(
+        re.search(r"##\s+Report\b", response_text, re.IGNORECASE)
+    )
+
+    if has_report_heading:
+        missing: list[str] = []
+        for sub in _REQUIRED_SUBSECTIONS:
+            pattern = rf"###\s+{re.escape(sub)}"
+            if not re.search(pattern, response_text, re.IGNORECASE):
+                missing.append(sub)
+        if missing:
+            missing_str = ", ".join(f"'{s}'" for s in missing)
+            diagnosis = (
+                "Implementer started a Report but omitted required "
+                f"subsections: {missing_str}."
+            )
+            return f"REFLECT: {diagnosis}\n{truncated}"
+
+    if not has_report_heading:
+        diagnosis = (
+            "Implementer wrote a response but never started a "
+            "`## Report` block. Likely the instruction format was "
+            "ignored."
+        )
+        return f"REFLECT: {diagnosis}\n{truncated}"
+
+    diagnosis = (
+        "Implementer's response is malformed; could not produce a "
+        "structured diagnosis."
+    )
+    return f"REFLECT: {diagnosis}\n{truncated}"
+
+
+# ---------------------------------------------------------------------------
+# Transcript helpers (Piece D)
+# ---------------------------------------------------------------------------
+
+
+def _record_transcript(
+    transcript_path: Path,
+    event: dict[str, Any],
+) -> None:
+    """Append a single JSONL event to a transcript file.
+
+    Parameters
+    ----------
+    transcript_path : Path
+        Absolute path to the ``.jsonl`` file.  Parent directories are
+        created if they do not exist.
+    event : dict
+        A dict that must include at least a ``"type"`` key and a ``"ts"``
+        key with an ISO-format timestamp.
+    """
+    transcript_path.parent.mkdir(parents=True, exist_ok=True)
+    with transcript_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event) + "\n")
+
+
+def read_transcript(path: Path) -> list[dict[str, Any]]:
+    """Load a JSONL transcript file into a list of event dicts.
+
+    Parameters
+    ----------
+    path : Path
+        Absolute path to the ``.jsonl`` transcript file.
+
+    Returns
+    -------
+    list[dict]
+        Ordered list of event dicts as written by ``_record_transcript``.
+        Returns an empty list if the file does not exist.
+    """
+    if not path.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                events.append(json.loads(line))
+    return events
+
+
+# ---------------------------------------------------------------------------
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
@@ -664,6 +813,7 @@ class AgenticRun:
         implementer_factory: (
             Callable[..., ImplementerSession] | None
         ) = None,
+        record_transcripts: bool = True,
     ) -> None:
         self._study_dir = Path(study_dir).resolve()
         self._model = model
@@ -676,6 +826,7 @@ class AgenticRun:
         self._implementer_factory = (
             implementer_factory or _default_implementer_factory
         )
+        self._record_transcripts = record_transcripts
 
         # Mutable run state — populated in execute().
         self._run_dir: Path | None = None
@@ -834,14 +985,87 @@ class AgenticRun:
     def _build_strategizer_tools(
         self,
     ) -> dict[str, Callable[..., str]]:
-        """Return the five Strategizer tool closures."""
-        return {
+        """Return the five Strategizer tool closures.
+
+        When ``record_transcripts`` is True each closure is wrapped so
+        that every call and result is appended to
+        ``runs/<ts>/transcripts/strategizer.jsonl``.
+        """
+        raw: dict[str, Callable[..., str]] = {
             "Read": self._tool_read,
             "WriteMarkdown": self._tool_write_markdown,
             "Ask": self._tool_ask,
             "Delegate": self._tool_delegate,
             "Done": self._tool_done,
         }
+        if not self._record_transcripts:
+            return raw
+        return {
+            name: self._make_transcript_wrapper(name, fn)
+            for name, fn in raw.items()
+        }
+
+    def _make_transcript_wrapper(
+        self,
+        tool_name: str,
+        fn: Callable[..., str],
+    ) -> Callable[..., str]:
+        """Return a wrapped version of *fn* that records to strategizer.jsonl.
+
+        Parameters
+        ----------
+        tool_name : str
+            The name used for the ``tool_call`` / ``tool_result`` events.
+        fn : callable
+            The underlying tool closure.
+
+        Returns
+        -------
+        callable
+            A drop-in replacement that records events before and after
+            the underlying call.
+        """
+
+        def _wrapper(**kwargs: Any) -> str:
+            ts_call = (
+                datetime.now(tz=timezone.utc)
+                .isoformat(timespec="seconds")
+            )
+            if self._run_dir is not None:
+                strat_t = (
+                    self._run_dir
+                    / "transcripts"
+                    / "strategizer.jsonl"
+                )
+                _record_transcript(
+                    strat_t,
+                    {
+                        "type": "tool_call",
+                        "name": tool_name,
+                        "args": kwargs,
+                        "ts": ts_call,
+                    },
+                )
+            result = fn(**kwargs)
+            ts_result = (
+                datetime.now(tz=timezone.utc)
+                .isoformat(timespec="seconds")
+            )
+            if self._run_dir is not None:
+                _record_transcript(
+                    self._run_dir
+                    / "transcripts"
+                    / "strategizer.jsonl",
+                    {
+                        "type": "tool_result",
+                        "name": tool_name,
+                        "content": result,
+                        "ts": ts_result,
+                    },
+                )
+            return result
+
+        return _wrapper
 
     def _tool_read(self, path: str) -> str:
         """Read a file from the study tree.
@@ -957,17 +1181,64 @@ class AgenticRun:
         task = Task(intent=intent, expected_report=expected_report)
         task_msg = _format_task(task)
 
-        # (c) Send to Implementer.
+        # (c) Send to Implementer; record per-delegation transcript.
         impl_reply = self._implementer.send(task_msg)
         self._turn_count += 1
+
+        if self._record_transcripts and self._run_dir is not None:
+            ts_now = (
+                datetime.now(tz=timezone.utc)
+                .isoformat(timespec="seconds")
+            )
+            deleg_idx = self._total_delegations
+            impl_transcript = (
+                self._run_dir
+                / "transcripts"
+                / f"{deleg_idx}_implementer.jsonl"
+            )
+            _record_transcript(
+                impl_transcript,
+                {
+                    "type": "user_message",
+                    "content": task_msg,
+                    "ts": ts_now,
+                },
+            )
+            _record_transcript(
+                impl_transcript,
+                {
+                    "type": "assistant_text",
+                    "content": impl_reply,
+                    "ts": ts_now,
+                },
+            )
 
         # (d) Parse Report.
         report = _parse_report(impl_reply)
         if report is None:
-            return (
-                "ERROR: Implementer did not return a valid Report. "
-                "Re-delegate with a clearer expected_report."
+            reflect_msg = _classify_failed_implementer_response(
+                impl_reply
             )
+            if self._record_transcripts and self._run_dir is not None:
+                ts_now = (
+                    datetime.now(tz=timezone.utc)
+                    .isoformat(timespec="seconds")
+                )
+                strat_transcript = (
+                    self._run_dir
+                    / "transcripts"
+                    / "strategizer.jsonl"
+                )
+                _record_transcript(
+                    strat_transcript,
+                    {
+                        "type": "tool_result",
+                        "name": "Delegate",
+                        "content": reflect_msg,
+                        "ts": ts_now,
+                    },
+                )
+            return reflect_msg
 
         # (e) On success — update state.
         self._delegation_counter += 1
@@ -1131,6 +1402,17 @@ class AgenticRun:
                     shutil.copytree(item, dest, dirs_exist_ok=True)
                 else:
                     shutil.copy2(item, dest)
+
+        # transcripts/ — copy run transcripts to deliverable.
+        if self._record_transcripts:
+            transcripts_src = self._run_dir / "transcripts"
+            if transcripts_src.exists():
+                transcripts_dest = deliv_dir / "transcripts"
+                shutil.copytree(
+                    transcripts_src,
+                    transcripts_dest,
+                    dirs_exist_ok=True,
+                )
 
         return deliv_dir
 

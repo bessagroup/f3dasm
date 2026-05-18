@@ -23,8 +23,10 @@ from f3dasm._src.optimization.agent_runtime import (
     AgenticRun,
     AgenticRunError,
     Task,
+    _classify_failed_implementer_response,
     _format_task,
     _parse_report,
+    read_transcript,
 )
 
 #                                                          Authorship & Credits
@@ -533,7 +535,10 @@ def test_invalid_report_does_not_increment(tmp_path: Path) -> None:
     )
     run.execute()
 
-    assert delegate_results[0].startswith("ERROR")
+    first_result = delegate_results[0]
+    assert first_result.startswith("ERROR") or first_result.startswith(
+        "REFLECT:"
+    ), f"Expected ERROR or REFLECT:, got: {first_result[:60]!r}"
     assert run._total_delegations == 0
 
 
@@ -824,3 +829,212 @@ def test_format_task_contains_sections() -> None:
     assert "## Task" in text
     assert "Do X" in text
     assert "Return Y" in text
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 13 — Piece B: classifier — short response branch
+# ---------------------------------------------------------------------------
+
+
+def test_classify_short_response() -> None:
+    """Short response (<100 chars) returns REFLECT: unusually short."""
+    result = _classify_failed_implementer_response("Too brief.")
+    assert result.startswith("REFLECT:"), (
+        f"Expected REFLECT: prefix, got: {result[:60]!r}"
+    )
+    assert "unusually short" in result, (
+        f"Expected 'unusually short' in diagnosis, got: {result[:120]!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 14 — Piece B: classifier — capability-limit branch
+# ---------------------------------------------------------------------------
+
+
+def test_classify_capability_limit() -> None:
+    """Response containing 'I cannot' triggers capability-limit REFLECT."""
+    long_response = (
+        "I cannot access this file because I do not have the required "
+        "permissions to read files outside the study directory.  This "
+        "is a limitation of my current tool configuration."
+    )
+    result = _classify_failed_implementer_response(long_response)
+    assert result.startswith("REFLECT:"), (
+        f"Expected REFLECT: prefix, got: {result[:60]!r}"
+    )
+    assert "capability" in result.lower(), (
+        f"Expected 'capability' in diagnosis, got: {result[:120]!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 15 — Piece B: classifier — missing subsections branch
+# ---------------------------------------------------------------------------
+
+
+def test_classify_missing_subsections() -> None:
+    """Report heading present but missing subsections triggers REFLECT."""
+    partial_report = (
+        "## Report\n\n"
+        "### Actions taken\n"
+        "- Completed step one.\n\n"
+        "Some trailing text about what happened.\n"
+        * 3
+    )
+    result = _classify_failed_implementer_response(partial_report)
+    assert result.startswith("REFLECT:"), (
+        f"Expected REFLECT: prefix, got: {result[:60]!r}"
+    )
+    assert "subsection" in result.lower(), (
+        f"Expected 'subsection' in diagnosis, got: {result[:160]!r}"
+    )
+    assert "Files touched" in result or "Conclusions" in result or (
+        "Numbers" in result
+    ), (
+        "Expected at least one missing subsection name in REFLECT message"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 16 — Piece B: classifier — no Report heading branch
+# ---------------------------------------------------------------------------
+
+
+def test_classify_no_report_heading() -> None:
+    """200-char response without ## Report triggers missing-block REFLECT."""
+    long_no_report = (
+        "Here is a long explanation of what I did.  I ran several "
+        "steps including reading the CSV file and computing the "
+        "statistics, but I did not use the correct output format. "
+        "The values I found were interesting."
+    )
+    assert len(long_no_report) >= 100
+    result = _classify_failed_implementer_response(long_no_report)
+    assert result.startswith("REFLECT:"), (
+        f"Expected REFLECT: prefix, got: {result[:60]!r}"
+    )
+    assert "## Report" in result or "report block" in result.lower(), (
+        "Expected mention of missing Report block in REFLECT message"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 17 — Piece B: stub-based re-delegation after REFLECT
+# ---------------------------------------------------------------------------
+
+
+def test_reflect_then_redelegation_with_different_intent(
+    tmp_path: Path,
+) -> None:
+    """After a REFLECT on first delegation, a second delegation succeeds.
+
+    The delegation counter must equal 1 (only the successful delegation
+    is counted).  The first tool result must start with REFLECT:.
+    """
+    study_dir = tmp_path / "study"
+    study_dir.mkdir()
+    (study_dir / "briefing.md").write_text("# Briefing")
+
+    first_result_box: list[str] = []
+
+    class _ReflectThenRetryStrategizer:
+        def __init__(self, tool_closures: dict[str, Any]) -> None:
+            self._tc = tool_closures
+            self._sent = False
+
+        def send(self, message: str) -> str:
+            if not self._sent:
+                self._sent = True
+                first = self._tc["Delegate"](
+                    intent="do the first thing",
+                    expected_report="report stuff",
+                )
+                first_result_box.append(first)
+                self._tc["Delegate"](
+                    intent="do a DIFFERENT second thing with more context",
+                    expected_report="report stuff clearly",
+                )
+                self._tc["Done"](summary="Done after retry.")
+            return "(done)"
+
+    def strat_factory(
+        *,
+        system_prompt: str,
+        model: str,
+        tool_closures: dict[str, Any],
+    ) -> _ReflectThenRetryStrategizer:
+        return _ReflectThenRetryStrategizer(tool_closures)
+
+    _, impl_factory = _make_factories(
+        [],
+        [_INVALID_REPORT, _VALID_REPORT],
+    )
+
+    run = AgenticRun(
+        study_dir,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+    )
+    run.execute()
+
+    assert first_result_box[0].startswith("REFLECT:"), (
+        f"First delegation result should start with REFLECT:, "
+        f"got {first_result_box[0][:60]!r}"
+    )
+    assert run._total_delegations == 1, (
+        f"Only the successful delegation should be counted; "
+        f"got {run._total_delegations}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 18 — Piece D: strategizer transcript written when record_transcripts
+# ---------------------------------------------------------------------------
+
+
+def test_transcript_written_when_record_transcripts_true(
+    tmp_path: Path,
+) -> None:
+    """With record_transcripts=True, strategizer.jsonl is created."""
+    study_dir = tmp_path / "study"
+    study_dir.mkdir()
+    (study_dir / "briefing.md").write_text("# Briefing")
+
+    actions: list[StrategizerAction] = [
+        _DelegateAction(
+            intent="Run a simple experiment.",
+            expected_report="best_x",
+        ),
+        _DoneAction(summary="Done."),
+    ]
+
+    strat_factory, impl_factory = _make_factories(
+        actions, [_VALID_REPORT]
+    )
+
+    run = AgenticRun(
+        study_dir,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        record_transcripts=True,
+    )
+    deliv = run.execute()
+
+    run_dir = deliv.parent
+    strat_transcript = run_dir / "transcripts" / "strategizer.jsonl"
+    assert strat_transcript.exists(), (
+        f"Expected strategizer.jsonl at {strat_transcript}"
+    )
+
+    events = read_transcript(strat_transcript)
+    assert len(events) > 0, "strategizer.jsonl must contain at least one event"
+
+    deliv_transcript = deliv / "transcripts" / "strategizer.jsonl"
+    assert deliv_transcript.exists(), (
+        "strategizer.jsonl must be copied to deliverable/transcripts/"
+    )

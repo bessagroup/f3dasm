@@ -555,3 +555,161 @@ def test_runtime_imports_all_four_constants():
         assert name in source, (
             f"agent_runtime.py does not reference '{name}'"
         )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 16 — Piece A: hypothesis_log tag appears exactly once
+# ---------------------------------------------------------------------------
+
+def test_strategizer_hypothesis_log_tag_appears_once():
+    """STRATEGIZER_SYSTEM_PROMPT has exactly one <hypothesis_log> pair."""
+    from f3dasm._src.optimization.agent_prompts import (
+        STRATEGIZER_SYSTEM_PROMPT,
+    )
+
+    _assert_tag_once(STRATEGIZER_SYSTEM_PROMPT, "hypothesis_log")
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 17 — Piece A: hypothesis_log section content
+# ---------------------------------------------------------------------------
+
+def test_strategizer_hypothesis_log_content():
+    """hypothesis_log section mentions all required fields."""
+    from f3dasm._src.optimization.agent_prompts import (
+        STRATEGIZER_SYSTEM_PROMPT,
+    )
+
+    lower = STRATEGIZER_SYSTEM_PROMPT.lower()
+    required_terms = [
+        "hypotheses.md",
+        "comment",
+        "confidence",
+        "evidence",
+        "status",
+        "last_updated_delegation",
+    ]
+    for term in required_terms:
+        assert term in lower, (
+            f"STRATEGIZER_SYSTEM_PROMPT hypothesis_log missing '{term}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 18 — Piece B: on_error tag appears exactly once
+# ---------------------------------------------------------------------------
+
+def test_strategizer_on_error_tag_appears_once():
+    """STRATEGIZER_SYSTEM_PROMPT has exactly one <on_error> pair."""
+    from f3dasm._src.optimization.agent_prompts import (
+        STRATEGIZER_SYSTEM_PROMPT,
+    )
+
+    _assert_tag_once(STRATEGIZER_SYSTEM_PROMPT, "on_error")
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 19 — Piece B: on_error section content
+# ---------------------------------------------------------------------------
+
+def test_strategizer_on_error_content():
+    """on_error mentions REFLECT: and forbids identical re-delegation."""
+    from f3dasm._src.optimization.agent_prompts import (
+        STRATEGIZER_SYSTEM_PROMPT,
+    )
+
+    assert "REFLECT:" in STRATEGIZER_SYSTEM_PROMPT, (
+        "STRATEGIZER_SYSTEM_PROMPT on_error does not mention 'REFLECT:'"
+    )
+    lower = STRATEGIZER_SYSTEM_PROMPT.lower()
+    forbidden_phrases = [
+        "forbidden",
+        "exact same intent",
+    ]
+    for phrase in forbidden_phrases:
+        assert phrase in lower, (
+            f"STRATEGIZER_SYSTEM_PROMPT on_error missing phrase '{phrase}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 20 — Piece A: CHECKPOINT prompt contains Comment log section
+# ---------------------------------------------------------------------------
+
+def test_checkpoint_prompt_contains_comment_log():
+    """CHECKPOINT_STRATEGIZER_PROMPT contains the ### Comment log section."""
+    from f3dasm._src.optimization.agent_prompts import (
+        CHECKPOINT_STRATEGIZER_PROMPT,
+    )
+
+    assert "### Comment log" in CHECKPOINT_STRATEGIZER_PROMPT, (
+        "CHECKPOINT_STRATEGIZER_PROMPT missing '### Comment log' section"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 21 — Piece C: reasoning_protocol tag appears exactly once
+# ---------------------------------------------------------------------------
+
+def test_implementer_reasoning_protocol_tag_appears_once():
+    """IMPLEMENTER_SYSTEM_PROMPT has exactly one <reasoning_protocol> pair."""
+    from f3dasm._src.optimization.agent_prompts import (
+        IMPLEMENTER_SYSTEM_PROMPT,
+    )
+
+    _assert_tag_once(IMPLEMENTER_SYSTEM_PROMPT, "reasoning_protocol")
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 22 — Piece C: reasoning_protocol section content
+# ---------------------------------------------------------------------------
+
+def test_implementer_reasoning_protocol_content():
+    """reasoning_protocol mentions Stages 1-3 and their headings."""
+    from f3dasm._src.optimization.agent_prompts import (
+        IMPLEMENTER_SYSTEM_PROMPT,
+    )
+
+    required_terms = [
+        "Stage 1",
+        "Stage 2",
+        "Stage 3",
+        "Task restatement",
+        "Workspace inventory",
+        "Execution plan",
+    ]
+    for term in required_terms:
+        assert term in IMPLEMENTER_SYSTEM_PROMPT, (
+            f"IMPLEMENTER_SYSTEM_PROMPT reasoning_protocol missing "
+            f"'{term}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 23 — Piece A/B/C: cleanliness invariant (extended)
+# ---------------------------------------------------------------------------
+
+def test_no_domain_specific_leakage_extended():
+    """No prompt contains 'coilable', 'sigma_crit', or 'Bessa'."""
+    from f3dasm._src.optimization.agent_prompts import (
+        CHECKPOINT_STRATEGIZER_PROMPT,
+        IMPLEMENTER_RESET_PROMPT_TEMPLATE,
+        IMPLEMENTER_SYSTEM_PROMPT,
+        STRATEGIZER_SYSTEM_PROMPT,
+    )
+
+    forbidden_terms = ["coilable", "sigma_crit", "bessa"]
+    prompts = {
+        "STRATEGIZER_SYSTEM_PROMPT": STRATEGIZER_SYSTEM_PROMPT,
+        "IMPLEMENTER_SYSTEM_PROMPT": IMPLEMENTER_SYSTEM_PROMPT,
+        "CHECKPOINT_STRATEGIZER_PROMPT": CHECKPOINT_STRATEGIZER_PROMPT,
+        "IMPLEMENTER_RESET_PROMPT_TEMPLATE": (
+            IMPLEMENTER_RESET_PROMPT_TEMPLATE
+        ),
+    }
+    for const_name, text in prompts.items():
+        lower = text.lower()
+        for term in forbidden_terms:
+            assert term not in lower, (
+                f"{const_name} leaks term '{term}'"
+            )
