@@ -26,11 +26,13 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import logging
 import re
 import shutil
 import subprocess
 import sys
 import textwrap
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -610,6 +612,30 @@ def _truncate_for_commit(text: str, max_len: int = 70) -> str:
     return text[: max_len - 1] + "…"
 
 
+def _preview(text: str, max_len: int) -> str:
+    """Return a single-line preview of ``text``, ≤ ``max_len`` chars.
+
+    Newlines collapse to spaces; the result is suffixed with ``…``
+    when truncated. Used for human-readable log messages.
+    """
+    if text is None:
+        return ""
+    flat = " ".join(text.split())
+    if len(flat) <= max_len:
+        return flat
+    return flat[: max_len - 1].rstrip() + "…"
+
+
+def _format_elapsed(seconds: float) -> str:
+    """Format a duration in seconds as ``M:SS`` (or ``H:MM:SS``)."""
+    seconds = int(seconds)
+    hours, remainder = divmod(seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"
+
+
 def _run_git(
     args: list[str],
     *,
@@ -854,6 +880,9 @@ class AgenticRun:
         self._implementer: ImplementerSession | None = None
         self._turn_count: int = 0
         self._checkpoint_summary: str = ""
+        self._logger: logging.Logger = logging.getLogger(
+            "f3dasm.agentic"
+        )
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -875,11 +904,61 @@ class AgenticRun:
         """
         self._validate()
         self._setup_paths()
+        self._init_logging()
+        self._logger.info(
+            "Run starting at %s (model=%s, checkpoint_every=%d)",
+            self._run_dir,
+            self._model,
+            self._checkpoint_every,
+        )
         self._init_git()
         briefing_text = (self._study_dir / "briefing.md").read_text()
+        self._logger.info(
+            "Read briefing.md (%d chars)", len(briefing_text)
+        )
         self._start_sessions()
+        self._logger.info(
+            "Sessions started; handing briefing to Strategizer"
+        )
         self._run_loop(briefing_text)
-        return self._assemble_deliverable()
+        deliverable = self._assemble_deliverable()
+        self._logger.info("Deliverable assembled at %s", deliverable)
+        return deliverable
+
+    # ------------------------------------------------------------------
+    # Logging
+    # ------------------------------------------------------------------
+
+    def _init_logging(self) -> None:
+        """Configure the f3dasm.agentic logger for this run.
+
+        Adds two handlers — a stderr StreamHandler and a FileHandler
+        at ``<run_dir>/run.log`` — both formatted with HH:MM:SS
+        timestamps.  Handlers are reset between runs so the same
+        AgenticRun-class invocations in one process don't accumulate
+        duplicates.
+        """
+        self._logger = logging.getLogger("f3dasm.agentic")
+        self._logger.setLevel(logging.INFO)
+        self._logger.handlers.clear()
+        self._logger.propagate = False
+
+        fmt = logging.Formatter(
+            "[%(asctime)s] %(levelname)s %(message)s",
+            datefmt="%H:%M:%S",
+        )
+
+        stream = logging.StreamHandler(sys.stderr)
+        stream.setFormatter(fmt)
+        self._logger.addHandler(stream)
+
+        if self._run_dir is not None:
+            log_path = self._run_dir / "run.log"
+            file_handler = logging.FileHandler(
+                log_path, encoding="utf-8"
+            )
+            file_handler.setFormatter(fmt)
+            self._logger.addHandler(file_handler)
 
     # ------------------------------------------------------------------
     # Step 1 — Validation
@@ -957,6 +1036,9 @@ class AgenticRun:
 
     def _reset_implementer(self, checkpoint_summary: str) -> None:
         """Destroy the current Implementer and create a fresh one."""
+        self._logger.info(
+            "Implementer session reset (briefed with checkpoint summary)"
+        )
         reset_msg = IMPLEMENTER_RESET_PROMPT_TEMPLATE.format(
             checkpoint_summary=checkpoint_summary
         )
@@ -1214,6 +1296,14 @@ class AgenticRun:
         assert self._implementer is not None
         assert self._git_dir is not None
 
+        deleg_idx = self._total_delegations
+        delegation_start = time.monotonic()
+        self._logger.info(
+            "[delegation #%d] starting — intent: %s",
+            deleg_idx,
+            _preview(intent, 80),
+        )
+
         # (a) Git commit — record study state prior to this delegation.
         if self._last_report is not None:
             commit_msg = _truncate_for_commit(
@@ -1334,12 +1424,33 @@ class AgenticRun:
                         "ts": ts_now,
                     },
                 )
+            elapsed = _format_elapsed(
+                time.monotonic() - delegation_start
+            )
+            self._logger.warning(
+                "[delegation #%d] failed after retry in %s — REFLECT: %s",
+                deleg_idx,
+                elapsed,
+                _preview(
+                    reflect_msg.split("\n", 1)[0].removeprefix(
+                        "REFLECT: "
+                    ),
+                    100,
+                ),
+            )
             return reflect_msg
 
         # (e) On success — update state.
         self._delegation_counter += 1
         self._total_delegations += 1
         self._last_report = report
+        elapsed = _format_elapsed(time.monotonic() - delegation_start)
+        self._logger.info(
+            "[delegation #%d] done in %s — conclusions: %s",
+            deleg_idx,
+            elapsed,
+            _preview(report.conclusions, 100),
+        )
 
         # Check checkpoint.
         if self._delegation_counter >= self._checkpoint_every:
@@ -1364,6 +1475,10 @@ class AgenticRun:
         """
         self._done_summary = summary
         self._done_called = True
+        self._logger.info(
+            "Done received from Strategizer — summary: %s",
+            _preview(summary, 120),
+        )
         return "OK: run finalised. Assembling deliverable."
 
     # ------------------------------------------------------------------
@@ -1373,6 +1488,11 @@ class AgenticRun:
     def _run_checkpoint(self) -> None:
         """Inject the checkpoint prompt and handle user steering."""
         assert self._strategizer is not None
+
+        self._logger.info(
+            "Checkpoint firing after %d delegations",
+            self._total_delegations,
+        )
 
         self._stdout.write(
             "\n--- CHECKPOINT "
@@ -1509,6 +1629,13 @@ class AgenticRun:
                     transcripts_dest,
                     dirs_exist_ok=True,
                 )
+
+        # run.log — flush handlers and copy the log into the deliverable.
+        log_src = self._run_dir / "run.log"
+        for handler in list(self._logger.handlers):
+            handler.flush()
+        if log_src.exists():
+            shutil.copy2(log_src, deliv_dir / "run.log")
 
         return deliv_dir
 
