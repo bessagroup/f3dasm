@@ -24,6 +24,7 @@ from f3dasm._src.optimization.agent_runtime import (
     AgenticRunError,
     Task,
     _classify_failed_implementer_response,
+    _classify_sdk_error,
     _format_task,
     _parse_report,
     read_transcript,
@@ -1109,3 +1110,110 @@ def test_transcript_written_when_record_transcripts_true(
     assert deliv_transcript.exists(), (
         "strategizer.jsonl must be copied to deliverable/transcripts/"
     )
+
+
+# ---------------------------------------------------------------------------
+# Tests for SDK exception classification + Claude CLI preflight
+# ---------------------------------------------------------------------------
+
+
+def test_preflight_missing_claude_cli_raises_friendly_error(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    """``execute()`` fails fast when the Claude CLI binary is absent.
+
+    Uses the default factories (which target the real SDK) so the
+    pre-flight check fires; ``shutil.which`` is monkey-patched to
+    simulate a missing binary.
+    """
+
+    from f3dasm._src.optimization import agent_runtime as _runtime
+
+    study_dir = tmp_path / "study"
+    study_dir.mkdir()
+    (study_dir / "briefing.md").write_text("# Briefing")
+
+    monkeypatch.setattr(_runtime.shutil, "which", lambda *_a, **_k: None)
+
+    run = AgenticRun(study_dir)
+    with pytest.raises(AgenticRunError) as excinfo:
+        run.execute()
+    msg = str(excinfo.value).lower()
+    assert "claude cli not found" in msg
+    assert "path" in msg
+
+
+def test_classify_sdk_error_cli_not_found() -> None:
+    """A CLINotFoundError becomes an AgenticRunError that names the CLI."""
+
+    from claude_agent_sdk._errors import CLINotFoundError
+
+    exc = CLINotFoundError(cli_path="/usr/local/bin/claude")
+    out = _classify_sdk_error(exc, agent_label="Strategizer")
+    assert isinstance(out, AgenticRunError)
+    text = str(out).lower()
+    assert "claude" in text
+    assert "path" in text
+    assert "strategizer" in text
+
+
+def test_classify_sdk_error_authentication() -> None:
+    """A ProcessError whose stderr mentions 401 yields an auth hint."""
+
+    from claude_agent_sdk._errors import ProcessError
+
+    exc = ProcessError(
+        "subprocess failed",
+        exit_code=1,
+        stderr="401 Unauthorized: please log in.",
+    )
+    out = _classify_sdk_error(exc, agent_label="Implementer")
+    text = str(out).lower()
+    assert "authenticate" in text or "sign in" in text
+    assert "implementer" in text
+
+
+def test_classify_sdk_error_api_key() -> None:
+    """A ProcessError mentioning ANTHROPIC_API_KEY yields an API-key hint."""
+
+    from claude_agent_sdk._errors import ProcessError
+
+    exc = ProcessError(
+        "subprocess failed",
+        exit_code=1,
+        stderr="missing ANTHROPIC_API_KEY in environment",
+    )
+    out = _classify_sdk_error(exc, agent_label="Strategizer")
+    text = str(out).lower()
+    assert (
+        "anthropic_api_key" in text
+        or "api-key" in text
+        or "api key" in text
+    )
+
+
+def test_classify_sdk_error_rate_limit() -> None:
+    """A ProcessError mentioning rate limits yields a quota hint."""
+
+    from claude_agent_sdk._errors import ProcessError
+
+    exc = ProcessError(
+        "subprocess failed",
+        exit_code=1,
+        stderr="429 Too Many Requests: rate limit exceeded",
+    )
+    out = _classify_sdk_error(exc, agent_label="Strategizer")
+    text = str(out).lower()
+    assert "rate" in text or "credit" in text or "quota" in text
+
+
+def test_classify_sdk_error_unknown_subclass_fallback() -> None:
+    """Unknown ClaudeSDKError subclasses produce a generic fallback."""
+
+    from claude_agent_sdk._errors import ClaudeSDKError
+
+    exc = ClaudeSDKError("something exotic")
+    out = _classify_sdk_error(exc, agent_label="Strategizer")
+    assert isinstance(out, AgenticRunError)
+    assert "ClaudeSDKError" in str(out) or "unexpected" in str(out).lower()

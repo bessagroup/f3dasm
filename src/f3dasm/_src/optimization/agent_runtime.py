@@ -323,7 +323,18 @@ class _ClaudeStrategizer:
                     except Exception:
                         pass
 
-        _run_async_safe(_run())
+        try:
+            _run_async_safe(_run())
+        except AgenticRunError:
+            raise
+        except Exception as exc:
+            try:
+                from claude_agent_sdk._errors import ClaudeSDKError
+            except ImportError:
+                raise
+            if isinstance(exc, ClaudeSDKError):
+                raise _classify_sdk_error(exc, "Strategizer") from exc
+            raise
 
         if result_msg is not None:
             self._session_id = result_msg.session_id
@@ -412,7 +423,18 @@ class _ClaudeImplementer:
                     except Exception:
                         pass
 
-        _run_async_safe(_run())
+        try:
+            _run_async_safe(_run())
+        except AgenticRunError:
+            raise
+        except Exception as exc:
+            try:
+                from claude_agent_sdk._errors import ClaudeSDKError
+            except ImportError:
+                raise
+            if isinstance(exc, ClaudeSDKError):
+                raise _classify_sdk_error(exc, "Implementer") from exc
+            raise
 
         if result_msg is not None:
             self._session_id = result_msg.session_id
@@ -589,6 +611,107 @@ def _parse_report(text: str) -> Report | None:
         conclusions=conclusions,
         numbers=numbers,
         raw=raw_block,
+    )
+
+
+def _classify_sdk_error(
+    exc: BaseException, agent_label: str
+) -> AgenticRunError:
+    """Translate a Claude SDK exception into an actionable error.
+
+    Inspects the exception type and (where applicable) its ``stderr``
+    field for the most common operator-facing failure modes —
+    missing CLI binary, unauthenticated session, missing API key,
+    or rate limit — and returns an :class:`AgenticRunError` whose
+    message tells the user what to do next.  Falls back to a
+    generic translation when the underlying failure does not match
+    a known pattern.
+
+    Parameters
+    ----------
+    exc : BaseException
+        The exception raised from inside an SDK call.
+    agent_label : str
+        Either ``"Strategizer"`` or ``"Implementer"`` so the user
+        knows which session failed.
+
+    Returns
+    -------
+    AgenticRunError
+        Ready to be raised by the caller via ``raise ... from exc``.
+    """
+
+    try:
+        from claude_agent_sdk._errors import (
+            CLIConnectionError,
+            CLINotFoundError,
+            ProcessError,
+        )
+    except ImportError:
+        return AgenticRunError(
+            f"{agent_label} SDK call failed: {type(exc).__name__}: "
+            f"{exc}. The claude-agent-sdk package is required; "
+            'install it with `uv pip install -e ".[agentic]"`.'
+        )
+
+    if isinstance(exc, CLINotFoundError):
+        return AgenticRunError(
+            f"{agent_label} cannot start: the `claude` CLI binary "
+            "was not found on PATH. Install Claude Code "
+            "(https://docs.claude.com/en/docs/claude-code) and "
+            "run `claude` once interactively so it can sign you in "
+            "to your Anthropic account."
+        )
+
+    if isinstance(exc, ProcessError):
+        stderr_text = (exc.stderr or "").lower()
+        auth_tokens = (
+            "authenticate",
+            "not logged in",
+            "log in",
+            "login required",
+            "401",
+            "unauthor",
+        )
+        api_key_tokens = ("api key", "anthropic_api_key", "x-api-key")
+        rate_tokens = ("rate limit", "429", "quota", "credit")
+
+        if any(tok in stderr_text for tok in auth_tokens):
+            return AgenticRunError(
+                f"{agent_label} cannot authenticate with Claude. "
+                "Run `claude` once interactively to sign in to your "
+                "Anthropic account, then retry the agentic loop. "
+                f"\nUnderlying SDK error: {exc}"
+            )
+        if any(tok in stderr_text for tok in api_key_tokens):
+            return AgenticRunError(
+                f"{agent_label} reports an API-key problem. From "
+                "2026-06-15 onward programmatic Claude Agent SDK "
+                "usage may need ANTHROPIC_API_KEY set in your "
+                "environment in addition to (or instead of) the "
+                "interactive `claude` login. Export the key and "
+                f"retry.\nUnderlying SDK error: {exc}"
+            )
+        if any(tok in stderr_text for tok in rate_tokens):
+            return AgenticRunError(
+                f"{agent_label} hit a rate or credit limit. Wait "
+                "and retry, or check your Claude plan's available "
+                f"usage budget.\nUnderlying SDK error: {exc}"
+            )
+        return AgenticRunError(
+            f"{agent_label} CLI subprocess failed "
+            f"(exit code {exc.exit_code}). stderr:\n{exc.stderr}"
+        )
+
+    if isinstance(exc, CLIConnectionError):
+        return AgenticRunError(
+            f"{agent_label} could not connect to the Claude CLI: "
+            f"{exc}. Check the CLI is installed and authenticated."
+        )
+
+    return AgenticRunError(
+        f"{agent_label} SDK call failed with an unexpected error: "
+        f"{type(exc).__name__}: {exc}"
     )
 
 
@@ -970,6 +1093,35 @@ class AgenticRun:
             raise AgenticRunError(
                 f"briefing.md not found in {self._study_dir}. "
                 "Create it before running the agentic loop."
+            )
+        self._preflight_check_claude_cli()
+
+    def _preflight_check_claude_cli(self) -> None:
+        """Fail fast if the Claude CLI binary cannot be found.
+
+        The default factories build SDK sessions that delegate to the
+        ``claude`` CLI as a subprocess.  When stubs are injected (the
+        test path) we skip the check, so unit tests do not need the
+        CLI installed.
+        """
+        using_default_strategizer = (
+            self._strategizer_factory is _default_strategizer_factory
+        )
+        using_default_implementer = (
+            self._implementer_factory is _default_implementer_factory
+        )
+        if not (
+            using_default_strategizer or using_default_implementer
+        ):
+            return
+        if shutil.which("claude") is None:
+            raise AgenticRunError(
+                "Claude CLI not found on PATH. Install Claude Code "
+                "(https://docs.claude.com/en/docs/claude-code) and "
+                "run `claude` once interactively to sign in to your "
+                "Anthropic account before launching the agentic "
+                "loop. If the CLI is installed in a non-standard "
+                "location, add that directory to PATH."
             )
 
     # ------------------------------------------------------------------
