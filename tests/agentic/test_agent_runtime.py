@@ -24,11 +24,11 @@ from f3dasm._src.agentic.agent_runtime import (
     AgenticRunError,
     Task,
     _classify_failed_implementer_response,
-    _classify_sdk_error,
     _format_task,
     _parse_report,
     read_transcript,
 )
+from f3dasm._src.agentic.backends.claude import _classify_sdk_error
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -1217,3 +1217,57 @@ def test_classify_sdk_error_unknown_subclass_fallback() -> None:
     out = _classify_sdk_error(exc, agent_label="Strategizer")
     assert isinstance(out, AgenticRunError)
     assert "ClaudeSDKError" in str(out) or "unexpected" in str(out).lower()
+
+
+# ---------------------------------------------------------------------------
+# Backend bundle: custom Backend drops in via kwarg
+# ---------------------------------------------------------------------------
+
+
+def test_custom_backend_drops_in_via_kwarg(tmp_path: Path) -> None:
+    """Passing a custom ``Backend`` swaps both factories + preflight.
+
+    Verifies the three-piece refactor: ``Backend`` bundles the
+    strategizer factory, implementer factory, default model, and
+    preflight callable. Constructing a stub bundle and passing it via
+    ``AgenticRun(backend=...)`` produces a run that uses the stub
+    sessions and the stub preflight only.
+    """
+    from f3dasm.agentic import Backend
+
+    study_dir = tmp_path / "study"
+    study_dir.mkdir()
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
+
+    preflight_called: list[bool] = []
+
+    def stub_preflight() -> None:
+        preflight_called.append(True)
+
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction(summary="done")],
+        [_VALID_REPORT],
+    )
+
+    stub_backend = Backend(
+        name="stub",
+        default_model="stub-model-v1",
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        preflight=stub_preflight,
+    )
+
+    run = AgenticRun(
+        study_dir,
+        backend=stub_backend,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    deliv = run.execute()
+
+    assert deliv.exists()
+    assert preflight_called == [True], (
+        "Backend.preflight must fire exactly once during execute()"
+    )
+    solution = (deliv / "solution.md").read_text()
+    assert "done" in solution

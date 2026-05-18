@@ -12,12 +12,16 @@ The user's only required input is ``<study-dir>/PROBLEM_STATEMENT.md``.
 
 Public symbols:
 
-- ``MVP_DEFAULT_MODEL`` — Claude model id used by default.
 - ``AgenticRun`` — runtime entry point.
 - ``Task`` — dataclass sent to the Implementer on each delegation.
 - ``Report`` — dataclass produced from the Implementer's response.
 - ``AgenticRunError`` — raised for non-recoverable orchestrator errors.
 - ``CHECKPOINT_EVERY`` — Implementer-call cadence.
+- ``Backend`` — dataclass bundling an LLM backend's factories,
+  preflight, and default model.
+- ``CLAUDE_BACKEND`` — the default Claude Agent SDK backend.
+- ``MVP_DEFAULT_MODEL`` — Claude model id used by default
+  (alias of ``CLAUDE_BACKEND.default_model``).
 - ``LookupDataGenerator`` — utility the Implementer may import.
 - prompt constants — see ``agent_prompts`` module.
 """
@@ -34,6 +38,8 @@ from .._src.agentic.agent_runtime import (
     Report,
     Task,
 )
+from .._src.agentic.backends.base import Backend
+from .._src.agentic.backends.claude import CLAUDE_BACKEND
 
 # Local
 from .._src.agentic.lookup import LookupDataGenerator
@@ -49,7 +55,9 @@ __status__ = "Experimental"
 __all__ = [
     "AgenticRun",
     "AgenticRunError",
+    "Backend",
     "CHECKPOINT_EVERY",
+    "CLAUDE_BACKEND",
     "LookupDataGenerator",
     "MVP_DEFAULT_MODEL",
     "Report",
