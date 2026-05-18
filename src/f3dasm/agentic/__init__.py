@@ -10,22 +10,32 @@ Claude Agent SDK sessions:
 
 The user's only required input is ``<study-dir>/briefing.md``.
 
-Public symbols are populated as the modules land:
+Public symbols:
 
 - ``MVP_DEFAULT_MODEL`` — Claude model id used by default.
-- ``AgenticRun`` — runtime entry point (G2).
-- prompt constants — see ``agent_prompts`` (G1).
-
-Until those land this module exports only the model constant and the
-``LookupDataGenerator`` utility that the Implementer may import inside
-its own scripts.
+- ``AgenticRun`` — runtime entry point.
+- ``Task`` — dataclass sent to the Implementer on each delegation.
+- ``Report`` — dataclass produced from the Implementer's response.
+- ``AgenticRunError`` — raised for non-recoverable orchestrator errors.
+- ``CHECKPOINT_EVERY`` — Implementer-call cadence.
+- ``LookupDataGenerator`` — utility the Implementer may import.
+- prompt constants — see ``agent_prompts`` module.
 """
+
 #                                                                       Modules
 # =============================================================================
 from __future__ import annotations
 
 # Local
 from .._src.datageneration.lookup import LookupDataGenerator
+from .._src.optimization.agent_runtime import (
+    CHECKPOINT_EVERY,
+    MVP_DEFAULT_MODEL,
+    AgenticRun,
+    AgenticRunError,
+    Report,
+    Task,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -35,10 +45,12 @@ __status__ = "Experimental"
 # =============================================================================
 
 
-MVP_DEFAULT_MODEL: str = "claude-haiku-4-5-20251001"
-
-
 __all__ = [
+    "AgenticRun",
+    "AgenticRunError",
+    "CHECKPOINT_EVERY",
     "LookupDataGenerator",
     "MVP_DEFAULT_MODEL",
+    "Report",
+    "Task",
 ]
