@@ -290,12 +290,12 @@ def _make_factories(
 
 
 # ---------------------------------------------------------------------------
-# Test 1 — Bootstrap: missing briefing.md
+# Test 1 — Bootstrap: missing PROBLEM_STATEMENT.md
 # ---------------------------------------------------------------------------
 
 
 def test_bootstrap_missing_briefing(tmp_path: Path) -> None:
-    """Missing briefing.md raises AgenticRunError before any work."""
+    """Missing PROBLEM_STATEMENT.md raises AgenticRunError before any work."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
 
@@ -306,7 +306,7 @@ def test_bootstrap_missing_briefing(tmp_path: Path) -> None:
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
     )
-    with pytest.raises(AgenticRunError, match="briefing.md not found"):
+    with pytest.raises(AgenticRunError, match="PROBLEM_STATEMENT.md not found"):
         run.execute()
 
 
@@ -319,7 +319,7 @@ def test_happy_path_ask_delegate_done(tmp_path: Path) -> None:
     """Ask + two delegations + Done: deliverable assembled correctly."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Test briefing\nDo stuff.")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Test briefing\nDo stuff.")
 
     actions: list[StrategizerAction] = [
         _AskAction(
@@ -386,7 +386,7 @@ def test_write_markdown_bad_paths(tmp_path: Path) -> None:
     """
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     bad_path_results: list[str] = []
     bad_ext_results: list[str] = []
@@ -461,7 +461,7 @@ def test_read_rejects_escape(tmp_path: Path) -> None:
     """Read('/etc/passwd') returns ERROR."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     read_results: list[str] = []
 
@@ -516,7 +516,7 @@ def test_one_shot_retry_recovers_invalid_report(tmp_path: Path) -> None:
     """
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     delegate_results: list[str] = []
 
@@ -569,7 +569,7 @@ def test_two_invalid_replies_fall_through_to_reflect(
     """Two malformed replies in a row → REFLECT; counter stays 0."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     delegate_results: list[str] = []
 
@@ -625,7 +625,7 @@ def test_checkpoint_fires_and_resets_implementer(
     """After checkpoint_every delegations, checkpoint fires, resets."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     impl_instances: list[StubImplementer] = []
     checkpoint_every = 3
@@ -708,7 +708,7 @@ def test_checkpoint_stop_assembles_deliverable(tmp_path: Path) -> None:
     """User types 'stop' at checkpoint; deliverable uses checkpoint summary."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     checkpoint_every = 2
 
@@ -772,7 +772,7 @@ def test_checkpoint_empty_stdin_continues(tmp_path: Path) -> None:
     """Empty stdin at checkpoint is not treated as 'stop'."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     checkpoint_every = 1
     impl_instances: list[StubImplementer] = []
@@ -847,7 +847,7 @@ def test_run_does_not_touch_ancestor_git(tmp_path: Path) -> None:
 
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     actions: list[StrategizerAction] = [
         _DoneAction(summary="Finished quickly."),
@@ -1006,7 +1006,7 @@ def test_reflect_then_redelegation_with_different_intent(
     """
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     first_result_box: list[str] = []
 
@@ -1073,7 +1073,7 @@ def test_transcript_written_when_record_transcripts_true(
     """With record_transcripts=True, strategizer.jsonl is created."""
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     actions: list[StrategizerAction] = [
         _DelegateAction(
@@ -1132,7 +1132,7 @@ def test_preflight_missing_claude_cli_raises_friendly_error(
 
     study_dir = tmp_path / "study"
     study_dir.mkdir()
-    (study_dir / "briefing.md").write_text("# Briefing")
+    (study_dir / "PROBLEM_STATEMENT.md").write_text("# Briefing")
 
     monkeypatch.setattr(_runtime.shutil, "which", lambda *_a, **_k: None)
 

@@ -6,7 +6,7 @@ Run a study from its directory::
 
     python -m f3dasm.agentic <study-dir>
 
-The study directory must contain a ``briefing.md`` file.  The agentic
+The study directory must contain a ``PROBLEM_STATEMENT.md`` file.  The agentic
 loop runs to completion (or until the user types ``stop`` at a
 checkpoint) and then prints the absolute path of the deliverable folder.
 
@@ -57,7 +57,7 @@ def _build_parser() -> argparse.ArgumentParser:
         metavar="study-dir",
         type=Path,
         help=(
-            "Path to the study directory.  Must contain briefing.md."
+            "Path to the study directory.  Must contain PROBLEM_STATEMENT.md."
         ),
     )
     parser.add_argument(

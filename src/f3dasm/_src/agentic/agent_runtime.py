@@ -942,7 +942,7 @@ class AgenticRun:
     Parameters
     ----------
     study_dir : Path
-        Root of the study tree.  Must contain ``briefing.md``.
+        Root of the study tree.  Must contain ``PROBLEM_STATEMENT.md``.
     model : str
         Claude model identifier used by both sessions.
     checkpoint_every : int
@@ -1022,7 +1022,7 @@ class AgenticRun:
         Raises
         ------
         AgenticRunError
-            If ``<study_dir>/briefing.md`` is missing or a fatal SDK
+            If ``<study_dir>/PROBLEM_STATEMENT.md`` is missing or a fatal SDK
             error occurs during the run.
         """
         self._validate()
@@ -1035,9 +1035,9 @@ class AgenticRun:
             self._checkpoint_every,
         )
         self._init_git()
-        briefing_text = (self._study_dir / "briefing.md").read_text()
+        briefing_text = (self._study_dir / "PROBLEM_STATEMENT.md").read_text()
         self._logger.info(
-            "Read briefing.md (%d chars)", len(briefing_text)
+            "Read PROBLEM_STATEMENT.md (%d chars)", len(briefing_text)
         )
         self._start_sessions()
         self._logger.info(
@@ -1088,10 +1088,10 @@ class AgenticRun:
     # ------------------------------------------------------------------
 
     def _validate(self) -> None:
-        briefing = self._study_dir / "briefing.md"
+        briefing = self._study_dir / "PROBLEM_STATEMENT.md"
         if not briefing.exists():
             raise AgenticRunError(
-                f"briefing.md not found in {self._study_dir}. "
+                f"PROBLEM_STATEMENT.md not found in {self._study_dir}. "
                 "Create it before running the agentic loop."
             )
         self._preflight_check_claude_cli()

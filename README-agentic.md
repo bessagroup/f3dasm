@@ -12,7 +12,7 @@ An additive subpackage of [`f3dasm`](./README.md) that drives the full design-of
 python -m f3dasm.agentic <study-dir>
 ```
 
-Inside `<study-dir>` you place one file — `briefing.md` — describing the problem, the design parameters, the objective, and any resources (datasets, simulators) the agent should use. You may also drop optional auxiliary files (CSV pools, Python simulators, reference papers). The runtime then orchestrates two Claude Agent SDK sessions:
+Inside `<study-dir>` you place one file — `PROBLEM_STATEMENT.md` — describing the problem, the design parameters, the objective, and any resources (datasets, simulators) the agent should use. You may also drop optional auxiliary files (CSV pools, Python simulators, reference papers). The runtime then orchestrates two Claude Agent SDK sessions:
 
 - a **Strategizer** that reads everything in the study, asks 1–3 clarifying questions of the user, hypothesises, and delegates concrete tasks;
 - an **Implementer** that receives each task, writes and executes Python under a sandboxed `workspace/`, and returns a structured `Report`.
@@ -27,7 +27,7 @@ f3dasm is a Python framework that orchestrates the canonical DOE loop: *define a
 
 The pain point we address: many users of `f3dasm` (downstream researchers, students, collaborators in non-coding disciplines) carry valuable domain knowledge but are blocked at the framework's surface area. The natural unit of work is the briefing they would already give a graduate-student assistant — a problem statement, constraints, available resources, and a goal — not a Python script.
 
-`agentic-f3dasm` is the smallest possible bridge from a briefing.md to a result. A briefing in, a deliverable out. The agent reads, hypothesises, writes its own code, executes it, falsifies its own claims, and produces a self-contained folder that another human can audit and reproduce without re-running the agent.
+`agentic-f3dasm` is the smallest possible bridge from a PROBLEM_STATEMENT.md to a result. A briefing in, a deliverable out. The agent reads, hypothesises, writes its own code, executes it, falsifies its own claims, and produces a self-contained folder that another human can audit and reproduce without re-running the agent.
 
 The system is built on a literature base of 17 papers covering agentic optimization (BORA, LLAMBO, Multi-Agent BO), multi-agent research systems (Virtual Lab, AgenticSciML, PABLO, Denario), and agentic reflection patterns (ReAct, Reflexion, SelfAI, ADAS). See `docs/specs/literature-map.md` for the full synthesis.
 
@@ -39,7 +39,7 @@ The architecture has four pieces, each kept deliberately small.
 
 ```text
                 ┌──────────────────────────────────┐
-   briefing.md ─▶│   AgenticRun                    │── runs/<ts>/strategizer_notes/
+   PROBLEM_STATEMENT.md ─▶│   AgenticRun                    │── runs/<ts>/strategizer_notes/
                 │   (~1 200 lines of Python)       │── runs/<ts>/.git/    (provenance)
                 │   - routes messages              │── runs/<ts>/deliverable/
                 │   - git commit per delegation    │
@@ -67,7 +67,7 @@ The architecture has four pieces, each kept deliberately small.
 2. **Composable peer topology.** The two agents are peers, not parent/child. Neither spawns subagents at runtime.
 3. **The orchestrator is plumbing.** It routes messages, runs git, enforces the checkpoint cadence — nothing more. Strategic decisions belong to the Strategizer.
 4. **Provenance and interpretability are deliverables.** Every Implementer delegation is bracketed by a git commit. The deliverable folder includes the solution, the full git log, JSONL transcripts of both agents, and the Implementer's workspace.
-5. **Problem-agnostic core.** Nothing in `src/f3dasm/` (including the new agentic modules) carries problem-specific names, enums, or constants. Domain content lives entirely in `studies/<study>/briefing.md`.
+5. **Problem-agnostic core.** Nothing in `src/f3dasm/` (including the new agentic modules) carries problem-specific names, enums, or constants. Domain content lives entirely in `studies/<study>/PROBLEM_STATEMENT.md`.
 
 **Built-in safeguards engineered into the system prompts:** the Strategizer's prompt names and mitigates anchoring bias, confirmation bias, availability bias, role drift, sycophancy, and premature convergence; the Implementer's prompt enforces a SelfAI-style three-stage reasoning protocol (Restate / Inventory / Plan) before any code execution, and a BORA-style structured `## Report` block on output. A one-shot corrective retry fires when the report can't be parsed; a Reflexion-style `REFLECT:` diagnostic surfaces if the retry also fails.
 
@@ -112,7 +112,7 @@ uv run python -m f3dasm.agentic studies/modular_resonance
 
 ```bash
 mkdir studies/my_problem
-cat > studies/my_problem/briefing.md <<EOF
+cat > studies/my_problem/PROBLEM_STATEMENT.md <<EOF
 # My problem
 
 I want to find (x, y) in [0, 1]² that maximises f(x, y) where
@@ -164,7 +164,7 @@ tests/optimization/
     test_agent_prompts.py  # prompt-content sanity checks
 
 studies/<study>/
-    briefing.md            # the only required file
+    PROBLEM_STATEMENT.md            # the only required file
     (data, sims, papers — optional)
     workspace/             # Implementer scratch (study-level, persists)
     runs/<ts>/             # one folder per agent run

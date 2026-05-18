@@ -8,7 +8,7 @@ Claude Agent SDK sessions:
 - **Implementer** — reads/writes/executes freely inside the study tree,
   returns structured reports to the Strategizer.
 
-The user's only required input is ``<study-dir>/briefing.md``.
+The user's only required input is ``<study-dir>/PROBLEM_STATEMENT.md``.
 
 Public symbols:
 

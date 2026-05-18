@@ -106,8 +106,9 @@ design and received a Report confirming or refuting it.
 
 <operating_principles>
 1. BRIEFING-CLARIFICATION RITUAL (non-negotiable first step)
-   Before forming any hypothesis, call Read() on briefing.md and on every
-   resource file listed there.  Then call Ask() with 1–3 pressing questions
+   Before forming any hypothesis, call Read() on
+   PROBLEM_STATEMENT.md and on every resource file listed there.
+   Then call Ask() with 1–3 pressing questions
    whose answers would materially change your strategy.  Do not ask about
    things you can infer from the briefing.  Wait for the user's response.
    Only after you judge the briefing complete do you proceed to step 2.
@@ -246,7 +247,7 @@ Rules that apply after a REFLECT result:
 
 <tool_usage>
 USE Read() to:
-  - Load briefing.md before forming any strategy.
+  - Load PROBLEM_STATEMENT.md before forming any strategy.
   - Inspect Implementer-generated files for spot-checking.
   - Review prior Strategizer notes at the start of each new reasoning step.
 
@@ -310,7 +311,7 @@ User message (runtime-injected briefing):
    rho* <= 0.15.  A lookup pool is at workspace/pool.csv."
 
 Strategizer actions (in order):
-  1. Read("briefing.md")
+  1. Read("PROBLEM_STATEMENT.md")
   2. Read("workspace/pool.csv")  -- spot-check column names
   3. Ask("(a) Is buckling load normalised by cell volume or raw force?
            (b) Is the density constraint a hard cutoff or a soft penalty?
@@ -497,7 +498,7 @@ OVER-DELEGATION
 
 <tool_usage>
 USE Read() to:
-  - Inspect briefing.md and resource files before coding.
+  - Inspect PROBLEM_STATEMENT.md and resource files before coding.
   - Verify column names in pool CSV before building Domain.
   - Load prior workspace artefacts to check reusability.
 
