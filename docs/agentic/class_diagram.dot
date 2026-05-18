@@ -1,0 +1,191 @@
+/*
+ * agentic-f3dasm v2 class diagram
+ *
+ * Renders with:   dot -Tsvg docs/agentic/class_diagram.dot \
+ *                     -o docs/agentic/class_diagram.svg
+ */
+digraph AgenticF3dasmClasses {
+    graph [
+        rankdir = LR
+        fontname = "Helvetica Neue"
+        fontsize = 12
+        bgcolor = "white"
+        pad = 0.5
+        splines = polyline
+        nodesep = 0.45
+        ranksep = 0.7
+    ]
+    node [
+        fontname = "Helvetica Neue"
+        fontsize = 11
+        shape = record
+        style = "filled,rounded"
+        margin = "0.12,0.08"
+    ]
+    edge [
+        fontname = "Helvetica Neue"
+        fontsize = 10
+        color = "#555555"
+        fontcolor = "#555555"
+    ]
+
+    /* ── Orchestrator (Python plumbing) ─────────────────────── */
+    AgenticRun [
+        label = "{AgenticRun\n(f3dasm._src.optimization.agent_runtime) |
+                  - _study_dir : Path\l
+                  - _run_dir : Path\l
+                  - _git_dir : Path\l
+                  - _strategizer : StrategizerSession\l
+                  - _implementer : ImplementerSession\l
+                  - _checkpoint_every : int = 30\l
+                  - _delegation_counter : int\l
+                  - _last_report : Report | None\l
+                  - _done_called : bool\l |
+                  + execute() : Path\l
+                  - _setup_paths()\l
+                  - _init_git()\l
+                  - _start_sessions()\l
+                  - _run_loop()\l
+                  - _run_checkpoint()\l
+                  - _reset_implementer()\l
+                  - _assemble_deliverable()\l }"
+        fillcolor = "#E8F4FD"
+        color = "#1565C0"
+    ]
+
+    /* ── Agent abstractions ────────────────────────────────── */
+    StrategizerSession [
+        label = "{«Protocol»\nStrategizerSession |
+                  + send(message : str) : str\l}"
+        fillcolor = "#FFF9C4"
+        color = "#F9A825"
+    ]
+    ImplementerSession [
+        label = "{«Protocol»\nImplementerSession |
+                  + send(message : str) : str\l}"
+        fillcolor = "#FFF9C4"
+        color = "#F9A825"
+    ]
+    ClaudeStrategizer [
+        label = "{_ClaudeStrategizer\n(implements StrategizerSession) |
+                  - _system_prompt : str\l
+                  - _model : str\l
+                  - _tool_closures : dict\l
+                  - _session_id : str | None\l |
+                  + send(message) : str\l
+                  - _build_options() : ClaudeAgentOptions\l}"
+        fillcolor = "#FFF3E0"
+        color = "#E65100"
+    ]
+    ClaudeImplementer [
+        label = "{_ClaudeImplementer\n(implements ImplementerSession) |
+                  - _system_prompt : str\l
+                  - _model : str\l
+                  - _study_dir : Path\l
+                  - _session_id : str | None\l |
+                  + send(message) : str\l
+                  - _build_options() : ClaudeAgentOptions\l}"
+        fillcolor = "#FFF3E0"
+        color = "#E65100"
+    ]
+
+    /* ── Payloads ──────────────────────────────────────────── */
+    Task [
+        label = "{«dataclass»\nTask |
+                  + intent : str\l
+                  + expected_report : str\l}"
+        fillcolor = "#EDE7F6"
+        color = "#5E35B1"
+    ]
+    Report [
+        label = "{«dataclass»\nReport |
+                  + actions_taken : str\l
+                  + files_touched : list[str]\l
+                  + conclusions : str\l
+                  + numbers : dict\l
+                  + raw : str\l}"
+        fillcolor = "#EDE7F6"
+        color = "#5E35B1"
+    ]
+
+    /* ── Tool closures owned by the orchestrator ───────────── */
+    Tools [
+        label = "{Strategizer tool closures\n(SdkMcpTool wrappers) |
+                  Read(path) : str\l
+                  WriteMarkdown(path, content) : str\l
+                  Ask(question) : str\l
+                  Delegate(intent, expected_report) : str\l
+                  Done(summary) : str\l}"
+        fillcolor = "#E8F5E9"
+        color = "#388E3C"
+    ]
+
+    /* ── Utility surfaced for the Implementer ──────────────── */
+    LookupDataGenerator [
+        label = "{LookupDataGenerator\n(extends DataGenerator) |
+                  + pool : ExperimentData\l
+                  + input_columns : list[str]\l
+                  + output_columns : list[str] | None\l |
+                  + execute(sample) : ExperimentSample\l
+                  + consume_repeats() : int\l
+                  + reset_seen()\l}"
+        fillcolor = "#E3F2FD"
+        color = "#1565C0"
+    ]
+
+    /* ── Native f3dasm (pristine; shown for reference) ─────── */
+    f3dasm_core [
+        label = "{«native f3dasm — not edited»\nDomain, ExperimentData,\nDataGenerator, Block,\nSampler, Optimizer |
+                  (no changes by the agentic layer)\l}"
+        style = "dashed,rounded,filled"
+        fillcolor = "#F5F5F5"
+        color = "#9E9E9E"
+    ]
+
+    /* ── Prompts module ────────────────────────────────────── */
+    Prompts [
+        label = "{agent_prompts (module) |
+                  STRATEGIZER_SYSTEM_PROMPT\l
+                  IMPLEMENTER_SYSTEM_PROMPT\l
+                  CHECKPOINT_STRATEGIZER_PROMPT\l
+                  IMPLEMENTER_RESET_PROMPT_TEMPLATE\l}"
+        fillcolor = "#FFEBEE"
+        color = "#D32F2F"
+    ]
+
+    /* ══════════════════════════════════════════════════════
+       RELATIONS
+       ══════════════════════════════════════════════════════ */
+    AgenticRun -> StrategizerSession   [arrowhead = open
+                                         label = "  drives"]
+    AgenticRun -> ImplementerSession   [arrowhead = open
+                                         label = "  drives"]
+    AgenticRun -> Tools                [arrowhead = open
+                                         label = "  builds &\n  injects"]
+    AgenticRun -> Prompts              [arrowhead = open
+                                         label = "  loads"]
+
+    StrategizerSession -> ClaudeStrategizer [arrowhead = empty
+                                              style = dashed
+                                              label = "  realised by"]
+    ImplementerSession -> ClaudeImplementer [arrowhead = empty
+                                              style = dashed
+                                              label = "  realised by"]
+
+    AgenticRun -> Task                [arrowhead = open
+                                         label = "  creates per\n  delegation"]
+    AgenticRun -> Report              [arrowhead = open
+                                         label = "  parses from\n  reply"]
+
+    Task -> ClaudeImplementer         [style = dashed
+                                         label = "  serialised\n  as user msg"]
+    ClaudeImplementer -> Report       [style = dashed
+                                         label = "  emits in\n  reply text"]
+
+    ClaudeImplementer -> LookupDataGenerator [style = dashed
+                                                arrowhead = vee
+                                                label = "  may import\n  inside its scripts"]
+    LookupDataGenerator -> f3dasm_core [style = dashed
+                                          arrowhead = empty
+                                          label = "  subclasses"]
+}
