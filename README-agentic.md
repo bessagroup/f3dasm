@@ -15,7 +15,7 @@ python -m f3dasm.agentic <study-dir>
 Inside `<study-dir>` you place one file — `PROBLEM_STATEMENT.md` — describing the problem, the design parameters, the objective, and any resources (datasets, simulators) the agent should use. You may also drop optional auxiliary files (CSV pools, Python simulators, reference papers). The runtime then orchestrates two Claude Agent SDK sessions:
 
 - a **Strategizer** that reads everything in the study, asks 1–3 clarifying questions of the user, hypothesises, and delegates concrete tasks;
-- an **Implementer** that receives each task, writes and executes Python under a sandboxed `workspace/`, and returns a structured `Report`.
+- an **Implementer** that receives each task, writes and executes Python under a designated `workspace/` (prompt-enforced today; OS-level isolation via `sandbox-exec`/Docker is a documented opt-in for high-stakes runs), and returns a structured `Report`.
 
 The runtime records every delegation as a git commit against an isolated per-run repository, captures per-turn JSONL transcripts for both agents, and assembles a deliverable folder containing the solution, the supporting code, and the audit trail.
 
@@ -145,37 +145,51 @@ python -m f3dasm.agentic <study-dir> \
 ```text
 src/f3dasm/agentic/
     __init__.py            # public API: AgenticRun, Task, Report,
-                           # AgenticRunError, MVP_DEFAULT_MODEL, …
+                           # AgenticRunError, LookupDataGenerator,
+                           # MVP_DEFAULT_MODEL, CHECKPOINT_EVERY
     __main__.py            # CLI entry point
 
-src/f3dasm/_src/optimization/
+src/f3dasm/_src/agentic/   # implementation home — strictly orthogonal to
+                           # native f3dasm modules (no code from this
+                           # subpackage is reachable from `import f3dasm`)
     agent_runtime.py       # AgenticRun, _ClaudeStrategizer,
                            # _ClaudeImplementer, tool closures,
-                           # git helpers, checkpoint logic
-    agent_prompts.py       # the four prompt constants
-
-src/f3dasm/_src/datageneration/
+                           # git helpers, checkpoint logic,
+                           # SDK-exception classifier, progress logging
+    agent_prompts.py       # the prompt constants — system prompts,
+                           # path-aware preambles, checkpoint and
+                           # reset templates, REFLECT diagnoses
     lookup.py              # LookupDataGenerator — utility the
-                           # Implementer may import for
-                           # pool-backed evaluation
+                           # Implementer may import for pool-backed
+                           # evaluation
 
-tests/optimization/
-    test_agent_runtime.py  # 30+ tests over the runtime
-    test_agent_prompts.py  # prompt-content sanity checks
+tests/agentic/             # all agentic tests live here; `tests/optimization/`
+                           # and `tests/datageneration/` carry only native
+                           # f3dasm tests
+    test_agent_runtime.py
+    test_agent_prompts.py
+    test_lookup.py
 
 studies/<study>/
-    PROBLEM_STATEMENT.md            # the only required file
+    PROBLEM_STATEMENT.md   # the only required file
     (data, sims, papers — optional)
-    workspace/             # Implementer scratch (study-level, persists)
-    runs/<ts>/             # one folder per agent run
+    workspace/             # Implementer scratch; persists across runs
+                           # on disk but is .gitignored (per-user output)
+    runs/<ts>/             # one folder per agent run; .gitignored
         .git/              # provenance (isolated per-run repo)
         strategizer_notes/ # Strategizer .md lab notebook (run-level)
         transcripts/       # JSONL per-turn transcripts (both agents)
+        run.log            # mirror of stderr progress logging
         deliverable/       # what an outsider should read
             solution.md
             replication/   # mirror of workspace/
             git_log.txt
             transcripts/
+            run.log
+
+docs/agentic/              # presentation artefacts (committed)
+    class_diagram.dot
+    class_diagram.svg
 
 docs/specs/                # design docs (local-only by convention)
     architecture.md        # the v2 architecture, full spec
@@ -190,8 +204,6 @@ docs/specs/                # design docs (local-only by convention)
 
 - **Elvis Aguero** (`elvis_alexander_aguero_vera@brown.edu`) — design, architecture, implementation.
 - Bessa Research Group, Brown University — context and host project.
-
-The agentic-f3dasm layer was developed in collaboration with Claude (Anthropic) — both the design conversations and the implementation passes were carried out with Claude Code as a working partner.
 
 ---
 
