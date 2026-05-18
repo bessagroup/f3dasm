@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 
 # Local
-from .._src.optimization.agent_runtime import (
+from .._src.agentic.agent_runtime import (
     CHECKPOINT_EVERY,
     MVP_DEFAULT_MODEL,
     AgenticRun,

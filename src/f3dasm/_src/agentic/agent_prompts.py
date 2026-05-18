@@ -414,7 +414,7 @@ DATAGENERATOR — evaluates each row.
   Modes: "sequential", "parallel", "cluster", "mpi", "cluster_array"
 
 LOOKUP DATAGENERATOR — evaluates by nearest-neighbour against a pool.
-  from f3dasm._src.datageneration.lookup import LookupDataGenerator
+  from f3dasm.agentic import LookupDataGenerator
   pool = ExperimentData(input_data=pool_df, domain=d)
   gen = LookupDataGenerator(
       pool=pool,

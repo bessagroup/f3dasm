@@ -26,9 +26,7 @@ Public symbols:
 # =============================================================================
 from __future__ import annotations
 
-# Local
-from .._src.datageneration.lookup import LookupDataGenerator
-from .._src.optimization.agent_runtime import (
+from .._src.agentic.agent_runtime import (
     CHECKPOINT_EVERY,
     MVP_DEFAULT_MODEL,
     AgenticRun,
@@ -36,6 +34,9 @@ from .._src.optimization.agent_runtime import (
     Report,
     Task,
 )
+
+# Local
+from .._src.agentic.lookup import LookupDataGenerator
 
 #                                                          Authorship & Credits
 # =============================================================================

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 # Local
 from f3dasm import ExperimentData
-from f3dasm._src.datageneration.lookup import LookupDataGenerator
+from f3dasm._src.agentic.lookup import LookupDataGenerator
 from f3dasm._src.experimentsample import ExperimentSample
 from f3dasm.design import Domain
 

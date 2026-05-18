@@ -19,7 +19,7 @@ from typing import Any
 import pytest
 
 # Local
-from f3dasm._src.optimization.agent_runtime import (
+from f3dasm._src.agentic.agent_runtime import (
     AgenticRun,
     AgenticRunError,
     Task,
@@ -1128,7 +1128,7 @@ def test_preflight_missing_claude_cli_raises_friendly_error(
     simulate a missing binary.
     """
 
-    from f3dasm._src.optimization import agent_runtime as _runtime
+    from f3dasm._src.agentic import agent_runtime as _runtime
 
     study_dir = tmp_path / "study"
     study_dir.mkdir()
