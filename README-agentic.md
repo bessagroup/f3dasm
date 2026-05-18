@@ -86,22 +86,27 @@ The architecture has four pieces, each kept deliberately small.
 
 ## Getting started
 
-### Install
+### Install (with `uv`)
+
+We recommend [`uv`](https://docs.astral.sh/uv/) for environment management; plain `pip install` can silently fall back to the global interpreter if no venv is active, which is a bad fit for a project that ships a runtime depending on a pinned `claude-agent-sdk` version.
 
 ```bash
 # Inside the f3dasm repo
-pip install -e ".[agentic]"
+uv venv                              # creates ./.venv with a compatible Python (>=3.10)
+uv pip install -e ".[agentic]"       # editable install + agentic extras into ./.venv
 ```
 
 The `agentic` extras install `claude-agent-sdk`. You also need the Claude CLI binary on your `PATH`. Through 2026-06-14, Agent SDK calls count against your Claude.ai subscription pool; after that, programmatic usage moves to a separate credit bucket (Pro: $20/mo; Max 20×: $200/mo).
 
+> If you absolutely cannot use `uv`, the legacy alternative is `python -m venv .venv && source .venv/bin/activate && pip install -e ".[agentic]"`. *Do not* run `pip install -e ".[agentic]"` without first activating a venv — that will install into your system Python.
+
 ### Run an existing study
 
 ```bash
-python -m f3dasm.agentic studies/modular_resonance
+uv run python -m f3dasm.agentic studies/modular_resonance
 ```
 
-The Strategizer will print 1–3 clarifying questions on stdout and wait for your typed answers. After the briefing phase, it delegates work to the Implementer. When the run completes, the deliverable lives at `studies/modular_resonance/runs/<timestamp>/deliverable/`.
+`uv run` executes inside `./.venv` automatically, so you do not have to remember to `source .venv/bin/activate`. The Strategizer will print 1–3 clarifying questions on stdout and wait for your typed answers. After the briefing phase, it delegates work to the Implementer. When the run completes, the deliverable lives at `studies/modular_resonance/runs/<timestamp>/deliverable/`.
 
 ### Make your own study
 
@@ -114,7 +119,7 @@ I want to find (x, y) in [0, 1]² that maximises f(x, y) where
 f is implemented in sim.py. Do not run more than 200 evaluations.
 EOF
 cp my_simulator.py studies/my_problem/sim.py
-python -m f3dasm.agentic studies/my_problem
+uv run python -m f3dasm.agentic studies/my_problem
 ```
 
 That is the entire user-facing surface.
