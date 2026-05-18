@@ -376,13 +376,20 @@ def test_happy_path_ask_delegate_done(tmp_path: Path) -> None:
 
 
 def test_write_markdown_bad_paths(tmp_path: Path) -> None:
-    """WriteMarkdown rejects out-of-notes-dir paths and non-.md files."""
+    """WriteMarkdown rejects path-escape and non-.md files.
+
+    Bare filenames and relative paths inside ``strategizer_notes/`` are
+    accepted (and anchored under the canonical notes directory); the
+    rejection cases are absolute paths outside the notes directory and
+    any file whose extension is not ``.md``.
+    """
     study_dir = tmp_path / "study"
     study_dir.mkdir()
     (study_dir / "briefing.md").write_text("# Briefing")
 
     bad_path_results: list[str] = []
     bad_ext_results: list[str] = []
+    bare_filename_results: list[str] = []
 
     class _InspectStrategizer:
         def __init__(
@@ -397,17 +404,20 @@ def test_write_markdown_bad_paths(tmp_path: Path) -> None:
                 self._sent = True
                 bad_path_results.append(
                     self._tc["WriteMarkdown"](
-                        path="workspace/evil.md",
+                        path="../../etc/evil.md",
                         content="hack",
                     )
                 )
                 bad_ext_results.append(
                     self._tc["WriteMarkdown"](
-                        path=(
-                            "runs/faketime/strategizer_notes/"
-                            "note.txt"
-                        ),
+                        path="note.txt",
                         content="hack",
+                    )
+                )
+                bare_filename_results.append(
+                    self._tc["WriteMarkdown"](
+                        path="hypotheses.md",
+                        content="ok",
                     )
                 )
                 self._tc["Done"](
@@ -436,6 +446,9 @@ def test_write_markdown_bad_paths(tmp_path: Path) -> None:
 
     assert bad_path_results and bad_path_results[0].startswith("ERROR")
     assert bad_ext_results and bad_ext_results[0].startswith("ERROR")
+    assert bare_filename_results and bare_filename_results[0].startswith(
+        "OK: wrote "
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -492,15 +505,21 @@ def test_read_rejects_escape(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_invalid_report_does_not_increment(tmp_path: Path) -> None:
-    """Invalid Report → ERROR tool result; counter not incremented."""
+def test_one_shot_retry_recovers_invalid_report(tmp_path: Path) -> None:
+    """First reply malformed → corrective retry → counter increments.
+
+    The runtime sends the Implementer one focused corrective message
+    when ``_parse_report`` fails. If the retry yields a valid Report,
+    the delegation is counted and the tool result is the recovered
+    raw block (not REFLECT).
+    """
     study_dir = tmp_path / "study"
     study_dir.mkdir()
     (study_dir / "briefing.md").write_text("# Briefing")
 
     delegate_results: list[str] = []
 
-    class _InvalidStrategizer:
+    class _SingleDelegateStrategizer:
         def __init__(self, tool_closures: dict[str, Any]) -> None:
             self._tc = tool_closures
             self._sent = False
@@ -513,7 +532,7 @@ def test_invalid_report_does_not_increment(tmp_path: Path) -> None:
                     expected_report="stuff",
                 )
                 delegate_results.append(r)
-                self._tc["Done"](summary="done after bad report")
+                self._tc["Done"](summary="done after retry recovered")
             return "(done)"
 
     def strat_factory(
@@ -521,10 +540,12 @@ def test_invalid_report_does_not_increment(tmp_path: Path) -> None:
         system_prompt: str,
         model: str,
         tool_closures: dict[str, Any],
-    ) -> _InvalidStrategizer:
-        return _InvalidStrategizer(tool_closures)
+    ) -> _SingleDelegateStrategizer:
+        return _SingleDelegateStrategizer(tool_closures)
 
-    _, impl_factory = _make_factories([], [_INVALID_REPORT])
+    _, impl_factory = _make_factories(
+        [], [_INVALID_REPORT, _VALID_REPORT]
+    )
 
     run = AgenticRun(
         study_dir,
@@ -536,9 +557,59 @@ def test_invalid_report_does_not_increment(tmp_path: Path) -> None:
     run.execute()
 
     first_result = delegate_results[0]
-    assert first_result.startswith("ERROR") or first_result.startswith(
-        "REFLECT:"
-    ), f"Expected ERROR or REFLECT:, got: {first_result[:60]!r}"
+    assert "## Report" in first_result
+    assert not first_result.startswith("REFLECT:")
+    assert run._total_delegations == 1
+
+
+def test_two_invalid_replies_fall_through_to_reflect(
+    tmp_path: Path,
+) -> None:
+    """Two malformed replies in a row → REFLECT; counter stays 0."""
+    study_dir = tmp_path / "study"
+    study_dir.mkdir()
+    (study_dir / "briefing.md").write_text("# Briefing")
+
+    delegate_results: list[str] = []
+
+    class _SingleDelegateStrategizer:
+        def __init__(self, tool_closures: dict[str, Any]) -> None:
+            self._tc = tool_closures
+            self._sent = False
+
+        def send(self, message: str) -> str:
+            if not self._sent:
+                self._sent = True
+                r = self._tc["Delegate"](
+                    intent="do stuff",
+                    expected_report="stuff",
+                )
+                delegate_results.append(r)
+                self._tc["Done"](summary="done after two bad replies")
+            return "(done)"
+
+    def strat_factory(
+        *,
+        system_prompt: str,
+        model: str,
+        tool_closures: dict[str, Any],
+    ) -> _SingleDelegateStrategizer:
+        return _SingleDelegateStrategizer(tool_closures)
+
+    _, impl_factory = _make_factories(
+        [], [_INVALID_REPORT, _INVALID_REPORT]
+    )
+
+    run = AgenticRun(
+        study_dir,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+    )
+    run.execute()
+
+    assert delegate_results[0].startswith("REFLECT:")
     assert run._total_delegations == 0
 
 
@@ -968,7 +1039,7 @@ def test_reflect_then_redelegation_with_different_intent(
 
     _, impl_factory = _make_factories(
         [],
-        [_INVALID_REPORT, _VALID_REPORT],
+        [_INVALID_REPORT, _INVALID_REPORT, _VALID_REPORT],
     )
 
     run = AgenticRun(

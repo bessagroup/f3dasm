@@ -24,6 +24,7 @@ from __future__ import annotations
 
 # Standard
 import asyncio
+import inspect
 import json
 import re
 import shutil
@@ -256,13 +257,16 @@ class _ClaudeStrategizer:
             name=server_name,
             tools=sdk_tools if sdk_tools else None,
         )
-        tool_names = [t.name for t in sdk_tools]
+        qualified_tool_names = [
+            f"mcp__{server_name}__{t.name}" for t in sdk_tools
+        ]
 
         return ClaudeAgentOptions(
             system_prompt=self._system_prompt,
             model=self._model,
+            tools=[],
             mcp_servers={server_name: mcp_cfg},
-            allowed_tools=tool_names,
+            allowed_tools=qualified_tool_names,
             disallowed_tools=_IMPLEMENTER_DENY_LIST,
             permission_mode="bypassPermissions",
             resume=self._session_id,
@@ -289,18 +293,25 @@ class _ClaudeStrategizer:
         async def _run() -> None:
             nonlocal assistant_text, result_msg
             last_assistant: Any = None
-            async for msg in query(
-                prompt=message, options=options
-            ):
-                if isinstance(msg, AssistantMessage):
-                    last_assistant = msg
-                elif isinstance(msg, ResultMessage):
-                    result_msg = msg
-                    if last_assistant is not None:
-                        for block in last_assistant.content:
-                            if isinstance(block, TextBlock):
-                                assistant_text += block.text
-                    break
+            gen = query(prompt=message, options=options)
+            try:
+                async for msg in gen:
+                    if isinstance(msg, AssistantMessage):
+                        last_assistant = msg
+                    elif isinstance(msg, ResultMessage):
+                        result_msg = msg
+                        if last_assistant is not None:
+                            for block in last_assistant.content:
+                                if isinstance(block, TextBlock):
+                                    assistant_text += block.text
+                        break
+            finally:
+                aclose = getattr(gen, "aclose", None)
+                if aclose is not None:
+                    try:
+                        await aclose()
+                    except Exception:
+                        pass
 
         _run_async_safe(_run())
 
@@ -371,18 +382,25 @@ class _ClaudeImplementer:
         async def _run() -> None:
             nonlocal assistant_text, result_msg
             last_assistant: Any = None
-            async for msg in query(
-                prompt=message, options=options
-            ):
-                if isinstance(msg, AssistantMessage):
-                    last_assistant = msg
-                elif isinstance(msg, ResultMessage):
-                    result_msg = msg
-                    if last_assistant is not None:
-                        for block in last_assistant.content:
-                            if isinstance(block, TextBlock):
-                                assistant_text += block.text
-                    break
+            gen = query(prompt=message, options=options)
+            try:
+                async for msg in gen:
+                    if isinstance(msg, AssistantMessage):
+                        last_assistant = msg
+                    elif isinstance(msg, ResultMessage):
+                        result_msg = msg
+                        if last_assistant is not None:
+                            for block in last_assistant.content:
+                                if isinstance(block, TextBlock):
+                                    assistant_text += block.text
+                        break
+            finally:
+                aclose = getattr(gen, "aclose", None)
+                if aclose is not None:
+                    try:
+                        await aclose()
+                    except Exception:
+                        pass
 
         _run_async_safe(_run())
 
@@ -931,12 +949,12 @@ class AgenticRun:
     def _start_sessions(self) -> None:
         tool_closures = self._build_strategizer_tools()
         self._strategizer = self._strategizer_factory(
-            system_prompt=STRATEGIZER_SYSTEM_PROMPT,
+            system_prompt=self._compose_strategizer_prompt(),
             model=self._model,
             tool_closures=tool_closures,
         )
         self._implementer = self._implementer_factory(
-            system_prompt=IMPLEMENTER_SYSTEM_PROMPT,
+            system_prompt=self._compose_implementer_prompt(),
             model=self._model,
             study_dir=self._study_dir,
         )
@@ -947,11 +965,55 @@ class AgenticRun:
             checkpoint_summary=checkpoint_summary
         )
         self._implementer = self._implementer_factory(
-            system_prompt=IMPLEMENTER_SYSTEM_PROMPT,
+            system_prompt=self._compose_implementer_prompt(),
             model=self._model,
             study_dir=self._study_dir,
         )
         self._implementer.send(reset_msg)
+
+    def _compose_strategizer_prompt(self) -> str:
+        """Return the Strategizer system prompt with run-specific paths.
+
+        Prepends a small ``<run_paths>`` section so the model knows the
+        canonical absolute paths for its notes directory and the study
+        tree without having to guess timestamps.
+        """
+        assert self._run_dir is not None
+        notes_dir = (self._run_dir / "strategizer_notes").resolve()
+        preamble = (
+            "<run_paths>\n"
+            f"study_dir = {self._study_dir}\n"
+            f"strategizer_notes_dir = {notes_dir}\n"
+            "Use these absolute paths when calling Read() and "
+            "WriteMarkdown(). WriteMarkdown also accepts a bare filename "
+            "such as 'hypotheses.md', which is anchored under "
+            "strategizer_notes_dir automatically.\n"
+            "</run_paths>\n\n"
+        )
+        return preamble + STRATEGIZER_SYSTEM_PROMPT
+
+    def _compose_implementer_prompt(self) -> str:
+        """Return the Implementer system prompt with workspace anchored.
+
+        Prepends a ``<workspace>`` section so the model knows the
+        absolute path it must write to. The session's cwd is the study
+        directory, so relative paths still resolve correctly; the
+        explicit absolute path here is what removes the temptation to
+        use ``/tmp``.
+        """
+        workspace = (self._study_dir / "workspace").resolve()
+        preamble = (
+            "<workspace>\n"
+            f"workspace_dir = {workspace}\n"
+            "Every file you create — code, intermediate data, plots, "
+            "logs — MUST be written under workspace_dir. The deliverable "
+            "folder is assembled by copying workspace_dir; anything you "
+            "place outside it (for example in /tmp) will be lost and "
+            "the run will be unreproducible. If you need a scratch file, "
+            "put it under workspace_dir/scratch/.\n"
+            "</workspace>\n\n"
+        )
+        return preamble + IMPLEMENTER_SYSTEM_PROMPT
 
     # ------------------------------------------------------------------
     # Step 5 — Main loop
@@ -1026,6 +1088,8 @@ class AgenticRun:
             the underlying call.
         """
 
+        original_sig = inspect.signature(fn)
+
         def _wrapper(**kwargs: Any) -> str:
             ts_call = (
                 datetime.now(tz=timezone.utc)
@@ -1065,6 +1129,9 @@ class AgenticRun:
                 )
             return result
 
+        _wrapper.__signature__ = original_sig
+        _wrapper.__doc__ = fn.__doc__
+        _wrapper.__name__ = getattr(fn, "__name__", tool_name)
         return _wrapper
 
     def _tool_read(self, path: str) -> str:
@@ -1087,27 +1154,44 @@ class AgenticRun:
             return f"ERROR: could not read {path}: {exc}"
 
     def _tool_write_markdown(self, path: str, content: str) -> str:
-        """Write a Markdown file to strategizer_notes/.
+        """Write a Markdown file to ``strategizer_notes/``.
 
-        The path must be under ``<run_dir>/strategizer_notes/`` and end
-        in ``.md``.  Returns OK or an ERROR string.
+        Relative paths and bare filenames are resolved under
+        ``<run_dir>/strategizer_notes/``.  Absolute paths that already
+        live under that directory are accepted as-is.  Anything that
+        escapes the notes directory or carries a non-``.md`` extension
+        is rejected.
+
+        Returns OK or an ERROR string.
         """
         assert self._run_dir is not None
-        notes_dir = self._run_dir / "strategizer_notes"
+        notes_dir = (self._run_dir / "strategizer_notes").resolve()
 
-        if not path.endswith(".md"):
+        candidate = Path(path)
+        if candidate.is_absolute():
+            target = candidate.resolve()
+        else:
+            # Strip any leading "strategizer_notes/" or "runs/<ts>/..."
+            # prefix the model might have invented; we always anchor the
+            # write under the canonical notes directory.
+            stripped = path
+            for prefix in ("./", "strategizer_notes/"):
+                if stripped.startswith(prefix):
+                    stripped = stripped[len(prefix):]
+            target = (notes_dir / stripped).resolve()
+
+        if not target.suffix == ".md":
             return (
                 f"ERROR: WriteMarkdown only accepts .md files; "
                 f"got {path!r}."
             )
 
-        target = (self._study_dir / path).resolve()
-        notes_dir_resolved = notes_dir.resolve()
-
-        if not str(target).startswith(str(notes_dir_resolved)):
+        try:
+            target.relative_to(notes_dir)
+        except ValueError:
             return (
-                f"ERROR: WriteMarkdown path must be under "
-                f"runs/<timestamp>/strategizer_notes/. Got {path!r}."
+                f"ERROR: WriteMarkdown path escapes "
+                f"<run_dir>/strategizer_notes/. Got {path!r}."
             )
 
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -1213,8 +1297,54 @@ class AgenticRun:
                 },
             )
 
-        # (d) Parse Report.
+        # (d) Parse Report.  If the first reply is malformed, give the
+        # Implementer one focused corrective retry before falling through
+        # to REFLECT.  The retry message restates the required structure
+        # in literal form so the model cannot misread it.
         report = _parse_report(impl_reply)
+        if report is None:
+            correction = (
+                "Your previous reply did not contain a parseable "
+                "`## Report` block. Re-emit your output now using "
+                "EXACTLY this structure, with the literal line "
+                "`## Report` on its own line:\n\n"
+                "## Report\n\n"
+                "### Actions taken\n- <bulleted list>\n\n"
+                "### Files touched\n- <absolute paths under "
+                "workspace_dir>\n\n"
+                "### Conclusions\n<prose, <= 200 words>\n\n"
+                "### Numbers\n- <key>: <value>\n\n"
+                "Do not skip any subsection. Include the Stage 1 / "
+                "Stage 2 / Stage 3 prose ONLY before the `## Report` "
+                "heading. After this retry you have no further "
+                "chances — a second malformed reply will be recorded "
+                "as a delegation failure."
+            )
+            retry_reply = self._implementer.send(correction)
+            self._turn_count += 1
+            if self._record_transcripts and self._run_dir is not None:
+                ts_now = (
+                    datetime.now(tz=timezone.utc)
+                    .isoformat(timespec="seconds")
+                )
+                _record_transcript(
+                    impl_transcript,
+                    {
+                        "type": "user_message",
+                        "content": correction,
+                        "ts": ts_now,
+                    },
+                )
+                _record_transcript(
+                    impl_transcript,
+                    {
+                        "type": "assistant_text",
+                        "content": retry_reply,
+                        "ts": ts_now,
+                    },
+                )
+            impl_reply = retry_reply
+            report = _parse_report(impl_reply)
         if report is None:
             reflect_msg = _classify_failed_implementer_response(
                 impl_reply
