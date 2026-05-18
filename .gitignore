@@ -145,3 +145,4 @@ docs/specs/
 
 # Agentic-f3dasm runtime output
 studies/*/runs/
+studies/*/workspace/
