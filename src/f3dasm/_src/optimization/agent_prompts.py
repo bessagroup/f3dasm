@@ -1,6 +1,6 @@
 """System prompts for the two-agent agentic-f3dasm runtime.
 
-This module ships the four string constants that bootstrap the Strategizer
+This module ships all string constants that bootstrap the Strategizer
 and Implementer Claude Agent SDK sessions used by
 ``f3dasm.agentic.run``.  They are kept in one place so the prompts can be
 versioned, reviewed, and improved independently of the routing runtime.
@@ -17,6 +17,30 @@ IMPLEMENTER_RESET_PROMPT_TEMPLATE
     ``.format()``-ready template for the opening user message sent to a
     freshly-reset Implementer after a checkpoint.  Single placeholder:
     ``{checkpoint_summary}``.
+RUN_PATHS_PREAMBLE_TEMPLATE
+    ``.format()``-ready preamble prepended to the Strategizer system
+    prompt at the start of every run.  Placeholders: ``{study_dir}``,
+    ``{notes_dir}``.
+WORKSPACE_PREAMBLE_TEMPLATE
+    ``.format()``-ready preamble prepended to the Implementer system
+    prompt at the start of every run.  Placeholder: ``{workspace_dir}``.
+IMPLEMENTER_REPORT_RETRY_PROMPT
+    Static correction message sent to the Implementer when its first
+    reply lacks a parseable ``## Report`` block.
+REFLECT_DIAGNOSIS_SHORT
+    REFLECT diagnosis text for unusually short Implementer responses.
+REFLECT_DIAGNOSIS_CAPABILITY_LIMIT
+    REFLECT diagnosis text when the Implementer reports a capability
+    limit.
+REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE
+    ``.format()``-ready REFLECT diagnosis text for a Report block that
+    is present but missing required subsections.  Placeholder:
+    ``{missing_subsections}``.
+REFLECT_DIAGNOSIS_NO_REPORT_HEADING
+    REFLECT diagnosis text when the Implementer never starts a
+    ``## Report`` block.
+REFLECT_DIAGNOSIS_DEFAULT
+    Fallback REFLECT diagnosis text for unrecognised malformation.
 
 Notes
 -----
@@ -43,6 +67,14 @@ __all__ = [
     "IMPLEMENTER_SYSTEM_PROMPT",
     "CHECKPOINT_STRATEGIZER_PROMPT",
     "IMPLEMENTER_RESET_PROMPT_TEMPLATE",
+    "RUN_PATHS_PREAMBLE_TEMPLATE",
+    "WORKSPACE_PREAMBLE_TEMPLATE",
+    "IMPLEMENTER_REPORT_RETRY_PROMPT",
+    "REFLECT_DIAGNOSIS_SHORT",
+    "REFLECT_DIAGNOSIS_CAPABILITY_LIMIT",
+    "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE",
+    "REFLECT_DIAGNOSIS_NO_REPORT_HEADING",
+    "REFLECT_DIAGNOSIS_DEFAULT",
 ]
 
 # =============================================================================
@@ -694,4 +726,164 @@ From this point on you will receive Task messages from the Strategizer.
 Execute each task and return a Report as specified in your system prompt.
 The workspace/ directory under the study root may contain artefacts from
 the prior session — check before recomputing anything.
+"""
+
+# =============================================================================
+
+RUN_PATHS_PREAMBLE_TEMPLATE = """\
+<run_paths>
+study_dir = {study_dir}
+strategizer_notes_dir = {notes_dir}
+Use these absolute paths when calling Read() and WriteMarkdown(). \
+WriteMarkdown also accepts a bare filename such as 'hypotheses.md', \
+which is anchored under strategizer_notes_dir automatically.
+</run_paths>
+
+"""
+"""Run-paths preamble injected at the head of the Strategizer system
+prompt for every new run.
+
+Prepended by ``AgenticRun._compose_strategizer_prompt`` so the
+Strategizer always knows the canonical absolute paths for the study
+tree and its notes directory without having to guess timestamps.
+
+Parameters (via ``.format()``)
+------------------------------
+study_dir : str or Path
+    Absolute path to the study root directory.
+notes_dir : str or Path
+    Absolute path to the ``strategizer_notes/`` sub-directory inside
+    the current run directory.
+"""
+
+# =============================================================================
+
+WORKSPACE_PREAMBLE_TEMPLATE = """\
+<workspace>
+workspace_dir = {workspace_dir}
+Every file you create — code, intermediate data, plots, logs — MUST be \
+written under workspace_dir. The deliverable folder is assembled by \
+copying workspace_dir; anything you place outside it (for example in \
+/tmp) will be lost and the run will be unreproducible. If you need a \
+scratch file, put it under workspace_dir/scratch/.
+</workspace>
+
+"""
+"""Workspace preamble injected at the head of the Implementer system
+prompt for every new run.
+
+Prepended by ``AgenticRun._compose_implementer_prompt`` so the
+Implementer always knows the absolute path it must write files to,
+and is explicitly warned that writing outside this path (e.g. ``/tmp``)
+makes the run unreproducible.
+
+Parameters (via ``.format()``)
+------------------------------
+workspace_dir : str or Path
+    Absolute path to the ``workspace/`` directory under the study root.
+"""
+
+# =============================================================================
+
+IMPLEMENTER_REPORT_RETRY_PROMPT = (
+    "Your previous reply did not contain a parseable "
+    "`## Report` block. Re-emit your output now using "
+    "EXACTLY this structure, with the literal line "
+    "`## Report` on its own line:\n\n"
+    "## Report\n\n"
+    "### Actions taken\n- <bulleted list>\n\n"
+    "### Files touched\n- <absolute paths under "
+    "workspace_dir>\n\n"
+    "### Conclusions\n<prose, <= 200 words>\n\n"
+    "### Numbers\n- <key>: <value>\n\n"
+    "Do not skip any subsection. Include the Stage 1 / "
+    "Stage 2 / Stage 3 prose ONLY before the `## Report` "
+    "heading. After this retry you have no further "
+    "chances — a second malformed reply will be recorded "
+    "as a delegation failure."
+)
+"""Correction message sent to the Implementer when its first reply
+lacks a parseable ``## Report`` block.
+
+Injected by ``AgenticRun._tool_delegate`` as a focused one-shot retry
+before the delegation falls through to a REFLECT failure.  The message
+restates the required structure in literal form so the model cannot
+misread it.  No placeholders; pure static text.
+"""
+
+# =============================================================================
+
+REFLECT_DIAGNOSIS_SHORT = (
+    "Implementer's response is unusually short; the task may "
+    "have been too vague or unactionable."
+)
+"""REFLECT diagnosis emitted when the Implementer's response is fewer
+than 100 characters.
+
+Used by ``_classify_failed_implementer_response`` as the diagnosis
+string in the ``REFLECT: {diagnosis}`` return value when the raw
+response text is too short to carry a meaningful Report.
+"""
+
+# =============================================================================
+
+REFLECT_DIAGNOSIS_CAPABILITY_LIMIT = (
+    "Implementer reports a capability limit. Check whether "
+    "the task asked for something outside its tool set."
+)
+"""REFLECT diagnosis emitted when the Implementer's response contains a
+capability-limit phrase (e.g. "I cannot", "I don't have access").
+
+Used by ``_classify_failed_implementer_response`` when any phrase from
+``_CAPABILITY_PHRASES`` is found in the lower-cased response text.
+"""
+
+# =============================================================================
+
+REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE = (
+    "Implementer started a Report but omitted required "
+    "subsections: {missing_subsections}."
+)
+"""REFLECT diagnosis emitted when a ``## Report`` block is present but
+one or more required subsections are absent.
+
+Used by ``_classify_failed_implementer_response`` after detecting that
+``## Report`` exists but at least one of ``### Actions taken``,
+``### Files touched``, ``### Conclusions``, or ``### Numbers`` is
+missing.
+
+Parameters (via ``.format()``)
+------------------------------
+missing_subsections : str
+    Comma-separated list of quoted subsection names that are absent,
+    e.g. ``"'Files touched', 'Numbers'"``.
+"""
+
+# =============================================================================
+
+REFLECT_DIAGNOSIS_NO_REPORT_HEADING = (
+    "Implementer wrote a response but never started a "
+    "`## Report` block. Likely the instruction format was "
+    "ignored."
+)
+"""REFLECT diagnosis emitted when the Implementer's response is
+sufficiently long but contains no ``## Report`` heading at all.
+
+Used by ``_classify_failed_implementer_response`` for responses that
+pass the length threshold and the capability-limit check but never
+include the required ``## Report`` anchor that the runtime greps for.
+"""
+
+# =============================================================================
+
+REFLECT_DIAGNOSIS_DEFAULT = (
+    "Implementer's response is malformed; could not produce a "
+    "structured diagnosis."
+)
+"""Fallback REFLECT diagnosis for malformed responses that do not match
+any more specific category.
+
+Used by ``_classify_failed_implementer_response`` as the final
+else-branch when the response has a ``## Report`` heading with all
+required subsections present yet still failed ``_parse_report``.
 """

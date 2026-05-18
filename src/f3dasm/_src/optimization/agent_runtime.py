@@ -40,9 +40,17 @@ from typing import Any, Protocol, TextIO, runtime_checkable
 # Local
 from .agent_prompts import (
     CHECKPOINT_STRATEGIZER_PROMPT,
+    IMPLEMENTER_REPORT_RETRY_PROMPT,
     IMPLEMENTER_RESET_PROMPT_TEMPLATE,
     IMPLEMENTER_SYSTEM_PROMPT,
+    REFLECT_DIAGNOSIS_CAPABILITY_LIMIT,
+    REFLECT_DIAGNOSIS_DEFAULT,
+    REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE,
+    REFLECT_DIAGNOSIS_NO_REPORT_HEADING,
+    REFLECT_DIAGNOSIS_SHORT,
+    RUN_PATHS_PREAMBLE_TEMPLATE,
     STRATEGIZER_SYSTEM_PROMPT,
+    WORKSPACE_PREAMBLE_TEMPLATE,
 )
 
 MVP_DEFAULT_MODEL: str = "claude-haiku-4-5-20251001"
@@ -689,18 +697,12 @@ def _classify_failed_implementer_response(
     lower = response_text.lower()
 
     if len(response_text) < 100:
-        diagnosis = (
-            "Implementer's response is unusually short; the task may "
-            "have been too vague or unactionable."
-        )
+        diagnosis = REFLECT_DIAGNOSIS_SHORT
         return f"REFLECT: {diagnosis}\n{truncated}"
 
     for phrase in _CAPABILITY_PHRASES:
         if phrase in lower:
-            diagnosis = (
-                "Implementer reports a capability limit. Check whether "
-                "the task asked for something outside its tool set."
-            )
+            diagnosis = REFLECT_DIAGNOSIS_CAPABILITY_LIMIT
             return f"REFLECT: {diagnosis}\n{truncated}"
 
     has_report_heading = bool(
@@ -716,23 +718,17 @@ def _classify_failed_implementer_response(
         if missing:
             missing_str = ", ".join(f"'{s}'" for s in missing)
             diagnosis = (
-                "Implementer started a Report but omitted required "
-                f"subsections: {missing_str}."
+                REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE.format(
+                    missing_subsections=missing_str
+                )
             )
             return f"REFLECT: {diagnosis}\n{truncated}"
 
     if not has_report_heading:
-        diagnosis = (
-            "Implementer wrote a response but never started a "
-            "`## Report` block. Likely the instruction format was "
-            "ignored."
-        )
+        diagnosis = REFLECT_DIAGNOSIS_NO_REPORT_HEADING
         return f"REFLECT: {diagnosis}\n{truncated}"
 
-    diagnosis = (
-        "Implementer's response is malformed; could not produce a "
-        "structured diagnosis."
-    )
+    diagnosis = REFLECT_DIAGNOSIS_DEFAULT
     return f"REFLECT: {diagnosis}\n{truncated}"
 
 
@@ -980,15 +976,9 @@ class AgenticRun:
         """
         assert self._run_dir is not None
         notes_dir = (self._run_dir / "strategizer_notes").resolve()
-        preamble = (
-            "<run_paths>\n"
-            f"study_dir = {self._study_dir}\n"
-            f"strategizer_notes_dir = {notes_dir}\n"
-            "Use these absolute paths when calling Read() and "
-            "WriteMarkdown(). WriteMarkdown also accepts a bare filename "
-            "such as 'hypotheses.md', which is anchored under "
-            "strategizer_notes_dir automatically.\n"
-            "</run_paths>\n\n"
+        preamble = RUN_PATHS_PREAMBLE_TEMPLATE.format(
+            study_dir=self._study_dir,
+            notes_dir=notes_dir,
         )
         return preamble + STRATEGIZER_SYSTEM_PROMPT
 
@@ -1002,16 +992,8 @@ class AgenticRun:
         use ``/tmp``.
         """
         workspace = (self._study_dir / "workspace").resolve()
-        preamble = (
-            "<workspace>\n"
-            f"workspace_dir = {workspace}\n"
-            "Every file you create — code, intermediate data, plots, "
-            "logs — MUST be written under workspace_dir. The deliverable "
-            "folder is assembled by copying workspace_dir; anything you "
-            "place outside it (for example in /tmp) will be lost and "
-            "the run will be unreproducible. If you need a scratch file, "
-            "put it under workspace_dir/scratch/.\n"
-            "</workspace>\n\n"
+        preamble = WORKSPACE_PREAMBLE_TEMPLATE.format(
+            workspace_dir=workspace,
         )
         return preamble + IMPLEMENTER_SYSTEM_PROMPT
 
@@ -1303,23 +1285,7 @@ class AgenticRun:
         # in literal form so the model cannot misread it.
         report = _parse_report(impl_reply)
         if report is None:
-            correction = (
-                "Your previous reply did not contain a parseable "
-                "`## Report` block. Re-emit your output now using "
-                "EXACTLY this structure, with the literal line "
-                "`## Report` on its own line:\n\n"
-                "## Report\n\n"
-                "### Actions taken\n- <bulleted list>\n\n"
-                "### Files touched\n- <absolute paths under "
-                "workspace_dir>\n\n"
-                "### Conclusions\n<prose, <= 200 words>\n\n"
-                "### Numbers\n- <key>: <value>\n\n"
-                "Do not skip any subsection. Include the Stage 1 / "
-                "Stage 2 / Stage 3 prose ONLY before the `## Report` "
-                "heading. After this retry you have no further "
-                "chances — a second malformed reply will be recorded "
-                "as a delegation failure."
-            )
+            correction = IMPLEMENTER_REPORT_RETRY_PROMPT
             retry_reply = self._implementer.send(correction)
             self._turn_count += 1
             if self._record_transcripts and self._run_dir is not None:

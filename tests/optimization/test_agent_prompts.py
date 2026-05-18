@@ -713,3 +713,335 @@ def test_no_domain_specific_leakage_extended():
             assert term not in lower, (
                 f"{const_name} leaks term '{term}'"
             )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 24 — RUN_PATHS_PREAMBLE_TEMPLATE existence and type
+# ---------------------------------------------------------------------------
+
+def test_run_paths_preamble_template_exists_and_is_string():
+    """RUN_PATHS_PREAMBLE_TEMPLATE is a non-empty string."""
+    from f3dasm._src.optimization.agent_prompts import (
+        RUN_PATHS_PREAMBLE_TEMPLATE,
+    )
+
+    assert isinstance(RUN_PATHS_PREAMBLE_TEMPLATE, str), (
+        "RUN_PATHS_PREAMBLE_TEMPLATE is not a str"
+    )
+    assert len(RUN_PATHS_PREAMBLE_TEMPLATE) > 0, (
+        "RUN_PATHS_PREAMBLE_TEMPLATE is empty"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 25 — RUN_PATHS_PREAMBLE_TEMPLATE placeholders and content
+# ---------------------------------------------------------------------------
+
+def test_run_paths_preamble_template_placeholders():
+    """Template substitutes study_dir and notes_dir; missing kwarg raises.
+
+    Notes
+    -----
+    The template must mention ``study_dir`` and
+    ``strategizer_notes_dir`` as literal labels in its body so that
+    the Strategizer understands the semantics of each path.
+    """
+    from f3dasm._src.optimization.agent_prompts import (
+        RUN_PATHS_PREAMBLE_TEMPLATE,
+    )
+
+    result = RUN_PATHS_PREAMBLE_TEMPLATE.format(
+        study_dir="/a/study",
+        notes_dir="/a/notes",
+    )
+    assert "/a/study" in result, (
+        "study_dir substitution not found in result"
+    )
+    assert "/a/notes" in result, (
+        "notes_dir substitution not found in result"
+    )
+    assert "study_dir" in RUN_PATHS_PREAMBLE_TEMPLATE, (
+        "RUN_PATHS_PREAMBLE_TEMPLATE does not contain literal "
+        "'study_dir'"
+    )
+    assert "strategizer_notes_dir" in RUN_PATHS_PREAMBLE_TEMPLATE, (
+        "RUN_PATHS_PREAMBLE_TEMPLATE does not contain literal "
+        "'strategizer_notes_dir'"
+    )
+
+    import pytest
+    with pytest.raises(KeyError):
+        RUN_PATHS_PREAMBLE_TEMPLATE.format(study_dir="/a/study")
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 26 — WORKSPACE_PREAMBLE_TEMPLATE existence and type
+# ---------------------------------------------------------------------------
+
+def test_workspace_preamble_template_exists_and_is_string():
+    """WORKSPACE_PREAMBLE_TEMPLATE is a non-empty string."""
+    from f3dasm._src.optimization.agent_prompts import (
+        WORKSPACE_PREAMBLE_TEMPLATE,
+    )
+
+    assert isinstance(WORKSPACE_PREAMBLE_TEMPLATE, str), (
+        "WORKSPACE_PREAMBLE_TEMPLATE is not a str"
+    )
+    assert len(WORKSPACE_PREAMBLE_TEMPLATE) > 0, (
+        "WORKSPACE_PREAMBLE_TEMPLATE is empty"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 27 — WORKSPACE_PREAMBLE_TEMPLATE placeholder and /tmp warning
+# ---------------------------------------------------------------------------
+
+def test_workspace_preamble_template_placeholder_and_no_tmp():
+    """Template substitutes workspace_dir; warns against /tmp.
+
+    Notes
+    -----
+    ``/tmp`` (case-insensitive) must appear as a forbidden example so
+    the Implementer understands that scratch files outside the workspace
+    will be lost.
+    """
+    from f3dasm._src.optimization.agent_prompts import (
+        WORKSPACE_PREAMBLE_TEMPLATE,
+    )
+
+    result = WORKSPACE_PREAMBLE_TEMPLATE.format(
+        workspace_dir="/a/workspace",
+    )
+    assert "/a/workspace" in result, (
+        "workspace_dir substitution not found in result"
+    )
+    assert "workspace_dir" in WORKSPACE_PREAMBLE_TEMPLATE, (
+        "WORKSPACE_PREAMBLE_TEMPLATE does not contain literal "
+        "'workspace_dir'"
+    )
+    assert "/tmp" in WORKSPACE_PREAMBLE_TEMPLATE.lower(), (
+        "WORKSPACE_PREAMBLE_TEMPLATE does not warn against /tmp"
+    )
+
+    import pytest
+    with pytest.raises(KeyError):
+        WORKSPACE_PREAMBLE_TEMPLATE.format()
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 28 — IMPLEMENTER_REPORT_RETRY_PROMPT existence and content
+# ---------------------------------------------------------------------------
+
+def test_implementer_report_retry_prompt_exists_and_is_string():
+    """IMPLEMENTER_REPORT_RETRY_PROMPT is a non-empty string."""
+    from f3dasm._src.optimization.agent_prompts import (
+        IMPLEMENTER_REPORT_RETRY_PROMPT,
+    )
+
+    assert isinstance(IMPLEMENTER_REPORT_RETRY_PROMPT, str), (
+        "IMPLEMENTER_REPORT_RETRY_PROMPT is not a str"
+    )
+    assert len(IMPLEMENTER_REPORT_RETRY_PROMPT) > 0, (
+        "IMPLEMENTER_REPORT_RETRY_PROMPT is empty"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 29 — IMPLEMENTER_REPORT_RETRY_PROMPT required subsections
+# ---------------------------------------------------------------------------
+
+def test_implementer_report_retry_prompt_required_headings():
+    """Retry prompt contains '## Report' and all four subsection headings.
+
+    Notes
+    -----
+    The runtime greps for ``## Report``; the four ``###`` subsections
+    are structural requirements checked by ``_classify_failed_*``.
+    """
+    from f3dasm._src.optimization.agent_prompts import (
+        IMPLEMENTER_REPORT_RETRY_PROMPT,
+    )
+
+    assert "## Report" in IMPLEMENTER_REPORT_RETRY_PROMPT, (
+        "IMPLEMENTER_REPORT_RETRY_PROMPT missing '## Report'"
+    )
+    for subsection in (
+        "### Actions taken",
+        "### Files touched",
+        "### Conclusions",
+        "### Numbers",
+    ):
+        assert subsection in IMPLEMENTER_REPORT_RETRY_PROMPT, (
+            f"IMPLEMENTER_REPORT_RETRY_PROMPT missing '{subsection}'"
+        )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 30 — REFLECT_DIAGNOSIS_SHORT existence and keyword
+# ---------------------------------------------------------------------------
+
+def test_reflect_diagnosis_short_exists_and_keyword():
+    """REFLECT_DIAGNOSIS_SHORT is a non-empty string mentioning 'unusually
+    short'."""
+    from f3dasm._src.optimization.agent_prompts import (
+        REFLECT_DIAGNOSIS_SHORT,
+    )
+
+    assert isinstance(REFLECT_DIAGNOSIS_SHORT, str), (
+        "REFLECT_DIAGNOSIS_SHORT is not a str"
+    )
+    assert len(REFLECT_DIAGNOSIS_SHORT) > 0, (
+        "REFLECT_DIAGNOSIS_SHORT is empty"
+    )
+    assert "unusually short" in REFLECT_DIAGNOSIS_SHORT.lower(), (
+        "REFLECT_DIAGNOSIS_SHORT does not mention 'unusually short'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 31 — REFLECT_DIAGNOSIS_CAPABILITY_LIMIT existence and keyword
+# ---------------------------------------------------------------------------
+
+def test_reflect_diagnosis_capability_limit_exists_and_keyword():
+    """REFLECT_DIAGNOSIS_CAPABILITY_LIMIT is a non-empty string mentioning
+    'capability'."""
+    from f3dasm._src.optimization.agent_prompts import (
+        REFLECT_DIAGNOSIS_CAPABILITY_LIMIT,
+    )
+
+    assert isinstance(REFLECT_DIAGNOSIS_CAPABILITY_LIMIT, str), (
+        "REFLECT_DIAGNOSIS_CAPABILITY_LIMIT is not a str"
+    )
+    assert len(REFLECT_DIAGNOSIS_CAPABILITY_LIMIT) > 0, (
+        "REFLECT_DIAGNOSIS_CAPABILITY_LIMIT is empty"
+    )
+    assert "capability" in REFLECT_DIAGNOSIS_CAPABILITY_LIMIT.lower(), (
+        "REFLECT_DIAGNOSIS_CAPABILITY_LIMIT does not mention 'capability'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 32 — REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE
+# ---------------------------------------------------------------------------
+
+def test_reflect_diagnosis_missing_subsections_template():
+    """Template contains the literal placeholder before formatting and
+    substitutes correctly when formatted.
+
+    Notes
+    -----
+    The literal substring ``{missing_subsections}`` must exist in the
+    raw template text so the contract is visible to code readers.
+    """
+    from f3dasm._src.optimization.agent_prompts import (
+        REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE,
+    )
+
+    assert isinstance(
+        REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE, str
+    ), "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE is not a str"
+    assert len(REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE) > 0, (
+        "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE is empty"
+    )
+    assert (
+        "{missing_subsections}"
+        in REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE
+    ), (
+        "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE does not contain "
+        "literal '{missing_subsections}' placeholder"
+    )
+
+    result = REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE.format(
+        missing_subsections="'Numbers'"
+    )
+    assert "'Numbers'" in result, (
+        "Formatted result does not contain substituted value"
+    )
+
+    import pytest
+    with pytest.raises(KeyError):
+        REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE.format()
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 33 — REFLECT_DIAGNOSIS_NO_REPORT_HEADING existence and keyword
+# ---------------------------------------------------------------------------
+
+def test_reflect_diagnosis_no_report_heading_exists_and_keyword():
+    """REFLECT_DIAGNOSIS_NO_REPORT_HEADING is a non-empty string."""
+    from f3dasm._src.optimization.agent_prompts import (
+        REFLECT_DIAGNOSIS_NO_REPORT_HEADING,
+    )
+
+    assert isinstance(REFLECT_DIAGNOSIS_NO_REPORT_HEADING, str), (
+        "REFLECT_DIAGNOSIS_NO_REPORT_HEADING is not a str"
+    )
+    assert len(REFLECT_DIAGNOSIS_NO_REPORT_HEADING) > 0, (
+        "REFLECT_DIAGNOSIS_NO_REPORT_HEADING is empty"
+    )
+    assert "## report" in REFLECT_DIAGNOSIS_NO_REPORT_HEADING.lower(), (
+        "REFLECT_DIAGNOSIS_NO_REPORT_HEADING does not mention '## Report'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 34 — REFLECT_DIAGNOSIS_DEFAULT existence
+# ---------------------------------------------------------------------------
+
+def test_reflect_diagnosis_default_exists_and_keyword():
+    """REFLECT_DIAGNOSIS_DEFAULT is a non-empty string."""
+    from f3dasm._src.optimization.agent_prompts import (
+        REFLECT_DIAGNOSIS_DEFAULT,
+    )
+
+    assert isinstance(REFLECT_DIAGNOSIS_DEFAULT, str), (
+        "REFLECT_DIAGNOSIS_DEFAULT is not a str"
+    )
+    assert len(REFLECT_DIAGNOSIS_DEFAULT) > 0, (
+        "REFLECT_DIAGNOSIS_DEFAULT is empty"
+    )
+    assert "malformed" in REFLECT_DIAGNOSIS_DEFAULT.lower(), (
+        "REFLECT_DIAGNOSIS_DEFAULT does not mention 'malformed'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# NEW Test 35 — Runtime integration: agent_runtime imports all 11 constants
+# ---------------------------------------------------------------------------
+
+def test_runtime_imports_all_new_constants():
+    """``agent_runtime.py`` imports all seven new prompt constants.
+
+    Notes
+    -----
+    Textual grep check — same lightweight approach as Test 15.
+    """
+    import pathlib
+
+    runtime_path = pathlib.Path(
+        "src/f3dasm/_src/optimization/agent_runtime.py"
+    )
+    if not runtime_path.is_absolute():
+        repo_root = pathlib.Path(__file__).parent.parent.parent
+        runtime_path = repo_root / runtime_path
+
+    assert runtime_path.exists(), (
+        f"agent_runtime.py not found at {runtime_path}"
+    )
+
+    source = runtime_path.read_text(encoding="utf-8")
+
+    new_names = [
+        "RUN_PATHS_PREAMBLE_TEMPLATE",
+        "WORKSPACE_PREAMBLE_TEMPLATE",
+        "IMPLEMENTER_REPORT_RETRY_PROMPT",
+        "REFLECT_DIAGNOSIS_SHORT",
+        "REFLECT_DIAGNOSIS_CAPABILITY_LIMIT",
+        "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE",
+        "REFLECT_DIAGNOSIS_NO_REPORT_HEADING",
+        "REFLECT_DIAGNOSIS_DEFAULT",
+    ]
+    for name in new_names:
+        assert name in source, (
+            f"agent_runtime.py does not reference '{name}'"
+        )
