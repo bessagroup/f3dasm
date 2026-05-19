@@ -41,6 +41,7 @@ from .._src.agentic.agent_runtime import (
 )
 from .._src.agentic.backends.base import Backend
 from .._src.agentic.backends.claude import CLAUDE_BACKEND
+from .._src.agentic.backends.ollama import OLLAMA_BACKEND
 
 # Local
 from .._src.agentic.lookup import LookupDataGenerator
@@ -59,6 +60,7 @@ __all__ = [
     "Backend",
     "CHECKPOINT_EVERY",
     "CLAUDE_BACKEND",
+    "OLLAMA_BACKEND",
     "LookupDataGenerator",
     "MVP_DEFAULT_MODEL",
     "Report",
