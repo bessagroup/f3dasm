@@ -731,6 +731,10 @@ class AgenticRun:
         )
         if not (using_backend_strategizer or using_backend_implementer):
             return
+        if self._backend.name == "ollama":
+            from .backends.ollama import _preflight_ollama
+            _preflight_ollama(self._model)
+            return
         self._backend.preflight()
 
     # Backward-compatible alias kept so existing code that calls
@@ -838,11 +842,17 @@ class AgenticRun:
         explicit absolute path here is what removes the temptation to
         use ``/tmp``.
         """
+        from .agent_prompts import IMPLEMENTER_SYSTEM_PROMPT_OLLAMA
         workspace = (self._study_dir / "workspace").resolve()
         preamble = WORKSPACE_PREAMBLE_TEMPLATE.format(
             workspace_dir=workspace,
         )
-        return preamble + IMPLEMENTER_SYSTEM_PROMPT
+        base = (
+            IMPLEMENTER_SYSTEM_PROMPT_OLLAMA
+            if self._backend.name == "ollama"
+            else IMPLEMENTER_SYSTEM_PROMPT
+        )
+        return preamble + base
 
     # ------------------------------------------------------------------
     # Step 5 — Main loop
