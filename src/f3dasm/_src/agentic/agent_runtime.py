@@ -33,7 +33,7 @@ import sys
 import textwrap
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, TextIO
@@ -78,8 +78,11 @@ __all__ = [
     "AgenticRun",
     "AgenticRunError",
     "CHECKPOINT_EVERY",
+    "Delegation",
     "Report",
     "Task",
+    "_format_delegation",
+    "_parse_delegation",
     "read_transcript",
 ]
 
@@ -145,6 +148,56 @@ class Report:
     numbers: dict[str, Any]
     raw: str
     remaining_time: timedelta | None = None
+
+
+@dataclass
+class Delegation:
+    """Symmetric exchange object for an agent-to-agent channel.
+
+    Both the initiating agent (fills request fields) and the responding
+    agent (fills response fields) use the same class.  The initiating
+    agent serialises the request half via :func:`_format_delegation`;
+    the responding agent's reply is parsed via :func:`_parse_delegation`,
+    which fills the response fields in-place and returns the enriched
+    object.
+
+    Parameters
+    ----------
+    intent : str
+        Natural-language description of what to do.
+    expected_report : str
+        Description of the measurements or conclusions required.
+    remaining_time : timedelta or None
+        Wall-clock time remaining in the run budget.
+    budget : timedelta or None
+        Total run budget (for 20% warning threshold).
+    actions_taken : str
+        Bullet list of what was done (responding agent fills).
+    files_touched : list[str]
+        Paths of artefacts produced (responding agent fills).
+    conclusions : str
+        Narrative conclusion; becomes the git commit message
+        (responding agent fills).
+    numbers : dict[str, Any]
+        Numeric key-value results extracted by name
+        (responding agent fills).
+    raw : str
+        Full ``## Report`` markdown block as written
+        (responding agent fills).
+    metadata : dict[str, Any]
+        Channel-specific extensions; either party may add keys.
+    """
+
+    intent: str
+    expected_report: str
+    remaining_time: timedelta | None = None
+    budget: timedelta | None = None
+    actions_taken: str = ""
+    files_touched: list[str] = field(default_factory=list)
+    conclusions: str = ""
+    numbers: dict[str, Any] = field(default_factory=dict)
+    raw: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -1486,5 +1539,115 @@ def _format_task(task: Task) -> str:
             ))
             lines.insert(5, "")
     return "\n".join(lines) + "\n"
+
+
+def _format_delegation(delegation: Delegation) -> str:
+    """Render the request half of a Delegation as a markdown block.
+
+    Parameters
+    ----------
+    delegation : Delegation
+        The delegation whose request fields are to be formatted.
+
+    Returns
+    -------
+    str
+        Markdown string ready for the responding agent's context.
+    """
+    lines = [
+        "## Task",
+        "",
+        "### Intent",
+        delegation.intent,
+        "",
+        "### Expected report",
+        delegation.expected_report,
+    ]
+    if delegation.remaining_time is not None:
+        h, rem = divmod(
+            int(delegation.remaining_time.total_seconds()), 3600
+        )
+        m, s = divmod(rem, 60)
+        lines.insert(
+            2, f"**Time remaining: {h:02d}:{m:02d}:{s:02d}**"
+        )
+        lines.insert(3, "")
+        if (
+            delegation.budget is not None
+            and delegation.remaining_time < 0.2 * delegation.budget
+        ):
+            lines.insert(4, (
+                "⚠ Budget nearly exhausted — "
+                "scope remaining work accordingly."
+            ))
+            lines.insert(5, "")
+    return "\n".join(lines) + "\n"
+
+
+def _parse_delegation(
+    text: str, delegation: Delegation
+) -> Delegation | None:
+    """Parse the response half from an agent reply into *delegation*.
+
+    Searches for a ``## Report`` heading and extracts the four
+    sub-sections by heading.  Returns ``None`` if the heading is
+    absent.  On success mutates *delegation* in-place (filling
+    ``actions_taken``, ``files_touched``, ``conclusions``,
+    ``numbers``, ``raw``) and returns the enriched object.
+
+    Parameters
+    ----------
+    text : str
+        Full assistant message text.
+    delegation : Delegation
+        The delegation object to enrich with parsed response fields.
+
+    Returns
+    -------
+    Delegation or None
+        The enriched *delegation*, or ``None`` if no
+        ``## Report`` heading was found.
+    """
+    match = re.search(r"##\s+Report\b", text, re.IGNORECASE)
+    if not match:
+        return None
+
+    raw_start = match.start()
+    raw_block = text[raw_start:]
+
+    def _section(heading: str, src: str) -> str:
+        pattern = rf"###\s+{re.escape(heading)}\s*\n(.*?)(?=\n###|\Z)"
+        m = re.search(pattern, src, re.DOTALL | re.IGNORECASE)
+        return m.group(1).strip() if m else ""
+
+    actions = _section("Actions taken", raw_block)
+    files_raw = _section("Files touched", raw_block)
+    conclusions = _section("Conclusions", raw_block)
+    numbers_raw = _section("Numbers", raw_block)
+
+    files: list[str] = [
+        ln.lstrip("- ").strip()
+        for ln in files_raw.splitlines()
+        if ln.strip() and ln.strip() != "-"
+    ]
+
+    numbers: dict[str, Any] = {}
+    for ln in numbers_raw.splitlines():
+        if ":" in ln:
+            key, _, val = ln.partition(":")
+            key = key.strip()
+            val = val.strip()
+            if key:
+                try:
+                    numbers[key] = float(val)
+                except ValueError:
+                    numbers[key] = val
+
+    delegation.actions_taken = actions
+    delegation.files_touched = files
+    delegation.conclusions = conclusions
+    delegation.numbers = numbers
+    delegation.raw = raw_block
+    return delegation
 
 

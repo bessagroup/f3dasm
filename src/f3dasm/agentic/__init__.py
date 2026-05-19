@@ -1,29 +1,38 @@
-"""Public API for the agentic-f3dasm Level-1 (v2) layer.
+"""Public API for the agentic-f3dasm layer.
 
-The v2 architecture is a thin Python runtime over two persistent
-Claude Agent SDK sessions:
+The architecture is a thin Python runtime over N persistent agent
+sessions:
 
 - **Strategizer** — reads any file, writes ``.md`` notes only,
   delegates execution to the Implementer.
 - **Implementer** — reads/writes/executes freely inside the study tree,
-  returns structured reports to the Strategizer.
+  enriches and returns structured :class:`Delegation` objects.
 
 The user's only required input is ``<study-dir>/PROBLEM_STATEMENT.md``.
 
-Public symbols:
+Level-1 public symbols (stable):
 
 - ``AgenticRun`` — runtime entry point.
-- ``Task`` — dataclass sent to the Implementer on each delegation.
-- ``Report`` — dataclass produced from the Implementer's response.
+- ``Task`` — backward-compatible alias; use :class:`Delegation` for new code.
+- ``Report`` — backward-compatible alias; use :class:`Delegation` for new code.
+- ``Delegation`` — symmetric exchange class; both parties enrich the same object.
 - ``AgenticRunError`` — raised for non-recoverable orchestrator errors.
 - ``CHECKPOINT_EVERY`` — Implementer-call cadence.
-- ``Backend`` — dataclass bundling an LLM backend's factories,
-  preflight, and default model.
+- ``Backend`` — frozen dataclass bundling an LLM backend's factories.
 - ``CLAUDE_BACKEND`` — the default Claude Agent SDK backend.
-- ``MVP_DEFAULT_MODEL`` — Claude model id used by default
-  (alias of ``CLAUDE_BACKEND.default_model``).
-- ``LookupDataGenerator`` — utility the Implementer may import.
-- prompt constants — see ``agent_prompts`` module.
+- ``OLLAMA_BACKEND`` — Ollama backend (local models).
+- ``MVP_DEFAULT_MODEL`` — default model id.
+- ``LookupDataGenerator`` — nearest-neighbour pool evaluator.
+
+Level-2 public symbols (typed stores + firing primitives):
+
+- ``AnalysisBase`` / ``AnalysisNode`` / ``AnalysisSlice`` — hierarchical
+  per-solution analysis store.
+- ``TaskRegistry`` / ``RegistryEntry`` / ``MAX_TASKS`` — capped operator
+  registry with success-rate tracking.
+- ``parallel`` — fan-out to K agents concurrently.
+- ``retry`` — persistence loop with configurable success predicate.
+- ``rounds`` — fixed-N debate between two agents.
 """
 
 #                                                                       Modules
@@ -35,6 +44,7 @@ from .._src.agentic.agent_runtime import (
     MVP_DEFAULT_MODEL,
     AgenticRun,
     AgenticRunError,
+    Delegation,
     Report,
     StudyConfig,
     Task,
@@ -42,9 +52,16 @@ from .._src.agentic.agent_runtime import (
 from .._src.agentic.backends.base import Backend
 from .._src.agentic.backends.claude import CLAUDE_BACKEND
 from .._src.agentic.backends.ollama import OLLAMA_BACKEND
-
-# Local
 from .._src.agentic.lookup import LookupDataGenerator
+from .._src.agentic.primitives import parallel, retry, rounds
+from .._src.agentic.stores import (
+    MAX_TASKS,
+    AnalysisBase,
+    AnalysisNode,
+    AnalysisSlice,
+    RegistryEntry,
+    TaskRegistry,
+)
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -55,15 +72,28 @@ __status__ = "Experimental"
 
 
 __all__ = [
+    # Level 1
     "AgenticRun",
     "AgenticRunError",
     "Backend",
     "CHECKPOINT_EVERY",
     "CLAUDE_BACKEND",
-    "OLLAMA_BACKEND",
+    "Delegation",
     "LookupDataGenerator",
     "MVP_DEFAULT_MODEL",
+    "OLLAMA_BACKEND",
     "Report",
     "StudyConfig",
     "Task",
+    # Level 2 — typed stores
+    "AnalysisBase",
+    "AnalysisNode",
+    "AnalysisSlice",
+    "MAX_TASKS",
+    "RegistryEntry",
+    "TaskRegistry",
+    # Level 2 — firing primitives
+    "parallel",
+    "retry",
+    "rounds",
 ]
