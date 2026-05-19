@@ -1009,9 +1009,29 @@ def grid(
 
 _SAMPLERS = [random, latin, sobol, grid]
 
+# Issue #289 sub-item 1: prefer explicit `<name>_sampler` keys over the
+# bare short names. The short names still work but emit a
+# DeprecationWarning so users can migrate at their own pace.
 SAMPLER_MAPPING: dict[str, Block] = {
     sampler.__name__.lower(): sampler for sampler in _SAMPLERS
 }
+SAMPLER_MAPPING.update(
+    {f"{sampler.__name__.lower()}sampler": sampler for sampler in _SAMPLERS}
+)
+
+# Per-backend documented `parameters` allow-list (issue #289 sub-item 2).
+# Keys are filtered names (after stripping spaces, dashes, underscores);
+# values are the documented kwargs each sampler accepts. Unknown kwargs
+# now raise a TypeError instead of being silently swallowed.
+SAMPLER_PARAMETERS: dict[str, set[str]] = {
+    "random": {"seed"},
+    "latin": {"seed"},
+    "sobol": {"seed"},
+    "grid": {"stepsize_continuous_parameters"},
+}
+SAMPLER_PARAMETERS.update(
+    {f"{name}sampler": kw for name, kw in list(SAMPLER_PARAMETERS.items())}
+)
 
 #                                                              Factory function
 # =============================================================================
@@ -1023,13 +1043,27 @@ def create_sampler(sampler: str | DictConfig, **parameters) -> Block:
 
     Parameters
     ----------
-    sampler : str | Block | DictConfig
-        name of the built-in sampler. This can be a string with the name of the
-        sampler, a Block object (this will just by-pass the function), or a
-        DictConfig object (the sampler will be instantiated with
-        hydra.instantiate).
+    sampler : str | DictConfig
+        Name of the built-in sampler. Accepted values (issue #289):
+
+        - ``"random_sampler"`` (preferred) or ``"random"`` (deprecated):
+          uniform random sampling. Accepted ``parameters``: ``seed``.
+        - ``"latin_sampler"`` (preferred) or ``"latin"`` (deprecated):
+          Latin-Hypercube sampling. Accepted ``parameters``: ``seed``.
+        - ``"sobol_sampler"`` (preferred) or ``"sobol"`` (deprecated):
+          Sobol low-discrepancy sequence sampling. Accepted
+          ``parameters``: ``seed``.
+        - ``"grid_sampler"`` (preferred) or ``"grid"`` (deprecated): full
+          cross-product grid. Accepted ``parameters``:
+          ``stepsize_continuous_parameters``.
+
+        Can also be a Hydra ``DictConfig`` that instantiates a sampler
+        block directly.
     **parameters
-        Additional keyword arguments passed when initializing the sampler
+        Additional keyword arguments passed when initializing the sampler.
+        Only the keywords documented per-backend above are accepted; any
+        other keyword raises a ``TypeError`` so typos and stale options
+        do not silently get ignored.
 
     Returns
     -------
@@ -1041,7 +1075,9 @@ def create_sampler(sampler: str | DictConfig, **parameters) -> Block:
     KeyError
         If the built-in sampler name is not recognized.
     TypeError
-        If the given type is not recognized.
+        If ``sampler`` is not a ``str`` or ``DictConfig``, or if
+        ``parameters`` contains a keyword the chosen backend does not
+        accept.
     """
     if isinstance(sampler, str):
         filtered_name = (
@@ -1049,6 +1085,11 @@ def create_sampler(sampler: str | DictConfig, **parameters) -> Block:
         )
 
         if filtered_name in SAMPLER_MAPPING:
+            # Old, short keys (issue #289): emit a DeprecationWarning so
+            # users can move to the explicit `<name>_sampler` form.
+            if not filtered_name.endswith("sampler"):
+                _warn_deprecated_sampler_name(sampler)
+            _validate_sampler_parameters(filtered_name, parameters)
             return SAMPLER_MAPPING[filtered_name](**parameters)
 
         else:
@@ -1061,4 +1102,51 @@ def create_sampler(sampler: str | DictConfig, **parameters) -> Block:
         raise TypeError(f"Unknown sampler type given: {type(sampler)}")
 
 
-SamplerNames = Literal["random", "latin", "sobol", "grid"]
+def _warn_deprecated_sampler_name(name: str) -> None:
+    """Warn that a bare short sampler name is being used.
+
+    Recommends migrating to the ``<name>_sampler`` form added in issue
+    #289. Lives in a helper so the deprecation can be silenced in tests
+    via ``warnings.simplefilter("error", DeprecationWarning)``.
+    """
+    import warnings
+
+    warnings.warn(
+        f"Sampler name {name!r} is deprecated and will be removed in a "
+        f"future release; use {name + '_sampler'!r} instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
+
+def _validate_sampler_parameters(
+    filtered_name: str, parameters: dict[str, object]
+) -> None:
+    """Reject keywords the chosen sampler doesn't accept (issue #289).
+
+    Compares the supplied keys against the per-backend allow-list in
+    :data:`SAMPLER_PARAMETERS` and raises ``TypeError`` if anything is
+    unknown. Without this check a typo like ``seedz=42`` was silently
+    swallowed by the factory's ``**parameters``.
+    """
+    allowed = SAMPLER_PARAMETERS.get(filtered_name)
+    if allowed is None:
+        return
+    unknown = set(parameters) - allowed
+    if unknown:
+        raise TypeError(
+            f"Sampler {filtered_name!r} does not accept "
+            f"keyword(s) {sorted(unknown)}. Accepted: {sorted(allowed)}."
+        )
+
+
+SamplerNames = Literal[
+    "random",
+    "latin",
+    "sobol",
+    "grid",
+    "random_sampler",
+    "latin_sampler",
+    "sobol_sampler",
+    "grid_sampler",
+]

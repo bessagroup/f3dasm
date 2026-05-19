@@ -59,6 +59,70 @@ def test_create_sampler_grid():
     assert sampler is not None
 
 
+# ===== explicit sampler names + kwargs allow-list (#289 sub-items 1 & 2) =====
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["random_sampler", "latin_sampler", "sobol_sampler", "grid_sampler"],
+)
+def test_create_sampler_accepts_explicit_alias(name):
+    """The explicit `<name>_sampler` form added in issue #289 must
+    return the same backend block as the legacy short name."""
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        if name == "grid_sampler":
+            sampler = create_sampler(name)
+        else:
+            sampler = create_sampler(name, seed=42)
+    assert sampler is not None
+
+
+@pytest.mark.parametrize(
+    ("old_name", "new_name"),
+    [
+        ("random", "random_sampler"),
+        ("latin", "latin_sampler"),
+        ("sobol", "sobol_sampler"),
+        ("grid", "grid_sampler"),
+    ],
+)
+def test_create_sampler_short_name_warns(old_name, new_name):
+    """Issue #289 sub-item 1: bare short names emit a DeprecationWarning
+    pointing at the explicit alias."""
+    import warnings
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        kwargs = {} if old_name == "grid" else {"seed": 42}
+        create_sampler(old_name, **kwargs)
+
+    deprecations = [
+        w for w in caught if issubclass(w.category, DeprecationWarning)
+    ]
+    assert len(deprecations) == 1
+    msg = str(deprecations[0].message)
+    assert old_name in msg
+    assert new_name in msg
+
+
+def test_create_sampler_rejects_unknown_kwarg():
+    """Issue #289 sub-item 2: typos like `seedz=42` were silently
+    swallowed by the factory's `**parameters`. The allow-list now
+    raises TypeError naming the accepted keywords."""
+    with pytest.raises(TypeError, match=r"keyword\(s\) \['seedz'\]"):
+        create_sampler("random_sampler", seedz=42)
+
+
+def test_create_sampler_grid_rejects_seed():
+    """Per the per-backend allow-list, `seed` is not a valid argument
+    for the grid sampler -- the factory must say so eagerly."""
+    with pytest.raises(TypeError, match="seed"):
+        create_sampler("grid_sampler", seed=42)
+
+
 # ======================= next_power_of_two =======================
 
 
