@@ -29,44 +29,71 @@ CategoricalType = Union[None, int, float, str]  # noqa
 
 
 class StoreFunction(Protocol):
-    """Base class for storing and loading output data from disk"""
+    """Protocol for a custom function that stores an object to disk."""
 
     def __call__(object: Any, path: str) -> str:
         """
-        Protocol class for storing output data from disk.
+        Store ``object`` to disk and return the full path it was written to.
 
         Parameters
         ----------
         object : Any
             The object to store.
         path : str
-            The location to store the object to.
+            The location to store the object to, **without** a file
+            extension. The implementation is responsible for choosing the
+            extension appropriate to the object type and appending it
+            before writing.
 
-        Notes
-        -----
-        The function should store the object to the location specified by the
-        path parameter. The suffix of the file should be determined by the
-        object type, and is not yet implemented in the path!
+        Returns
+        -------
+        str
+            The full path the object was written to, **including** the
+            file extension. f3dasm uses this returned path to locate the
+            object at load time, so it must reflect the extension actually
+            used on disk.
+
+        Examples
+        --------
+        A minimal store function for a numpy array — note that the
+        returned path carries the ``.npy`` suffix:
+
+        >>> import numpy as np
+        >>> from pathlib import Path
+        >>> def numpy_store(object: np.ndarray, path: str) -> str:
+        ...     _path = Path(path).with_suffix(".npy")
+        ...     np.save(_path, object)
+        ...     return str(_path)  # must include the .npy suffix
         """
         ...
 
 
 class LoadFunction(Protocol):
-    """Base class for storing and loading output data from disk"""
+    """Protocol for a custom function that loads an object from disk."""
 
     def __call__(path: str) -> Any:
         """
-        Protocol class for loading output data from disk.
+        Load and return the object previously written by a StoreFunction.
 
         Parameters
         ----------
         path : str
-            The location to load the object from.
+            The full path the object was written to, **including** the
+            file extension. This is the value the matching
+            :class:`StoreFunction` returned.
 
         Returns
         -------
         Any
             The loaded object.
+
+        Examples
+        --------
+        The symmetric load for the numpy ``StoreFunction`` example:
+
+        >>> import numpy as np
+        >>> def numpy_load(path: str) -> np.ndarray:
+        ...     return np.load(path)
         """
         ...
 
