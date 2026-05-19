@@ -16,13 +16,27 @@ from collections.abc import Callable, Mapping
 # Standard
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+
+# matplotlib is an optional dependency since issue #301 -- only the
+# `figure_store` / `figure_load` helpers need it, and they fail with a
+# clear ImportError the moment they're called rather than blocking
+# every import of f3dasm.
+try:
+    import matplotlib.pyplot as plt  # type: ignore[import-untyped]
+
+    _HAS_MATPLOTLIB = True
+except ImportError:
+    plt = None  # type: ignore[assignment]
+    _HAS_MATPLOTLIB = False
+
+if TYPE_CHECKING:  # pragma: no cover
+    import matplotlib.pyplot as plt  # noqa: F811
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -272,7 +286,18 @@ def figure_store(object: plt.Figure, path: str) -> str:
     -------
     str
         The path to the stored figure.
+
+    Raises
+    ------
+    ImportError
+        If matplotlib is not installed -- matplotlib is an optional
+        dependency on the `figures` extra (see issue #301).
     """
+    if not _HAS_MATPLOTLIB:
+        raise ImportError(
+            "figure_store requires matplotlib; install with "
+            "`pip install f3dasm[figures]`."
+        )
     _path = Path(path)
 
     object.savefig(
@@ -300,19 +325,33 @@ def figure_load(path: str) -> np.ndarray:
     -------
     np.ndarray
         The loaded figure.
+
+    Raises
+    ------
+    ImportError
+        If matplotlib is not installed -- see :func:`figure_store`.
     """
+    if not _HAS_MATPLOTLIB:
+        raise ImportError(
+            "figure_load requires matplotlib; install with "
+            "`pip install f3dasm[figures]`."
+        )
     _path = Path(path).with_suffix(".pdf")
     return plt.imread(_path)
 
 
-STORE_FUNCTION_MAPPING: Mapping[type, Callable] = {
+STORE_FUNCTION_MAPPING: dict[type, Callable] = {
     np.ndarray: numpy_store,
     pd.DataFrame: pandas_store,
     pd.Series: pandas_store,
     xr.DataArray: xarray_dataarray_store,
     xr.Dataset: xarray_dataset_store,
-    plt.Figure: figure_store,
 }
+# matplotlib is optional (issue #301): register the figure mapping only
+# when it's importable so users without matplotlib still get a working
+# `from f3dasm._src._io import store_object` etc.
+if _HAS_MATPLOTLIB:
+    STORE_FUNCTION_MAPPING[plt.Figure] = figure_store
 
 LOAD_FUNCTION_MAPPING: Mapping[str, Callable] = {
     ".npy": numpy_load,
