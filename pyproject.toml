@@ -42,7 +42,8 @@ version = "2.2.3"
 [project.optional-dependencies]
 all = [
   "abaqus2py>=1.0.0",
-  "optuna>=4.4.0"
+  "optuna>=4.4.0",
+  "tqdm>=4.66.0"
 ]
 dev = [
   "pre-commit>=4.4.0",
@@ -56,6 +57,9 @@ docs = [
   "mkdocstrings>=0.30.1",
   "mkdocstrings-python>=1.18.2",
   "pymdown-extensions>=10.16.1"
+]
+progress = [
+  "tqdm>=4.66.0"
 ]
 tests = [
   "hypothesis>=6.138.0",

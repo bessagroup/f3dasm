@@ -10,7 +10,8 @@ import logging
 
 # Standard
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import contextmanager
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,74 @@ __status__ = "Alpha"
 logger = logging.getLogger("f3dasm")
 
 # =============================================================================
+
+
+@contextmanager
+def _progress_bar(
+    total: int | None, enabled: bool, desc: str
+) -> Iterator[Callable[[int], None]]:
+    """Yield a callback that advances a tqdm bar -- or a no-op if tqdm is
+    unavailable or progress reporting was not requested (issue #234).
+
+    Parameters
+    ----------
+    total : int or None
+        Expected number of work items, when known.
+    enabled : bool
+        Whether the user asked for a progress bar.
+    desc : str
+        Label shown next to the bar.
+
+    Yields
+    ------
+    Callable[[int], None]
+        ``update(n)``: advance the bar by ``n`` units. A no-op when
+        progress is disabled or tqdm is missing.
+    """
+    if not enabled:
+        yield lambda _n=1: None
+        return
+
+    try:
+        from tqdm.auto import tqdm  # type: ignore[import-not-found]
+    except ImportError:
+        logger.warning(
+            "`progress=True` requested but `tqdm` is not installed; "
+            "running silently. Install `f3dasm[progress]` to enable "
+            "progress bars."
+        )
+        yield lambda _n=1: None
+        return
+
+    bar = tqdm(total=total, desc=desc, leave=False)
+    try:
+        yield bar.update
+    finally:
+        bar.close()
+
+
+def _progress_iter(
+    iterable: Iterable[Any],
+    *,
+    total: int | None,
+    enabled: bool,
+    desc: str,
+) -> Iterable[Any]:
+    """Wrap ``iterable`` in tqdm when ``enabled`` is True and tqdm is
+    available; otherwise return it unchanged. See :func:`_progress_bar`
+    for the rationale (issue #234)."""
+    if not enabled:
+        return iterable
+    try:
+        from tqdm.auto import tqdm  # type: ignore[import-not-found]
+    except ImportError:
+        logger.warning(
+            "`progress=True` requested but `tqdm` is not installed; "
+            "running silently. Install `f3dasm[progress]` to enable "
+            "progress bars."
+        )
+        return iterable
+    return tqdm(iterable, total=total, desc=desc, leave=False)
 
 
 def _run_sample(
@@ -113,6 +182,7 @@ def evaluate_sequential(
     execute_fn: Callable[..., ExperimentSample],
     data: ExperimentData,
     pass_id: bool,
+    progress: bool = False,
     **kwargs,
 ) -> ExperimentData:
     """Run the operation sequentially
@@ -125,6 +195,11 @@ def evaluate_sequential(
         The ExperimentData object containing the samples to be processed
     pass_id : bool
         Whether to pass the job index to the execute function
+    progress : bool, optional
+        If True, display a tqdm progress bar over the open jobs.
+        Requires the optional `tqdm` dependency; if missing, the
+        evaluator falls back to silent execution with a warning
+        (issue #234). Defaults to False.
     kwargs : dict
         Any keyword arguments that need to be supplied to the function
 
@@ -133,24 +208,28 @@ def evaluate_sequential(
     ExperimentData
         The updated ExperimentData object
     """
+    total = len(data.select_with_status("open"))
+    with _progress_bar(
+        total=total, enabled=progress, desc="evaluate"
+    ) as update:
+        while True:
+            job_number, experiment_sample, domain = data.get_open_job()
+            if job_number is None:
+                logger.debug("No open jobs left!")
+                break
 
-    while True:
-        job_number, experiment_sample, domain = data.get_open_job()
-        if job_number is None:
-            logger.debug("No open jobs left!")
-            break
+            experiment_sample, domain = _run_sample(
+                execute_fn=execute_fn,
+                experiment_sample=experiment_sample,
+                domain=domain,
+                job_number=job_number,
+                pass_id=pass_id,
+                **kwargs,
+            )
 
-        experiment_sample, domain = _run_sample(
-            execute_fn=execute_fn,
-            experiment_sample=experiment_sample,
-            domain=domain,
-            job_number=job_number,
-            pass_id=pass_id,
-            **kwargs,
-        )
-
-        data.domain = domain
-        data.data[job_number] = experiment_sample
+            data.domain = domain
+            data.data[job_number] = experiment_sample
+            update(1)
 
     return data
 
@@ -160,6 +239,7 @@ def evaluate_multiprocessing(
     data: ExperimentData,
     pass_id: bool,
     nodes: int = mp.cpu_count(),
+    progress: bool = False,
     **kwargs,
 ) -> ExperimentData:
     """Run the operation using multiprocessing
@@ -174,6 +254,10 @@ def evaluate_multiprocessing(
         Whether to pass the job index to the execute function
     nodes : int, optional
         The number of parallel processes to use, by default mp.cpu_count()
+    progress : bool, optional
+        If True, display a tqdm progress bar over the open jobs as
+        each worker completes. Requires the optional `tqdm` dependency
+        (issue #234). Defaults to False.
     kwargs : dict
         Any keyword arguments that need to be supplied to the function
 
@@ -209,9 +293,16 @@ def evaluate_multiprocessing(
 
     if work_items:
         with mp.Pool(nodes) as pool:
-            # maybe implement pool.starmap_async ?
-            results: list[tuple[int, ExperimentSample, Domain]] = pool.map(
-                _worker, work_items
+            # `imap_unordered` lets tqdm tick as each worker finishes;
+            # ordering is restored on assignment via `job_number`.
+            result_iter = pool.imap_unordered(_worker, work_items)
+            results = list(
+                _progress_iter(
+                    result_iter,
+                    total=len(work_items),
+                    enabled=progress,
+                    desc="evaluate",
+                )
             )
 
         for job_number, experiment_sample, domain in results:
@@ -231,6 +322,7 @@ def evaluate_cluster(
     pass_id: bool,
     wait_for_creation: bool = False,
     max_tries: int = MAX_TRIES,
+    progress: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -252,9 +344,20 @@ def evaluate_cluster(
     max_tries : int, optional
         The maximum number of tries to access the ExperimentData file, by
         default MAX_TRIES
+    progress : bool, optional
+        Accepted for API symmetry with the sequential and multiprocessing
+        evaluators (issue #234) but currently ignored on the cluster
+        path: each worker only sees its own samples, so a per-worker
+        tqdm bar would be misleading. Use
+        :meth:`ExperimentData.progress_summary` on the driver instead.
     kwargs : dict
         Any keyword arguments that need to be supplied to the function
     """
+    if progress:
+        logger.info(
+            "`progress=True` has no effect on the 'cluster' evaluator; "
+            "use ExperimentData.progress_summary() from the driver."
+        )
 
     # Creat lockfile
     lock_path = (
@@ -307,6 +410,7 @@ def evaluate_mpi(
     pass_id: bool,
     wait_for_creation: bool = False,
     max_tries: int = MAX_TRIES,
+    progress: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -329,9 +433,19 @@ def evaluate_mpi(
     max_tries : int, optional
         The maximum number of tries to access the ExperimentData file, by
         default MAX_TRIES
+    progress : bool, optional
+        Accepted for API symmetry with the sequential/parallel evaluators
+        (issue #234) but currently ignored under MPI for the same
+        reason it is ignored on the cluster path. Use
+        :meth:`ExperimentData.progress_summary` on the driver process.
     kwargs : dict
         Any keyword arguments that need to be supplied to the function
     """
+    if progress:
+        logger.info(
+            "`progress=True` has no effect on the 'mpi' evaluator; "
+            "use ExperimentData.progress_summary() from the driver."
+        )
     rank = comm.Get_rank()
     size = comm.Get_size()
 
@@ -357,6 +471,7 @@ def evaluate_cluster_array(
     data: ExperimentData,
     job_number: int,
     pass_id: bool,
+    progress: bool = False,
     **kwargs,
 ) -> None:
     """
@@ -373,9 +488,20 @@ def evaluate_cluster_array(
         The index of the specific job (array element) to run.
     pass_id : bool
         Whether to pass the job index to the execute function.
+    progress : bool, optional
+        Accepted for API symmetry (issue #234) but ignored: a single
+        array-job worker only runs its own sample, so a tqdm bar would
+        always be "0 of 1". Use :meth:`ExperimentData.progress_summary`
+        on the driver instead.
     **kwargs : dict
         Any keyword arguments that need to be supplied to the function.
     """
+    if progress:
+        logger.info(
+            "`progress=True` has no effect on the 'cluster_array' "
+            "evaluator; use ExperimentData.progress_summary() from the "
+            "driver."
+        )
 
     # Retrieve the experiment sample
     experiment_sample = data.get_experiment_sample(job_number)

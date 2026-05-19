@@ -775,6 +775,31 @@ class ExperimentData:
         idx = [i for i, es in self if es.is_status(status)]
         return self[idx]
 
+    def progress_summary(self) -> dict[str, int]:
+        """Return a count of samples in each :class:`JobStatus`.
+
+        Provides a lightweight driver-side view of evaluation progress
+        that works regardless of which evaluator backend is in use --
+        most useful under the cluster, MPI, and cluster-array paths
+        where a per-worker tqdm bar is misleading (issue #234).
+
+        Returns
+        -------
+        dict[str, int]
+            Mapping of ``{"open", "in_progress", "finished", "error"}``
+            to the number of samples currently in that state.
+
+        Examples
+        --------
+        >>> summary = experiment_data.progress_summary()
+        >>> summary["finished"]
+        42
+        """
+        return {
+            status: len(self.select_with_status(status))
+            for status in ("open", "in_progress", "finished", "error")
+        }
+
     #                                                                    Export
     # =========================================================================
 
