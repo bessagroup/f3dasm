@@ -303,12 +303,25 @@ class TestGridValueFunctions:
                 stepsize_continuous_parameters={"x": 0.5, "y": 0.5},
             )
 
-    def test_grid_values_continuous_none_returns_empty(self):
+    def test_grid_values_continuous_none_raises(self):
+        # Issue #318: passing None with a non-empty input space used to
+        # silently return an empty dict, which made the grid sampler emit
+        # a degenerate single-row grid. It now raises a clear ValueError.
         input_space = {
             "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
         }
+        with pytest.raises(ValueError, match="stepsize_continuous"):
+            grid_values_continuous_parameters(
+                input_space=input_space,
+                stepsize_continuous_parameters=None,
+            )
+
+    def test_grid_values_continuous_none_empty_space_returns_empty(self):
+        # When the input space has no continuous parameters at all, the
+        # stepsize argument is genuinely irrelevant and the function
+        # should return an empty dict without raising.
         result = grid_values_continuous_parameters(
-            input_space=input_space,
+            input_space={},
             stepsize_continuous_parameters=None,
         )
         assert result == {}
