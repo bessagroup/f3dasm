@@ -1964,6 +1964,7 @@ def _store(
                     to_disk=True,
                     store_function=value.store_function,
                     load_function=value.load_function,
+                    load_kwargs=value.load_kwargs,
                 )
             # Store the value on disk
             reference = value.store(
@@ -1988,6 +1989,7 @@ def _store(
                     to_disk=True,
                     store_function=value.store_function,
                     load_function=value.load_function,
+                    load_kwargs=value.load_kwargs,
                 )
             # Store the value on disk
             reference = value.store(
