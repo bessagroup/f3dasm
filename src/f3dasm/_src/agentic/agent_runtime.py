@@ -106,10 +106,16 @@ class Task:
     expected_report : str
         Description of the measurements or conclusions the Report must
         contain.
+    remaining_time : timedelta or None
+        Wall-clock time remaining in the run budget, if a budget is set.
+    budget : timedelta or None
+        Total run budget (used to compute the 20% warning threshold).
     """
 
     intent: str
     expected_report: str
+    remaining_time: timedelta | None = None
+    budget: timedelta | None = None
 
 
 @dataclass
@@ -129,6 +135,8 @@ class Report:
     raw : str
         The full ``## Report`` markdown block as written by the
         Implementer.
+    remaining_time : timedelta or None
+        Wall-clock time remaining when the report was received.
     """
 
     actions_taken: str
@@ -136,6 +144,7 @@ class Report:
     conclusions: str
     numbers: dict[str, Any]
     raw: str
+    remaining_time: timedelta | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -1103,7 +1112,13 @@ class AgenticRun:
         )
 
         # (b) Build task message.
-        task = Task(intent=intent, expected_report=expected_report)
+        remaining = self._remaining()
+        task = Task(
+            intent=intent,
+            expected_report=expected_report,
+            remaining_time=remaining,
+            budget=self._budget,
+        )
         task_msg = _format_task(task)
 
         # (c) Send to Implementer; record per-delegation transcript.
@@ -1213,6 +1228,7 @@ class AgenticRun:
         self._delegation_counter += 1
         self._total_delegations += 1
         self._last_report = report
+        report.remaining_time = self._remaining()
         elapsed = _format_elapsed(time.monotonic() - delegation_start)
         self._logger.info(
             "[delegation #%d] done in %s — conclusions: %s",
@@ -1362,6 +1378,15 @@ class AgenticRun:
             f"- total_delegations: {self._total_delegations}",
             f"- total_turns: {self._turn_count}",
             f"- run_dir: {self._run_dir}",
+        ]
+        if self._budget is not None:
+            solution_lines.append(f"- budget: {self._budget}")
+        if self._start_time is not None:
+            used = datetime.now(tz=timezone.utc) - self._start_time
+            h, rem = divmod(int(used.total_seconds()), 3600)
+            m, s = divmod(rem, 60)
+            solution_lines.append(f"- time_used: {h:02d}:{m:02d}:{s:02d}")
+        solution_lines += [
             "",
             "## Provenance",
             "",
@@ -1427,16 +1452,29 @@ def _format_task(task: Task) -> str:
     str
         Markdown string ready for the Implementer's context.
     """
-    return textwrap.dedent(
-        f"""\
-        ## Task
-
-        ### Intent
-        {task.intent}
-
-        ### Expected report
-        {task.expected_report}
-        """
-    )
+    lines = [
+        "## Task",
+        "",
+        "### Intent",
+        task.intent,
+        "",
+        "### Expected report",
+        task.expected_report,
+    ]
+    if task.remaining_time is not None:
+        h, rem = divmod(int(task.remaining_time.total_seconds()), 3600)
+        m, s = divmod(rem, 60)
+        lines.insert(2, f"**Time remaining: {h:02d}:{m:02d}:{s:02d}**")
+        lines.insert(3, "")
+        if (
+            task.budget is not None
+            and task.remaining_time < 0.2 * task.budget
+        ):
+            lines.insert(4, (
+                "⚠ Budget nearly exhausted — "
+                "scope remaining work accordingly."
+            ))
+            lines.insert(5, "")
+    return "\n".join(lines) + "\n"
 
 

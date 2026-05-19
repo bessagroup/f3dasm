@@ -1452,3 +1452,60 @@ def test_budget_expired_skips_delegation(tmp_path):
     )
     assert run._done_called
     assert "budget" in result.lower()
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — _format_task with remaining_time / budget fields
+# ---------------------------------------------------------------------------
+
+
+def test_format_task_no_budget():
+    """No remaining_time → no time line in formatted output."""
+    task = Task(intent="do X", expected_report="report Y")
+    rendered = _format_task(task)
+    assert "Time remaining" not in rendered
+
+
+def test_format_task_with_budget():
+    """remaining_time present → time line appears in formatted output."""
+    task = Task(
+        intent="do X",
+        expected_report="report Y",
+        remaining_time=timedelta(hours=1, minutes=12, seconds=47),
+    )
+    rendered = _format_task(task)
+    assert "Time remaining: 01:12:47" in rendered
+
+
+def test_format_task_budget_warning():
+    """remaining_time < 20% of budget → warning line in formatted output."""
+    task = Task(
+        intent="do X",
+        expected_report="report Y",
+        remaining_time=timedelta(minutes=5),
+        budget=timedelta(hours=1),   # 5/60 ≈ 8% < 20%
+    )
+    rendered = _format_task(task)
+    assert "nearly exhausted" in rendered
+
+
+def test_solution_md_includes_budget_metadata(tmp_path):
+    """solution.md contains budget and time_used when budget is set."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
+    cfg = StudyConfig(budget=timedelta(hours=1))
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("great result")], []
+    )
+    run = AgenticRun(
+        tmp_path,
+        study_config=cfg,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    deliv = run.execute()
+    solution = (deliv / "solution.md").read_text()
+    assert "budget: 1:00:00" in solution
+    assert "time_used:" in solution
