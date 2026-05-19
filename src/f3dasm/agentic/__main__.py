@@ -6,46 +6,30 @@ Run a study from its directory::
 
     python -m f3dasm.agentic <study-dir>
 
-The study directory must contain a ``PROBLEM_STATEMENT.md`` file.  The agentic
-loop runs to completion (or until the user types ``stop`` at a
-checkpoint) and then prints the absolute path of the deliverable folder.
+The study directory must contain a ``PROBLEM_STATEMENT.md`` file.
+All runtime parameters come from ``<study-dir>/config.yaml``; CLI flags
+override them for one-off runs.
 
 Options
 -------
---model <id>
-    Claude model identifier.  Default: ``claude-haiku-4-5-20251001``.
---checkpoint-every <n>
-    Number of Implementer delegations between checkpoints.  Default: 30.
+--model <id>          LLM model identifier (overrides config.yaml).
+--backend <name>      Backend to use: ``claude`` or ``ollama`` (overrides config.yaml).
+--budget HH:MM:SS     Wall-clock time budget (overrides config.yaml).
+--checkpoint-every N  Delegations between checkpoints (overrides config.yaml).
 """
-
-#                                                                       Modules
-# =============================================================================
 
 from __future__ import annotations
 
-# Standard
 import argparse
 import sys
 from pathlib import Path
 
-# Local
-from .._src.agentic.agent_runtime import (
-    CHECKPOINT_EVERY,
-    MVP_DEFAULT_MODEL,
-    AgenticRun,
-    AgenticRunError,
-)
-
-#                                                          Authorship & Credits
-# =============================================================================
 __author__ = "Elvis Aguero (elvis_alexander_aguero_vera@brown.edu)"
 __credits__ = ["Elvis Aguero"]
 __status__ = "Experimental"
-# =============================================================================
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build and return the CLI argument parser."""
     parser = argparse.ArgumentParser(
         prog="python -m f3dasm.agentic",
         description=(
@@ -56,52 +40,98 @@ def _build_parser() -> argparse.ArgumentParser:
         "study_dir",
         metavar="study-dir",
         type=Path,
-        help=(
-            "Path to the study directory.  Must contain PROBLEM_STATEMENT.md."
-        ),
+        help="Path to the study directory. Must contain PROBLEM_STATEMENT.md.",
     )
     parser.add_argument(
         "--model",
-        default=MVP_DEFAULT_MODEL,
+        default=None,
         metavar="MODEL",
-        help=(
-            f"Claude model identifier (default: {MVP_DEFAULT_MODEL})."
-        ),
+        help="LLM model identifier (overrides config.yaml).",
+    )
+    parser.add_argument(
+        "--backend",
+        default=None,
+        choices=["claude", "ollama"],
+        help="Backend to use (overrides config.yaml; default: claude).",
+    )
+    parser.add_argument(
+        "--budget",
+        default=None,
+        metavar="HH:MM:SS",
+        help="Wall-clock time budget (overrides config.yaml).",
     )
     parser.add_argument(
         "--checkpoint-every",
         type=int,
-        default=CHECKPOINT_EVERY,
+        default=None,
         metavar="N",
         dest="checkpoint_every",
-        help=(
-            "Number of Implementer delegations between checkpoints "
-            f"(default: {CHECKPOINT_EVERY})."
-        ),
+        help="Delegations between checkpoints (overrides config.yaml).",
     )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Parse arguments and execute the agentic run.
+    from .._src.agentic.agent_runtime import (
+        AgenticRun,
+        AgenticRunError,
+        StudyConfig,
+        _load_study_config,
+        _parse_budget,
+    )
+    from .._src.agentic.backends.claude import CLAUDE_BACKEND
 
-    Parameters
-    ----------
-    argv : list[str] or None
-        Command-line arguments.  If ``None``, uses ``sys.argv[1:]``.
-
-    Returns
-    -------
-    int
-        Exit code (0 = success, 1 = error).
-    """
     parser = _build_parser()
     args = parser.parse_args(argv)
+    study_dir = Path(args.study_dir)
+
+    # Load file config, then apply CLI overrides.
+    cfg = _load_study_config(study_dir)
+    if args.model is not None:
+        cfg = StudyConfig(
+            model=args.model,
+            backend=cfg.backend,
+            budget=cfg.budget,
+            checkpoint_every=cfg.checkpoint_every,
+        )
+    if args.backend is not None:
+        cfg = StudyConfig(
+            model=cfg.model,
+            backend=args.backend,
+            budget=cfg.budget,
+            checkpoint_every=cfg.checkpoint_every,
+        )
+    if args.budget is not None:
+        try:
+            parsed_budget = _parse_budget(args.budget)
+        except ValueError as exc:
+            print(f"Error: invalid --budget: {exc}", file=sys.stderr)
+            return 1
+        cfg = StudyConfig(
+            model=cfg.model,
+            backend=cfg.backend,
+            budget=parsed_budget,
+            checkpoint_every=cfg.checkpoint_every,
+        )
+    if args.checkpoint_every is not None:
+        cfg = StudyConfig(
+            model=cfg.model,
+            backend=cfg.backend,
+            budget=cfg.budget,
+            checkpoint_every=args.checkpoint_every,
+        )
+
+    # Resolve backend.
+    if cfg.backend == "ollama":
+        from .._src.agentic.backends.ollama import OLLAMA_BACKEND
+        backend = OLLAMA_BACKEND
+    else:
+        backend = CLAUDE_BACKEND
 
     run = AgenticRun(
-        study_dir=args.study_dir,
-        model=args.model,
-        checkpoint_every=args.checkpoint_every,
+        study_dir=study_dir,
+        study_config=cfg,
+        backend=backend,
     )
 
     try:

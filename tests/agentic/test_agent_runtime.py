@@ -1332,3 +1332,47 @@ def test_load_study_config_bad_budget_raises(tmp_path):
     (tmp_path / "config.yaml").write_text('budget: "not-a-time"\n')
     with pytest.raises(AgenticRunError, match="budget"):
         _load_study_config(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# Task 2 tests — StudyConfig wired into AgenticRun
+# ---------------------------------------------------------------------------
+
+
+def test_agentic_run_accepts_study_config(tmp_path):
+    """AgenticRun accepts a StudyConfig and uses its checkpoint_every."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# Test\n")
+    cfg = StudyConfig(checkpoint_every=5)
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("done")], [_VALID_REPORT]
+    )
+    run = AgenticRun(
+        tmp_path,
+        study_config=cfg,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    assert run._checkpoint_every == 5
+
+
+def test_agentic_run_cli_overrides_config(tmp_path):
+    """Explicit CLI model kwarg overrides config.yaml model."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# Test\n")
+    cfg = StudyConfig(model="model-from-config")
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("done")], [_VALID_REPORT]
+    )
+    run = AgenticRun(
+        tmp_path,
+        model="model-from-cli",
+        study_config=cfg,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    assert run._model == "model-from-cli"

@@ -520,6 +520,10 @@ class AgenticRun:
         ``(*, system_prompt, model, study_dir) ->
         ImplementerSession``.  When supplied, takes precedence over
         the backend's factory (used for test injection).
+    study_config : StudyConfig or None
+        Config loaded from ``config.yaml``.  CLI kwargs (``model``,
+        ``checkpoint_every``) take precedence over config values;
+        config values take precedence over backend defaults.
     """
 
     def __init__(
@@ -538,6 +542,7 @@ class AgenticRun:
             Callable[..., ImplementerSession] | None
         ) = None,
         record_transcripts: bool = True,
+        study_config: StudyConfig | None = None,
     ) -> None:
         # Resolve backend first so model default can come from it.
         from .backends.claude import CLAUDE_BACKEND
@@ -546,11 +551,20 @@ class AgenticRun:
             backend if backend is not None else CLAUDE_BACKEND
         )
         self._study_dir = Path(study_dir).resolve()
-        # Resolve model: explicit kwarg wins; otherwise use backend default.
+        _cfg = study_config or StudyConfig()
+        # CLI model wins over config, config wins over backend default.
+        if model is None:
+            model = _cfg.model  # may still be None
         self._model: str = (
             model if model is not None else self._backend.default_model
         )
+        # CLI checkpoint_every (explicit) wins over config.
+        if checkpoint_every == CHECKPOINT_EVERY and _cfg.checkpoint_every is not None:
+            checkpoint_every = _cfg.checkpoint_every
         self._checkpoint_every = checkpoint_every
+        # Budget (new field).
+        self._budget: timedelta | None = _cfg.budget
+        self._start_time: datetime | None = None  # set in execute()
         self._stdin = stdin
         self._stdout = stdout
         # Resolution order for factories: explicit kwarg > backend factory.

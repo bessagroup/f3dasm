@@ -36,6 +36,7 @@ from .._src.agentic.agent_runtime import (
     AgenticRun,
     AgenticRunError,
     Report,
+    StudyConfig,
     Task,
 )
 from .._src.agentic.backends.base import Backend
@@ -61,5 +62,6 @@ __all__ = [
     "LookupDataGenerator",
     "MVP_DEFAULT_MODEL",
     "Report",
+    "StudyConfig",
     "Task",
 ]
