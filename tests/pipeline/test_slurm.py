@@ -65,7 +65,7 @@ class TestRenderSbatchScript:
         assert "module load python/3.11" in script
         assert 'export MY_VAR="value"' in script
         assert "--step=train" in script
-        assert f"--job-dir={job_dir}" in script
+        assert f"--job-dir={job_dir.as_posix()}" in script
         assert "--iteration=0" in script
         # Non-parallel: no array or job-number
         assert "--array" not in script
