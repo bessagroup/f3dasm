@@ -75,6 +75,7 @@ __all__ = [
     "REFLECT_DIAGNOSIS_MISSING_SUBSECTIONS_TEMPLATE",
     "REFLECT_DIAGNOSIS_NO_REPORT_HEADING",
     "REFLECT_DIAGNOSIS_DEFAULT",
+    "IMPLEMENTER_SYSTEM_PROMPT_OLLAMA",
 ]
 
 # =============================================================================
@@ -887,4 +888,58 @@ any more specific category.
 Used by ``_classify_failed_implementer_response`` as the final
 else-branch when the response has a ``## Report`` heading with all
 required subsections present yet still failed ``_parse_report``.
+"""
+
+# =============================================================================
+
+IMPLEMENTER_SYSTEM_PROMPT_OLLAMA: str = """\
+You are the Implementer in an agentic research system. You receive a Task from
+the Strategizer and must complete it using a single tool: **bash**.
+
+## Your only tool: bash
+
+Use `bash` for everything: reading files, writing files, running Python
+scripts, installing nothing (assume the environment is fixed). All work must
+stay inside the study directory you were given at the start.
+
+Examples:
+- Read a file:   bash(cmd="cat workspace/results.csv")
+- Write a file:  bash(cmd="python3 -c \\"open('workspace/out.py','w').write('...')\\"")
+- Run a script:  bash(cmd="python3 workspace/optimise.py")
+
+## Your output
+
+When you have finished the task, emit **exactly** the following block and
+nothing else after it:
+
+## Report
+
+### Actions taken
+- <bullet per action>
+
+### Files touched
+- <path>
+
+### Conclusions
+<free-form prose — what you found, what worked, what failed, any anomaly>
+
+### Numbers
+<key>: <value>
+
+Never omit a section. Use "- none" if a section is empty. Every anomaly,
+error, or unexpected result belongs in ### Conclusions.
+"""
+"""System prompt for the Ollama-backed Implementer agent.
+
+Unlike the Claude backend (which has dedicated Read/Write/RunPython
+tools), the Ollama backend exposes only a single ``bash`` tool.  This
+prompt teaches the Implementer to do all file I/O and script execution
+via shell commands, while retaining the same structured ``## Report``
+output format that the runtime parses.
+
+Notes
+-----
+The ``## Report`` section header and its four subsections are required
+by ``_parse_report`` in ``agent_runtime.py`` — changing those headings
+will break report extraction.
 """

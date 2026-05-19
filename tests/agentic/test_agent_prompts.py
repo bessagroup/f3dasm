@@ -964,6 +964,18 @@ def test_reflect_diagnosis_missing_subsections_template():
 
 
 # ---------------------------------------------------------------------------
+# NEW Test 36 — IMPLEMENTER_SYSTEM_PROMPT_OLLAMA existence and content
+# ---------------------------------------------------------------------------
+
+def test_ollama_implementer_prompt_exists():
+    from f3dasm._src.agentic.agent_prompts import (
+        IMPLEMENTER_SYSTEM_PROMPT_OLLAMA,
+    )
+    assert "bash" in IMPLEMENTER_SYSTEM_PROMPT_OLLAMA.lower()
+    assert "## Report" in IMPLEMENTER_SYSTEM_PROMPT_OLLAMA
+
+
+# ---------------------------------------------------------------------------
 # NEW Test 33 — REFLECT_DIAGNOSIS_NO_REPORT_HEADING existence and keyword
 # ---------------------------------------------------------------------------
 
