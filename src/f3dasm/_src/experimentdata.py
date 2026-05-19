@@ -123,10 +123,31 @@ class ExperimentData:
 
         Examples
         --------
+        Three creation paths cover almost every workflow on the
+        current API (post-#331):
+
+        Empty container that a sampler block populates:
+
+        >>> from f3dasm import ExperimentData, create_sampler
+        >>> from f3dasm.design import Domain
+        >>> domain = Domain()
+        >>> domain.add_float("x", 0.0, 1.0)
+        >>> data = ExperimentData(domain=domain)
+        >>> data = create_sampler("random", seed=0).call(data, n_samples=8)
+
+        From an in-memory numpy array, pandas DataFrame, list of dicts,
+        or path to a CSV:
+
         >>> experiment_data = ExperimentData(
         ...     domain=domain_obj,
         ...     input_data=input_df,
-        ...     output_data=output_df
+        ...     output_data=output_df,
+        ... )
+
+        From a previously stored f3dasm project directory:
+
+        >>> experiment_data = ExperimentData.from_file(
+        ...     project_dir="./my_project"
         ... )
         """
         _domain = _domain_factory(domain)
