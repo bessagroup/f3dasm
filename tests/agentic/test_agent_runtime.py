@@ -12,7 +12,7 @@ from __future__ import annotations
 
 # Standard
 import textwrap
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -1376,3 +1376,79 @@ def test_agentic_run_cli_overrides_config(tmp_path):
         stdout=StringIO(),
     )
     assert run._model == "model-from-cli"
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — _remaining() and pre-delegation budget check
+# ---------------------------------------------------------------------------
+
+
+def test_remaining_no_budget(tmp_path):
+    """_remaining() returns None when no budget is set."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("done")], [_VALID_REPORT]
+    )
+    run = AgenticRun(
+        tmp_path,
+        study_config=StudyConfig(),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    run._start_time = datetime.now(tz=timezone.utc)
+    assert run._remaining() is None
+
+
+def test_remaining_with_budget(tmp_path):
+    """_remaining() returns a positive timedelta just after start."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("done")], [_VALID_REPORT]
+    )
+    run = AgenticRun(
+        tmp_path,
+        study_config=StudyConfig(budget=timedelta(hours=1)),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    run._start_time = datetime.now(tz=timezone.utc)
+    rem = run._remaining()
+    assert rem is not None
+    assert timedelta(minutes=59) < rem <= timedelta(hours=1)
+
+
+def test_budget_expired_skips_delegation(tmp_path):
+    """When budget is exhausted, _tool_delegate triggers clean shutdown."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
+    strat_factory, impl_factory = _make_factories(
+        [_DoneAction("done")], [_VALID_REPORT]
+    )
+    run = AgenticRun(
+        tmp_path,
+        study_config=StudyConfig(budget=timedelta(seconds=1)),
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+    )
+    # Simulate an expired budget (start_time was 1 hour ago).
+    run._start_time = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+    # Need a real implementer stub; create one inline.
+    run._implementer = StubImplementer([_VALID_REPORT])
+    # Set up minimal run state so _tool_delegate can run.
+    run._run_dir = tmp_path / "runs" / "test_run"
+    run._run_dir.mkdir(parents=True)
+    run._git_dir = run._run_dir / ".git"
+    run._git_dir.mkdir()
+    result = run._tool_delegate(
+        intent="do something", expected_report="report"
+    )
+    assert run._done_called
+    assert "budget" in result.lower()

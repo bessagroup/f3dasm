@@ -597,6 +597,24 @@ class AgenticRun:
         )
 
     # ------------------------------------------------------------------
+    # Budget helpers
+    # ------------------------------------------------------------------
+
+    def _remaining(self) -> timedelta | None:
+        """Return wall-clock time left, or None if no budget is set.
+
+        Returns
+        -------
+        timedelta or None
+            Remaining time. Can be negative (budget exceeded).
+        """
+        if self._budget is None or self._start_time is None:
+            return None
+        return self._budget - (
+            datetime.now(tz=timezone.utc) - self._start_time
+        )
+
+    # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
@@ -624,6 +642,7 @@ class AgenticRun:
             self._checkpoint_every,
         )
         self._init_git()
+        self._start_time = datetime.now(tz=timezone.utc)
         briefing_text = (self._study_dir / "PROBLEM_STATEMENT.md").read_text()
         self._logger.info(
             "Read PROBLEM_STATEMENT.md (%d chars)", len(briefing_text)
@@ -1030,6 +1049,19 @@ class AgenticRun:
         str
             The Implementer's ``## Report`` block, or an ERROR string.
         """
+        # Budget check — before any work for this delegation.
+        remaining = self._remaining()
+        if remaining is not None and remaining <= timedelta(0):
+            self._done_called = True
+            self._logger.info(
+                "Budget exhausted before delegation #%d — stopping cleanly.",
+                self._total_delegations,
+            )
+            return (
+                "BUDGET_EXHAUSTED: wall-clock budget has been consumed. "
+                "No further delegations will be issued."
+            )
+
         assert self._implementer is not None
         assert self._git_dir is not None
 
