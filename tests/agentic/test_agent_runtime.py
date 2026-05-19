@@ -11,6 +11,8 @@ API calls are made.
 from __future__ import annotations
 
 # Standard
+import textwrap
+from datetime import timedelta
 from io import StringIO
 from pathlib import Path
 from typing import Any
@@ -1271,3 +1273,62 @@ def test_custom_backend_drops_in_via_kwarg(tmp_path: Path) -> None:
     )
     solution = (deliv / "solution.md").read_text()
     assert "done" in solution
+
+
+# ── StudyConfig ──────────────────────────────────────────────────────────────
+
+def test_load_study_config_missing_file(tmp_path):
+    """Absent config.yaml → all defaults."""
+    from f3dasm._src.agentic.agent_runtime import _load_study_config
+    cfg = _load_study_config(tmp_path)
+    assert cfg.model is None
+    assert cfg.backend == "claude"
+    assert cfg.budget is None
+    assert cfg.checkpoint_every is None
+
+
+def test_load_study_config_full(tmp_path):
+    """All keys parsed correctly."""
+    from f3dasm._src.agentic.agent_runtime import _load_study_config
+    (tmp_path / "config.yaml").write_text(textwrap.dedent("""\
+        model: llama3.1:8b
+        backend: ollama
+        budget: "01:30:00"
+        checkpoint_every: 10
+    """))
+    cfg = _load_study_config(tmp_path)
+    assert cfg.model == "llama3.1:8b"
+    assert cfg.backend == "ollama"
+    assert cfg.budget == timedelta(hours=1, minutes=30)
+    assert cfg.checkpoint_every == 10
+
+
+def test_load_study_config_budget_only(tmp_path):
+    """Partial config — only budget set."""
+    from f3dasm._src.agentic.agent_runtime import _load_study_config
+    (tmp_path / "config.yaml").write_text('budget: "00:45:00"\n')
+    cfg = _load_study_config(tmp_path)
+    assert cfg.budget == timedelta(minutes=45)
+    assert cfg.model is None
+
+
+def test_load_study_config_unknown_key_raises(tmp_path):
+    """Unrecognised key → AgenticRunError."""
+    from f3dasm._src.agentic.agent_runtime import (
+        AgenticRunError,
+        _load_study_config,
+    )
+    (tmp_path / "config.yaml").write_text("unknown_key: value\n")
+    with pytest.raises(AgenticRunError, match="unknown_key"):
+        _load_study_config(tmp_path)
+
+
+def test_load_study_config_bad_budget_raises(tmp_path):
+    """Malformed budget string → AgenticRunError."""
+    from f3dasm._src.agentic.agent_runtime import (
+        AgenticRunError,
+        _load_study_config,
+    )
+    (tmp_path / "config.yaml").write_text('budget: "not-a-time"\n')
+    with pytest.raises(AgenticRunError, match="budget"):
+        _load_study_config(tmp_path)

@@ -34,7 +34,7 @@ import textwrap
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -145,6 +145,60 @@ class Report:
 
 class AgenticRunError(RuntimeError):
     """Raised for non-recoverable orchestrator failures."""
+
+
+# ---------------------------------------------------------------------------
+# StudyConfig
+# ---------------------------------------------------------------------------
+
+_KNOWN_CONFIG_KEYS: frozenset[str] = frozenset(
+    {"model", "backend", "budget", "checkpoint_every"}
+)
+
+
+def _parse_budget(value: str) -> timedelta:
+    parts = value.strip().split(":")
+    if len(parts) != 3:
+        raise ValueError(f"expected HH:MM:SS, got {value!r}")
+    h, m, s = (int(p) for p in parts)
+    return timedelta(hours=h, minutes=m, seconds=s)
+
+
+@dataclass
+class StudyConfig:
+    model: str | None = None
+    backend: str = "claude"
+    budget: timedelta | None = None
+    checkpoint_every: int | None = None
+
+
+def _load_study_config(study_dir: Path) -> StudyConfig:
+    import yaml  # soft import
+
+    config_path = Path(study_dir) / "config.yaml"
+    if not config_path.exists():
+        return StudyConfig()
+    raw = yaml.safe_load(config_path.read_text()) or {}
+    unknown = set(raw) - _KNOWN_CONFIG_KEYS
+    if unknown:
+        raise AgenticRunError(
+            f"config.yaml: unknown key(s): {', '.join(sorted(unknown))}. "
+            f"Valid keys: {', '.join(sorted(_KNOWN_CONFIG_KEYS))}."
+        )
+    budget = None
+    if "budget" in raw:
+        try:
+            budget = _parse_budget(str(raw["budget"]))
+        except (ValueError, TypeError) as exc:
+            raise AgenticRunError(
+                f"config.yaml: invalid budget {raw['budget']!r} — expected HH:MM:SS ({exc})."
+            ) from exc
+    return StudyConfig(
+        model=raw.get("model"),
+        backend=raw.get("backend", "claude"),
+        budget=budget,
+        checkpoint_every=raw.get("checkpoint_every"),
+    )
 
 
 # ---------------------------------------------------------------------------
