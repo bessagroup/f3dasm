@@ -7,6 +7,7 @@ This module contains the DataGenerator abstraction.
 from __future__ import annotations
 
 import logging
+import random
 
 # Standard
 import traceback
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 # Third-party
+import numpy as np
 from filelock import FileLock
 from pathos.helpers import mp
 
@@ -43,6 +45,37 @@ __status__ = "Alpha"
 logger = logging.getLogger("f3dasm")
 
 # =============================================================================
+
+
+def _reseed_for_job(job_number: int | None) -> None:
+    """Reseed the legacy global RNGs from ``job_number`` for the current job.
+
+    `pathos`/`multiprocessing` workers fork from the parent process, which
+    means NumPy's *global* default RNG state (and Python's ``random``
+    state) is inherited verbatim at fork time. Every worker then draws
+    the same numbers from ``np.random.*`` and ``random.*`` unless the
+    user explicitly creates a seeded `Generator` inside their function.
+
+    Derive a deterministic per-job seed via
+    ``np.random.SeedSequence(job_number)`` and seed both the NumPy
+    legacy global state and ``random`` with it before invoking the
+    user's `execute_fn`. The result is each parallel worker sees a
+    distinct random stream while runs remain reproducible given the
+    same job indices.
+
+    Skipped when ``job_number`` is None (no stable entropy source to
+    derive a seed from).
+
+    Parameters
+    ----------
+    job_number : int or None
+        The index of the job whose worker is about to run.
+    """
+    if job_number is None:
+        return
+    seed_int = int(np.random.SeedSequence(job_number).generate_state(1)[0])
+    np.random.seed(seed_int)
+    random.seed(seed_int)
 
 
 def _run_sample(
@@ -83,6 +116,7 @@ def _run_sample(
     """
     try:
         logger.debug(f"Running experiment_sample {job_number}")
+        _reseed_for_job(job_number)
         if pass_id and job_number is not None:
             experiment_sample = execute_fn(
                 experiment_sample=experiment_sample, id=job_number, **kwargs
