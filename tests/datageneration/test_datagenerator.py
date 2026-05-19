@@ -64,3 +64,61 @@ def test_invalid_parallelization_mode():
 
     with pytest.raises(ValueError):
         experiment_data = func.call(data=experiment_data, mode="invalid")
+
+
+# ====== signature validation (#268) =========================================
+
+
+def test_decorated_function_with_mismatched_arg_raises_on_call():
+    """User function declares `seed`, Domain provides `x`/`z` -- arm must
+    raise immediately rather than letting `_run_sample` fail with the
+    confusing `cannot unpack non-iterable NoneType object` error.
+
+    This is the second repro from issue #268 (renamed argument).
+    """
+    domain = Domain()
+    domain.add_float("x", low=0.0, high=100.0)
+    domain.add_float("z", low=0.0, high=100.0)
+    domain.add_output("y")
+
+    @datagenerator(output_names="y")
+    def fn(seed):
+        return seed
+
+    ed = ExperimentData(domain=domain, input_data=[{"x": 1.0, "z": 2.0}])
+    with pytest.raises(ValueError, match=r"required argument\(s\) \['seed'\]"):
+        fn.call(data=ed)
+
+
+def test_decorated_function_with_extra_domain_arg_passes():
+    """Domain may legitimately carry parameters the function doesn't
+    consume (e.g. metadata kept for downstream blocks). The validation
+    should only flag function args that have no Domain backing."""
+    domain = Domain()
+    domain.add_float("x", low=0.0, high=100.0)
+    domain.add_float("z", low=0.0, high=100.0)
+    domain.add_output("y")
+
+    @datagenerator(output_names="y")
+    def fn(x):
+        return x * 2
+
+    ed = ExperimentData(domain=domain, input_data=[{"x": 1.0, "z": 2.0}])
+    # Should not raise.
+    fn.arm(data=ed)
+
+
+def test_decorated_function_with_defaulted_arg_passes():
+    """Arguments with defaults are optional, so a missing Domain entry
+    for them must not trigger the validation."""
+    domain = Domain()
+    domain.add_float("x", low=0.0, high=1.0)
+    domain.add_output("y")
+
+    @datagenerator(output_names="y")
+    def fn(x, multiplier=2.0):
+        return x * multiplier
+
+    ed = ExperimentData(domain=domain, input_data=[{"x": 1.0}])
+    fn.arm(data=ed)  # no raise
+    fn.call(data=ed)  # no raise either

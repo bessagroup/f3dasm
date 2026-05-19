@@ -412,9 +412,12 @@ def datagenerator(
     """
     Decorator to convert a function into a `DataGenerator` subclass.
 
-    The decorated function should take named arguments matching the keys in
-    the Domain and return one or multiple output values. These values will be
-    stored in the `ExperimentData` under the names specified in `output_names`.
+    The decorated function's parameter names must match either an input
+    parameter name in the Domain or an explicit kwarg later passed to
+    `call(...)`; defaulted parameters are optional. A mismatch is caught
+    at `arm`/`call` time with a clear ``ValueError`` (see issue #268).
+    The function's return values will be stored in the `ExperimentSample`
+    object under the names specified in `output_names`.
 
     Parameters
     ----------
@@ -468,6 +471,68 @@ def datagenerator(
             """
             Auto-generated DataGenerator subclass from a decorated function.
             """
+
+            def _validate_signature(
+                self,
+                data: ExperimentData,
+                supplied_kwargs: Iterable[str],
+            ) -> None:
+                """Check ``f``'s required args resolve to a known source.
+
+                A decorated data generator pulls each required argument
+                of ``f`` from one of three places at execute time: the
+                Domain's input parameters, an explicit kwarg on
+                ``DataGenerator.call``, or (if defined) a parameter
+                default. When none of those covers a required arg, the
+                user previously got the confusing ``TypeError: cannot
+                unpack non-iterable NoneType object`` from inside
+                ``_run_sample``. Catch the mismatch eagerly instead with
+                a message that names the offending arguments and lists
+                what's available (see issue #268).
+                """
+                required = {
+                    name
+                    for name, p in signature.parameters.items()
+                    if p.default is inspect.Parameter.empty
+                    and p.kind
+                    not in (
+                        inspect.Parameter.VAR_POSITIONAL,
+                        inspect.Parameter.VAR_KEYWORD,
+                    )
+                }
+                domain_inputs = set(data.domain.input_names)
+                missing = required - domain_inputs - set(supplied_kwargs)
+                if missing:
+                    raise ValueError(
+                        f"DataGenerator function `{f.__name__}` declares "
+                        f"required argument(s) {sorted(missing)} that "
+                        "are not present in the Domain and were not "
+                        f"supplied via `call(...)` kwargs. Domain "
+                        f"inputs are {sorted(domain_inputs)}. Rename "
+                        "your function arguments to match the Domain "
+                        "parameter names, give them default values, or "
+                        "pass them explicitly to `call(...)`."
+                    )
+
+            def arm(self, data: ExperimentData) -> None:
+                """Validate that ``f``'s required args match the Domain.
+
+                Equivalent to the validation that ``call`` runs, but
+                without knowledge of any kwargs the user will pass
+                later. Use this when you want the mismatch to surface
+                eagerly during pipeline setup.
+                """
+                self._validate_signature(data, supplied_kwargs=())
+
+            def call(
+                self, data: ExperimentData, **kwargs: Any
+            ) -> ExperimentData:
+                # `DataGenerator.call` does not auto-invoke `arm`, so we
+                # run the signature check here -- with the user's
+                # kwargs in scope -- as a safety net for the common
+                # `dg.call(data=ed, ...)` pattern (issue #268).
+                self._validate_signature(data, supplied_kwargs=kwargs.keys())
+                return super().call(data=data, **kwargs)
 
             def execute(
                 self, experiment_sample: ExperimentSample, **kwargs: Any
