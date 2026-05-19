@@ -58,6 +58,11 @@ class SlurmResources:
 class SlurmCluster:
     """Configuration for a specific SLURM cluster.
 
+    The cluster is assumed to be a POSIX system (Linux): generated
+    sbatch scripts use POSIX-style paths and bash shell syntax,
+    and ``sbatch`` must be available on the submission host's
+    ``PATH``.
+
     Parameters
     ----------
     partition : str

@@ -70,6 +70,13 @@ class SlurmExecutor(Executor):
     imports from local scripts resolve correctly. This requires
     compute nodes to share a filesystem with the submission host.
 
+    SLURM mode assumes a POSIX system (Linux). The compute nodes
+    and submission host running ``sbatch`` must be POSIX; all
+    generated scripts use POSIX-style (forward-slash) paths.
+    ``generate_scripts`` may be invoked from any platform for
+    previewing, but ``run`` requires ``sbatch`` on ``PATH`` and
+    therefore a POSIX submission host.
+
     Parameters
     ----------
     cluster : SlurmCluster
@@ -167,7 +174,7 @@ class SlurmExecutor(Executor):
                 )
                 path = script_dir / f"{label}.sh"
                 path.write_text(script)
-                script_paths[label] = str(path)
+                script_paths[label] = path.as_posix()
 
             elif isinstance(element, Loop):
                 for step in element.steps:
@@ -182,7 +189,7 @@ class SlurmExecutor(Executor):
                     )
                     path = script_dir / f"{label}.sh"
                     path.write_text(script)
-                    script_paths[label] = str(path)
+                    script_paths[label] = path.as_posix()
 
         # --- Generate and write the orchestrator ---
         orch_res = pipeline.orchestrator_resources or _DEFAULT_ORCH_RESOURCES
@@ -191,7 +198,7 @@ class SlurmExecutor(Executor):
             cluster=self.cluster,
             orchestrator_resources=orch_res,
             script_paths=script_paths,
-            log_dir_path=str(log_dir),
+            log_dir_path=log_dir.as_posix(),
             job_dir=job_dir,
         )
         orch_path = script_dir / "orchestrator.sh"
@@ -237,7 +244,7 @@ class SlurmExecutor(Executor):
         """
         rootdir = rootdir if rootdir is not None else Path.cwd()
         job_dir: Path = rootdir / project_job
-        log_dir_path: str = str(job_dir / "logs")
+        log_dir_path: str = (job_dir / "logs").as_posix()
 
         scripts: dict[str, str] = {}
         # Placeholder paths for the orchestrator (since scripts
@@ -307,6 +314,10 @@ def render_sbatch_script(
     supplies ``--array=`` on the ``sbatch`` command line based on
     the count of open experiments on disk at submission time.
 
+    All paths embedded in the rendered script use POSIX-style
+    (forward-slash) form; the script is meant to run on a POSIX
+    SLURM cluster regardless of the platform that generated it.
+
     Parameters
     ----------
     step : Step
@@ -345,7 +356,9 @@ def render_sbatch_script(
     ]
 
     # --- Log output paths ---
-    log_path: str = str(job_dir / "logs" / label)
+    # Use POSIX-style paths since this script runs on a SLURM
+    # (Linux) compute node regardless of where it was generated.
+    log_path: str = (job_dir / "logs" / label).as_posix()
     if step.parallel:
         lines.append(f"#SBATCH --output={log_path}_%A_%a.out")
     else:
@@ -380,7 +393,7 @@ def render_sbatch_script(
     cmd_parts: list[str] = [
         f"{cluster.runner} -m {run_step_module}",
         f"  --step={step.name}",
-        f"  --job-dir={job_dir}",
+        f"  --job-dir={job_dir.as_posix()}",
         f"  --project-dir={step.project_dir}",
         f"  --iteration={iteration}",
     ]
@@ -423,6 +436,11 @@ def render_orchestrator_script(
     flag based on the number of open experiments on disk. If
     there are none, the step is skipped and the next element is
     resubmitted without a SLURM dependency.
+
+    All paths embedded in the rendered orchestrator script use
+    POSIX-style (forward-slash) form; the orchestrator is meant
+    to run on a POSIX SLURM cluster regardless of the platform
+    that generated it.
 
     Parameters
     ----------
@@ -486,7 +504,7 @@ def render_orchestrator_script(
             "LOOP_COUNT=$2",
             'SELF=$(realpath "$0")',
             f"TOTAL_STEPS={total_steps}",
-            f'JOB_DIR="{job_dir}"',
+            f'JOB_DIR="{job_dir.as_posix()}"',
             "",
             'while [ "$STEP_COUNT" -lt "$TOTAL_STEPS" ]; do',
             "",
