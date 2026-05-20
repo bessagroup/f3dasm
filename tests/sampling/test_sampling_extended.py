@@ -172,6 +172,52 @@ def test_sampler_discrete_only():
         assert 0 <= int(val) <= 10
 
 
+def test_sampler_discrete_large_bound_bounded_memory():
+    # Regression for issue #270: the random sampler used to do
+    # `rng.choice(range(low, high+1, step))`, which materializes the full
+    # range into a numpy array and OOMs for high ~ 1e12. The replacement
+    # uses `rng.integers` directly and must run in bounded memory while
+    # still producing values inside the domain.
+    import tracemalloc
+
+    upper = int(1e12)
+    domain = Domain()
+    domain.add_int("x", low=0, high=upper)
+    data = ExperimentData(domain=domain)
+    sampler = create_sampler(sampler="random", seed=2024)
+
+    tracemalloc.start()
+    result = sampler.call(data=data, n_samples=4)
+    _current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # The bug allocated O((high-low)/step) bytes; with high == 1e12 that
+    # is many gigabytes. A correct implementation only needs a few KB for
+    # the 4 sampled values. Set the cap generously (8 MB) so the test
+    # stays portable while still proving the bug is gone.
+    assert peak < 8 * 1024 * 1024
+    df, _ = result.to_pandas()
+    for val in df["x"]:
+        assert 0 <= int(val) <= upper
+
+
+def test_sampler_discrete_with_step():
+    # The step != 1 code path is exercised here so that the inverse-step
+    # arithmetic stays correct (#270 fix).
+    domain = Domain()
+    domain.add_int(
+        "x", low=4, high=20, step=3
+    )  # legal grid: 4, 7, 10, 13, 16, 19
+    data = ExperimentData(domain=domain)
+    sampler = create_sampler(sampler="random", seed=42)
+    result = sampler.call(data=data, n_samples=20)
+
+    df, _ = result.to_pandas()
+    legal = {4, 7, 10, 13, 16, 19}
+    for val in df["x"]:
+        assert int(val) in legal
+
+
 def test_sampler_categorical_only():
     domain = Domain()
     domain.add_category("cat", ["a", "b", "c"])
@@ -303,12 +349,25 @@ class TestGridValueFunctions:
                 stepsize_continuous_parameters={"x": 0.5, "y": 0.5},
             )
 
-    def test_grid_values_continuous_none_returns_empty(self):
+    def test_grid_values_continuous_none_raises(self):
+        # Issue #318: passing None with a non-empty input space used to
+        # silently return an empty dict, which made the grid sampler emit
+        # a degenerate single-row grid. It now raises a clear ValueError.
         input_space = {
             "x": ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
         }
+        with pytest.raises(ValueError, match="stepsize_continuous"):
+            grid_values_continuous_parameters(
+                input_space=input_space,
+                stepsize_continuous_parameters=None,
+            )
+
+    def test_grid_values_continuous_none_empty_space_returns_empty(self):
+        # When the input space has no continuous parameters at all, the
+        # stepsize argument is genuinely irrelevant and the function
+        # should return an empty dict without raising.
         result = grid_values_continuous_parameters(
-            input_space=input_space,
+            input_space={},
             stepsize_continuous_parameters=None,
         )
         assert result == {}

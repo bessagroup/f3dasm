@@ -55,6 +55,39 @@ MAX_TRIES = 20
 # =============================================================================
 
 
+def _atomic_write(target: Path, write_fn: Callable[[Path], None]) -> str:
+    """Write to a sibling ``.tmp`` file then POSIX-atomically rename.
+
+    Some f3dasm pipelines run many parallel writers (SLURM array jobs,
+    ``evaluate_multiprocessing``) against a single project directory while
+    a separate driver process reads the same file via ``from_file``. The
+    naive ``to_csv(path)`` / ``np.save(path)`` patterns truncate the
+    target first and then stream the body, so a concurrent reader can
+    catch the file half-written and raise ``pd.errors.EmptyDataError``
+    (see issue #273).
+
+    Writing to a sibling temp path and then calling ``Path.replace`` (an
+    ``os.rename``) means readers always see either the previous fully
+    written file or the new one — never an empty or partial file.
+
+    Parameters
+    ----------
+    target : Path
+        Final path the object should live at (including extension).
+    write_fn : Callable[[Path], None]
+        Callable that writes the object to the path it receives.
+
+    Returns
+    -------
+    str
+        The string form of ``target`` (always with the chosen extension).
+    """
+    tmp = target.with_suffix(target.suffix + ".tmp")
+    write_fn(tmp)
+    tmp.replace(target)
+    return str(target)
+
+
 def pickle_store(object: Any, path: str) -> str:
     """
     Store an object using pickle.
@@ -72,10 +105,12 @@ def pickle_store(object: Any, path: str) -> str:
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".pkl")
-    with open(_path, "wb") as file:
-        pickle.dump(object, file)
 
-    return str(_path)
+    def _write(p: Path) -> None:
+        with open(p, "wb") as file:
+            pickle.dump(object, file)
+
+    return _atomic_write(_path, _write)
 
 
 def pickle_load(path: str) -> Any:
@@ -114,8 +149,14 @@ def numpy_store(object: np.ndarray, path: str) -> str:
         The path to the stored array.
     """
     _path = Path(path).with_suffix(".npy")
-    np.save(file=_path, arr=object)
-    return str(_path)
+
+    def _write(p: Path) -> None:
+        # Pass an open file handle so np.save does not auto-append ".npy"
+        # to the temp path (which would otherwise become "<name>.npy.tmp.npy").
+        with open(p, "wb") as file:
+            np.save(file, object)
+
+    return _atomic_write(_path, _write)
 
 
 def numpy_load(path: str) -> np.ndarray:
@@ -153,8 +194,7 @@ def pandas_store(object: pd.DataFrame, path: str) -> str:
         The path to the stored DataFrame.
     """
     _path = Path(path).with_suffix(".csv")
-    object.to_csv(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_csv(p))
 
 
 def pandas_load(path: str) -> pd.DataFrame:
@@ -192,8 +232,7 @@ def xarray_dataset_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".ncs")
-    object.to_netcdf(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_netcdf(p))
 
 
 def xarray_dataarray_store(
@@ -215,8 +254,7 @@ def xarray_dataarray_store(
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".nca")
-    object.to_netcdf(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_netcdf(p))
 
 
 def xarray_dataset_load(path: str) -> xr.DataArray | xr.Dataset:
@@ -275,15 +313,17 @@ def figure_store(object: plt.Figure, path: str) -> str:
     """
     _path = Path(path)
 
-    object.savefig(
-        _path.with_suffix(".pdf"),
-        format="pdf",
-        bbox_inches="tight",
-        pad_inches=0.01,
-        transparent=True,
-        dpi=RESOLUTION_MATPLOTLIB_FIGURE,
-    )
+    def _write(p: Path) -> None:
+        object.savefig(
+            p,
+            format="pdf",
+            bbox_inches="tight",
+            pad_inches=0.01,
+            transparent=True,
+            dpi=RESOLUTION_MATPLOTLIB_FIGURE,
+        )
 
+    _atomic_write(_path.with_suffix(".pdf"), _write)
     return str(_path)
 
 
