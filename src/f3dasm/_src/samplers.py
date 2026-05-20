@@ -766,6 +766,13 @@ def grid_values_continuous_parameters(
     -------
     dict[str, np.ndarray]
         A dictionary mapping parameter names to arrays of grid values.
+
+    Raises
+    ------
+    ValueError
+        If `input_space` contains continuous parameters but
+        `stepsize_continuous_parameters` is None — the grid sampler cannot
+        discretize a continuous parameter without a stepsize.
     """
     if isinstance(stepsize_continuous_parameters, float | int):
         return {
@@ -797,7 +804,13 @@ def grid_values_continuous_parameters(
             for name, param in discrete_space.items()
         }
 
-    # stepsize_continuous_parameters is None — no continuous values
+    # stepsize_continuous_parameters is None
+    if input_space:
+        raise ValueError(
+            "Grid sampler requires `stepsize_continuous_parameters` when "
+            "the domain contains continuous parameters; got None for "
+            f"continuous parameters {list(input_space)}."
+        )
     return {}
 
 
