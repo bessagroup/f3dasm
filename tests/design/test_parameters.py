@@ -1,8 +1,10 @@
 import pickle
 
+import numpy as np
 import pytest
 
 from f3dasm._src.design.parameter import (
+    ArrayParameter,
     CategoricalParameter,
     ConstantParameter,
     ContinuousParameter,
@@ -325,3 +327,77 @@ def test_add_continuous_to_continuous():
     assert isinstance(result, ContinuousParameter)
     assert result.lower_bound == 0.0
     assert result.upper_bound == 15.0
+
+
+# ======================= ArrayParameter =======================
+
+
+class TestArrayParameter:
+    def test_int_shape_normalized_to_tuple(self):
+        p = ArrayParameter(shape=3, lower_bound=0.0, upper_bound=1.0)
+        assert p.shape == (3,)
+
+    def test_iterable_shape_normalized(self):
+        p = ArrayParameter(shape=[2, 3], lower_bound=0.0, upper_bound=1.0)
+        assert p.shape == (2, 3)
+
+    def test_empty_shape_raises(self):
+        with pytest.raises(ValueError, match="non-empty"):
+            ArrayParameter(shape=(), lower_bound=0.0, upper_bound=1.0)
+
+    def test_non_positive_dimension_raises(self):
+        with pytest.raises(ValueError, match="non-empty"):
+            ArrayParameter(shape=(0,), lower_bound=0.0, upper_bound=1.0)
+
+    def test_scalar_bounds_broadcast(self):
+        p = ArrayParameter(shape=(2, 3), lower_bound=0.0, upper_bound=1.0)
+        assert p.lower_bound.shape == (2, 3)
+        assert p.upper_bound.shape == (2, 3)
+        assert np.all(p.lower_bound == 0.0)
+        assert np.all(p.upper_bound == 1.0)
+
+    def test_array_bounds_preserved(self):
+        lb = np.array([0.0, 1.0])
+        ub = np.array([2.0, 3.0])
+        p = ArrayParameter(shape=(2,), lower_bound=lb, upper_bound=ub)
+        np.testing.assert_array_equal(p.lower_bound, lb)
+        np.testing.assert_array_equal(p.upper_bound, ub)
+
+
+class TestArrayParameterEquality:
+    def test_equal_arrays(self):
+        p1 = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=1.0)
+        p2 = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=1.0)
+        assert p1 == p2
+
+    def test_not_equal_different_shape(self):
+        p1 = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=1.0)
+        p2 = ArrayParameter(shape=(3,), lower_bound=0.0, upper_bound=1.0)
+        assert p1 != p2
+
+    def test_not_equal_different_bounds(self):
+        p1 = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=1.0)
+        p2 = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=2.0)
+        assert p1 != p2
+
+    def test_not_equal_with_non_array(self):
+        p = ArrayParameter(shape=(2,), lower_bound=0.0, upper_bound=1.0)
+        assert p != ContinuousParameter(0.0, 1.0)
+
+
+# ======================= CategoricalParameter add edge cases =======================
+
+
+def test_add_categorical_to_constant():
+    cat = CategoricalParameter(["a", "b"])
+    const = ConstantParameter(value="c")
+    result = cat + const
+    assert isinstance(result, CategoricalParameter)
+    assert "c" in result.categories
+
+
+def test_add_categorical_to_discrete():
+    cat = CategoricalParameter([1, 2])
+    disc = DiscreteParameter(lower_bound=3, upper_bound=5)
+    result = cat + disc
+    assert isinstance(result, CategoricalParameter)

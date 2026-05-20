@@ -34,12 +34,27 @@ __status__ = "Stable"
 
 
 class JobStatus(Enum):
+    """Possible states of an experiment sample's job.
+
+    Attributes
+    ----------
+    OPEN : int
+        The sample is available for processing.
+    IN_PROGRESS : int
+        The sample is currently being processed.
+    FINISHED : int
+        The sample has been processed successfully.
+    ERROR : int
+        An error occurred during processing.
+    """
+
     OPEN = 0
     IN_PROGRESS = 1
     FINISHED = 2
     ERROR = 3
 
     def __str__(self) -> str:
+        """Return the name of the job status."""
         return self.name
 
 
@@ -490,6 +505,7 @@ class ExperimentSample:
         to_disk: bool = False,
         store_function: Callable | None = None,
         load_function: Callable | None = None,
+        load_kwargs: dict | None = None,
         which: Literal["input", "output"] = "output",
     ):
         """
@@ -509,6 +525,10 @@ class ExperimentSample:
         load_function : Optional[Type[Callable]], optional
             The function to use for loading the object from disk,
             by default None.
+        load_kwargs : dict, optional
+            Extra keyword arguments forwarded to ``load_function`` when
+            the stored object is later loaded (issue #285). Defaults to
+            None.
         which : Literal['input', 'output'], optional
             Specify whether to store the object in input or output data,
             by default 'output'.
@@ -534,7 +554,7 @@ class ExperimentSample:
 
         .. code-block:: python
 
-            def load_function(path: str) -> Any:
+            def load_function(path: str, **kwargs: Any) -> Any:
                 ...
         """
         value = (
@@ -545,6 +565,7 @@ class ExperimentSample:
                 name=name,
                 store_function=store_function,
                 load_function=load_function,
+                load_kwargs=load_kwargs,
             )
         )
 

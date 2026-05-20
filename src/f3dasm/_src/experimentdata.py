@@ -13,6 +13,7 @@ import logging
 
 # Standard
 import random
+import shutil
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator
 from copy import copy
@@ -37,6 +38,7 @@ from ._io import (
     JOBS_FILENAME,
     MAX_TRIES,
     OUTPUT_DATA_FILENAME,
+    ReferenceValue,
     ToDiskValue,
     _project_dir_factory,
 )
@@ -60,12 +62,27 @@ logger = logging.getLogger("f3dasm")
 
 
 class Block(Protocol):
+    """Structural typing protocol for pipeline blocks.
+
+    Any object that implements :meth:`arm` and :meth:`call` with
+    the signatures below satisfies this protocol. The concrete
+    abstract base class lives in :mod:`f3dasm._src.core`.
+    """
+
     def arm(self, data: ExperimentData) -> None: ...
 
     def call(self, data: ExperimentData, **kwargs) -> ExperimentData: ...
 
 
-class DataGenerator(Block): ...
+class DataGenerator(Block):
+    """Protocol for data generation blocks.
+
+    Extends :class:`Block` to mark blocks whose primary purpose
+    is executing a data-generating function on each experiment
+    sample.
+    """
+
+    ...
 
 
 # =============================================================================
@@ -106,10 +123,31 @@ class ExperimentData:
 
         Examples
         --------
+        Three creation paths cover almost every workflow on the
+        current API (post-#331):
+
+        Empty container that a sampler block populates:
+
+        >>> from f3dasm import ExperimentData, create_sampler
+        >>> from f3dasm.design import Domain
+        >>> domain = Domain()
+        >>> domain.add_float("x", 0.0, 1.0)
+        >>> data = ExperimentData(domain=domain)
+        >>> data = create_sampler("random", seed=0).call(data, n_samples=8)
+
+        From an in-memory numpy array, pandas DataFrame, list of dicts,
+        or path to a CSV:
+
         >>> experiment_data = ExperimentData(
         ...     domain=domain_obj,
         ...     input_data=input_df,
-        ...     output_data=output_df
+        ...     output_data=output_df,
+        ... )
+
+        From a previously stored f3dasm project directory:
+
+        >>> experiment_data = ExperimentData.from_file(
+        ...     project_dir="./my_project"
         ... )
         """
         _domain = _domain_factory(domain)
@@ -463,6 +501,12 @@ class ExperimentData:
         ----------
         project_dir : Path or str
             User defined path of the experimentdata directory.
+        wait_for_creation : bool, optional
+            If True, wait for files to be created if not found,
+            by default False.
+        max_tries : int, optional
+            Maximum number of attempts to read the files,
+            by default MAX_TRIES.
 
         Returns
         -------
@@ -586,6 +630,148 @@ class ExperimentData:
         """
         return self[indices]
 
+    def select_parameter(self, name: str) -> ExperimentData:
+        """Return an ExperimentData containing only the named parameter.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input or output parameter to select.
+
+        Returns
+        -------
+        ExperimentData
+            New ExperimentData with a single-parameter domain and only the
+            data for that parameter.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in either input or output space.
+
+        Examples
+        --------
+        >>> exp_model = experiment_data.select_parameter('model')
+        """
+        if name in self._domain.input_space:
+            new_domain = Domain(
+                input_space={name: self._domain.input_space[name]}
+            )
+            new_data = {
+                idx: ExperimentSample(
+                    _input_data={name: es._input_data.get(name)},
+                    _output_data={},
+                    job_status=es.job_status,
+                    project_dir=es.project_dir,
+                )
+                for idx, es in self
+            }
+        elif name in self._domain.output_space:
+            new_domain = Domain(
+                output_space={name: self._domain.output_space[name]}
+            )
+            new_data = {
+                idx: ExperimentSample(
+                    _input_data={},
+                    _output_data={name: es._output_data.get(name)},
+                    job_status=es.job_status,
+                    project_dir=es.project_dir,
+                )
+                for idx, es in self
+            }
+        else:
+            raise KeyError(f"Parameter '{name}' not found in domain.")
+
+        return ExperimentData.from_data(
+            data=new_data,
+            domain=new_domain,
+            project_dir=self._project_dir,
+        )
+
+    def move_to_output(self, name: str, in_place: bool = False):
+        """Move a parameter from the input space to the output space.
+
+        The parameter entry is removed from the domain's input space and added
+        to the output space. For every experiment sample, the corresponding
+        value is moved from ``_input_data`` to ``_output_data``.
+
+        Parameters
+        ----------
+        name : str
+            Name of the input parameter to move.
+        in_place : bool, optional
+            If True, the operation is performed in place and None is returned,
+            by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            A new ExperimentData with the parameter moved, or None if
+            ``in_place=True``.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in the input space.
+
+        Examples
+        --------
+        >>> new_data = experiment_data.move_to_output('x0')
+        >>> experiment_data.move_to_output('x0', in_place=True)
+        """
+        d = self._copy(in_place=in_place)
+        if name not in d._domain.input_space:
+            raise KeyError(f"Parameter '{name}' not found in input space.")
+        d._domain.output_space[name] = d._domain.input_space.pop(name)
+        for _, es in d:
+            if name in es._input_data:
+                es._output_data[name] = es._input_data.pop(name)
+        if in_place:
+            return None
+        return d
+
+    def move_to_input(self, name: str, in_place: bool = False):
+        """Move a parameter from the output space to the input space.
+
+        The parameter entry is removed from the domain's output space and added
+        to the input space. For every experiment sample, the corresponding
+        value is moved from ``_output_data`` to ``_input_data``.
+
+        Parameters
+        ----------
+        name : str
+            Name of the output parameter to move.
+        in_place : bool, optional
+            If True, the operation is performed in place and None is returned,
+            by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            A new ExperimentData with the parameter moved, or None if
+            ``in_place=True``.
+
+        Raises
+        ------
+        KeyError
+            If ``name`` is not found in the output space.
+
+        Examples
+        --------
+        >>> new_data = experiment_data.move_to_input('y')
+        >>> experiment_data.move_to_input('y', in_place=True)
+        """
+        d = self._copy(in_place=in_place)
+        if name not in d._domain.output_space:
+            raise KeyError(f"Parameter '{name}' not found in output space.")
+        d._domain.input_space[name] = d._domain.output_space.pop(name)
+        for _, es in d:
+            if name in es._output_data:
+                es._input_data[name] = es._output_data.pop(name)
+        if in_place:
+            return None
+        return d
+
     def select_with_status(
         self, status: Literal["open", "in_progress", "finished", "error"]
     ) -> ExperimentData:
@@ -650,7 +836,11 @@ class ExperimentData:
             project_dir=self._project_dir,
         )
 
-    def store(self, project_dir: Optional[Path | str] = None):
+    def store(
+        self,
+        project_dir: Optional[Path | str] = None,
+        copy_references: bool = False,
+    ):
         """
         Write the ExperimentData to disk in the project directory.
 
@@ -659,6 +849,12 @@ class ExperimentData:
         project_dir : Optional[Path | str], optional
             The f3dasm project directory to store the
             ExperimentData object to, by default None.
+        copy_references : bool, optional
+            If True, any :class:`ReferenceValue` objects whose source
+            ``project_dir`` differs from the destination are physically
+            copied into the destination project directory before writing.
+            The in-memory references are updated to point to the new
+            locations, by default False.
 
         Note
         ----
@@ -681,8 +877,25 @@ class ExperimentData:
         access the lock file. This lock file is removed after the
         ExperimentData object is written to disk.
         """
+        old_project_dir = self._project_dir
+
         if project_dir is not None:
             self.set_project_dir(project_dir, in_place=True)
+
+        if copy_references:
+            seen: set[Path] = set()
+            for _, es in self:
+                for value in list(es._input_data.values()) + list(
+                    es._output_data.values()
+                ):
+                    if (
+                        isinstance(value, ReferenceValue)
+                        and value.reference not in seen
+                    ):
+                        seen.add(value.reference)
+                        _copy_reference(
+                            value.reference, old_project_dir, self._project_dir
+                        )
 
         subdirectory = self._project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -1020,6 +1233,8 @@ class ExperimentData:
         ----------
         decimals : int
             Number of decimals to round to.
+        in_place : bool, optional
+            If True, round values in place, by default False.
 
         Examples
         --------
@@ -1188,6 +1403,25 @@ class ExperimentData:
                     )
 
     def update_from_experimentssample_json(self, in_place: bool = False):
+        """
+        Update the ExperimentData from ExperimentSample JSON files.
+
+        Parameters
+        ----------
+        in_place : bool, optional
+            If True, update in place, by default False.
+
+        Returns
+        -------
+        ExperimentData or None
+            Updated ExperimentData object, or None if in_place is True.
+
+        Notes
+        -----
+        This method loads ExperimentSample objects from JSON files in
+        the EXPERIMENTSAMPLE_SUBFOLDER directory. If loading fails for
+        any file, a warning is logged and the process continues.
+        """
         d = self._copy(in_place=in_place)
 
         for json_file in (d.project_dir / EXPERIMENTSAMPLE_SUBFOLDER).glob(
@@ -1360,17 +1594,17 @@ def _from_file_attempt(
     max_tries: int = MAX_TRIES,
     wait_for_creation: bool = False,
 ) -> ExperimentData:
-    """Attempt to create an ExperimentData object
-    from .csv and .pkl files.
+    """Attempt to create an ExperimentData object from .csv and .json
+    files.
 
     Parameters
     ----------
     project_dir : Path
         Name of the user-defined directory where the files are stored.
     max_tries : int, optional
-        Maximum number of tries to read the files, by default MAX_TRIES
+        Maximum number of tries to read the files, by default MAX_TRIES.
     wait_for_creation : bool, optional
-        If True, wait for the files to be created, by default False
+        If True, wait for the files to be created, by default False.
 
     Returns
     -------
@@ -1381,6 +1615,8 @@ def _from_file_attempt(
     ------
     FileNotFoundError
         If the files cannot be found.
+    ReachMaximumTriesError
+        If maximum number of tries is exceeded.
     """
     subdirectory = project_dir / EXPERIMENTDATA_SUBFOLDER
 
@@ -1421,21 +1657,26 @@ def convert_numpy_to_dataframe_with_domain(
     mode: Literal["input", "output"],
 ) -> pd.DataFrame:
     """
-    Convert a numpy array to a pandas DataFrame with the domain names
+    Convert a numpy array to a pandas DataFrame with the domain names.
 
     Parameters
     ----------
     array : np.ndarray
-        The numpy array to be converted
-    names : List[str], optional
-        The names of the columns, by default None
-    mode : str
-        The mode of the data, either 'input' or 'output'
+        The numpy array to be converted.
+    names : list[str], optional
+        The names of the columns, by default None.
+    mode : {'input', 'output'}
+        The mode of the data, either 'input' or 'output'.
 
     Returns
     -------
     pd.DataFrame
-        The converted data as a pandas DataFrame
+        The converted data as a pandas DataFrame.
+
+    Raises
+    ------
+    ValueError
+        If mode is not 'input' or 'output'.
     """
     if not names:
         if mode == "input":
@@ -1453,6 +1694,26 @@ def convert_numpy_to_dataframe_with_domain(
 
 
 def merge_dicts(list_of_dicts):
+    """
+    Merge a list of dictionaries with ordered keys and None padding.
+
+    Parameters
+    ----------
+    list_of_dicts : list[dict]
+        List of dictionaries to merge.
+
+    Returns
+    -------
+    dict
+        Merged dictionary with keys ordered by category ('jobs', 'input',
+        'output') and all values padded with None for missing keys.
+
+    Notes
+    -----
+    Keys are sorted first by category order (jobs=0, input=1, output=2),
+    then alphabetically within each group. Missing keys in any dictionary
+    are filled with None values.
+    """
     merged_dict = defaultdict(list)
 
     # Get all unique keys from all dictionaries
@@ -1480,22 +1741,28 @@ def _dict_factory(
     data: pd.DataFrame | list[dict[str, Any]] | None | Path | str,
 ) -> list[dict[str, Any]]:
     """
-    Convert the DataTypes to a list of dictionaries
+    Convert the DataTypes to a list of dictionaries.
 
     Parameters
     ----------
-    data : pd.DataFrame | List[Dict[str, Any]] | None | Path | str
-        The data to be converted
+    data : pd.DataFrame or list[dict[str, Any]] or None or Path or str
+        The data to be converted.
 
     Returns
     -------
-    List[Dict[str, Any]]
-        The converted data as a list of dictionaries
+    list[dict[str, Any]]
+        The converted data as a list of dictionaries.
 
     Raises
     ------
     ValueError
-        Raised when the data type is not supported
+        Raised when the data type is not supported.
+    FileNotFoundError
+        If the file path does not exist.
+    EmptyFileError
+        If the file is empty.
+    DecodeError
+        If the file cannot be decoded.
 
     Notes
     -----
@@ -1539,26 +1806,29 @@ def data_factory(
     project_dir: Path,
 ) -> dict[int, ExperimentSample]:
     """
-    Convert the input and output data to a defaultdictionary
-    of ExperimentSamples
+    Convert the input and output data to a defaultdict of
+    ExperimentSamples.
 
     Parameters
     ----------
-    input_data : List[Dict[str, Any]]
-        The input data of the experiments
-    output_data : List[Dict[str, Any]]
-        The output data of the experiments
+    input_data : list[dict[str, Any]]
+        The input data of the experiments.
+    output_data : list[dict[str, Any]]
+        The output data of the experiments.
     jobs : pd.Series
-        The status of all the jobs
+        The status of all the jobs.
     project_dir : Path
-        The project directory of the data
-
+        The project directory of the data.
 
     Returns
     -------
-    Dict[int, ExperimentSample]
-        The converted data as a defaultdict of ExperimentSamples
+    dict[int, ExperimentSample]
+        The converted data as a defaultdict of ExperimentSamples.
 
+    Notes
+    -----
+    NaN and None values are removed from input and output data before
+    creating ExperimentSample objects.
     """
     # remove all key-value pairs that have a None or np.nan value
     input_data = remove_nan_and_none_keys_inplace(input_data)
@@ -1582,6 +1852,25 @@ def data_factory(
 
 
 def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
+    """
+    Remove keys with NaN or None values from dictionaries in place.
+
+    Parameters
+    ----------
+    data_list : list[dict[str, Any]]
+        List of dictionaries to clean.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        The same list with NaN and None keys removed from each
+        dictionary.
+
+    Notes
+    -----
+    This function modifies the dictionaries in place. Keys are removed
+    if their values are None or NaN (for float values).
+    """
     for data in data_list:
         keys_to_remove = [
             k
@@ -1595,6 +1884,37 @@ def remove_nan_and_none_keys_inplace(data_list: list[dict[str, Any]]) -> None:
 
 
 def jobs_factory(jobs: pd.Series | str | Path | None) -> pd.Series:
+    """
+    Convert jobs data to a pandas Series.
+
+    Parameters
+    ----------
+    jobs : pd.Series or str or Path or None
+        The jobs data to convert. Can be a Series, path to a CSV file,
+        or None.
+
+    Returns
+    -------
+    pd.Series
+        The jobs data as a pandas Series.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file path does not exist.
+    EmptyFileError
+        If the file is empty.
+    DecodeError
+        If the file cannot be decoded.
+    ValueError
+        If the jobs type is not supported.
+
+    Notes
+    -----
+    If jobs is None, an empty Series is returned. If jobs is already
+    a Series, it is returned as-is. If jobs is a path, the CSV file
+    is read and converted to a Series.
+    """
     if isinstance(jobs, pd.Series):
         return jobs
 
@@ -1631,6 +1951,31 @@ def _store(
     idx: int,
     domain: Domain,
 ) -> ExperimentSample:
+    """
+    Store an ExperimentSample and update the Domain accordingly.
+
+    Parameters
+    ----------
+    experiment_sample : ExperimentSample
+        The experiment sample to store.
+    idx : int
+        The index of the experiment sample.
+    domain : Domain
+        The domain to update with new parameters or outputs.
+
+    Returns
+    -------
+    tuple of (ExperimentSample, Domain)
+        The updated experiment sample and domain.
+
+    Notes
+    -----
+    This function processes both input and output data. For values that
+    are ToDiskValue instances, it stores them to disk and updates the
+    experiment sample with a reference. It also ensures that all
+    parameters and outputs are added to the domain if not already
+    present.
+    """
     for name, value in experiment_sample._output_data.items():
         # If the value is a ToDiskValue, we need to store it
         if isinstance(value, ToDiskValue):
@@ -1640,6 +1985,7 @@ def _store(
                     to_disk=True,
                     store_function=value.store_function,
                     load_function=value.load_function,
+                    load_kwargs=value.load_kwargs,
                 )
             # Store the value on disk
             reference = value.store(
@@ -1664,6 +2010,7 @@ def _store(
                     to_disk=True,
                     store_function=value.store_function,
                     load_function=value.load_function,
+                    load_kwargs=value.load_kwargs,
                 )
             # Store the value on disk
             reference = value.store(
@@ -1681,3 +2028,48 @@ def _store(
                 domain.add_parameter(name=name)
 
     return experiment_sample, domain
+
+
+def _copy_reference(
+    reference: Path, old_project_dir: Path, new_project_dir: Path
+):
+    """
+    Copy a reference file (possibly extension-less) to a new
+    project directory.
+
+    ``reference`` may lack an extension (e.g. ``Path("model/0")``), because
+    store functions such as :func:`pickle_store` add the suffix themselves.
+    This function globs for ``<stem>.*`` to locate the actual file, then
+    copies it to the same relative path under ``new_project_dir``.
+
+    Parameters
+    ----------
+    reference : Path
+        Path relative to the experiment-data subfolder (may have no suffix).
+    old_project_dir : Path
+        Source project directory.
+    new_project_dir : Path
+        Destination project directory.
+    """
+    old_base = old_project_dir / EXPERIMENTDATA_SUBFOLDER / reference
+
+    # The actual file may carry an extension added by the store function.
+    if old_base.exists():
+        candidates = [old_base]
+    else:
+        candidates = list(old_base.parent.glob(old_base.name + ".*"))
+
+    if not candidates:
+        raise FileNotFoundError(
+            f"No file found for reference '{reference}' in '{old_base.parent}'"
+        )
+
+    for src in candidates:
+        dst = (
+            new_project_dir
+            / EXPERIMENTDATA_SUBFOLDER
+            / reference.parent
+            / src.name
+        )
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)

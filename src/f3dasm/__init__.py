@@ -13,11 +13,25 @@ optimization, sampling, and simulation.
 #                                                                       Modules
 # =============================================================================
 
-from ._src.core import Block, DataGenerator, Optimizer, datagenerator
+from ._src.core import (
+    Block,
+    ChainedBlock,
+    DataGenerator,
+    LoopBlock,
+    datagenerator,
+)
 from ._src.datageneration.datagenerator_factory import create_datagenerator
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.optimization.optimizer_factory import create_optimizer
+from ._src.pipeline import (
+    CollectArrayResults,
+    Loop,
+    Pipeline,
+    SlurmCluster,
+    SlurmResources,
+    Step,
+)
 from ._src.samplers import create_sampler
 
 #                                                        Authorship and Credits
@@ -29,13 +43,20 @@ __status__ = "Stable"
 # =============================================================================
 
 __all__ = [
+    "Block",
+    "ChainedBlock",
+    "CollectArrayResults",
+    "DataGenerator",
     "ExperimentData",
     "ExperimentSample",
+    "Loop",
+    "LoopBlock",
+    "Pipeline",
+    "SlurmCluster",
+    "SlurmResources",
+    "Step",
     "create_datagenerator",
-    "datagenerator",
     "create_optimizer",
     "create_sampler",
-    "Block",
-    "Optimizer",
-    "DataGenerator",
+    "datagenerator",
 ]

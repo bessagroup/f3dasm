@@ -5,7 +5,13 @@ Module for optimization
 # =============================================================================
 
 # Local
-from ._src.optimization import cg, lbfgsb, nelder_mead, tpesampler
+from ._src.optimization._imports import try_import
+
+with try_import() as _scipy_imports:
+    from ._src.optimization import cg, lbfgsb, nelder_mead
+
+with try_import() as _optuna_imports:
+    from ._src.optimization import tpesampler
 
 #                                                          Authorship & Credits
 # =============================================================================

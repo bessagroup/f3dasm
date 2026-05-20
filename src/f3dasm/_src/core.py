@@ -41,8 +41,28 @@ __status__ = "Alpha"
 
 
 class Block(ABC):
-    """
-    Abstract base class representing an operation in the data-driven process
+    """Abstract base class representing a single operation in a data-driven
+    pipeline.
+
+    A Block transforms an :class:`ExperimentData` object and returns the
+    updated result. Subclasses must implement the :meth:`call` method.
+    Optionally, they may override :meth:`arm` to perform any one-time setup
+    (e.g. fitting a surrogate model) before the block is executed.
+
+    Blocks compose with the ``>>`` operator into a :class:`ChainedBlock`,
+    and can be repeated with :meth:`loop` to produce a :class:`LoopBlock`.
+    The built-in samplers (:class:`RandomUniform`, :class:`Latin`,
+    :class:`Sobol`, :class:`Grid`), the :class:`DataGenerator`, and the
+    built-in optimizer update steps are all Block subclasses.
+
+    Examples
+    --------
+    Define a custom block:
+
+    >>> class MyBlock(Block):
+    ...     def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+    ...         # transform data here
+    ...         return data
     """
 
     def arm(self, data: ExperimentData) -> None:
@@ -81,6 +101,44 @@ class Block(ABC):
         """
         pass
 
+    def __rshift__(self, other: Block) -> ChainedBlock:
+        """Chain two blocks with the ``>>`` operator.
+
+        Parameters
+        ----------
+        other : Block
+            The block to execute after this one.
+
+        Returns
+        -------
+        ChainedBlock
+            A new block that runs ``self`` then ``other``.
+        """
+        if isinstance(other, ChainedBlock):
+            return ChainedBlock(blocks=[self, *other.blocks])
+        return ChainedBlock(blocks=[self, other])
+
+    def loop(self, n_iterations: int) -> LoopBlock:
+        """Repeat this block ``n_iterations`` times.
+
+        Parameters
+        ----------
+        n_iterations : int
+            Number of times to run the block.
+
+        Returns
+        -------
+        LoopBlock
+            A new block that runs ``self`` ``n_iterations`` times, passing
+            the output of each iteration as the input to the next.
+
+        Examples
+        --------
+        >>> step = update_step >> data_generator
+        >>> data = step.loop(50).call(initial_data)
+        """
+        return LoopBlock(block=self, n_iterations=n_iterations)
+
     @classmethod
     def from_yaml(
         cls, init_config: DictConfig, call_config: Optional[DictConfig] = None
@@ -107,13 +165,143 @@ class Block(ABC):
         return block
 
 
+class ChainedBlock(Block):
+    """A block that runs multiple blocks in sequence.
+
+    Created automatically by the ``>>`` operator on
+    :class:`Block` instances.
+
+    Parameters
+    ----------
+    blocks : list[Block]
+        The blocks to execute in order.
+    """
+
+    def __init__(self, blocks: list[Block]) -> None:
+        """Initialize the chained block.
+
+        Parameters
+        ----------
+        blocks : list[Block]
+            Ordered list of blocks to execute sequentially.
+        """
+        self.blocks = blocks
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Execute all chained blocks in order.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments for each block.
+
+        Returns
+        -------
+        ExperimentData
+            The processed experiment data.
+        """
+        for block in self.blocks:
+            data = block.call(data=data, **kwargs)
+        return data
+
+    def arm(self, data: ExperimentData) -> None:
+        """Arm all chained blocks."""
+        for block in self.blocks:
+            block.arm(data)
+
+    def __rshift__(self, other: Block) -> ChainedBlock:
+        if isinstance(other, ChainedBlock):
+            return ChainedBlock(blocks=[*self.blocks, *other.blocks])
+        return ChainedBlock(blocks=[*self.blocks, other])
+
+
+class LoopBlock(Block):
+    """A block that repeats an inner block ``n_iterations`` times.
+
+    Each iteration passes the output of the previous call as the input to
+    the next. Typical use is to drive an optimizer update step chained with
+    a data generator:
+
+    >>> loop = (update_step >> data_generator).loop(50)
+    >>> data = loop.call(initial_data)
+
+    Parameters
+    ----------
+    block : Block
+        The inner block to repeat.
+    n_iterations : int
+        Number of iterations to run.
+    """
+
+    def __init__(self, block: Block, n_iterations: int) -> None:
+        self.block = block
+        self.n_iterations = n_iterations
+
+    def arm(self, data: ExperimentData) -> None:
+        """Arm the inner block once before the loop starts."""
+        self.block.arm(data)
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Run the inner block ``n_iterations`` times sequentially.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data to process.
+        **kwargs : dict
+            Additional keyword arguments forwarded to each iteration.
+
+        Returns
+        -------
+        ExperimentData
+            The experiment data after ``n_iterations`` iterations.
+        """
+        for _ in range(self.n_iterations):
+            data = self.block.call(data=data, **kwargs)
+        return data
+
+
 # =============================================================================
 
 
 class DataGenerator:
-    """Base class for a data generator"""
+    """Base class for generating output data for experiment samples.
+
+    Subclasses must implement the :meth:`execute` method, which receives a
+    single :class:`ExperimentSample` and returns it after storing the computed
+    outputs.  The :meth:`call` method drives execution across a full
+    :class:`ExperimentData` object and supports several parallelisation
+    backends (sequential, multiprocessing, cluster file-lock, MPI).
+
+    Examples
+    --------
+    Define a custom data generator:
+
+    >>> class MyDataGenerator(DataGenerator):
+    ...     def execute(
+    ...         self, experiment_sample: ExperimentSample, **kwargs
+    ...     ) -> ExperimentSample:
+    ...         x0 = experiment_sample.input_data['x0']
+    ...         experiment_sample.store('y', x0 ** 2)
+    ...         return experiment_sample
+    """
 
     def arm(self, data: ExperimentData) -> None:
+        """Prepare the data generator before execution.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The experiment data that the generator will operate on.
+
+        Notes
+        -----
+        Override this method in a subclass to perform one-time setup that
+        requires access to the full :class:`ExperimentData` (e.g. fitting a
+        surrogate model). The default implementation does nothing.
+        """
         pass
 
     # =========================================================================
@@ -149,7 +337,7 @@ class DataGenerator:
 
     def call(
         self,
-        data: ExperimentData | str,
+        data: ExperimentData,
         mode: str = "sequential",
         pass_id: bool = False,
         **kwargs,
@@ -159,7 +347,7 @@ class DataGenerator:
 
         Parameters
         ----------
-        data : ExperimentData | str
+        data : ExperimentData
             The experiment data to process.
         mode : str, optional
             The mode of evaluation, by default 'sequential'
@@ -224,9 +412,12 @@ def datagenerator(
     """
     Decorator to convert a function into a `DataGenerator` subclass.
 
-    The decorated function should take named arguments matching the keys in
-    the Domain and return one or multiple output values. These values will be
-    stored in the `ExperimentData` under the names specified in `output_names`.
+    The decorated function's parameter names must match either an input
+    parameter name in the Domain or an explicit kwarg later passed to
+    `call(...)`; defaulted parameters are optional. A mismatch is caught
+    at `arm`/`call` time with a clear ``ValueError`` (see issue #268).
+    The function's return values will be stored in the `ExperimentSample`
+    object under the names specified in `output_names`.
 
     Parameters
     ----------
@@ -280,6 +471,68 @@ def datagenerator(
             """
             Auto-generated DataGenerator subclass from a decorated function.
             """
+
+            def _validate_signature(
+                self,
+                data: ExperimentData,
+                supplied_kwargs: Iterable[str],
+            ) -> None:
+                """Check ``f``'s required args resolve to a known source.
+
+                A decorated data generator pulls each required argument
+                of ``f`` from one of three places at execute time: the
+                Domain's input parameters, an explicit kwarg on
+                ``DataGenerator.call``, or (if defined) a parameter
+                default. When none of those covers a required arg, the
+                user previously got the confusing ``TypeError: cannot
+                unpack non-iterable NoneType object`` from inside
+                ``_run_sample``. Catch the mismatch eagerly instead with
+                a message that names the offending arguments and lists
+                what's available (see issue #268).
+                """
+                required = {
+                    name
+                    for name, p in signature.parameters.items()
+                    if p.default is inspect.Parameter.empty
+                    and p.kind
+                    not in (
+                        inspect.Parameter.VAR_POSITIONAL,
+                        inspect.Parameter.VAR_KEYWORD,
+                    )
+                }
+                domain_inputs = set(data.domain.input_names)
+                missing = required - domain_inputs - set(supplied_kwargs)
+                if missing:
+                    raise ValueError(
+                        f"DataGenerator function `{f.__name__}` declares "
+                        f"required argument(s) {sorted(missing)} that "
+                        "are not present in the Domain and were not "
+                        f"supplied via `call(...)` kwargs. Domain "
+                        f"inputs are {sorted(domain_inputs)}. Rename "
+                        "your function arguments to match the Domain "
+                        "parameter names, give them default values, or "
+                        "pass them explicitly to `call(...)`."
+                    )
+
+            def arm(self, data: ExperimentData) -> None:
+                """Validate that ``f``'s required args match the Domain.
+
+                Equivalent to the validation that ``call`` runs, but
+                without knowledge of any kwargs the user will pass
+                later. Use this when you want the mismatch to surface
+                eagerly during pipeline setup.
+                """
+                self._validate_signature(data, supplied_kwargs=())
+
+            def call(
+                self, data: ExperimentData, **kwargs: Any
+            ) -> ExperimentData:
+                # `DataGenerator.call` does not auto-invoke `arm`, so we
+                # run the signature check here -- with the user's
+                # kwargs in scope -- as a safety net for the common
+                # `dg.call(data=ed, ...)` pattern (issue #268).
+                self._validate_signature(data, supplied_kwargs=kwargs.keys())
+                return super().call(data=data, **kwargs)
 
             def execute(
                 self, experiment_sample: ExperimentSample, **kwargs: Any
@@ -335,6 +588,7 @@ def datagenerator(
                             to_disk=parameter.to_disk,
                             store_function=parameter.store_function,
                             load_function=parameter.load_function,
+                            load_kwargs=parameter.load_kwargs,
                         )
                     else:
                         experiment_sample.store(name=name, object=value)
@@ -347,24 +601,3 @@ def datagenerator(
         return data_generator
 
     return decorator
-
-
-# =============================================================================
-
-
-class Optimizer(ABC):
-    @abstractmethod
-    def arm(
-        self,
-        data: ExperimentData,
-        data_generator: DataGenerator,
-        input_name: str,
-        output_name: str,
-    ) -> None:
-        pass
-
-    @abstractmethod
-    def call(
-        self, data: ExperimentData, n_iterations: int, **kwargs
-    ) -> ExperimentData:
-        pass

@@ -11,7 +11,7 @@ from typing import Optional
 import scipy.optimize
 
 # Locals
-from ..core import DataGenerator, Optimizer
+from ..core import Block, DataGenerator
 from ..experimentdata import ExperimentData
 
 #                                                          Authorship & Credits
@@ -30,103 +30,95 @@ warnings.filterwarnings(
 # =============================================================================
 
 
-class ScipyOptimizer(Optimizer):
-    """Wrapper for scipy.optimize.minimize optimization methods.
+class ScipyOptimizer(Block):
+    """One-shot block that wraps ``scipy.optimize.minimize``.
 
-    This class provides an interface to various optimization algorithms
-    from scipy.optimize.minimize, adapted to work with the f3dasm framework.
+    Unlike ask/tell optimizers, scipy runs its own inner loop, so this block
+    is *not* meant to be wrapped in a :class:`LoopBlock`. Call it once and
+    it returns the full optimization history appended to the input data.
 
     Parameters
     ----------
     method : str
-        Name of the scipy optimization method to use (e.g., 'CG', 'L-BFGS-B',
-        'Nelder-Mead').
+        scipy optimization method name (e.g. ``'CG'``, ``'L-BFGS-B'``,
+        ``'Nelder-Mead'``).
+    data_generator : DataGenerator
+        The data generator whose ``f`` attribute will be optimized.
+    output_name : str
+        Name of the output column scipy minimizes.
+    input_name : str
+        Name of the input column controlled by scipy.
     bounds : scipy.optimize.Bounds, optional
-        Bounds on variables for optimization algorithms that support them.
+        Bounds on variables for methods that support them.
+    grad_f : callable, optional
+        Gradient function. If ``None``, scipy estimates gradients numerically.
     **hyperparameters
-        Additional keyword arguments to pass to the scipy optimizer as options.
+        Forwarded to ``scipy.optimize.minimize`` as ``options={...}``
+        (e.g. ``maxiter``).
 
     Attributes
     ----------
-    bounds : scipy.optimize.Bounds or None
-        Bounds on variables for the optimization.
     method : str
-        The scipy optimization method being used.
-    hyperparameters : dict
-        Dictionary of hyperparameters for the optimizer.
+        The scipy method used.
     data_generator : DataGenerator
-        The data generator used for function evaluations.
+        The data generator whose ``f`` attribute is optimized.
     output_name : str
-        Name of the output variable to optimize.
+        Name of the output column being minimized.
     input_name : str
-        Name of the input variable being optimized.
+        Name of the input column being optimized.
+    bounds : scipy.optimize.Bounds or None
+        Variable bounds.
+    grad_f : callable or None
+        Gradient function; ``None`` means numerical gradients.
+    hyperparameters : dict
+        Extra options forwarded to scipy.
     """
 
     def __init__(
         self,
         method: str,
+        data_generator: DataGenerator,
+        output_name: str,
+        input_name: str,
         bounds: Optional[scipy.optimize.Bounds] = None,
+        grad_f: Optional[Callable] = None,
         **hyperparameters,
     ):
-        self.bounds = bounds
         self.method = method
-        self.hyperparameters = hyperparameters
-
-    def arm(
-        self,
-        data: ExperimentData,
-        data_generator: DataGenerator,
-        input_name: str,
-        output_name: str,
-    ):
-        """Prepare the optimizer with initial data and configuration.
-
-        Parameters
-        ----------
-        data : ExperimentData
-            The experiment data containing initial samples.
-        data_generator : DataGenerator
-            The data generator used for function evaluations.
-        input_name : str
-            Name of the input variable to optimize.
-        output_name : str
-            Name of the output variable to optimize.
-        """
         self.data_generator = data_generator
         self.output_name = output_name
         self.input_name = input_name
+        self.bounds = bounds
+        self.grad_f = grad_f
+        self.hyperparameters = hyperparameters
 
-        experiment_sample = data.get_experiment_sample(data.index[-1])
-        self._x0 = experiment_sample.input_data[input_name]
-
-    def call(
-        self,
-        data: ExperimentData,
-        n_iterations: Optional[int] = None,
-        grad_f: Optional[Callable] = None,
-        **kwargs,
-    ) -> ExperimentData:
-        """Execute the optimization algorithm.
+    def arm(self, data: ExperimentData) -> None:
+        """Capture the initial point (``x0``) from the last row of ``data``.
 
         Parameters
         ----------
         data : ExperimentData
-            The experiment data to use for optimization.
-        n_iterations : int, optional
-            Maximum number of iterations (not used in scipy optimizers, but
-            kept for interface consistency).
-        grad_f : callable, optional
-            Gradient function for the objective. If None, gradients will be
-            estimated numerically by scipy.
-        **kwargs
-            Additional keyword arguments (not used, but kept for interface
-            consistency).
+            The experiment data providing the initial point.
+        """
+        experiment_sample = data.get_experiment_sample(data.index[-1])
+        self._x0 = experiment_sample.input_data[self.input_name]
+
+    def call(self, data: ExperimentData, **kwargs) -> ExperimentData:
+        """Run ``scipy.optimize.minimize`` and append its history to ``data``.
+
+        Parameters
+        ----------
+        data : ExperimentData
+            The input experiment data. The history produced by scipy is
+            appended to this via :meth:`ExperimentData.__add__`.
+        **kwargs : dict
+            Unused; kept for Block interface consistency.
 
         Returns
         -------
         ExperimentData
-            New experiment data containing the optimization history with
-            input-output pairs from each iteration.
+            ``data`` concatenated with one row per scipy callback call
+            (the input-output pairs scipy emits during its inner loop).
         """
         history_x, history_y = [], []
 
@@ -140,122 +132,163 @@ class ScipyOptimizer(Optimizer):
             fun=self.data_generator.f,
             x0=self._x0,
             method=self.method,
-            jac=grad_f,
+            jac=self.grad_f,
             bounds=self.bounds,
             options={**self.hyperparameters},
             callback=callback,
         )
 
-        return ExperimentData(
+        history = ExperimentData(
             domain=data.domain,
             input_data=history_x,
             output_data=history_y,
             project_dir=data._project_dir,
         )
 
+        return data + history
+
 
 # =============================================================================
 
 
 def cg(
-    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+    data_generator: DataGenerator,
+    output_name: str,
+    input_name: str,
+    bounds: Optional[scipy.optimize.Bounds] = None,
+    grad_f: Optional[Callable] = None,
+    **hyperparameters,
 ) -> ScipyOptimizer:
-    """Create a Conjugate Gradient optimizer.
-
-    Uses the Conjugate Gradient (CG) algorithm from scipy.optimize.minimize.
-    This is a gradient-based optimization method suitable for unconstrained
-    optimization of smooth functions.
+    """Create a Conjugate Gradient block.
 
     Parameters
     ----------
+    data_generator : DataGenerator
+        The data generator whose ``f`` attribute will be optimized.
+    output_name : str
+        Name of the output column to minimize.
+    input_name : str
+        Name of the input column controlled by CG.
     bounds : scipy.optimize.Bounds, optional
-        Bounds on variables. Note that CG typically doesn't support bounds
-        directly, but this parameter is kept for interface consistency.
+        Bounds on variables (CG does not natively support bounds; kept for
+        interface consistency).
+    grad_f : callable, optional
+        Gradient function. If ``None``, gradients are estimated numerically.
     **hyperparameters
-        Additional options to pass to the CG optimizer. Common options include:
-        - maxiter : int, maximum number of iterations
-        - gtol : float, gradient norm tolerance
-        - norm : str, order of vector norm used in convergence checks
+        Options forwarded to the CG optimizer, such as ``maxiter``, ``gtol``,
+        ``norm``.
 
     Returns
     -------
     ScipyOptimizer
-        Configured CG optimizer instance.
+        Configured CG block.
 
     See Also
     --------
-    scipy.optimize.minimize : The underlying scipy minimize function.
+    scipy.optimize.minimize
     """
-    return ScipyOptimizer(method="CG", bounds=bounds, **hyperparameters)
+    return ScipyOptimizer(
+        method="CG",
+        data_generator=data_generator,
+        output_name=output_name,
+        input_name=input_name,
+        bounds=bounds,
+        grad_f=grad_f,
+        **hyperparameters,
+    )
 
 
 def nelder_mead(
-    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+    data_generator: DataGenerator,
+    output_name: str,
+    input_name: str,
+    bounds: Optional[scipy.optimize.Bounds] = None,
+    grad_f: Optional[Callable] = None,
+    **hyperparameters,
 ) -> ScipyOptimizer:
-    """Create a Nelder-Mead optimizer.
-
-    Uses the Nelder-Mead simplex algorithm from scipy.optimize.minimize.
-    This is a derivative-free optimization method that works well for
-    non-smooth functions but may be slower for high-dimensional problems.
+    """Create a Nelder-Mead block.
 
     Parameters
     ----------
+    data_generator : DataGenerator
+        The data generator whose ``f`` attribute will be optimized.
+    output_name : str
+        Name of the output column to minimize.
+    input_name : str
+        Name of the input column controlled by Nelder-Mead.
     bounds : scipy.optimize.Bounds, optional
-        Bounds on variables. Note that standard Nelder-Mead doesn't support
-        bounds, but this parameter is kept for interface consistency.
+        Bounds on variables (standard Nelder-Mead does not support them).
+    grad_f : callable, optional
+        Gradient function (unused by Nelder-Mead; kept for interface
+        consistency).
     **hyperparameters
-        Additional options to pass to the Nelder-Mead optimizer. Common
-        options include:
-        - maxiter : int, maximum number of iterations
-        - maxfev : int, maximum number of function evaluations
-        - xatol : float, absolute error in parameters for convergence
-        - fatol : float, absolute error in function value for convergence
+        Options forwarded to the Nelder-Mead optimizer, such as ``maxiter``,
+        ``maxfev``, ``xatol``, ``fatol``.
 
     Returns
     -------
     ScipyOptimizer
-        Configured Nelder-Mead optimizer instance.
+        Configured Nelder-Mead block.
 
     See Also
     --------
-    scipy.optimize.minimize : The underlying scipy minimize function.
+    scipy.optimize.minimize
     """
     return ScipyOptimizer(
-        method="Nelder-Mead", bounds=bounds, **hyperparameters
+        method="Nelder-Mead",
+        data_generator=data_generator,
+        output_name=output_name,
+        input_name=input_name,
+        bounds=bounds,
+        grad_f=grad_f,
+        **hyperparameters,
     )
 
 
 def lbfgsb(
-    bounds: Optional[scipy.optimize.Bounds] = None, **hyperparameters
+    data_generator: DataGenerator,
+    output_name: str,
+    input_name: str,
+    bounds: Optional[scipy.optimize.Bounds] = None,
+    grad_f: Optional[Callable] = None,
+    **hyperparameters,
 ) -> ScipyOptimizer:
-    """Create an L-BFGS-B optimizer.
-
-    Uses the Limited-memory BFGS with Box constraints (L-BFGS-B) algorithm
-    from scipy.optimize.minimize. This is a quasi-Newton method that handles
-    bound constraints efficiently and is suitable for large-scale problems.
+    """Create an L-BFGS-B block.
 
     Parameters
     ----------
+    data_generator : DataGenerator
+        The data generator whose ``f`` attribute will be optimized.
+    output_name : str
+        Name of the output column to minimize.
+    input_name : str
+        Name of the input column controlled by L-BFGS-B.
     bounds : scipy.optimize.Bounds, optional
-        Bounds on variables. L-BFGS-B natively supports box constraints.
+        Bounds on variables; L-BFGS-B supports box constraints natively.
+    grad_f : callable, optional
+        Gradient function. If ``None``, gradients are estimated numerically.
     **hyperparameters
-        Additional options to pass to the L-BFGS-B optimizer. Common options:
-        - maxiter : int, maximum number of iterations
-        - maxfun : int, maximum number of function evaluations
-        - ftol : float, tolerance for termination based on function value
-        - gtol : float, tolerance for termination based on gradient norm
-        - maxcor : int, maximum number of variable metric corrections
+        Options forwarded to the L-BFGS-B optimizer, such as ``maxiter``,
+        ``maxfun``, ``ftol``, ``gtol``, ``maxcor``.
 
     Returns
     -------
     ScipyOptimizer
-        Configured L-BFGS-B optimizer instance.
+        Configured L-BFGS-B block.
 
     See Also
     --------
-    scipy.optimize.minimize : The underlying scipy minimize function.
+    scipy.optimize.minimize
     """
-    return ScipyOptimizer(method="L-BFGS-B", bounds=bounds, **hyperparameters)
+    return ScipyOptimizer(
+        method="L-BFGS-B",
+        data_generator=data_generator,
+        output_name=output_name,
+        input_name=input_name,
+        bounds=bounds,
+        grad_f=grad_f,
+        **hyperparameters,
+    )
 
 
 # =============================================================================

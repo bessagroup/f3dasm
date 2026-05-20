@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 # Standard
+import copy  # noqa: F401
+import dataclasses
 import pickle
-from collections.abc import Iterable
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional, Protocol, Union
 
 import numpy as np
@@ -27,44 +29,77 @@ CategoricalType = Union[None, int, float, str]  # noqa
 
 
 class StoreFunction(Protocol):
-    """Base class for storing and loading output data from disk"""
+    """Protocol for a custom function that stores an object to disk."""
 
     def __call__(object: Any, path: str) -> str:
         """
-        Protocol class for storing output data from disk.
+        Store ``object`` to disk and return the full path it was written to.
 
         Parameters
         ----------
         object : Any
             The object to store.
         path : str
-            The location to store the object to.
+            The location to store the object to, **without** a file
+            extension. The implementation is responsible for choosing the
+            extension appropriate to the object type and appending it
+            before writing.
 
-        Notes
-        -----
-        The function should store the object to the location specified by the
-        path parameter. The suffix of the file should be determined by the
-        object type, and is not yet implemented in the path!
+        Returns
+        -------
+        str
+            The full path the object was written to, **including** the
+            file extension. f3dasm uses this returned path to locate the
+            object at load time, so it must reflect the extension actually
+            used on disk.
+
+        Examples
+        --------
+        A minimal store function for a numpy array — note that the
+        returned path carries the ``.npy`` suffix:
+
+        >>> import numpy as np
+        >>> from pathlib import Path
+        >>> def numpy_store(object: np.ndarray, path: str) -> str:
+        ...     _path = Path(path).with_suffix(".npy")
+        ...     np.save(_path, object)
+        ...     return str(_path)  # must include the .npy suffix
         """
         ...
 
 
 class LoadFunction(Protocol):
-    """Base class for storing and loading output data from disk"""
+    """Protocol for a custom function that loads an object from disk."""
 
-    def __call__(path: str) -> Any:
+    def __call__(path: str, **kwargs: Any) -> Any:
         """
-        Protocol class for loading output data from disk.
+        Load and return the object previously written by a StoreFunction.
 
         Parameters
         ----------
         path : str
             The location to load the object from.
+        **kwargs : Any
+            Auxiliary state required by the load implementation. f3dasm
+            forwards any ``load_kwargs`` registered on the matching
+            :class:`Parameter` (see issue #285). The built-in loaders
+            ignore unknown kwargs, so custom deserialisers can request
+            extra state (e.g. an ``equinox`` template via
+            ``load_kwargs={"like": template}``) without breaking the
+            default path.
 
         Returns
         -------
         Any
             The loaded object.
+
+        Examples
+        --------
+        The symmetric load for the numpy ``StoreFunction`` example:
+
+        >>> import numpy as np
+        >>> def numpy_load(path: str) -> np.ndarray:
+        ...     return np.load(path)
         """
         ...
 
@@ -82,6 +117,7 @@ class Parameter:
         to_disk: bool = False,
         store_function: Optional[StoreFunction] = None,
         load_function: Optional[LoadFunction] = None,
+        load_kwargs: Optional[dict[str, Any]] = None,
     ):
         """
         Initialize the Parameter.
@@ -94,12 +130,18 @@ class Parameter:
             Function to store the parameter to disk. Defaults to None.
         load_function : Optional[LoadFunction], optional
             Function to load the parameter from disk. Defaults to None.
+        load_kwargs : dict[str, Any], optional
+            Extra keyword arguments forwarded to ``load_function`` each
+            time the stored object is loaded. Useful when the
+            deserialiser needs auxiliary state (an ``equinox`` template,
+            a torch module skeleton for a `state_dict`, etc.) -- see
+            issue #285. Defaults to None (no kwargs forwarded).
 
         Raises
         ------
         ValueError
-            If `to_disk` is False but either `store_function` or
-            `load_function` is not None.
+            If `to_disk` is False but either `store_function`,
+            `load_function`, or `load_kwargs` is not None.
 
         Notes
         -----
@@ -119,24 +161,55 @@ class Parameter:
         """
 
         if not to_disk and (
-            store_function is not None or load_function is not None
+            store_function is not None
+            or load_function is not None
+            or load_kwargs is not None
         ):
             raise ValueError(
-                "If 'to_disk' is False, 'store_function' and"
-                "load_function' must be None."
+                "If 'to_disk' is False, 'store_function', "
+                "'load_function', and 'load_kwargs' must be None."
             )
 
         self.to_disk = to_disk
         self.store_function = store_function
         self.load_function = load_function
+        self.load_kwargs = load_kwargs
 
     def __str__(self):
-        return f"Parameter(type={self._type}, to_disk={self.to_disk})"
+        """Return a string representation of the Parameter.
+
+        Returns
+        -------
+        str
+            String representation of the Parameter.
+        """
+        if type(self) is Parameter:
+            return f"Parameter(type={self._type}, to_disk={self.to_disk})"
+        return repr(self)
 
     def __repr__(self):
+        """Return a representation of the Parameter.
+
+        Returns
+        -------
+        str
+            Representation string of the Parameter.
+        """
         return f"{self.__class__.__name__}(to_disk={self.to_disk})"
 
     def __eq__(self, __o: Parameter):
+        """Check equality between two Parameters.
+
+        Parameters
+        ----------
+        __o : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if parameters have the same to_disk attribute.
+        """
         return self.to_disk == __o.to_disk
 
     def __add__(self, __o: Parameter) -> Parameter:
@@ -178,6 +251,7 @@ class Parameter:
             to_disk=self.to_disk,
             store_function=self.store_function,
             load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )
 
     def to_dict(self) -> dict:
@@ -191,32 +265,39 @@ class Parameter:
 
         Notes
         -----
-        The dictionary representation of the Parameter object contains the
-        type of the parameter, whether it should be saved to disk, and the
-        store and load functions. The functions are stored as hex strings.
+        The dictionary representation of the Parameter object contains
+        the type of the parameter, whether it should be saved to disk,
+        and the store and load functions. The functions are stored as
+        hex strings.
 
         Examples
         --------
         >>> param = Parameter(to_disk=True)
         >>> param_dict = param.to_dict()
-
-
         """
-        param_dict = {
+        d: dict = {
             "type": self._type,
             "to_disk": self.to_disk,
-            "store_function": None,
-            "load_function": None,
+            "store_function": (
+                pickle.dumps(self.store_function).hex()
+                if self.store_function
+                else None
+            ),
+            "load_function": (
+                pickle.dumps(self.load_function).hex()
+                if self.load_function
+                else None
+            ),
+            "load_kwargs": (
+                pickle.dumps(self.load_kwargs).hex()
+                if self.load_kwargs is not None
+                else None
+            ),
         }
-        if self.store_function:
-            param_dict["store_function"] = pickle.dumps(
-                self.store_function
-            ).hex()
-        if self.load_function:
-            param_dict["load_function"] = pickle.dumps(
-                self.load_function
-            ).hex()
-        return param_dict
+        if dataclasses.is_dataclass(self):
+            for f in dataclasses.fields(self):
+                d[f.name] = getattr(self, f.name)
+        return d
 
     @classmethod
     def from_dict(cls, param_dict: dict) -> Parameter:
@@ -235,19 +316,25 @@ class Parameter:
 
         Examples
         --------
-        >>> param_dict = {'type': 'object', 'to_disk': False}
+        >>> param_dict = {'type': 'object', 'to_disk': False,
+        ...               'store_function': None, 'load_function': None}
         >>> param = Parameter.from_dict(param_dict)
         """
         param_type = param_dict["type"]
         store_function = None
         load_function = None
-        if param_dict["store_function"]:
+        load_kwargs = None
+        if param_dict.get("store_function"):
             store_function = pickle.loads(
                 bytes.fromhex(param_dict["store_function"])
             )
-        if param_dict["load_function"]:
+        if param_dict.get("load_function"):
             load_function = pickle.loads(
                 bytes.fromhex(param_dict["load_function"])
+            )
+        if param_dict.get("load_kwargs"):
+            load_kwargs = pickle.loads(
+                bytes.fromhex(param_dict["load_kwargs"])
             )
 
         if param_type == "object":
@@ -255,38 +342,21 @@ class Parameter:
                 to_disk=param_dict["to_disk"],
                 store_function=store_function,
                 load_function=load_function,
+                load_kwargs=load_kwargs,
             )
-        elif param_type == "float":
-            return ContinuousParameter(
-                lower_bound=param_dict.get("lower_bound", float("-inf")),
-                upper_bound=param_dict.get("upper_bound", float("inf")),
-                log=param_dict.get("log", False),
-            )
-        elif param_type == "int":
-            return DiscreteParameter(
-                lower_bound=param_dict.get("lower_bound", 0),
-                upper_bound=param_dict.get("upper_bound", 1),
-                step=param_dict.get("step", 1),
-            )
-        elif param_type == "category":
-            return CategoricalParameter(
-                categories=param_dict.get("categories", [])
-            )
-        elif param_type == "constant":
-            return ConstantParameter(value=param_dict.get("value"))
-        elif param_type == "array":
-            return ArrayParameter(
-                shape=param_dict.get("shape", ()),
-                lower_bound=param_dict.get("lower_bound", float("-inf")),
-                upper_bound=param_dict.get("upper_bound", float("inf")),
-            )
-        else:
+
+        param_cls = _PARAM_REGISTRY.get(param_type)
+        if param_cls is None:
             raise ValueError(f"Unknown parameter type: {param_type}")
+        fields = {f.name for f in dataclasses.fields(param_cls)}
+        kwargs = {k: v for k, v in param_dict.items() if k in fields}
+        return param_cls(**kwargs)
 
 
 # =============================================================================
 
 
+@dataclass
 class ConstantParameter(Parameter):
     """
     Create a search space parameter that is constant.
@@ -299,7 +369,7 @@ class ConstantParameter(Parameter):
     Attributes
     ----------
     _type : str
-        The type of the parameter, which is always 'object'.
+        The type of the parameter, which is always 'constant'.
 
     Raises
     ------
@@ -313,12 +383,39 @@ class ConstantParameter(Parameter):
     ConstantParameter(value=5)
     """
 
-    def __init__(self, value: Any):
+    _type: ClassVar[str] = "constant"
+    value: Any  # required, no default
+
+    def __post_init__(self):
+        """Validate that the value is hashable.
+
+        Raises
+        ------
+        TypeError
+            If the value is not hashable.
+        """
         super().__init__()
-        self.value = value
         self._validate_hashable()
 
     def __add__(self, other: Parameter):
+        """Add two ConstantParameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        ConstantParameter or CategoricalParameter
+            Returns self if values are equal, otherwise returns a
+            CategoricalParameter containing both values.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter.
+        """
         if isinstance(other, ConstantParameter):
             if self.value == other.value:
                 return self
@@ -336,22 +433,6 @@ class ConstantParameter(Parameter):
         if isinstance(other, ContinuousParameter):
             raise ValueError("Cannot add continuous parameter to constant!")
 
-    def _copy(self) -> ConstantParameter:
-        """
-        Create a copy of the ConstantParameter object.
-
-        Returns
-        -------
-        ConstantParameter
-            A copy of the ConstantParameter object.
-
-        Examples
-        --------
-        >>> param = ConstantParameter(value=5)
-        >>> param_copy = param._copy()
-        """
-        return ConstantParameter(value=self.value)
-
     def to_categorical(self) -> CategoricalParameter:
         """
         Convert the constant parameter to a categorical parameter.
@@ -363,35 +444,24 @@ class ConstantParameter(Parameter):
         """
         return CategoricalParameter(categories=[self.value])
 
-    def to_dict(self):
-        param_dict = super().to_dict()
-        param_dict["type"] = "constant"
-        param_dict["value"] = self.value
-        return param_dict
-
     def _validate_hashable(self):
-        """Check if the value is hashable."""
+        """Check if the value is hashable.
+
+        Raises
+        ------
+        TypeError
+            If the value is not hashable.
+        """
         try:
             hash(self.value)
         except TypeError as exc:
             raise TypeError("The value must be hashable.") from exc
 
-    def __str__(self):
-        return f"ConstantParameter(value={self.value})"
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(value={repr(self.value)})"
-
-    def __eq__(self, __o: Parameter) -> bool:
-        if not isinstance(__o, ConstantParameter):
-            return False
-
-        return self.value == __o.value
-
 
 # =============================================================================
 
 
+@dataclass
 class ContinuousParameter(Parameter):
     """
     A search space parameter that is continuous.
@@ -419,18 +489,22 @@ class ContinuousParameter(Parameter):
     """
 
     _type: ClassVar[str] = "float"
+    lower_bound: float = field(default_factory=lambda: float("-inf"))
+    upper_bound: float = field(default_factory=lambda: float("inf"))
+    log: bool = False
 
-    def __init__(
-        self,
-        lower_bound: float = float("-inf"),
-        upper_bound: float = float("inf"),
-        log: bool = False,
-    ):
+    def __post_init__(self):
+        """Cast bounds to float and validate the range.
+
+        Raises
+        ------
+        ValueError
+            If ``log`` is True and ``lower_bound <= 0``, or if
+            ``upper_bound <= lower_bound``.
+        """
         super().__init__()
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        self.log = log
-
+        self.lower_bound = float(self.lower_bound)
+        self.upper_bound = float(self.upper_bound)
         if self.log and self.lower_bound <= 0.0:
             raise ValueError(
                 f"The `lower_bound` value must be larger than 0 for a "
@@ -440,6 +514,24 @@ class ContinuousParameter(Parameter):
         self._validate_range()
 
     def __add__(self, other: Parameter) -> ContinuousParameter:
+        """Add two ContinuousParameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        ContinuousParameter
+            Combined continuous parameter with merged bounds.
+
+        Raises
+        ------
+        ValueError
+            If other is not a ContinuousParameter, has different log
+            scale, or ranges do not overlap.
+        """
         if not isinstance(other, ContinuousParameter):
             raise ValueError(
                 "Cannot add non-continuous parameter to continuous!"
@@ -459,28 +551,6 @@ class ContinuousParameter(Parameter):
             upper_bound=max(self.upper_bound, other.upper_bound),
         )
 
-    def __str__(self):
-        return (
-            f"ContinuousParameter(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, log={self.log})"
-        )
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, log={self.log})"
-        )
-
-    def __eq__(self, __o: Parameter) -> bool:
-        if not isinstance(__o, ContinuousParameter):
-            return False
-
-        return (
-            self.lower_bound == __o.lower_bound
-            and self.upper_bound == __o.upper_bound
-            and self.log == __o.log
-        )
-
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError(
@@ -488,26 +558,6 @@ class ContinuousParameter(Parameter):
                 f"(lower_bound={self.lower_bound}, "
                 f"upper_bound={self.upper_bound})"
             )
-
-    def _copy(self) -> ContinuousParameter:
-        """
-        Create a copy of the ContinuousParameter object.
-
-        Returns
-        -------
-        ContinuousParameter
-            A copy of the ContinuousParameter object.
-
-        Examples
-        --------
-        >>> param = ContinuousParameter(lower_bound=0.0, upper_bound=1.0)
-        >>> param_copy = param._copy()
-        """
-        return ContinuousParameter(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-            log=self.log,
-        )
 
     def to_discrete(self, step: int = 1) -> DiscreteParameter:
         """
@@ -543,18 +593,11 @@ class ContinuousParameter(Parameter):
             step=step,
         )
 
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "float"
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        param_dict["log"] = self.log
-        return param_dict
-
 
 # =============================================================================
 
 
+@dataclass
 class DiscreteParameter(Parameter):
     """
     Create a search space parameter that is discrete.
@@ -581,30 +624,43 @@ class DiscreteParameter(Parameter):
     DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
     """
 
-    def __init__(
-        self, lower_bound: int = 0, upper_bound: int = 1, step: int = 1
-    ):
-        super().__init__()
-        self.lower_bound = int(lower_bound)
-        self.upper_bound = int(upper_bound)
-        self.step = step
-        self._type = "int"
+    _type: ClassVar[str] = "int"
+    lower_bound: int = 0
+    upper_bound: int = 1
+    step: int = 1
 
+    def __post_init__(self):
+        """Cast bounds to int and validate the range.
+
+        Raises
+        ------
+        ValueError
+            If ``upper_bound <= lower_bound`` or
+            ``step <= 0``.
+        """
+        super().__init__()
+        self.lower_bound = int(self.lower_bound)
+        self.upper_bound = int(self.upper_bound)
         self._validate_range()
 
-    def __str__(self):
-        return (
-            f"DiscreteParameter(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, step={self.step})"
-        )
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound}, step={self.step})"
-        )
-
     def __add__(self, other: Parameter) -> DiscreteParameter:
+        """Add two Parameters.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        DiscreteParameter or CategoricalParameter
+            Combined parameter based on types.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter.
+        """
         if isinstance(other, CategoricalParameter):
             return other + self
         if isinstance(other, ConstantParameter):
@@ -613,54 +669,17 @@ class DiscreteParameter(Parameter):
             raise ValueError("Cannot add continuous parameter to discrete!")
         return self  # Assuming the same discrete parameters are being added.
 
-    def __eq__(self, __o: Parameter) -> bool:
-        if not isinstance(__o, DiscreteParameter):
-            return False
-
-        return (
-            self.lower_bound == __o.lower_bound
-            and self.upper_bound == __o.upper_bound
-            and self.step == __o.step
-        )
-
-    def _copy(self) -> DiscreteParameter:
-        """
-        Create a copy of the DiscreteParameter object.
-
-        Returns
-        -------
-        DiscreteParameter
-            A copy of the DiscreteParameter object.
-
-        Examples
-        --------
-        >>> param = DiscreteParameter(lower_bound=0, upper_bound=10, step=1)
-        >>> param_copy = param._copy()
-        """
-        return DiscreteParameter(
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-            step=self.step,
-        )
-
     def _validate_range(self):
         if self.upper_bound <= self.lower_bound:
             raise ValueError("Upper bound must be greater than lower bound.")
         if self.step <= 0:
             raise ValueError("Step size must be positive.")
 
-    def to_dict(self):
-        param_dict = super().to_dict()
-        param_dict["type"] = "int"
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        param_dict["step"] = self.step
-        return param_dict
-
 
 # =============================================================================
 
 
+@dataclass(eq=False)
 class CategoricalParameter(Parameter):
     """
     Create a search space parameter that is categorical.
@@ -682,20 +701,39 @@ class CategoricalParameter(Parameter):
     CategoricalParameter(categories=['a', 'b', 'c'])
     """
 
-    _type: ClassVar[str] = "object"
+    _type: ClassVar[str] = "category"
+    categories: list[Any] = field(default_factory=list)
 
-    def __init__(self, categories: Iterable[Any]):
+    def __post_init__(self):
+        """Convert categories to a list and check for duplicates.
+
+        Raises
+        ------
+        ValueError
+            If the categories contain duplicate values.
+        """
         super().__init__()
-        self.categories = categories
+        self.categories = list(self.categories)
         self._check_duplicates()
 
-    def __str__(self):
-        return f"CategoricalParameter(categories={self.categories})"
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(categories={list(self.categories)})"
-
     def __add__(self, other: Parameter) -> CategoricalParameter:
+        """Add two Parameters to create a combined categorical.
+
+        Parameters
+        ----------
+        other : Parameter
+            The parameter to add.
+
+        Returns
+        -------
+        CategoricalParameter
+            Combined categorical parameter with merged categories.
+
+        Raises
+        ------
+        ValueError
+            If trying to add a ContinuousParameter or unsupported type.
+        """
         if isinstance(other, CategoricalParameter):
             joint_categories = list(set(self.categories + other.categories))
         elif isinstance(other, ConstantParameter):
@@ -718,142 +756,110 @@ class CategoricalParameter(Parameter):
         return CategoricalParameter(joint_categories)
 
     def __eq__(self, other: CategoricalParameter) -> bool:
-        return set(self.categories) == set(other.categories)
+        """Check equality with another CategoricalParameter.
 
-    def _check_duplicates(self):
-        if len(self.categories) != len(set(self.categories)):
-            raise ValueError("Categories contain duplicates!")
-
-    def _copy(self) -> CategoricalParameter:
-        """
-        Create a copy of the CategoricalParameter object.
+        Parameters
+        ----------
+        other : CategoricalParameter
+            The other parameter to compare.
 
         Returns
         -------
-        CategoricalParameter
-            A copy of the CategoricalParameter object.
-
-        Examples
-        --------
-        >>> param = CategoricalParameter(categories=['a', 'b', 'c'])
-        >>> param_copy = param._copy()
+        bool
+            True if both have the same categories (order-independent).
         """
-        return CategoricalParameter(categories=self.categories)
+        return set(self.categories) == set(other.categories)
 
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "category"
-        param_dict["categories"] = self.categories
-        return param_dict
+    def _check_duplicates(self):
+        """Check for duplicate categories.
+
+        Raises
+        ------
+        ValueError
+            If categories contain duplicates.
+        """
+        if len(self.categories) != len(set(self.categories)):
+            raise ValueError("Categories contain duplicates!")
 
 
 # =============================================================================
 
 
+@dataclass(eq=False)
 class ArrayParameter(Parameter):
     """
     Create a search space parameter that is an array.
 
     Parameters
     ----------
-    dimensionality : Iterable[int]
+    shape : int or Iterable[int]
         The dimensions of the array.
-    lower_bound : float | np.ndarray, optional
-        The lower bound of the parameter. Defaults to -inf.
-    upper_bound : float | np.ndarray, optional
-        The upper bound of the parameter. Defaults to inf.
+    lower_bound : float or np.ndarray, optional
+        The lower bound of the parameter, by default -inf.
+    upper_bound : float or np.ndarray, optional
+        The upper bound of the parameter, by default inf.
 
     Raises
     ------
     ValueError
-        If `dimensionality` is empty or contains non-positive integers.
-        If `upper_bound` is less than or equal to `lower_bound`.
+        If `shape` is empty or contains non-positive integers.
 
     Examples
     --------
     >>> param = ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
-    >>> print(param)
-    ArrayParameter(shape=[3, 4], lower_bound=0.0, upper_bound=1.0)
     """
 
-    def __init__(
-        self,
-        shape: int | Iterable[int],
-        lower_bound: float | np.ndarray = float("-inf"),
-        upper_bound: float | np.ndarray = float("inf"),
-    ):
+    _type: ClassVar[str] = "array"
+    shape: Any = field(default_factory=tuple)
+    lower_bound: Any = field(default_factory=lambda: float("-inf"))
+    upper_bound: Any = field(default_factory=lambda: float("inf"))
+
+    def __post_init__(self):
+        """Normalize shape and bounds, validating dimensions.
+
+        Raises
+        ------
+        ValueError
+            If ``shape`` is empty or contains non-positive
+            integers.
+        """
         super().__init__()
 
-        if isinstance(shape, int):
-            shape = [shape]
-
-        self.shape = tuple(int(d) for d in shape)
+        if isinstance(self.shape, int):
+            self.shape = (self.shape,)
+        else:
+            self.shape = tuple(int(d) for d in self.shape)
 
         if not self.shape or any(d <= 0 for d in self.shape):
             raise ValueError(
                 "Shape must be a non-empty iterable of positive integers."
             )
 
-        if isinstance(lower_bound, float | int):
-            lower_bound = np.full(self.shape, float(lower_bound))
-        if isinstance(upper_bound, float | int):
-            upper_bound = np.full(self.shape, float(upper_bound))
-
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-
-    def __str__(self):
-        return (
-            f"ArrayParameter(shape={self.shape}, "
-            f"lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound})"
-        )
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__}"
-            f"(shape={self.shape}, "
-            f"lower_bound={self.lower_bound}, "
-            f"upper_bound={self.upper_bound})"
-        )
+        if isinstance(self.lower_bound, float | int):
+            self.lower_bound = np.full(self.shape, float(self.lower_bound))
+        if isinstance(self.upper_bound, float | int):
+            self.upper_bound = np.full(self.shape, float(self.upper_bound))
 
     def __eq__(self, other: Parameter) -> bool:
+        """Check equality with another Parameter.
+
+        Parameters
+        ----------
+        other : Parameter
+            The other Parameter to compare.
+
+        Returns
+        -------
+        bool
+            True if both are ArrayParameters with equal attributes.
+        """
         if not isinstance(other, ArrayParameter):
             return False
         return (
             self.shape == other.shape
-            and self.lower_bound == other.lower_bound
-            and self.upper_bound == other.upper_bound
+            and np.array_equal(self.lower_bound, other.lower_bound)
+            and np.array_equal(self.upper_bound, other.upper_bound)
         )
-
-    def _copy(self) -> ArrayParameter:
-        """
-        Create a copy of the ArrayParameter object.
-
-        Returns
-        -------
-        ArrayParameter
-            A copy of the ArrayParameter object.
-
-        Examples
-        --------
-        >>> param = ArrayParameter(shape=[3, 4],
-        lower_bound=0.0, upper_bound=1.0)
-        >>> param_copy = param._copy()
-        """
-        return ArrayParameter(
-            shape=self.shape,
-            lower_bound=self.lower_bound,
-            upper_bound=self.upper_bound,
-        )
-
-    def to_dict(self) -> dict:
-        param_dict = super().to_dict()
-        param_dict["type"] = "array"
-        param_dict["shape"] = self.shape
-        param_dict["lower_bound"] = self.lower_bound
-        param_dict["upper_bound"] = self.upper_bound
-        return param_dict
 
 
 PARAMETERS = [
@@ -863,3 +869,7 @@ PARAMETERS = [
     DiscreteParameter,
     ArrayParameter,
 ]
+
+_PARAM_REGISTRY: dict[str, type[Parameter]] = {
+    cls._type: cls for cls in PARAMETERS
+}

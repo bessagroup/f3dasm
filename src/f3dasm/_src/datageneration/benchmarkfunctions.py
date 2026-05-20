@@ -1,3 +1,5 @@
+"""Benchmark optimization test functions for data generation."""
+
 #                                                                       Modules
 # =============================================================================
 
@@ -36,6 +38,18 @@ def ackley(
     -------
     float
         The value of the Ackley function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-32.768, 32.768] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = -a * np.exp(-b * np.sqrt(np.mean(x**2)))
     y = y - np.exp(np.mean(np.cos(c * x))) + a + np.exp(1)
@@ -56,6 +70,18 @@ def beale(x: np.ndarray):
     -------
     float
         The value of the Beale function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-4.5, 4.5] for i = 1, 2.
+    Global minimum: f(x*) = 0 at x* = (3, 0.5).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = (
         (1.5 - x[0] + x[0] * x[1]) ** 2
@@ -80,6 +106,18 @@ def bohachevsky(x: np.ndarray):
     -------
     float
         The value of the Bohachevsky N. 1 function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-100, 100] for i = 1, 2.
+    Global minimum: f(x*) = 0 at x* = (0, 0).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = (
         x[0] ** 2
@@ -106,6 +144,18 @@ def booth(x: np.ndarray):
     -------
     float
         The value of the Booth function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-10, 10] for i = 1, 2.
+    Global minimum: f(x*) = 0 at x* = (1, 3).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = (x[0] + 2 * x[1] - 7) ** 2 + (2 * x[0] + x[1] - 5) ** 2
     return y
@@ -146,6 +196,19 @@ def branin(
     -------
     float
         The value of the Branin function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_1 in [-5, 10], x_2 in [0, 15].
+    Global minima: f(x*) = 0.397887 at x* = (-pi, 12.275),
+    (pi, 2.275), and (9.42478, 2.475).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = a * (x[1] - b * x[0] ** 2 + c * x[0] - r) ** 2
     y = y + s * (1 - t) * np.cos(x[0]) + s
@@ -167,6 +230,18 @@ def bukin(x: np.ndarray):
     -------
     float
         The value of the Bukin N. 6 function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_1 in [-15, -5], x_2 in [-3, 3].
+    Global minimum: f(x*) = 0 at x* = (-10, 1).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = 100 * np.sqrt(np.abs(x[1] - 0.01 * x[0] ** 2)) + 0.01 * np.abs(
         x[0] + 10
@@ -190,6 +265,18 @@ def crossintray(x: np.ndarray):
     -------
     float
         The value of the Cross-in-Tray function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-10, 10] for i = 1, 2.
+    Global minima: f(x*) = -2.06261 at x* = (+/- 1.34941, +/- 1.34941).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = (
         -0.0001
@@ -219,6 +306,18 @@ def dixonprice(x: np.ndarray):
     -------
     float
         The value of the Dixon Price function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-10, 10] for all i.
+    Global minimum: f(x*) = 0 at x*_i = 2 ** (-(2 ** i - 2) / 2 ** i).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     y = (x[0] - 1) ** 2 + np.sum(
@@ -242,6 +341,18 @@ def drop_wave(x: np.ndarray):
     -------
     float
         The value of the Drop-Wave function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5.12, 5.12] for i = 1, 2.
+    Global minimum: f(x*) = -1 at x* = (0, 0).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = -(1 + np.cos(12 * np.sqrt(x[0] ** 2 + x[1] ** 2))) / (
         0.5 * (x[0] ** 2 + x[1] ** 2) + 2
@@ -264,6 +375,18 @@ def easom(x: np.ndarray):
     -------
     float
         The value of the Easom function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-100, 100] for i = 1, 2.
+    Global minimum: f(x*) = -1 at x* = (pi, pi).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = (
         -np.cos(x[0])
@@ -288,6 +411,18 @@ def eggholder(x: np.ndarray):
     -------
     float
         The value of the Egg Holder function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-512, 512] for i = 1, 2.
+    Global minimum: f(x*) = -959.6407 at x* = (512, 404.2319).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = -(x[1] + 47) * np.sin(np.sqrt(np.abs(x[1] + 0.5 * x[0] + 47))) - x[
         0
@@ -310,6 +445,18 @@ def griewank(x: np.ndarray):
     -------
     float
         The value of the Griewank function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-600, 600] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     i = np.arange(1, d + 1)
@@ -333,6 +480,18 @@ def holder_table(x: np.ndarray):
     -------
     float
         The value of the Holder-Table function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-10, 10] for i = 1, 2.
+    Global minima: f(x*) = -19.2085 at x* = (+/- 8.05502, +/- 9.66459).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = -np.abs(
         np.sin(x[0])
@@ -357,6 +516,18 @@ def levy(x: np.ndarray):
     -------
     float
         The value of the Levy function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-10, 10] for all i.
+    Global minimum: f(x*) = 0 at x* = (1, ..., 1).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     z = 1 + (x - 1) / 4
     y = (
@@ -382,6 +553,18 @@ def rastrigin(x: np.ndarray):
     -------
     float
         The value of the Rastrigin function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5.12, 5.12] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     y = 10 * d + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
@@ -404,6 +587,19 @@ def rosenbrock(x: np.ndarray):
     -------
     float
         The value of the Rosenbrock function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5, 10] for all i
+    (some sources use [-2.048, 2.048]).
+    Global minimum: f(x*) = 0 at x* = (1, ..., 1).
+    Defined on any dimension d (most often used at d = 2).
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = np.sum(np.abs(100 * (x[1:] - x[:-1] ** 2) ** 2 + (1 - x[:-1]) ** 2))
     return y
@@ -425,6 +621,18 @@ def rotatedhyperellipsoid(x: np.ndarray):
     -------
     float
         The value of the Rotated Hyper-Ellipsoid function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-65.536, 65.536] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     y = np.sum([np.sum(x[: i + 1] ** 2) for i in range(d)])
@@ -446,6 +654,18 @@ def schwefel(x: np.ndarray):
     -------
     float
         The value of the Schwefel function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-500, 500] for all i.
+    Global minimum: f(x*) = 0 at x* = (420.9687, ..., 420.9687).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     y = 418.9829 * d - np.sum(x * np.sin(np.sqrt(np.abs(x))))
@@ -468,6 +688,18 @@ def sphere(x: np.ndarray):
     -------
     float
         The value of the Sphere function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5.12, 5.12] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = np.sum(x**2)
     return y
@@ -489,6 +721,19 @@ def styblinskitang(x: np.ndarray):
     -------
     float
         The value of the Styblinski-Tang function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5, 5] for all i.
+    Global minimum: f(x*) = -39.16599 * d at
+    x* = (-2.903534, ..., -2.903534), where d is the dimensionality.
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     y = 0.5 * np.sum(x**4 - 16 * x**2 + 5 * x)
     return y
@@ -509,6 +754,18 @@ def threehump(x: np.ndarray):
     -------
     float
         The value of the Three-Hump function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5, 5] for i = 1, 2.
+    Global minimum: f(x*) = 0 at x* = (0, 0).
+    Two-dimensional.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     x1, x2 = x
     y = 2 * x1**2 - 1.05 * x1**4 + x1**6 * (1 / 6) + x1 * x2 + x2**2
@@ -530,6 +787,18 @@ def zakharov(x: np.ndarray):
     -------
     float
         The value of the Zakharov function at x.
+
+    Notes
+    -----
+    Recommended search domain: x_i in [-5, 10] for all i.
+    Global minimum: f(x*) = 0 at x* = (0, ..., 0).
+    Defined on any dimension d.
+
+    References
+    ----------
+    .. [1] Surjanovic, S. & Bingham, D. (2013). Virtual Library
+       of Simulation Experiments: Test Functions and Datasets.
+       https://www.sfu.ca/~ssurjano/optimization.html
     """
     d = x.shape[0]
     y = (

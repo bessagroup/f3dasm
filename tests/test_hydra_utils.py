@@ -33,3 +33,17 @@ def test_update_config_with_experiment_sample(
     assert updated_config.parameter1 == 10
     assert updated_config.parameter2 == 20
     assert updated_config.nested.parameter3 == 30
+
+
+def test_update_config_skips_invalid_keys():
+    """Keys that cause AttributeError should be silently skipped."""
+    config = OmegaConf.create({"a": 1})
+    # Key "nonexistent.deep.path" will cause AttributeError
+    # when force_add=False (default)
+    sample = ExperimentSample(
+        _input_data={"nonexistent.deep.path": 99},
+        _output_data={},
+    )
+    result = update_config_with_experiment_sample(config, sample)
+    # Should not raise; original 'a' unchanged
+    assert result.a == 1

@@ -38,14 +38,12 @@ def sample_domain_no_continuous() -> Domain:
 
 def test_grid_sample_with_default_steps(sample_domain):
     """Test Grid sampler with default step size."""
-    grid_sampler = Grid()
+    stepsize = 0.5
+    grid_sampler = Grid(stepsize_continuous_parameters=stepsize)
     experiment_data = ExperimentData(domain=sample_domain)
     grid_sampler.arm(experiment_data)
 
-    stepsize = 0.5
-    samples = grid_sampler.call(
-        data=experiment_data, stepsize_continuous_parameters=stepsize
-    )
+    samples = grid_sampler.call(data=experiment_data)
     df, _ = samples.to_pandas()
     # Expected continuous values
     x1_values = np.arange(0, 1, stepsize)
@@ -83,14 +81,12 @@ def test_grid_sample_with_default_steps(sample_domain):
 
 def test_grid_sample_with_custom_steps(sample_domain):
     """Test Grid sampler with custom step sizes for continuous parameters."""
-    grid_sampler = Grid()
+    custom_steps = {"x1": 0.25, "x2": 0.5}
+    grid_sampler = Grid(stepsize_continuous_parameters=custom_steps)
     experiment_data = ExperimentData(domain=sample_domain)
     grid_sampler.arm(experiment_data)
 
-    custom_steps = {"x1": 0.25, "x2": 0.5}
-    samples = grid_sampler.call(
-        data=experiment_data, stepsize_continuous_parameters=custom_steps
-    )
+    samples = grid_sampler.call(data=experiment_data)
     df, _ = samples.to_pandas()
 
     # Expected continuous values
@@ -133,9 +129,7 @@ def test_grid_sample_with_no_continuous(sample_domain_no_continuous):
     experiment_data = ExperimentData(domain=sample_domain_no_continuous)
     grid_sampler.arm(experiment_data)
 
-    samples = grid_sampler.call(
-        data=experiment_data, stepsize_continuous_parameters=None
-    )
+    samples = grid_sampler.call(data=experiment_data)
     df, _ = samples.to_pandas()
 
     # Expected discrete values
@@ -162,3 +156,25 @@ def test_grid_sample_with_no_continuous(sample_domain_no_continuous):
 
     # Assert equality
     pd.testing.assert_frame_equal(df, expected_df, check_dtype=False)
+
+
+def test_grid_sample_continuous_without_stepsize_raises():
+    """Mixed categorical + continuous domain with no stepsize must raise.
+
+    Regression for issue #318: the grid sampler used to silently return a
+    degenerate one-row grid (the categorical cross-product times an empty
+    continuous contribution) when the user forgot to pass
+    `stepsize_continuous_parameters` for a domain that contains continuous
+    parameters. It now raises a clear ValueError instead.
+    """
+    domain = Domain()
+    domain.add_category(name="ad_mode", categories=["unroll"])
+    domain.add_float(name="target_pt_a1", low=0.25, high=2.0)
+    domain.add_float(name="target_pt_a2", low=0.25, high=2.0)
+
+    grid_sampler = Grid()  # no stepsize_continuous_parameters
+    experiment_data = ExperimentData(domain=domain)
+    grid_sampler.arm(experiment_data)
+
+    with pytest.raises(ValueError, match="stepsize_continuous_parameters"):
+        grid_sampler.call(data=experiment_data)

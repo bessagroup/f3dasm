@@ -18,14 +18,13 @@ classifiers = [
   "Operating System :: MacOS"
 ]
 dependencies = [
+  "cloudpickle>=3.1.2",
   "filelock>=3.16.1",
   "hydra-core>=1.3.2",
-  "matplotlib>=3.7.5",
   "numpy>=1.24.4",
   "pandas>=2.0.3",
   "pathos>=0.3.4",
   "salib>=1.5.2",
-  "scipy>=1.10.1",
   "xarray>=2023.1.0"
 ]
 description = "f3dasm - Framework for Data-driven Development and Analysis of Structures and Materials"
@@ -36,12 +35,14 @@ maintainers = [
 name = "f3dasm"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2.2.2"
+version = "2.2.3"
 
 [project.optional-dependencies]
 all = [
   "abaqus2py>=1.0.0",
-  "optuna>=4.4.0"
+  "matplotlib>=3.7.5",
+  "optuna>=4.4.0",
+  "scipy>=1.10.1"
 ]
 dev = [
   "pre-commit>=4.4.0",
@@ -55,6 +56,12 @@ docs = [
   "mkdocstrings>=0.30.1",
   "mkdocstrings-python>=1.18.2",
   "pymdown-extensions>=10.16.1"
+]
+figures = [
+  "matplotlib>=3.7.5"
+]
+scipy = [
+  "scipy>=1.10.1"
 ]
 tests = [
   "hypothesis>=6.138.0",
@@ -98,7 +105,7 @@ omit = [
 source = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=70.00"
+addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=85.00"
 markers = [
   "smoke",
   "requires_dependency(name): mark the test as it requires a certain dependency"

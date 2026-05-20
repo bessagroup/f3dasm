@@ -1,5 +1,11 @@
 # Built-in functionalities
 
+Factory functions and implementations for built-in samplers, benchmark functions, and optimizers. These can be instantiated by name using the factory functions or imported directly from their submodules.
+
+!!! tip "See also"
+    - Guide: [Built-in Defaults](../defaults.md) for a quick reference with tables and examples
+    - Tutorials: [Benchmark Functions](../notebooks/builtins/builtinfunction.ipynb) | [Built-in Optimizers](../notebooks/builtins/builtinoptimizers.ipynb) | [Built-in Samplers](../notebooks/builtins/builtinsamplers.ipynb)
+
 ::: f3dasm.create_sampler
 
 ::: f3dasm.create_datagenerator

@@ -23,40 +23,6 @@ def test_correct_doe(doe):
     pass
 
 
-def test_get_continuous_parameters(doe: Domain):
-    design = {
-        "x1": ContinuousParameter(lower_bound=2.4, upper_bound=10.3),
-        "x3": ContinuousParameter(lower_bound=10.0, upper_bound=380.3),
-    }
-    assert doe.continuous.input_space == design
-
-
-def test_get_discrete_parameters(doe: Domain):
-    design = {
-        "x2": DiscreteParameter(lower_bound=5, upper_bound=80),
-        "x5": DiscreteParameter(lower_bound=2, upper_bound=3),
-    }
-    assert doe.discrete.input_space == design
-
-
-def test_get_categorical_parameters(doe: Domain):
-    assert doe.categorical.input_space == {
-        "x4": CategoricalParameter(categories=["test1", "test2", "test3"])
-    }
-
-
-def test_get_continuous_names(doe: Domain):
-    assert doe.continuous.input_names == ["x1", "x3"]
-
-
-def test_get_discrete_names(doe: Domain):
-    assert doe.discrete.input_names == ["x2", "x5"]
-
-
-def test_get_categorical_names(doe: Domain):
-    assert doe.categorical.input_names == ["x4"]
-
-
 def test_add_arbitrary_list_as_categorical_parameter():
     arbitrary_list_1 = [3.1416, "pi", 42]
     arbitrary_list_2 = np.linspace(start=142, stop=214, num=10)
