@@ -523,6 +523,7 @@ def datagenerator(
                             to_disk=parameter.to_disk,
                             store_function=parameter.store_function,
                             load_function=parameter.load_function,
+                            load_kwargs=parameter.load_kwargs,
                         )
                     else:
                         experiment_sample.store(name=name, object=value)

@@ -399,6 +399,7 @@ class Domain:
         to_disk=False,
         store_function: Optional[StoreFunction] = None,
         load_function: Optional[LoadFunction] = None,
+        load_kwargs: Optional[dict[str, Any]] = None,
     ):
         """Add a new parameter to the domain.
 
@@ -412,6 +413,12 @@ class Domain:
             Function to store the parameter, by default None.
         load_function : LoadFunction, optional
             Function to load the parameter, by default None.
+        load_kwargs : dict[str, Any], optional
+            Extra keyword arguments forwarded to `load_function` each
+            time the stored object is loaded. Useful when the
+            deserialiser needs auxiliary state (e.g. an `equinox`
+            template via ``load_kwargs={"like": template}``). Defaults
+            to None.
 
         Examples
         -------
@@ -426,6 +433,7 @@ class Domain:
             Parameter(
                 store_function=store_function,
                 load_function=load_function,
+                load_kwargs=load_kwargs,
                 to_disk=to_disk,
             ),
         )
@@ -623,6 +631,7 @@ class Domain:
         exist_ok: bool = False,
         store_function: Optional[StoreFunction] = None,
         load_function: Optional[LoadFunction] = None,
+        load_kwargs: Optional[dict[str, Any]] = None,
     ):
         """Add a new output parameter to the domain.
 
@@ -640,6 +649,9 @@ class Domain:
             Function to store the parameter, by default None.
         load_function : LoadFunction, optional
             Function to load the parameter, by default None.
+        load_kwargs : dict[str, Any], optional
+            Extra keyword arguments forwarded to `load_function` each
+            time the stored object is loaded. Defaults to None.
 
         Examples
         -------
@@ -660,6 +672,7 @@ class Domain:
             to_disk=to_disk,
             store_function=store_function,
             load_function=load_function,
+            load_kwargs=load_kwargs,
         )
 
     #                                                                   Getters

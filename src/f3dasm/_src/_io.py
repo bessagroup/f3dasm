@@ -507,6 +507,7 @@ def load_object(
     project_dir: Path,
     path: str | Path,
     load_function: Optional[Callable] = None,
+    **load_kwargs: Any,
 ) -> Any:
     """
     Load an object from disk from a given path and storing method.
@@ -519,6 +520,11 @@ def load_object(
         The path to the object.
     load_function : Optional[Callable], optional
         The method to load the object, by default None.
+    **load_kwargs : Any
+        Auxiliary keyword arguments forwarded to ``load_function`` --
+        see ``Parameter(load_kwargs=...)`` and issue #285. The built-in
+        loaders ignore unknown kwargs; a fallback ``pickle_load`` will
+        also receive them.
 
     Returns
     -------
@@ -554,6 +560,8 @@ def load_object(
             load_function = LOAD_FUNCTION_MAPPING[suffix]
 
     # Store the object and return the storage location
+    if load_kwargs:
+        return load_function(_path, **load_kwargs)
     return load_function(_path)
 
 
@@ -631,12 +639,17 @@ class ReferenceValue:
     ----------
     reference : Path
         Path to the stored object, relative to the experiment data subfolder.
-    load_function : Callable[[Path], Any]
-        Callable that accepts the absolute path and returns the loaded object.
+    load_function : Callable[..., Any]
+        Callable that accepts the absolute path (and any
+        ``load_kwargs``) and returns the loaded object.
+    load_kwargs : dict[str, Any], optional
+        Extra keyword arguments forwarded to ``load_function`` on every
+        :meth:`load` call (issue #285). Defaults to None.
     """
 
     reference: Path
-    load_function: Callable[[Path], Any]
+    load_function: Callable[..., Any]
+    load_kwargs: Optional[dict[str, Any]] = None
 
     def load(self, project_dir: Path) -> Any:
         """Load and return the referenced object from disk.
@@ -655,6 +668,7 @@ class ReferenceValue:
             project_dir=project_dir,
             path=self.reference,
             load_function=self.load_function,
+            **(self.load_kwargs or {}),
         )
 
     def copy_to(
@@ -679,7 +693,9 @@ class ReferenceValue:
             self.reference, old_project_dir, new_project_dir
         )
         return ReferenceValue(
-            reference=Path(new_reference), load_function=self.load_function
+            reference=Path(new_reference),
+            load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )
 
     def __hash__(self) -> int:
@@ -694,13 +710,18 @@ class ReferenceValue:
         Returns
         -------
         dict
-            A dict with ``__type__``, ``reference``, and a hex-encoded
-            pickle of ``load_function``.
+            A dict with ``__type__``, ``reference``, and hex-encoded
+            pickles of ``load_function`` and ``load_kwargs`` (if set).
         """
         return {
             "__type__": "ReferenceValue",
             "reference": str(self.reference),
             "load_function": pickle.dumps(self.load_function).hex(),
+            "load_kwargs": (
+                pickle.dumps(self.load_kwargs).hex()
+                if self.load_kwargs is not None
+                else None
+            ),
         }
 
     @classmethod
@@ -717,9 +738,13 @@ class ReferenceValue:
         ReferenceValue
             The reconstructed instance.
         """
+        load_kwargs = None
+        if data.get("load_kwargs"):
+            load_kwargs = pickle.loads(bytes.fromhex(data["load_kwargs"]))
         return cls(
             reference=Path(data["reference"]),
             load_function=pickle.loads(bytes.fromhex(data["load_function"])),
+            load_kwargs=load_kwargs,
         )
 
 
@@ -740,14 +765,19 @@ class ToDiskValue:
         Parameter name used to construct the storage path.
     store_function : Callable[[Any, Path], Path]
         Callable that writes `object` to disk and returns the path.
-    load_function : Callable[[Path], Any]
+    load_function : Callable[..., Any]
         Callable that reads and returns the object from disk.
+    load_kwargs : dict[str, Any], optional
+        Extra keyword arguments forwarded to ``load_function`` when the
+        resulting :class:`ReferenceValue` is later loaded (issue #285).
+        Defaults to None.
     """
 
     object: Any
     name: str
     store_function: Callable[[Any, Path], Path]
-    load_function: Callable[[Path], Any]
+    load_function: Callable[..., Any]
+    load_kwargs: Optional[dict[str, Any]] = None
 
     def store(self, project_dir: Path, idx: int) -> Path:
         """Write the object to disk and return the stored path.
@@ -796,4 +826,5 @@ class ToDiskValue:
         return ReferenceValue(
             reference=reference,
             load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )

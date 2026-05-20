@@ -71,16 +71,22 @@ class StoreFunction(Protocol):
 class LoadFunction(Protocol):
     """Protocol for a custom function that loads an object from disk."""
 
-    def __call__(path: str) -> Any:
+    def __call__(path: str, **kwargs: Any) -> Any:
         """
         Load and return the object previously written by a StoreFunction.
 
         Parameters
         ----------
         path : str
-            The full path the object was written to, **including** the
-            file extension. This is the value the matching
-            :class:`StoreFunction` returned.
+            The location to load the object from.
+        **kwargs : Any
+            Auxiliary state required by the load implementation. f3dasm
+            forwards any ``load_kwargs`` registered on the matching
+            :class:`Parameter` (see issue #285). The built-in loaders
+            ignore unknown kwargs, so custom deserialisers can request
+            extra state (e.g. an ``equinox`` template via
+            ``load_kwargs={"like": template}``) without breaking the
+            default path.
 
         Returns
         -------
@@ -111,6 +117,7 @@ class Parameter:
         to_disk: bool = False,
         store_function: Optional[StoreFunction] = None,
         load_function: Optional[LoadFunction] = None,
+        load_kwargs: Optional[dict[str, Any]] = None,
     ):
         """
         Initialize the Parameter.
@@ -123,12 +130,18 @@ class Parameter:
             Function to store the parameter to disk. Defaults to None.
         load_function : Optional[LoadFunction], optional
             Function to load the parameter from disk. Defaults to None.
+        load_kwargs : dict[str, Any], optional
+            Extra keyword arguments forwarded to ``load_function`` each
+            time the stored object is loaded. Useful when the
+            deserialiser needs auxiliary state (an ``equinox`` template,
+            a torch module skeleton for a `state_dict`, etc.) -- see
+            issue #285. Defaults to None (no kwargs forwarded).
 
         Raises
         ------
         ValueError
-            If `to_disk` is False but either `store_function` or
-            `load_function` is not None.
+            If `to_disk` is False but either `store_function`,
+            `load_function`, or `load_kwargs` is not None.
 
         Notes
         -----
@@ -148,16 +161,19 @@ class Parameter:
         """
 
         if not to_disk and (
-            store_function is not None or load_function is not None
+            store_function is not None
+            or load_function is not None
+            or load_kwargs is not None
         ):
             raise ValueError(
-                "If 'to_disk' is False, 'store_function' and"
-                "load_function' must be None."
+                "If 'to_disk' is False, 'store_function', "
+                "'load_function', and 'load_kwargs' must be None."
             )
 
         self.to_disk = to_disk
         self.store_function = store_function
         self.load_function = load_function
+        self.load_kwargs = load_kwargs
 
     def __str__(self):
         """Return a string representation of the Parameter.
@@ -235,6 +251,7 @@ class Parameter:
             to_disk=self.to_disk,
             store_function=self.store_function,
             load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )
 
     def to_dict(self) -> dict:
@@ -271,6 +288,11 @@ class Parameter:
                 if self.load_function
                 else None
             ),
+            "load_kwargs": (
+                pickle.dumps(self.load_kwargs).hex()
+                if self.load_kwargs is not None
+                else None
+            ),
         }
         if dataclasses.is_dataclass(self):
             for f in dataclasses.fields(self):
@@ -301,6 +323,7 @@ class Parameter:
         param_type = param_dict["type"]
         store_function = None
         load_function = None
+        load_kwargs = None
         if param_dict.get("store_function"):
             store_function = pickle.loads(
                 bytes.fromhex(param_dict["store_function"])
@@ -309,12 +332,17 @@ class Parameter:
             load_function = pickle.loads(
                 bytes.fromhex(param_dict["load_function"])
             )
+        if param_dict.get("load_kwargs"):
+            load_kwargs = pickle.loads(
+                bytes.fromhex(param_dict["load_kwargs"])
+            )
 
         if param_type == "object":
             return Parameter(
                 to_disk=param_dict["to_disk"],
                 store_function=store_function,
                 load_function=load_function,
+                load_kwargs=load_kwargs,
             )
 
         param_cls = _PARAM_REGISTRY.get(param_type)
