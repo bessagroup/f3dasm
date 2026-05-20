@@ -8,6 +8,7 @@ import pytest
 
 from f3dasm._src.agentic.agent_runtime import (
     Delegation,
+    Task,
     _format_delegation,
     _parse_delegation,
 )
@@ -39,10 +40,18 @@ n_evaluated: 10
 """
 
 
-def _make_delegation(**kwargs) -> Delegation:
-    defaults = dict(intent="run LHS", expected_report="best_x and n_evaluated")
-    defaults.update(kwargs)
-    return Delegation(**defaults)
+def _make_delegation(
+    intent: str = "run LHS",
+    expected_report: str = "best_x and n_evaluated",
+    remaining_time: timedelta | None = None,
+    budget: timedelta | None = None,
+) -> Delegation:
+    return Delegation(task=Task(
+        intent=intent,
+        expected_report=expected_report,
+        remaining_time=remaining_time,
+        budget=budget,
+    ))
 
 
 # ---------------------------------------------------------------------------
@@ -52,12 +61,16 @@ def _make_delegation(**kwargs) -> Delegation:
 
 def test_delegation_defaults():
     d = _make_delegation()
-    assert d.actions_taken == ""
-    assert d.files_touched == []
-    assert d.conclusions == ""
-    assert d.numbers == {}
-    assert d.raw == ""
+    assert d.report is None
+    assert d.is_complete is False
     assert d.metadata == {}
+
+
+def test_delegation_is_complete_after_parse():
+    d = _make_delegation()
+    _parse_delegation(_VALID_REPORT, d)
+    assert d.is_complete is True
+    assert d.report is not None
 
 
 def test_delegation_metadata_isolated():
@@ -65,13 +78,6 @@ def test_delegation_metadata_isolated():
     d2 = _make_delegation()
     d1.metadata["key"] = "value"
     assert "key" not in d2.metadata
-
-
-def test_delegation_files_touched_isolated():
-    d1 = _make_delegation()
-    d2 = _make_delegation()
-    d1.files_touched.append("/some/file")
-    assert d2.files_touched == []
 
 
 # ---------------------------------------------------------------------------
@@ -139,43 +145,43 @@ def test_parse_delegation_fills_actions():
     d = _make_delegation()
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert "Did the thing" in result.actions_taken
+    assert "Did the thing" in result.report.actions_taken
 
 
 def test_parse_delegation_fills_files_touched():
     d = _make_delegation()
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert "/study/workspace/out.csv" in result.files_touched
+    assert "/study/workspace/out.csv" in result.report.files_touched
 
 
 def test_parse_delegation_fills_conclusions():
     d = _make_delegation()
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert "Task succeeded" in result.conclusions
+    assert "Task succeeded" in result.report.conclusions
 
 
 def test_parse_delegation_fills_numbers():
     d = _make_delegation()
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert result.numbers["best_x"] == pytest.approx(0.5)
-    assert result.numbers["n_evaluated"] == pytest.approx(10.0)
+    assert result.report.numbers["best_x"] == pytest.approx(0.5)
+    assert result.report.numbers["n_evaluated"] == pytest.approx(10.0)
 
 
 def test_parse_delegation_fills_raw():
     d = _make_delegation()
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert "## Report" in result.raw
+    assert "## Report" in result.report.raw
 
 
 def test_parse_delegation_preserves_intent():
     d = _make_delegation(intent="my original intent")
     result = _parse_delegation(_VALID_REPORT, d)
     assert result is not None
-    assert result.intent == "my original intent"
+    assert result.task.intent == "my original intent"
 
 
 def test_parse_delegation_preserves_metadata():
@@ -212,5 +218,5 @@ def test_round_trip_format_parse():
     reply = formatted + "\n" + _VALID_REPORT
     filled = _parse_delegation(reply, d)
     assert filled is not None
-    assert filled.intent == "run SMAC optimisation"
-    assert filled.numbers["best_x"] == pytest.approx(0.5)
+    assert filled.task.intent == "run SMAC optimisation"
+    assert filled.report.numbers["best_x"] == pytest.approx(0.5)

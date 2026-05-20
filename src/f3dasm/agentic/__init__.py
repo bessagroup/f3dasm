@@ -6,33 +6,37 @@ sessions:
 - **Strategizer** — reads any file, writes ``.md`` notes only,
   delegates execution to the Implementer.
 - **Implementer** — reads/writes/executes freely inside the study tree,
-  enriches and returns structured :class:`Delegation` objects.
+  enriches and returns structured :class:`Delegation` envelopes.
 
 The user's only required input is ``<study-dir>/PROBLEM_STATEMENT.md``.
 
-Level-1 public symbols (stable):
+Core symbols:
 
 - ``AgenticRun`` — runtime entry point.
-- ``Task`` — backward-compatible alias; use :class:`Delegation` for new code.
-- ``Report`` — backward-compatible alias; use :class:`Delegation` for new code.
-- ``Delegation`` — symmetric exchange class; both parties enrich the same object.
+- ``AgenticOptimizer`` — f3dasm Optimizer interface wrapping AgenticRun.
+- ``Task`` — request half of a round-trip exchange.
+- ``Report`` — response half of a round-trip exchange.
+- ``Delegation`` — envelope wrapping ``task`` + ``report`` + ``metadata``.
+- ``RunContext`` — protocol exposed to custom topology callables.
 - ``AgenticRunError`` — raised for non-recoverable orchestrator errors.
-- ``CHECKPOINT_EVERY`` — Implementer-call cadence.
+- ``StudyConfig`` — per-study config loaded from ``config.yaml``.
 - ``Backend`` — frozen dataclass bundling an LLM backend's factories.
 - ``CLAUDE_BACKEND`` — the default Claude Agent SDK backend.
-- ``OLLAMA_BACKEND`` — Ollama backend (local models).
-- ``MVP_DEFAULT_MODEL`` — default model id.
 - ``LookupDataGenerator`` — nearest-neighbour pool evaluator.
+- ``register_backend`` — register a custom backend by name.
 
-Level-2 public symbols (typed stores + firing primitives):
+Typed stores:
 
-- ``AnalysisBase`` / ``AnalysisNode`` / ``AnalysisSlice`` — hierarchical
+- ``AnalysisBase`` / ``AnalysisNode`` / ``ContextSlice`` — hierarchical
   per-solution analysis store.
-- ``TaskRegistry`` / ``RegistryEntry`` / ``MAX_TASKS`` — capped operator
-  registry with success-rate tracking.
+- ``TaskRegistry`` / ``TaskStats`` — capped operator registry with
+  success-rate tracking.
+
+Firing primitives:
+
 - ``parallel`` — fan-out to K agents concurrently.
 - ``retry`` — persistence loop with configurable success predicate.
-- ``rounds`` — fixed-N debate between two agents.
+- ``debate`` — fixed-N raw-text exchange between two agents.
 """
 
 #                                                                       Modules
@@ -40,27 +44,26 @@ Level-2 public symbols (typed stores + firing primitives):
 from __future__ import annotations
 
 from .._src.agentic.agent_runtime import (
-    CHECKPOINT_EVERY,
-    MVP_DEFAULT_MODEL,
     AgenticRun,
     AgenticRunError,
     Delegation,
     Report,
+    RunContext,
     StudyConfig,
     Task,
+    register_backend,
 )
 from .._src.agentic.backends.base import Backend
 from .._src.agentic.backends.claude import CLAUDE_BACKEND
-from .._src.agentic.backends.ollama import OLLAMA_BACKEND
 from .._src.agentic.lookup import LookupDataGenerator
-from .._src.agentic.primitives import parallel, retry, rounds
+from .._src.agentic.optimizer import AgenticOptimizer
+from .._src.agentic.primitives import debate, parallel, retry
 from .._src.agentic.stores import (
-    MAX_TASKS,
     AnalysisBase,
     AnalysisNode,
-    AnalysisSlice,
-    RegistryEntry,
+    ContextSlice,
     TaskRegistry,
+    TaskStats,
 )
 
 #                                                          Authorship & Credits
@@ -72,28 +75,27 @@ __status__ = "Experimental"
 
 
 __all__ = [
-    # Level 1
+    # Core
     "AgenticRun",
     "AgenticRunError",
+    "AgenticOptimizer",
     "Backend",
-    "CHECKPOINT_EVERY",
     "CLAUDE_BACKEND",
     "Delegation",
     "LookupDataGenerator",
-    "MVP_DEFAULT_MODEL",
-    "OLLAMA_BACKEND",
     "Report",
+    "RunContext",
     "StudyConfig",
     "Task",
-    # Level 2 — typed stores
+    "register_backend",
+    # Typed stores
     "AnalysisBase",
     "AnalysisNode",
-    "AnalysisSlice",
-    "MAX_TASKS",
-    "RegistryEntry",
+    "ContextSlice",
     "TaskRegistry",
-    # Level 2 — firing primitives
+    "TaskStats",
+    # Firing primitives
+    "debate",
     "parallel",
     "retry",
-    "rounds",
 ]

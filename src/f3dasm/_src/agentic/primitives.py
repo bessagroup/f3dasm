@@ -24,7 +24,7 @@ import concurrent.futures
 from collections.abc import Callable
 from typing import Any
 
-from .agent_runtime import AgenticRunError, Delegation, _parse_delegation
+from .agent_runtime import AgenticRunError, Delegation, Report, Task, _format_task, _parse_delegation
 from .backends.base import ImplementerSession, StrategizerSession
 
 #                                                          Authorship & Credits
@@ -35,9 +35,9 @@ __status__ = "Experimental"
 # =============================================================================
 
 __all__ = [
+    "debate",
     "parallel",
     "retry",
-    "rounds",
 ]
 
 # Union type accepted by all three primitives.
@@ -51,15 +51,15 @@ _AnySession = ImplementerSession | StrategizerSession
 
 def parallel(
     agents: list[_AnySession],
-    task_fn: Callable[[int], str],
+    task_fn: Callable[[int], Task],
 ) -> list[Delegation]:
     """Fan-out: dispatch ``task_fn(k)`` to each agent concurrently.
 
-    Each agent receives the string returned by ``task_fn(k)`` and must
+    Each agent receives the formatted message for ``task_fn(k)`` and must
     reply with a ``## Report`` block.  Replies are parsed into
-    :class:`~agent_runtime.Delegation` objects.  Failures (parse errors
-    or exceptions) are captured as delegations with ``conclusions`` set
-    to the error description; no result is silently dropped.
+    :class:`~agent_runtime.Delegation` envelopes.  Failures (parse errors
+    or exceptions) are captured as delegations with ``metadata["error"]``
+    set to ``True``; no result is silently dropped.
 
     Parameters
     ----------
@@ -67,44 +67,53 @@ def parallel(
         Agent sessions.  All must implement ``send(str) -> str``.
     task_fn : callable
         Called with the zero-based agent index ``k``; must return the
-        formatted task message to send to agent ``k``.
+        :class:`~agent_runtime.Task` to send to agent ``k``.
 
     Returns
     -------
     list[Delegation]
         One :class:`~agent_runtime.Delegation` per agent, in the same
         order as ``agents``.  Delegations for failed calls have
-        ``conclusions`` set to an error description and ``metadata``
-        containing ``{"error": True}``.
+        ``metadata["error"] = True`` and the error description in
+        ``report.conclusions``.
     """
     n = len(agents)
     if n == 0:
         return []
-    results: list[Delegation] = [
-        Delegation(intent="", expected_report="") for _ in range(n)
-    ]
 
-    def _call(k: int) -> tuple[int, str | Exception]:
+    _stub_task = Task(intent="", expected_report="")
+    results: list[Delegation] = [Delegation(task=_stub_task) for _ in range(n)]
+
+    def _call(k: int) -> tuple[int, Task, str | Exception]:
+        task = task_fn(k)
         try:
-            return k, agents[k].send(task_fn(k))
+            return k, task, agents[k].send(_format_task(task))
         except Exception as exc:
-            return k, exc
+            return k, task, exc
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=n) as executor:
         futures = [executor.submit(_call, k) for k in range(n)]
         for future in concurrent.futures.as_completed(futures):
-            k, outcome = future.result()
-            deleg = Delegation(intent="", expected_report="")
+            k, task, outcome = future.result()
+            deleg = Delegation(task=task)
             if isinstance(outcome, Exception):
-                deleg.conclusions = f"ERROR: {outcome}"
+                deleg.report = Report(
+                    actions_taken="",
+                    files_touched=[],
+                    conclusions=f"ERROR: {outcome}",
+                    numbers={},
+                    raw="",
+                )
                 deleg.metadata["error"] = True
             else:
-                parsed = _parse_delegation(outcome, deleg)
-                if parsed is None:
-                    deleg.conclusions = (
-                        "ERROR: agent did not return a ## Report block."
+                if _parse_delegation(outcome, deleg) is None:
+                    deleg.report = Report(
+                        actions_taken="",
+                        files_touched=[],
+                        conclusions="ERROR: agent did not return a ## Report block.",
+                        numbers={},
+                        raw=outcome,
                     )
-                    deleg.raw = outcome
                     deleg.metadata["error"] = True
             results[k] = deleg
 
@@ -118,25 +127,24 @@ def parallel(
 
 def retry(
     agent: _AnySession,
-    task_msg: str,
+    task: Task,
     *,
     is_success: Callable[[Delegation], bool],
     max_fails: int = 3,
 ) -> Delegation:
     """Persistence loop: retry until ``is_success`` or ``max_fails``.
 
-    Sends ``task_msg`` to ``agent``, parses the reply into a
+    Sends the formatted *task* to *agent*, parses the reply into a
     :class:`~agent_runtime.Delegation`, and tests it with ``is_success``.
     Retries on failure up to ``max_fails`` times.  Each retry re-sends
-    the same ``task_msg`` (callers that need an adaptive message should
-    use a closure that captures state).
+    the same formatted task message.
 
     Parameters
     ----------
     agent : session
         Any object with ``send(str) -> str``.
-    task_msg : str
-        The formatted task message to send.
+    task : Task
+        The task to send.  Formatted with :func:`_format_task` internally.
     is_success : callable
         Predicate on the parsed :class:`~agent_runtime.Delegation`.
         Return ``True`` to accept, ``False`` to retry.
@@ -155,10 +163,11 @@ def retry(
         If ``is_success`` returns ``False`` (or parsing fails) for
         ``max_fails`` consecutive attempts.
     """
+    task_msg = _format_task(task)
     fails = 0
     while True:
         reply = agent.send(task_msg)
-        deleg = Delegation(intent="", expected_report="")
+        deleg = Delegation(task=task)
         parsed = _parse_delegation(reply, deleg)
         if parsed is not None and is_success(parsed):
             return parsed
@@ -175,17 +184,18 @@ def retry(
 # ---------------------------------------------------------------------------
 
 
-def rounds(
+def debate(
     agent_a: _AnySession,
     agent_b: _AnySession,
     n: int,
     initial: str,
-) -> str:
+) -> list[str]:
     """Fixed-N debate: alternate ``n`` turns between two agents.
 
     Each round consists of ``agent_a`` responding to the current message,
-    then ``agent_b`` responding to ``agent_a``'s reply.  After ``n``
-    complete rounds the final response from ``agent_b`` is returned.
+    then ``agent_b`` responding to ``agent_a``'s reply.  Returns the full
+    transcript as a list of raw text strings: ``[a1, b1, a2, b2, …]``
+    with ``2*n`` elements.  The final response is ``debate(…)[-1]``.
 
     This matches the AgenticSciML Proposer ↔ Critic debate (``n=4``):
     rounds 1–2 are analysis-only, round 3 is synthesis, round 4 is the
@@ -205,8 +215,9 @@ def rounds(
 
     Returns
     -------
-    str
-        The raw text reply from ``agent_b`` after ``n`` complete rounds.
+    list[str]
+        Interleaved transcript ``[a1, b1, a2, b2, …]`` of length ``2*n``.
+        ``result[-1]`` is ``agent_b``'s final response.
 
     Raises
     ------
@@ -214,9 +225,13 @@ def rounds(
         If ``n < 1``.
     """
     if n < 1:
-        raise ValueError(f"rounds: n must be ≥ 1, got {n}.")
+        raise ValueError(f"debate: n must be ≥ 1, got {n}.")
+    transcript: list[str] = []
     current = initial
     for _ in range(n):
         a_reply = agent_a.send(current)
-        current = agent_b.send(a_reply)
-    return current
+        transcript.append(a_reply)
+        b_reply = agent_b.send(a_reply)
+        transcript.append(b_reply)
+        current = b_reply
+    return transcript

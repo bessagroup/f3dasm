@@ -31,18 +31,16 @@ __status__ = "Experimental"
 __all__ = [
     "AnalysisBase",
     "AnalysisNode",
-    "AnalysisSlice",
-    "MAX_TASKS",
-    "RegistryEntry",
+    "ContextSlice",
     "TaskRegistry",
+    "TaskStats",
 ]
 
 # ---------------------------------------------------------------------------
 # AnalysisBase
 # ---------------------------------------------------------------------------
 
-MAX_TASKS: int = 20
-"""Default cap on the number of entries in a :class:`TaskRegistry`."""
+_MAX_TASKS: int = 20
 
 
 @dataclass
@@ -70,22 +68,27 @@ class AnalysisNode:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass
-class AnalysisSlice:
-    """Bounded comparative context returned by :meth:`AnalysisBase.get`.
+_VALID_INCLUDE: frozenset[str] = frozenset({"parent", "siblings", "uncles"})
+_DEFAULT_INCLUDE: tuple[str, ...] = ("parent", "siblings", "uncles")
+
+
+@dataclass(frozen=True)
+class ContextSlice:
+    """Bounded comparative context returned by :meth:`AnalysisBase.context`.
 
     Parameters
     ----------
     node : AnalysisNode
         The queried node itself.
     parent : AnalysisNode or None
-        The parent node (lineage), or ``None`` if the node is a root.
+        The parent node (lineage), or ``None`` if ``"parent"`` was not
+        in ``include`` or the node is a root.
     siblings : list[AnalysisNode]
-        Other children of the same parent (what else was tried at the
-        same generation), excluding the queried node itself.
+        Other children of the same parent, excluding the queried node.
+        Empty if ``"siblings"`` was not in ``include`` or node is root.
     uncles : list[AnalysisNode]
-        Children of the parent's siblings (what the parent's competitors
-        produced).
+        Children of the parent's siblings.
+        Empty if ``"uncles"`` was not in ``include`` or node is root.
     """
 
     node: AnalysisNode
@@ -98,9 +101,9 @@ class AnalysisBase:
     """Hierarchical store of per-solution analysis reports.
 
     Nodes form a tree: each node has at most one parent and zero or more
-    children.  :meth:`get` returns the *parent + siblings + uncles* slice
-    that gives a Critic or SelectorEnsemble the minimum comparative
-    context for a well-grounded judgment without reading the full tree.
+    children.  :meth:`context` returns a :class:`ContextSlice` that
+    gives a Critic or SelectorEnsemble bounded comparative context
+    without reading the full tree.
 
     Examples
     --------
@@ -108,7 +111,7 @@ class AnalysisBase:
     >>> ab.add(AnalysisNode("root", None, "baseline design", 0.5))
     >>> ab.add(AnalysisNode("child_a", "root", "improved v1", 0.7))
     >>> ab.add(AnalysisNode("child_b", "root", "improved v2", 0.6))
-    >>> sl = ab.get("child_a")
+    >>> sl = ab.context("child_a")
     >>> sl.parent.node_id
     'root'
     >>> [n.node_id for n in sl.siblings]
@@ -151,52 +154,70 @@ class AnalysisBase:
     # Query
     # ------------------------------------------------------------------
 
-    def get(self, node_id: str) -> AnalysisSlice:
+    def context(
+        self,
+        node_id: str,
+        include: tuple[str, ...] = _DEFAULT_INCLUDE,
+    ) -> ContextSlice:
         """Return the bounded comparative context for ``node_id``.
 
         Parameters
         ----------
         node_id : str
             The node to query.
+        include : tuple[str, ...]
+            Which relatives to compute.  Valid values: ``"parent"``,
+            ``"siblings"``, ``"uncles"``.  Defaults to all three.
 
         Returns
         -------
-        AnalysisSlice
-            Contains the node itself, its parent (or ``None``), its
-            siblings (other children of the same parent), and its uncles
-            (children of the parent's siblings).
+        ContextSlice
+            Contains the node itself, and the requested relatives.
+            Fields not in *include* are ``None`` / empty list.
 
         Raises
         ------
         KeyError
             If ``node_id`` is not in the store.
+        ValueError
+            If *include* contains an unknown value.
         """
+        unknown = set(include) - _VALID_INCLUDE
+        if unknown:
+            raise ValueError(
+                f"context(): unknown include values: {unknown}. "
+                f"Valid: {sorted(_VALID_INCLUDE)}."
+            )
         node = self._nodes[node_id]
         parent: AnalysisNode | None = None
         siblings: list[AnalysisNode] = []
         uncles: list[AnalysisNode] = []
 
         if node.parent_id is not None:
-            parent = self._nodes[node.parent_id]
-            siblings = [
-                n
-                for n in self._nodes.values()
-                if n.parent_id == node.parent_id and n.node_id != node_id
-            ]
-            parent_siblings = [
-                n
-                for n in self._nodes.values()
-                if parent.parent_id is not None
-                and n.parent_id == parent.parent_id
-                and n.node_id != node.parent_id
-            ]
-            uncles = [
-                n
-                for n in self._nodes.values()
-                if n.parent_id in {ps.node_id for ps in parent_siblings}
-            ]
+            if "parent" in include:
+                parent = self._nodes[node.parent_id]
+            _parent_node = self._nodes[node.parent_id]
+            if "siblings" in include:
+                siblings = [
+                    n
+                    for n in self._nodes.values()
+                    if n.parent_id == node.parent_id and n.node_id != node_id
+                ]
+            if "uncles" in include:
+                parent_siblings = [
+                    n
+                    for n in self._nodes.values()
+                    if _parent_node.parent_id is not None
+                    and n.parent_id == _parent_node.parent_id
+                    and n.node_id != node.parent_id
+                ]
+                uncles = [
+                    n
+                    for n in self._nodes.values()
+                    if n.parent_id in {ps.node_id for ps in parent_siblings}
+                ]
 
-        return AnalysisSlice(
+        return ContextSlice(
             node=node,
             parent=parent,
             siblings=siblings,
@@ -215,9 +236,9 @@ class AnalysisBase:
 # ---------------------------------------------------------------------------
 
 
-@dataclass
-class RegistryEntry:
-    """One entry in a :class:`TaskRegistry`.
+@dataclass(frozen=True)
+class TaskStats:
+    """Public read-only view of one :class:`TaskRegistry` entry.
 
     Parameters
     ----------
@@ -229,10 +250,22 @@ class RegistryEntry:
         Total number of times this task has been dispatched.
     successes : int
         Number of dispatches judged successful.
-    is_default : bool
-        Default operators are never pruned when the registry is at
-        capacity.
     """
+
+    task_name: str
+    task_text: str
+    attempts: int = 0
+    successes: int = 0
+
+    @property
+    def success_rate(self) -> float:
+        """Fraction of attempts that succeeded (0.0 if no attempts)."""
+        return self.successes / self.attempts if self.attempts > 0 else 0.0
+
+
+@dataclass
+class _RegistryEntry:
+    """Internal mutable entry used inside :class:`TaskRegistry`."""
 
     task_name: str
     task_text: str
@@ -242,8 +275,15 @@ class RegistryEntry:
 
     @property
     def success_rate(self) -> float:
-        """Fraction of attempts that succeeded (0.0 if no attempts)."""
         return self.successes / self.attempts if self.attempts > 0 else 0.0
+
+    def to_stats(self) -> TaskStats:
+        return TaskStats(
+            task_name=self.task_name,
+            task_text=self.task_text,
+            attempts=self.attempts,
+            successes=self.successes,
+        )
 
 
 class TaskRegistry:
@@ -257,7 +297,7 @@ class TaskRegistry:
     Parameters
     ----------
     max_tasks : int
-        Maximum number of entries.  Default is :data:`MAX_TASKS` (20).
+        Maximum number of entries.  Default is 20.
 
     Examples
     --------
@@ -269,8 +309,8 @@ class TaskRegistry:
     0.5
     """
 
-    def __init__(self, max_tasks: int = MAX_TASKS) -> None:
-        self._entries: dict[str, RegistryEntry] = {}
+    def __init__(self, max_tasks: int = _MAX_TASKS) -> None:
+        self._entries: dict[str, _RegistryEntry] = {}
         self._max_tasks = max_tasks
 
     # ------------------------------------------------------------------
@@ -326,7 +366,7 @@ class TaskRegistry:
             worst = min(evictable, key=lambda e: e.success_rate)
             del self._entries[worst.task_name]
 
-        self._entries[task_name] = RegistryEntry(
+        self._entries[task_name] = _RegistryEntry(
             task_name=task_name,
             task_text=task_text,
             is_default=is_default,
@@ -356,7 +396,7 @@ class TaskRegistry:
     # Query
     # ------------------------------------------------------------------
 
-    def top_k(self, k: int) -> list[RegistryEntry]:
+    def top_k(self, k: int) -> list[TaskStats]:
         """Return up to ``k`` entries sorted by descending success rate.
 
         Parameters
@@ -366,7 +406,7 @@ class TaskRegistry:
 
         Returns
         -------
-        list[RegistryEntry]
+        list[TaskStats]
             Entries sorted by ``success_rate`` descending, then by
             ``task_name`` ascending for deterministic ties.
         """
@@ -374,10 +414,10 @@ class TaskRegistry:
             self._entries.values(),
             key=lambda e: (-e.success_rate, e.task_name),
         )
-        return sorted_entries[:k]
+        return [e.to_stats() for e in sorted_entries[:k]]
 
-    def __getitem__(self, task_name: str) -> RegistryEntry:
-        return self._entries[task_name]
+    def __getitem__(self, task_name: str) -> TaskStats:
+        return self._entries[task_name].to_stats()
 
     def __contains__(self, task_name: str) -> bool:
         return task_name in self._entries
@@ -386,4 +426,4 @@ class TaskRegistry:
         return len(self._entries)
 
     def __iter__(self):
-        return iter(self._entries.values())
+        return (e.to_stats() for e in self._entries.values())

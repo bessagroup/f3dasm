@@ -77,13 +77,14 @@ __status__ = "Experimental"
 __all__ = [
     "AgenticRun",
     "AgenticRunError",
-    "CHECKPOINT_EVERY",
     "Delegation",
     "Report",
+    "RunContext",
     "Task",
     "_format_delegation",
     "_parse_delegation",
     "read_transcript",
+    "register_backend",
 ]
 
 # ---------------------------------------------------------------------------
@@ -92,6 +93,22 @@ __all__ = [
 
 CHECKPOINT_EVERY: int = 30
 """Number of Implementer delegations between checkpoints."""
+
+_BACKEND_REGISTRY: dict[str, "Backend"] = {}
+"""Registry of named backends for use in StudyConfig.backend."""
+
+
+def register_backend(name: str, backend: "Backend") -> None:
+    """Register a named backend so it can be referenced by StudyConfig.backend.
+
+    Parameters
+    ----------
+    name : str
+        The name used in ``config.yaml`` under the ``backend`` key.
+    backend : Backend
+        The backend instance to register.
+    """
+    _BACKEND_REGISTRY[name] = backend
 
 # ---------------------------------------------------------------------------
 # Public dataclasses
@@ -152,52 +169,32 @@ class Report:
 
 @dataclass
 class Delegation:
-    """Symmetric exchange object for an agent-to-agent channel.
+    """Round-trip exchange envelope for an agent-to-agent channel.
 
-    Both the initiating agent (fills request fields) and the responding
-    agent (fills response fields) use the same class.  The initiating
-    agent serialises the request half via :func:`_format_delegation`;
-    the responding agent's reply is parsed via :func:`_parse_delegation`,
-    which fills the response fields in-place and returns the enriched
-    object.
+    The initiating agent constructs the envelope with a :class:`Task`
+    (request half).  After the responding agent replies,
+    :func:`_parse_delegation` sets ``report`` to a :class:`Report`
+    (response half).  ``is_complete`` is ``True`` once the report is set.
 
     Parameters
     ----------
-    intent : str
-        Natural-language description of what to do.
-    expected_report : str
-        Description of the measurements or conclusions required.
-    remaining_time : timedelta or None
-        Wall-clock time remaining in the run budget.
-    budget : timedelta or None
-        Total run budget (for 20% warning threshold).
-    actions_taken : str
-        Bullet list of what was done (responding agent fills).
-    files_touched : list[str]
-        Paths of artefacts produced (responding agent fills).
-    conclusions : str
-        Narrative conclusion; becomes the git commit message
-        (responding agent fills).
-    numbers : dict[str, Any]
-        Numeric key-value results extracted by name
-        (responding agent fills).
-    raw : str
-        Full ``## Report`` markdown block as written
-        (responding agent fills).
+    task : Task
+        The request half (filled by the initiating agent).
+    report : Report or None
+        The response half (filled by :func:`_parse_delegation`, ``None``
+        until the round-trip completes).
     metadata : dict[str, Any]
         Channel-specific extensions; either party may add keys.
     """
 
-    intent: str
-    expected_report: str
-    remaining_time: timedelta | None = None
-    budget: timedelta | None = None
-    actions_taken: str = ""
-    files_touched: list[str] = field(default_factory=list)
-    conclusions: str = ""
-    numbers: dict[str, Any] = field(default_factory=dict)
-    raw: str = ""
+    task: Task
+    report: Report | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def is_complete(self) -> bool:
+        """True once the responding agent has filled the report."""
+        return self.report is not None
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +204,42 @@ class Delegation:
 
 class AgenticRunError(RuntimeError):
     """Raised for non-recoverable orchestrator failures."""
+
+
+# ---------------------------------------------------------------------------
+# RunContext protocol
+# ---------------------------------------------------------------------------
+
+from typing import Protocol as _Protocol  # noqa: E402
+
+
+class RunContext(_Protocol):
+    """Stable interface exposed to custom topology callables.
+
+    A custom topology is a ``Callable[[RunContext], None]`` passed to
+    :class:`AgenticRun`.  It calls methods on this context instead of
+    depending on :class:`AgenticRun` internals.
+    """
+
+    def delegate(self, task: Task) -> Delegation:
+        """Send *task* to the Implementer; return the completed Delegation."""
+        ...
+
+    def checkpoint(self) -> None:
+        """Commit current run state to git and reset the delegation counter."""
+        ...
+
+    def budget_remaining(self) -> timedelta | None:
+        """Wall-clock time remaining, or ``None`` if no budget is set."""
+        ...
+
+    def done(self, summary: str) -> None:
+        """Signal the run is complete with a final summary string."""
+        ...
+
+    def ask(self, question: str) -> str:
+        """Print *question* to stdout and return the operator's reply."""
+        ...
 
 
 # ---------------------------------------------------------------------------
@@ -605,15 +638,30 @@ class AgenticRun:
         ) = None,
         record_transcripts: bool = True,
         study_config: StudyConfig | None = None,
+        topology: Callable[["RunContext"], None] | None = None,
     ) -> None:
-        # Resolve backend first so model default can come from it.
-        from .backends.claude import CLAUDE_BACKEND
-
-        self._backend: Backend = (
-            backend if backend is not None else CLAUDE_BACKEND
-        )
+        # Resolve backend: explicit kwarg wins; otherwise honour StudyConfig.backend.
+        _cfg_pre = study_config or StudyConfig()
+        if backend is not None:
+            self._backend: Backend = backend
+        else:
+            _bname = _cfg_pre.backend
+            if _bname == "claude":
+                from .backends.claude import CLAUDE_BACKEND as _cb
+                self._backend = _cb
+            elif _bname == "ollama":
+                from .backends.ollama import OLLAMA_BACKEND as _ob
+                self._backend = _ob
+            elif _bname in _BACKEND_REGISTRY:
+                self._backend = _BACKEND_REGISTRY[_bname]
+            else:
+                raise AgenticRunError(
+                    f"Unknown backend {_bname!r}. "
+                    "Built-in backends: 'claude', 'ollama'. "
+                    "Register custom backends with register_backend()."
+                )
         self._study_dir = Path(study_dir).resolve()
-        _cfg = study_config or StudyConfig()
+        _cfg = _cfg_pre
         # CLI model wins over config, config wins over backend default.
         if model is None:
             model = _cfg.model  # may still be None
@@ -624,8 +672,10 @@ class AgenticRun:
         if checkpoint_every == CHECKPOINT_EVERY and _cfg.checkpoint_every is not None:
             checkpoint_every = _cfg.checkpoint_every
         self._checkpoint_every = checkpoint_every
-        # Budget (new field).
+        # Budget.
         self._budget: timedelta | None = _cfg.budget
+        # Custom topology (optional).
+        self._topology = topology
         self._start_time: datetime | None = None  # set in execute()
         self._stdin = stdin
         self._stdout = stdout
@@ -713,7 +763,10 @@ class AgenticRun:
         self._logger.info(
             "Sessions started; handing briefing to Strategizer"
         )
-        self._run_loop(briefing_text)
+        if self._topology is not None:
+            self._topology(self._as_context())
+        else:
+            self._run_loop(briefing_text)
         deliverable = self._assemble_deliverable()
         self._logger.info("Deliverable assembled at %s", deliverable)
         return deliverable
@@ -1330,6 +1383,34 @@ class AgenticRun:
         return "OK: run finalised. Assembling deliverable."
 
     # ------------------------------------------------------------------
+    # Topology helpers
+    # ------------------------------------------------------------------
+
+    def _delegate_task(self, task: Task) -> Delegation:
+        """Delegate *task* to the Implementer; return a completed Delegation.
+
+        Used by custom topology callables via :class:`_RunContextImpl`.
+        """
+        raw = self._tool_delegate(
+            intent=task.intent, expected_report=task.expected_report
+        )
+        d = Delegation(task=task)
+        if _parse_delegation(raw, d) is None:
+            d.report = Report(
+                actions_taken="",
+                files_touched=[],
+                conclusions=raw,
+                numbers={},
+                raw=raw,
+            )
+            d.metadata["error"] = True
+        return d
+
+    def _as_context(self) -> "_RunContextImpl":
+        """Return a :class:`_RunContextImpl` wrapping this run."""
+        return _RunContextImpl(self)
+
+    # ------------------------------------------------------------------
     # Checkpoint
     # ------------------------------------------------------------------
 
@@ -1498,6 +1579,43 @@ class AgenticRun:
 
 
 # ---------------------------------------------------------------------------
+# RunContext implementation
+# ---------------------------------------------------------------------------
+
+
+class _RunContextImpl:
+    """Concrete :class:`RunContext` that wraps an :class:`AgenticRun`.
+
+    Exposes only the stable interface so topology callables do not need
+    to depend on :class:`AgenticRun` internals.
+    """
+
+    def __init__(self, run: AgenticRun) -> None:
+        self._run = run
+
+    def delegate(self, task: Task) -> Delegation:
+        """Send *task* to the Implementer; return the completed Delegation."""
+        return self._run._delegate_task(task)
+
+    def checkpoint(self) -> None:
+        """Commit run state to git and reset the delegation counter."""
+        self._run._run_checkpoint()
+
+    def budget_remaining(self) -> timedelta | None:
+        """Wall-clock time remaining, or ``None`` if no budget is set."""
+        return self._run._remaining()
+
+    def done(self, summary: str) -> None:
+        """Signal the run is complete with a final summary string."""
+        self._run._done_summary = summary
+        self._run._done_called = True
+
+    def ask(self, question: str) -> str:
+        """Print *question* to stdout and return the operator's reply."""
+        return self._run._tool_ask(question=question)
+
+
+# ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
 
@@ -1542,112 +1660,49 @@ def _format_task(task: Task) -> str:
 
 
 def _format_delegation(delegation: Delegation) -> str:
-    """Render the request half of a Delegation as a markdown block.
+    """Render the task half of *delegation* as a markdown block.
+
+    Delegates to :func:`_format_task` with ``delegation.task``.
 
     Parameters
     ----------
     delegation : Delegation
-        The delegation whose request fields are to be formatted.
+        The envelope whose task fields are to be formatted.
 
     Returns
     -------
     str
         Markdown string ready for the responding agent's context.
     """
-    lines = [
-        "## Task",
-        "",
-        "### Intent",
-        delegation.intent,
-        "",
-        "### Expected report",
-        delegation.expected_report,
-    ]
-    if delegation.remaining_time is not None:
-        h, rem = divmod(
-            int(delegation.remaining_time.total_seconds()), 3600
-        )
-        m, s = divmod(rem, 60)
-        lines.insert(
-            2, f"**Time remaining: {h:02d}:{m:02d}:{s:02d}**"
-        )
-        lines.insert(3, "")
-        if (
-            delegation.budget is not None
-            and delegation.remaining_time < 0.2 * delegation.budget
-        ):
-            lines.insert(4, (
-                "⚠ Budget nearly exhausted — "
-                "scope remaining work accordingly."
-            ))
-            lines.insert(5, "")
-    return "\n".join(lines) + "\n"
+    return _format_task(delegation.task)
 
 
 def _parse_delegation(
     text: str, delegation: Delegation
 ) -> Delegation | None:
-    """Parse the response half from an agent reply into *delegation*.
+    """Parse an agent reply into ``delegation.report``.
 
-    Searches for a ``## Report`` heading and extracts the four
-    sub-sections by heading.  Returns ``None`` if the heading is
-    absent.  On success mutates *delegation* in-place (filling
-    ``actions_taken``, ``files_touched``, ``conclusions``,
-    ``numbers``, ``raw``) and returns the enriched object.
+    Calls :func:`_parse_report` on *text*.  Returns ``None`` if no
+    ``## Report`` heading is found.  On success sets
+    ``delegation.report`` to the parsed :class:`Report` and returns the
+    enriched *delegation* (same object).
 
     Parameters
     ----------
     text : str
         Full assistant message text.
     delegation : Delegation
-        The delegation object to enrich with parsed response fields.
+        The envelope to enrich with the parsed report.
 
     Returns
     -------
     Delegation or None
-        The enriched *delegation*, or ``None`` if no
-        ``## Report`` heading was found.
+        The enriched *delegation*, or ``None`` if parsing failed.
     """
-    match = re.search(r"##\s+Report\b", text, re.IGNORECASE)
-    if not match:
+    report = _parse_report(text)
+    if report is None:
         return None
-
-    raw_start = match.start()
-    raw_block = text[raw_start:]
-
-    def _section(heading: str, src: str) -> str:
-        pattern = rf"###\s+{re.escape(heading)}\s*\n(.*?)(?=\n###|\Z)"
-        m = re.search(pattern, src, re.DOTALL | re.IGNORECASE)
-        return m.group(1).strip() if m else ""
-
-    actions = _section("Actions taken", raw_block)
-    files_raw = _section("Files touched", raw_block)
-    conclusions = _section("Conclusions", raw_block)
-    numbers_raw = _section("Numbers", raw_block)
-
-    files: list[str] = [
-        ln.lstrip("- ").strip()
-        for ln in files_raw.splitlines()
-        if ln.strip() and ln.strip() != "-"
-    ]
-
-    numbers: dict[str, Any] = {}
-    for ln in numbers_raw.splitlines():
-        if ":" in ln:
-            key, _, val = ln.partition(":")
-            key = key.strip()
-            val = val.strip()
-            if key:
-                try:
-                    numbers[key] = float(val)
-                except ValueError:
-                    numbers[key] = val
-
-    delegation.actions_taken = actions
-    delegation.files_touched = files
-    delegation.conclusions = conclusions
-    delegation.numbers = numbers
-    delegation.raw = raw_block
+    delegation.report = report
     return delegation
 
 

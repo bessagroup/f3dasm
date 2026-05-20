@@ -40,7 +40,8 @@ version = "2.2.2"
 
 [project.optional-dependencies]
 agentic = [
-  "claude-agent-sdk>=0.2.82,<1.0.0"
+  "claude-agent-sdk>=0.2.82,<1.0.0",
+  "ollama>=0.4.0"
 ]
 all = [
   "abaqus2py>=1.0.0",

@@ -7,9 +7,9 @@ import pytest
 from f3dasm._src.agentic.stores import (
     AnalysisBase,
     AnalysisNode,
-    MAX_TASKS,
-    RegistryEntry,
+    ContextSlice,
     TaskRegistry,
+    TaskStats,
 )
 
 __author__ = "Elvis Aguero (elvis_alexander_aguero_vera@brown.edu)"
@@ -61,7 +61,7 @@ class TestAnalysisBaseAdd:
         assert "other" not in ab
 
 
-class TestAnalysisBaseGet:
+class TestAnalysisBaseContext:
     def setup_method(self):
         self.ab = AnalysisBase()
         self.ab.add(_node("root"))
@@ -69,35 +69,38 @@ class TestAnalysisBaseGet:
         self.ab.add(_node("child_b", parent_id="root"))
         self.ab.add(_node("child_c", parent_id="root"))
 
-    def test_get_missing_raises(self):
+    def test_context_missing_raises(self):
         with pytest.raises(KeyError):
-            self.ab.get("nonexistent")
+            self.ab.context("nonexistent")
 
-    def test_get_node_itself(self):
-        sl = self.ab.get("child_a")
+    def test_context_returns_context_slice(self):
+        sl = self.ab.context("child_a")
+        assert isinstance(sl, ContextSlice)
+
+    def test_context_node_itself(self):
+        sl = self.ab.context("child_a")
         assert sl.node.node_id == "child_a"
 
-    def test_get_parent(self):
-        sl = self.ab.get("child_a")
+    def test_context_parent(self):
+        sl = self.ab.context("child_a")
         assert sl.parent is not None
         assert sl.parent.node_id == "root"
 
-    def test_get_root_has_no_parent(self):
-        sl = self.ab.get("root")
+    def test_context_root_has_no_parent(self):
+        sl = self.ab.context("root")
         assert sl.parent is None
 
-    def test_get_siblings(self):
-        sl = self.ab.get("child_a")
+    def test_context_siblings(self):
+        sl = self.ab.context("child_a")
         sibling_ids = {n.node_id for n in sl.siblings}
         assert sibling_ids == {"child_b", "child_c"}
         assert "child_a" not in sibling_ids
 
-    def test_get_root_has_no_siblings(self):
-        sl = self.ab.get("root")
+    def test_context_root_has_no_siblings(self):
+        sl = self.ab.context("root")
         assert sl.siblings == []
 
-    def test_get_uncles(self):
-        # Grandparent and siblings of the parent
+    def test_context_uncles(self):
         ab = AnalysisBase()
         ab.add(_node("gp"))
         ab.add(_node("parent_a", parent_id="gp"))
@@ -105,13 +108,29 @@ class TestAnalysisBaseGet:
         ab.add(_node("child", parent_id="parent_a"))
         ab.add(_node("uncle_child", parent_id="parent_b"))
 
-        sl = ab.get("child")
+        sl = ab.context("child")
         uncle_ids = {n.node_id for n in sl.uncles}
         assert "uncle_child" in uncle_ids
 
-    def test_get_no_uncles_if_parent_is_root(self):
-        sl = self.ab.get("child_a")
+    def test_context_no_uncles_if_parent_is_root(self):
+        sl = self.ab.context("child_a")
         assert sl.uncles == []
+
+    def test_context_include_parent_only(self):
+        sl = self.ab.context("child_a", include=("parent",))
+        assert sl.parent is not None
+        assert sl.siblings == []
+        assert sl.uncles == []
+
+    def test_context_include_siblings_only(self):
+        sl = self.ab.context("child_a", include=("siblings",))
+        assert sl.parent is None
+        assert len(sl.siblings) == 2
+        assert sl.uncles == []
+
+    def test_context_unknown_include_raises(self):
+        with pytest.raises(ValueError, match="unknown include values"):
+            self.ab.context("child_a", include=("parents",))
 
 
 # ===========================================================================
@@ -119,14 +138,23 @@ class TestAnalysisBaseGet:
 # ===========================================================================
 
 
-class TestRegistryEntry:
+class TestTaskStats:
     def test_success_rate_zero_attempts(self):
-        e = RegistryEntry(task_name="t", task_text="txt")
-        assert e.success_rate == 0.0
+        s = TaskStats(task_name="t", task_text="txt")
+        assert s.success_rate == 0.0
 
     def test_success_rate_computation(self):
-        e = RegistryEntry(task_name="t", task_text="txt", attempts=4, successes=3)
-        assert e.success_rate == pytest.approx(0.75)
+        s = TaskStats(task_name="t", task_text="txt", attempts=4, successes=3)
+        assert s.success_rate == pytest.approx(0.75)
+
+    def test_task_stats_is_frozen(self):
+        s = TaskStats(task_name="t", task_text="txt")
+        with pytest.raises((AttributeError, TypeError)):
+            s.attempts = 5  # type: ignore[misc]
+
+    def test_task_stats_has_no_is_default(self):
+        s = TaskStats(task_name="t", task_text="txt")
+        assert not hasattr(s, "is_default")
 
 
 class TestTaskRegistryRegister:
@@ -208,6 +236,12 @@ class TestTaskRegistryTopK:
         assert top[0].task_name == "a"
         assert top[1].task_name == "b"
 
+    def test_top_k_returns_task_stats(self):
+        reg = TaskRegistry()
+        reg.register("op", "text")
+        top = reg.top_k(1)
+        assert isinstance(top[0], TaskStats)
+
     def test_top_k_capped(self):
         reg = TaskRegistry()
         for i in range(5):
@@ -230,11 +264,18 @@ class TestTaskRegistryIteration:
         reg.register("b", "b")
         assert len(reg) == 2
 
-    def test_iter_yields_entries(self):
+    def test_iter_yields_task_stats(self):
         reg = TaskRegistry()
         reg.register("a", "a")
-        names = {e.task_name for e in reg}
-        assert names == {"a"}
+        entries = list(reg)
+        assert len(entries) == 1
+        assert isinstance(entries[0], TaskStats)
+        assert entries[0].task_name == "a"
 
-    def test_max_tasks_constant_is_20(self):
-        assert MAX_TASKS == 20
+    def test_default_max_tasks_is_20(self):
+        reg = TaskRegistry()
+        for i in range(20):
+            reg.register(f"op{i}", f"text {i}")
+        assert len(reg) == 20
+        reg.register("op_extra", "extra")
+        assert len(reg) == 20

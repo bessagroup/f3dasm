@@ -42,7 +42,7 @@ def _import_ollama() -> None:
         from ..agent_runtime import AgenticRunError
         raise AgenticRunError(
             "The 'ollama' Python package is required for the Ollama backend. "
-            "Install it with: pip install ollama"
+            "Install it with: uv add 'f3dasm[agentic]'"
         ) from exc
 
 
