@@ -167,14 +167,28 @@ def random_sample_discrete_parameters(
     samples = {}
     for i in range(n_samples):
         sample_values = {
-            name: rng.choice(
-                range(param.lower_bound, param.upper_bound + 1, param.step)
-            )
+            name: _random_int_in_range(rng, param)
             for name, param in input_space.items()
         }
         samples[i] = ExperimentSample(_input_data=sample_values)
 
     return samples
+
+
+def _random_int_in_range(
+    rng: np.random.Generator, param: DiscreteParameter
+) -> np.integer:
+    """Draw one int from `[lower_bound, upper_bound]` honoring ``step``.
+
+    Avoids ``rng.choice(range(...))`` which materializes the full range
+    into an array — that pattern OOMs for parameters with very large
+    bounds (see issue #270).
+    """
+    if param.step == 1:
+        return rng.integers(low=param.lower_bound, high=param.upper_bound + 1)
+    # Sample an offset in [0, span) and scale by step.
+    span = (param.upper_bound - param.lower_bound) // param.step + 1
+    return param.lower_bound + param.step * rng.integers(low=0, high=span)
 
 
 def random_sample_categorical_parameters(
