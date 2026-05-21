@@ -203,6 +203,41 @@ class TestRetry:
         result = retry(agent, t, is_success=lambda d: True, max_fails=1)
         assert result.task.intent == "specific intent"
 
+    def test_on_failure_message_sent_on_retry(self):
+        """on_failure(deleg, attempt) string is sent to agent on each retry."""
+        corrective_calls: list[tuple[int, str]] = []
+
+        def on_failure(deleg: Delegation, attempt: int) -> str:
+            msg = f"attempt {attempt} failed, try again"
+            corrective_calls.append((attempt, msg))
+            return msg
+
+        # First reply fails (not a valid report), second succeeds.
+        session = StubSession([
+            "not a report",
+            _VALID_REPORT,
+        ])
+        task = Task(intent="do X", expected_report="report Y")
+        result = retry(session, task, is_success=lambda d: True, on_failure=on_failure)
+
+        assert result.is_complete
+        assert len(corrective_calls) == 1
+        assert corrective_calls[0] == (1, "attempt 1 failed, try again")
+        # The corrective message was sent to the session
+        assert any("attempt 1 failed" in msg for msg in session.received)
+
+    def test_on_failure_default_corrective_sent_when_none(self):
+        """When on_failure=None, a brief built-in corrective is sent on retry."""
+        session = StubSession(["not a report", _VALID_REPORT])
+        task = Task(intent="do X", expected_report="report Y")
+        result = retry(session, task, is_success=lambda d: True)
+
+        assert result.is_complete
+        # The second message sent to the session is the built-in corrective.
+        assert len(session.received) >= 2
+        corrective = session.received[1]
+        assert len(corrective) < 200, "default corrective should be brief"
+
 
 # ===========================================================================
 # debate

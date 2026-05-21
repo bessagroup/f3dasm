@@ -124,6 +124,10 @@ def parallel(
 # retry
 # ---------------------------------------------------------------------------
 
+_DEFAULT_CORRECTIVE = (
+    "Attempt {attempt} failed. Review what went wrong and revise your approach."
+)
+
 
 def retry(
     agent: _AnySession,
@@ -131,37 +135,34 @@ def retry(
     *,
     is_success: Callable[[Delegation], bool],
     max_fails: int = 3,
+    on_failure: Callable[[Delegation, int], str] | None = None,
 ) -> Delegation:
     """Persistence loop: retry until ``is_success`` or ``max_fails``.
 
     Sends the formatted *task* to *agent*, parses the reply into a
     :class:`~agent_runtime.Delegation`, and tests it with ``is_success``.
-    Retries on failure up to ``max_fails`` times.  Each retry re-sends
-    the same formatted task message.
+    Retries on failure, sending the corrective message from *on_failure*
+    (or a brief built-in message when *on_failure* is ``None``).
 
     Parameters
     ----------
     agent : session
         Any object with ``send(str) -> str``.
     task : Task
-        The task to send.  Formatted with :func:`_format_task` internally.
+        The task to send.
     is_success : callable
         Predicate on the parsed :class:`~agent_runtime.Delegation`.
-        Return ``True`` to accept, ``False`` to retry.
     max_fails : int
-        Maximum number of consecutive failures before raising.
-
-    Returns
-    -------
-    Delegation
-        The first :class:`~agent_runtime.Delegation` for which
-        ``is_success`` returns ``True``.
+        Maximum consecutive failures before raising.
+    on_failure : callable or None
+        Called as ``on_failure(delegation, attempt)`` on each failure
+        (attempt is 1-based).  Its return value is sent to the agent as a
+        corrective message.  When ``None``, a brief built-in message is used.
 
     Raises
     ------
     AgenticRunError
-        If ``is_success`` returns ``False`` (or parsing fails) for
-        ``max_fails`` consecutive attempts.
+        After ``max_fails`` consecutive failures.
     """
     task_msg = _format_task(task)
     fails = 0
@@ -177,6 +178,12 @@ def retry(
                 f"retry: exceeded max_fails={max_fails}. "
                 f"Last reply (first 200 chars): {reply[:200]!r}"
             )
+        corrective = (
+            on_failure(deleg, fails)
+            if on_failure is not None
+            else _DEFAULT_CORRECTIVE.format(attempt=fails)
+        )
+        task_msg = corrective
 
 
 # ---------------------------------------------------------------------------
