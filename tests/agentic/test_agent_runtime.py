@@ -32,7 +32,7 @@ from f3dasm._src.agentic.agent_runtime import (
     _parse_report,
     read_transcript,
 )
-from f3dasm._src.agentic.backends.base import AgentRole, Edge, Graph
+from f3dasm._src.agentic.backends.base import Agent, AgentRole, Edge, Graph
 from f3dasm._src.agentic.backends.claude import _classify_sdk_error
 
 #                                                          Authorship & Credits
@@ -2174,3 +2174,46 @@ def test_ctx_debate_returns_delegations_and_alternates(tmp_path: Path) -> None:
     assert len(received["critic"]) == 2
     # Chaining: critic received something containing "proposer" (the proposer's conclusion)
     assert "proposer" in received["critic"][0]
+
+
+# ---------------------------------------------------------------------------
+# TestAgentClassAPI — Task 1: Agent base class + Graph(nodes=)
+# ---------------------------------------------------------------------------
+
+
+class TestAgentClassAPI:
+    def test_agent_base_defaults(self):
+        a = Agent()
+        assert a.system_prompt == "" and a.tools == set() and a.model is None
+
+    def test_agent_subclass_inherits_and_overrides(self):
+        class Impl(Agent):
+            system_prompt = "..."
+            tools = {"bash"}
+
+        a = Impl(model="haiku")
+        assert a.tools == {"bash"} and a.model == "haiku"
+
+    def test_graph_nodes_dict(self):
+        class S(Agent):
+            pass
+
+        class I(Agent):
+            pass
+
+        g = Graph(nodes={"s": S(), "i": I()}, edges=(Edge("s", "i"),), entry="s")
+        assert g.outgoing("s") == ["i"] and g.outgoing("i") == []
+
+    def test_graph_rejects_unknown_edge_target(self):
+        class A(Agent):
+            pass
+
+        with pytest.raises(ValueError, match="undeclared"):
+            Graph(nodes={"a": A()}, edges=(Edge("a", "missing"),), entry="a")
+
+    def test_graph_rejects_unknown_entry(self):
+        class A(Agent):
+            pass
+
+        with pytest.raises(ValueError, match="entry"):
+            Graph(nodes={"a": A()}, edges=(), entry="missing")
