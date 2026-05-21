@@ -1914,3 +1914,93 @@ def test_ctx_parallel_calls_each_target_via_delegate(tmp_path: Path) -> None:
     assert all(d.is_complete for d in delegations_seen)
     assert received["alpha"], "alpha was never called"
     assert received["beta"], "beta was never called"
+
+
+def test_ctx_retry_succeeds_after_failure(tmp_path: Path) -> None:
+    """ctx.retry loops until is_success, sending on_failure corrective."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    _BAD_REPORT = (
+        "## Report\n\n### Actions taken\n- failed\n\n"
+        "### Files touched\n\n### Conclusions\nBAD\n\n### Numbers\nscore: 0.0\n"
+    )
+    _GOOD_REPORT = (
+        "## Report\n\n### Actions taken\n- succeeded\n\n"
+        "### Files touched\n\n### Conclusions\nGOOD\n\n### Numbers\nscore: 1.0\n"
+    )
+
+    class _FlipExec:
+        """Returns bad report first, good report after."""
+        def __init__(self) -> None:
+            self._calls = 0
+        def send(self, msg: str) -> str:
+            self._calls += 1
+            return _GOOD_REPORT if self._calls > 1 else _BAD_REPORT
+
+    def topology(ctx):
+        task = Task(intent="do X", expected_report="score must be 1.0")
+        result = ctx.retry(
+            task,
+            target="executor",
+            is_success=lambda d: d.report.numbers.get("score", 0) >= 1.0,
+            on_failure=lambda d, attempt: f"score was 0, attempt {attempt}",
+        )
+        ctx.done(f"done: {result.report.conclusions}")
+
+    roles = [
+        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
+            StubStrategizer([_DoneAction("unused")], tool_closures)),
+        AgentRole("executor", factory=lambda *, system_prompt, model, study_dir: _FlipExec()),
+    ]
+
+    run = AgenticRun(
+        tmp_path,
+        roles=roles,
+        topology=topology,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    deliv = run.execute()
+    assert "GOOD" in (deliv / "solution.md").read_text()
+
+
+def test_ctx_retry_raises_after_max_fails(tmp_path: Path) -> None:
+    """ctx.retry raises AgenticRunError after max_fails consecutive failures."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    _BAD_REPORT = (
+        "## Report\n\n### Actions taken\n- bad\n\n"
+        "### Files touched\n\n### Conclusions\nbad\n\n### Numbers\nscore: 0.0\n"
+    )
+
+    class _AlwaysBad:
+        def send(self, msg: str) -> str:
+            return _BAD_REPORT
+
+    def topology(ctx):
+        task = Task(intent="do X", expected_report="score must be 1.0")
+        ctx.retry(
+            task,
+            target="executor",
+            is_success=lambda d: d.report.numbers.get("score", 0) >= 1.0,
+            max_fails=2,
+        )
+        ctx.done("should not reach here")
+
+    roles = [
+        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
+            StubStrategizer([_DoneAction("unused")], tool_closures)),
+        AgentRole("executor", factory=lambda *, system_prompt, model, study_dir: _AlwaysBad()),
+    ]
+
+    run = AgenticRun(
+        tmp_path,
+        roles=roles,
+        topology=topology,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    with pytest.raises(AgenticRunError, match="max_fails"):
+        run.execute()

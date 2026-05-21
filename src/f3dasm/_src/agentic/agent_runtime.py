@@ -272,6 +272,28 @@ class RunContext(_Protocol):
         """
         ...
 
+    def retry(
+        self,
+        task: "Task",
+        target: str = "implementer",
+        *,
+        is_success: "Callable[[Delegation], bool]",
+        max_fails: int = 3,
+        on_failure: "Callable[[Delegation, int], str] | None" = None,
+    ) -> "Delegation":
+        """Persistence loop: delegate *task* to *target* until ``is_success``.
+
+        On each failure, sends ``on_failure(delegation, attempt)`` to the
+        agent as a corrective message (1-based attempt count).  When
+        *on_failure* is ``None``, a brief built-in corrective is used.
+
+        Raises
+        ------
+        AgenticRunError
+            After ``max_fails`` consecutive failures.
+        """
+        ...
+
 
 # ---------------------------------------------------------------------------
 # StudyConfig
@@ -1851,6 +1873,41 @@ class _RunContextImpl:
                 d.metadata["error"] = True
             results.append(d)
         return results
+
+    _RETRY_CORRECTIVE = (
+        "Attempt {attempt} failed. Review what went wrong and revise your approach."
+    )
+
+    def retry(
+        self,
+        task: Task,
+        target: str = "implementer",
+        *,
+        is_success: Callable[[Delegation], bool],
+        max_fails: int = 3,
+        on_failure: Callable[[Delegation, int], str] | None = None,
+    ) -> Delegation:
+        """Persistence loop through the run pipeline."""
+        fails = 0
+        current_task = task
+        while True:
+            d = self.delegate(current_task, target=target)
+            if d.is_complete and is_success(d):
+                return d
+            fails += 1
+            if fails >= max_fails:
+                raise AgenticRunError(
+                    f"ctx.retry: exceeded max_fails={max_fails} for target={target!r}."
+                )
+            corrective_text = (
+                on_failure(d, fails)
+                if on_failure is not None
+                else self._RETRY_CORRECTIVE.format(attempt=fails)
+            )
+            current_task = Task(
+                intent=corrective_text,
+                expected_report=task.expected_report,
+            )
 
 
 # ---------------------------------------------------------------------------
