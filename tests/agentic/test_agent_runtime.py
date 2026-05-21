@@ -2184,15 +2184,15 @@ def test_ctx_debate_returns_delegations_and_alternates(tmp_path: Path) -> None:
 class TestAgentClassAPI:
     def test_agent_base_defaults(self):
         a = Agent()
-        assert a.system_prompt == "" and a.tools == set() and a.model is None
+        assert a.system_prompt == "" and a.tools == frozenset() and a.model is None
 
     def test_agent_subclass_inherits_and_overrides(self):
         class Impl(Agent):
             system_prompt = "..."
-            tools = {"bash"}
+            tools = frozenset({"bash"})
 
         a = Impl(model="haiku")
-        assert a.tools == {"bash"} and a.model == "haiku"
+        assert a.tools == frozenset({"bash"}) and a.model == "haiku"
 
     def test_graph_nodes_dict(self):
         class S(Agent):

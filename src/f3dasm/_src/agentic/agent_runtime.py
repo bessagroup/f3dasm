@@ -1031,6 +1031,11 @@ class AgenticRun:
         Priority: ``graph=`` > ``roles=`` > default Strategizer + Implementer pair.
         """
         if self._graph is not None:
+            if self._graph.nodes is not None:
+                raise NotImplementedError(
+                    "Graph(nodes=...) wiring is not yet implemented. "
+                    "Use Graph(roles=[...]) until the Agent class API is fully wired."
+                )
             return list(self._graph.roles)
         if self._roles is not None:
             return self._roles

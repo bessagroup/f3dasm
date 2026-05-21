@@ -73,7 +73,7 @@ class Agent:
     """
 
     system_prompt: str = ""
-    tools: set[str] = set()
+    tools: frozenset[str] = frozenset()
     reset_on_checkpoint: bool = True
     description: str | None = None
 
@@ -220,8 +220,20 @@ class Graph:
         # Normalise edges to tuple.
         self.edges = tuple(self.edges)
 
+        # Reject ambiguous construction.
+        if self.nodes is not None and self.roles is not None:
+            raise ValueError(
+                "Graph: provide either nodes= or roles=, not both."
+            )
+
         # Resolve names from either nodes or legacy roles.
         if self.nodes is not None:
+            bad = [k for k, v in self.nodes.items() if not isinstance(v, Agent)]
+            if bad:
+                raise TypeError(
+                    f"Graph nodes values must be Agent instances; "
+                    f"got invalid values for keys: {sorted(bad)}"
+                )
             names = set(self.nodes)
         elif self.roles is not None:
             self.roles = tuple(self.roles)
