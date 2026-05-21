@@ -1437,6 +1437,22 @@ def test_load_study_config_eval_budget(tmp_path):
     assert cfg.eval_budget == 500
 
 
+def test_load_study_config_eval_budget_zero_raises(tmp_path):
+    """eval_budget: 0 must raise AgenticRunError."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRunError, _load_study_config
+    (tmp_path / "config.yaml").write_text("eval_budget: 0\n")
+    with pytest.raises(AgenticRunError, match="positive integer"):
+        _load_study_config(tmp_path)
+
+
+def test_load_study_config_eval_budget_negative_raises(tmp_path):
+    """eval_budget: -1 must raise AgenticRunError."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRunError, _load_study_config
+    (tmp_path / "config.yaml").write_text("eval_budget: -1\n")
+    with pytest.raises(AgenticRunError, match="positive integer"):
+        _load_study_config(tmp_path)
+
+
 def test_load_study_config_eval_budget_unknown_key_still_raises(tmp_path):
     """Unknown keys still raise even after adding eval_budget."""
     from f3dasm._src.agentic.agent_runtime import AgenticRunError, _load_study_config

@@ -318,6 +318,10 @@ class RunContext(_Protocol):
 # StudyConfig
 # ---------------------------------------------------------------------------
 
+_DEFAULT_RETRY_CORRECTIVE = (
+    "Attempt {attempt} failed. Review what went wrong and revise your approach."
+)
+
 _KNOWN_CONFIG_KEYS: frozenset[str] = frozenset(
     {"model", "backend", "budget", "checkpoint_every", "eval_budget"}
 )
@@ -338,6 +342,15 @@ class StudyConfig:
     budget: timedelta | None = None
     checkpoint_every: int | None = None
     eval_budget: int | None = None
+
+
+def _parse_eval_budget(raw: dict) -> int:
+    value = int(raw["eval_budget"])
+    if value <= 0:
+        raise AgenticRunError(
+            f"config.yaml: eval_budget must be a positive integer, got {value!r}."
+        )
+    return value
 
 
 def _load_study_config(study_dir: Path) -> StudyConfig:
@@ -366,7 +379,7 @@ def _load_study_config(study_dir: Path) -> StudyConfig:
         backend=raw.get("backend", "claude"),
         budget=budget,
         checkpoint_every=raw.get("checkpoint_every"),
-        eval_budget=int(raw["eval_budget"]) if "eval_budget" in raw else None,
+        eval_budget=_parse_eval_budget(raw) if "eval_budget" in raw else None,
     )
 
 
@@ -1908,10 +1921,6 @@ class _RunContextImpl:
             results.append(d)
         return results
 
-    _RETRY_CORRECTIVE = (
-        "Attempt {attempt} failed. Review what went wrong and revise your approach."
-    )
-
     def retry(
         self,
         task: Task,
@@ -1936,7 +1945,7 @@ class _RunContextImpl:
             corrective_text = (
                 on_failure(d, fails)
                 if on_failure is not None
-                else self._RETRY_CORRECTIVE.format(attempt=fails)
+                else _DEFAULT_RETRY_CORRECTIVE.format(attempt=fails)
             )
             current_task = Task(
                 intent=corrective_text,
