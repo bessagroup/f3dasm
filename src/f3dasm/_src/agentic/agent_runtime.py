@@ -294,6 +294,23 @@ class RunContext(_Protocol):
         """
         ...
 
+    def debate(
+        self,
+        target_a: str,
+        target_b: str,
+        n: int,
+        initial: str,
+    ) -> "list[Delegation]":
+        """Fixed-N debate: alternate *n* rounds between *target_a* and *target_b*.
+
+        Each round's response is used as the next round's input.  Returns
+        ``2*n`` Delegations ``[a1, b1, a2, b2, …]``.  All delegations go
+        through the full run pipeline (budget, git, transcripts).
+
+        The final response is ``debate(…)[-1].report.conclusions``.
+        """
+        ...
+
 
 # ---------------------------------------------------------------------------
 # StudyConfig
@@ -1908,6 +1925,29 @@ class _RunContextImpl:
                 intent=corrective_text,
                 expected_report=task.expected_report,
             )
+
+    def debate(
+        self,
+        target_a: str,
+        target_b: str,
+        n: int,
+        initial: str,
+    ) -> list[Delegation]:
+        """Fixed-N debate through the run pipeline."""
+        if n < 1:
+            raise ValueError(f"ctx.debate: n must be ≥ 1, got {n}.")
+        transcript: list[Delegation] = []
+        current = initial
+        for _ in range(n):
+            task_a = Task(intent=current, expected_report="Respond to the debate.")
+            d_a = self.delegate(task_a, target=target_a)
+            transcript.append(d_a)
+            a_reply = d_a.report.conclusions if d_a.is_complete else current
+            task_b = Task(intent=a_reply, expected_report="Respond to the debate.")
+            d_b = self.delegate(task_b, target=target_b)
+            transcript.append(d_b)
+            current = d_b.report.conclusions if d_b.is_complete else a_reply
+        return transcript
 
 
 # ---------------------------------------------------------------------------

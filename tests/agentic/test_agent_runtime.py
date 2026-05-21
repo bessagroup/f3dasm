@@ -2004,3 +2004,56 @@ def test_ctx_retry_raises_after_max_fails(tmp_path: Path) -> None:
     )
     with pytest.raises(AgenticRunError, match="max_fails"):
         run.execute()
+
+
+def test_ctx_debate_returns_delegations_and_alternates(tmp_path: Path) -> None:
+    """ctx.debate alternates n rounds between two named agents, returns list[Delegation]."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    received: dict[str, list[str]] = {"proposer": [], "critic": []}
+
+    def _make_report(name: str, msg: str) -> str:
+        return (
+            f"## Report\n\n### Actions taken\n- {name} responded\n\n"
+            f"### Files touched\n\n### Conclusions\n{name}: {msg}\n\n### Numbers\n"
+        )
+
+    class _DebateExec:
+        def __init__(self, name: str) -> None:
+            self._name = name
+            self._call = 0
+        def send(self, msg: str) -> str:
+            received[self._name].append(msg)
+            self._call += 1
+            return _make_report(self._name, f"round {self._call}")
+
+    transcript: list = []
+
+    def topology(ctx):
+        result = ctx.debate("proposer", "critic", n=2, initial="Begin.")
+        transcript.extend(result)
+        ctx.done("debate done")
+
+    roles = [
+        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
+            StubStrategizer([_DoneAction("unused")], tool_closures)),
+        AgentRole("proposer", factory=lambda *, system_prompt, model, study_dir: _DebateExec("proposer")),
+        AgentRole("critic",   factory=lambda *, system_prompt, model, study_dir: _DebateExec("critic")),
+    ]
+
+    run = AgenticRun(
+        tmp_path,
+        roles=roles,
+        topology=topology,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    run.execute()
+
+    assert len(transcript) == 4  # 2 rounds × 2 agents
+    assert all(isinstance(d, Delegation) for d in transcript)
+    assert len(received["proposer"]) == 2
+    assert len(received["critic"]) == 2
+    # Chaining: critic received something containing "proposer" (the proposer's conclusion)
+    assert "proposer" in received["critic"][0]
