@@ -915,6 +915,60 @@ def test_format_task_contains_sections() -> None:
     assert "Return Y" in text
 
 
+def test_eval_count_tracked_from_report_numbers(tmp_path: Path) -> None:
+    """_total_eval_count accumulates eval_count from report.numbers."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    _REPORT_WITH_EVALS = (
+        "## Report\n\n### Actions taken\n- ran\n\n"
+        "### Files touched\n\n### Conclusions\nok\n\n"
+        "### Numbers\neval_count: 42\n"
+    )
+
+    strat_factory, impl_factory = _make_factories(
+        [_DelegateAction("do X", "report"), _DoneAction("done")],
+        [_REPORT_WITH_EVALS],
+    )
+
+    run = AgenticRun(
+        tmp_path,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    run.execute()
+    assert run._total_eval_count == 42
+
+
+def test_eval_budget_warning_injected_into_task(tmp_path: Path) -> None:
+    """When eval_count_remaining <= 10% of eval_budget, warning is rendered."""
+    task = Task(
+        intent="do X",
+        expected_report="report",
+        eval_count_remaining=40,
+        eval_budget=500,
+    )
+    rendered = _format_task(task)
+    # Warning fires at <= 10% = 50 evals remaining; 40 < 50 → warning present
+    assert "40" in rendered
+    assert "Evaluation" in rendered
+
+
+def test_eval_budget_no_warning_when_plenty_remaining(tmp_path: Path) -> None:
+    """No eval warning when > 10% budget remains."""
+    task = Task(
+        intent="do X",
+        expected_report="report",
+        eval_count_remaining=400,
+        eval_budget=500,
+    )
+    rendered = _format_task(task)
+    # 400/500 = 80% remaining → no eval warning
+    assert "Evaluation budget" not in rendered
+
+
 # ---------------------------------------------------------------------------
 # NEW Test 13 — Piece B: classifier — short response branch
 # ---------------------------------------------------------------------------

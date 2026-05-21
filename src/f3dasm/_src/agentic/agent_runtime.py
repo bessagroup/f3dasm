@@ -144,6 +144,8 @@ class Task:
     expected_report: str
     remaining_time: timedelta | None = None
     budget: timedelta | None = None
+    eval_count_remaining: int | None = None
+    eval_budget: int | None = None
 
 
 @dataclass
@@ -1474,11 +1476,18 @@ class AgenticRun:
 
         # (b) Build task message.
         remaining = self._remaining()
+        eval_remaining = (
+            self._eval_budget - self._total_eval_count
+            if self._eval_budget is not None
+            else None
+        )
         task = Task(
             intent=intent,
             expected_report=expected_report,
             remaining_time=remaining,
             budget=self._budget,
+            eval_count_remaining=eval_remaining,
+            eval_budget=self._eval_budget,
         )
         task_msg = _format_task(task)
 
@@ -1589,6 +1598,10 @@ class AgenticRun:
         self._delegation_counter += 1
         self._total_delegations += 1
         self._last_report = report
+        # Accumulate eval_count from report numbers (soft budget tracking).
+        self._total_eval_count += int(
+            report.numbers.get("eval_count", 0)
+        )
         report.remaining_time = self._remaining()
         elapsed = _format_elapsed(time.monotonic() - delegation_start)
         self._logger.info(
@@ -1995,6 +2008,18 @@ def _format_task(task: Task) -> str:
                 "scope remaining work accordingly."
             ))
             lines.insert(5, "")
+    if task.eval_count_remaining is not None:
+        lines.append(f"**Evaluations remaining: {task.eval_count_remaining}**")
+        lines.append("")
+        if (
+            task.eval_budget is not None
+            and task.eval_count_remaining <= 0.1 * task.eval_budget
+        ):
+            lines.append(
+                "⚠ Evaluation budget nearly exhausted — "
+                "prioritise the most promising candidates only."
+            )
+            lines.append("")
     return "\n".join(lines) + "\n"
 
 
