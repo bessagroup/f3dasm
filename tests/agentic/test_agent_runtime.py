@@ -942,6 +942,37 @@ def test_eval_count_tracked_from_report_numbers(tmp_path: Path) -> None:
     assert run._total_eval_count == 42
 
 
+def test_eval_count_accumulates_across_delegations(tmp_path: Path) -> None:
+    """_total_eval_count sums eval_count across multiple delegations."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    _REPORT_20 = (
+        "## Report\n\n### Actions taken\n- ran\n\n"
+        "### Files touched\n\n### Conclusions\nok\n\n"
+        "### Numbers\neval_count: 20\n"
+    )
+
+    strat_factory, impl_factory = _make_factories(
+        [
+            _DelegateAction("phase 1", "report"),
+            _DelegateAction("phase 2", "report"),
+            _DoneAction("done"),
+        ],
+        [_REPORT_20, _REPORT_20],
+    )
+
+    run = AgenticRun(
+        tmp_path,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    run.execute()
+    assert run._total_eval_count == 40
+
+
 def test_eval_budget_warning_injected_into_task(tmp_path: Path) -> None:
     """When eval_count_remaining <= 10% of eval_budget, warning is rendered."""
     task = Task(

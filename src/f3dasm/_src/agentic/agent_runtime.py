@@ -1477,7 +1477,7 @@ class AgenticRun:
         # (b) Build task message.
         remaining = self._remaining()
         eval_remaining = (
-            self._eval_budget - self._total_eval_count
+            max(0, self._eval_budget - self._total_eval_count)
             if self._eval_budget is not None
             else None
         )
