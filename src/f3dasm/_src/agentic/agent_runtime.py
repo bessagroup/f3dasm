@@ -59,6 +59,7 @@ from .agent_prompts import (
 #   ``from f3dasm._src.agentic.agent_runtime import StrategizerSession``
 # continues to work without modification.
 from .backends.base import (
+    Agent,
     AgentRole,
     AgentSession,
     Backend,
@@ -251,66 +252,6 @@ class RunContext(_Protocol):
 
     def ask(self, question: str) -> str:
         """Print *question* to stdout and return the operator's reply."""
-        ...
-
-    def parallel(
-        self,
-        task_fn: "Callable[[int], Task]",
-        targets: "list[str]",
-    ) -> "list[Delegation]":
-        """Call ``task_fn(i)`` and delegate to ``targets[i]`` for each i.
-
-        Delegates are issued sequentially through the run's full pipeline
-        (budget check, git commit, transcript recording).  Order is
-        preserved.  Errors are captured as Delegations with
-        ``metadata["error"] = True``; nothing is silently dropped.
-
-        Parameters
-        ----------
-        task_fn : callable
-            Called with zero-based index; returns the Task for that slot.
-        targets : list[str]
-            Agent names, one per slot.  Must be declared in the Graph/roles.
-        """
-        ...
-
-    def retry(
-        self,
-        task: "Task",
-        target: str = "implementer",
-        *,
-        is_success: "Callable[[Delegation], bool]",
-        max_fails: int = 3,
-        on_failure: "Callable[[Delegation, int], str] | None" = None,
-    ) -> "Delegation":
-        """Persistence loop: delegate *task* to *target* until ``is_success``.
-
-        On each failure, sends ``on_failure(delegation, attempt)`` to the
-        agent as a corrective message (1-based attempt count).  When
-        *on_failure* is ``None``, a brief built-in corrective is used.
-
-        Raises
-        ------
-        AgenticRunError
-            After ``max_fails`` consecutive failures.
-        """
-        ...
-
-    def debate(
-        self,
-        target_a: str,
-        target_b: str,
-        n: int,
-        initial: str,
-    ) -> "list[Delegation]":
-        """Fixed-N debate: alternate *n* rounds between *target_a* and *target_b*.
-
-        Each round's response is used as the next round's input.  Returns
-        ``2*n`` Delegations ``[a1, b1, a2, b2, …]``.  All delegations go
-        through the full run pipeline (budget, git, transcripts).
-
-        The final response is ``debate(…)[-1].report.conclusions``.
-        """
         ...
 
 
@@ -706,13 +647,11 @@ class AgenticRun:
         Config loaded from ``config.yaml``.  CLI kwargs (``model``,
         ``checkpoint_every``) take precedence over config values;
         config values take precedence over backend defaults.
-    roles : list[AgentRole] or None
-        Named agent roles for the topology.  When ``None`` (the default),
-        the runtime synthesises the classic Strategizer + Implementer
-        pair using the backend's factories.  Supply a list to define a
-        custom agent graph; each role's ``factory`` is auto-detected as
-        planner-type (has ``tool_closures`` param) or executor-type (has
-        ``study_dir`` param).
+    graph : Graph or None
+        Agent graph with ``nodes`` (dict of ``Agent`` instances) and
+        ``edges``.  Nodes with outgoing edges become planners (receive
+        ``tool_closures``); leaf nodes become executors (receive
+        ``study_dir``).
     """
 
     def __init__(
@@ -732,8 +671,6 @@ class AgenticRun:
         ) = None,
         record_transcripts: bool = True,
         study_config: StudyConfig | None = None,
-        topology: Callable[["RunContext"], None] | None = None,
-        roles: list[AgentRole] | None = None,
         graph: Graph | None = None,
     ) -> None:
         # Resolve backend: explicit kwarg wins; otherwise honour StudyConfig.backend.
@@ -772,8 +709,6 @@ class AgenticRun:
         self._budget: timedelta | None = _cfg.budget
         self._eval_budget: int | None = _cfg.eval_budget
         self._total_eval_count: int = 0
-        # Custom topology (optional).
-        self._topology = topology
         self._start_time: datetime | None = None  # set in execute()
         self._stdin = stdin
         self._stdout = stdout
@@ -789,9 +724,7 @@ class AgenticRun:
             else self._backend.implementer_factory
         )
         self._record_transcripts = record_transcripts
-        # Named-role list (None → synthesise default pair at session start).
-        self._roles: list[AgentRole] | None = roles
-        # Agent graph (takes priority over roles= when set).
+        # Agent graph.
         self._graph: Graph | None = graph
 
         # Mutable run state — populated in execute().
@@ -886,10 +819,7 @@ class AgenticRun:
         self._logger.info(
             "Sessions started; handing briefing to Strategizer"
         )
-        if self._topology is not None:
-            self._topology(self._as_context())
-        else:
-            self._run_loop(briefing_text)
+        self._run_loop(briefing_text)
         deliverable = self._assemble_deliverable()
         self._logger.info("Deliverable assembled at %s", deliverable)
         return deliverable
@@ -950,8 +880,8 @@ class AgenticRun:
         When either factory has been replaced by a test-injected stub,
         we also skip so unit tests do not require the real CLI binary.
         """
-        if self._graph is not None or self._roles is not None:
-            return  # custom graph/roles: factories come from AgentRole.factory
+        if self._graph is not None:
+            return  # custom graph: factories come from Agent nodes
         using_backend_strategizer = (
             self._strategizer_factory
             is self._backend.strategizer_factory
@@ -1022,83 +952,33 @@ class AgenticRun:
     # ------------------------------------------------------------------
 
     def _start_sessions(self) -> None:
-        for role in self._resolve_roles():
-            self._agents[role.name] = self._instantiate_role(role)
+        self._build_sessions()
 
-    def _resolve_roles(self) -> list[AgentRole]:
-        """Return the effective role list.
+    def _build_sessions(self) -> None:
+        """Populate self._agents from Graph.nodes, inferring planner vs executor."""
+        assert self._graph is not None and self._graph.nodes is not None
+        for name, agent in self._graph.nodes.items():
+            is_planner = bool(self._graph.outgoing(name))
+            self._agents[name] = self._instantiate_node(name, agent, is_planner)
 
-        Priority: ``graph=`` > ``roles=`` > default Strategizer + Implementer pair.
-        """
-        if self._graph is not None:
-            if self._graph.nodes is not None:
-                raise NotImplementedError(
-                    "Graph(nodes=...) wiring is not yet implemented. "
-                    "Use Graph(roles=[...]) until the Agent class API is fully wired."
-                )
-            return list(self._graph.roles)
-        if self._roles is not None:
-            return self._roles
-        return [
-            AgentRole(
-                "strategizer",
-                factory=self._strategizer_factory,
-                reset_on_checkpoint=False,
-            ),
-            AgentRole(
-                "implementer",
-                factory=self._implementer_factory,
-                reset_on_checkpoint=True,
-            ),
-        ]
-
-    def _role_by_name(self, name: str) -> AgentRole | None:
-        """Return the :class:`AgentRole` with *name*, or ``None``."""
-        return next(
-            (r for r in self._resolve_roles() if r.name == name), None
-        )
-
-    def _instantiate_role(self, role: AgentRole) -> AgentSession:
-        """Construct a session for *role*, auto-detecting factory type.
-
-        Planner-type factories (have a ``tool_closures`` parameter) receive
-        orchestrator-injected tool closures.  Executor-type factories (have
-        a ``study_dir`` parameter) receive the study directory path and use
-        the backend's built-in file/bash tools.
-
-        ``_outgoing_targets`` uses :meth:`_resolve_roles` (not
-        ``self._agents``) so it is safe to call here before the full
-        ``_agents`` dict is populated.
-        """
-        sig = inspect.signature(role.factory)
-        prompt = role.system_prompt or self._default_prompt_for(role.name)
-        if "tool_closures" in sig.parameters:
-            closures, _ = self._build_planner_tools(role.name)
-            return role.factory(
-                system_prompt=prompt,
-                model=self._model,
-                tool_closures=closures,
-                **role.kwargs,
+    def _instantiate_node(
+        self, name: str, agent: Agent, is_planner: bool
+    ) -> AgentSession:
+        """Construct a session for *agent*, using planner or executor factory."""
+        model = agent.model or self._model
+        prompt = agent.system_prompt or self._default_prompt_for(name, is_planner)
+        if is_planner:
+            closures, _ = self._build_planner_tools(name, agent.tools)
+            return self._strategizer_factory(
+                system_prompt=prompt, model=model, tool_closures=closures
             )
-        return role.factory(
-            system_prompt=prompt,
-            model=self._model,
-            study_dir=self._study_dir,
-            **role.kwargs,
+        return self._implementer_factory(
+            system_prompt=prompt, model=model, study_dir=self._study_dir
         )
 
-    def _default_prompt_for(self, name: str) -> str:
-        """Return the default system prompt for a named role.
-
-        Planner-type roles (factory has ``tool_closures`` param) get the
-        Strategizer prompt; all others get the Implementer prompt.
-        """
-        role = self._role_by_name(name)
-        if role is not None:
-            sig = inspect.signature(role.factory)
-            if "tool_closures" in sig.parameters:
-                return self._compose_strategizer_prompt(name)
-        elif name == "strategizer":
+    def _default_prompt_for(self, name: str, is_planner: bool = False) -> str:
+        """Return the default system prompt for a named role."""
+        if is_planner or name == "strategizer":
             return self._compose_strategizer_prompt(name)
         return self._compose_implementer_prompt()
 
@@ -1109,14 +989,17 @@ class AgenticRun:
 
     def _reset_agent(self, name: str) -> None:
         """Destroy the session for *name* and create a fresh one."""
-        role = self._role_by_name(name)
-        if role is None:
+        if self._graph is None or self._graph.nodes is None:
+            return
+        agent = self._graph.nodes.get(name)
+        if agent is None:
             return
         self._logger.info("Agent %r session reset (briefed with checkpoint summary)", name)
+        is_planner = bool(self._graph.outgoing(name))
         reset_msg = IMPLEMENTER_RESET_PROMPT_TEMPLATE.format(
             checkpoint_summary=self._checkpoint_summary
         )
-        self._agents[name] = self._instantiate_role(role)
+        self._agents[name] = self._instantiate_node(name, agent, is_planner)
         self._agents[name].send(reset_msg)
 
     def _compose_strategizer_prompt(
@@ -1138,12 +1021,11 @@ class AgenticRun:
         prompt = preamble + STRATEGIZER_SYSTEM_PROMPT
         outgoing = self._outgoing_targets(name)
         if outgoing:
-            peer_roles = [
-                r for r in self._resolve_roles() if r.name in outgoing
-            ]
+            nodes = self._graph.nodes if self._graph is not None else {}
             lines = [
-                f'- {r.name}: {r.description or "agent"}'
-                for r in peer_roles
+                f'- {n}: {nodes[n].description or "agent"}'
+                for n in outgoing
+                if n in nodes
             ]
             roster = "\n".join(lines)
             prompt += (
@@ -1197,30 +1079,20 @@ class AgenticRun:
     # ------------------------------------------------------------------
 
     def _outgoing_targets(self, agent_name: str) -> list[str]:
-        """Return the list of agent names *agent_name* can delegate to.
-
-        When a :class:`~backends.base.Graph` is set, reads from its edge
-        declarations.  Otherwise returns all other agent names (legacy
-        all-to-all behaviour), computed from :meth:`_resolve_roles` so
-        it is safe to call before ``_agents`` is fully populated.
-        """
+        """Return the list of agent names *agent_name* can delegate to."""
         if self._graph is not None:
-            return [
-                e.target
-                for e in self._graph.edges
-                if e.source == agent_name
-            ]
-        all_names = [r.name for r in self._resolve_roles()]
-        return [n for n in all_names if n != agent_name]
+            return self._graph.outgoing(agent_name)
+        return []
 
     def _build_planner_tools(
         self,
         agent_name: str = "strategizer",
+        allowed: "frozenset[str] | None" = None,
     ) -> tuple[dict[str, Callable[..., str]], list[str]]:
         """Return ``(closures, outgoing)`` for *agent_name*.
 
         ``closures`` contains only the tools the agent is permitted to
-        use (filtered by :attr:`AgentRole.tools` and outgoing edges).
+        use (filtered by *allowed* and outgoing edges).
         ``outgoing`` is the list of agent names the agent can delegate
         to, used to build per-agent Ollama tool schemas.
 
@@ -1228,8 +1100,6 @@ class AgenticRun:
         that every call and result is appended to
         ``runs/<ts>/transcripts/<agent_name>.jsonl``.
         """
-        role = self._role_by_name(agent_name)
-        allowed = role.tools if role is not None else None
         outgoing = self._outgoing_targets(agent_name)
 
         raw: dict[str, Callable[..., str]] = {
@@ -1686,10 +1556,6 @@ class AgenticRun:
             d.metadata["error"] = True
         return d
 
-    def _as_context(self) -> "_RunContextImpl":
-        """Return a :class:`_RunContextImpl` wrapping this run."""
-        return _RunContextImpl(self)
-
     # ------------------------------------------------------------------
     # Checkpoint
     # ------------------------------------------------------------------
@@ -1739,10 +1605,11 @@ class AgenticRun:
         entry_agent.send(steering_msg)
         self._turn_count += 1
 
-        # Reset agents according to per-role policy.
-        for role in self._resolve_roles():
-            if role.reset_on_checkpoint:
-                self._reset_agent(role.name)
+        # Reset agents according to per-node reset_on_checkpoint policy.
+        if self._graph is not None and self._graph.nodes is not None:
+            for name, agent in self._graph.nodes.items():
+                if agent.reset_on_checkpoint:
+                    self._reset_agent(name)
 
         # Reset delegation counter.
         self._delegation_counter = 0
@@ -1901,84 +1768,6 @@ class _RunContextImpl:
     def ask(self, question: str) -> str:
         """Print *question* to stdout and return the operator's reply."""
         return self._run._tool_ask(question=question)
-
-    def parallel(
-        self,
-        task_fn: "Callable[[int], Task]",
-        targets: list[str],
-    ) -> list[Delegation]:
-        """Sequential-safe fan-out through the run pipeline."""
-        results: list[Delegation] = []
-        for i, target in enumerate(targets):
-            task = task_fn(i)
-            try:
-                d = self.delegate(task, target=target)
-            except Exception as exc:
-                d = Delegation(task=task)
-                d.report = Report(
-                    actions_taken="",
-                    files_touched=[],
-                    conclusions=f"ERROR: {exc}",
-                    numbers={},
-                    raw="",
-                )
-                d.metadata["error"] = True
-            results.append(d)
-        return results
-
-    def retry(
-        self,
-        task: Task,
-        target: str = "implementer",
-        *,
-        is_success: Callable[[Delegation], bool],
-        max_fails: int = 3,
-        on_failure: Callable[[Delegation, int], str] | None = None,
-    ) -> Delegation:
-        """Persistence loop through the run pipeline."""
-        fails = 0
-        current_task = task
-        while True:
-            d = self.delegate(current_task, target=target)
-            if d.is_complete and is_success(d):
-                return d
-            fails += 1
-            if fails >= max_fails:
-                raise AgenticRunError(
-                    f"ctx.retry: exceeded max_fails={max_fails} for target={target!r}."
-                )
-            corrective_text = (
-                on_failure(d, fails)
-                if on_failure is not None
-                else _DEFAULT_RETRY_CORRECTIVE.format(attempt=fails)
-            )
-            current_task = Task(
-                intent=corrective_text,
-                expected_report=task.expected_report,
-            )
-
-    def debate(
-        self,
-        target_a: str,
-        target_b: str,
-        n: int,
-        initial: str,
-    ) -> list[Delegation]:
-        """Fixed-N debate through the run pipeline."""
-        if n < 1:
-            raise ValueError(f"ctx.debate: n must be ≥ 1, got {n}.")
-        transcript: list[Delegation] = []
-        current = initial
-        for _ in range(n):
-            task_a = Task(intent=current, expected_report="Respond to the debate.")
-            d_a = self.delegate(task_a, target=target_a)
-            transcript.append(d_a)
-            a_reply = d_a.report.conclusions if d_a.is_complete else current
-            task_b = Task(intent=a_reply, expected_report="Respond to the debate.")
-            d_b = self.delegate(task_b, target=target_b)
-            transcript.append(d_b)
-            current = d_b.report.conclusions if d_b.is_complete else a_reply
-        return transcript
 
 
 # ---------------------------------------------------------------------------

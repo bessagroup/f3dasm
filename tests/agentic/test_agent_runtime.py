@@ -2217,3 +2217,166 @@ class TestAgentClassAPI:
 
         with pytest.raises(ValueError, match="entry"):
             Graph(nodes={"a": A()}, edges=(), entry="missing")
+
+
+# ---------------------------------------------------------------------------
+# TestAgenticRunWithNodes — Graph.nodes wiring (Task 2)
+# ---------------------------------------------------------------------------
+
+
+class TestAgenticRunWithNodes:
+    def test_run_entry_node_receives_briefing(self, tmp_path):
+        """graph.entry node's session receives the PROBLEM_STATEMENT.md content."""
+        (tmp_path / "PROBLEM_STATEMENT.md").write_text("Test briefing content.")
+
+        received = []
+
+        class StubStrat(Agent):
+            system_prompt = "stub strat"
+            reset_on_checkpoint = False
+
+        class StubImpl(Agent):
+            system_prompt = "stub impl"
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            class S:
+                def send(self, msg):
+                    received.append(msg)
+                    return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            class I:
+                def send(self, msg): return ""
+            return I()
+
+        g = Graph(
+            nodes={"strategizer": StubStrat(), "implementer": StubImpl()},
+            edges=(Edge("strategizer", "implementer"),),
+            entry="strategizer",
+        )
+        run = AgenticRun(
+            tmp_path,
+            graph=g,
+            strategizer_factory=strat_factory,
+            implementer_factory=impl_factory,
+        )
+        run.execute()
+        assert "Test briefing content." in received[0]
+
+    def test_node_with_outgoing_edge_gets_planner_session(self, tmp_path):
+        """Node with outgoing edges gets tool_closures (planner session factory called)."""
+        (tmp_path / "PROBLEM_STATEMENT.md").write_text("brief")
+        planner_called = []
+        executor_called = []
+
+        class StubStrat(Agent):
+            system_prompt = "strat"
+            reset_on_checkpoint = False
+
+        class StubImpl(Agent):
+            system_prompt = "impl"
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            planner_called.append(True)
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            executor_called.append(True)
+            class I:
+                def send(self, msg): return ""
+            return I()
+
+        g = Graph(
+            nodes={"strategizer": StubStrat(), "implementer": StubImpl()},
+            edges=(Edge("strategizer", "implementer"),),
+            entry="strategizer",
+        )
+        run = AgenticRun(
+            tmp_path, graph=g,
+            strategizer_factory=strat_factory,
+            implementer_factory=impl_factory,
+        )
+        run.execute()
+        assert planner_called  # strategizer has outgoing edge → planner session
+        assert executor_called  # implementer has no outgoing edge → executor session
+
+    def test_node_without_outgoing_edge_gets_executor_session(self, tmp_path):
+        """Node without outgoing edges gets study_dir (executor session factory called)."""
+        (tmp_path / "PROBLEM_STATEMENT.md").write_text("brief")
+        executor_study_dirs = []
+
+        class StubStrat(Agent):
+            system_prompt = "strat"
+            reset_on_checkpoint = False
+
+        class StubImpl(Agent):
+            system_prompt = "impl"
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            executor_study_dirs.append(study_dir)
+            class I:
+                def send(self, msg): return ""
+            return I()
+
+        g = Graph(
+            nodes={"strategizer": StubStrat(), "implementer": StubImpl()},
+            edges=(Edge("strategizer", "implementer"),),
+            entry="strategizer",
+        )
+        run = AgenticRun(
+            tmp_path, graph=g,
+            strategizer_factory=strat_factory,
+            implementer_factory=impl_factory,
+        )
+        run.execute()
+        assert len(executor_study_dirs) == 1
+        assert executor_study_dirs[0] == tmp_path.resolve()
+
+    def test_run_uses_agent_model_override(self, tmp_path):
+        """Agent(model='haiku') overrides the run-level model for that node."""
+        (tmp_path / "PROBLEM_STATEMENT.md").write_text("brief")
+        used_models = {}
+
+        class StubStrat(Agent):
+            system_prompt = "strat"
+            reset_on_checkpoint = False
+
+        class StubImpl(Agent):
+            system_prompt = "impl"
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            used_models["strategizer"] = model
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            used_models["implementer"] = model
+            class I:
+                def send(self, msg): return ""
+            return I()
+
+        g = Graph(
+            nodes={
+                "strategizer": StubStrat(),
+                "implementer": StubImpl(model="haiku"),
+            },
+            edges=(Edge("strategizer", "implementer"),),
+            entry="strategizer",
+        )
+        run = AgenticRun(
+            tmp_path, graph=g, model="sonnet",
+            strategizer_factory=strat_factory,
+            implementer_factory=impl_factory,
+        )
+        run.execute()
+        assert used_models["strategizer"] == "sonnet"  # uses run-level model
+        assert used_models["implementer"] == "haiku"    # uses agent-level override
