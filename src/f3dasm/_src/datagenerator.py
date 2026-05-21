@@ -302,7 +302,6 @@ def evaluate_cluster(
 
 def evaluate_mpi(
     execute_fn: Callable[..., ExperimentSample],
-    comm,
     data: ExperimentData,
     pass_id: bool,
     wait_for_creation: bool = False,
@@ -317,8 +316,6 @@ def evaluate_mpi(
     ----------
     execute_fn : Callable[..., ExperimentSample]
         The function to be executed on each ExperimentSample
-    comm : MPI.Comm
-        The MPI communicator
     data : ExperimentData
         The ExperimentData object containing the samples to be processed
     pass_id : bool
@@ -330,8 +327,25 @@ def evaluate_mpi(
         The maximum number of tries to access the ExperimentData file, by
         default MAX_TRIES
     kwargs : dict
-        Any keyword arguments that need to be supplied to the function
+        Any keyword arguments that need to be supplied to the function.
+        Must include ``comm`` (the ``MPI.Comm`` instance) -- pulled out
+        here rather than being a positional parameter so every
+        ``evaluate_*`` function shares the same
+        ``(execute_fn, data, pass_id, **kwargs)`` shape (issue #309).
+
+    Raises
+    ------
+    TypeError
+        If ``comm`` was not supplied in ``kwargs``.
     """
+    try:
+        comm = kwargs.pop("comm")
+    except KeyError as exc:
+        raise TypeError(
+            "evaluate_mpi requires the MPI communicator via "
+            "`comm=...`; pass it as a keyword argument."
+        ) from exc
+
     rank = comm.Get_rank()
     size = comm.Get_size()
 
@@ -355,7 +369,6 @@ def evaluate_mpi(
 def evaluate_cluster_array(
     execute_fn: Callable[..., ExperimentSample],
     data: ExperimentData,
-    job_number: int,
     pass_id: bool,
     **kwargs,
 ) -> None:
@@ -369,13 +382,27 @@ def evaluate_cluster_array(
         The function to be executed on each ExperimentSample.
     data : ExperimentData
         The ExperimentData object containing the samples to be processed.
-    job_number : int
-        The index of the specific job (array element) to run.
     pass_id : bool
         Whether to pass the job index to the execute function.
     **kwargs : dict
         Any keyword arguments that need to be supplied to the function.
+        Must include ``job_number`` (the array index to run) -- pulled
+        out of ``kwargs`` here rather than being a positional parameter
+        so every ``evaluate_*`` function shares the same
+        ``(execute_fn, data, pass_id, **kwargs)`` shape (issue #309).
+
+    Raises
+    ------
+    TypeError
+        If ``job_number`` was not supplied in ``kwargs``.
     """
+    try:
+        job_number = kwargs.pop("job_number")
+    except KeyError as exc:
+        raise TypeError(
+            "evaluate_cluster_array requires the array index via "
+            "`job_number=...`; pass it as a keyword argument."
+        ) from exc
 
     # Retrieve the experiment sample
     experiment_sample = data.get_experiment_sample(job_number)
