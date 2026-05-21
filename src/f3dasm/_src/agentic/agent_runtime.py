@@ -968,7 +968,10 @@ class AgenticRun:
         model = agent.model or self._model
         prompt = agent.system_prompt or self._default_prompt_for(name, is_planner)
         if is_planner:
-            closures, _ = self._build_planner_tools(name, agent.tools)
+            # Empty frozenset means "no restriction" — pass None so all
+            # tools are injected.  A non-empty frozenset acts as an allowlist.
+            allowed = agent.tools if agent.tools else None
+            closures, _ = self._build_planner_tools(name, allowed)
             return self._strategizer_factory(
                 system_prompt=prompt, model=model, tool_closures=closures
             )
@@ -1131,6 +1134,89 @@ class AgenticRun:
                 )
 
             raw["Delegate"] = _delegate_scoped
+
+            # --- NEW: Parallel ---
+            def _parallel_scoped(
+                targets: list,
+                intent: str,
+                expected_report: str,
+                _o: list = _out,
+                _c: str = _caller,
+            ) -> str:
+                """Fan out the same task to multiple agents concurrently."""
+                import concurrent.futures
+                results: dict[str, str] = {}
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=max(1, len(targets))
+                ) as ex:
+                    futs = {
+                        ex.submit(
+                            self._tool_delegate, intent, expected_report, t, caller=_c
+                        ): t
+                        for t in targets
+                    }
+                    for fut in concurrent.futures.as_completed(futs):
+                        t = futs[fut]
+                        try:
+                            results[t] = fut.result()
+                        except Exception as exc:
+                            results[t] = f"ERROR: {exc}"
+                return "\n\n---\n\n".join(
+                    f"## Result from {t}\n\n{results[t]}" for t in targets
+                )
+
+            raw["Parallel"] = _parallel_scoped
+
+            # --- NEW: Debate ---
+            def _debate_scoped(
+                target_a: str,
+                target_b: str,
+                n: int,
+                initial: str,
+                _c: str = _caller,
+            ) -> str:
+                """Alternate n rounds between two agents; return full transcript."""
+                transcript: list[str] = []
+                current = initial
+                for i in range(n):
+                    a = self._tool_delegate(
+                        current, "Respond to the debate.", target_a, caller=_c
+                    )
+                    transcript.append(f"## Round {i + 1} — {target_a}\n\n{a}")
+                    b = self._tool_delegate(
+                        a, "Respond to the debate.", target_b, caller=_c
+                    )
+                    transcript.append(f"## Round {i + 1} — {target_b}\n\n{b}")
+                    current = b
+                return "\n\n---\n\n".join(transcript)
+
+            raw["Debate"] = _debate_scoped
+
+            # --- NEW: Retry ---
+            def _retry_scoped(
+                target: str,
+                intent: str,
+                expected_report: str,
+                max_attempts: int = 3,
+                _c: str = _caller,
+            ) -> str:
+                """Retry a task until a valid ## Report block is returned."""
+                current_intent = intent
+                result = ""
+                for attempt in range(1, max_attempts + 1):
+                    result = self._tool_delegate(
+                        current_intent, expected_report, target, caller=_c
+                    )
+                    if "## Report" in result:
+                        return result
+                    if attempt < max_attempts:
+                        current_intent = (
+                            f"Attempt {attempt} returned no ## Report block. "
+                            f"Revise and try again.\n\nOriginal intent: {intent}"
+                        )
+                return result
+
+            raw["Retry"] = _retry_scoped
 
         if allowed is not None:
             raw = {k: v for k, v in raw.items() if k in allowed}

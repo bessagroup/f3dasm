@@ -2380,3 +2380,156 @@ class TestAgenticRunWithNodes:
         run.execute()
         assert used_models["strategizer"] == "sonnet"  # uses run-level model
         assert used_models["implementer"] == "haiku"    # uses agent-level override
+
+
+# =============================================================================
+# TestPlannerToolClosures
+# =============================================================================
+
+class TestPlannerToolClosures:
+    """Tests for Parallel, Debate, Retry tool closures injected into planner sessions."""
+
+    def _make_run(self, tmp_path, strat_factory, impl_factory):
+        """Helper to build AgenticRun with a 2-node graph."""
+        from f3dasm._src.agentic.backends.base import Agent, Edge, Graph
+        from f3dasm._src.agentic.agent_runtime import AgenticRun
+
+        class Strat(Agent):
+            system_prompt = "strat"
+            reset_on_checkpoint = False
+
+        class Impl(Agent):
+            system_prompt = "impl"
+
+        (tmp_path / "PROBLEM_STATEMENT.md").write_text("brief")
+        g = Graph(
+            nodes={"strategizer": Strat(), "implementer": Impl()},
+            edges=(Edge("strategizer", "implementer"),),
+            entry="strategizer",
+        )
+        return AgenticRun(
+            tmp_path, graph=g,
+            strategizer_factory=strat_factory,
+            implementer_factory=impl_factory,
+        )
+
+    def test_parallel_tool_calls_all_targets(self, tmp_path):
+        """Parallel tool fans out to each target via _tool_delegate."""
+        impl_received = []
+        tool_closures_ref = {}
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            tool_closures_ref.update(tool_closures)
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            class I:
+                def send(self, msg):
+                    impl_received.append(msg)
+                    return "## Report\n### Actions taken\ndone\n### Conclusions\nok"
+            return I()
+
+        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run.execute()
+
+        assert "Parallel" in tool_closures_ref
+        # Call the Parallel tool directly
+        result = tool_closures_ref["Parallel"](
+            targets=["implementer", "implementer"],
+            intent="do something",
+            expected_report="tell me what you did",
+        )
+        assert "implementer" in result.lower()
+
+    def test_debate_tool_alternates_n_rounds(self, tmp_path):
+        """Debate tool sends n rounds alternating between target_a and target_b."""
+        tool_closures_ref = {}
+        call_count = [0]
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            tool_closures_ref.update(tool_closures)
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            class I:
+                def send(self, msg):
+                    call_count[0] += 1
+                    return "## Report\n### Actions taken\ndone\n### Conclusions\nreplied"
+            return I()
+
+        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run.execute()
+
+        assert "Debate" in tool_closures_ref
+        result = tool_closures_ref["Debate"](
+            target_a="implementer",
+            target_b="implementer",
+            n=2,
+            initial="Opening statement",
+        )
+        # 2 rounds x 2 agents = 4 _tool_delegate calls, result has rounds
+        assert "Round" in result
+
+    def test_retry_tool_returns_on_first_valid_report(self, tmp_path):
+        """Retry tool returns immediately when agent returns a valid ## Report."""
+        tool_closures_ref = {}
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            tool_closures_ref.update(tool_closures)
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            class I:
+                def send(self, msg):
+                    return "## Report\n### Actions taken\ndone\n### Conclusions\nsuccess"
+            return I()
+
+        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run.execute()
+
+        assert "Retry" in tool_closures_ref
+        result = tool_closures_ref["Retry"](
+            target="implementer",
+            intent="do it",
+            expected_report="tell me",
+        )
+        assert "## Report" in result
+
+    def test_retry_tool_retries_on_missing_report(self, tmp_path):
+        """Retry tool retries when agent does not return a ## Report block."""
+        tool_closures_ref = {}
+        attempt_count = [0]
+
+        def strat_factory(*, system_prompt, model, tool_closures):
+            tool_closures_ref.update(tool_closures)
+            class S:
+                def send(self, msg): return ""
+            return S()
+
+        def impl_factory(*, system_prompt, model, study_dir):
+            class I:
+                def send(self, msg):
+                    attempt_count[0] += 1
+                    if attempt_count[0] < 3:
+                        return "No report here yet."
+                    return "## Report\n### Actions taken\ndone\n### Conclusions\nfinal"
+            return I()
+
+        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run.execute()
+
+        assert "Retry" in tool_closures_ref
+        result = tool_closures_ref["Retry"](
+            target="implementer",
+            intent="do it",
+            expected_report="tell me",
+            max_attempts=5,
+        )
+        assert "## Report" in result
+        assert attempt_count[0] >= 3
