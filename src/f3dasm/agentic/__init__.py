@@ -17,7 +17,6 @@ Core symbols:
 - ``Task`` — request half of a round-trip exchange.
 - ``Report`` — response half of a round-trip exchange.
 - ``Delegation`` — envelope wrapping ``task`` + ``report`` + ``metadata``.
-- ``RunContext`` — protocol exposed to custom topology callables.
 - ``AgenticRunError`` — raised for non-recoverable orchestrator errors.
 - ``StudyConfig`` — per-study config loaded from ``config.yaml``.
 - ``Backend`` — frozen dataclass bundling an LLM backend's factories.
@@ -48,12 +47,11 @@ from .._src.agentic.agent_runtime import (
     AgenticRunError,
     Delegation,
     Report,
-    RunContext,
     StudyConfig,
     Task,
     register_backend,
 )
-from .._src.agentic.backends.base import Backend
+from .._src.agentic.backends.base import Agent, Backend, Edge, Graph
 from .._src.agentic.backends.claude import CLAUDE_BACKEND
 from .._src.agentic.lookup import LookupDataGenerator
 from .._src.agentic.optimizer import AgenticOptimizer
@@ -76,7 +74,10 @@ __status__ = "Experimental"
 
 __all__ = [
     # Core
+    "Agent",
     "AgenticRun",
+    "Edge",
+    "Graph",
     "AgenticRunError",
     "AgenticOptimizer",
     "Backend",
@@ -84,7 +85,6 @@ __all__ = [
     "Delegation",
     "LookupDataGenerator",
     "Report",
-    "RunContext",
     "StudyConfig",
     "Task",
     "register_backend",

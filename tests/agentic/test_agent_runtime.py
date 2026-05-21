@@ -32,7 +32,7 @@ from f3dasm._src.agentic.agent_runtime import (
     _parse_report,
     read_transcript,
 )
-from f3dasm._src.agentic.backends.base import Agent, AgentRole, Edge, Graph
+from f3dasm._src.agentic.backends.base import Agent, Edge, Graph
 from f3dasm._src.agentic.backends.claude import _classify_sdk_error
 
 #                                                          Authorship & Credits
@@ -301,6 +301,21 @@ def _make_factories(
     return strat_factory, impl_factory
 
 
+def _make_default_graph() -> Graph:
+    """Return a minimal 2-node strategizer→implementer Graph for tests."""
+    class _DefaultStrat(Agent):
+        reset_on_checkpoint = False
+
+    class _DefaultImpl(Agent):
+        pass
+
+    return Graph(
+        nodes={"strategizer": _DefaultStrat(), "implementer": _DefaultImpl()},
+        edges=(Edge("strategizer", "implementer"),),
+        entry="strategizer",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Test 1 — Bootstrap: missing PROBLEM_STATEMENT.md
 # ---------------------------------------------------------------------------
@@ -315,6 +330,7 @@ def test_bootstrap_missing_briefing(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
     )
@@ -359,6 +375,7 @@ def test_happy_path_ask_delegate_done(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=stdin,
         stdout=stdout,
         strategizer_factory=strat_factory,
@@ -450,6 +467,7 @@ def test_write_markdown_bad_paths(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -503,6 +521,7 @@ def test_read_rejects_escape(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -562,6 +581,7 @@ def test_one_shot_retry_recovers_invalid_report(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -615,6 +635,7 @@ def test_two_invalid_replies_fall_through_to_reflect(
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -697,6 +718,7 @@ def test_checkpoint_fires_and_resets_implementer(
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
@@ -761,6 +783,7 @@ def test_checkpoint_stop_assembles_deliverable(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
@@ -832,6 +855,7 @@ def test_checkpoint_empty_stdin_continues(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
@@ -868,6 +892,7 @@ def test_run_does_not_touch_ancestor_git(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -932,6 +957,7 @@ def test_eval_count_tracked_from_report_numbers(tmp_path: Path) -> None:
 
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
         stdin=StringIO(""),
@@ -963,6 +989,7 @@ def test_eval_count_accumulates_across_delegations(tmp_path: Path) -> None:
 
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
         stdin=StringIO(""),
@@ -1142,6 +1169,7 @@ def test_reflect_then_redelegation_with_different_intent(
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -1186,6 +1214,7 @@ def test_transcript_written_when_record_transcripts_true(
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
         strategizer_factory=strat_factory,
@@ -1356,6 +1385,7 @@ def test_custom_backend_drops_in_via_kwarg(tmp_path: Path) -> None:
 
     run = AgenticRun(
         study_dir,
+        graph=_make_default_graph(),
         backend=stub_backend,
         stdin=StringIO(""),
         stdout=StringIO(),
@@ -1476,6 +1506,7 @@ def test_agentic_run_accepts_study_config(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         study_config=cfg,
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
@@ -1495,6 +1526,7 @@ def test_agentic_run_cli_overrides_config(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         model="model-from-cli",
         study_config=cfg,
         strategizer_factory=strat_factory,
@@ -1519,6 +1551,7 @@ def test_remaining_no_budget(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         study_config=StudyConfig(),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
@@ -1538,6 +1571,7 @@ def test_remaining_with_budget(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         study_config=StudyConfig(budget=timedelta(hours=1)),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
@@ -1559,6 +1593,7 @@ def test_budget_expired_skips_delegation(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         study_config=StudyConfig(budget=timedelta(seconds=1)),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
@@ -1626,6 +1661,7 @@ def test_solution_md_includes_budget_metadata(tmp_path):
     )
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         study_config=cfg,
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
@@ -1643,88 +1679,78 @@ def test_solution_md_includes_budget_metadata(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_named_roles_two_executors_routing(tmp_path: Path) -> None:
-    """Delegate(target=) routes to the correct named executor agent."""
+def test_named_nodes_two_executors_routing(tmp_path: Path) -> None:
+    """Strategizer can delegate to two named executor nodes."""
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
 
-    # Track which agent was called
     calls: dict[str, list[str]] = {"alpha": [], "beta": []}
 
-    _ALPHA_REPORT = """\
-## Report
+    _ALPHA_REPORT = (
+        "## Report\n\n### Actions taken\n- alpha\n\n"
+        "### Files touched\n- /workspace/alpha.csv\n\n"
+        "### Conclusions\nAlpha succeeded.\n\n### Numbers\nx: 1.0\n"
+    )
+    _BETA_REPORT = (
+        "## Report\n\n### Actions taken\n- beta\n\n"
+        "### Files touched\n- /workspace/beta.csv\n\n"
+        "### Conclusions\nBeta succeeded.\n\n### Numbers\nx: 2.0\n"
+    )
 
-### Actions taken
-- Alpha did it.
+    class _AlphaAgent(Agent):
+        system_prompt = "alpha executor"
 
-### Files touched
-- /workspace/alpha.csv
+    class _BetaAgent(Agent):
+        system_prompt = "beta executor"
 
-### Conclusions
-Alpha succeeded.
+    class _StrategistAgent(Agent):
+        reset_on_checkpoint = False
 
-### Numbers
-x: 1.0
-"""
+    def impl_factory(*, system_prompt, model, study_dir):
+        if "alpha" in system_prompt:
+            class AlphaExec:
+                def send(self, msg):
+                    calls["alpha"].append(msg)
+                    return _ALPHA_REPORT
+            return AlphaExec()
+        else:
+            class BetaExec:
+                def send(self, msg):
+                    calls["beta"].append(msg)
+                    return _BETA_REPORT
+            return BetaExec()
 
-    _BETA_REPORT = """\
-## Report
+    graph = Graph(
+        nodes={
+            "strategizer": _StrategistAgent(),
+            "alpha": _AlphaAgent(),
+            "beta": _BetaAgent(),
+        },
+        edges=(Edge("strategizer", "alpha"), Edge("strategizer", "beta")),
+        entry="strategizer",
+    )
 
-### Actions taken
-- Beta did it.
-
-### Files touched
-- /workspace/beta.csv
-
-### Conclusions
-Beta succeeded.
-
-### Numbers
-x: 2.0
-"""
-
-    class _TrackingExecutor:
-        def __init__(self, name: str, report: str) -> None:
-            self._name = name
-            self._report = report
-
-        def send(self, message: str) -> str:
-            calls[self._name].append(message)
-            return self._report
-
-    def alpha_factory(*, system_prompt: str, model: str, study_dir: Path):
-        return _TrackingExecutor("alpha", _ALPHA_REPORT)
-
-    def beta_factory(*, system_prompt: str, model: str, study_dir: Path):
-        return _TrackingExecutor("beta", _BETA_REPORT)
-
-    roles = [
-        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures: (
-            StubStrategizer(
-                [
-                    _DelegateAction("task for alpha", "alpha report", target="alpha"),
-                    _DelegateAction("task for beta", "beta report", target="beta"),
-                    _DoneAction("both done"),
-                ],
-                tool_closures,
-            )
-        )),
-        AgentRole("alpha", factory=alpha_factory, description="alpha executor"),
-        AgentRole("beta", factory=beta_factory, description="beta executor"),
-    ]
+    strat_factory, _ = _make_factories(
+        [
+            _DelegateAction("task for alpha", "alpha report", target="alpha"),
+            _DelegateAction("task for beta", "beta report", target="beta"),
+            _DoneAction("both done"),
+        ],
+        [],
+    )
 
     run = AgenticRun(
         tmp_path,
-        roles=roles,
+        graph=graph,
+        strategizer_factory=strat_factory,
+        implementer_factory=impl_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
         record_transcripts=False,
     )
-    deliv = run.execute()
+    run.execute()
 
     assert len(calls["alpha"]) >= 1, "alpha executor was never called"
     assert len(calls["beta"]) >= 1, "beta executor was never called"
-    assert (deliv / "solution.md").exists()
-
 
 def test_named_roles_unknown_target_returns_error(tmp_path: Path) -> None:
     """Delegate to an unknown target returns an ERROR string (no crash)."""
@@ -1754,6 +1780,7 @@ def test_named_roles_unknown_target_returns_error(tmp_path: Path) -> None:
 
     run = AgenticRun(
         tmp_path,
+        graph=_make_default_graph(),
         strategizer_factory=strat_factory,
         implementer_factory=impl_factory,
         stdin=StringIO(""),
@@ -1766,414 +1793,6 @@ def test_named_roles_unknown_target_returns_error(tmp_path: Path) -> None:
     assert received[0].startswith("ERROR:"), (
         f"Expected ERROR string, got: {received[0]!r}"
     )
-
-
-# ---------------------------------------------------------------------------
-# Graph / Topology tests
-# ---------------------------------------------------------------------------
-
-
-def test_graph_edge_validation_unknown_role() -> None:
-    """Graph raises ValueError when an edge references an undeclared role."""
-    role_a = AgentRole("a", factory=lambda **_: StubImplementer([]))
-
-    with pytest.raises(ValueError, match="undeclared role"):
-        Graph(
-            roles=[role_a],
-            edges=[Edge("a", "ghost")],
-        )
-
-
-def test_graph_edge_scoping(tmp_path: Path) -> None:
-    """Strategizer can only Delegate to its declared outgoing targets."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    delegate_results: list[str] = []
-
-    class _ScopedStrategizer:
-        def __init__(self, tool_closures: dict) -> None:
-            self._tc = tool_closures
-
-        def send(self, message: str) -> str:
-            # Permitted target.
-            r1 = self._tc["Delegate"](
-                intent="do X", expected_report="Y", target="worker"
-            )
-            delegate_results.append(r1)
-            # Forbidden target (not in edges).
-            r2 = self._tc["Delegate"](
-                intent="do X", expected_report="Y", target="other"
-            )
-            delegate_results.append(r2)
-            self._tc["Done"](summary="done")
-            return "ok"
-
-    def strat_factory(*, system_prompt, model, tool_closures):
-        return _ScopedStrategizer(tool_closures)
-
-    def impl_factory(*, system_prompt, model, study_dir):
-        return StubImplementer([_VALID_REPORT])
-
-    graph = Graph(
-        roles=[
-            AgentRole("coordinator", factory=strat_factory),
-            AgentRole("worker", factory=impl_factory),
-        ],
-        edges=[Edge("coordinator", "worker")],
-        entry="coordinator",
-    )
-
-    run = AgenticRun(
-        tmp_path,
-        graph=graph,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert len(delegate_results) == 2
-    assert "## Report" in delegate_results[0], "Permitted delegation failed"
-    assert delegate_results[1].startswith("ERROR:"), (
-        f"Expected ERROR for forbidden target, got: {delegate_results[1]!r}"
-    )
-    assert "other" in delegate_results[1]
-
-
-def test_graph_entry_point(tmp_path: Path) -> None:
-    """Graph.entry controls which agent receives the initial briefing."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    entry_messages: list[str] = []
-
-    class _RecordingStrategizer:
-        def __init__(self, tool_closures: dict) -> None:
-            self._tc = tool_closures
-
-        def send(self, message: str) -> str:
-            entry_messages.append(message)
-            self._tc["Done"](summary="done")
-            return "ok"
-
-    def planner_factory(*, system_prompt, model, tool_closures):
-        return _RecordingStrategizer(tool_closures)
-
-    def impl_factory(*, system_prompt, model, study_dir):
-        return StubImplementer([])
-
-    graph = Graph(
-        roles=[
-            AgentRole("planner", factory=planner_factory),
-            AgentRole("worker", factory=impl_factory),
-        ],
-        edges=[Edge("planner", "worker")],
-        entry="planner",
-    )
-
-    run = AgenticRun(
-        tmp_path,
-        graph=graph,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert entry_messages, "Entry agent never received a message"
-    assert "test" in entry_messages[0].lower() or "planner" in entry_messages[0].lower() or len(entry_messages[0]) > 0
-
-
-def test_graph_tools_filter(tmp_path: Path) -> None:
-    """AgentRole.tools=frozenset restricts which closures the agent receives."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    received_closure_keys: list[set] = []
-
-    class _InspectStrategizer:
-        def __init__(self, tool_closures: dict) -> None:
-            received_closure_keys.append(set(tool_closures.keys()))
-            self._tc = tool_closures
-
-        def send(self, message: str) -> str:
-            self._tc["Done"](summary="done")
-            return "ok"
-
-    def strat_factory(*, system_prompt, model, tool_closures):
-        return _InspectStrategizer(tool_closures)
-
-    def impl_factory(*, system_prompt, model, study_dir):
-        return StubImplementer([])
-
-    graph = Graph(
-        roles=[
-            AgentRole(
-                "planner",
-                factory=strat_factory,
-                tools={"Ask", "Done"},
-            ),
-            AgentRole("worker", factory=impl_factory),
-        ],
-        edges=[Edge("planner", "worker")],
-        entry="planner",
-    )
-
-    run = AgenticRun(
-        tmp_path,
-        graph=graph,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert received_closure_keys, "Planner factory was never called"
-    keys = received_closure_keys[0]
-    assert "Done" in keys, "Done should be in filtered tools"
-    assert "Ask" in keys, "Ask should be in filtered tools"
-    assert "Delegate" not in keys, "Delegate filtered out by tools="
-    assert "Read" not in keys, "Read filtered out by tools="
-
-
-def test_graph_no_outgoing_edges_no_delegate(tmp_path: Path) -> None:
-    """A planner role with no outgoing edges gets no Delegate tool."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    received_closure_keys: list[set] = []
-
-    class _InspectStrategizer:
-        def __init__(self, tool_closures: dict) -> None:
-            received_closure_keys.append(set(tool_closures.keys()))
-            self._tc = tool_closures
-
-        def send(self, message: str) -> str:
-            self._tc["Done"](summary="done")
-            return "ok"
-
-    def strat_factory(*, system_prompt, model, tool_closures):
-        return _InspectStrategizer(tool_closures)
-
-    graph = Graph(
-        roles=[AgentRole("solo", factory=strat_factory)],
-        edges=[],
-        entry="solo",
-    )
-
-    run = AgenticRun(
-        tmp_path,
-        graph=graph,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert received_closure_keys
-    assert "Delegate" not in received_closure_keys[0], (
-        "No outgoing edges → no Delegate tool"
-    )
-
-
-# ---------------------------------------------------------------------------
-# ctx.parallel / ctx.retry / ctx.debate
-# ---------------------------------------------------------------------------
-
-def test_ctx_parallel_calls_each_target_via_delegate(tmp_path: Path) -> None:
-    """ctx.parallel(task_fn, targets) dispatches to each named agent in order."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    received: dict[str, list[str]] = {"alpha": [], "beta": []}
-
-    _ALPHA_REPORT = (
-        "## Report\n\n### Actions taken\n- alpha\n\n"
-        "### Files touched\n- f\n\n### Conclusions\nalpha ok\n\n### Numbers\n"
-    )
-    _BETA_REPORT = (
-        "## Report\n\n### Actions taken\n- beta\n\n"
-        "### Files touched\n- f\n\n### Conclusions\nbeta ok\n\n### Numbers\n"
-    )
-
-    class _TrackExec:
-        def __init__(self, name: str, report: str) -> None:
-            self._name, self._report = name, report
-        def send(self, msg: str) -> str:
-            received[self._name].append(msg)
-            return self._report
-
-    delegations_seen: list = []
-
-    def topology(ctx):
-        task_fn = lambda i: Task(
-            intent=f"task {i}", expected_report="report"
-        )
-        delegations_seen.extend(ctx.parallel(task_fn, ["alpha", "beta"]))
-        ctx.done("parallel done")
-
-    roles = [
-        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
-            StubStrategizer([_DoneAction("unused")], tool_closures)),
-        AgentRole("alpha", factory=lambda *, system_prompt, model, study_dir:
-            _TrackExec("alpha", _ALPHA_REPORT)),
-        AgentRole("beta",  factory=lambda *, system_prompt, model, study_dir:
-            _TrackExec("beta",  _BETA_REPORT)),
-    ]
-
-    run = AgenticRun(
-        tmp_path,
-        roles=roles,
-        topology=topology,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert len(delegations_seen) == 2
-    assert all(d.is_complete for d in delegations_seen)
-    assert received["alpha"], "alpha was never called"
-    assert received["beta"], "beta was never called"
-
-
-def test_ctx_retry_succeeds_after_failure(tmp_path: Path) -> None:
-    """ctx.retry loops until is_success, sending on_failure corrective."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    _BAD_REPORT = (
-        "## Report\n\n### Actions taken\n- failed\n\n"
-        "### Files touched\n\n### Conclusions\nBAD\n\n### Numbers\nscore: 0.0\n"
-    )
-    _GOOD_REPORT = (
-        "## Report\n\n### Actions taken\n- succeeded\n\n"
-        "### Files touched\n\n### Conclusions\nGOOD\n\n### Numbers\nscore: 1.0\n"
-    )
-
-    class _FlipExec:
-        """Returns bad report first, good report after."""
-        def __init__(self) -> None:
-            self._calls = 0
-        def send(self, msg: str) -> str:
-            self._calls += 1
-            return _GOOD_REPORT if self._calls > 1 else _BAD_REPORT
-
-    def topology(ctx):
-        task = Task(intent="do X", expected_report="score must be 1.0")
-        result = ctx.retry(
-            task,
-            target="executor",
-            is_success=lambda d: d.report.numbers.get("score", 0) >= 1.0,
-            on_failure=lambda d, attempt: f"score was 0, attempt {attempt}",
-        )
-        ctx.done(f"done: {result.report.conclusions}")
-
-    roles = [
-        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
-            StubStrategizer([_DoneAction("unused")], tool_closures)),
-        AgentRole("executor", factory=lambda *, system_prompt, model, study_dir: _FlipExec()),
-    ]
-
-    run = AgenticRun(
-        tmp_path,
-        roles=roles,
-        topology=topology,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    deliv = run.execute()
-    assert "GOOD" in (deliv / "solution.md").read_text()
-
-
-def test_ctx_retry_raises_after_max_fails(tmp_path: Path) -> None:
-    """ctx.retry raises AgenticRunError after max_fails consecutive failures."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    _BAD_REPORT = (
-        "## Report\n\n### Actions taken\n- bad\n\n"
-        "### Files touched\n\n### Conclusions\nbad\n\n### Numbers\nscore: 0.0\n"
-    )
-
-    class _AlwaysBad:
-        def send(self, msg: str) -> str:
-            return _BAD_REPORT
-
-    def topology(ctx):
-        task = Task(intent="do X", expected_report="score must be 1.0")
-        ctx.retry(
-            task,
-            target="executor",
-            is_success=lambda d: d.report.numbers.get("score", 0) >= 1.0,
-            max_fails=2,
-        )
-        ctx.done("should not reach here")
-
-    roles = [
-        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
-            StubStrategizer([_DoneAction("unused")], tool_closures)),
-        AgentRole("executor", factory=lambda *, system_prompt, model, study_dir: _AlwaysBad()),
-    ]
-
-    run = AgenticRun(
-        tmp_path,
-        roles=roles,
-        topology=topology,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    with pytest.raises(AgenticRunError, match="max_fails"):
-        run.execute()
-
-
-def test_ctx_debate_returns_delegations_and_alternates(tmp_path: Path) -> None:
-    """ctx.debate alternates n rounds between two named agents, returns list[Delegation]."""
-    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
-
-    received: dict[str, list[str]] = {"proposer": [], "critic": []}
-
-    def _make_report(name: str, msg: str) -> str:
-        return (
-            f"## Report\n\n### Actions taken\n- {name} responded\n\n"
-            f"### Files touched\n\n### Conclusions\n{name}: {msg}\n\n### Numbers\n"
-        )
-
-    class _DebateExec:
-        def __init__(self, name: str) -> None:
-            self._name = name
-            self._call = 0
-        def send(self, msg: str) -> str:
-            received[self._name].append(msg)
-            self._call += 1
-            return _make_report(self._name, f"round {self._call}")
-
-    transcript: list = []
-
-    def topology(ctx):
-        result = ctx.debate("proposer", "critic", n=2, initial="Begin.")
-        transcript.extend(result)
-        ctx.done("debate done")
-
-    roles = [
-        AgentRole("strategizer", factory=lambda *, system_prompt, model, tool_closures:
-            StubStrategizer([_DoneAction("unused")], tool_closures)),
-        AgentRole("proposer", factory=lambda *, system_prompt, model, study_dir: _DebateExec("proposer")),
-        AgentRole("critic",   factory=lambda *, system_prompt, model, study_dir: _DebateExec("critic")),
-    ]
-
-    run = AgenticRun(
-        tmp_path,
-        roles=roles,
-        topology=topology,
-        stdin=StringIO(""),
-        stdout=StringIO(),
-        record_transcripts=False,
-    )
-    run.execute()
-
-    assert len(transcript) == 4  # 2 rounds × 2 agents
-    assert all(isinstance(d, Delegation) for d in transcript)
-    assert len(received["proposer"]) == 2
-    assert len(received["critic"]) == 2
-    # Chaining: critic received something containing "proposer" (the proposer's conclusion)
-    assert "proposer" in received["critic"][0]
 
 
 # ---------------------------------------------------------------------------

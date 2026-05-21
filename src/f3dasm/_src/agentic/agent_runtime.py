@@ -60,7 +60,6 @@ from .agent_prompts import (
 # continues to work without modification.
 from .backends.base import (
     Agent,
-    AgentRole,
     AgentSession,
     Backend,
     Edge,
@@ -875,13 +874,10 @@ class AgenticRun:
     def _preflight(self) -> None:
         """Delegate backend preflight check, skipping for stub factories.
 
-        When custom roles are supplied (``roles=`` kwarg), each role
-        brings its own factory and the backend preflight is skipped.
-        When either factory has been replaced by a test-injected stub,
-        we also skip so unit tests do not require the real CLI binary.
+        When either factory has been replaced by a test-injected stub
+        via direct kwargs (not from the backend bundle), we skip so
+        unit tests do not require the real CLI binary.
         """
-        if self._graph is not None:
-            return  # custom graph: factories come from Agent nodes
         using_backend_strategizer = (
             self._strategizer_factory
             is self._backend.strategizer_factory

@@ -21,8 +21,8 @@ are kept as aliases for backward compatibility.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
 # ---------------------------------------------------------------------------
 # Unified session protocol
@@ -85,77 +85,6 @@ class Agent:
 
 
 # ---------------------------------------------------------------------------
-# Named-agent role descriptor
-# ---------------------------------------------------------------------------
-
-
-@dataclass
-class AgentRole:
-    """Describes one named agent in the topology.
-
-    An :class:`AgentRole` pairs a unique name with the factory callable
-    and optional configuration needed to instantiate that agent's session.
-    Pass a list of roles to :class:`~agent_runtime.AgenticRun` via the
-    ``roles=`` keyword argument to define a custom agent graph.
-
-    Parameters
-    ----------
-    name : str
-        Unique identifier for this agent, e.g. ``"strategizer"``,
-        ``"python_impl"``, ``"debugger"``.  Used as the routing key in
-        :meth:`~agent_runtime.RunContext.delegate`.
-    factory : callable
-        Session factory.  Two calling conventions are supported and
-        auto-detected at construction time via signature inspection:
-
-        * **Planner-type** — ``(*, system_prompt, model, tool_closures) ->
-          AgentSession``: for agents that drive the run via injected tool
-          closures (e.g. Strategizer).
-        * **Executor-type** — ``(*, system_prompt, model, study_dir) ->
-          AgentSession``: for agents that execute tasks using built-in
-          file/bash tools (e.g. Implementer, Debugger).
-    system_prompt : str or None
-        Full system prompt for this role.  When ``None``, the runtime
-        generates a default prompt based on the role name.
-    description : str or None
-        Short human-readable description injected into the Strategizer's
-        agent roster so it knows what each peer can do.  Example:
-        ``"executor specializing in Python"``.
-    kwargs : dict
-        Extra keyword arguments forwarded verbatim to *factory* beyond
-        the standard ones (e.g. ``{"cwd": some_path}``).
-
-    Examples
-    --------
-    >>> from f3dasm._src.agentic.backends.claude import (
-    ...     _implementer_factory, _strategizer_factory,
-    ... )
-    >>> from f3dasm._src.agentic.agent_prompts import IMPLEMENTER_SYSTEM_PROMPT
-    >>> roles = [
-    ...     AgentRole("strategizer", factory=_strategizer_factory),
-    ...     AgentRole("python_impl", factory=_implementer_factory,
-    ...               system_prompt=IMPLEMENTER_SYSTEM_PROMPT + "\\nSpecialize in Python.",
-    ...               description="executor specializing in Python"),
-    ...     AgentRole("c_impl", factory=_implementer_factory,
-    ...               system_prompt=IMPLEMENTER_SYSTEM_PROMPT + "\\nSpecialize in C.",
-    ...               description="executor specializing in C"),
-    ... ]
-    """
-
-    name: str
-    factory: Callable[..., AgentSession]
-    system_prompt: str | None = None
-    description: str | None = None
-    tools: set[str] | None = None
-    reset_on_checkpoint: bool = True
-    kwargs: dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        if self.tools is not None:
-            object.__setattr__(self, "tools", set(self.tools))
-
-
-# ---------------------------------------------------------------------------
 # Graph primitives
 # ---------------------------------------------------------------------------
 
@@ -183,20 +112,10 @@ class Graph:
     Declares which agents exist, which directed delegation edges connect
     them, and which agent starts the run.  Loops are permitted.
 
-    The graph can be constructed in two ways:
-
-    * **New API** — ``nodes: dict[str, Agent]`` maps names to
-      :class:`Agent` instances.
-    * **Legacy API** — ``roles: sequence[AgentRole]`` is still accepted
-      for backward compatibility and is normalised into ``nodes`` during
-      ``__post_init__``.
-
     Parameters
     ----------
-    nodes : dict[str, Agent] or None
+    nodes : dict[str, Agent]
         Maps unique agent names to :class:`Agent` instances.
-    roles : sequence of AgentRole or None
-        Legacy role list (kept for backward compatibility).
     edges : sequence of Edge
         Directed delegation edges.  An agent with no outgoing edges
         receives no ``Delegate`` tool.
@@ -211,40 +130,23 @@ class Graph:
         not declared.
     """
 
-    nodes: dict | None = None  # dict[str, Agent]
-    roles: tuple | None = None  # legacy
+    nodes: dict  # dict[str, Agent]
     edges: tuple = ()
     entry: str = "strategizer"
 
     def __post_init__(self) -> None:
-        # Normalise edges to tuple.
         self.edges = tuple(self.edges)
-
-        # Reject ambiguous construction.
-        if self.nodes is not None and self.roles is not None:
-            raise ValueError(
-                "Graph: provide either nodes= or roles=, not both."
+        bad = [k for k, v in self.nodes.items() if not isinstance(v, Agent)]
+        if bad:
+            raise TypeError(
+                f"Graph nodes values must be Agent instances; "
+                f"got invalid values for keys: {sorted(bad)}"
             )
-
-        # Resolve names from either nodes or legacy roles.
-        if self.nodes is not None:
-            bad = [k for k, v in self.nodes.items() if not isinstance(v, Agent)]
-            if bad:
-                raise TypeError(
-                    f"Graph nodes values must be Agent instances; "
-                    f"got invalid values for keys: {sorted(bad)}"
-                )
-            names = set(self.nodes)
-        elif self.roles is not None:
-            self.roles = tuple(self.roles)
-            names = {r.name for r in self.roles}
-        else:
-            raise ValueError("Graph requires either nodes= or roles=.")
-
+        names = set(self.nodes)
         for e in self.edges:
             if e.source not in names or e.target not in names:
                 raise ValueError(
-                    f"Edge {e!r} references undeclared role. "
+                    f"Edge {e!r} references undeclared node. "
                     f"Declared names: {sorted(names)}"
                 )
         if self.entry not in names:
