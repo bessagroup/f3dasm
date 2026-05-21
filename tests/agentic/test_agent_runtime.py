@@ -1344,6 +1344,22 @@ def test_load_study_config_bad_budget_raises(tmp_path):
         _load_study_config(tmp_path)
 
 
+def test_load_study_config_eval_budget(tmp_path):
+    """eval_budget key parsed as int."""
+    from f3dasm._src.agentic.agent_runtime import _load_study_config
+    (tmp_path / "config.yaml").write_text("eval_budget: 500\n")
+    cfg = _load_study_config(tmp_path)
+    assert cfg.eval_budget == 500
+
+
+def test_load_study_config_eval_budget_unknown_key_still_raises(tmp_path):
+    """Unknown keys still raise even after adding eval_budget."""
+    from f3dasm._src.agentic.agent_runtime import AgenticRunError, _load_study_config
+    (tmp_path / "config.yaml").write_text("typo_key: 500\n")
+    with pytest.raises(AgenticRunError, match="typo_key"):
+        _load_study_config(tmp_path)
+
+
 # ---------------------------------------------------------------------------
 # Task 2 tests — StudyConfig wired into AgenticRun
 # ---------------------------------------------------------------------------

@@ -317,7 +317,7 @@ class RunContext(_Protocol):
 # ---------------------------------------------------------------------------
 
 _KNOWN_CONFIG_KEYS: frozenset[str] = frozenset(
-    {"model", "backend", "budget", "checkpoint_every"}
+    {"model", "backend", "budget", "checkpoint_every", "eval_budget"}
 )
 
 
@@ -335,6 +335,7 @@ class StudyConfig:
     backend: str = "claude"
     budget: timedelta | None = None
     checkpoint_every: int | None = None
+    eval_budget: int | None = None
 
 
 def _load_study_config(study_dir: Path) -> StudyConfig:
@@ -363,6 +364,7 @@ def _load_study_config(study_dir: Path) -> StudyConfig:
         backend=raw.get("backend", "claude"),
         budget=budget,
         checkpoint_every=raw.get("checkpoint_every"),
+        eval_budget=int(raw["eval_budget"]) if "eval_budget" in raw else None,
     )
 
 
@@ -753,6 +755,8 @@ class AgenticRun:
         self._checkpoint_every = checkpoint_every
         # Budget.
         self._budget: timedelta | None = _cfg.budget
+        self._eval_budget: int | None = _cfg.eval_budget
+        self._total_eval_count: int = 0
         # Custom topology (optional).
         self._topology = topology
         self._start_time: datetime | None = None  # set in execute()
