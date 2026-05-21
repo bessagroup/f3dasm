@@ -58,7 +58,15 @@ from .agent_prompts import (
 # existing test code that does
 #   ``from f3dasm._src.agentic.agent_runtime import StrategizerSession``
 # continues to work without modification.
-from .backends.base import Backend, ImplementerSession, StrategizerSession
+from .backends.base import (
+    AgentRole,
+    AgentSession,
+    Backend,
+    Edge,
+    Graph,
+    ImplementerSession,
+    StrategizerSession,
+)
 
 # MVP_DEFAULT_MODEL: keep the canonical value here as well so that
 # ``from f3dasm._src.agentic.agent_runtime import MVP_DEFAULT_MODEL``
@@ -221,8 +229,10 @@ class RunContext(_Protocol):
     depending on :class:`AgenticRun` internals.
     """
 
-    def delegate(self, task: Task) -> Delegation:
-        """Send *task* to the Implementer; return the completed Delegation."""
+    def delegate(
+        self, task: Task, target: str = "implementer"
+    ) -> Delegation:
+        """Send *task* to *target*; return the completed Delegation."""
         ...
 
     def checkpoint(self) -> None:
@@ -239,6 +249,27 @@ class RunContext(_Protocol):
 
     def ask(self, question: str) -> str:
         """Print *question* to stdout and return the operator's reply."""
+        ...
+
+    def parallel(
+        self,
+        task_fn: "Callable[[int], Task]",
+        targets: "list[str]",
+    ) -> "list[Delegation]":
+        """Call ``task_fn(i)`` and delegate to ``targets[i]`` for each i.
+
+        Delegates are issued sequentially through the run's full pipeline
+        (budget check, git commit, transcript recording).  Order is
+        preserved.  Errors are captured as Delegations with
+        ``metadata["error"] = True``; nothing is silently dropped.
+
+        Parameters
+        ----------
+        task_fn : callable
+            Called with zero-based index; returns the Task for that slot.
+        targets : list[str]
+            Agent names, one per slot.  Must be declared in the Graph/roles.
+        """
         ...
 
 
@@ -619,6 +650,13 @@ class AgenticRun:
         Config loaded from ``config.yaml``.  CLI kwargs (``model``,
         ``checkpoint_every``) take precedence over config values;
         config values take precedence over backend defaults.
+    roles : list[AgentRole] or None
+        Named agent roles for the topology.  When ``None`` (the default),
+        the runtime synthesises the classic Strategizer + Implementer
+        pair using the backend's factories.  Supply a list to define a
+        custom agent graph; each role's ``factory`` is auto-detected as
+        planner-type (has ``tool_closures`` param) or executor-type (has
+        ``study_dir`` param).
     """
 
     def __init__(
@@ -639,6 +677,8 @@ class AgenticRun:
         record_transcripts: bool = True,
         study_config: StudyConfig | None = None,
         topology: Callable[["RunContext"], None] | None = None,
+        roles: list[AgentRole] | None = None,
+        graph: Graph | None = None,
     ) -> None:
         # Resolve backend: explicit kwarg wins; otherwise honour StudyConfig.backend.
         _cfg_pre = study_config or StudyConfig()
@@ -691,6 +731,10 @@ class AgenticRun:
             else self._backend.implementer_factory
         )
         self._record_transcripts = record_transcripts
+        # Named-role list (None → synthesise default pair at session start).
+        self._roles: list[AgentRole] | None = roles
+        # Agent graph (takes priority over roles= when set).
+        self._graph: Graph | None = graph
 
         # Mutable run state — populated in execute().
         self._run_dir: Path | None = None
@@ -700,13 +744,34 @@ class AgenticRun:
         self._last_report: Report | None = None
         self._done_summary: str | None = None
         self._done_called: bool = False
-        self._strategizer: StrategizerSession | None = None
-        self._implementer: ImplementerSession | None = None
+        self._agents: dict[str, AgentSession] = {}
         self._turn_count: int = 0
         self._checkpoint_summary: str = ""
         self._logger: logging.Logger = logging.getLogger(
             "f3dasm.agentic"
         )
+
+    # ------------------------------------------------------------------
+    # Backward-compat properties for _strategizer / _implementer
+    # ------------------------------------------------------------------
+
+    @property
+    def _strategizer(self) -> AgentSession | None:
+        return self._agents.get("strategizer")
+
+    @_strategizer.setter
+    def _strategizer(self, v: AgentSession | None) -> None:
+        if v is not None:
+            self._agents["strategizer"] = v
+
+    @property
+    def _implementer(self) -> AgentSession | None:
+        return self._agents.get("implementer")
+
+    @_implementer.setter
+    def _implementer(self, v: AgentSession | None) -> None:
+        if v is not None:
+            self._agents["implementer"] = v
 
     # ------------------------------------------------------------------
     # Budget helpers
@@ -822,11 +887,13 @@ class AgenticRun:
     def _preflight(self) -> None:
         """Delegate backend preflight check, skipping for stub factories.
 
+        When custom roles are supplied (``roles=`` kwarg), each role
+        brings its own factory and the backend preflight is skipped.
         When either factory has been replaced by a test-injected stub,
-        we skip the backend's preflight so unit tests do not require
-        the real CLI binary to be installed.  The backend's preflight
-        runs only when both factories are the backend's own defaults.
+        we also skip so unit tests do not require the real CLI binary.
         """
+        if self._graph is not None or self._roles is not None:
+            return  # custom graph/roles: factories come from AgentRole.factory
         using_backend_strategizer = (
             self._strategizer_factory
             is self._backend.strategizer_factory
@@ -897,39 +964,107 @@ class AgenticRun:
     # ------------------------------------------------------------------
 
     def _start_sessions(self) -> None:
-        tool_closures = self._build_strategizer_tools()
-        self._strategizer = self._strategizer_factory(
-            system_prompt=self._compose_strategizer_prompt(),
-            model=self._model,
-            tool_closures=tool_closures,
+        for role in self._resolve_roles():
+            self._agents[role.name] = self._instantiate_role(role)
+
+    def _resolve_roles(self) -> list[AgentRole]:
+        """Return the effective role list.
+
+        Priority: ``graph=`` > ``roles=`` > default Strategizer + Implementer pair.
+        """
+        if self._graph is not None:
+            return list(self._graph.roles)
+        if self._roles is not None:
+            return self._roles
+        return [
+            AgentRole(
+                "strategizer",
+                factory=self._strategizer_factory,
+                reset_on_checkpoint=False,
+            ),
+            AgentRole(
+                "implementer",
+                factory=self._implementer_factory,
+                reset_on_checkpoint=True,
+            ),
+        ]
+
+    def _role_by_name(self, name: str) -> AgentRole | None:
+        """Return the :class:`AgentRole` with *name*, or ``None``."""
+        return next(
+            (r for r in self._resolve_roles() if r.name == name), None
         )
-        self._implementer = self._implementer_factory(
-            system_prompt=self._compose_implementer_prompt(),
+
+    def _instantiate_role(self, role: AgentRole) -> AgentSession:
+        """Construct a session for *role*, auto-detecting factory type.
+
+        Planner-type factories (have a ``tool_closures`` parameter) receive
+        orchestrator-injected tool closures.  Executor-type factories (have
+        a ``study_dir`` parameter) receive the study directory path and use
+        the backend's built-in file/bash tools.
+
+        ``_outgoing_targets`` uses :meth:`_resolve_roles` (not
+        ``self._agents``) so it is safe to call here before the full
+        ``_agents`` dict is populated.
+        """
+        sig = inspect.signature(role.factory)
+        prompt = role.system_prompt or self._default_prompt_for(role.name)
+        if "tool_closures" in sig.parameters:
+            closures, _ = self._build_planner_tools(role.name)
+            return role.factory(
+                system_prompt=prompt,
+                model=self._model,
+                tool_closures=closures,
+                **role.kwargs,
+            )
+        return role.factory(
+            system_prompt=prompt,
             model=self._model,
             study_dir=self._study_dir,
+            **role.kwargs,
         )
+
+    def _default_prompt_for(self, name: str) -> str:
+        """Return the default system prompt for a named role.
+
+        Planner-type roles (factory has ``tool_closures`` param) get the
+        Strategizer prompt; all others get the Implementer prompt.
+        """
+        role = self._role_by_name(name)
+        if role is not None:
+            sig = inspect.signature(role.factory)
+            if "tool_closures" in sig.parameters:
+                return self._compose_strategizer_prompt(name)
+        elif name == "strategizer":
+            return self._compose_strategizer_prompt(name)
+        return self._compose_implementer_prompt()
 
     def _reset_implementer(self, checkpoint_summary: str) -> None:
         """Destroy the current Implementer and create a fresh one."""
-        self._logger.info(
-            "Implementer session reset (briefed with checkpoint summary)"
-        )
-        reset_msg = IMPLEMENTER_RESET_PROMPT_TEMPLATE.format(
-            checkpoint_summary=checkpoint_summary
-        )
-        self._implementer = self._implementer_factory(
-            system_prompt=self._compose_implementer_prompt(),
-            model=self._model,
-            study_dir=self._study_dir,
-        )
-        self._implementer.send(reset_msg)
+        self._checkpoint_summary = checkpoint_summary
+        self._reset_agent("implementer")
 
-    def _compose_strategizer_prompt(self) -> str:
-        """Return the Strategizer system prompt with run-specific paths.
+    def _reset_agent(self, name: str) -> None:
+        """Destroy the session for *name* and create a fresh one."""
+        role = self._role_by_name(name)
+        if role is None:
+            return
+        self._logger.info("Agent %r session reset (briefed with checkpoint summary)", name)
+        reset_msg = IMPLEMENTER_RESET_PROMPT_TEMPLATE.format(
+            checkpoint_summary=self._checkpoint_summary
+        )
+        self._agents[name] = self._instantiate_role(role)
+        self._agents[name].send(reset_msg)
+
+    def _compose_strategizer_prompt(
+        self, name: str = "strategizer"
+    ) -> str:
+        """Return the planner system prompt with run-specific paths and roster.
 
         Prepends a small ``<run_paths>`` section so the model knows the
         canonical absolute paths for its notes directory and the study
-        tree without having to guess timestamps.
+        tree.  Also injects ``<available_agents>`` listing only the agents
+        this particular planner can reach via ``Delegate``.
         """
         assert self._run_dir is not None
         notes_dir = (self._run_dir / "strategizer_notes").resolve()
@@ -937,7 +1072,25 @@ class AgenticRun:
             study_dir=self._study_dir,
             notes_dir=notes_dir,
         )
-        return preamble + STRATEGIZER_SYSTEM_PROMPT
+        prompt = preamble + STRATEGIZER_SYSTEM_PROMPT
+        outgoing = self._outgoing_targets(name)
+        if outgoing:
+            peer_roles = [
+                r for r in self._resolve_roles() if r.name in outgoing
+            ]
+            lines = [
+                f'- {r.name}: {r.description or "agent"}'
+                for r in peer_roles
+            ]
+            roster = "\n".join(lines)
+            prompt += (
+                "\n\n<available_agents>\n"
+                "Agents you can reach via "
+                'Delegate(target="<name>", intent=..., expected_report=...):\n'
+                f"{roster}\n"
+                "</available_agents>"
+            )
+        return prompt
 
     def _compose_implementer_prompt(self) -> str:
         """Return the Implementer system prompt with workspace anchored.
@@ -965,75 +1118,111 @@ class AgenticRun:
     # ------------------------------------------------------------------
 
     def _run_loop(self, briefing_text: str) -> None:
-        """Drive the Strategizer until Done() is called or a stop occurs.
-
-        The SDK handles all tool invocations internally (via the in-process
-        MCP server). A single ``send()`` call runs the entire multi-turn
-        conversation: the model calls tools, gets results, calls more
-        tools, and so on until it emits a final message with no tool
-        calls. Our ``Done`` and ``Delegate`` closures mutate orchestrator
-        state; once ``Done`` is called ``_done_called`` is set and we
-        know the run is complete.
-
-        Because the SDK drives the full conversation in one ``send()``,
-        the loop here is structurally simple: send the briefing and
-        wait. If a ``checkpoint`` resets ``_done_called`` (which it does
-        not — checkpoints resume), the second send continues the
-        Strategizer session.
-        """
-        assert self._strategizer is not None
-        self._strategizer.send(briefing_text)
+        """Drive the entry agent until Done() is called or a stop occurs."""
+        entry_name = (
+            self._graph.entry if self._graph is not None else "strategizer"
+        )
+        entry_agent = self._agents.get(entry_name)
+        assert entry_agent is not None, (
+            f"Entry agent {entry_name!r} not found in _agents"
+        )
+        entry_agent.send(briefing_text)
         self._turn_count += 1
 
     # ------------------------------------------------------------------
     # Tool closures (Strategizer)
     # ------------------------------------------------------------------
 
-    def _build_strategizer_tools(
+    def _outgoing_targets(self, agent_name: str) -> list[str]:
+        """Return the list of agent names *agent_name* can delegate to.
+
+        When a :class:`~backends.base.Graph` is set, reads from its edge
+        declarations.  Otherwise returns all other agent names (legacy
+        all-to-all behaviour), computed from :meth:`_resolve_roles` so
+        it is safe to call before ``_agents`` is fully populated.
+        """
+        if self._graph is not None:
+            return [
+                e.target
+                for e in self._graph.edges
+                if e.source == agent_name
+            ]
+        all_names = [r.name for r in self._resolve_roles()]
+        return [n for n in all_names if n != agent_name]
+
+    def _build_planner_tools(
         self,
-    ) -> dict[str, Callable[..., str]]:
-        """Return the five Strategizer tool closures.
+        agent_name: str = "strategizer",
+    ) -> tuple[dict[str, Callable[..., str]], list[str]]:
+        """Return ``(closures, outgoing)`` for *agent_name*.
+
+        ``closures`` contains only the tools the agent is permitted to
+        use (filtered by :attr:`AgentRole.tools` and outgoing edges).
+        ``outgoing`` is the list of agent names the agent can delegate
+        to, used to build per-agent Ollama tool schemas.
 
         When ``record_transcripts`` is True each closure is wrapped so
         that every call and result is appended to
-        ``runs/<ts>/transcripts/strategizer.jsonl``.
+        ``runs/<ts>/transcripts/<agent_name>.jsonl``.
         """
+        role = self._role_by_name(agent_name)
+        allowed = role.tools if role is not None else None
+        outgoing = self._outgoing_targets(agent_name)
+
         raw: dict[str, Callable[..., str]] = {
             "Read": self._tool_read,
             "WriteMarkdown": self._tool_write_markdown,
             "Ask": self._tool_ask,
-            "Delegate": self._tool_delegate,
             "Done": self._tool_done,
         }
+        if outgoing:
+            _out = list(outgoing)
+            _caller = agent_name
+            _default_target = _out[0]
+
+            def _delegate_scoped(
+                intent: str,
+                expected_report: str,
+                target: str = _default_target,
+                _o: list[str] = _out,
+                _c: str = _caller,
+            ) -> str:
+                """Delegate a task — only to permitted targets."""
+                if target not in _o:
+                    return (
+                        f"ERROR: {_c!r} is not permitted to delegate to "
+                        f"{target!r}. Permitted targets: {_o}"
+                    )
+                return self._tool_delegate(
+                    intent, expected_report, target, caller=_c
+                )
+
+            raw["Delegate"] = _delegate_scoped
+
+        if allowed is not None:
+            raw = {k: v for k, v in raw.items() if k in allowed}
+
         if not self._record_transcripts:
-            return raw
-        return {
-            name: self._make_transcript_wrapper(name, fn)
+            return raw, outgoing
+        wrapped = {
+            name: self._make_transcript_wrapper(name, fn, agent_name)
             for name, fn in raw.items()
         }
+        return wrapped, outgoing
+
+    # Keep the old name as an alias so any external callers still work.
+    _build_strategizer_tools = _build_planner_tools
 
     def _make_transcript_wrapper(
         self,
         tool_name: str,
         fn: Callable[..., str],
+        agent_name: str = "strategizer",
     ) -> Callable[..., str]:
-        """Return a wrapped version of *fn* that records to strategizer.jsonl.
-
-        Parameters
-        ----------
-        tool_name : str
-            The name used for the ``tool_call`` / ``tool_result`` events.
-        fn : callable
-            The underlying tool closure.
-
-        Returns
-        -------
-        callable
-            A drop-in replacement that records events before and after
-            the underlying call.
-        """
+        """Return a wrapped version of *fn* that records to <agent_name>.jsonl."""
 
         original_sig = inspect.signature(fn)
+        _aname = agent_name
 
         def _wrapper(**kwargs: Any) -> str:
             ts_call = (
@@ -1041,13 +1230,11 @@ class AgenticRun:
                 .isoformat(timespec="seconds")
             )
             if self._run_dir is not None:
-                strat_t = (
-                    self._run_dir
-                    / "transcripts"
-                    / "strategizer.jsonl"
+                t_path = (
+                    self._run_dir / "transcripts" / f"{_aname}.jsonl"
                 )
                 _record_transcript(
-                    strat_t,
+                    t_path,
                     {
                         "type": "tool_call",
                         "name": tool_name,
@@ -1062,9 +1249,7 @@ class AgenticRun:
             )
             if self._run_dir is not None:
                 _record_transcript(
-                    self._run_dir
-                    / "transcripts"
-                    / "strategizer.jsonl",
+                    self._run_dir / "transcripts" / f"{_aname}.jsonl",
                     {
                         "type": "tool_result",
                         "name": tool_name,
@@ -1154,26 +1339,44 @@ class AgenticRun:
         self._turn_count += 1
         return line.rstrip("\n") or "(no reply)"
 
-    def _tool_delegate(self, intent: str, expected_report: str) -> str:
-        """Delegate a task to the Implementer.
+    def _tool_delegate(
+        self,
+        intent: str,
+        expected_report: str,
+        target: str = "implementer",
+        *,
+        caller: str = "strategizer",
+    ) -> str:
+        """Delegate a task to a named agent.
 
-        Records a git commit, sends the task to the Implementer, parses
-        the Report, and returns the raw Report markdown to the
-        Strategizer.  If no parseable Report is found, returns an ERROR
-        without incrementing the delegation counter.
+        Records a git commit, sends the task to *target*, parses the
+        Report, and returns the raw Report markdown to the caller.  If
+        no parseable Report is found, returns an ERROR without
+        incrementing the delegation counter.
 
         Parameters
         ----------
         intent : str
-            What the Implementer should do.
+            What the agent should do.
         expected_report : str
             What measurements or conclusions are required.
+        target : str
+            Name of the agent to delegate to (default: ``"implementer"``).
+            Must be a key in ``self._agents``.
 
         Returns
         -------
         str
-            The Implementer's ``## Report`` block, or an ERROR string.
+            The agent's ``## Report`` block, or an ERROR string.
         """
+        # Route to the named agent.
+        agent = self._agents.get(target)
+        if agent is None:
+            return (
+                f"ERROR: no agent named {target!r}. "
+                f"Available agents: {list(self._agents)}"
+            )
+
         # Budget check — before any work for this delegation.
         remaining = self._remaining()
         if remaining is not None and remaining <= timedelta(0):
@@ -1187,7 +1390,6 @@ class AgenticRun:
                 "No further delegations will be issued."
             )
 
-        assert self._implementer is not None
         assert self._git_dir is not None
 
         deleg_idx = self._total_delegations
@@ -1237,8 +1439,8 @@ class AgenticRun:
         )
         task_msg = _format_task(task)
 
-        # (c) Send to Implementer; record per-delegation transcript.
-        impl_reply = self._implementer.send(task_msg)
+        # (c) Send to target agent; record per-delegation transcript.
+        impl_reply = agent.send(task_msg)
         self._turn_count += 1
 
         if self._record_transcripts and self._run_dir is not None:
@@ -1250,7 +1452,7 @@ class AgenticRun:
             impl_transcript = (
                 self._run_dir
                 / "transcripts"
-                / f"{deleg_idx}_implementer.jsonl"
+                / f"{deleg_idx}_{target}.jsonl"
             )
             _record_transcript(
                 impl_transcript,
@@ -1276,7 +1478,7 @@ class AgenticRun:
         report = _parse_report(impl_reply)
         if report is None:
             correction = IMPLEMENTER_REPORT_RETRY_PROMPT
-            retry_reply = self._implementer.send(correction)
+            retry_reply = agent.send(correction)
             self._turn_count += 1
             if self._record_transcripts and self._run_dir is not None:
                 ts_now = (
@@ -1310,13 +1512,13 @@ class AgenticRun:
                     datetime.now(tz=timezone.utc)
                     .isoformat(timespec="seconds")
                 )
-                strat_transcript = (
+                caller_transcript = (
                     self._run_dir
                     / "transcripts"
-                    / "strategizer.jsonl"
+                    / f"{caller}.jsonl"
                 )
                 _record_transcript(
-                    strat_transcript,
+                    caller_transcript,
                     {
                         "type": "tool_result",
                         "name": "Delegate",
@@ -1386,13 +1588,17 @@ class AgenticRun:
     # Topology helpers
     # ------------------------------------------------------------------
 
-    def _delegate_task(self, task: Task) -> Delegation:
-        """Delegate *task* to the Implementer; return a completed Delegation.
+    def _delegate_task(
+        self, task: Task, target: str = "implementer"
+    ) -> Delegation:
+        """Delegate *task* to *target*; return a completed Delegation.
 
         Used by custom topology callables via :class:`_RunContextImpl`.
         """
         raw = self._tool_delegate(
-            intent=task.intent, expected_report=task.expected_report
+            intent=task.intent,
+            expected_report=task.expected_report,
+            target=target,
         )
         d = Delegation(task=task)
         if _parse_delegation(raw, d) is None:
@@ -1416,7 +1622,11 @@ class AgenticRun:
 
     def _run_checkpoint(self) -> None:
         """Inject the checkpoint prompt and handle user steering."""
-        assert self._strategizer is not None
+        entry_name = (
+            self._graph.entry if self._graph is not None else "strategizer"
+        )
+        entry_agent = self._agents.get(entry_name) or self._strategizer
+        assert entry_agent is not None
 
         self._logger.info(
             "Checkpoint firing after %d delegations",
@@ -1429,7 +1639,7 @@ class AgenticRun:
         )
         self._stdout.flush()
 
-        cp_reply = self._strategizer.send(CHECKPOINT_STRATEGIZER_PROMPT)
+        cp_reply = entry_agent.send(CHECKPOINT_STRATEGIZER_PROMPT)
         self._turn_count += 1
         self._checkpoint_summary = cp_reply
 
@@ -1446,17 +1656,19 @@ class AgenticRun:
             self._done_called = True
             return
 
-        # Resume: pass user steering (or "(continue)") to the Strategizer.
+        # Resume: pass user steering (or "(continue)") to the entry agent.
         steering_msg = (
             f"user steering: {user_input}"
             if user_input.strip()
             else "(continue)"
         )
-        self._strategizer.send(steering_msg)
+        entry_agent.send(steering_msg)
         self._turn_count += 1
 
-        # Reset the Implementer.
-        self._reset_implementer(cp_reply)
+        # Reset agents according to per-role policy.
+        for role in self._resolve_roles():
+            if role.reset_on_checkpoint:
+                self._reset_agent(role.name)
 
         # Reset delegation counter.
         self._delegation_counter = 0
@@ -1593,9 +1805,11 @@ class _RunContextImpl:
     def __init__(self, run: AgenticRun) -> None:
         self._run = run
 
-    def delegate(self, task: Task) -> Delegation:
-        """Send *task* to the Implementer; return the completed Delegation."""
-        return self._run._delegate_task(task)
+    def delegate(
+        self, task: Task, target: str = "implementer"
+    ) -> Delegation:
+        """Send *task* to *target*; return the completed Delegation."""
+        return self._run._delegate_task(task, target=target)
 
     def checkpoint(self) -> None:
         """Commit run state to git and reset the delegation counter."""
@@ -1613,6 +1827,30 @@ class _RunContextImpl:
     def ask(self, question: str) -> str:
         """Print *question* to stdout and return the operator's reply."""
         return self._run._tool_ask(question=question)
+
+    def parallel(
+        self,
+        task_fn: "Callable[[int], Task]",
+        targets: list[str],
+    ) -> list[Delegation]:
+        """Sequential-safe fan-out through the run pipeline."""
+        results: list[Delegation] = []
+        for i, target in enumerate(targets):
+            task = task_fn(i)
+            try:
+                d = self.delegate(task, target=target)
+            except Exception as exc:
+                d = Delegation(task=task)
+                d.report = Report(
+                    actions_taken="",
+                    files_touched=[],
+                    conclusions=f"ERROR: {exc}",
+                    numbers={},
+                    raw="",
+                )
+                d.metadata["error"] = True
+            results.append(d)
+        return results
 
 
 # ---------------------------------------------------------------------------
