@@ -196,25 +196,24 @@ def debate(
     agent_b: _AnySession,
     n: int,
     initial: str,
-) -> list[str]:
+) -> list[Delegation]:
     """Fixed-N debate: alternate ``n`` turns between two agents.
 
-    Each round consists of ``agent_a`` responding to the current message,
-    then ``agent_b`` responding to ``agent_a``'s reply.  Returns the full
-    transcript as a list of raw text strings: ``[a1, b1, a2, b2, …]``
-    with ``2*n`` elements.  The final response is ``debate(…)[-1]``.
+    Returns the full transcript as a list of :class:`~agent_runtime.Delegation`
+    objects ``[a1, b1, a2, b2, …]`` with ``2*n`` elements.  Each Delegation's
+    ``report.raw`` holds the agent's raw response.  The final response is
+    ``debate(…)[-1].report.raw``.
 
-    This matches the AgenticSciML Proposer ↔ Critic debate (``n=4``):
-    rounds 1–2 are analysis-only, round 3 is synthesis, round 4 is the
-    final verdict.  Phase annotations may be embedded in ``initial`` for
-    phase-aware agents.
+    Unlike :func:`parallel` and :func:`retry`, debate does not require agents
+    to emit a ``## Report`` block — responses are accepted as-is and stored in
+    ``report.raw`` / ``report.conclusions``.
 
     Parameters
     ----------
     agent_a : session
-        First agent (e.g. Proposer).  Must implement ``send(str) -> str``.
+        First agent (e.g. Proposer).
     agent_b : session
-        Second agent (e.g. Critic).  Must implement ``send(str) -> str``.
+        Second agent (e.g. Critic).
     n : int
         Number of complete A→B exchange rounds.  Must be ≥ 1.
     initial : str
@@ -222,9 +221,8 @@ def debate(
 
     Returns
     -------
-    list[str]
+    list[Delegation]
         Interleaved transcript ``[a1, b1, a2, b2, …]`` of length ``2*n``.
-        ``result[-1]`` is ``agent_b``'s final response.
 
     Raises
     ------
@@ -233,12 +231,25 @@ def debate(
     """
     if n < 1:
         raise ValueError(f"debate: n must be ≥ 1, got {n}.")
-    transcript: list[str] = []
+
+    def _wrap(raw: str, prompt: str) -> Delegation:
+        task = Task(intent=prompt, expected_report="Respond to the debate.")
+        d = Delegation(task=task)
+        d.report = Report(
+            actions_taken="",
+            files_touched=[],
+            conclusions=raw,
+            numbers={},
+            raw=raw,
+        )
+        return d
+
+    transcript: list[Delegation] = []
     current = initial
     for _ in range(n):
-        a_reply = agent_a.send(current)
-        transcript.append(a_reply)
-        b_reply = agent_b.send(a_reply)
-        transcript.append(b_reply)
-        current = b_reply
+        a_raw = agent_a.send(current)
+        transcript.append(_wrap(a_raw, current))
+        b_raw = agent_b.send(a_raw)
+        transcript.append(_wrap(b_raw, a_raw))
+        current = b_raw
     return transcript

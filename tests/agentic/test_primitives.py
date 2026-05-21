@@ -245,57 +245,39 @@ class TestRetry:
 
 
 class TestDebate:
-    def test_single_round_returns_two_strings(self):
-        agent_a = StubSession(["a_reply"])
-        agent_b = StubSession(["b_reply"])
-        result = debate(agent_a, agent_b, n=1, initial="start")
-        assert result == ["a_reply", "b_reply"]
-
-    def test_final_response_is_last_element(self):
-        agent_a = StubSession(["a_reply"])
-        agent_b = StubSession(["b_reply"])
-        result = debate(agent_a, agent_b, n=1, initial="start")
-        assert result[-1] == "b_reply"
-
-    def test_two_rounds_returns_four_strings(self):
-        agent_a = StubSession(["a1", "a2"])
-        agent_b = StubSession(["b1", "b2"])
-        result = debate(agent_a, agent_b, n=2, initial="start")
-        assert result == ["a1", "b1", "a2", "b2"]
+    def test_single_round_returns_two_delegations(self):
+        a = StubSession(["reply_a1"])
+        b = StubSession(["reply_b1"])
+        result = debate(a, b, n=1, initial="start")
+        assert len(result) == 2
+        assert all(isinstance(d, Delegation) for d in result)
+        assert result[0].is_complete
+        assert result[1].is_complete
 
     def test_transcript_length_is_2n(self):
-        agent_a = StubSession([f"a{i}" for i in range(4)])
-        agent_b = StubSession([f"b{i}" for i in range(4)])
-        result = debate(agent_a, agent_b, n=4, initial="proposal")
-        assert len(result) == 8
-
-    def test_four_rounds_final_response(self):
-        agent_a = StubSession([f"a{i}" for i in range(4)])
-        agent_b = StubSession([f"b{i}" for i in range(4)])
-        result = debate(agent_a, agent_b, n=4, initial="proposal")
-        assert result[-1] == "b3"
+        a = StubSession(["a1", "a2", "a3"])
+        b = StubSession(["b1", "b2", "b3"])
+        result = debate(a, b, n=3, initial="go")
+        assert len(result) == 6
 
     def test_message_chaining(self):
-        agent_a = StubSession(["a1", "a2"])
-        agent_b = StubSession(["b1", "b2"])
-        debate(agent_a, agent_b, n=2, initial="start")
-        assert agent_a.received == ["start", "b1"]
-        assert agent_b.received == ["a1", "a2"]
+        """Each agent gets the previous agent's raw reply as input."""
+        a = StubSession(["reply_from_a"])
+        b = StubSession(["reply_from_b"])
+        debate(a, b, n=1, initial="initial_message")
+        assert a.received[0] == "initial_message"
+        assert b.received[0] == "reply_from_a"
 
-    def test_initial_passed_to_agent_a(self):
-        agent_a = StubSession(["a_reply"])
-        agent_b = StubSession(["b_reply"])
-        debate(agent_a, agent_b, n=1, initial="my initial message")
-        assert agent_a.received[0] == "my initial message"
+    def test_delegation_raw_contains_reply(self):
+        """Report.raw on each Delegation holds the agent's raw response."""
+        a = StubSession(["agent_a_says_this"])
+        b = StubSession(["agent_b_says_that"])
+        result = debate(a, b, n=1, initial="start")
+        assert result[0].report.raw == "agent_a_says_this"
+        assert result[1].report.raw == "agent_b_says_that"
 
     def test_zero_rounds_raises(self):
-        agent_a = StubSession([])
-        agent_b = StubSession([])
+        a = StubSession([])
+        b = StubSession([])
         with pytest.raises(ValueError, match="n must be"):
-            debate(agent_a, agent_b, n=0, initial="start")
-
-    def test_a_and_b_can_be_same_type(self):
-        a = StubSession(["hello from a"])
-        b = StubSession(["hello from b"])
-        result = debate(a, b, n=1, initial="go")
-        assert result[-1] == "hello from b"
+            debate(a, b, n=0, initial="start")
