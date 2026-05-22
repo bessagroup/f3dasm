@@ -1,7 +1,5 @@
 # agentic-f3dasm
 
-![agentic-f3dasm flow](img/agentic_flow.svg)
-
 ---
 
 ## Summary
