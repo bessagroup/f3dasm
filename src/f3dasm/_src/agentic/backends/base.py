@@ -237,7 +237,7 @@ class Graph:
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
+@dataclass
 class Backend:
     """Immutable bundle that fully describes one LLM backend.
 
@@ -252,7 +252,7 @@ class Backend:
         Human-readable identifier (e.g. ``"claude"``).
     default_model : str
         Model string used when the caller does not supply ``model=``.
-    session_factory : callable
+    session_factory : callable or None
         Factory with signature
         ``(*, system_prompt, model, native_tools, closure_tools, study_dir)
         -> AgentSession``.  ``native_tools`` is a list of canonical tool
@@ -260,19 +260,71 @@ class Backend:
         of tool-name → callable for protocol and topology tools.
         ``study_dir`` is the study root path (set as the session ``cwd``
         for executors, or ``None`` if not needed).
+        Required unless ``strategizer_factory`` and ``implementer_factory``
+        are provided (legacy compat path).
     preflight : callable
         Zero-argument callable that raises
         :class:`~f3dasm._src.agentic.agent_runtime.AgenticRunError`
         when the backend is not ready (e.g. CLI binary missing).
         Must be a no-op when the backend is available.
+    strategizer_factory : callable or None
+        *Deprecated compat kwarg.* If provided (along with
+        ``implementer_factory``), a unified ``session_factory`` is built
+        automatically.  Pass ``session_factory`` directly instead.
+    implementer_factory : callable or None
+        *Deprecated compat kwarg.* See ``strategizer_factory``.
 
     Notes
     -----
-    The dataclass is frozen so that backend objects can be used as
-    dictionary keys or cached without risk of mutation.
+    The dataclass is not frozen (was frozen before the v2 refactor) so
+    that the ``__post_init__`` compat wrapper can assign ``session_factory``
+    when only the legacy factory kwargs are supplied.
     """
 
     name: str
     default_model: str
-    session_factory: Callable[..., AgentSession]
-    preflight: Callable[[], None]
+    session_factory: Callable[..., AgentSession] | None = None
+    preflight: Callable[[], None] = lambda: None  # type: ignore[assignment]
+    # Deprecated compat kwargs — will be removed in a future release.
+    strategizer_factory: Callable[..., AgentSession] | None = None
+    implementer_factory: Callable[..., AgentSession] | None = None
+
+    def __post_init__(self) -> None:
+        if self.session_factory is None:
+            if self.strategizer_factory is not None or self.implementer_factory is not None:
+                # Build a unified session_factory from the legacy pair.
+                _sf = self.strategizer_factory
+                _if = self.implementer_factory
+
+                def _compat(
+                    *,
+                    system_prompt: str,
+                    model: str,
+                    native_tools: list,
+                    closure_tools: dict,
+                    study_dir: "Path",
+                ) -> AgentSession:
+                    # Discriminant: planners have "Delegate" in closure_tools.
+                    is_planner = "Delegate" in closure_tools
+                    if is_planner and _sf is not None:
+                        return _sf(
+                            system_prompt=system_prompt,
+                            model=model,
+                            tool_closures=closure_tools,
+                        )
+                    elif not is_planner and _if is not None:
+                        return _if(
+                            system_prompt=system_prompt,
+                            model=model,
+                            study_dir=study_dir,
+                        )
+                    raise ValueError(
+                        "Backend compat: cannot dispatch — no matching factory."
+                    )
+
+                self.session_factory = _compat
+            else:
+                raise TypeError(
+                    "Backend requires either session_factory or both "
+                    "strategizer_factory and implementer_factory."
+                )

@@ -65,6 +65,8 @@ from .backends.base import (
     Edge,
     Graph,
     ImplementerSession,
+    NATIVE_TOOL_NAMES,
+    PROTOCOL_CLOSURE_NAMES,
     StrategizerSession,
 )
 
@@ -662,6 +664,9 @@ class AgenticRun:
         stdin: TextIO = sys.stdin,
         stdout: TextIO = sys.stdout,
         backend: Backend | None = None,
+        session_factory: Callable[..., AgentSession] | None = None,
+        # Deprecated compat kwargs — tests still use these; the compat
+        # wrapper below converts them into a unified session_factory.
         strategizer_factory: (
             Callable[..., StrategizerSession] | None
         ) = None,
@@ -711,20 +716,57 @@ class AgenticRun:
         self._start_time: datetime | None = None  # set in execute()
         self._stdin = stdin
         self._stdout = stdout
-        # Resolution order for factories: explicit kwarg > backend factory.
-        self._strategizer_factory: Callable[..., StrategizerSession] = (
-            strategizer_factory
-            if strategizer_factory is not None
-            else self._backend.strategizer_factory
-        )
-        self._implementer_factory: Callable[..., ImplementerSession] = (
-            implementer_factory
-            if implementer_factory is not None
-            else self._backend.implementer_factory
-        )
         self._record_transcripts = record_transcripts
         # Agent graph.
         self._graph: Graph | None = graph
+
+        # --- Resolve session_factory ---
+        # Priority: explicit session_factory kwarg > compat wrapper for old
+        # strategizer_factory/implementer_factory kwargs > backend's factory.
+        if session_factory is not None:
+            self._session_factory: Callable[..., AgentSession] = session_factory
+        elif strategizer_factory is not None or implementer_factory is not None:
+            # Compat wrapper: convert old-style factory kwargs into a unified
+            # session_factory so existing tests continue to work unchanged.
+            _sf = strategizer_factory
+            _if = implementer_factory
+
+            def _compat_session_factory(
+                *,
+                system_prompt: str,
+                model: str,
+                native_tools: list,
+                closure_tools: dict,
+                study_dir: Path,
+            ) -> AgentSession:
+                # Discriminant: planners have "Delegate" in closure_tools
+                # (topology-injected for nodes with outgoing edges).
+                # Executors do not have "Delegate".
+                is_planner = "Delegate" in closure_tools
+                if is_planner and _sf is not None:
+                    return _sf(
+                        system_prompt=system_prompt,
+                        model=model,
+                        tool_closures=closure_tools,
+                    )
+                elif not is_planner and _if is not None:
+                    return _if(
+                        system_prompt=system_prompt,
+                        model=model,
+                        study_dir=study_dir,
+                    )
+                # Fallback: use backend factory.
+                return self._backend.session_factory(
+                    system_prompt=system_prompt,
+                    model=model,
+                    native_tools=native_tools,
+                    closure_tools=closure_tools,
+                    study_dir=study_dir,
+                )
+
+            self._session_factory = _compat_session_factory
+        else:
+            self._session_factory = self._backend.session_factory
 
         # Mutable run state — populated in execute().
         self._run_dir: Path | None = None
@@ -742,17 +784,8 @@ class AgenticRun:
         )
 
     # ------------------------------------------------------------------
-    # Backward-compat properties for _strategizer / _implementer
+    # Backward-compat properties for _implementer (still used in tests)
     # ------------------------------------------------------------------
-
-    @property
-    def _strategizer(self) -> AgentSession | None:
-        return self._agents.get("strategizer")
-
-    @_strategizer.setter
-    def _strategizer(self, v: AgentSession | None) -> None:
-        if v is not None:
-            self._agents["strategizer"] = v
 
     @property
     def _implementer(self) -> AgentSession | None:
@@ -874,29 +907,17 @@ class AgenticRun:
     def _preflight(self) -> None:
         """Delegate backend preflight check, skipping for stub factories.
 
-        When either factory has been replaced by a test-injected stub
-        via direct kwargs (not from the backend bundle), we skip so
-        unit tests do not require the real CLI binary.
+        When the session_factory has been replaced by a test-injected stub
+        (not from the backend bundle), we skip so unit tests do not require
+        the real CLI binary.
         """
-        using_backend_strategizer = (
-            self._strategizer_factory
-            is self._backend.strategizer_factory
-        )
-        using_backend_implementer = (
-            self._implementer_factory
-            is self._backend.implementer_factory
-        )
-        if not (using_backend_strategizer or using_backend_implementer):
-            return
+        if self._session_factory is not self._backend.session_factory:
+            return  # test-injected stub — skip preflight
         if self._backend.name == "ollama":
             from .backends.ollama import _preflight_ollama
             _preflight_ollama(self._model)
             return
         self._backend.preflight()
-
-    # Backward-compatible alias kept so existing code that calls
-    # ``run._preflight_check_claude_cli()`` directly still works.
-    _preflight_check_claude_cli = _preflight
 
     # ------------------------------------------------------------------
     # Step 2 — Path setup
@@ -952,7 +973,25 @@ class AgenticRun:
 
     def _build_sessions(self) -> None:
         """Populate self._agents from Graph.nodes, inferring planner vs executor."""
-        assert self._graph is not None and self._graph.nodes is not None
+        if self._graph is None:
+            # No graph supplied → synthesise the classic 2-node default.
+            from .backends.base import Agent as _Agent, Edge as _Edge, Graph as _Graph
+
+            class _DefaultStrat(_Agent):
+                tools = frozenset({"Done", "WriteMarkdown", "ReadNote"})
+                reset_on_checkpoint = False
+
+            class _DefaultImpl(_Agent):
+                tools = frozenset({"Bash", "Read", "Write", "Edit", "Glob", "Grep"})
+
+            self._graph = _Graph(
+                nodes={
+                    "strategizer": _DefaultStrat(),
+                    "implementer": _DefaultImpl(),
+                },
+                edges=(_Edge("strategizer", "implementer"),),
+                entry="strategizer",
+            )
         for name, agent in self._graph.nodes.items():
             is_planner = bool(self._graph.outgoing(name))
             self._agents[name] = self._instantiate_node(name, agent, is_planner)
@@ -960,19 +999,65 @@ class AgenticRun:
     def _instantiate_node(
         self, name: str, agent: Agent, is_planner: bool
     ) -> AgentSession:
-        """Construct a session for *agent*, using planner or executor factory."""
+        """Construct a session for *agent* from the three-category tool system."""
         model = agent.model or self._model
         prompt = agent.system_prompt or self._default_prompt_for(name, is_planner)
+
+        declared = agent.tools
+        # Empty frozenset means "no restriction" — include all tools for the role.
+        _unrestricted = not declared
+
+        # --- Native backend tools (NATIVE_TOOL_NAMES declared in agent.tools) ---
+        native_tools: list[str] = [
+            t for t in declared if t in NATIVE_TOOL_NAMES
+        ]
+
+        # --- Protocol closure tools (PROTOCOL_CLOSURE_NAMES declared in agent.tools) ---
+        # When unrestricted (empty tools frozenset), all protocol closures apply.
+        protocol_closures: dict[str, Callable[..., str]] = {}
+        if _unrestricted or "Done" in declared:
+            protocol_closures["Done"] = self._tool_done
+        if _unrestricted or "WriteMarkdown" in declared:
+            protocol_closures["WriteMarkdown"] = self._tool_write_markdown
+        if _unrestricted or "ReadNote" in declared:
+            protocol_closures["ReadNote"] = self._tool_read
+        # Backward-compat alias: "Read" was the old name for "ReadNote"
+        # in the planner tool set.  Expose both so existing code and tests
+        # that use the old key continue to work.
+        if "ReadNote" in protocol_closures:
+            protocol_closures["Read"] = self._tool_read
+
+        # --- Topology-injected tools (never in Agent.tools) ---
+        topology_closures: dict[str, Callable[..., str]] = {}
+
         if is_planner:
-            # Empty frozenset means "no restriction" — pass None so all
-            # tools are injected.  A non-empty frozenset acts as an allowlist.
-            allowed = agent.tools if agent.tools else None
-            closures, _ = self._build_planner_tools(name, allowed)
-            return self._strategizer_factory(
-                system_prompt=prompt, model=model, tool_closures=closures
-            )
-        return self._implementer_factory(
-            system_prompt=prompt, model=model, study_dir=self._study_dir
+            topology_closures.update(self._build_topology_closures(name))
+
+        # Ask: only for entry node (asks the human operator)
+        entry = self._graph.entry if self._graph is not None else "strategizer"
+        if name == entry:
+            topology_closures["Ask"] = self._tool_ask
+
+        # FollowUp: nodes with incoming edges can ask one clarifying question
+        if self._graph is not None and self._graph.incoming(name):
+            topology_closures["FollowUp"] = self._make_followup_tool(name)
+
+        # Build combined closure dict
+        closure_tools = {**protocol_closures, **topology_closures}
+
+        # Wrap with transcript recording if enabled
+        if self._record_transcripts:
+            closure_tools = {
+                k: self._make_transcript_wrapper(k, v, name)
+                for k, v in closure_tools.items()
+            }
+
+        return self._session_factory(
+            system_prompt=prompt,
+            model=model,
+            native_tools=native_tools,
+            closure_tools=closure_tools,
+            study_dir=self._study_dir,
         )
 
     def _default_prompt_for(self, name: str, is_planner: bool = False) -> str:
@@ -1227,6 +1312,136 @@ class AgenticRun:
 
     # Keep the old name as an alias so any external callers still work.
     _build_strategizer_tools = _build_planner_tools
+
+    def _make_followup_tool(self, agent_name: str) -> Callable[..., str]:
+        """Return a FollowUp closure for *agent_name*.
+
+        The closure is a no-op placeholder — the actual FollowUp detection
+        happens in ``_tool_delegate`` by inspecting the reply text.
+        Providing the closure here means the session factory can include it
+        in the tool list exposed to the model.
+        """
+        def _followup(question: str) -> str:
+            """Ask a clarifying question back to the delegating agent.
+
+            Return this instead of ## Report when you need one clarification
+            before you can complete the task.
+            """
+            return f"## FollowUp\n{question}"
+
+        return _followup
+
+    def _build_topology_closures(
+        self, agent_name: str
+    ) -> dict[str, Callable[..., str]]:
+        """Build Delegate/Parallel/Debate/Retry closures for *agent_name*."""
+        outgoing = self._outgoing_targets(agent_name)
+        if not outgoing:
+            return {}
+
+        _out = list(outgoing)
+        _caller = agent_name
+        _default_target = _out[0]
+        closures: dict[str, Callable[..., str]] = {}
+
+        def _delegate_scoped(
+            intent: str,
+            expected_report: str,
+            target: str = _default_target,
+            _o: list[str] = _out,
+            _c: str = _caller,
+        ) -> str:
+            """Delegate a task — only to permitted targets."""
+            if target not in _o:
+                return (
+                    f"ERROR: {_c!r} is not permitted to delegate to "
+                    f"{target!r}. Permitted targets: {_o}"
+                )
+            return self._tool_delegate(intent, expected_report, target, caller=_c)
+
+        closures["Delegate"] = _delegate_scoped
+
+        def _parallel_scoped(
+            targets: list,
+            intent: str,
+            expected_report: str,
+            _o: list = _out,
+            _c: str = _caller,
+        ) -> str:
+            """Fan out the same task to multiple agents concurrently."""
+            import concurrent.futures
+            results: dict[str, str] = {}
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max(1, len(targets))
+            ) as ex:
+                futs = {
+                    ex.submit(
+                        self._tool_delegate, intent, expected_report, t, caller=_c
+                    ): t
+                    for t in targets
+                }
+                for fut in concurrent.futures.as_completed(futs):
+                    t = futs[fut]
+                    try:
+                        results[t] = fut.result()
+                    except Exception as exc:
+                        results[t] = f"ERROR: {exc}"
+            return "\n\n---\n\n".join(
+                f"## Result from {t}\n\n{results[t]}" for t in targets
+            )
+
+        closures["Parallel"] = _parallel_scoped
+
+        def _debate_scoped(
+            target_a: str,
+            target_b: str,
+            n: int,
+            initial: str,
+            _c: str = _caller,
+        ) -> str:
+            """Alternate n rounds between two agents; return full transcript."""
+            transcript: list[str] = []
+            current = initial
+            for i in range(n):
+                a = self._tool_delegate(
+                    current, "Respond to the debate.", target_a, caller=_c
+                )
+                transcript.append(f"## Round {i + 1} — {target_a}\n\n{a}")
+                b = self._tool_delegate(
+                    a, "Respond to the debate.", target_b, caller=_c
+                )
+                transcript.append(f"## Round {i + 1} — {target_b}\n\n{b}")
+                current = b
+            return "\n\n---\n\n".join(transcript)
+
+        closures["Debate"] = _debate_scoped
+
+        def _retry_scoped(
+            target: str,
+            intent: str,
+            expected_report: str,
+            max_attempts: int = 3,
+            _c: str = _caller,
+        ) -> str:
+            """Retry a task until a valid ## Report block is returned."""
+            current_intent = intent
+            result = ""
+            for attempt in range(1, max_attempts + 1):
+                result = self._tool_delegate(
+                    current_intent, expected_report, target, caller=_c
+                )
+                if "## Report" in result:
+                    return result
+                if attempt < max_attempts:
+                    current_intent = (
+                        f"Attempt {attempt} returned no ## Report block. "
+                        f"Revise and try again.\n\nOriginal intent: {intent}"
+                    )
+            return result
+
+        closures["Retry"] = _retry_scoped
+
+        return closures
 
     def _make_transcript_wrapper(
         self,
@@ -1493,7 +1708,27 @@ class AgenticRun:
                 },
             )
 
-        # (d) Parse Report.  If the first reply is malformed, give the
+        # (d) Detect FollowUp — agent is asking a clarifying question.
+        followup_match = re.search(
+            r"##\s+FollowUp\s*\n(.+?)(?=\n##|\Z)",
+            impl_reply,
+            re.DOTALL | re.IGNORECASE,
+        )
+        if followup_match:
+            question = followup_match.group(1).strip()
+            followup_msg = (
+                f"FOLLOW_UP from {target!r}: {question}\n"
+                f"Re-call Delegate with the answer embedded in the intent."
+            )
+            self._logger.info(
+                "[delegation #%d] FOLLOW_UP from %r — question: %s",
+                deleg_idx,
+                target,
+                _preview(question, 80),
+            )
+            return followup_msg
+
+        # (e) Parse Report.  If the first reply is malformed, give the
         # Implementer one focused corrective retry before falling through
         # to REFLECT.  The retry message restates the required structure
         # in literal form so the model cannot misread it.
