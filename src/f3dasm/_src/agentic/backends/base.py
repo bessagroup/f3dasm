@@ -1,10 +1,9 @@
 """Protocol contracts and Backend bundle for agentic-f3dasm backends.
 
 Every LLM backend implementation must supply a :class:`Backend` instance
-that bundles the five callables the orchestrator needs:
+that bundles the callables the orchestrator needs:
 
-* a Strategizer session factory
-* an Implementer session factory
+* a unified session factory
 * a preflight check (raises :class:`~agent_runtime.AgenticRunError` if
   the backend is not ready)
 * a human-readable name
@@ -22,6 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 # ---------------------------------------------------------------------------
@@ -55,6 +55,53 @@ ImplementerSession = AgentSession
 
 
 # ---------------------------------------------------------------------------
+# Tool vocabulary — canonical names used across all backends
+# ---------------------------------------------------------------------------
+
+NATIVE_TOOL_NAMES: frozenset[str] = frozenset({
+    # These map to the backend's native execution tools.
+    # Claude mapping: identical names (Bash→Bash, Read→Read, etc.)
+    # Ollama mapping: only "Bash" supported natively; others via bash commands.
+    "Bash",
+    "Edit",
+    "Glob",
+    "Grep",
+    "MultiEdit",
+    "Read",
+    "Write",
+})
+
+PROTOCOL_CLOSURE_NAMES: frozenset[str] = frozenset({
+    # These are Python callables built by the f3dasm runtime.
+    "Done",        # Signal end of run with a summary
+    "ReadNote",    # Read a file from the study tree (path-restricted)
+    "WriteMarkdown",  # Write a .md note to strategizer_notes/
+})
+
+# TOPOLOGY-INJECTED tools — NEVER declare these in Agent.tools.
+# The runtime injects them automatically from graph topology:
+#
+#   Nodes WITH outgoing edges receive:
+#     "Delegate"  — send a task to a named target agent
+#     "Parallel"  — fan out the same task to multiple agents concurrently
+#     "Debate"    — alternate N rounds between two agents
+#     "Retry"     — retry a task until a valid ## Report block is returned
+#
+#   Entry node (graph.entry) receives:
+#     "Ask"       — ask the human operator a question (stdin/stdout)
+#
+#   Nodes WITH incoming edges receive:
+#     "FollowUp"  — ask ONE clarifying question back to the delegating agent
+#                   (response-format mechanism, not a live callback)
+#
+# Declaring any of these in Agent.tools is silently ignored — the runtime
+# injects them regardless of Agent.tools content.
+_TOPOLOGY_INJECTED_TOOL_NAMES: frozenset[str] = frozenset({
+    "Ask", "Debate", "Delegate", "FollowUp", "Parallel", "Retry",
+})
+
+
+# ---------------------------------------------------------------------------
 # Agent base class
 # ---------------------------------------------------------------------------
 
@@ -65,6 +112,27 @@ class Agent:
     Subclasses override class-level attributes (``system_prompt``,
     ``tools``, etc.) to configure behaviour.  Behavioural differences
     belong in class attributes, not constructor arguments.
+
+    **Tool system — three categories:**
+
+    ``tools: frozenset[str]`` declares tools from two categories:
+
+    1. **Native backend tools** — names from :data:`NATIVE_TOOL_NAMES`
+       (``"Bash"``, ``"Read"``, ``"Write"``, etc.).  The runtime passes
+       these to the backend session's native tool executor.
+
+    2. **Protocol closure tools** — names from
+       :data:`PROTOCOL_CLOSURE_NAMES` (``"Done"``, ``"WriteMarkdown"``,
+       ``"ReadNote"``).  The runtime builds Python callables for these and
+       passes them as ``closure_tools`` to the session factory.
+
+    3. **Topology-injected tools** — ``"Delegate"``, ``"Parallel"``,
+       ``"Debate"``, ``"Retry"`` (outgoing edges), ``"Ask"`` (entry node),
+       and ``"FollowUp"`` (incoming edges).  **Never declare these in**
+       ``Agent.tools``.  The runtime injects them automatically from the
+       graph topology; any declaration here is ignored.
+
+    Default is ``frozenset()`` — no tools (opt-in, conservative).
 
     Parameters
     ----------
@@ -159,6 +227,10 @@ class Graph:
         """Return target names for all edges out of *name*."""
         return [e.target for e in self.edges if e.source == name]
 
+    def incoming(self, name: str) -> list[str]:
+        """Return source names for all edges into *name*."""
+        return [e.source for e in self.edges if e.target == name]
+
 
 # ---------------------------------------------------------------------------
 # Backend bundle
@@ -180,12 +252,14 @@ class Backend:
         Human-readable identifier (e.g. ``"claude"``).
     default_model : str
         Model string used when the caller does not supply ``model=``.
-    strategizer_factory : callable
+    session_factory : callable
         Factory with signature
-        ``(*, system_prompt, model, tool_closures) -> StrategizerSession``.
-    implementer_factory : callable
-        Factory with signature
-        ``(*, system_prompt, model, study_dir) -> ImplementerSession``.
+        ``(*, system_prompt, model, native_tools, closure_tools, study_dir)
+        -> AgentSession``.  ``native_tools`` is a list of canonical tool
+        names from :data:`NATIVE_TOOL_NAMES`.  ``closure_tools`` is a dict
+        of tool-name → callable for protocol and topology tools.
+        ``study_dir`` is the study root path (set as the session ``cwd``
+        for executors, or ``None`` if not needed).
     preflight : callable
         Zero-argument callable that raises
         :class:`~f3dasm._src.agentic.agent_runtime.AgenticRunError`
@@ -200,6 +274,5 @@ class Backend:
 
     name: str
     default_model: str
-    strategizer_factory: Callable[..., StrategizerSession]
-    implementer_factory: Callable[..., ImplementerSession]
+    session_factory: Callable[..., AgentSession]
     preflight: Callable[[], None]
