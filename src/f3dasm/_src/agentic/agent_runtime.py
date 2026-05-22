@@ -634,16 +634,11 @@ class AgenticRun:
     backend : Backend or None
         The LLM backend bundle.  If ``None``, defaults to
         :data:`~f3dasm._src.agentic.backends.claude.CLAUDE_BACKEND`.
-    strategizer_factory : callable or None
-        Override the backend's Strategizer factory.  Signature:
-        ``(*, system_prompt, model, tool_closures) ->
-        StrategizerSession``.  When supplied, takes precedence over
-        the backend's factory (used for test injection).
-    implementer_factory : callable or None
-        Override the backend's Implementer factory.  Signature:
-        ``(*, system_prompt, model, study_dir) ->
-        ImplementerSession``.  When supplied, takes precedence over
-        the backend's factory (used for test injection).
+    session_factory : callable or None
+        Override the backend's session factory.  Signature:
+        ``(*, system_prompt, model, native_tools, closure_tools, study_dir)
+        -> AgentSession``.  When supplied, takes precedence over the
+        backend's factory (used for test injection).
     study_config : StudyConfig or None
         Config loaded from ``config.yaml``.  CLI kwargs (``model``,
         ``checkpoint_every``) take precedence over config values;
@@ -665,14 +660,6 @@ class AgenticRun:
         stdout: TextIO = sys.stdout,
         backend: Backend | None = None,
         session_factory: Callable[..., AgentSession] | None = None,
-        # Deprecated compat kwargs — tests still use these; the compat
-        # wrapper below converts them into a unified session_factory.
-        strategizer_factory: (
-            Callable[..., StrategizerSession] | None
-        ) = None,
-        implementer_factory: (
-            Callable[..., ImplementerSession] | None
-        ) = None,
         record_transcripts: bool = True,
         study_config: StudyConfig | None = None,
         graph: Graph | None = None,
@@ -721,50 +708,9 @@ class AgenticRun:
         self._graph: Graph | None = graph
 
         # --- Resolve session_factory ---
-        # Priority: explicit session_factory kwarg > compat wrapper for old
-        # strategizer_factory/implementer_factory kwargs > backend's factory.
+        # Priority: explicit session_factory kwarg > backend's factory.
         if session_factory is not None:
             self._session_factory: Callable[..., AgentSession] = session_factory
-        elif strategizer_factory is not None or implementer_factory is not None:
-            # Compat wrapper: convert old-style factory kwargs into a unified
-            # session_factory so existing tests continue to work unchanged.
-            _sf = strategizer_factory
-            _if = implementer_factory
-
-            def _compat_session_factory(
-                *,
-                system_prompt: str,
-                model: str,
-                native_tools: list,
-                closure_tools: dict,
-                study_dir: Path,
-            ) -> AgentSession:
-                # Discriminant: planners have "Delegate" in closure_tools
-                # (topology-injected for nodes with outgoing edges).
-                # Executors do not have "Delegate".
-                is_planner = "Delegate" in closure_tools
-                if is_planner and _sf is not None:
-                    return _sf(
-                        system_prompt=system_prompt,
-                        model=model,
-                        tool_closures=closure_tools,
-                    )
-                elif not is_planner and _if is not None:
-                    return _if(
-                        system_prompt=system_prompt,
-                        model=model,
-                        study_dir=study_dir,
-                    )
-                # Fallback: use backend factory.
-                return self._backend.session_factory(
-                    system_prompt=system_prompt,
-                    model=model,
-                    native_tools=native_tools,
-                    closure_tools=closure_tools,
-                    study_dir=study_dir,
-                )
-
-            self._session_factory = _compat_session_factory
         else:
             self._session_factory = self._backend.session_factory
 
@@ -782,19 +728,6 @@ class AgenticRun:
         self._logger: logging.Logger = logging.getLogger(
             "f3dasm.agentic"
         )
-
-    # ------------------------------------------------------------------
-    # Backward-compat properties for _implementer (still used in tests)
-    # ------------------------------------------------------------------
-
-    @property
-    def _implementer(self) -> AgentSession | None:
-        return self._agents.get("implementer")
-
-    @_implementer.setter
-    def _implementer(self, v: AgentSession | None) -> None:
-        if v is not None:
-            self._agents["implementer"] = v
 
     # ------------------------------------------------------------------
     # Budget helpers

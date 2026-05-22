@@ -256,12 +256,17 @@ class StubImplementer:
 # ---------------------------------------------------------------------------
 
 
-def _make_factories(
+def _make_session_factory(
     strategizer_actions: list[StrategizerAction],
     implementer_reports: list[str],
     implementer_instances: list[StubImplementer] | None = None,
-) -> tuple[Any, Any]:
-    """Return ``(strategizer_factory, implementer_factory)`` stubs.
+) -> Any:
+    """Return a unified session_factory stub.
+
+    Discriminates by closure_tools: if 'Delegate' in closure_tools →
+    planner (StubStrategizer); else → executor (StubImplementer).
+    'Delegate' is the canonical discriminant because it is ONLY injected
+    for nodes with outgoing edges (planners), never for executors.
 
     Parameters
     ----------
@@ -270,35 +275,48 @@ def _make_factories(
     implementer_reports : list[str]
         Reports for ``StubImplementer``.
     implementer_instances : list or None
-        If provided, each factory call appends the created instance here
-        so the test can inspect it.
+        If provided, each executor factory call appends the created
+        instance here so the test can inspect it.
     """
-    strat_box: list[StubStrategizer] = []
-
-    def strat_factory(
-        *,
-        system_prompt: str,
-        model: str,
-        tool_closures: dict[str, Any],
-    ) -> StubStrategizer:
-        s = StubStrategizer(strategizer_actions, tool_closures)
-        strat_box.append(s)
-        return s
-
     remaining_reports: list[str] = list(implementer_reports)
 
-    def impl_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
+        native_tools: list,
+        closure_tools: dict,
         study_dir: Path,
-    ) -> StubImplementer:
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return StubStrategizer(strategizer_actions, closure_tools)
         stub = StubImplementer(list(remaining_reports))
         if implementer_instances is not None:
             implementer_instances.append(stub)
         return stub
 
-    return strat_factory, impl_factory
+    return session_factory
+
+
+def _make_factories(
+    strategizer_actions: list[StrategizerAction],
+    implementer_reports: list[str],
+    implementer_instances: list[StubImplementer] | None = None,
+) -> tuple[Any, Any]:
+    """Backward-compat wrapper — returns (session_factory, None).
+
+    The second element is unused; callers that do::
+
+        sf, _ = _make_factories(...)
+        run = AgenticRun(..., session_factory=sf)
+
+    continue to work.  New tests should use ``_make_session_factory``
+    directly.
+    """
+    sf = _make_session_factory(
+        strategizer_actions, implementer_reports, implementer_instances
+    )
+    return sf, None
 
 
 def _make_default_graph() -> Graph:
@@ -326,13 +344,12 @@ def test_bootstrap_missing_briefing(tmp_path: Path) -> None:
     study_dir = tmp_path / "study"
     study_dir.mkdir()
 
-    strat_factory, impl_factory = _make_factories([], [])
+    session_factory, _ = _make_factories([], [])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     with pytest.raises(AgenticRunError, match="PROBLEM_STATEMENT.md not found"):
         run.execute()
@@ -365,7 +382,7 @@ def test_happy_path_ask_delegate_done(tmp_path: Path) -> None:
         _DoneAction(summary="Best design found: x=0.7 with y=1.5."),
     ]
 
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         actions,
         [_VALID_REPORT, _VALID_REPORT_2],
     )
@@ -378,8 +395,7 @@ def test_happy_path_ask_delegate_done(tmp_path: Path) -> None:
         graph=_make_default_graph(),
         stdin=stdin,
         stdout=stdout,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     deliv = run.execute()
 
@@ -455,23 +471,24 @@ def test_write_markdown_bad_paths(tmp_path: Path) -> None:
                 )
             return "(done)"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _InspectStrategizer:
-        return _InspectStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories([], [_VALID_REPORT])
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _InspectStrategizer(closure_tools)
+        return StubImplementer([_VALID_REPORT])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -509,23 +526,24 @@ def test_read_rejects_escape(tmp_path: Path) -> None:
                 self._tc["Done"](summary="done")
             return "(done)"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _EscapeStrategizer:
-        return _EscapeStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories([], [])
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _EscapeStrategizer(closure_tools)
+        return StubImplementer([])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -567,25 +585,24 @@ def test_one_shot_retry_recovers_invalid_report(tmp_path: Path) -> None:
                 self._tc["Done"](summary="done after retry recovered")
             return "(done)"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _SingleDelegateStrategizer:
-        return _SingleDelegateStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories(
-        [], [_INVALID_REPORT, _VALID_REPORT]
-    )
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _SingleDelegateStrategizer(closure_tools)
+        return StubImplementer([_INVALID_REPORT, _VALID_REPORT])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -621,25 +638,24 @@ def test_two_invalid_replies_fall_through_to_reflect(
                 self._tc["Done"](summary="done after two bad replies")
             return "(done)"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _SingleDelegateStrategizer:
-        return _SingleDelegateStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories(
-        [], [_INVALID_REPORT, _INVALID_REPORT]
-    )
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _SingleDelegateStrategizer(closure_tools)
+        return StubImplementer([_INVALID_REPORT, _INVALID_REPORT])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -695,20 +711,16 @@ def test_checkpoint_fires_and_resets_implementer(
 
             return f"(call {self._call})"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _CheckpointStrategizer:
-        return _CheckpointStrategizer(tool_closures)
-
-    def impl_factory(
-        *,
-        system_prompt: str,
-        model: str,
+        native_tools: list,
+        closure_tools: dict,
         study_dir: Path,
-    ) -> StubImplementer:
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _CheckpointStrategizer(closure_tools)
         stub = StubImplementer(list(reports))
         impl_instances.append(stub)
         return stub
@@ -722,8 +734,7 @@ def test_checkpoint_fires_and_resets_implementer(
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -766,17 +777,17 @@ def test_checkpoint_stop_assembles_deliverable(tmp_path: Path) -> None:
                 )
             return f"(call {self._call})"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _StopStrategizer:
-        return _StopStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories(
-        [], [_VALID_REPORT, _VALID_REPORT_2]
-    )
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _StopStrategizer(closure_tools)
+        return StubImplementer([_VALID_REPORT, _VALID_REPORT_2])
 
     stdin = StringIO("stop\n")
     stdout = StringIO()
@@ -787,8 +798,7 @@ def test_checkpoint_stop_assembles_deliverable(tmp_path: Path) -> None:
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     deliv = run.execute()
 
@@ -832,20 +842,16 @@ def test_checkpoint_empty_stdin_continues(tmp_path: Path) -> None:
                 )
             return f"(call {self._call})"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _ContinueStrategizer:
-        return _ContinueStrategizer(tool_closures)
-
-    def impl_factory(
-        *,
-        system_prompt: str,
-        model: str,
+        native_tools: list,
+        closure_tools: dict,
         study_dir: Path,
-    ) -> StubImplementer:
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _ContinueStrategizer(closure_tools)
         stub = StubImplementer([_VALID_REPORT])
         impl_instances.append(stub)
         return stub
@@ -859,8 +865,7 @@ def test_checkpoint_empty_stdin_continues(tmp_path: Path) -> None:
         checkpoint_every=checkpoint_every,
         stdin=stdin,
         stdout=stdout,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -888,15 +893,14 @@ def test_run_does_not_touch_ancestor_git(tmp_path: Path) -> None:
     actions: list[StrategizerAction] = [
         _DoneAction(summary="Finished quickly."),
     ]
-    strat_factory, impl_factory = _make_factories(actions, [])
+    session_factory, _ = _make_factories(actions, [])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -950,7 +954,7 @@ def test_eval_count_tracked_from_report_numbers(tmp_path: Path) -> None:
         "### Numbers\neval_count: 42\n"
     )
 
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DelegateAction("do X", "report"), _DoneAction("done")],
         [_REPORT_WITH_EVALS],
     )
@@ -958,8 +962,7 @@ def test_eval_count_tracked_from_report_numbers(tmp_path: Path) -> None:
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
         record_transcripts=False,
@@ -978,7 +981,7 @@ def test_eval_count_accumulates_across_delegations(tmp_path: Path) -> None:
         "### Numbers\neval_count: 20\n"
     )
 
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [
             _DelegateAction("phase 1", "report"),
             _DelegateAction("phase 2", "report"),
@@ -990,8 +993,7 @@ def test_eval_count_accumulates_across_delegations(tmp_path: Path) -> None:
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
         record_transcripts=False,
@@ -1154,26 +1156,24 @@ def test_reflect_then_redelegation_with_different_intent(
                 self._tc["Done"](summary="Done after retry.")
             return "(done)"
 
-    def strat_factory(
+    def session_factory(
         *,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Any],
-    ) -> _ReflectThenRetryStrategizer:
-        return _ReflectThenRetryStrategizer(tool_closures)
-
-    _, impl_factory = _make_factories(
-        [],
-        [_INVALID_REPORT, _INVALID_REPORT, _VALID_REPORT],
-    )
+        native_tools: list,
+        closure_tools: dict,
+        study_dir: Path,
+    ) -> Any:
+        if "Delegate" in closure_tools:
+            return _ReflectThenRetryStrategizer(closure_tools)
+        return StubImplementer([_INVALID_REPORT, _INVALID_REPORT, _VALID_REPORT])
 
     run = AgenticRun(
         study_dir,
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
     )
     run.execute()
 
@@ -1208,7 +1208,7 @@ def test_transcript_written_when_record_transcripts_true(
         _DoneAction(summary="Done."),
     ]
 
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         actions, [_VALID_REPORT]
     )
 
@@ -1217,8 +1217,7 @@ def test_transcript_written_when_record_transcripts_true(
         graph=_make_default_graph(),
         stdin=StringIO(""),
         stdout=StringIO(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         record_transcripts=True,
     )
     deliv = run.execute()
@@ -1370,7 +1369,7 @@ def test_custom_backend_drops_in_via_kwarg(tmp_path: Path) -> None:
     def stub_preflight() -> None:
         preflight_called.append(True)
 
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction(summary="done")],
         [_VALID_REPORT],
     )
@@ -1378,8 +1377,7 @@ def test_custom_backend_drops_in_via_kwarg(tmp_path: Path) -> None:
     stub_backend = Backend(
         name="stub",
         default_model="stub-model-v1",
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         preflight=stub_preflight,
     )
 
@@ -1501,15 +1499,14 @@ def test_agentic_run_accepts_study_config(tmp_path):
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# Test\n")
     cfg = StudyConfig(checkpoint_every=5)
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("done")], [_VALID_REPORT]
     )
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
         study_config=cfg,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
@@ -1521,7 +1518,7 @@ def test_agentic_run_cli_overrides_config(tmp_path):
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# Test\n")
     cfg = StudyConfig(model="model-from-config")
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("done")], [_VALID_REPORT]
     )
     run = AgenticRun(
@@ -1529,8 +1526,7 @@ def test_agentic_run_cli_overrides_config(tmp_path):
         graph=_make_default_graph(),
         model="model-from-cli",
         study_config=cfg,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
@@ -1546,15 +1542,14 @@ def test_remaining_no_budget(tmp_path):
     """_remaining() returns None when no budget is set."""
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("done")], [_VALID_REPORT]
     )
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
         study_config=StudyConfig(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
@@ -1566,15 +1561,14 @@ def test_remaining_with_budget(tmp_path):
     """_remaining() returns a positive timedelta just after start."""
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("done")], [_VALID_REPORT]
     )
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
         study_config=StudyConfig(budget=timedelta(hours=1)),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
@@ -1588,22 +1582,21 @@ def test_budget_expired_skips_delegation(tmp_path):
     """When budget is exhausted, _tool_delegate triggers clean shutdown."""
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("done")], [_VALID_REPORT]
     )
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
         study_config=StudyConfig(budget=timedelta(seconds=1)),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
     # Simulate an expired budget (start_time was 1 hour ago).
     run._start_time = datetime.now(tz=timezone.utc) - timedelta(hours=1)
     # Need a real implementer stub; create one inline.
-    run._implementer = StubImplementer([_VALID_REPORT])
+    run._agents["implementer"] = StubImplementer([_VALID_REPORT])
     # Set up minimal run state so _tool_delegate can run.
     run._run_dir = tmp_path / "runs" / "test_run"
     run._run_dir.mkdir(parents=True)
@@ -1656,15 +1649,14 @@ def test_solution_md_includes_budget_metadata(tmp_path):
     from f3dasm._src.agentic.agent_runtime import AgenticRun, StudyConfig
     (tmp_path / "PROBLEM_STATEMENT.md").write_text("# t\n")
     cfg = StudyConfig(budget=timedelta(hours=1))
-    strat_factory, impl_factory = _make_factories(
+    session_factory, _ = _make_factories(
         [_DoneAction("great result")], []
     )
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
         study_config=cfg,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
     )
@@ -1705,7 +1697,24 @@ def test_named_nodes_two_executors_routing(tmp_path: Path) -> None:
     class _StrategistAgent(Agent):
         reset_on_checkpoint = False
 
-    def impl_factory(*, system_prompt, model, study_dir):
+    _strat_sf = _make_session_factory(
+        [
+            _DelegateAction("task for alpha", "alpha report", target="alpha"),
+            _DelegateAction("task for beta", "beta report", target="beta"),
+            _DoneAction("both done"),
+        ],
+        [],
+    )
+
+    def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+        if "Delegate" in closure_tools:
+            return _strat_sf(
+                system_prompt=system_prompt,
+                model=model,
+                native_tools=native_tools,
+                closure_tools=closure_tools,
+                study_dir=study_dir,
+            )
         if "alpha" in system_prompt:
             class AlphaExec:
                 def send(self, msg):
@@ -1729,20 +1738,10 @@ def test_named_nodes_two_executors_routing(tmp_path: Path) -> None:
         entry="strategizer",
     )
 
-    strat_factory, _ = _make_factories(
-        [
-            _DelegateAction("task for alpha", "alpha report", target="alpha"),
-            _DelegateAction("task for beta", "beta report", target="beta"),
-            _DoneAction("both done"),
-        ],
-        [],
-    )
-
     run = AgenticRun(
         tmp_path,
         graph=graph,
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
         record_transcripts=False,
@@ -1772,17 +1771,15 @@ def test_named_roles_unknown_target_returns_error(tmp_path: Path) -> None:
             self._closures["Done"](summary="done")
             return "ok"
 
-    def strat_factory(*, system_prompt, model, tool_closures):
-        return _RecordingStrategizer(tool_closures)
-
-    def impl_factory(*, system_prompt, model, study_dir):
+    def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+        if "Delegate" in closure_tools:
+            return _RecordingStrategizer(closure_tools)
         return StubImplementer([_VALID_REPORT])
 
     run = AgenticRun(
         tmp_path,
         graph=_make_default_graph(),
-        strategizer_factory=strat_factory,
-        implementer_factory=impl_factory,
+        session_factory=session_factory,
         stdin=StringIO(""),
         stdout=StringIO(),
         record_transcripts=False,
@@ -1857,14 +1854,13 @@ class TestAgenticRunWithNodes:
         class StubImpl(Agent):
             system_prompt = "stub impl"
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            class S:
-                def send(self, msg):
-                    received.append(msg)
-                    return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                class S:
+                    def send(self, msg):
+                        received.append(msg)
+                        return ""
+                return S()
             class I:
                 def send(self, msg): return ""
             return I()
@@ -1877,8 +1873,7 @@ class TestAgenticRunWithNodes:
         run = AgenticRun(
             tmp_path,
             graph=g,
-            strategizer_factory=strat_factory,
-            implementer_factory=impl_factory,
+            session_factory=session_factory,
         )
         run.execute()
         assert "Test briefing content." in received[0]
@@ -1896,13 +1891,12 @@ class TestAgenticRunWithNodes:
         class StubImpl(Agent):
             system_prompt = "impl"
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            planner_called.append(True)
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                planner_called.append(True)
+                class S:
+                    def send(self, msg): return ""
+                return S()
             executor_called.append(True)
             class I:
                 def send(self, msg): return ""
@@ -1915,8 +1909,7 @@ class TestAgenticRunWithNodes:
         )
         run = AgenticRun(
             tmp_path, graph=g,
-            strategizer_factory=strat_factory,
-            implementer_factory=impl_factory,
+            session_factory=session_factory,
         )
         run.execute()
         assert planner_called  # strategizer has outgoing edge → planner session
@@ -1934,12 +1927,11 @@ class TestAgenticRunWithNodes:
         class StubImpl(Agent):
             system_prompt = "impl"
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                class S:
+                    def send(self, msg): return ""
+                return S()
             executor_study_dirs.append(study_dir)
             class I:
                 def send(self, msg): return ""
@@ -1952,8 +1944,7 @@ class TestAgenticRunWithNodes:
         )
         run = AgenticRun(
             tmp_path, graph=g,
-            strategizer_factory=strat_factory,
-            implementer_factory=impl_factory,
+            session_factory=session_factory,
         )
         run.execute()
         assert len(executor_study_dirs) == 1
@@ -1971,13 +1962,12 @@ class TestAgenticRunWithNodes:
         class StubImpl(Agent):
             system_prompt = "impl"
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            used_models["strategizer"] = model
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                used_models["strategizer"] = model
+                class S:
+                    def send(self, msg): return ""
+                return S()
             used_models["implementer"] = model
             class I:
                 def send(self, msg): return ""
@@ -1993,8 +1983,7 @@ class TestAgenticRunWithNodes:
         )
         run = AgenticRun(
             tmp_path, graph=g, model="sonnet",
-            strategizer_factory=strat_factory,
-            implementer_factory=impl_factory,
+            session_factory=session_factory,
         )
         run.execute()
         assert used_models["strategizer"] == "sonnet"  # uses run-level model
@@ -2008,7 +1997,7 @@ class TestAgenticRunWithNodes:
 class TestPlannerToolClosures:
     """Tests for Parallel, Debate, Retry tool closures injected into planner sessions."""
 
-    def _make_run(self, tmp_path, strat_factory, impl_factory):
+    def _make_run(self, tmp_path, session_factory):
         """Helper to build AgenticRun with a 2-node graph."""
         from f3dasm._src.agentic.backends.base import Agent, Edge, Graph
         from f3dasm._src.agentic.agent_runtime import AgenticRun
@@ -2028,8 +2017,7 @@ class TestPlannerToolClosures:
         )
         return AgenticRun(
             tmp_path, graph=g,
-            strategizer_factory=strat_factory,
-            implementer_factory=impl_factory,
+            session_factory=session_factory,
         )
 
     def test_parallel_tool_calls_all_targets(self, tmp_path):
@@ -2037,20 +2025,19 @@ class TestPlannerToolClosures:
         impl_received = []
         tool_closures_ref = {}
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            tool_closures_ref.update(tool_closures)
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                tool_closures_ref.update(closure_tools)
+                class S:
+                    def send(self, msg): return ""
+                return S()
             class I:
                 def send(self, msg):
                     impl_received.append(msg)
                     return "## Report\n### Actions taken\ndone\n### Conclusions\nok"
             return I()
 
-        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run = self._make_run(tmp_path, session_factory)
         run.execute()
 
         assert "Parallel" in tool_closures_ref
@@ -2067,20 +2054,19 @@ class TestPlannerToolClosures:
         tool_closures_ref = {}
         call_count = [0]
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            tool_closures_ref.update(tool_closures)
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                tool_closures_ref.update(closure_tools)
+                class S:
+                    def send(self, msg): return ""
+                return S()
             class I:
                 def send(self, msg):
                     call_count[0] += 1
                     return "## Report\n### Actions taken\ndone\n### Conclusions\nreplied"
             return I()
 
-        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run = self._make_run(tmp_path, session_factory)
         run.execute()
 
         assert "Debate" in tool_closures_ref
@@ -2097,19 +2083,18 @@ class TestPlannerToolClosures:
         """Retry tool returns immediately when agent returns a valid ## Report."""
         tool_closures_ref = {}
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            tool_closures_ref.update(tool_closures)
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                tool_closures_ref.update(closure_tools)
+                class S:
+                    def send(self, msg): return ""
+                return S()
             class I:
                 def send(self, msg):
                     return "## Report\n### Actions taken\ndone\n### Conclusions\nsuccess"
             return I()
 
-        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run = self._make_run(tmp_path, session_factory)
         run.execute()
 
         assert "Retry" in tool_closures_ref
@@ -2125,13 +2110,12 @@ class TestPlannerToolClosures:
         tool_closures_ref = {}
         attempt_count = [0]
 
-        def strat_factory(*, system_prompt, model, tool_closures):
-            tool_closures_ref.update(tool_closures)
-            class S:
-                def send(self, msg): return ""
-            return S()
-
-        def impl_factory(*, system_prompt, model, study_dir):
+        def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+            if "Delegate" in closure_tools:
+                tool_closures_ref.update(closure_tools)
+                class S:
+                    def send(self, msg): return ""
+                return S()
             class I:
                 def send(self, msg):
                     attempt_count[0] += 1
@@ -2140,7 +2124,7 @@ class TestPlannerToolClosures:
                     return "## Report\n### Actions taken\ndone\n### Conclusions\nfinal"
             return I()
 
-        run = self._make_run(tmp_path, strat_factory, impl_factory)
+        run = self._make_run(tmp_path, session_factory)
         run.execute()
 
         assert "Retry" in tool_closures_ref
@@ -2152,3 +2136,180 @@ class TestPlannerToolClosures:
         )
         assert "## Report" in result
         assert attempt_count[0] >= 3
+
+
+# ---------------------------------------------------------------------------
+# Part 4 — New tests for topology-injected tool behaviors
+# ---------------------------------------------------------------------------
+
+
+def test_ask_injected_only_for_entry_node(tmp_path):
+    """Ask tool is injected into the entry node's session and not into non-entry nodes."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    # Track closure_tools for each factory call by call order.
+    all_closure_tools: list[dict] = []
+
+    def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+        all_closure_tools.append(dict(closure_tools))
+        class S:
+            def send(self, msg): return ""
+        return S()
+
+    class EntryAgent(Agent):
+        system_prompt = "You are the strategizer."
+        tools = frozenset({"Done", "WriteMarkdown", "ReadNote"})
+        reset_on_checkpoint = False
+
+    class LeafAgent(Agent):
+        system_prompt = "You execute tasks."
+        tools = frozenset({"Bash", "Read"})
+
+    g = Graph(
+        nodes={"strategizer": EntryAgent(), "implementer": LeafAgent()},
+        edges=(Edge("strategizer", "implementer"),),
+        entry="strategizer",
+    )
+    run = AgenticRun(tmp_path, graph=g, session_factory=session_factory)
+    run.execute()
+
+    # First call is always the entry node (strategizer).
+    entry_closures = all_closure_tools[0]
+    assert "Ask" in entry_closures, (
+        "Entry node must receive the Ask tool in closure_tools"
+    )
+    assert "Delegate" in entry_closures, (
+        "Entry node (planner) must receive the Delegate tool"
+    )
+
+    # Non-entry nodes should not get Ask.
+    for closures in all_closure_tools[1:]:
+        assert "Ask" not in closures, (
+            f"Non-entry node must NOT receive Ask; got: {list(closures.keys())}"
+        )
+
+
+def test_followup_detection_in_tool_delegate(tmp_path):
+    """_tool_delegate returns FOLLOW_UP string when agent replies with ## FollowUp."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    followup_result_box: list[str] = []
+    second_result_box: list[str] = []
+
+    def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+        if "Delegate" in closure_tools:
+            # Planner: delegate once, get follow-up, delegate again, done
+            class PlannerSession:
+                _call = 0
+
+                def send(self, msg):
+                    self._call += 1
+                    if self._call == 1:
+                        # First send: issue delegation — implementer will FollowUp
+                        r = closure_tools["Delegate"](
+                            intent="do the task",
+                            expected_report="report",
+                        )
+                        followup_result_box.append(r)
+                        # If follow-up, issue another delegation with answer
+                        if r.startswith("FOLLOW_UP"):
+                            r2 = closure_tools["Delegate"](
+                                intent="do the task (answer: 42)",
+                                expected_report="report",
+                            )
+                            second_result_box.append(r2)
+                        closure_tools["Done"](summary="done")
+                    return "ok"
+
+            return PlannerSession()
+        else:
+            # Executor: first call returns FollowUp, second returns Report
+            call_count = [0]
+
+            class ExecSession:
+                def send(self, msg):
+                    call_count[0] += 1
+                    if call_count[0] == 1:
+                        return "## FollowUp\nWhat value should I use for x?"
+                    return (
+                        "## Report\n### Actions taken\n- used x=42\n"
+                        "### Files touched\n\n### Conclusions\nok\n### Numbers\n"
+                    )
+
+            return ExecSession()
+
+    class Strat(Agent):
+        system_prompt = "strat"
+        tools = frozenset({"Done"})
+        reset_on_checkpoint = False
+
+    class Impl(Agent):
+        system_prompt = "impl"
+        tools = frozenset()  # executor — gets FollowUp via incoming edge
+
+    g = Graph(
+        nodes={"strategizer": Strat(), "implementer": Impl()},
+        edges=(Edge("strategizer", "implementer"),),
+        entry="strategizer",
+    )
+    run = AgenticRun(
+        tmp_path, graph=g,
+        session_factory=session_factory,
+        stdin=StringIO(""),
+        stdout=StringIO(),
+        record_transcripts=False,
+    )
+    run.execute()
+
+    assert followup_result_box, "Delegate was never called"
+    assert followup_result_box[0].startswith("FOLLOW_UP"), (
+        f"Expected FOLLOW_UP string, got: {followup_result_box[0]!r}"
+    )
+    assert second_result_box, "No second delegation after FollowUp"
+    assert "## Report" in second_result_box[0], (
+        "Second delegation should return a Report"
+    )
+
+
+def test_conservative_toolset_empty_frozenset(tmp_path):
+    """Agent with empty tools frozenset gets Ask (entry) and Delegate (planner) injected."""
+    (tmp_path / "PROBLEM_STATEMENT.md").write_text("# test\n")
+
+    captured_closures: list[dict] = []
+    captured_native: list[list] = []
+
+    def session_factory(*, system_prompt, model, native_tools, closure_tools, study_dir):
+        captured_closures.append(dict(closure_tools))
+        captured_native.append(list(native_tools))
+
+        class S:
+            def send(self, msg): return ""
+
+        return S()
+
+    class BareAgent(Agent):
+        system_prompt = "bare"
+        tools = frozenset()  # no declared tools → unrestricted
+        reset_on_checkpoint = False
+
+    class LeafAgent(Agent):
+        system_prompt = "leaf"
+        tools = frozenset()  # no declared tools
+
+    g = Graph(
+        nodes={"bare": BareAgent(), "leaf": LeafAgent()},
+        edges=(Edge("bare", "leaf"),),
+        entry="bare",
+    )
+    run = AgenticRun(tmp_path, graph=g, session_factory=session_factory)
+    run.execute()
+
+    # Entry node (bare) gets Ask (topology: entry) and Delegate (topology: planner).
+    entry_closures = captured_closures[0]
+    assert "Ask" in entry_closures, "Entry node always gets Ask (topology-injected)"
+    assert "Delegate" in entry_closures, "Planner always gets Delegate (topology-injected)"
+    # With unrestricted tools (empty frozenset), protocol closures are also included.
+    assert "Done" in entry_closures, "Unrestricted agent gets Done (protocol closure)"
+
+    # Native tools: empty (nothing in NATIVE_TOOL_NAMES declared)
+    assert captured_native[0] == [], "No native tools declared — empty frozenset yields []"
