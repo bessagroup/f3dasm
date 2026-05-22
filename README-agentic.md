@@ -1,6 +1,6 @@
 # agentic-f3dasm
 
-An additive subpackage of [`f3dasm`](./README.md) that drives the full design-of-experiments cycle autonomously, using persistent LLM agent sessions and a thin Python runtime. This document is the agentic layer's standalone README; the upstream `f3dasm` package and its top-level `README.md` are untouched.
+![agentic-f3dasm flow](img/agentic_flow.svg)
 
 ---
 
