@@ -2,14 +2,14 @@
 
 This module owns all Claude-specific session classes, the SDK-error
 classifier, the backend preflight check, the async runner helper, the
-SDK tool list constants, the schema-inference helper, and the two
-factory functions.  The module-level :data:`CLAUDE_BACKEND` constant is
+SDK tool list constants, the schema-inference helper, and the unified
+factory function.  The module-level :data:`CLAUDE_BACKEND` constant is
 the ready-to-use :class:`~backends.base.Backend` bundle for Claude.
 
 Importing this module does **not** require the ``claude-agent-sdk``
 package to be installed; the SDK imports are deferred to the first
-:meth:`_ClaudeStrategizer.send` / :meth:`_ClaudeImplementer.send`
-call so that the rest of the runtime can be imported freely.
+:meth:`_ClaudeAgentSession.send` call so that the rest of the runtime
+can be imported freely.
 """
 
 #                                                                       Modules
@@ -29,7 +29,7 @@ from typing import Any
 # import is safe.  We import nothing else from agent_runtime to avoid
 # reaching symbols that have not been defined yet.
 from ..agent_runtime import AgenticRunError
-from .base import Backend, ImplementerSession, StrategizerSession
+from .base import Backend
 
 # ---------------------------------------------------------------------------
 # Module constant
@@ -47,17 +47,6 @@ continues to work without a module-level import cycle.
 # SDK tool lists
 # ---------------------------------------------------------------------------
 
-_IMPLEMENTER_ALLOWED_TOOLS: list[str] = [
-    "Read",
-    "Write",
-    "Edit",
-    "MultiEdit",
-    "Bash",
-    "Glob",
-    "Grep",
-]
-"""Built-in tools the Implementer may use."""
-
 _IMPLEMENTER_DENY_LIST: list[str] = [
     "WebSearch",
     "WebFetch",
@@ -65,7 +54,7 @@ _IMPLEMENTER_DENY_LIST: list[str] = [
     "ExitPlanMode",
     "computer",
 ]
-"""Tools that are always disallowed for both agents."""
+"""Tools that are always disallowed for all agent sessions."""
 
 # ---------------------------------------------------------------------------
 # Async runner helper
@@ -173,7 +162,7 @@ def _classify_sdk_error(
     exc : BaseException
         The exception raised from inside an SDK call.
     agent_label : str
-        Either ``"Strategizer"`` or ``"Implementer"`` so the user
+        A label identifying the session (e.g. ``"Agent"``) so the user
         knows which session failed.
 
     Returns
@@ -256,126 +245,133 @@ def _classify_sdk_error(
 
 
 # ---------------------------------------------------------------------------
-# Concrete Claude SDK sessions
+# Canonical → Claude tool name mapping
 # ---------------------------------------------------------------------------
+#
+# Every canonical name in NATIVE_TOOL_NAMES maps to the identical Claude
+# SDK tool name.  This 1:1 correspondence is a deliberate design choice;
+# the canonical vocabulary was chosen to match Claude's naming.
+#
+#   Canonical  →  Claude SDK
+#   ─────────────────────────
+#   "Bash"     →  "Bash"
+#   "Edit"     →  "Edit"
+#   "Glob"     →  "Glob"
+#   "Grep"     →  "Grep"
+#   "MultiEdit"→  "MultiEdit"
+#   "Read"     →  "Read"
+#   "Write"    →  "Write"
+#
+# When adding new backends, document the mapping here and in the backend file.
 
 
-class _ClaudeStrategizer:
-    """Claude Agent SDK-backed Strategizer session.
+class _ClaudeAgentSession:
+    """Unified Claude Agent SDK session.
 
-    The Strategizer receives five custom tools (Read, WriteMarkdown, Ask,
-    Delegate, Done) via an in-process MCP server built with
-    ``create_sdk_mcp_server``.  The SDK handles tool invocation
-    automatically; the orchestrator supplies each tool's closure via the
-    ``tool_closures`` argument so that the closures can mutate orchestrator
-    state.
-
-    The session is resumed across ``send()`` calls via the
-    ``resume=session_id`` mechanism so conversation history accumulates
-    in the CLI process.
+    Handles both planner-style sessions (with closure tools via an in-process
+    MCP server) and executor-style sessions (with native SDK tools).
+    A single session may combine both: ``closure_tools`` builds the MCP
+    server; ``native_tools`` restricts the SDK's built-in tools.
 
     Parameters
     ----------
     system_prompt : str
-        Strategizer system prompt.
     model : str
-        Claude model identifier.
-    tool_closures : dict[str, Callable[..., str]]
-        Mapping of tool name to synchronous Python callable.  Each
-        callable must accept the keyword arguments that match the tool's
-        JSON schema.
+    native_tools : list[str]
+        Canonical tool names (from NATIVE_TOOL_NAMES).  Maps 1:1 to Claude
+        SDK tool names (see mapping above).  Empty list → no native tools.
+    closure_tools : dict[str, Callable]
+        Python callables exposed as MCP tools.  Empty dict → no MCP server.
+    study_dir : Path or None
+        Working directory passed as ``cwd`` to the SDK.
     """
 
     def __init__(
         self,
         system_prompt: str,
         model: str,
-        tool_closures: dict[str, Callable[..., str]],
+        native_tools: list[str],
+        closure_tools: dict[str, Callable[..., str]],
+        study_dir: Path | None = None,
     ) -> None:
         self._system_prompt = system_prompt
         self._model = model
-        self._tool_closures = tool_closures
+        self._native_tools = list(native_tools)
+        self._closure_tools = closure_tools
+        self._study_dir = study_dir
         self._session_id: str | None = None
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
     def _build_options(self) -> Any:
-        """Build ClaudeAgentOptions for the next query() call."""
-        from claude_agent_sdk import (
-            ClaudeAgentOptions,
-            SdkMcpTool,
-            create_sdk_mcp_server,
-        )
+        """Build ClaudeAgentOptions combining native tools + MCP closures."""
+        from claude_agent_sdk import ClaudeAgentOptions
 
-        sdk_tools: list[SdkMcpTool] = []
-        for tool_name, fn in self._tool_closures.items():
-            schema = _infer_schema_from_callable(fn)
+        mcp_servers: dict[str, Any] = {}
+        qualified_mcp_tools: list[str] = []
 
-            def _make_handler(
-                bound_fn: Callable[..., str],
-            ) -> Callable[[dict[str, Any]], Any]:
-                async def _handler(
-                    args: dict[str, Any],
-                ) -> dict[str, Any]:
-                    try:
-                        result = bound_fn(**args)
-                    except Exception as exc:
-                        return {
-                            "content": [
-                                {
-                                    "type": "text",
-                                    "text": (
-                                        f"ERROR: {type(exc).__name__}:"
-                                        f" {exc}"
-                                    ),
-                                }
-                            ],
-                            "is_error": True,
-                        }
-                    text = str(result) if result is not None else ""
-                    return {
-                        "content": [{"type": "text", "text": text}]
-                    }
+        if self._closure_tools:
+            from claude_agent_sdk import SdkMcpTool, create_sdk_mcp_server
 
-                return _handler
+            sdk_tools: list[SdkMcpTool] = []
+            for tool_name, fn in self._closure_tools.items():
+                schema = _infer_schema_from_callable(fn)
 
-            sdk_tools.append(
-                SdkMcpTool(
-                    name=tool_name,
-                    description=(
-                        (fn.__doc__ or tool_name).split("\n")[0].strip()
-                    ),
-                    input_schema=schema,
-                    handler=_make_handler(fn),
+                def _make_handler(
+                    bound_fn: Callable[..., str],
+                ) -> Callable[[dict[str, Any]], Any]:
+                    async def _handler(args: dict[str, Any]) -> dict[str, Any]:
+                        try:
+                            result = bound_fn(**args)
+                        except Exception as exc:
+                            return {
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": f"ERROR: {type(exc).__name__}: {exc}",
+                                    }
+                                ],
+                                "is_error": True,
+                            }
+                        text = str(result) if result is not None else ""
+                        return {"content": [{"type": "text", "text": text}]}
+
+                    return _handler
+
+                sdk_tools.append(
+                    SdkMcpTool(
+                        name=tool_name,
+                        description=(
+                            (fn.__doc__ or tool_name).split("\n")[0].strip()
+                        ),
+                        input_schema=schema,
+                        handler=_make_handler(fn),
+                    )
                 )
-            )
 
-        server_name = "f3dasm_strategizer_tools"
-        mcp_cfg = create_sdk_mcp_server(
-            name=server_name,
-            tools=sdk_tools if sdk_tools else None,
-        )
-        qualified_tool_names = [
-            f"mcp__{server_name}__{t.name}" for t in sdk_tools
-        ]
+            server_name = "f3dasm_agent_tools"
+            mcp_cfg = create_sdk_mcp_server(
+                name=server_name,
+                tools=sdk_tools if sdk_tools else None,
+            )
+            mcp_servers[server_name] = mcp_cfg
+            qualified_mcp_tools = [
+                f"mcp__{server_name}__{t.name}" for t in sdk_tools
+            ]
+
+        # Combine: MCP tool names + native SDK tool names
+        all_allowed = qualified_mcp_tools + self._native_tools
 
         return ClaudeAgentOptions(
             system_prompt=self._system_prompt,
             model=self._model,
-            tools=[],
-            mcp_servers={server_name: mcp_cfg},
-            allowed_tools=qualified_tool_names,
+            cwd=str(self._study_dir) if self._study_dir is not None else None,
+            tools=self._native_tools if self._native_tools else [],
+            mcp_servers=mcp_servers if mcp_servers else {},
+            allowed_tools=all_allowed if all_allowed else [],
             disallowed_tools=_IMPLEMENTER_DENY_LIST,
             permission_mode="bypassPermissions",
             resume=self._session_id,
-            strict_mcp_config=True,
+            strict_mcp_config=True if mcp_servers else False,
         )
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def send(self, message: str) -> str:
         """Send a user message and return the final assistant text."""
@@ -423,116 +419,14 @@ class _ClaudeStrategizer:
             except ImportError:
                 raise
             if isinstance(exc, ClaudeSDKError):
-                raise _classify_sdk_error(exc, "Strategizer") from exc
+                raise _classify_sdk_error(exc, "Agent") from exc
             raise
 
         if result_msg is not None:
             self._session_id = result_msg.session_id
 
         if result_msg is not None and result_msg.is_error:
-            raise AgenticRunError(
-                f"Strategizer SDK error: {result_msg}"
-            )
-        return assistant_text
-
-
-class _ClaudeImplementer:
-    """Claude Agent SDK-backed Implementer session.
-
-    The Implementer uses the SDK's built-in file/exec tools (Read, Write,
-    Edit, Bash, Glob, Grep) restricted to the study directory.  No custom
-    MCP tools are registered; the Implementer communicates its results
-    via a ``## Report`` block in the final assistant message.
-
-    Parameters
-    ----------
-    system_prompt : str
-        Implementer system prompt.
-    model : str
-        Claude model identifier.
-    study_dir : Path
-        The study root.  The SDK's ``cwd`` is set here so relative paths
-        in tool calls resolve correctly.
-    """
-
-    def __init__(
-        self,
-        system_prompt: str,
-        model: str,
-        study_dir: Path,
-    ) -> None:
-        self._system_prompt = system_prompt
-        self._model = model
-        self._study_dir = study_dir
-        self._session_id: str | None = None
-
-    def send(self, message: str) -> str:
-        """Send a user message and return the final assistant text."""
-        from claude_agent_sdk import (
-            AssistantMessage,
-            ClaudeAgentOptions,
-            ResultMessage,
-            TextBlock,
-            query,
-        )
-
-        options = ClaudeAgentOptions(
-            system_prompt=self._system_prompt,
-            model=self._model,
-            cwd=str(self._study_dir),
-            tools=_IMPLEMENTER_ALLOWED_TOOLS,
-            allowed_tools=_IMPLEMENTER_ALLOWED_TOOLS,
-            disallowed_tools=_IMPLEMENTER_DENY_LIST,
-            permission_mode="bypassPermissions",
-            resume=self._session_id,
-        )
-
-        assistant_text = ""
-        result_msg: Any = None
-
-        async def _run() -> None:
-            nonlocal assistant_text, result_msg
-            last_assistant: Any = None
-            gen = query(prompt=message, options=options)
-            try:
-                async for msg in gen:
-                    if isinstance(msg, AssistantMessage):
-                        last_assistant = msg
-                    elif isinstance(msg, ResultMessage):
-                        result_msg = msg
-                        if last_assistant is not None:
-                            for block in last_assistant.content:
-                                if isinstance(block, TextBlock):
-                                    assistant_text += block.text
-                        break
-            finally:
-                aclose = getattr(gen, "aclose", None)
-                if aclose is not None:
-                    try:
-                        await aclose()
-                    except Exception:
-                        pass
-
-        try:
-            _run_async_safe(_run())
-        except AgenticRunError:
-            raise
-        except Exception as exc:
-            try:
-                from claude_agent_sdk._errors import ClaudeSDKError
-            except ImportError:
-                raise
-            if isinstance(exc, ClaudeSDKError):
-                raise _classify_sdk_error(exc, "Implementer") from exc
-            raise
-
-        if result_msg is not None:
-            self._session_id = result_msg.session_id
-
-        if result_msg is not None and result_msg.is_error:
-            raise AgenticRunError(
-                f"Implementer SDK error: {result_msg}"
-            )
+            raise AgenticRunError(f"Agent SDK error: {result_msg}")
         return assistant_text
 
 
@@ -544,7 +438,7 @@ class _ClaudeImplementer:
 def _preflight_claude_cli() -> None:
     """Raise AgenticRunError if the Claude CLI binary is not on PATH.
 
-    The default factories build SDK sessions that delegate to the
+    The default factory builds SDK sessions that delegate to the
     ``claude`` CLI as a subprocess.  This function is called during
     :meth:`AgenticRun._preflight` when the Claude backend is active.
 
@@ -565,34 +459,24 @@ def _preflight_claude_cli() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Backend-specific factory functions
+# Unified factory function
 # ---------------------------------------------------------------------------
 
 
-def _strategizer_factory(
+def _session_factory(
     *,
     system_prompt: str,
     model: str,
-    tool_closures: dict[str, Callable[..., str]],
-) -> StrategizerSession:
-    """Build a :class:`_ClaudeStrategizer` with the supplied closures."""
-    return _ClaudeStrategizer(
+    native_tools: list[str],
+    closure_tools: dict[str, Callable[..., str]],
+    study_dir: "Path | None" = None,
+) -> _ClaudeAgentSession:
+    """Build a :class:`_ClaudeAgentSession` for any node type."""
+    return _ClaudeAgentSession(
         system_prompt=system_prompt,
         model=model,
-        tool_closures=tool_closures,
-    )
-
-
-def _implementer_factory(
-    *,
-    system_prompt: str,
-    model: str,
-    study_dir: Path,
-) -> ImplementerSession:
-    """Build a :class:`_ClaudeImplementer` for the given study directory."""
-    return _ClaudeImplementer(
-        system_prompt=system_prompt,
-        model=model,
+        native_tools=native_tools,
+        closure_tools=closure_tools,
         study_dir=study_dir,
     )
 
@@ -604,8 +488,7 @@ def _implementer_factory(
 CLAUDE_BACKEND: Backend = Backend(
     name="claude",
     default_model=MVP_DEFAULT_MODEL,
-    strategizer_factory=_strategizer_factory,
-    implementer_factory=_implementer_factory,
+    session_factory=_session_factory,
     preflight=_preflight_claude_cli,
 )
 """Ready-to-use Backend bundle for the Claude CLI backend."""
