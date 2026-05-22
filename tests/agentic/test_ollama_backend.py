@@ -71,7 +71,7 @@ def test_preflight_ollama_ok():
 # ---------------------------------------------------------------------------
 
 def test_ollama_strategizer_plain_text_return():
-    from f3dasm._src.agentic.backends.ollama import _OllamaStrategizer
+    from f3dasm._src.agentic.backends.ollama import _OllamaAgentSession
 
     with patch(
         "f3dasm._src.agentic.backends.ollama.ollama"
@@ -79,17 +79,18 @@ def test_ollama_strategizer_plain_text_return():
         mock_ollama.chat.return_value = _make_ollama_response(
             "Hello from Strategizer"
         )
-        session = _OllamaStrategizer(
+        session = _OllamaAgentSession(
             system_prompt="sys",
             model="qwen2.5:0.5b",
-            tool_closures={"Ask": lambda question: "ok"},
+            native_tools=[],
+            closure_tools={"Ask": lambda question: "ok"},
         )
         result = session.send("hi")
         assert result == "Hello from Strategizer"
 
 
 def test_ollama_strategizer_tool_call_ask():
-    from f3dasm._src.agentic.backends.ollama import _OllamaStrategizer
+    from f3dasm._src.agentic.backends.ollama import _OllamaAgentSession
 
     call = MagicMock()
     call.function.name = "Ask"
@@ -103,10 +104,11 @@ def test_ollama_strategizer_tool_call_ask():
             _make_ollama_response("Done asking"),
         ]
         ask_results = []
-        session = _OllamaStrategizer(
+        session = _OllamaAgentSession(
             system_prompt="sys",
             model="qwen2.5:0.5b",
-            tool_closures={
+            native_tools=[],
+            closure_tools={
                 "Ask": lambda question: ask_results.append(question) or "user answer",
                 "Delegate": lambda **kw: "delegate result",
                 "Done": lambda summary: "done",
@@ -122,7 +124,7 @@ def test_ollama_strategizer_tool_call_ask():
 # ---------------------------------------------------------------------------
 
 def test_ollama_implementer_bash_tool_executed(tmp_path):
-    from f3dasm._src.agentic.backends.ollama import _OllamaImplementer
+    from f3dasm._src.agentic.backends.ollama import _OllamaAgentSession
 
     call = MagicMock()
     call.function.name = "bash"
@@ -137,9 +139,11 @@ def test_ollama_implementer_bash_tool_executed(tmp_path):
                                   "### Files touched\n- none\n"
                                   "### Conclusions\nok\n### Numbers\n"),
         ]
-        session = _OllamaImplementer(
+        session = _OllamaAgentSession(
             system_prompt="sys",
             model="qwen2.5:0.5b",
+            native_tools=["Bash"],
+            closure_tools={},
             study_dir=tmp_path,
         )
         result = session.send("do task")
@@ -147,7 +151,7 @@ def test_ollama_implementer_bash_tool_executed(tmp_path):
 
 
 def test_ollama_implementer_bash_output_in_history(tmp_path):
-    from f3dasm._src.agentic.backends.ollama import _OllamaImplementer
+    from f3dasm._src.agentic.backends.ollama import _OllamaAgentSession
 
     call = MagicMock()
     call.function.name = "bash"
@@ -169,9 +173,11 @@ def test_ollama_implementer_bash_output_in_history(tmp_path):
         "f3dasm._src.agentic.backends.ollama.ollama"
     ) as mock_ollama:
         mock_ollama.chat.side_effect = _mock_chat
-        session = _OllamaImplementer(
+        session = _OllamaAgentSession(
             system_prompt="sys",
             model="qwen2.5:0.5b",
+            native_tools=["Bash"],
+            closure_tools={},
             study_dir=tmp_path,
         )
         session.send("do task")

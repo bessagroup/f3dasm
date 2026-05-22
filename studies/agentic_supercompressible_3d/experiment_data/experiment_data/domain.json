@@ -1,0 +1,51 @@
+{
+    "input_space": {
+        "ratio_d": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.004,
+            "upper_bound": 0.073,
+            "log": false
+        },
+        "ratio_pitch": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.25,
+            "upper_bound": 1.5,
+            "log": false
+        },
+        "ratio_top_diameter": {
+            "type": "float",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null,
+            "lower_bound": 0.0,
+            "upper_bound": 0.8,
+            "log": false
+        }
+    },
+    "output_space": {
+        "coilable": {
+            "type": "object",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null
+        },
+        "sigma_crit": {
+            "type": "object",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null
+        },
+        "energy": {
+            "type": "object",
+            "to_disk": false,
+            "store_function": null,
+            "load_function": null
+        }
+    }
+}

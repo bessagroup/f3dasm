@@ -102,7 +102,7 @@ omit = [
 source = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=f3dasm --cov-fail-under=70.00"
+addopts = "--cov-report term --cov-report html --cov-config=.coveragerc --cov=src/f3dasm/_src/agentic --cov-fail-under=70.00"
 markers = [
   "smoke",
   "requires_dependency(name): mark the test as it requires a certain dependency"

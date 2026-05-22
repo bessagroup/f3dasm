@@ -1,4 +1,0 @@
-model: claude-haiku-4-5-20251001
-backend: claude
-budget: "04:00:00"
-checkpoint_every: 30

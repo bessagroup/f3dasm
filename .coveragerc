@@ -1,0 +1,18 @@
+[run]
+branch = true
+source = src
+omit =
+    tests/
+    **/__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug
+    raise AssertionError
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    if 0:
+    if __name__ == .__main__.:
+    @(abc\.)?abstractmethod

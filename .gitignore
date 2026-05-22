@@ -140,9 +140,13 @@ notebook/
 
 # Mkdocs
 site/
-# Design specs (local only)
+# Design specs and implementation plans (local only)
 docs/specs/
+docs/superpowers/
 
 # Agentic-f3dasm runtime output
 studies/*/runs/
 studies/*/workspace/
+
+# Reference material kept out of agent reach
+studies/fragile_becomes_supercompressible/bessa2019.md
