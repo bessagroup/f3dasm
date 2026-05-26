@@ -22,9 +22,16 @@ from __future__ import annotations
 
 import concurrent.futures
 from collections.abc import Callable
-from typing import Any
 
-from .agent_runtime import AgenticRunError, Delegation, Report, Task, _DEFAULT_RETRY_CORRECTIVE, _format_task, _parse_delegation
+from .agent_runtime import (
+    _DEFAULT_RETRY_CORRECTIVE,
+    AgenticRunError,
+    Delegation,
+    Report,
+    Task,
+    _format_task,
+    _parse_delegation,
+)
 from .backends.base import ImplementerSession, StrategizerSession
 
 #                                                          Authorship & Credits
@@ -110,7 +117,9 @@ def parallel(
                     deleg.report = Report(
                         actions_taken="",
                         files_touched=[],
-                        conclusions="ERROR: agent did not return a ## Report block.",
+                        conclusions=(
+                            "ERROR: agent did not return a ## Report block."
+                        ),
                         numbers={},
                         raw=outcome,
                     )
@@ -196,8 +205,8 @@ def debate(
 
     Returns the full transcript as a list of :class:`~agent_runtime.Delegation`
     objects ``[a1, b1, a2, b2, …]`` with ``2*n`` elements.  Each Delegation's
-    ``report.conclusions`` holds the agent's raw response.  The final response is
-    ``debate(…)[-1].report.conclusions``.
+    ``report.conclusions`` holds the agent's raw response.  The final
+    response is ``debate(…)[-1].report.conclusions``.
 
     Unlike :func:`parallel` and :func:`retry`, debate does not require agents
     to emit a ``## Report`` block — responses are accepted as-is and stored in

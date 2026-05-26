@@ -128,5 +128,9 @@ nav:
         - 'api/datageneration.md'
         - 'api/defaults.md'
         - 'api/hydra_tools.md'
+    - Agentic:
+        - 'specs/architecture.md'
+        - 'specs/2026-05-19-config-budget-ollama-design.md'
+        - 'specs/2026-05-19-config-budget-ollama-plan.md'
     - License:
         - 'license.md'

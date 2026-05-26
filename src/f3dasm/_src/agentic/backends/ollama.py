@@ -15,7 +15,6 @@ agentic-f3dasm can be imported without it installed.
 from __future__ import annotations
 
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -88,7 +87,9 @@ def _tool_schema(
             "parameters": {
                 "type": "object",
                 "properties": properties,
-                "required": required if required is not None else list(properties),
+                "required": (
+                    required if required is not None else list(properties)
+                ),
             },
         },
     }
@@ -101,9 +102,20 @@ _STRATEGIZER_TOOLS = [
         "Delegate",
         "Delegate a task to a named agent.",
         {
-            "intent": {"type": "string", "description": "What the agent should do."},
-            "expected_report": {"type": "string", "description": "Required conclusions."},
-            "target": {"type": "string", "description": "Name of agent to delegate to (default: implementer)."},
+            "intent": {
+                "type": "string",
+                "description": "What the agent should do.",
+            },
+            "expected_report": {
+                "type": "string",
+                "description": "Required conclusions.",
+            },
+            "target": {
+                "type": "string",
+                "description": (
+                    "Name of agent to delegate to (default: implementer)."
+                ),
+            },
         },
         required=["intent", "expected_report"],
     ),
@@ -119,7 +131,8 @@ _STRATEGIZER_TOOLS = [
                   "content": {"type": "string"}}),
 ]
 
-# Lookup dict for schema generation from closure keys (built once at module level).
+# Lookup dict for schema generation from closure keys
+# (built once at module level).
 _TOOL_SCHEMAS_BY_NAME: dict[str, dict] = {
     s["function"]["name"]: s for s in _STRATEGIZER_TOOLS
 }
@@ -131,8 +144,14 @@ def _make_delegate_schema(outgoing: list[str]) -> dict:
         "Delegate",
         "Delegate a task to a named agent.",
         {
-            "intent": {"type": "string", "description": "What the agent should do."},
-            "expected_report": {"type": "string", "description": "Required conclusions."},
+            "intent": {
+                "type": "string",
+                "description": "What the agent should do.",
+            },
+            "expected_report": {
+                "type": "string",
+                "description": "Required conclusions.",
+            },
             "target": {
                 "type": "string",
                 "enum": outgoing,
@@ -208,7 +227,8 @@ def _closures_to_schemas_all(closures: dict) -> list[dict]:
         elif name in _TOOL_SCHEMAS_BY_NAME:
             schemas.append(_TOOL_SCHEMAS_BY_NAME[name])
         else:
-            # Generic schema for topology tools (Parallel, Debate, Retry, FollowUp, etc.)
+            # Generic schema for topology tools
+            # (Parallel, Debate, Retry, FollowUp, etc.)
             import inspect as _insp
             sig = _insp.signature(fn)
             props = {
@@ -219,7 +239,9 @@ def _closures_to_schemas_all(closures: dict) -> list[dict]:
                 p for p, param in sig.parameters.items()
                 if param.default is _insp.Parameter.empty
             ]
-            schemas.append(_tool_schema(name, fn.__doc__ or name, props, req or None))
+            schemas.append(
+                _tool_schema(name, fn.__doc__ or name, props, req or None)
+            )
     return schemas
 
 
@@ -253,15 +275,18 @@ class _OllamaAgentSession:
         model: str,
         native_tools: list[str],
         closure_tools: dict,
-        study_dir: "Path | None" = None,
+        study_dir: Path | None = None,
     ) -> None:
         _import_ollama()
         self._model = model
-        self._study_dir = Path(study_dir) if study_dir is not None else Path(".")
+        self._study_dir = (
+            Path(study_dir) if study_dir is not None else Path(".")
+        )
         self._closure_tools = closure_tools
         # Build Ollama tool schemas
         self._tool_schemas: list[dict] = []
-        # Closure tools schemas (from existing _TOOL_SCHEMAS_BY_NAME or dynamic)
+        # Closure tools schemas
+        # (from existing _TOOL_SCHEMAS_BY_NAME or dynamic)
         self._tool_schemas.extend(_closures_to_schemas_all(closure_tools))
         # Native bash tool (if declared)
         if "Bash" in native_tools:
@@ -326,7 +351,10 @@ class _OllamaAgentSession:
                     except Exception as exc:
                         result = f"ERROR: {type(exc).__name__}: {exc}"
                 else:
-                    result = f"ERROR: unknown tool {name!r}. Available: {list(self._closure_tools)}"
+                    result = (
+                        f"ERROR: unknown tool {name!r}."
+                        f" Available: {list(self._closure_tools)}"
+                    )
                 self._history.append({"role": "tool", "content": str(result)})
 
 
@@ -340,7 +368,7 @@ def _make_ollama_session(
     model: str,
     native_tools: list[str],
     closure_tools: dict,
-    study_dir: "Path | None" = None,
+    study_dir: Path | None = None,
 ) -> _OllamaAgentSession:
     return _OllamaAgentSession(
         system_prompt=system_prompt,

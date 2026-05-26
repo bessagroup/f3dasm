@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 # ---------------------------------------------------------------------------
@@ -72,10 +71,10 @@ NATIVE_TOOL_NAMES: frozenset[str] = frozenset({
 })
 
 PROTOCOL_CLOSURE_NAMES: frozenset[str] = frozenset({
-    # These are Python callables built by the f3dasm runtime.
-    "Done",        # Signal end of run with a summary
-    "ReadNote",    # Read a file from the study tree (path-restricted)
-    "WriteMarkdown",  # Write a .md note to strategizer_notes/
+    # Python callables built by the f3dasm runtime.
+    "Done",
+    "ReadNote",
+    "WriteMarkdown",
 })
 
 # TOPOLOGY-INJECTED tools — NEVER declare these in Agent.tools.
@@ -198,7 +197,7 @@ class Graph:
         not declared.
     """
 
-    nodes: dict  # dict[str, Agent]
+    nodes: dict[str, Agent]
     edges: tuple = ()
     entry: str = "strategizer"
 

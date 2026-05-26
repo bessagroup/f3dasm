@@ -326,7 +326,10 @@ class _ClaudeAgentSession:
                                 "content": [
                                     {
                                         "type": "text",
-                                        "text": f"ERROR: {type(exc).__name__}: {exc}",
+                                        "text": (
+                                            f"ERROR: {type(exc).__name__}:"
+                                            f" {exc}"
+                                        ),
                                     }
                                 ],
                                 "is_error": True,
@@ -469,7 +472,7 @@ def _session_factory(
     model: str,
     native_tools: list[str],
     closure_tools: dict[str, Callable[..., str]],
-    study_dir: "Path | None" = None,
+    study_dir: Path | None = None,
 ) -> _ClaudeAgentSession:
     """Build a :class:`_ClaudeAgentSession` for any node type."""
     return _ClaudeAgentSession(

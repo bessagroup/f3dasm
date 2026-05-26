@@ -30,7 +30,6 @@ import re
 import shutil
 import subprocess
 import sys
-import textwrap
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -59,15 +58,11 @@ from .agent_prompts import (
 #   ``from f3dasm._src.agentic.agent_runtime import StrategizerSession``
 # continues to work without modification.
 from .backends.base import (
+    NATIVE_TOOL_NAMES,
     Agent,
     AgentSession,
     Backend,
-    Edge,
     Graph,
-    ImplementerSession,
-    NATIVE_TOOL_NAMES,
-    PROTOCOL_CLOSURE_NAMES,
-    StrategizerSession,
 )
 
 # MVP_DEFAULT_MODEL: keep the canonical value here as well so that
@@ -104,11 +99,11 @@ __all__ = [
 CHECKPOINT_EVERY: int = 30
 """Number of Implementer delegations between checkpoints."""
 
-_BACKEND_REGISTRY: dict[str, "Backend"] = {}
+_BACKEND_REGISTRY: dict[str, Backend] = {}
 """Registry of named backends for use in StudyConfig.backend."""
 
 
-def register_backend(name: str, backend: "Backend") -> None:
+def register_backend(name: str, backend: Backend) -> None:
     """Register a named backend so it can be referenced by StudyConfig.backend.
 
     Parameters
@@ -261,7 +256,8 @@ class RunContext(_Protocol):
 # ---------------------------------------------------------------------------
 
 _DEFAULT_RETRY_CORRECTIVE = (
-    "Attempt {attempt} failed. Review what went wrong and revise your approach."
+    "Attempt {attempt} failed. Review what went wrong"
+    " and revise your approach."
 )
 
 _KNOWN_CONFIG_KEYS: frozenset[str] = frozenset(
@@ -290,13 +286,15 @@ def _parse_eval_budget(raw: dict) -> int:
     value = int(raw["eval_budget"])
     if value <= 0:
         raise AgenticRunError(
-            f"config.yaml: eval_budget must be a positive integer, got {value!r}."
+            "config.yaml: eval_budget must be a positive integer,"
+            f" got {value!r}."
         )
     return value
 
 
 def _load_study_config(study_dir: Path) -> StudyConfig:
-    import yaml  # soft import
+    # soft import
+    import yaml
 
     config_path = Path(study_dir) / "config.yaml"
     if not config_path.exists():
@@ -314,7 +312,8 @@ def _load_study_config(study_dir: Path) -> StudyConfig:
             budget = _parse_budget(str(raw["budget"]))
         except (ValueError, TypeError) as exc:
             raise AgenticRunError(
-                f"config.yaml: invalid budget {raw['budget']!r} — expected HH:MM:SS ({exc})."
+                f"config.yaml: invalid budget {raw['budget']!r}"
+                f" — expected HH:MM:SS ({exc})."
             ) from exc
     return StudyConfig(
         model=raw.get("model"),
@@ -664,7 +663,8 @@ class AgenticRun:
         study_config: StudyConfig | None = None,
         graph: Graph | None = None,
     ) -> None:
-        # Resolve backend: explicit kwarg wins; otherwise honour StudyConfig.backend.
+        # Resolve backend: explicit kwarg wins;
+        # otherwise honour StudyConfig.backend.
         _cfg_pre = study_config or StudyConfig()
         if backend is not None:
             self._backend: Backend = backend
@@ -688,19 +688,24 @@ class AgenticRun:
         _cfg = _cfg_pre
         # CLI model wins over config, config wins over backend default.
         if model is None:
-            model = _cfg.model  # may still be None
+            # may still be None
+            model = _cfg.model
         self._model: str = (
             model if model is not None else self._backend.default_model
         )
         # CLI checkpoint_every (explicit) wins over config.
-        if checkpoint_every == CHECKPOINT_EVERY and _cfg.checkpoint_every is not None:
+        if (
+            checkpoint_every == CHECKPOINT_EVERY
+            and _cfg.checkpoint_every is not None
+        ):
             checkpoint_every = _cfg.checkpoint_every
         self._checkpoint_every = checkpoint_every
         # Budget.
         self._budget: timedelta | None = _cfg.budget
         self._eval_budget: int | None = _cfg.eval_budget
         self._total_eval_count: int = 0
-        self._start_time: datetime | None = None  # set in execute()
+        # set in execute()
+        self._start_time: datetime | None = None
         self._stdin = stdin
         self._stdout = stdout
         self._record_transcripts = record_transcripts
@@ -710,7 +715,9 @@ class AgenticRun:
         # --- Resolve session_factory ---
         # Priority: explicit session_factory kwarg > backend's factory.
         if session_factory is not None:
-            self._session_factory: Callable[..., AgentSession] = session_factory
+            self._session_factory: Callable[..., AgentSession] = (
+                session_factory
+            )
         else:
             self._session_factory = self._backend.session_factory
 
@@ -845,7 +852,8 @@ class AgenticRun:
         the real CLI binary.
         """
         if self._session_factory is not self._backend.session_factory:
-            return  # test-injected stub — skip preflight
+            # test-injected stub — skip preflight
+            return
         if self._backend.name == "ollama":
             from .backends.ollama import _preflight_ollama
             _preflight_ollama(self._model)
@@ -905,17 +913,22 @@ class AgenticRun:
         self._build_sessions()
 
     def _build_sessions(self) -> None:
-        """Populate self._agents from Graph.nodes, inferring planner vs executor."""
+        """Populate self._agents from Graph.nodes, inferring planner vs
+        executor."""
         if self._graph is None:
             # No graph supplied → synthesise the classic 2-node default.
-            from .backends.base import Agent as _Agent, Edge as _Edge, Graph as _Graph
+            from .backends.base import Agent as _Agent
+            from .backends.base import Edge as _Edge
+            from .backends.base import Graph as _Graph
 
             class _DefaultStrat(_Agent):
                 tools = frozenset({"Done", "WriteMarkdown", "ReadNote"})
                 reset_on_checkpoint = False
 
             class _DefaultImpl(_Agent):
-                tools = frozenset({"Bash", "Read", "Write", "Edit", "Glob", "Grep"})
+                tools = frozenset(
+                    {"Bash", "Read", "Write", "Edit", "Glob", "Grep"}
+                )
 
             self._graph = _Graph(
                 nodes={
@@ -927,26 +940,35 @@ class AgenticRun:
             )
         for name, agent in self._graph.nodes.items():
             is_planner = bool(self._graph.outgoing(name))
-            self._agents[name] = self._instantiate_node(name, agent, is_planner)
+            self._agents[name] = self._instantiate_node(
+                name, agent, is_planner
+            )
 
     def _instantiate_node(
         self, name: str, agent: Agent, is_planner: bool
     ) -> AgentSession:
-        """Construct a session for *agent* from the three-category tool system."""
+        """Construct a session for *agent* from the three-category tool
+        system."""
         model = agent.model or self._model
-        prompt = agent.system_prompt or self._default_prompt_for(name, is_planner)
+        prompt = (
+            agent.system_prompt or self._default_prompt_for(name, is_planner)
+        )
 
         declared = agent.tools
-        # Empty frozenset means "no restriction" — include all tools for the role.
+        # Empty frozenset means "no restriction" — include all tools
+        # for the role.
         _unrestricted = not declared
 
-        # --- Native backend tools (NATIVE_TOOL_NAMES declared in agent.tools) ---
+        # --- Native backend tools
+        # (NATIVE_TOOL_NAMES declared in agent.tools) ---
         native_tools: list[str] = [
             t for t in declared if t in NATIVE_TOOL_NAMES
         ]
 
-        # --- Protocol closure tools (PROTOCOL_CLOSURE_NAMES declared in agent.tools) ---
-        # When unrestricted (empty tools frozenset), all protocol closures apply.
+        # --- Protocol closure tools
+        # (PROTOCOL_CLOSURE_NAMES declared in agent.tools) ---
+        # When unrestricted (empty tools frozenset), all protocol closures
+        # apply.
         protocol_closures: dict[str, Callable[..., str]] = {}
         if _unrestricted or "Done" in declared:
             protocol_closures["Done"] = self._tool_done
@@ -1011,7 +1033,9 @@ class AgenticRun:
         agent = self._graph.nodes.get(name)
         if agent is None:
             return
-        self._logger.info("Agent %r session reset (briefed with checkpoint summary)", name)
+        self._logger.info(
+            "Agent %r session reset (briefed with checkpoint summary)", name
+        )
         is_planner = bool(self._graph.outgoing(name))
         reset_msg = IMPLEMENTER_RESET_PROMPT_TEMPLATE.format(
             checkpoint_summary=self._checkpoint_summary
@@ -1104,7 +1128,7 @@ class AgenticRun:
     def _build_planner_tools(
         self,
         agent_name: str = "strategizer",
-        allowed: "frozenset[str] | None" = None,
+        allowed: frozenset[str] | None = None,
     ) -> tuple[dict[str, Callable[..., str]], list[str]]:
         """Return ``(closures, outgoing)`` for *agent_name*.
 
@@ -1165,7 +1189,8 @@ class AgenticRun:
                 ) as ex:
                     futs = {
                         ex.submit(
-                            self._tool_delegate, intent, expected_report, t, caller=_c
+                            self._tool_delegate,
+                            intent, expected_report, t, caller=_c
                         ): t
                         for t in targets
                     }
@@ -1189,7 +1214,8 @@ class AgenticRun:
                 initial: str,
                 _c: str = _caller,
             ) -> str:
-                """Alternate n rounds between two agents; return full transcript."""
+                """Alternate n rounds between two agents; return full
+                transcript."""
                 transcript: list[str] = []
                 current = initial
                 for i in range(n):
@@ -1226,7 +1252,8 @@ class AgenticRun:
                     if attempt < max_attempts:
                         current_intent = (
                             f"Attempt {attempt} returned no ## Report block. "
-                            f"Revise and try again.\n\nOriginal intent: {intent}"
+                            f"Revise and try again."
+                            f"\n\nOriginal intent: {intent}"
                         )
                 return result
 
@@ -1290,7 +1317,9 @@ class AgenticRun:
                     f"ERROR: {_c!r} is not permitted to delegate to "
                     f"{target!r}. Permitted targets: {_o}"
                 )
-            return self._tool_delegate(intent, expected_report, target, caller=_c)
+            return self._tool_delegate(
+                intent, expected_report, target, caller=_c
+            )
 
         closures["Delegate"] = _delegate_scoped
 
@@ -1309,7 +1338,8 @@ class AgenticRun:
             ) as ex:
                 futs = {
                     ex.submit(
-                        self._tool_delegate, intent, expected_report, t, caller=_c
+                        self._tool_delegate,
+                        intent, expected_report, t, caller=_c
                     ): t
                     for t in targets
                 }
@@ -1332,7 +1362,8 @@ class AgenticRun:
             initial: str,
             _c: str = _caller,
         ) -> str:
-            """Alternate n rounds between two agents; return full transcript."""
+            """Alternate n rounds between two agents; return full
+            transcript."""
             transcript: list[str] = []
             current = initial
             for i in range(n):
@@ -1382,7 +1413,8 @@ class AgenticRun:
         fn: Callable[..., str],
         agent_name: str = "strategizer",
     ) -> Callable[..., str]:
-        """Return a wrapped version of *fn* that records to <agent_name>.jsonl."""
+        """Return a wrapped version of *fn* that records to
+        <agent_name>.jsonl."""
 
         original_sig = inspect.signature(fn)
         _aname = agent_name
@@ -1488,7 +1520,7 @@ class AgenticRun:
             )
 
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content)
+        target.write_text(content, encoding="utf-8")
         return f"OK: wrote {target}"
 
     def _tool_ask(self, question: str) -> str:
@@ -1942,11 +1974,11 @@ class AgenticRun:
             "```",
         ]
         (deliv_dir / "solution.md").write_text(
-            "\n".join(solution_lines)
+            "\n".join(solution_lines), encoding="utf-8"
         )
 
         # git_log.txt
-        (deliv_dir / "git_log.txt").write_text(git_log_full)
+        (deliv_dir / "git_log.txt").write_text(git_log_full, encoding="utf-8")
 
         # replication/ — copy workspace/ contents.
         replication_dir = deliv_dir / "replication"
