@@ -160,31 +160,37 @@ class MyCoordinator(Agent):
 ## Method overview
 
 ```text
-                ┌──────────────────────────────────────────────┐
- PROBLEM_STATEMENT.md ─▶│  AgenticRun                              │
-                │  (~800 lines of Python)                  │
-                │  - classifies Agent.tools (3 categories)  │
-                │  - injects topology tools from Graph      │
-                │  - routes messages via _tool_delegate     │
-                │  - git commit per delegation              │
-                │  - checkpoint every N delegations         │
-                └──┬────────────────────────────────────┬───┘
-                   │                                    │
-        ┌──────────▼────────┐                 ┌─────────▼──────────┐
-        │  StrategizerAgent │                 │  ImplementerAgent  │
-        │  (planner session)│                 │  (executor session)│
-        │                   │  ## Task        │                    │
-        │  ReadNote         │ ──────────────▶ │  Bash / Read /     │
-        │  WriteMarkdown    │                 │  Write / Edit …    │
-        │  Done             │  ## Report      │                    │
-        │  [Ask — entry]    │ ◀────────────── │  [FollowUp — opt]  │
-        │  Delegate ──┐     │                 │                    │
-        │  Parallel   │     │                 │                    │
-        │  Debate     │     │                 │                    │
-        │  Retry      │     │                 │                    │
-        └─────────────┘     │                 └────────────────────┘
-             topology-injected                 native backend tools
-             (from Graph edges)                (declared in Agent.tools)
+╔══════════════════════════════════════════════════════════════════════╗
+║  f3dasm  (src/f3dasm/)                                               ║
+║                                                                      ║
+║  ┌──────────────────────────────────────────────────────────────┐   ║
+║  │  f3dasm.agentic  (AgenticRun)                                │   ║
+║  │                                                              │   ║
+║  │  PROBLEM_STATEMENT.md ──▶  AgenticRun                        │   ║
+║  │                            - classifies Agent.tools          │   ║
+║  │                            - injects topology tools          │   ║
+║  │                            - routes via _tool_delegate       │   ║
+║  │                            - git commit per delegation       │   ║
+║  │                            - checkpoint every N delegations  │   ║
+║  │                   ┌────────┴────────┐                        │   ║
+║  │                   │                 │                        │   ║
+║  │    ┌──────────────▼──┐      ┌───────▼────────────┐          │   ║
+║  │    │ StrategizerAgent│      │  ImplementerAgent  │          │   ║
+║  │    │ (planner)       │      │  (executor)        │          │   ║
+║  │    │                 │Task  │                    │          │   ║
+║  │    │  ReadNote       │─────▶│  Bash / Read /     │          │   ║
+║  │    │  WriteMarkdown  │      │  Write / Edit …    │          │   ║
+║  │    │  Done           │Report│                    │          │   ║
+║  │    │  [Ask]          │◀─────│  [FollowUp — opt]  │          │   ║
+║  │    │  Delegate       │      │                    │          │   ║
+║  │    └─────────────────┘      └────────────────────┘          │   ║
+║  │          topology-injected        native backend tools       │   ║
+║  │          (from Graph edges)       (declared in Agent.tools)  │   ║
+║  └──────────────────────────────────────────────────────────────┘   ║
+║                                                                      ║
+║  f3dasm.experimentdata / domain / samplers / optimizers / …         ║
+║  (untouched — available to agents as any other Python import)        ║
+╚══════════════════════════════════════════════════════════════════════╝
 ```
 
 **f3dasm integration boundary.** `agentic-f3dasm` ships as `f3dasm.agentic`
