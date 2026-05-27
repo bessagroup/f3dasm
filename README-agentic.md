@@ -160,32 +160,49 @@ class MyCoordinator(Agent):
 ## Method overview
 
 ```text
-                ┌──────────────────────────────────────────────┐
- PROBLEM_STATEMENT.md ─▶│  AgenticRun                              │
-                │  (~800 lines of Python)                  │
-                │  - classifies Agent.tools (3 categories)  │
-                │  - injects topology tools from Graph      │
-                │  - routes messages via _tool_delegate     │
-                │  - git commit per delegation              │
-                │  - checkpoint every N delegations         │
-                └──┬────────────────────────────────────┬───┘
-                   │                                    │
-        ┌──────────▼────────┐                 ┌─────────▼──────────┐
-        │  StrategizerAgent │                 │  ImplementerAgent  │
-        │  (planner session)│                 │  (executor session)│
-        │                   │  ## Task        │                    │
-        │  ReadNote         │ ──────────────▶ │  Bash / Read /     │
-        │  WriteMarkdown    │                 │  Write / Edit …    │
-        │  Done             │  ## Report      │                    │
-        │  [Ask — entry]    │ ◀────────────── │  [FollowUp — opt]  │
-        │  Delegate ──┐     │                 │                    │
-        │  Parallel   │     │                 │                    │
-        │  Debate     │     │                 │                    │
-        │  Retry      │     │                 │                    │
-        └─────────────┘     │                 └────────────────────┘
-             topology-injected                 native backend tools
-             (from Graph edges)                (declared in Agent.tools)
+╔══════════════════════════════════════════════════════════════════════╗
+║  f3dasm  (src/f3dasm/)                                               ║
+║                                                                      ║
+║  ┌──────────────────────────────────────────────────────────────┐   ║
+║  │  f3dasm.agentic  (AgenticRun)                                │   ║
+║  │                                                              │   ║
+║  │  PROBLEM_STATEMENT.md ──▶  AgenticRun                        │   ║
+║  │                            - classifies Agent.tools          │   ║
+║  │                            - injects topology tools          │   ║
+║  │                            - routes via _tool_delegate       │   ║
+║  │                            - git commit per delegation       │   ║
+║  │                            - checkpoint every N delegations  │   ║
+║  │                   ┌────────┴────────┐                        │   ║
+║  │                   │                 │                        │   ║
+║  │    ┌──────────────▼──┐      ┌───────▼────────────┐          │   ║
+║  │    │ StrategizerAgent│      │  ImplementerAgent  │          │   ║
+║  │    │ (planner)       │      │  (executor)        │          │   ║
+║  │    │                 │Task  │                    │          │   ║
+║  │    │  ReadNote       │─────▶│  Bash / Read /     │          │   ║
+║  │    │  WriteMarkdown  │      │  Write / Edit …    │          │   ║
+║  │    │  Done           │Report│                    │          │   ║
+║  │    │  [Ask]          │◀─────│  [FollowUp — opt]  │          │   ║
+║  │    │  Delegate       │      │                    │          │   ║
+║  │    └─────────────────┘      └────────────────────┘          │   ║
+║  │          topology-injected        native backend tools       │   ║
+║  │          (from Graph edges)       (declared in Agent.tools)  │   ║
+║  └──────────────────────────────────────────────────────────────┘   ║
+║                                                                      ║
+║  f3dasm.experimentdata / domain / samplers / optimizers / …         ║
+║  (untouched — available to agents as any other Python import)        ║
+╚══════════════════════════════════════════════════════════════════════╝
 ```
+
+**f3dasm integration boundary.** `agentic-f3dasm` ships as `f3dasm.agentic`
+— a module inside the f3dasm package. The core f3dasm modules
+(`ExperimentData`, `Domain`, `DataGenerator`, `Optimizer`, samplers) are
+never modified by the agentic layer. Agents running in the `workspace/`
+can import f3dasm — or any other installed Python package — freely.
+What makes the integration native is that `LookupDataGenerator` and
+`AgenticOptimizer` implement f3dasm's standard interfaces, so a study
+can plug directly into an existing f3dasm pipeline without glue code.
+Nothing in the agentic runtime enforces or restricts which packages the
+agents call; the design is intentionally orthogonal.
 
 **The five non-negotiable commitments:**
 
