@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -54,11 +55,48 @@ __status__ = "Stable"
 
 logger = logging.getLogger("f3dasm")
 
+# Env var carrying the worker log level. SLURM workers run this module
+# via ``python -m`` and never pass through ``hydra.main``, so Hydra's
+# job logging never initializes here; the level is threaded in from the
+# application's config through ``SlurmCluster.env_vars`` (written as an
+# ``export`` in the generated sbatch script) and applied to the root
+# logger below.
+_LOG_LEVEL_ENV = "F3DASM_LOG_LEVEL"
+
 # =============================================================================
 
 
+def _configure_worker_logging() -> None:
+    """Set the worker's root log level from ``F3DASM_LOG_LEVEL``.
+
+    A SLURM worker runs this module via ``python -m`` and never passes
+    through ``hydra.main``, so it would otherwise inherit the default
+    WARNING root logger with no handlers and drop every INFO line. This
+    installs a stderr handler (whose output lands in the worker's SLURM
+    ``.out`` file) and sets the root level from ``F3DASM_LOG_LEVEL``
+    (e.g. ``INFO``), defaulting to ``WARNING`` when unset or holding an
+    unrecognized level name. It configures *a* level on the root logger
+    and names no package, so the framework stays self-contained.
+    """
+    name = os.environ.get(_LOG_LEVEL_ENV, "WARNING").strip().upper()
+    level = getattr(logging, name, logging.WARNING)
+    if not isinstance(level, int):
+        level = logging.WARNING
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
-    """Parse arguments and execute a single pipeline step."""
+    """Parse arguments and execute a single pipeline step.
+
+    Configures worker logging from the ``F3DASM_LOG_LEVEL`` environment
+    variable (see :func:`_configure_worker_logging`) before doing any
+    work, since this entry point runs outside ``hydra.main`` and would
+    otherwise inherit the default WARNING root logger with no handlers.
+    """
+    _configure_worker_logging()
     parser = argparse.ArgumentParser(description="Run a single pipeline step.")
     parser.add_argument(
         "--step",
