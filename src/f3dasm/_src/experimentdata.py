@@ -604,7 +604,17 @@ class ExperimentData:
 
         experiment_data.data = defaultdict(ExperimentSample, data)
         experiment_data._domain = domain
-        experiment_data._project_dir = _project_dir_factory(project_dir)
+        if project_dir is None:
+            experiment_data._project_dir = _project_dir_factory(project_dir)
+        else:
+            # Route through the project_dir setter so the directory is
+            # propagated to every ExperimentSample, not just the
+            # container. A bare ``_project_dir = ...`` leaves each
+            # sample's project_dir at its cwd default, which sends
+            # to-disk objects to the wrong location (e.g. the random
+            # sampler builds bare samples, unlike the grid sampler which
+            # stamps project_dir via the constructor).
+            experiment_data.project_dir = project_dir
         return experiment_data
 
     #                                                         Selecting subsets
@@ -1578,7 +1588,9 @@ class ExperimentData:
             ExperimentData object with the updated project directory
         """
         d = self._copy(in_place=in_place)
-        d._project_dir = _project_dir_factory(project_dir)
+        # Use the property setter so the project directory propagates to
+        # every ExperimentSample, not just the container.
+        d.project_dir = project_dir
 
         if in_place:
             return None
