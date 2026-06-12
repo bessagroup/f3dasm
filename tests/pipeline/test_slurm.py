@@ -172,7 +172,11 @@ class TestRenderStepBlock:
         assert "STEP_COUNT=1" in text
         assert "exit 0" in text
 
-    def test_last_step(self, cluster):
+    def test_last_step_resubmits_final_marker_run(self, cluster):
+        # The last step must resubmit the orchestrator one final
+        # time (afterok), past TOTAL_STEPS, so that run skips the
+        # while loop and prints the completion marker. Without it
+        # the marker is unreachable for Step-final pipelines.
         lines = []
         step = Step(block=lambda: None, name="a")
         p = Pipeline(steps=[step])
@@ -186,8 +190,12 @@ class TestRenderStepBlock:
             total_steps=1,
         )
         text = "\n".join(lines)
+        assert "STEP_COUNT=1" in text
+        assert (
+            'sbatch --dependency=afterok:$JOB_ID "$SELF"'
+            " $STEP_COUNT $LOOP_COUNT" in text
+        )
         assert "exit 0" in text
-        assert "STEP_COUNT" not in text
 
     def test_parallel_step_resolves_array_at_submit(self, cluster):
         # A parallel step must (a) call count_open to determine
@@ -309,6 +317,39 @@ class TestRenderOrchestratorScript:
         assert "TOTAL_STEPS=1" in script
         assert 'JOB_DIR="/scratch/job1"' in script
         assert "Pipeline complete" in script
+
+    def test_step_final_pipeline_reaches_marker(self, cluster):
+        # A pipeline ending in a plain Step (no trailing Loop)
+        # must still produce a final orchestrator run that prints
+        # the completion marker: the last step block resubmits
+        # with STEP_COUNT == TOTAL_STEPS, which skips the while
+        # loop and falls through to the echo.
+        steps = [
+            Step(block=lambda: None, name="create"),
+            Step(block=lambda: None, name="report"),
+        ]
+        p = Pipeline(name="test", steps=steps)
+        res = SlurmResources(time="00:05:00", mem="1G")
+        script = render_orchestrator_script(
+            pipeline=p,
+            cluster=cluster,
+            orchestrator_resources=res,
+            script_paths={
+                "create": "/scripts/create.sh",
+                "report": "/scripts/report.sh",
+            },
+            log_dir_path="/logs",
+            job_dir=Path("/scratch/job1"),
+        )
+        assert "TOTAL_STEPS=2" in script
+        # The report block (last element) advances past TOTAL_STEPS
+        # and resubmits the orchestrator for the marker run.
+        assert "STEP_COUNT=2" in script
+        assert (
+            'sbatch --dependency=afterok:$JOB_ID "$SELF"'
+            " $STEP_COUNT $LOOP_COUNT" in script
+        )
+        assert 'echo "Pipeline complete."' in script
 
     def test_orchestrator_inherits_env_setup(self, cluster):
         # The orchestrator runs count_open before each parallel

@@ -429,7 +429,13 @@ def render_orchestrator_script(
     submission or one Loop iteration), then resubmits itself
     with ``--dependency`` on the last submitted job. The
     dependency type is determined by the *next* step's
-    ``Step.dependency`` field.
+    ``Step.dependency`` field; after the last element the
+    orchestrator resubmits itself once more with ``afterok``, so
+    a final run starts past ``TOTAL_STEPS`` and prints
+    ``"Pipeline complete."`` to its log if (and only if) the
+    last step succeeded. External tooling may poll the
+    orchestrator logs for that marker as the pipeline's success
+    signal.
 
     For parallel steps, the orchestrator invokes
     :mod:`f3dasm.pipeline.count_open` to size the ``--array=``
@@ -663,24 +669,28 @@ def _render_step_block(
     next_step = step_index + 1
     next_dep = _get_next_dependency(pipeline, step_index, total_steps)
 
-    if next_dep is not None:
-        lines.append(f"    STEP_COUNT={next_step}")
-        # If the step was skipped (no open experiments), JOB_ID
-        # is empty — resubmit without a SLURM dependency.
-        lines.extend(
-            [
-                '    if [ -n "$JOB_ID" ]; then',
-                f"      sbatch --dependency={next_dep}:$JOB_ID"
-                ' "$SELF" $STEP_COUNT $LOOP_COUNT',
-                "    else",
-                '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
-                "    fi",
-                "    exit 0",
-            ]
-        )
-    else:
-        # Last element in pipeline — don't resubmit
-        lines.append("    exit 0")
+    # After the last element there is no next step, but the
+    # orchestrator still resubmits itself once more (afterok):
+    # that final run starts with STEP_COUNT == TOTAL_STEPS, skips
+    # the while loop, and prints the completion marker — so the
+    # marker appears in the orchestrator log only if the last
+    # step succeeded.
+    dep = next_dep if next_dep is not None else "afterok"
+
+    lines.append(f"    STEP_COUNT={next_step}")
+    # If the step was skipped (no open experiments), JOB_ID
+    # is empty — resubmit without a SLURM dependency.
+    lines.extend(
+        [
+            '    if [ -n "$JOB_ID" ]; then',
+            f"      sbatch --dependency={dep}:$JOB_ID"
+            ' "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "    else",
+            '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "    fi",
+            "    exit 0",
+        ]
+    )
 
 
 def _render_loop_block(
