@@ -293,8 +293,122 @@ class TestRenderLoopBlock:
         text = "\n".join(lines)
         assert "f3dasm.pipeline.count_open" in text
         assert "--array=0-${ARRAY_MAX}%64" in text
-        # PREV_JOB_ID is set/used conditionally for chaining
-        assert 'if [ -n "$PREV_JOB_ID" ]; then' in text
+        # A skipped parallel inner step empties JOB_ID and resubmits
+        # without a dependency (the gen-then-post chaining is carried by
+        # the per-inner-step SELF resubmission, not an in-wake PREV_JOB_ID).
+        assert 'JOB_ID=""' in text
+        assert 'if [ -n "$JOB_ID" ]; then' in text
+
+    def test_parallel_inner_step_counts_open_after_predecessor(self, cluster):
+        # Regression: a parallel inner step's count_open must run in a
+        # *separate* wake from (and gated on) its non-parallel predecessor,
+        # so the array width reflects what the predecessor just wrote --
+        # not the previous iteration's residual job statuses.
+        res = SlurmResources(max_array_size=900, max_concurrent=64)
+        sub = Step(block=lambda: None, name="subsample", dependency="afterok")
+        run = Step(
+            block=lambda: None,
+            name="run",
+            parallel=True,
+            resources=res,
+            dependency="afterok",
+        )
+        post = Step(block=lambda: None, name="post", dependency="afterany")
+        loop = Loop(n_iterations=4, steps=[sub, run, post])
+        p = Pipeline(steps=[loop])
+        lines = []
+        _render_loop_block(
+            lines=lines,
+            loop=loop,
+            step_index=0,
+            pipeline=p,
+            cluster=cluster,
+            script_paths={
+                "loop0_subsample": "/s/sub.sh",
+                "loop0_run": "/s/run.sh",
+                "loop0_post": "/s/post.sh",
+            },
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        assert 'if [ "$INNER_COUNT" -eq 0 ]' in text
+        assert 'elif [ "$INNER_COUNT" -eq 1 ]' in text
+        assert 'elif [ "$INNER_COUNT" -eq 2 ]' in text
+        seg0 = text[
+            text.index('if [ "$INNER_COUNT" -eq 0 ]') : text.index(
+                'elif [ "$INNER_COUNT" -eq 1 ]'
+            )
+        ]
+        seg1 = text[
+            text.index('elif [ "$INNER_COUNT" -eq 1 ]') : text.index(
+                'elif [ "$INNER_COUNT" -eq 2 ]'
+            )
+        ]
+        # subsample wake submits the script but never counts open ...
+        assert "/s/sub.sh" in seg0
+        assert "count_open" not in seg0
+        # ... and run's count_open lives only in the next (gated) wake.
+        assert "count_open" in seg1
+        assert "/s/run.sh" in seg1
+
+    def test_inner_steps_thread_inner_count(self, cluster):
+        # Each inner step resubmits the orchestrator for the next inner
+        # index (gated by the *next* step's dependency); the last inner
+        # step advances the iteration and resets INNER_COUNT to 0.
+        sub = Step(block=lambda: None, name="subsample", dependency="afterok")
+        run = Step(block=lambda: None, name="run", dependency="afterok")
+        post = Step(block=lambda: None, name="post", dependency="afterany")
+        loop = Loop(n_iterations=4, steps=[sub, run, post])
+        p = Pipeline(steps=[loop])
+        lines = []
+        _render_loop_block(
+            lines=lines,
+            loop=loop,
+            step_index=0,
+            pipeline=p,
+            cluster=cluster,
+            script_paths={
+                "loop0_subsample": "/s/sub.sh",
+                "loop0_run": "/s/run.sh",
+                "loop0_post": "/s/post.sh",
+            },
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        # subsample -> run (run.dependency == afterok), next inner index 1
+        assert (
+            'sbatch --dependency=afterok:$JOB_ID "$SELF"'
+            " $STEP_COUNT $LOOP_COUNT 1" in text
+        )
+        # run -> post (post.dependency == afterany), next inner index 2
+        assert (
+            'sbatch --dependency=afterany:$JOB_ID "$SELF"'
+            " $STEP_COUNT $LOOP_COUNT 2" in text
+        )
+        # post (last) -> next iteration (steps[0].dependency == afterok),
+        # LOOP_COUNT + 1 and INNER_COUNT reset to 0
+        assert (
+            'sbatch --dependency=afterok:$JOB_ID "$SELF"'
+            " $STEP_COUNT $((LOOP_COUNT + 1)) 0" in text
+        )
+        assert "INNER_COUNT=0" in text
+
+    def test_empty_loop_advances_without_submitting(self, cluster):
+        loop = Loop(n_iterations=3, steps=[])
+        p = Pipeline(steps=[loop, Step(block=lambda: None, name="after")])
+        lines = []
+        _render_loop_block(
+            lines=lines,
+            loop=loop,
+            step_index=0,
+            pipeline=p,
+            cluster=cluster,
+            script_paths={},
+            total_steps=2,
+        )
+        text = "\n".join(lines)
+        assert 'sbatch "$SELF" $STEP_COUNT $LOOP_COUNT 0' in text
+        assert "STEP_COUNT=1" in text
 
 
 class TestRenderOrchestratorScript:
@@ -314,6 +428,7 @@ class TestRenderOrchestratorScript:
         assert "orchestrator_test" in script
         assert "STEP_COUNT=$1" in script
         assert "LOOP_COUNT=$2" in script
+        assert "INNER_COUNT=${3:-0}" in script
         assert "TOTAL_STEPS=1" in script
         assert 'JOB_DIR="/scratch/job1"' in script
         assert "Pipeline complete" in script
