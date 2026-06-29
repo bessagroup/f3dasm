@@ -205,7 +205,7 @@ class SlurmExecutor(Executor):
         orch_path.write_text(orch_script)
 
         # --- Submit the orchestrator ---
-        cmd: list[str] = ["sbatch", str(orch_path), "0", "0"]
+        cmd: list[str] = ["sbatch", str(orch_path), "0", "0", "0"]
         logger.info(f"Submitting orchestrator: {' '.join(cmd)}")
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=True
@@ -417,19 +417,27 @@ def render_orchestrator_script(
 ) -> str:
     """Render a self-resubmitting orchestrator for the pipeline.
 
-    The orchestrator manages the entire pipeline using two
+    The orchestrator manages the entire pipeline using three
     counters passed as positional arguments:
 
     - ``STEP_COUNT``: index into the pipeline's top-level
       elements (Steps and Loops).
     - ``LOOP_COUNT``: current iteration within a Loop (0 when
       not inside a loop).
+    - ``INNER_COUNT``: index of the inner step within the
+      current Loop iteration (0 when not inside a loop).
 
     Each execution handles exactly one action (one Step
-    submission or one Loop iteration), then resubmits itself
-    with ``--dependency`` on the last submitted job. The
-    dependency type is determined by the *next* step's
-    ``Step.dependency`` field; after the last element the
+    submission, or one inner step of one Loop iteration), then
+    resubmits itself with ``--dependency`` on the last submitted
+    job. Submitting each inner Loop step in its own wake (rather
+    than all of an iteration's steps at once) ensures a parallel
+    inner step sizes its ``--array=`` via
+    :mod:`f3dasm.pipeline.count_open` only *after* its upstream
+    inner step has finished writing its ExperimentData to disk --
+    the same guarantee top-level step transitions already
+    provide. The dependency type is determined by the *next*
+    step's ``Step.dependency`` field; after the last element the
     orchestrator resubmits itself once more with ``afterok``, so
     a final run starts past ``TOTAL_STEPS`` and prints
     ``"Pipeline complete."`` to its log if (and only if) the
@@ -508,6 +516,7 @@ def render_orchestrator_script(
         [
             "STEP_COUNT=$1",
             "LOOP_COUNT=$2",
+            "INNER_COUNT=${3:-0}",
             'SELF=$(realpath "$0")',
             f"TOTAL_STEPS={total_steps}",
             f'JOB_DIR="{job_dir.as_posix()}"',
@@ -702,94 +711,115 @@ def _render_loop_block(
     script_paths: dict[str, str],
     total_steps: int,
 ) -> None:
-    """Append bash lines for a Loop element in the orchestrator."""
+    """Append bash lines for a Loop element in the orchestrator.
+
+    Each inner step is submitted in its *own* orchestrator wake,
+    tracked by ``INNER_COUNT`` and chained by a SLURM dependency on
+    the previous inner step. This guarantees a parallel inner step's
+    :mod:`f3dasm.pipeline.count_open` runs only after its predecessor
+    has finished writing its ExperimentData to disk -- the invariant
+    top-level step transitions already rely on. Submitting all of an
+    iteration's inner steps in a single wake (the previous behaviour)
+    would size a parallel step's ``--array=`` from the *previous*
+    iteration's residual job statuses, before the current iteration's
+    upstream step had run.
+    """
     n_iters = loop.n_iterations
+    next_step_index = step_index + 1
 
     lines.extend(
         [
             f"    # Loop: {n_iters} iterations",
             f'    if [ "$LOOP_COUNT" -lt {n_iters} ]; then',
             "      export F3DASM_ITERATION=$LOOP_COUNT",
-            '      PREV_JOB_ID=""',
         ]
     )
 
-    # Submit each inner step with dependency chaining
+    if not loop.steps:
+        # Degenerate loop with no inner steps: advance the iteration
+        # counter without submitting anything (a no-op per iteration,
+        # preserving the prior behaviour for empty loops).
+        lines.extend(
+            [
+                "      LOOP_COUNT=$((LOOP_COUNT + 1))",
+                '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT 0',
+                "      exit 0",
+                "    else",
+                "      LOOP_COUNT=0",
+                "      INNER_COUNT=0",
+                f"      STEP_COUNT={next_step_index}",
+                "      continue",
+                "    fi",
+            ]
+        )
+        return
+
+    n_inner = len(loop.steps)
     for j, inner_step in enumerate(loop.steps):
         inner_label = f"loop{step_index}_{inner_step.name}"
         inner_path = script_paths[inner_label]
         log_label = f"{inner_step.name} (iter $LOOP_COUNT)"
-        dep = inner_step.dependency
+        cond = "if" if j == 0 else "elif"
 
-        lines.append(f"      # Inner step: {inner_step.name}")
+        lines.append(f'      {cond} [ "$INNER_COUNT" -eq {j} ]; then')
+        lines.append(f"        # Inner step: {inner_step.name}")
 
+        # --- Submit this inner step -> JOB_ID (empty if skipped). The
+        # cross-step ordering is enforced by the dependency on the SELF
+        # resubmission that gated *this* wake, so the step itself only
+        # needs --export=ALL (no carry-in --dependency flag).
         if inner_step.parallel:
-            # Build the optional --dependency= flag.
-            if j == 0:
-                dep_flag_setup = ['      DEP_FLAG="--export=ALL"']
-            else:
-                dep_flag_setup = [
-                    '      if [ -n "$PREV_JOB_ID" ]; then',
-                    f'        DEP_FLAG="--dependency={dep}:$PREV_JOB_ID'
-                    ' --export=ALL"',
-                    "      else",
-                    '        DEP_FLAG="--export=ALL"',
-                    "      fi",
-                ]
-            lines.extend(dep_flag_setup)
             _render_parallel_submit(
                 lines=lines,
                 step=inner_step,
                 cluster=cluster,
                 script_path=inner_path,
                 label_for_log=f"  {log_label}",
-                job_id_var="PREV_JOB_ID",
-                indent="      ",
-                extra_sbatch_flags="$DEP_FLAG",
-            )
-        elif j == 0:
-            # First inner non-parallel step: no carry-in dep
-            lines.extend(
-                [
-                    f'      RESULT=$(sbatch --export=ALL "{inner_path}")',
-                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
-                ]
+                job_id_var="JOB_ID",
+                indent="        ",
+                extra_sbatch_flags="--export=ALL",
             )
         else:
             lines.extend(
                 [
-                    '      if [ -n "$PREV_JOB_ID" ]; then',
-                    "        RESULT=$(sbatch"
-                    f" --dependency={dep}:$PREV_JOB_ID"
-                    f' --export=ALL "{inner_path}")',
-                    "      else",
                     f'        RESULT=$(sbatch --export=ALL "{inner_path}")',
-                    "      fi",
-                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
+                    "        JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+                    f'        echo "  Submitted {log_label}: job $JOB_ID"',
                 ]
             )
 
-    # Resubmit orchestrator for next iteration
-    # Use the first inner step's dependency type for iteration
-    # resubmission (determines if next iteration runs on failure)
-    iter_dep = loop.steps[0].dependency if loop.steps else "afterok"
+        # --- Resubmit SELF for the next inner step, or (after the last
+        # inner step) for the next iteration. The target step's
+        # ``dependency`` field decides how it depends on this one.
+        if j < n_inner - 1:
+            next_dep = loop.steps[j + 1].dependency
+            self_args = f"$STEP_COUNT $LOOP_COUNT {j + 1}"
+        else:
+            next_dep = loop.steps[0].dependency
+            self_args = "$STEP_COUNT $((LOOP_COUNT + 1)) 0"
+
+        # A skipped parallel step leaves JOB_ID empty -> resubmit
+        # without a SLURM dependency.
+        lines.extend(
+            [
+                '        if [ -n "$JOB_ID" ]; then',
+                f"          sbatch --dependency={next_dep}:$JOB_ID"
+                f' "$SELF" {self_args}',
+                "        else",
+                f'          sbatch "$SELF" {self_args}',
+                "        fi",
+                "        exit 0",
+            ]
+        )
 
     lines.extend(
         [
-            "      LOOP_COUNT=$((LOOP_COUNT + 1))",
-            '      if [ -n "$PREV_JOB_ID" ]; then',
-            f"        sbatch --dependency={iter_dep}:$PREV_JOB_ID"
-            ' "$SELF" $STEP_COUNT $LOOP_COUNT',
-            "      else",
-            '        sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
             "      fi",
-            "      exit 0",
             "    else",
             "      # Loop done — advance to next element",
             "      LOOP_COUNT=0",
-            f"      STEP_COUNT={step_index + 1}",
+            "      INNER_COUNT=0",
+            f"      STEP_COUNT={next_step_index}",
             "      continue",
             "    fi",
         ]
