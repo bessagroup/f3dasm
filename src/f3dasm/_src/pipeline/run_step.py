@@ -39,8 +39,7 @@ from pathlib import Path
 import cloudpickle
 
 # Local
-from ..core import Block, DataGenerator
-from ..experimentdata import ExperimentData
+from .executors._runner import ExecutionContext, run_step
 from .loop import Loop
 from .pipeline import Pipeline, Step
 
@@ -207,17 +206,16 @@ def _execute_step(
 ) -> None:
     """Execute a single step's block on a cluster node.
 
-    This function is called from within a SLURM job. The
-    dispatch logic differs from local execution:
+    This function is called from within a SLURM job. It builds the cluster
+    :class:`ExecutionContext` and delegates to the shared :func:`run_step`
+    dispatcher:
 
-    - **Parallel DataGenerator** (``job_number`` is set): uses
-      ``"cluster_array"`` mode so each array task processes one
-      job index.
-    - **Non-parallel DataGenerator**: uses ``"cluster"`` mode
-      with file-lock coordination for multi-node execution.
-    - **Block**: loads ExperimentData, runs ``arm`` + ``call``,
-      and stores the result back to disk.
-    - **callable**: invokes with project context.
+    - **Parallel DataGenerator** with a SLURM array task id: runs as a
+      ``cluster_array`` task owning the strided slice
+      ``open[job_number::max_array_size]`` of the open jobs.
+    - **Every other step** (non-parallel DataGenerator, Block, callable):
+      runs in ``"cluster"`` mode with file-lock coordination for multi-node
+      execution.
 
     Parameters
     ----------
@@ -229,46 +227,16 @@ def _execute_step(
     job_number : int | None
         SLURM array task ID, or ``None`` for non-array jobs.
     """
-    block = step.block
-
-    if isinstance(block, DataGenerator):
-        # Load ExperimentData from disk before dispatching.
-        data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        if step.parallel and job_number is not None:
-            # Array job: each SLURM task processes one job index.
-            # The DataGenerator handles the strided access pattern
-            # internally (job_number::max_array_size).
-            max_array_size = step.resources.max_array_size
-            open_experiments = data.select_with_status("open").index.tolist()
-
-            job_numbers = open_experiments[job_number::max_array_size]
-
-            for job_idx in job_numbers:
-                _ = block.call(
-                    data=data,
-                    mode="cluster_array",
-                    job_number=job_idx,
-                    **step.kwargs,
-                )
-        else:
-            # Non-parallel DataGenerator on cluster: use file-lock
-            # coordination so multiple nodes can safely share the
-            # same ExperimentData on disk.
-            block.call(data=data, mode="cluster", **step.kwargs)
-    elif isinstance(block, Block):
-        # Single-node Block execution: load data, transform,
-        # persist.
-        data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        result: ExperimentData = block.call(data=data, **step.kwargs)
-        result.store(run_dir)
-    elif callable(block):
-        block(project_dir=run_dir, **step.kwargs)
-    else:
-        raise TypeError(
-            f"Step {step.name!r} has an unsupported block type: {type(block)}"
+    if step.parallel and job_number is not None:
+        ctx = ExecutionContext(
+            mode="cluster_array",
+            job_number=job_number,
+            max_array_size=step.resources.max_array_size,
         )
+    else:
+        ctx = ExecutionContext(mode="cluster")
+
+    run_step(step=step, run_dir=run_dir, ctx=ctx)
 
 
 if __name__ == "__main__":

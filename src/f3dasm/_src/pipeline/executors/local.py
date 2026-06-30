@@ -12,9 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Local
-from ...core import Block, DataGenerator
-from ...experimentdata import ExperimentData
 from ..pipeline import Pipeline, Step
+from ._runner import ExecutionContext, run_step
 from .base import Executor
 
 #                                                          Authorship & Credits
@@ -112,17 +111,10 @@ def _run_step_locally(
 ) -> None:
     """Execute a single pipeline step in the local process.
 
-    Dispatches to the appropriate execution strategy based on the
-    block type:
-
-    - **DataGenerator** with ``parallel=True``: uses
-      ``parallel_mode`` (default ``"cluster"``).
-    - **DataGenerator** without ``parallel``: uses ``"cluster"``
-      mode (single job at a time, in-process).
-    - **Block**: loads ExperimentData from disk, calls
-      ``arm`` + ``call``, and stores the result back.
-    - **callable**: invokes with ``project_dir`` and
-      ``project_job``.
+    Builds the local :class:`ExecutionContext` and delegates to the shared
+    :func:`run_step` dispatcher. A parallel :class:`DataGenerator` step uses
+    ``parallel_mode`` (default ``"cluster"``); every other step uses
+    ``"cluster"`` -- the mode is only consulted for DataGenerator steps.
 
     Parameters
     ----------
@@ -131,33 +123,7 @@ def _run_step_locally(
     run_dir : Path
         The project run directory on disk.
     parallel_mode : str
-        Mode for DataGenerator parallel steps.
+        Mode for parallel DataGenerator steps. Defaults to ``"cluster"``.
     """
-    block = step.block
-
-    if isinstance(block, DataGenerator):
-        # Load ExperimentData from disk and run the DataGenerator.
-        data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        mode: str = parallel_mode if step.parallel else "cluster"
-        result: ExperimentData | None = block.call(
-            data=data, mode=mode, **step.kwargs
-        )
-        if mode == "sequential":
-            result.store()
-    elif isinstance(block, Block):
-        # Load ExperimentData from disk, run arm + call, persist.
-        data = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        result = block.call(data=data, **step.kwargs)
-        result.store()
-    elif callable(block):
-        # Plain callable (e.g. the first step that creates
-        # ExperimentData from scratch). It receives the run
-        # directory and is responsible for creating and storing
-        # data on disk.
-        block(project_dir=run_dir, **step.kwargs)
-    else:
-        raise TypeError(
-            f"Step {step.name!r} has an unsupported block type: {type(block)}"
-        )
+    mode = parallel_mode if step.parallel else "cluster"
+    run_step(step=step, run_dir=run_dir, ctx=ExecutionContext(mode=mode))
