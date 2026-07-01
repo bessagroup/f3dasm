@@ -60,3 +60,17 @@ Optional deps (`optuna`, `abaqus2py`) are gated behind the `all` extra and behin
 - [agentic-l2co](https://github.com/bessagroup/agentic-l2co) — An LLM-agent drop-in replacement for `l2co.L2COModel`, driving two-stage optimizer selection with an Ollama-hosted LLM.
 - [bbob-jax](https://github.com/bessagroup/bbob-jax) — JAX implementations of the BBOB and CEC 2005 black-box optimization benchmark functions.
 - [f3dasm](https://github.com/bessagroup/f3dasm) — Framework for Data-Driven Design and Analysis of Structures and Materials; provides `ExperimentData`, pipelines, and SLURM orchestration.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live in the [bessagroup/f3dasm](https://github.com/bessagroup/f3dasm) GitHub Issues (managed via the `gh` CLI). External PRs are **not** a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical role names used verbatim — `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, plus the repo's existing `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

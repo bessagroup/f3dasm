@@ -76,3 +76,53 @@ class TestCollectArrayResults:
         # Should not raise even without experiment_sample dir
         result = block.call(data=data)
         assert result is not None
+
+    def test_disk_backed_output_survives_collect_store_reload(self, tmp_path):
+        """A disk-backed (ReferenceValue) output must round-trip.
+
+        Regression test: the SLURM-array collection path used to drop the
+        domain's ``to_disk`` metadata, so after
+        ``CollectArrayResults`` -> ``store`` -> ``from_file`` a disk-backed
+        output (e.g. an array) reloaded as the bare reference *string*
+        (``'disp/0.npy'``) instead of the loaded object -- which then blew up
+        downstream (``float / str``) when a consumer indexed into it.
+        """
+        import numpy as np
+        import pandas as pd
+
+        from f3dasm._src.experimentdata import _store
+
+        domain = Domain()
+        domain.add_float("x", 0.0, 1.0)
+        data = ExperimentData(
+            domain=domain, input_data=pd.DataFrame({"x": [0.1, 0.2]})
+        )
+        data.store(project_dir=tmp_path)
+
+        # Emulate two SLURM array jobs, each producing an on-disk array output
+        # and persisting itself as an experiment_sample JSON file.
+        for idx in range(2):
+            d = ExperimentData.from_file(tmp_path)
+            sample = d.get_experiment_sample(idx)
+            sample.store_as_json(idx=idx)
+            sample.store(
+                object=np.array([1.0, 2.0, 3.0]), name="disp", to_disk=True
+            )
+            sample, d.domain = _store(
+                experiment_sample=sample, idx=idx, domain=d.domain
+            )
+            sample.mark("finished")
+            sample.store_as_json(idx=idx)
+
+        # reset step: collect the array results, then persist.
+        collected = CollectArrayResults(cleanup=True).call(
+            data=ExperimentData.from_file(tmp_path)
+        )
+        assert collected.domain.output_space["disp"].to_disk is True
+        collected.store(project_dir=tmp_path)
+
+        # downstream step: reload and read the output back.
+        reloaded = ExperimentData.from_file(tmp_path)
+        value = reloaded.get_experiment_sample(0).to_dict()["disp"]
+        assert isinstance(value, np.ndarray)
+        np.testing.assert_array_equal(value, np.array([1.0, 2.0, 3.0]))
