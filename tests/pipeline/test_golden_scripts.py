@@ -19,7 +19,9 @@ def test_opted_out_pipeline_renders_golden_scripts():
     golden_labels = sorted(p.stem for p in GOLDEN_DIR.glob("*.sh"))
     assert sorted(scripts) == golden_labels
     for label, content in scripts.items():
-        golden = (GOLDEN_DIR / f"{label}.sh").read_text()
+        # Explicit encoding: the scripts contain non-ASCII (em-dash)
+        # and Windows' default codec is cp1252, not UTF-8.
+        golden = (GOLDEN_DIR / f"{label}.sh").read_text(encoding="utf-8")
         assert content == golden, (
             f"generated script {label!r} differs from its golden file; "
             "max_jobs_per_task=None must reproduce the pre-wave renderer "
