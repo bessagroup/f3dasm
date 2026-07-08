@@ -7,7 +7,8 @@ Usage::
         --job-dir=/scratch/user/1711449600 \\
         --project-dir=. \\
         --iteration=0 \\
-        [--job-number=42]
+        [--job-number=42] \\
+        [--wave=0]
 
 This module is the *only* Python script that SLURM jobs execute.
 The ``SlurmExecutor`` serialises the full :class:`Pipeline` to
@@ -128,6 +129,12 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="SLURM array task ID for parallel steps.",
     )
+    parser.add_argument(
+        "--wave",
+        type=int,
+        default=0,
+        help="Wave index for parallel steps submitted in waves.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -169,6 +176,7 @@ def main(argv: list[str] | None = None) -> None:
         step=step,
         run_dir=run_dir,
         job_number=args.job_number,
+        wave=args.wave,
     )
 
 
@@ -203,6 +211,7 @@ def _execute_step(
     step: Step,
     run_dir: Path,
     job_number: int | None,
+    wave: int = 0,
 ) -> None:
     """Execute a single step's block on a cluster node.
 
@@ -211,8 +220,11 @@ def _execute_step(
     dispatcher:
 
     - **Parallel DataGenerator** with a SLURM array task id: runs as a
-      ``cluster_array`` task owning the strided slice
-      ``open[job_number::max_array_size]`` of the open jobs.
+      ``cluster_array`` task owning the slice
+      ``open[wave*W*j:][job_number::W][:j]`` of the open jobs, where
+      ``W = max_array_size`` and ``j = max_jobs_per_task`` (``j=None``:
+      no wave offset and no cap — the whole strided slice
+      ``open[job_number::W]``).
     - **Every other step** (non-parallel DataGenerator, Block, callable):
       runs in ``"cluster"`` mode with file-lock coordination for multi-node
       execution.
@@ -226,12 +238,17 @@ def _execute_step(
         (``job_dir / step.project_dir``).
     job_number : int | None
         SLURM array task ID, or ``None`` for non-array jobs.
+    wave : int
+        Wave index for parallel steps submitted in waves; ``0``
+        otherwise.
     """
     if step.parallel and job_number is not None:
         ctx = ExecutionContext(
             mode="cluster_array",
             job_number=job_number,
             max_array_size=step.resources.max_array_size,
+            wave=wave,
+            max_jobs_per_task=step.resources.max_jobs_per_task,
         )
     else:
         ctx = ExecutionContext(mode="cluster")

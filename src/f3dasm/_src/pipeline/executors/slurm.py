@@ -62,7 +62,11 @@ class SlurmExecutor(Executor):
     step's ExperimentData on disk. This means the user does not
     need to declare ``array_jobs`` upfront — the orchestrator
     invokes :mod:`f3dasm.pipeline.count_open` to compute the array
-    width just before each ``sbatch``.
+    width just before each ``sbatch``. When the open-job count
+    exceeds ``max_array_size * max_jobs_per_task``, the step is
+    submitted as multiple sequential waves of array jobs, so the
+    step's declared resources always cover at most
+    ``max_jobs_per_task`` experiments per array task.
 
     At submission time the submitter's ``sys.path`` is stored as
     ``.sys_path.json`` alongside ``.pipeline.pkl``. When a SLURM
@@ -313,6 +317,9 @@ def render_sbatch_script(
     intentionally omitted from the script; the orchestrator
     supplies ``--array=`` on the ``sbatch`` command line based on
     the count of open experiments on disk at submission time.
+    Wave-submitted steps (bounded ``max_jobs_per_task``) also pass
+    ``--wave=${F3DASM_WAVE:-0}`` to the payload; the orchestrator
+    exports ``F3DASM_WAVE`` before each wave's ``sbatch``.
 
     All paths embedded in the rendered script use POSIX-style
     (forward-slash) form; the script is meant to run on a POSIX
@@ -400,6 +407,8 @@ def render_sbatch_script(
 
     if step.parallel:
         cmd_parts.append("  --job-number=$SLURM_ARRAY_TASK_ID")
+    if _step_uses_waves(step):
+        cmd_parts.append("  --wave=${F3DASM_WAVE:-0}")
 
     lines.append(" \\\n".join(cmd_parts))
     lines.append("")
@@ -426,6 +435,10 @@ def render_orchestrator_script(
       not inside a loop).
     - ``INNER_COUNT``: index of the inner step within the
       current Loop iteration (0 when not inside a loop).
+    - ``WAVE_COUNT`` (fourth positional argument; only rendered
+      when some step is submitted in waves): index of the current
+      wave within a parallel step. Reset to 0 whenever any other
+      counter advances.
 
     Each execution handles exactly one action (one Step
     submission, or one inner step of one Loop iteration), then
@@ -450,6 +463,17 @@ def render_orchestrator_script(
     flag based on the number of open experiments on disk. If
     there are none, the step is skipped and the next element is
     resubmitted without a SLURM dependency.
+
+    A parallel step with a bounded ``max_jobs_per_task`` whose
+    open-job count exceeds ``max_array_size * max_jobs_per_task``
+    is submitted as multiple sequential *waves*: after each wave
+    the orchestrator resubmits itself for the next one, gated
+    ``afterany`` on the wave's array job (see
+    :func:`_render_parallel_submit`). The open-job count is read
+    from the central store, which array tasks do not modify, so
+    every wave sizes and offsets against the same frozen snapshot.
+    The next pipeline element's dependency attaches to the final
+    wave only.
 
     All paths embedded in the rendered orchestrator script use
     POSIX-style (forward-slash) form; the orchestrator is meant
@@ -512,11 +536,21 @@ def render_orchestrator_script(
     if cluster.env_vars:
         lines.append("")
 
+    counter_lines = [
+        "STEP_COUNT=$1",
+        "LOOP_COUNT=$2",
+        "INNER_COUNT=${3:-0}",
+    ]
+    # The wave counter is only threaded through when some step is
+    # actually submitted in waves, so pipelines that opt out
+    # (max_jobs_per_task=None everywhere) render byte-identical
+    # scripts to the pre-wave orchestrator.
+    if _pipeline_uses_waves(pipeline):
+        counter_lines.append("WAVE_COUNT=${4:-0}")
+
     lines.extend(
         [
-            "STEP_COUNT=$1",
-            "LOOP_COUNT=$2",
-            "INNER_COUNT=${3:-0}",
+            *counter_lines,
             'SELF=$(realpath "$0")',
             f"TOTAL_STEPS={total_steps}",
             f'JOB_DIR="{job_dir.as_posix()}"',
@@ -593,6 +627,28 @@ def _get_next_dependency(
     return "afterok"
 
 
+def _step_uses_waves(step: Step) -> bool:
+    """Whether a step is submitted in waves (see ``CONTEXT.md``).
+
+    A parallel step with a bounded ``max_jobs_per_task`` executes as
+    one or more waves; ``max_jobs_per_task=None`` opts out and keeps
+    the single strided array submission.
+    """
+    return step.parallel and step.resources.max_jobs_per_task is not None
+
+
+def _pipeline_uses_waves(pipeline: Pipeline) -> bool:
+    """Whether any step of the pipeline is submitted in waves."""
+    for element in pipeline.steps:
+        if isinstance(element, Step):
+            if _step_uses_waves(element):
+                return True
+        elif isinstance(element, Loop):
+            if any(_step_uses_waves(s) for s in element.steps):
+                return True
+    return False
+
+
 def _render_parallel_submit(
     lines: list[str],
     *,
@@ -603,12 +659,24 @@ def _render_parallel_submit(
     job_id_var: str,
     indent: str,
     extra_sbatch_flags: str = "",
+    wave_self_args: str = "",
 ) -> None:
     """Append bash that counts open experiments and sbatches a parallel step.
 
     On entry: nothing required. On exit: the bash variable named
     by ``job_id_var`` is either the submitted SLURM job id, or the
     empty string if there were no open experiments.
+
+    For a wave-submitted step (bounded ``max_jobs_per_task``, see
+    :func:`_step_uses_waves`) the appended bash sizes the array for
+    the current ``WAVE_COUNT``'s window of open jobs and — when more
+    windows remain — resubmits the orchestrator for the next wave
+    (gated ``afterany`` on this one, so an infra-killed task cannot
+    orphan the remaining waves) and exits. Control only reaches the
+    lines appended *after* this block on the final wave; the next
+    step's dependency therefore attaches to the final wave's job id.
+    ``wave_self_args`` holds the orchestrator counter arguments that
+    re-enter this same step (``WAVE_COUNT + 1`` is appended to them).
     """
     res = step.resources
     project_dir = step.project_dir
@@ -617,22 +685,62 @@ def _render_parallel_submit(
         f"{runner} -m {_COUNT_OPEN_MODULE} "
         f'--job-dir="$JOB_DIR" --project-dir="{project_dir}"'
     )
-    sbatch_flags = (
-        f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent}"
-        f" {extra_sbatch_flags}".rstrip()
-    )
+
+    if not _step_uses_waves(step):
+        sbatch_flags = (
+            f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent}"
+            f" {extra_sbatch_flags}".rstrip()
+        )
+        lines.extend(
+            [
+                f"{indent}N_OPEN=$({count_cmd})",
+                f'{indent}if [ "$N_OPEN" -gt 0 ]; then',
+                f"{indent}  ARRAY_MAX=$(("
+                f" (N_OPEN < {res.max_array_size} ? N_OPEN :"
+                f" {res.max_array_size}) - 1 ))",
+                f'{indent}  RESULT=$(sbatch {sbatch_flags} "{script_path}")',
+                f"{indent}  {job_id_var}="
+                f"$(echo $RESULT | awk '{{print $NF}}')",
+                f'{indent}  echo "Submitted {label_for_log}:'
+                f' job ${job_id_var} (array 0-$ARRAY_MAX)"',
+                f"{indent}else",
+                f'{indent}  echo "Skipping {label_for_log}:'
+                f' no open experiments"',
+                f'{indent}  {job_id_var}=""',
+                f"{indent}fi",
+            ]
+        )
+        return
+
+    # Wave submission: the wave index reaches the worker via the
+    # exported F3DASM_WAVE (--export=ALL), mirroring F3DASM_ITERATION.
+    j = res.max_jobs_per_task
+    window = res.max_array_size * j
+    flags = extra_sbatch_flags
+    if "--export=ALL" not in flags:
+        flags = f"--export=ALL {flags}".rstrip()
+    sbatch_flags = f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent} {flags}"
 
     lines.extend(
         [
             f"{indent}N_OPEN=$({count_cmd})",
             f'{indent}if [ "$N_OPEN" -gt 0 ]; then',
+            f"{indent}  REM=$(( N_OPEN - WAVE_COUNT * {window} ))",
+            f"{indent}  N_TASKS=$(( (REM + {j} - 1) / {j} ))",
             f"{indent}  ARRAY_MAX=$(("
-            f" (N_OPEN < {res.max_array_size} ? N_OPEN :"
+            f" (N_TASKS < {res.max_array_size} ? N_TASKS :"
             f" {res.max_array_size}) - 1 ))",
+            f"{indent}  export F3DASM_WAVE=$WAVE_COUNT",
             f'{indent}  RESULT=$(sbatch {sbatch_flags} "{script_path}")',
             f"{indent}  {job_id_var}=$(echo $RESULT | awk '{{print $NF}}')",
             f'{indent}  echo "Submitted {label_for_log}:'
-            f' job ${job_id_var} (array 0-$ARRAY_MAX)"',
+            f' job ${job_id_var} wave $WAVE_COUNT (array 0-$ARRAY_MAX)"',
+            f"{indent}  if [ $(( (WAVE_COUNT + 1) * {window} ))"
+            f' -lt "$N_OPEN" ]; then',
+            f"{indent}    sbatch --dependency=afterany:${job_id_var}"
+            f' "$SELF" {wave_self_args} $((WAVE_COUNT + 1))',
+            f"{indent}    exit 0",
+            f"{indent}  fi",
             f"{indent}else",
             f'{indent}  echo "Skipping {label_for_log}: no open experiments"',
             f'{indent}  {job_id_var}=""',
@@ -665,6 +773,7 @@ def _render_step_block(
             label_for_log=step.name,
             job_id_var="JOB_ID",
             indent="    ",
+            wave_self_args="$STEP_COUNT $LOOP_COUNT 0",
         )
     else:
         lines.extend(
@@ -778,6 +887,7 @@ def _render_loop_block(
                 job_id_var="JOB_ID",
                 indent="        ",
                 extra_sbatch_flags="--export=ALL",
+                wave_self_args=f"$STEP_COUNT $LOOP_COUNT {j}",
             )
         else:
             lines.extend(

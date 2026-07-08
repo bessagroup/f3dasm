@@ -60,6 +60,37 @@ class TestExecuteStep:
         with pytest.raises(TypeError, match="unsupported block type"):
             _execute_step(step=step, run_dir=tmp_path, job_number=None)
 
+    def test_wave_threaded_into_execution_context(self, tmp_path):
+        """A parallel step run with a wave index owns the offset slice."""
+        from f3dasm import ExperimentData, create_sampler, datagenerator
+        from f3dasm._src.pipeline.resources import SlurmResources
+        from f3dasm.design import Domain
+
+        @datagenerator(output_names="y")
+        def const(x):
+            return 1.0
+
+        domain = Domain()
+        domain.add_float("x", 0.0, 1.0)
+        domain.add_output("y")
+        data = ExperimentData(domain=domain)
+        data = create_sampler("random", seed=42).call(data=data, n_samples=5)
+        data.store(project_dir=tmp_path)
+
+        step = Step(
+            block=const,
+            name="gen",
+            parallel=True,
+            resources=SlurmResources(max_array_size=2, max_jobs_per_task=1),
+        )
+
+        # Wave 1, task 0 of width 2 owns open[1*2*1 + 0] = index 2.
+        _execute_step(step=step, run_dir=tmp_path, job_number=0, wave=1)
+
+        sample_dir = tmp_path / "experiment_sample"
+        written = sorted(p.stem for p in sample_dir.glob("*.json"))
+        assert written == ["2"]
+
 
 class TestSysPathRestoration:
     def _make_job_dir(self, tmp_path):
