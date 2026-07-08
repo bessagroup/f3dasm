@@ -55,3 +55,7 @@ _Avoid_: runner, scheduler, backend.
 **Execution context**:
 The description of *how and where* a single step is evaluated in a given environment — its parallelization mode and which jobs the current invocation is responsible for — independent of *what* the step computes. The same step runs locally or as one task of a SLURM array purely by changing its execution context.
 _Avoid_: config, options, environment (alone).
+
+**Wave**:
+One SLURM array submission covering a contiguous window of a parallel step's open jobs. A parallel step executes as one or more waves, each gated on the previous wave terminating.
+_Avoid_: batch, chunk, round.

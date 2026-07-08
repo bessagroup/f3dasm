@@ -17,6 +17,7 @@ class TestSlurmResources:
         assert r.nodes == 1
         assert r.max_array_size == 900
         assert r.max_concurrent == 64
+        assert r.max_jobs_per_task == 1
         assert r.extra_sbatch == {}
 
     def test_custom_values(self):
@@ -34,6 +35,16 @@ class TestSlurmResources:
         assert r.cpus_per_task == 4
         assert r.nodes == 2
         assert r.extra_sbatch == {"gres": "gpu:1"}
+
+    @pytest.mark.parametrize("value", [None, 1, 2, 10])
+    def test_max_jobs_per_task_valid(self, value):
+        r = SlurmResources(max_jobs_per_task=value)
+        assert r.max_jobs_per_task == value
+
+    @pytest.mark.parametrize("value", [0, -1, -900])
+    def test_max_jobs_per_task_invalid(self, value):
+        with pytest.raises(ValueError, match="max_jobs_per_task"):
+            SlurmResources(max_jobs_per_task=value)
 
 
 class TestSlurmCluster:

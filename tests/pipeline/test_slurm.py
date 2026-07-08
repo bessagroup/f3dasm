@@ -114,6 +114,136 @@ class TestRenderSbatchScript:
         )
         assert "%j.out" in script
 
+    def test_wave_step_passes_wave_flag(self, cluster):
+        res = SlurmResources(max_array_size=100, max_jobs_per_task=1)
+        step = Step(
+            block=lambda: None, name="run", resources=res, parallel=True
+        )
+        script = render_sbatch_script(
+            step=step,
+            cluster=cluster,
+            pipeline_name="pipe",
+            label="run",
+            job_dir=Path("/scratch/job1"),
+            iteration=0,
+        )
+        assert "--wave=${F3DASM_WAVE:-0}" in script
+
+    def test_opted_out_step_has_no_wave_flag(self, cluster):
+        res = SlurmResources(max_array_size=100, max_jobs_per_task=None)
+        step = Step(
+            block=lambda: None, name="run", resources=res, parallel=True
+        )
+        script = render_sbatch_script(
+            step=step,
+            cluster=cluster,
+            pipeline_name="pipe",
+            label="run",
+            job_dir=Path("/scratch/job1"),
+            iteration=0,
+        )
+        assert "--wave" not in script
+
+
+class TestWaveRendering:
+    def _parallel_step(self, max_jobs_per_task):
+        res = SlurmResources(
+            max_array_size=100,
+            max_concurrent=32,
+            max_jobs_per_task=max_jobs_per_task,
+        )
+        return Step(
+            block=lambda: None, name="run", resources=res, parallel=True
+        )
+
+    def test_wave_step_block(self, cluster):
+        lines = []
+        step = self._parallel_step(max_jobs_per_task=2)
+        pipeline = Pipeline(name="pipe", steps=[step])
+        _render_step_block(
+            lines=lines,
+            step=step,
+            step_index=0,
+            pipeline=pipeline,
+            cluster=cluster,
+            script_paths={"run": "/scripts/run.sh"},
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        # Window = max_array_size * max_jobs_per_task = 200.
+        assert "REM=$(( N_OPEN - WAVE_COUNT * 200 ))" in text
+        assert "N_TASKS=$(( (REM + 2 - 1) / 2 ))" in text
+        assert "export F3DASM_WAVE=$WAVE_COUNT" in text
+        assert "--export=ALL" in text
+        assert (
+            'if [ $(( (WAVE_COUNT + 1) * 200 )) -lt "$N_OPEN" ]; then' in text
+        )
+        assert (
+            "sbatch --dependency=afterany:$JOB_ID"
+            ' "$SELF" $STEP_COUNT $LOOP_COUNT 0 $((WAVE_COUNT + 1))' in text
+        )
+
+    def test_opted_out_step_block_has_no_wave_logic(self, cluster):
+        lines = []
+        step = self._parallel_step(max_jobs_per_task=None)
+        pipeline = Pipeline(name="pipe", steps=[step])
+        _render_step_block(
+            lines=lines,
+            step=step,
+            step_index=0,
+            pipeline=pipeline,
+            cluster=cluster,
+            script_paths={"run": "/scripts/run.sh"},
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        assert "WAVE_COUNT" not in text
+        assert "F3DASM_WAVE" not in text
+
+    def test_orchestrator_wave_counter_only_when_used(self, cluster):
+        wave_pipeline = Pipeline(
+            name="pipe", steps=[self._parallel_step(max_jobs_per_task=1)]
+        )
+        opted_out = Pipeline(
+            name="pipe", steps=[self._parallel_step(max_jobs_per_task=None)]
+        )
+        kwargs = dict(
+            cluster=cluster,
+            orchestrator_resources=SlurmResources(),
+            script_paths={"run": "/scripts/run.sh"},
+            log_dir_path="/logs",
+            job_dir=Path("/scratch/job1"),
+        )
+        with_waves = render_orchestrator_script(
+            pipeline=wave_pipeline, **kwargs
+        )
+        without = render_orchestrator_script(pipeline=opted_out, **kwargs)
+        assert "WAVE_COUNT=${4:-0}" in with_waves
+        assert "WAVE_COUNT" not in without
+
+    def test_loop_inner_wave_resubmits_same_inner_step(self, cluster):
+        lines = []
+        inner = self._parallel_step(max_jobs_per_task=1)
+        loop = Loop(n_iterations=2, steps=[inner])
+        pipeline = Pipeline(name="pipe", steps=[loop])
+        _render_loop_block(
+            lines=lines,
+            loop=loop,
+            step_index=0,
+            pipeline=pipeline,
+            cluster=cluster,
+            script_paths={"loop0_run": "/scripts/loop0_run.sh"},
+            total_steps=1,
+        )
+        text = "\n".join(lines)
+        assert (
+            "sbatch --dependency=afterany:$JOB_ID"
+            ' "$SELF" $STEP_COUNT $LOOP_COUNT 0 $((WAVE_COUNT + 1))' in text
+        )
+        # Advancing to the next iteration resets the wave counter by
+        # omitting the fourth argument.
+        assert 'sbatch "$SELF" $STEP_COUNT $((LOOP_COUNT + 1)) 0' in text
+
 
 class TestGetNextDependency:
     def test_no_next_element(self):
@@ -198,12 +328,15 @@ class TestRenderStepBlock:
         assert "exit 0" in text
 
     def test_parallel_step_resolves_array_at_submit(self, cluster):
-        # A parallel step must (a) call count_open to determine
-        # the array width, (b) sbatch with a runtime --array=
-        # flag, and (c) handle the zero-open case by skipping
-        # submission and resubmitting without a dependency.
+        # An opted-out (max_jobs_per_task=None) parallel step must
+        # (a) call count_open to determine the array width,
+        # (b) sbatch with a runtime --array= flag, and (c) handle
+        # the zero-open case by skipping submission and
+        # resubmitting without a dependency.
         lines = []
-        res = SlurmResources(max_array_size=900, max_concurrent=64)
+        res = SlurmResources(
+            max_array_size=900, max_concurrent=64, max_jobs_per_task=None
+        )
         step = Step(
             block=lambda: None, name="run", parallel=True, resources=res
         )

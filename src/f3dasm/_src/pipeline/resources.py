@@ -40,6 +40,18 @@ class SlurmResources:
         Maximum SLURM array size (capped by cluster policy).
     max_concurrent : int
         Maximum number of concurrently running array tasks.
+    max_jobs_per_task : int | None
+        Maximum number of open jobs a single array task evaluates
+        sequentially. With the default ``1``, the declared ``time``
+        and ``mem`` describe the cost of exactly one experiment,
+        independent of how many open jobs the step has: when the
+        open-job count exceeds ``max_array_size *
+        max_jobs_per_task``, the step is submitted as multiple
+        sequential waves of array jobs. Set to ``None`` to restore
+        a single array submission in which each task evaluates the
+        unbounded strided slice of the open jobs (the declared
+        resources must then cover ``ceil(n_open /
+        max_array_size)`` experiments).
     extra_sbatch : dict[str, str]
         Arbitrary extra ``#SBATCH`` directives as key-value
         pairs.
@@ -51,7 +63,15 @@ class SlurmResources:
     nodes: int = 1
     max_array_size: int = 900
     max_concurrent: int = 64
+    max_jobs_per_task: int | None = 1
     extra_sbatch: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.max_jobs_per_task is not None and self.max_jobs_per_task < 1:
+            raise ValueError(
+                "max_jobs_per_task must be a positive integer or None "
+                f"(got {self.max_jobs_per_task!r})."
+            )
 
 
 @dataclass

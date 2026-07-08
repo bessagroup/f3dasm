@@ -54,11 +54,23 @@ class ExecutionContext:
     max_array_size : int | None
         For a SLURM array task, the array width used to stride the open jobs
         across tasks. Unused when ``job_number`` is ``None``.
+    wave : int
+        For a SLURM array task, the index of the wave this invocation
+        belongs to. Each wave covers a contiguous window of
+        ``max_array_size * max_jobs_per_task`` open jobs; wave ``b`` skips
+        the ``b`` preceding windows. Must be ``0`` when
+        ``max_jobs_per_task`` is ``None`` (a single unbounded wave).
+    max_jobs_per_task : int | None
+        For a SLURM array task, the maximum number of open jobs this
+        invocation evaluates sequentially. ``None`` places no bound (the
+        whole strided slice of the open jobs belongs to this task).
     """
 
     mode: str
     job_number: int | None = None
     max_array_size: int | None = None
+    wave: int = 0
+    max_jobs_per_task: int | None = None
 
     def execute(
         self,
@@ -78,10 +90,10 @@ class ExecutionContext:
         if self.job_number is None:
             return block.call(data=data, mode=self.mode, **kwargs)
 
-        # SLURM array task: own only the strided slice of the open jobs and
+        # SLURM array task: own only this task's slice of the open jobs and
         # run each as a self-persisting ``cluster_array`` evaluation.
         open_jobs = data.select_with_status("open").index.tolist()
-        for idx in open_jobs[self.job_number :: self.max_array_size]:
+        for idx in self.assigned_jobs(open_jobs):
             block.call(
                 data=data,
                 mode="cluster_array",
@@ -89,6 +101,31 @@ class ExecutionContext:
                 **kwargs,
             )
         return None
+
+    def assigned_jobs(self, open_jobs: list[int]) -> list[int]:
+        """The slice of ``open_jobs`` this array task owns.
+
+        Skips this wave's offset into the open jobs, strides by the
+        array width, and caps at ``max_jobs_per_task`` jobs
+        (``None``: no offset, no cap — the whole strided slice).
+
+        Parameters
+        ----------
+        open_jobs : list[int]
+            Indices of all open jobs, as read from the step's frozen
+            central-store snapshot.
+
+        Returns
+        -------
+        list[int]
+            The job indices this task evaluates sequentially.
+        """
+        j = self.max_jobs_per_task
+        offset = 0 if j is None else self.wave * self.max_array_size * j
+        assigned = open_jobs[offset:][self.job_number :: self.max_array_size]
+        if j is not None:
+            assigned = assigned[:j]
+        return assigned
 
 
 def run_step(step: Step, run_dir: Path, ctx: ExecutionContext) -> None:
