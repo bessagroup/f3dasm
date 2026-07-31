@@ -8,6 +8,7 @@ from __future__ import annotations
 # Standard
 import json
 import logging
+import math
 import subprocess
 import sys
 import time
@@ -298,7 +299,35 @@ class SlurmExecutor(Executor):
 # =============================================================================
 
 
-def _render_resource_directives(res: SlurmResources) -> list[str]:
+def _mem_to_mb(mem: str) -> int:
+    """Parse a SLURM memory string (e.g. ``"8G"``, ``"3968M"``) to MB.
+
+    A bare number is interpreted as MB (SLURM's default unit).
+    Recognises ``K``/``M``/``G``/``T`` suffixes as binary multiples
+    (matching SLURM), and rounds the result up to the next whole MB.
+
+    Parameters
+    ----------
+    mem : str
+        A SLURM memory specification.
+
+    Returns
+    -------
+    int
+        The memory in whole MB.
+    """
+    s = mem.strip().upper()
+    mult = {"K": 1 / 1024, "M": 1.0, "G": 1024.0, "T": 1024.0 * 1024.0}
+    if s and s[-1] in mult:
+        value = float(s[:-1]) * mult[s[-1]]
+    else:
+        value = float(s)
+    return math.ceil(value)
+
+
+def _render_resource_directives(
+    res: SlurmResources, cluster: SlurmCluster
+) -> list[str]:
     """Render the resource ``#SBATCH`` directives common to both renderers.
 
     Emits ``--time``, the memory directive, ``--ntasks``,
@@ -307,14 +336,29 @@ def _render_resource_directives(res: SlurmResources) -> list[str]:
     :func:`render_orchestrator_script`, kept in one place so the two
     headers cannot drift.
 
-    The memory directive is ``--mem-per-cpu`` when ``res.mem_per_cpu``
-    is set and the per-node ``--mem`` otherwise; SLURM treats the two
-    as mutually exclusive, so exactly one is emitted. ``--ntasks`` is
-    always emitted (sites with a ``job_submit`` filter that mandates a
-    task count reject jobs without it; it is harmless elsewhere).
-    ``--nodes`` is omitted when ``mem_per_cpu`` is set *and* ``nodes``
-    is at its default of ``1`` -- per-task allocation makes it
-    redundant and it silences the benign "``--nodes`` without
+    The memory directive is ``--mem-per-cpu`` when a per-CPU value
+    applies and the per-node ``--mem`` otherwise; SLURM treats the two
+    as mutually exclusive, so exactly one is emitted. A per-CPU value
+    applies when either:
+
+    - the resource sets ``res.mem_per_cpu`` explicitly (rendered
+      verbatim, always winning -- the caller owns the value and the
+      matching ``cpus_per_task``); or
+    - ``cluster.mem_per_cpu`` is set to the cluster's per-CPU memory
+      cap, for sites whose ``job_submit`` filter rejects ``--mem``
+      (e.g. DelftBlue). In this case the per-CPU value is *derived*
+      from the resource's declared per-node ``mem``: the value is
+      ``ceil(mem / cpus_per_task)``, and ``cpus_per_task`` is bumped
+      up to ``ceil(mem / cap)`` whenever the node's core:memory ratio
+      cannot supply the declared memory on the requested cores (the
+      only way to buy more memory on such a cluster is more cores).
+      ``cpus_per_task`` is only ever increased, never reduced.
+
+    ``--ntasks`` is always emitted (sites with a ``job_submit`` filter
+    that mandates a task count reject jobs without it; it is harmless
+    elsewhere). ``--nodes`` is omitted when a per-CPU value applies
+    *and* ``nodes`` is at its default of ``1`` -- per-task allocation
+    makes it redundant and it silences the benign "``--nodes`` without
     ``--exclusive``" warning; an explicit ``nodes > 1`` is always
     emitted.
 
@@ -322,6 +366,9 @@ def _render_resource_directives(res: SlurmResources) -> list[str]:
     ----------
     res : SlurmResources
         The resources describing this job.
+    cluster : SlurmCluster
+        Cluster configuration; its ``mem_per_cpu`` cap decides whether
+        (and how) the per-node ``mem`` is rendered as ``--mem-per-cpu``.
 
     Returns
     -------
@@ -329,13 +376,28 @@ def _render_resource_directives(res: SlurmResources) -> list[str]:
         The rendered ``#SBATCH`` directive lines, in header order.
     """
     directives = [f"#SBATCH --time={res.time}"]
+    cpus = res.cpus_per_task
+    per_cpu_mode = True
     if res.mem_per_cpu is not None:
+        # The caller took explicit control of per-CPU memory (and
+        # sized cpus_per_task to match); render it verbatim.
         directives.append(f"#SBATCH --mem-per-cpu={res.mem_per_cpu}")
+    elif cluster.mem_per_cpu is not None:
+        # The cluster mandates per-CPU accounting with a hard per-CPU
+        # cap. Derive the directive from the declared per-node `mem`,
+        # bumping cpus_per_task when the cap cannot supply it on the
+        # requested cores.
+        cap_mb = _mem_to_mb(cluster.mem_per_cpu)
+        mem_mb = _mem_to_mb(res.mem)
+        cpus = max(res.cpus_per_task, math.ceil(mem_mb / cap_mb))
+        per_cpu_mb = math.ceil(mem_mb / cpus)
+        directives.append(f"#SBATCH --mem-per-cpu={per_cpu_mb}M")
     else:
         directives.append(f"#SBATCH --mem={res.mem}")
+        per_cpu_mode = False
     directives.append(f"#SBATCH --ntasks={res.ntasks}")
-    directives.append(f"#SBATCH --cpus-per-task={res.cpus_per_task}")
-    if not (res.mem_per_cpu is not None and res.nodes == 1):
+    directives.append(f"#SBATCH --cpus-per-task={cpus}")
+    if not (per_cpu_mode and res.nodes == 1):
         directives.append(f"#SBATCH --nodes={res.nodes}")
     return directives
 
@@ -396,7 +458,7 @@ def render_sbatch_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name={label}_{pipeline_name}",
-        *_render_resource_directives(res),
+        *_render_resource_directives(res, cluster),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
     ]
@@ -548,7 +610,7 @@ def render_orchestrator_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name=orchestrator_{pipeline.name}",
-        *_render_resource_directives(res),
+        *_render_resource_directives(res, cluster),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
         f"#SBATCH --output={log_dir_path}/orchestrator_%j.out",
