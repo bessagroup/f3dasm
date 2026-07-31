@@ -19,6 +19,8 @@ class TestSlurmResources:
         assert r.max_concurrent == 64
         assert r.max_jobs_per_task == 1
         assert r.extra_sbatch == {}
+        assert r.ntasks == 1
+        assert r.mem_per_cpu is None
 
     def test_custom_values(self):
         r = SlurmResources(
@@ -29,12 +31,16 @@ class TestSlurmResources:
             max_array_size=500,
             max_concurrent=32,
             extra_sbatch={"gres": "gpu:1"},
+            ntasks=4,
+            mem_per_cpu="3968M",
         )
         assert r.time == "02:00:00"
         assert r.mem == "16G"
         assert r.cpus_per_task == 4
         assert r.nodes == 2
         assert r.extra_sbatch == {"gres": "gpu:1"}
+        assert r.ntasks == 4
+        assert r.mem_per_cpu == "3968M"
 
     @pytest.mark.parametrize("value", [None, 1, 2, 10])
     def test_max_jobs_per_task_valid(self, value):

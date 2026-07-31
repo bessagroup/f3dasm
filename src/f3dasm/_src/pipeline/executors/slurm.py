@@ -298,6 +298,48 @@ class SlurmExecutor(Executor):
 # =============================================================================
 
 
+def _render_resource_directives(res: SlurmResources) -> list[str]:
+    """Render the resource ``#SBATCH`` directives common to both renderers.
+
+    Emits ``--time``, the memory directive, ``--ntasks``,
+    ``--cpus-per-task`` and (conditionally) ``--nodes`` -- the block
+    shared verbatim by :func:`render_sbatch_script` and
+    :func:`render_orchestrator_script`, kept in one place so the two
+    headers cannot drift.
+
+    The memory directive is ``--mem-per-cpu`` when ``res.mem_per_cpu``
+    is set and the per-node ``--mem`` otherwise; SLURM treats the two
+    as mutually exclusive, so exactly one is emitted. ``--ntasks`` is
+    always emitted (sites with a ``job_submit`` filter that mandates a
+    task count reject jobs without it; it is harmless elsewhere).
+    ``--nodes`` is omitted when ``mem_per_cpu`` is set *and* ``nodes``
+    is at its default of ``1`` -- per-task allocation makes it
+    redundant and it silences the benign "``--nodes`` without
+    ``--exclusive``" warning; an explicit ``nodes > 1`` is always
+    emitted.
+
+    Parameters
+    ----------
+    res : SlurmResources
+        The resources describing this job.
+
+    Returns
+    -------
+    list[str]
+        The rendered ``#SBATCH`` directive lines, in header order.
+    """
+    directives = [f"#SBATCH --time={res.time}"]
+    if res.mem_per_cpu is not None:
+        directives.append(f"#SBATCH --mem-per-cpu={res.mem_per_cpu}")
+    else:
+        directives.append(f"#SBATCH --mem={res.mem}")
+    directives.append(f"#SBATCH --ntasks={res.ntasks}")
+    directives.append(f"#SBATCH --cpus-per-task={res.cpus_per_task}")
+    if not (res.mem_per_cpu is not None and res.nodes == 1):
+        directives.append(f"#SBATCH --nodes={res.nodes}")
+    return directives
+
+
 def render_sbatch_script(
     step: Step,
     cluster: SlurmCluster,
@@ -354,10 +396,7 @@ def render_sbatch_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name={label}_{pipeline_name}",
-        f"#SBATCH --time={res.time}",
-        f"#SBATCH --mem={res.mem}",
-        f"#SBATCH --cpus-per-task={res.cpus_per_task}",
-        f"#SBATCH --nodes={res.nodes}",
+        *_render_resource_directives(res),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
     ]
@@ -509,10 +548,7 @@ def render_orchestrator_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name=orchestrator_{pipeline.name}",
-        f"#SBATCH --time={res.time}",
-        f"#SBATCH --mem={res.mem}",
-        f"#SBATCH --cpus-per-task={res.cpus_per_task}",
-        f"#SBATCH --nodes={res.nodes}",
+        *_render_resource_directives(res),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
         f"#SBATCH --output={log_dir_path}/orchestrator_%j.out",

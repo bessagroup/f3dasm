@@ -2,6 +2,7 @@
 #SBATCH --job-name=orchestrator_golden
 #SBATCH --time=00:10:00
 #SBATCH --mem=1G
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
 #SBATCH --partition=compute

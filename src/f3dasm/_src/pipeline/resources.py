@@ -31,11 +31,16 @@ class SlurmResources:
     time : str
         Wall-clock time limit (e.g. ``"01:00:00"``).
     mem : str
-        Memory per node (e.g. ``"4G"``).
+        Memory per node (e.g. ``"4G"``). Ignored when
+        ``mem_per_cpu`` is set (see ``mem_per_cpu``).
     cpus_per_task : int
         Number of CPUs per task.
     nodes : int
-        Number of nodes.
+        Number of nodes. When ``mem_per_cpu`` is set and ``nodes``
+        is left at its default of ``1``, the ``--nodes`` directive
+        is omitted from the rendered script (per-task allocation
+        makes it redundant); an explicit ``nodes > 1`` is always
+        emitted.
     max_array_size : int
         Maximum SLURM array size (capped by cluster policy).
     max_concurrent : int
@@ -55,6 +60,22 @@ class SlurmResources:
     extra_sbatch : dict[str, str]
         Arbitrary extra ``#SBATCH`` directives as key-value
         pairs.
+    ntasks : int
+        Number of tasks (``--ntasks``). Always emitted, on every
+        cluster. Sites whose ``job_submit`` filter mandates a task
+        count (e.g. TU Delft's DelftBlue) reject jobs that omit it;
+        ``--ntasks=1`` is harmless where it is not required.
+    mem_per_cpu : str | None
+        Per-CPU memory (e.g. ``"3968M"``). When set, the rendered
+        script emits ``--mem-per-cpu`` instead of ``--mem`` (the two
+        are mutually exclusive in SLURM) and ``mem`` is ignored.
+        Required by sites enforcing per-CPU memory accounting.
+        Defaults to ``None`` (per-node ``--mem`` is used). The
+        precedence over ``mem`` is documented, not validated: a
+        dataclass cannot tell an explicitly-set ``mem`` from its
+        default, so no runtime "both set" check is attempted. Keep
+        ``cpus_per_task * mem_per_cpu`` under the partition's
+        ``MaxMemPerCPU`` cap — that remains the caller's concern.
     """
 
     time: str = "01:00:00"
@@ -65,6 +86,8 @@ class SlurmResources:
     max_concurrent: int = 64
     max_jobs_per_task: int | None = 1
     extra_sbatch: dict[str, str] = field(default_factory=dict)
+    ntasks: int = 1
+    mem_per_cpu: str | None = None
 
     def __post_init__(self) -> None:
         if self.max_jobs_per_task is not None and self.max_jobs_per_task < 1:
