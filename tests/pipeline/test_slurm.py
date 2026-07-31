@@ -58,7 +58,10 @@ class TestRenderSbatchScript:
         assert "#SBATCH --job-name=train_my_pipe" in script
         assert "#SBATCH --time=01:00:00" in script
         assert "#SBATCH --mem=4G" in script
+        # --ntasks is always emitted (default 1), before --cpus-per-task.
+        assert "#SBATCH --ntasks=1" in script
         assert "#SBATCH --cpus-per-task=2" in script
+        assert "#SBATCH --nodes=1" in script
         assert "#SBATCH --partition=compute" in script
         assert "#SBATCH --account=proj123" in script
         assert "#SBATCH --gres=gpu:1" in script
@@ -676,3 +679,86 @@ class TestSysPathSerialization:
 
         paths = json.loads((tmp_path / "myjob" / ".sys_path.json").read_text())
         assert len(paths) == len(set(paths))
+
+
+class TestPerCpuMemory:
+    """Per-CPU memory accounting for DelftBlue-style sites (issue #352)."""
+
+    def _orchestrator(self, cluster, res):
+        step = Step(block=lambda: None, name="create")
+        p = Pipeline(name="test", steps=[step])
+        return render_orchestrator_script(
+            pipeline=p,
+            cluster=cluster,
+            orchestrator_resources=res,
+            script_paths={"create": "/scripts/create.sh"},
+            log_dir_path="/logs",
+            job_dir=Path("/scratch/job1"),
+        )
+
+    def _step(self, cluster, res):
+        step = Step(block=lambda: None, name="train", resources=res)
+        return render_sbatch_script(
+            step=step,
+            cluster=cluster,
+            pipeline_name="pipe",
+            label="train",
+            job_dir=Path("/scratch/job1"),
+            iteration=0,
+        )
+
+    def test_step_mem_per_cpu_replaces_mem(self, cluster):
+        # When mem_per_cpu is set, emit --mem-per-cpu and NOT --mem
+        # (SLURM treats the two as mutually exclusive -> fatal).
+        res = SlurmResources(mem="8G", mem_per_cpu="3968M")
+        script = self._step(cluster, res)
+        assert "#SBATCH --mem-per-cpu=3968M" in script
+        assert "#SBATCH --mem=" not in script
+
+    def test_step_default_uses_mem(self, cluster):
+        # Without mem_per_cpu, --mem is used and --mem-per-cpu absent.
+        script = self._step(cluster, SlurmResources(mem="8G"))
+        assert "#SBATCH --mem=8G" in script
+        assert "#SBATCH --mem-per-cpu" not in script
+
+    def test_step_ntasks_custom_value(self, cluster):
+        script = self._step(cluster, SlurmResources(ntasks=4))
+        assert "#SBATCH --ntasks=4" in script
+
+    def test_step_nodes_omitted_when_mem_per_cpu_and_default_nodes(
+        self, cluster
+    ):
+        # mem_per_cpu set AND nodes at default 1 -> --nodes dropped.
+        res = SlurmResources(mem_per_cpu="3968M", nodes=1)
+        script = self._step(cluster, res)
+        assert "#SBATCH --nodes" not in script
+
+    def test_step_nodes_emitted_when_explicit_multinode(self, cluster):
+        # An explicit nodes > 1 is never silently dropped.
+        res = SlurmResources(mem_per_cpu="3968M", nodes=2)
+        script = self._step(cluster, res)
+        assert "#SBATCH --nodes=2" in script
+
+    def test_step_nodes_emitted_without_mem_per_cpu(self, cluster):
+        # Omission only applies under mem_per_cpu; the default path
+        # keeps --nodes=1.
+        script = self._step(cluster, SlurmResources(nodes=1))
+        assert "#SBATCH --nodes=1" in script
+
+    def test_orchestrator_mem_per_cpu_replaces_mem(self, cluster):
+        # The orchestrator header obeys the same rules, so a
+        # DelftBlue pipeline can make its orchestrator submittable
+        # via orchestrator_resources.
+        res = SlurmResources(time="00:10:00", mem="1G", mem_per_cpu="1024M")
+        script = self._orchestrator(cluster, res)
+        assert "#SBATCH --mem-per-cpu=1024M" in script
+        assert "#SBATCH --mem=" not in script
+        assert "#SBATCH --ntasks=1" in script
+        assert "#SBATCH --nodes" not in script
+
+    def test_orchestrator_default_uses_mem(self, cluster):
+        res = SlurmResources(time="00:10:00", mem="1G")
+        script = self._orchestrator(cluster, res)
+        assert "#SBATCH --mem=1G" in script
+        assert "#SBATCH --mem-per-cpu" not in script
+        assert "#SBATCH --ntasks=1" in script
