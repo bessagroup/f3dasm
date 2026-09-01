@@ -222,6 +222,68 @@ class TestEvaluateClusterArray:
         json_files = list(subfolder.glob("*.json"))
         assert len(json_files) >= 1
 
+    def test_cluster_array_missing_job_number_raises(self, stored_data):
+        """Issue #309: `job_number` is now a kwargs-only parameter.
+        Omitting it must raise a clear TypeError rather than a confusing
+        KeyError from somewhere deep in the call."""
+        with pytest.raises(TypeError, match="job_number"):
+            evaluate_cluster_array(
+                execute_fn=_square_fn,
+                data=stored_data,
+                pass_id=False,
+            )
+
+
+# ===== unified signature contract (#309) ==================================
+
+
+class TestUnifiedEvaluateSignatures:
+    """Issue #309: all five `evaluate_*` functions must share the same
+    leading positional shape `(execute_fn, data, pass_id, **kwargs)` so
+    `DataGenerator.call`'s dispatch can hand them off identically."""
+
+    @pytest.mark.parametrize(
+        "func_name",
+        [
+            "evaluate_sequential",
+            "evaluate_multiprocessing",
+            "evaluate_cluster",
+            "evaluate_mpi",
+            "evaluate_cluster_array",
+        ],
+    )
+    def test_first_three_positional_are_uniform(self, func_name):
+        import inspect
+
+        from f3dasm._src import datagenerator
+
+        sig = inspect.signature(getattr(datagenerator, func_name))
+        params = list(sig.parameters.values())
+        # First three positional parameters: execute_fn, data, pass_id
+        names = [p.name for p in params[:3]]
+        assert names == ["execute_fn", "data", "pass_id"]
+
+    @pytest.mark.parametrize(
+        "func_name",
+        [
+            "evaluate_sequential",
+            "evaluate_multiprocessing",
+            "evaluate_cluster",
+            "evaluate_mpi",
+            "evaluate_cluster_array",
+        ],
+    )
+    def test_each_evaluator_accepts_var_keyword(self, func_name):
+        import inspect
+
+        from f3dasm._src import datagenerator
+
+        sig = inspect.signature(getattr(datagenerator, func_name))
+        kinds = {p.kind for p in sig.parameters.values()}
+        assert inspect.Parameter.VAR_KEYWORD in kinds, (
+            f"{func_name} no longer accepts **kwargs"
+        )
+
 
 class TestEvaluateMPI:
     def test_mpi_rank_zero_calls_lock_manager(self, simple_data):
