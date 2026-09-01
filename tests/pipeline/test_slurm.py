@@ -785,7 +785,9 @@ class TestPerCpuMemory:
         # verbatim: 32G / 9 cores (bumped from 4) = 3641M/core, so the
         # total stays ~32G rather than 32G*cpus.
         cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
-        script = self._step(cluster, SlurmResources(mem="32G", cpus_per_task=4))
+        script = self._step(
+            cluster, SlurmResources(mem="32G", cpus_per_task=4)
+        )
         assert "#SBATCH --cpus-per-task=9" in script
         assert "#SBATCH --mem-per-cpu=3641M" in script
 
