@@ -762,3 +762,69 @@ class TestPerCpuMemory:
         assert "#SBATCH --mem=1G" in script
         assert "#SBATCH --mem-per-cpu" not in script
         assert "#SBATCH --ntasks=1" in script
+
+    def test_cluster_cap_fits_leaves_cpus_unchanged(self):
+        # mem within one core's cap: --mem-per-cpu = mem, cpus as-is.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        script = self._step(cluster, SlurmResources(mem="2G", cpus_per_task=1))
+        assert "#SBATCH --mem-per-cpu=2048M" in script
+        assert "#SBATCH --cpus-per-task=1" in script
+        assert "#SBATCH --mem=" not in script
+
+    def test_cluster_cap_bumps_cpus_when_mem_exceeds_cap(self):
+        # 8G on 1 core exceeds the 3968M cap -> bump to ceil(8192/3968)
+        # = 3 cores, each ceil(8192/3)=2731M.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        script = self._step(cluster, SlurmResources(mem="8G", cpus_per_task=1))
+        assert "#SBATCH --cpus-per-task=3" in script
+        assert "#SBATCH --mem-per-cpu=2731M" in script
+        assert "#SBATCH --mem=" not in script
+
+    def test_cluster_cap_divides_per_node_mem_across_declared_cpus(self):
+        # A multi-core step's per-node mem is divided, NOT reused
+        # verbatim: 32G / 9 cores (bumped from 4) = 3641M/core, so the
+        # total stays ~32G rather than 32G*cpus.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        script = self._step(
+            cluster, SlurmResources(mem="32G", cpus_per_task=4)
+        )
+        assert "#SBATCH --cpus-per-task=9" in script
+        assert "#SBATCH --mem-per-cpu=3641M" in script
+
+    def test_cluster_cap_respects_generous_declared_cpus(self):
+        # 16G on 8 cores is 2048M/core, already under the cap: no bump.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        script = self._step(
+            cluster, SlurmResources(mem="16G", cpus_per_task=8)
+        )
+        assert "#SBATCH --cpus-per-task=8" in script
+        assert "#SBATCH --mem-per-cpu=2048M" in script
+
+    def test_cluster_cap_converts_orchestrator_mem(self):
+        # The library-default orchestrator resources declare only
+        # `mem`; the cluster cap must still make them submittable.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        res = SlurmResources(time="00:10:00", mem="1G")
+        script = self._orchestrator(cluster, res)
+        assert "#SBATCH --mem-per-cpu=1024M" in script
+        assert "#SBATCH --mem=" not in script
+        assert "#SBATCH --nodes" not in script
+
+    def test_resource_mem_per_cpu_wins_over_cluster_cap(self):
+        # An explicit per-resource mem_per_cpu is authoritative: it is
+        # rendered verbatim and does not trigger the cap-based bump.
+        cluster = SlurmCluster(partition="compute", mem_per_cpu="3968M")
+        res = SlurmResources(mem="8G", mem_per_cpu="3968M", cpus_per_task=2)
+        script = self._step(cluster, res)
+        assert "#SBATCH --mem-per-cpu=3968M" in script
+        assert "#SBATCH --cpus-per-task=2" in script
+        assert "#SBATCH --mem=" not in script
+
+    def test_cluster_cap_defaults_none_keeps_per_node_mem(self):
+        # Clusters that accept --mem (e.g. Oscar) are unaffected: the
+        # cap defaults to None, so --mem is emitted unchanged.
+        cluster = SlurmCluster(partition="compute")
+        assert cluster.mem_per_cpu is None
+        script = self._step(cluster, SlurmResources(mem="8G"))
+        assert "#SBATCH --mem=8G" in script
+        assert "#SBATCH --mem-per-cpu" not in script

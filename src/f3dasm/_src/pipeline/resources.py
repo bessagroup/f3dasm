@@ -122,6 +122,21 @@ class SlurmCluster:
         (e.g. ``"uv run"`` or ``"python"``).
     log_dir : str
         Log directory template. May contain ``{project_job}``.
+    mem_per_cpu : str | None
+        The cluster's per-CPU memory cap (e.g. ``"3968M"``), or
+        ``None`` (the default) for clusters that accept the per-node
+        ``--mem``. When set, every generated script (the orchestrator
+        and each step) emits ``--mem-per-cpu`` instead of ``--mem``,
+        deriving the per-CPU value from each resource's declared
+        per-node ``mem`` as ``ceil(mem / cpus_per_task)`` and bumping
+        ``cpus_per_task`` up to ``ceil(mem / cap)`` when the node's
+        core:memory ratio cannot supply the declared memory on the
+        requested cores (a resource that sets ``mem_per_cpu``
+        explicitly bypasses this and is rendered verbatim). Set for
+        sites whose ``job_submit`` filter rejects ``--mem`` and caps
+        per-CPU memory (e.g. TU Delft's DelftBlue, ``"3968M"``); leave
+        ``None`` on clusters that accept per-node ``--mem`` (e.g.
+        Brown's Oscar).
     """
 
     partition: str = "batch"
@@ -130,6 +145,7 @@ class SlurmCluster:
     env_vars: dict[str, str] = field(default_factory=dict)
     runner: str = "python"
     log_dir: str = "logs/{project_job}"
+    mem_per_cpu: str | None = None
 
     @classmethod
     def from_yaml(cls, config: DictConfig) -> SlurmCluster:
