@@ -528,7 +528,8 @@ def render_orchestrator_script(
     """Render a self-resubmitting orchestrator for the pipeline.
 
     The orchestrator manages the entire pipeline using three
-    counters passed as positional arguments:
+    counters passed as positional arguments, plus an optional
+    fourth when any step is submitted in waves:
 
     - ``STEP_COUNT``: index into the pipeline's top-level
       elements (Steps and Loops).
