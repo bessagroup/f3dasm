@@ -8,6 +8,7 @@ from __future__ import annotations
 # Standard
 import json
 import logging
+import math
 import subprocess
 import sys
 import time
@@ -62,7 +63,11 @@ class SlurmExecutor(Executor):
     step's ExperimentData on disk. This means the user does not
     need to declare ``array_jobs`` upfront — the orchestrator
     invokes :mod:`f3dasm.pipeline.count_open` to compute the array
-    width just before each ``sbatch``.
+    width just before each ``sbatch``. When the open-job count
+    exceeds ``max_array_size * max_jobs_per_task``, the step is
+    submitted as multiple sequential waves of array jobs, so the
+    step's declared resources always cover at most
+    ``max_jobs_per_task`` experiments per array task.
 
     At submission time the submitter's ``sys.path`` is stored as
     ``.sys_path.json`` alongside ``.pipeline.pkl``. When a SLURM
@@ -205,7 +210,7 @@ class SlurmExecutor(Executor):
         orch_path.write_text(orch_script)
 
         # --- Submit the orchestrator ---
-        cmd: list[str] = ["sbatch", str(orch_path), "0", "0"]
+        cmd: list[str] = ["sbatch", str(orch_path), "0", "0", "0"]
         logger.info(f"Submitting orchestrator: {' '.join(cmd)}")
         result = subprocess.run(
             cmd, capture_output=True, text=True, check=True
@@ -294,6 +299,109 @@ class SlurmExecutor(Executor):
 # =============================================================================
 
 
+def _mem_to_mb(mem: str) -> int:
+    """Parse a SLURM memory string (e.g. ``"8G"``, ``"3968M"``) to MB.
+
+    A bare number is interpreted as MB (SLURM's default unit).
+    Recognises ``K``/``M``/``G``/``T`` suffixes as binary multiples
+    (matching SLURM), and rounds the result up to the next whole MB.
+
+    Parameters
+    ----------
+    mem : str
+        A SLURM memory specification.
+
+    Returns
+    -------
+    int
+        The memory in whole MB.
+    """
+    s = mem.strip().upper()
+    mult = {"K": 1 / 1024, "M": 1.0, "G": 1024.0, "T": 1024.0 * 1024.0}
+    if s and s[-1] in mult:
+        value = float(s[:-1]) * mult[s[-1]]
+    else:
+        value = float(s)
+    return math.ceil(value)
+
+
+def _render_resource_directives(
+    res: SlurmResources, cluster: SlurmCluster
+) -> list[str]:
+    """Render the resource ``#SBATCH`` directives common to both renderers.
+
+    Emits ``--time``, the memory directive, ``--ntasks``,
+    ``--cpus-per-task`` and (conditionally) ``--nodes`` -- the block
+    shared verbatim by :func:`render_sbatch_script` and
+    :func:`render_orchestrator_script`, kept in one place so the two
+    headers cannot drift.
+
+    The memory directive is ``--mem-per-cpu`` when a per-CPU value
+    applies and the per-node ``--mem`` otherwise; SLURM treats the two
+    as mutually exclusive, so exactly one is emitted. A per-CPU value
+    applies when either:
+
+    - the resource sets ``res.mem_per_cpu`` explicitly (rendered
+      verbatim, always winning -- the caller owns the value and the
+      matching ``cpus_per_task``); or
+    - ``cluster.mem_per_cpu`` is set to the cluster's per-CPU memory
+      cap, for sites whose ``job_submit`` filter rejects ``--mem``
+      (e.g. DelftBlue). In this case the per-CPU value is *derived*
+      from the resource's declared per-node ``mem``: the value is
+      ``ceil(mem / cpus_per_task)``, and ``cpus_per_task`` is bumped
+      up to ``ceil(mem / cap)`` whenever the node's core:memory ratio
+      cannot supply the declared memory on the requested cores (the
+      only way to buy more memory on such a cluster is more cores).
+      ``cpus_per_task`` is only ever increased, never reduced.
+
+    ``--ntasks`` is always emitted (sites with a ``job_submit`` filter
+    that mandates a task count reject jobs without it; it is harmless
+    elsewhere). ``--nodes`` is omitted when a per-CPU value applies
+    *and* ``nodes`` is at its default of ``1`` -- per-task allocation
+    makes it redundant and it silences the benign "``--nodes`` without
+    ``--exclusive``" warning; an explicit ``nodes > 1`` is always
+    emitted.
+
+    Parameters
+    ----------
+    res : SlurmResources
+        The resources describing this job.
+    cluster : SlurmCluster
+        Cluster configuration; its ``mem_per_cpu`` cap decides whether
+        (and how) the per-node ``mem`` is rendered as ``--mem-per-cpu``.
+
+    Returns
+    -------
+    list[str]
+        The rendered ``#SBATCH`` directive lines, in header order.
+    """
+    directives = [f"#SBATCH --time={res.time}"]
+    cpus = res.cpus_per_task
+    per_cpu_mode = True
+    if res.mem_per_cpu is not None:
+        # The caller took explicit control of per-CPU memory (and
+        # sized cpus_per_task to match); render it verbatim.
+        directives.append(f"#SBATCH --mem-per-cpu={res.mem_per_cpu}")
+    elif cluster.mem_per_cpu is not None:
+        # The cluster mandates per-CPU accounting with a hard per-CPU
+        # cap. Derive the directive from the declared per-node `mem`,
+        # bumping cpus_per_task when the cap cannot supply it on the
+        # requested cores.
+        cap_mb = _mem_to_mb(cluster.mem_per_cpu)
+        mem_mb = _mem_to_mb(res.mem)
+        cpus = max(res.cpus_per_task, math.ceil(mem_mb / cap_mb))
+        per_cpu_mb = math.ceil(mem_mb / cpus)
+        directives.append(f"#SBATCH --mem-per-cpu={per_cpu_mb}M")
+    else:
+        directives.append(f"#SBATCH --mem={res.mem}")
+        per_cpu_mode = False
+    directives.append(f"#SBATCH --ntasks={res.ntasks}")
+    directives.append(f"#SBATCH --cpus-per-task={cpus}")
+    if not (per_cpu_mode and res.nodes == 1):
+        directives.append(f"#SBATCH --nodes={res.nodes}")
+    return directives
+
+
 def render_sbatch_script(
     step: Step,
     cluster: SlurmCluster,
@@ -313,6 +421,9 @@ def render_sbatch_script(
     intentionally omitted from the script; the orchestrator
     supplies ``--array=`` on the ``sbatch`` command line based on
     the count of open experiments on disk at submission time.
+    Wave-submitted steps (bounded ``max_jobs_per_task``) also pass
+    ``--wave=${F3DASM_WAVE:-0}`` to the payload; the orchestrator
+    exports ``F3DASM_WAVE`` before each wave's ``sbatch``.
 
     All paths embedded in the rendered script use POSIX-style
     (forward-slash) form; the script is meant to run on a POSIX
@@ -347,10 +458,7 @@ def render_sbatch_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name={label}_{pipeline_name}",
-        f"#SBATCH --time={res.time}",
-        f"#SBATCH --mem={res.mem}",
-        f"#SBATCH --cpus-per-task={res.cpus_per_task}",
-        f"#SBATCH --nodes={res.nodes}",
+        *_render_resource_directives(res, cluster),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
     ]
@@ -400,6 +508,8 @@ def render_sbatch_script(
 
     if step.parallel:
         cmd_parts.append("  --job-number=$SLURM_ARRAY_TASK_ID")
+    if _step_uses_waves(step):
+        cmd_parts.append("  --wave=${F3DASM_WAVE:-0}")
 
     lines.append(" \\\n".join(cmd_parts))
     lines.append("")
@@ -417,25 +527,55 @@ def render_orchestrator_script(
 ) -> str:
     """Render a self-resubmitting orchestrator for the pipeline.
 
-    The orchestrator manages the entire pipeline using two
-    counters passed as positional arguments:
+    The orchestrator manages the entire pipeline using three
+    counters passed as positional arguments, plus an optional
+    fourth when any step is submitted in waves:
 
     - ``STEP_COUNT``: index into the pipeline's top-level
       elements (Steps and Loops).
     - ``LOOP_COUNT``: current iteration within a Loop (0 when
       not inside a loop).
+    - ``INNER_COUNT``: index of the inner step within the
+      current Loop iteration (0 when not inside a loop).
+    - ``WAVE_COUNT`` (fourth positional argument; only rendered
+      when some step is submitted in waves): index of the current
+      wave within a parallel step. Reset to 0 whenever any other
+      counter advances.
 
     Each execution handles exactly one action (one Step
-    submission or one Loop iteration), then resubmits itself
-    with ``--dependency`` on the last submitted job. The
-    dependency type is determined by the *next* step's
-    ``Step.dependency`` field.
+    submission, or one inner step of one Loop iteration), then
+    resubmits itself with ``--dependency`` on the last submitted
+    job. Submitting each inner Loop step in its own wake (rather
+    than all of an iteration's steps at once) ensures a parallel
+    inner step sizes its ``--array=`` via
+    :mod:`f3dasm.pipeline.count_open` only *after* its upstream
+    inner step has finished writing its ExperimentData to disk --
+    the same guarantee top-level step transitions already
+    provide. The dependency type is determined by the *next*
+    step's ``Step.dependency`` field; after the last element the
+    orchestrator resubmits itself once more with ``afterok``, so
+    a final run starts past ``TOTAL_STEPS`` and prints
+    ``"Pipeline complete."`` to its log if (and only if) the
+    last step succeeded. External tooling may poll the
+    orchestrator logs for that marker as the pipeline's success
+    signal.
 
     For parallel steps, the orchestrator invokes
     :mod:`f3dasm.pipeline.count_open` to size the ``--array=``
     flag based on the number of open experiments on disk. If
     there are none, the step is skipped and the next element is
     resubmitted without a SLURM dependency.
+
+    A parallel step with a bounded ``max_jobs_per_task`` whose
+    open-job count exceeds ``max_array_size * max_jobs_per_task``
+    is submitted as multiple sequential *waves*: after each wave
+    the orchestrator resubmits itself for the next one, gated
+    ``afterany`` on the wave's array job (see
+    :func:`_render_parallel_submit`). The open-job count is read
+    from the central store, which array tasks do not modify, so
+    every wave sizes and offsets against the same frozen snapshot.
+    The next pipeline element's dependency attaches to the final
+    wave only.
 
     All paths embedded in the rendered orchestrator script use
     POSIX-style (forward-slash) form; the orchestrator is meant
@@ -471,10 +611,7 @@ def render_orchestrator_script(
     lines: list[str] = [
         "#!/bin/bash",
         f"#SBATCH --job-name=orchestrator_{pipeline.name}",
-        f"#SBATCH --time={res.time}",
-        f"#SBATCH --mem={res.mem}",
-        f"#SBATCH --cpus-per-task={res.cpus_per_task}",
-        f"#SBATCH --nodes={res.nodes}",
+        *_render_resource_directives(res, cluster),
         f"#SBATCH --partition={cluster.partition}",
         f"#SBATCH --account={cluster.account}",
         f"#SBATCH --output={log_dir_path}/orchestrator_%j.out",
@@ -498,10 +635,21 @@ def render_orchestrator_script(
     if cluster.env_vars:
         lines.append("")
 
+    counter_lines = [
+        "STEP_COUNT=$1",
+        "LOOP_COUNT=$2",
+        "INNER_COUNT=${3:-0}",
+    ]
+    # The wave counter is only threaded through when some step is
+    # actually submitted in waves, so pipelines that opt out
+    # (max_jobs_per_task=None everywhere) render byte-identical
+    # scripts to the pre-wave orchestrator.
+    if _pipeline_uses_waves(pipeline):
+        counter_lines.append("WAVE_COUNT=${4:-0}")
+
     lines.extend(
         [
-            "STEP_COUNT=$1",
-            "LOOP_COUNT=$2",
+            *counter_lines,
             'SELF=$(realpath "$0")',
             f"TOTAL_STEPS={total_steps}",
             f'JOB_DIR="{job_dir.as_posix()}"',
@@ -578,6 +726,28 @@ def _get_next_dependency(
     return "afterok"
 
 
+def _step_uses_waves(step: Step) -> bool:
+    """Whether a step is submitted in waves (see ``CONTEXT.md``).
+
+    A parallel step with a bounded ``max_jobs_per_task`` executes as
+    one or more waves; ``max_jobs_per_task=None`` opts out and keeps
+    the single strided array submission.
+    """
+    return step.parallel and step.resources.max_jobs_per_task is not None
+
+
+def _pipeline_uses_waves(pipeline: Pipeline) -> bool:
+    """Whether any step of the pipeline is submitted in waves."""
+    for element in pipeline.steps:
+        if isinstance(element, Step):
+            if _step_uses_waves(element):
+                return True
+        elif isinstance(element, Loop):
+            if any(_step_uses_waves(s) for s in element.steps):
+                return True
+    return False
+
+
 def _render_parallel_submit(
     lines: list[str],
     *,
@@ -588,12 +758,24 @@ def _render_parallel_submit(
     job_id_var: str,
     indent: str,
     extra_sbatch_flags: str = "",
+    wave_self_args: str = "",
 ) -> None:
     """Append bash that counts open experiments and sbatches a parallel step.
 
     On entry: nothing required. On exit: the bash variable named
     by ``job_id_var`` is either the submitted SLURM job id, or the
     empty string if there were no open experiments.
+
+    For a wave-submitted step (bounded ``max_jobs_per_task``, see
+    :func:`_step_uses_waves`) the appended bash sizes the array for
+    the current ``WAVE_COUNT``'s window of open jobs and — when more
+    windows remain — resubmits the orchestrator for the next wave
+    (gated ``afterany`` on this one, so an infra-killed task cannot
+    orphan the remaining waves) and exits. Control only reaches the
+    lines appended *after* this block on the final wave; the next
+    step's dependency therefore attaches to the final wave's job id.
+    ``wave_self_args`` holds the orchestrator counter arguments that
+    re-enter this same step (``WAVE_COUNT + 1`` is appended to them).
     """
     res = step.resources
     project_dir = step.project_dir
@@ -602,22 +784,62 @@ def _render_parallel_submit(
         f"{runner} -m {_COUNT_OPEN_MODULE} "
         f'--job-dir="$JOB_DIR" --project-dir="{project_dir}"'
     )
-    sbatch_flags = (
-        f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent}"
-        f" {extra_sbatch_flags}".rstrip()
-    )
+
+    if not _step_uses_waves(step):
+        sbatch_flags = (
+            f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent}"
+            f" {extra_sbatch_flags}".rstrip()
+        )
+        lines.extend(
+            [
+                f"{indent}N_OPEN=$({count_cmd})",
+                f'{indent}if [ "$N_OPEN" -gt 0 ]; then',
+                f"{indent}  ARRAY_MAX=$(("
+                f" (N_OPEN < {res.max_array_size} ? N_OPEN :"
+                f" {res.max_array_size}) - 1 ))",
+                f'{indent}  RESULT=$(sbatch {sbatch_flags} "{script_path}")',
+                f"{indent}  {job_id_var}="
+                f"$(echo $RESULT | awk '{{print $NF}}')",
+                f'{indent}  echo "Submitted {label_for_log}:'
+                f' job ${job_id_var} (array 0-$ARRAY_MAX)"',
+                f"{indent}else",
+                f'{indent}  echo "Skipping {label_for_log}:'
+                f' no open experiments"',
+                f'{indent}  {job_id_var}=""',
+                f"{indent}fi",
+            ]
+        )
+        return
+
+    # Wave submission: the wave index reaches the worker via the
+    # exported F3DASM_WAVE (--export=ALL), mirroring F3DASM_ITERATION.
+    j = res.max_jobs_per_task
+    window = res.max_array_size * j
+    flags = extra_sbatch_flags
+    if "--export=ALL" not in flags:
+        flags = f"--export=ALL {flags}".rstrip()
+    sbatch_flags = f"--array=0-${{ARRAY_MAX}}%{res.max_concurrent} {flags}"
 
     lines.extend(
         [
             f"{indent}N_OPEN=$({count_cmd})",
             f'{indent}if [ "$N_OPEN" -gt 0 ]; then',
+            f"{indent}  REM=$(( N_OPEN - WAVE_COUNT * {window} ))",
+            f"{indent}  N_TASKS=$(( (REM + {j} - 1) / {j} ))",
             f"{indent}  ARRAY_MAX=$(("
-            f" (N_OPEN < {res.max_array_size} ? N_OPEN :"
+            f" (N_TASKS < {res.max_array_size} ? N_TASKS :"
             f" {res.max_array_size}) - 1 ))",
+            f"{indent}  export F3DASM_WAVE=$WAVE_COUNT",
             f'{indent}  RESULT=$(sbatch {sbatch_flags} "{script_path}")',
             f"{indent}  {job_id_var}=$(echo $RESULT | awk '{{print $NF}}')",
             f'{indent}  echo "Submitted {label_for_log}:'
-            f' job ${job_id_var} (array 0-$ARRAY_MAX)"',
+            f' job ${job_id_var} wave $WAVE_COUNT (array 0-$ARRAY_MAX)"',
+            f"{indent}  if [ $(( (WAVE_COUNT + 1) * {window} ))"
+            f' -lt "$N_OPEN" ]; then',
+            f"{indent}    sbatch --dependency=afterany:${job_id_var}"
+            f' "$SELF" {wave_self_args} $((WAVE_COUNT + 1))',
+            f"{indent}    exit 0",
+            f"{indent}  fi",
             f"{indent}else",
             f'{indent}  echo "Skipping {label_for_log}: no open experiments"',
             f'{indent}  {job_id_var}=""',
@@ -650,6 +872,7 @@ def _render_step_block(
             label_for_log=step.name,
             job_id_var="JOB_ID",
             indent="    ",
+            wave_self_args="$STEP_COUNT $LOOP_COUNT 0",
         )
     else:
         lines.extend(
@@ -663,24 +886,28 @@ def _render_step_block(
     next_step = step_index + 1
     next_dep = _get_next_dependency(pipeline, step_index, total_steps)
 
-    if next_dep is not None:
-        lines.append(f"    STEP_COUNT={next_step}")
-        # If the step was skipped (no open experiments), JOB_ID
-        # is empty — resubmit without a SLURM dependency.
-        lines.extend(
-            [
-                '    if [ -n "$JOB_ID" ]; then',
-                f"      sbatch --dependency={next_dep}:$JOB_ID"
-                ' "$SELF" $STEP_COUNT $LOOP_COUNT',
-                "    else",
-                '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
-                "    fi",
-                "    exit 0",
-            ]
-        )
-    else:
-        # Last element in pipeline — don't resubmit
-        lines.append("    exit 0")
+    # After the last element there is no next step, but the
+    # orchestrator still resubmits itself once more (afterok):
+    # that final run starts with STEP_COUNT == TOTAL_STEPS, skips
+    # the while loop, and prints the completion marker — so the
+    # marker appears in the orchestrator log only if the last
+    # step succeeded.
+    dep = next_dep if next_dep is not None else "afterok"
+
+    lines.append(f"    STEP_COUNT={next_step}")
+    # If the step was skipped (no open experiments), JOB_ID
+    # is empty — resubmit without a SLURM dependency.
+    lines.extend(
+        [
+            '    if [ -n "$JOB_ID" ]; then',
+            f"      sbatch --dependency={dep}:$JOB_ID"
+            ' "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "    else",
+            '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
+            "    fi",
+            "    exit 0",
+        ]
+    )
 
 
 def _render_loop_block(
@@ -692,94 +919,116 @@ def _render_loop_block(
     script_paths: dict[str, str],
     total_steps: int,
 ) -> None:
-    """Append bash lines for a Loop element in the orchestrator."""
+    """Append bash lines for a Loop element in the orchestrator.
+
+    Each inner step is submitted in its *own* orchestrator wake,
+    tracked by ``INNER_COUNT`` and chained by a SLURM dependency on
+    the previous inner step. This guarantees a parallel inner step's
+    :mod:`f3dasm.pipeline.count_open` runs only after its predecessor
+    has finished writing its ExperimentData to disk -- the invariant
+    top-level step transitions already rely on. Submitting all of an
+    iteration's inner steps in a single wake (the previous behaviour)
+    would size a parallel step's ``--array=`` from the *previous*
+    iteration's residual job statuses, before the current iteration's
+    upstream step had run.
+    """
     n_iters = loop.n_iterations
+    next_step_index = step_index + 1
 
     lines.extend(
         [
             f"    # Loop: {n_iters} iterations",
             f'    if [ "$LOOP_COUNT" -lt {n_iters} ]; then',
             "      export F3DASM_ITERATION=$LOOP_COUNT",
-            '      PREV_JOB_ID=""',
         ]
     )
 
-    # Submit each inner step with dependency chaining
+    if not loop.steps:
+        # Degenerate loop with no inner steps: advance the iteration
+        # counter without submitting anything (a no-op per iteration,
+        # preserving the prior behaviour for empty loops).
+        lines.extend(
+            [
+                "      LOOP_COUNT=$((LOOP_COUNT + 1))",
+                '      sbatch "$SELF" $STEP_COUNT $LOOP_COUNT 0',
+                "      exit 0",
+                "    else",
+                "      LOOP_COUNT=0",
+                "      INNER_COUNT=0",
+                f"      STEP_COUNT={next_step_index}",
+                "      continue",
+                "    fi",
+            ]
+        )
+        return
+
+    n_inner = len(loop.steps)
     for j, inner_step in enumerate(loop.steps):
         inner_label = f"loop{step_index}_{inner_step.name}"
         inner_path = script_paths[inner_label]
         log_label = f"{inner_step.name} (iter $LOOP_COUNT)"
-        dep = inner_step.dependency
+        cond = "if" if j == 0 else "elif"
 
-        lines.append(f"      # Inner step: {inner_step.name}")
+        lines.append(f'      {cond} [ "$INNER_COUNT" -eq {j} ]; then')
+        lines.append(f"        # Inner step: {inner_step.name}")
 
+        # --- Submit this inner step -> JOB_ID (empty if skipped). The
+        # cross-step ordering is enforced by the dependency on the SELF
+        # resubmission that gated *this* wake, so the step itself only
+        # needs --export=ALL (no carry-in --dependency flag).
         if inner_step.parallel:
-            # Build the optional --dependency= flag.
-            if j == 0:
-                dep_flag_setup = ['      DEP_FLAG="--export=ALL"']
-            else:
-                dep_flag_setup = [
-                    '      if [ -n "$PREV_JOB_ID" ]; then',
-                    f'        DEP_FLAG="--dependency={dep}:$PREV_JOB_ID'
-                    ' --export=ALL"',
-                    "      else",
-                    '        DEP_FLAG="--export=ALL"',
-                    "      fi",
-                ]
-            lines.extend(dep_flag_setup)
             _render_parallel_submit(
                 lines=lines,
                 step=inner_step,
                 cluster=cluster,
                 script_path=inner_path,
                 label_for_log=f"  {log_label}",
-                job_id_var="PREV_JOB_ID",
-                indent="      ",
-                extra_sbatch_flags="$DEP_FLAG",
-            )
-        elif j == 0:
-            # First inner non-parallel step: no carry-in dep
-            lines.extend(
-                [
-                    f'      RESULT=$(sbatch --export=ALL "{inner_path}")',
-                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
-                ]
+                job_id_var="JOB_ID",
+                indent="        ",
+                extra_sbatch_flags="--export=ALL",
+                wave_self_args=f"$STEP_COUNT $LOOP_COUNT {j}",
             )
         else:
             lines.extend(
                 [
-                    '      if [ -n "$PREV_JOB_ID" ]; then',
-                    "        RESULT=$(sbatch"
-                    f" --dependency={dep}:$PREV_JOB_ID"
-                    f' --export=ALL "{inner_path}")',
-                    "      else",
                     f'        RESULT=$(sbatch --export=ALL "{inner_path}")',
-                    "      fi",
-                    "      PREV_JOB_ID=$(echo $RESULT | awk '{print $NF}')",
-                    f'      echo "  Submitted {log_label}: job $PREV_JOB_ID"',
+                    "        JOB_ID=$(echo $RESULT | awk '{print $NF}')",
+                    f'        echo "  Submitted {log_label}: job $JOB_ID"',
                 ]
             )
 
-    # Resubmit orchestrator for next iteration
-    # Use the first inner step's dependency type for iteration
-    # resubmission (determines if next iteration runs on failure)
-    iter_dep = loop.steps[0].dependency if loop.steps else "afterok"
+        # --- Resubmit SELF for the next inner step, or (after the last
+        # inner step) for the next iteration. The target step's
+        # ``dependency`` field decides how it depends on this one.
+        if j < n_inner - 1:
+            next_dep = loop.steps[j + 1].dependency
+            self_args = f"$STEP_COUNT $LOOP_COUNT {j + 1}"
+        else:
+            next_dep = loop.steps[0].dependency
+            self_args = "$STEP_COUNT $((LOOP_COUNT + 1)) 0"
+
+        # A skipped parallel step leaves JOB_ID empty -> resubmit
+        # without a SLURM dependency.
+        lines.extend(
+            [
+                '        if [ -n "$JOB_ID" ]; then',
+                f"          sbatch --dependency={next_dep}:$JOB_ID"
+                f' "$SELF" {self_args}',
+                "        else",
+                f'          sbatch "$SELF" {self_args}',
+                "        fi",
+                "        exit 0",
+            ]
+        )
 
     lines.extend(
         [
-            "      LOOP_COUNT=$((LOOP_COUNT + 1))",
-            '      if [ -n "$PREV_JOB_ID" ]; then',
-            f"        sbatch --dependency={iter_dep}:$PREV_JOB_ID"
-            ' "$SELF" $STEP_COUNT $LOOP_COUNT',
-            "      else",
-            '        sbatch "$SELF" $STEP_COUNT $LOOP_COUNT',
             "      fi",
-            "      exit 0",
             "    else",
             "      # Loop done — advance to next element",
             "      LOOP_COUNT=0",
-            f"      STEP_COUNT={step_index + 1}",
+            "      INNER_COUNT=0",
+            f"      STEP_COUNT={next_step_index}",
             "      continue",
             "    fi",
         ]
