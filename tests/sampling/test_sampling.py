@@ -72,13 +72,14 @@ def test_correct_sampling_sobol(design3: Domain):
     seed = 42
     numsamples = 5
 
+    # Continuous columns: scrambled Sobol points seeded with 42 (issue #358).
     ground_truth_samples = np.array(
         [
-            [2.4000, 11, 10.0000, "test1", 0.6000],
-            [6.3500, 63, 195.1500, "test3", 3.9500],
-            [8.3250, 54, 102.5750, "test2", 2.2750],
-            [4.3750, 38, 287.7250, "test2", 5.6250],
-            [5.3625, 37, 148.8625, "test2", 4.7875],
+            [4.021065, 11, 255.326703, "test1", 6.001059],
+            [6.616731, 63, 137.514821, "test3", 0.680026],
+            [9.410169, 54, 369.896163, "test2", 5.164293],
+            [5.332763, 38, 23.668384, "test2", 3.196456],
+            [5.538807, 37, 316.264121, "test2", 1.549205],
         ]
     )
 
@@ -102,7 +103,13 @@ def test_correct_sampling_sobol(design3: Domain):
     df_input = df_input.reindex(sorted(df_input.columns), axis=1)
     df_input.columns = df_ground_truth.columns
 
-    assert_frame_equal(df_input, df_ground_truth, check_dtype=False)
+    assert_frame_equal(
+        df_input,
+        df_ground_truth,
+        check_dtype=False,
+        check_exact=False,
+        rtol=1e-6,
+    )
 
 
 def test_correct_sampling_lhs(design3: Domain):

@@ -83,8 +83,17 @@ The following built-in implementations of samplers can be used in the data-drive
 | ------------------------ | ---------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Random Uniform sampling  | `"random"` | `f3dasm.design.random` | [numpy.random.uniform](https://numpy.org/doc/stable/reference/random/generated/numpy.random.uniform.html)               |
 | Latin Hypercube sampling | `"latin"`  | `f3dasm.design.latin`  | [SALib.latin](https://salib.readthedocs.io/en/latest/api/SALib.sample.html#SALib.sample.latin.sample)                   |
-| Sobol Sequence sampling  | `"sobol"`  | `f3dasm.design.sobol`  | [SALib.sobol_sequence](https://salib.readthedocs.io/en/latest/api/SALib.sample.html#SALib.sample.sobol_sequence.sample) |
+| Sobol Sequence sampling  | `"sobol"`  | `f3dasm.design.sobol`  | [scipy.stats.qmc.Sobol](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.qmc.Sobol.html)                |
 | Grid Search sampling     | `"grid"`   | `f3dasm.design.grid`   | [itertools.product](https://docs.python.org/3/library/itertools.html#itertools.product)                                 |
+
+The Sobol sampler scrambles its sequence with the given `seed`, so different
+seeds give different designs. Sobol points are best balanced when the number of
+samples is a power of 2.
+
+The grid sampler includes both bounds of every continuous parameter. If
+`stepsize_continuous_parameters` does not divide a parameter's range into a whole
+number of steps, the step is rounded to the nearest one that does, and a warning
+is issued.
 
 ## Implemented benchmark functions
 
