@@ -21,6 +21,7 @@ from ._src.core import (
     datagenerator,
 )
 from ._src.datageneration.datagenerator_factory import create_datagenerator
+from ._src.errors import EmptyFileError, ReachMaximumTriesError
 from ._src.experimentdata import ExperimentData
 from ._src.experimentsample import ExperimentSample
 from ._src.optimization.optimizer_factory import create_optimizer
@@ -47,11 +48,13 @@ __all__ = [
     "ChainedBlock",
     "CollectArrayResults",
     "DataGenerator",
+    "EmptyFileError",
     "ExperimentData",
     "ExperimentSample",
     "Loop",
     "LoopBlock",
     "Pipeline",
+    "ReachMaximumTriesError",
     "SlurmCluster",
     "SlurmResources",
     "Step",
