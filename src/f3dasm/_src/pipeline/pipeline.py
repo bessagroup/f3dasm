@@ -56,7 +56,13 @@ class Step:
         the block is a :class:`DataGenerator`. The array size is
         determined at submission time from the number of open
         experiments in the step's ExperimentData on disk, capped
-        by ``resources.max_array_size``.
+        by ``resources.max_array_size``. When the open count
+        exceeds ``resources.max_array_size *
+        resources.max_jobs_per_task``, the step is submitted as
+        multiple sequential waves of array jobs, so each array
+        task evaluates at most ``max_jobs_per_task`` experiments
+        (``max_jobs_per_task=None``: a single array job whose
+        tasks evaluate unbounded strided slices).
     resources : SlurmResources
         SLURM resource requirements for this step.
     dependency : Literal["afterok", "afterany"]

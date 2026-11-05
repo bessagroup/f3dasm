@@ -75,6 +75,12 @@ plugins:
     - include_exclude_files:
         exclude:
             - "_overrides"
+            # Instructions for the coding-agent skills that work on this
+            # repo, not user documentation. They live under docs/ so the
+            # skills can find them, but must not be published to the site
+            # (without this they build to /agents/*/, reachable by URL
+            # even though they are absent from the nav).
+            - "agents"
     - ipynb
     - mkdocstrings:
         handlers:

@@ -241,3 +241,76 @@ def test_figure_load_png(tmp_path):
     loaded = plt.imread(str(png_path))
     assert isinstance(loaded, np.ndarray)
     assert loaded.ndim == 3
+
+
+# ======================= concurrent writer/reader (#273) =======================
+
+
+def _writer_loop(path_str: str, n_iters: int) -> None:
+    """Process target: rewrite a 1000-row DataFrame repeatedly."""
+    import pandas as pd
+
+    from f3dasm._src._io import pandas_store
+
+    df = pd.DataFrame({"a": range(1000), "b": range(1000)})
+    for _ in range(n_iters):
+        pandas_store(df, path_str)
+
+
+def _reader_loop(path_str: str, n_iters: int, errors: list) -> None:
+    """Process target: read the DataFrame repeatedly and record any error."""
+    import pandas as pd
+
+    from f3dasm._src._io import pandas_load
+
+    for _ in range(n_iters):
+        try:
+            df = pandas_load(path_str)
+            # Sanity check: should always observe a fully populated frame
+            if len(df) != 1000:
+                errors.append(f"short read: {len(df)} rows")
+        except pd.errors.EmptyDataError as exc:
+            errors.append(f"EmptyDataError: {exc}")
+        except FileNotFoundError:
+            # The reader can race with the very first write — tolerable.
+            pass
+
+
+def test_pandas_store_concurrent_no_empty_data_error(tmp_path):
+    """Concurrent writer + reader must never observe a half-written file.
+
+    Regression for issue #273: `pandas.DataFrame.to_csv(path)` previously
+    truncated the file before writing, so a reader hitting the file
+    between truncate and the body raised `pd.errors.EmptyDataError`. The
+    atomic temp+rename in `_io._atomic_write` should make that race
+    invisible to readers.
+    """
+    import multiprocessing as mp
+
+    path_str = str(tmp_path / "concurrent")
+
+    # Seed the file once so the reader has something to read at start.
+    from f3dasm._src._io import pandas_store
+
+    pandas_store(pd.DataFrame({"a": range(1000), "b": range(1000)}), path_str)
+
+    n_iters = 200
+    with mp.Manager() as manager:
+        errors = manager.list()
+        ctx = mp.get_context("spawn")
+        writer = ctx.Process(target=_writer_loop, args=(path_str, n_iters))
+        reader = ctx.Process(
+            target=_reader_loop,
+            args=(path_str, n_iters, errors),
+        )
+
+        writer.start()
+        reader.start()
+        writer.join(timeout=60)
+        reader.join(timeout=60)
+
+        assert not writer.is_alive(), "writer process hung"
+        assert not reader.is_alive(), "reader process hung"
+        assert list(errors) == [], (
+            f"concurrent reader observed half-written files: {list(errors)}"
+        )

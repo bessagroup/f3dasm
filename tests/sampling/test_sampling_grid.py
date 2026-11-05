@@ -1,3 +1,4 @@
+import warnings
 from itertools import product
 
 import numpy as np
@@ -46,8 +47,9 @@ def test_grid_sample_with_default_steps(sample_domain):
     samples = grid_sampler.call(data=experiment_data)
     df, _ = samples.to_pandas()
     # Expected continuous values
-    x1_values = np.arange(0, 1, stepsize)
-    x2_values = np.arange(2, 4, stepsize)
+    # Both bounds are part of the grid (issue #357)
+    x1_values = [0.0, 0.5, 1.0]
+    x2_values = [2.0, 2.5, 3.0, 3.5, 4.0]
 
     # Expected discrete values
     d1_values = [1, 2, 3]
@@ -90,8 +92,9 @@ def test_grid_sample_with_custom_steps(sample_domain):
     df, _ = samples.to_pandas()
 
     # Expected continuous values
-    x1_values = np.arange(0, 1, custom_steps["x1"])
-    x2_values = np.arange(2, 4, custom_steps["x2"])
+    # Both bounds are part of the grid (issue #357)
+    x1_values = [0.0, 0.25, 0.5, 0.75, 1.0]
+    x2_values = [2.0, 2.5, 3.0, 3.5, 4.0]
 
     # Expected discrete values
     d1_values = [1, 2, 3]
@@ -156,3 +159,100 @@ def test_grid_sample_with_no_continuous(sample_domain_no_continuous):
 
     # Assert equality
     pd.testing.assert_frame_equal(df, expected_df, check_dtype=False)
+
+
+def test_grid_sample_continuous_without_stepsize_raises():
+    """Mixed categorical + continuous domain with no stepsize must raise.
+
+    Regression for issue #318: the grid sampler used to silently return a
+    degenerate one-row grid (the categorical cross-product times an empty
+    continuous contribution) when the user forgot to pass
+    `stepsize_continuous_parameters` for a domain that contains continuous
+    parameters. It now raises a clear ValueError instead.
+    """
+    domain = Domain()
+    domain.add_category(name="ad_mode", categories=["unroll"])
+    domain.add_float(name="target_pt_a1", low=0.25, high=2.0)
+    domain.add_float(name="target_pt_a2", low=0.25, high=2.0)
+
+    grid_sampler = Grid()  # no stepsize_continuous_parameters
+    experiment_data = ExperimentData(domain=domain)
+    grid_sampler.arm(experiment_data)
+
+    with pytest.raises(ValueError, match="stepsize_continuous_parameters"):
+        grid_sampler.call(data=experiment_data)
+
+
+# ======================= Continuous grid bounds (issue #357) ===============
+
+
+def _grid_values(lower, upper, stepsize):
+    """Return the sorted grid values of a single continuous parameter."""
+    domain = Domain()
+    domain.add_float(name="x", low=lower, high=upper)
+    samples = Grid(stepsize_continuous_parameters=stepsize).call(
+        data=ExperimentData(domain=domain)
+    )
+    df, _ = samples.to_pandas()
+    return np.sort(df["x"].to_numpy(dtype=float))
+
+
+@pytest.mark.parametrize(
+    ("lower", "upper", "stepsize", "expected"),
+    [
+        (0.0, 1.0, 0.25, [0.0, 0.25, 0.5, 0.75, 1.0]),
+        (0.0, 1.0, 0.5, [0.0, 0.5, 1.0]),
+        (1.0, 4.0, 0.5, [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]),
+        (1.0, 1.3, 0.1, [1.0, 1.1, 1.2, 1.3]),
+        (0.0, 3.0, 1, [0.0, 1.0, 2.0, 3.0]),
+    ],
+)
+def test_grid_includes_both_bounds(lower, upper, stepsize, expected):
+    """Steps that divide the range give a grid from bound to bound."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        values = _grid_values(lower, upper, stepsize)
+    np.testing.assert_allclose(values, expected)
+    assert values[0] == lower
+    assert values[-1] == upper
+
+
+def test_grid_dict_stepsize_includes_both_bounds():
+    """The per-parameter stepsize form behaves like the scalar form."""
+    values = _grid_values(0.0, 1.0, {"x": 0.25})
+    np.testing.assert_allclose(values, [0.0, 0.25, 0.5, 0.75, 1.0])
+
+
+@pytest.mark.parametrize(
+    ("stepsize", "expected"),
+    [
+        (0.3, [0.0, 1 / 3, 2 / 3, 1.0]),  # 3.33 steps -> 3
+        (0.4, [0.0, 1 / 3, 2 / 3, 1.0]),  # 2.5 steps -> 3 (ties round up)
+        (0.45, [0.0, 0.5, 1.0]),  # 2.22 steps -> 2
+        (5.0, [0.0, 1.0]),  # larger than the range: the two bounds
+    ],
+)
+def test_grid_rounds_step_that_does_not_divide_range(stepsize, expected):
+    """A step that does not divide the range is rounded to one that does."""
+    with pytest.warns(UserWarning, match="does not divide"):
+        values = _grid_values(0.0, 1.0, stepsize)
+    np.testing.assert_allclose(values, expected)
+
+
+def test_grid_two_level_corners():
+    """A step equal to the range gives the corners of the domain."""
+    domain = Domain()
+    domain.add_float(name="x1", low=0.0, high=1.0)
+    domain.add_float(name="x2", low=0.0, high=1.0)
+    samples = Grid(stepsize_continuous_parameters=1.0).call(
+        data=ExperimentData(domain=domain)
+    )
+    df, _ = samples.to_pandas()
+    corners = {tuple(row) for row in df[["x1", "x2"]].to_numpy(dtype=float)}
+    assert corners == {(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)}
+
+
+@pytest.mark.parametrize("stepsize", [0.0, -0.5, {"x": 0.0}, {"x": -0.5}])
+def test_grid_non_positive_step_raises(stepsize):
+    with pytest.raises(ValueError, match="larger than 0"):
+        _grid_values(0.0, 1.0, stepsize)

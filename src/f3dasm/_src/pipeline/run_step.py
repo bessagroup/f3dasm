@@ -7,7 +7,8 @@ Usage::
         --job-dir=/scratch/user/1711449600 \\
         --project-dir=. \\
         --iteration=0 \\
-        [--job-number=42]
+        [--job-number=42] \\
+        [--wave=0]
 
 This module is the *only* Python script that SLURM jobs execute.
 The ``SlurmExecutor`` serialises the full :class:`Pipeline` to
@@ -31,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -38,8 +40,7 @@ from pathlib import Path
 import cloudpickle
 
 # Local
-from ..core import Block, DataGenerator
-from ..experimentdata import ExperimentData
+from .executors._runner import ExecutionContext, run_step
 from .loop import Loop
 from .pipeline import Pipeline, Step
 
@@ -54,11 +55,48 @@ __status__ = "Stable"
 
 logger = logging.getLogger("f3dasm")
 
+# Env var carrying the worker log level. SLURM workers run this module
+# via ``python -m`` and never pass through ``hydra.main``, so Hydra's
+# job logging never initializes here; the level is threaded in from the
+# application's config through ``SlurmCluster.env_vars`` (written as an
+# ``export`` in the generated sbatch script) and applied to the root
+# logger below.
+_LOG_LEVEL_ENV = "F3DASM_LOG_LEVEL"
+
 # =============================================================================
 
 
+def _configure_worker_logging() -> None:
+    """Set the worker's root log level from ``F3DASM_LOG_LEVEL``.
+
+    A SLURM worker runs this module via ``python -m`` and never passes
+    through ``hydra.main``, so it would otherwise inherit the default
+    WARNING root logger with no handlers and drop every INFO line. This
+    installs a stderr handler (whose output lands in the worker's SLURM
+    ``.out`` file) and sets the root level from ``F3DASM_LOG_LEVEL``
+    (e.g. ``INFO``), defaulting to ``WARNING`` when unset or holding an
+    unrecognized level name. It configures *a* level on the root logger
+    and names no package, so the framework stays self-contained.
+    """
+    name = os.environ.get(_LOG_LEVEL_ENV, "WARNING").strip().upper()
+    level = getattr(logging, name, logging.WARNING)
+    if not isinstance(level, int):
+        level = logging.WARNING
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
-    """Parse arguments and execute a single pipeline step."""
+    """Parse arguments and execute a single pipeline step.
+
+    Configures worker logging from the ``F3DASM_LOG_LEVEL`` environment
+    variable (see :func:`_configure_worker_logging`) before doing any
+    work, since this entry point runs outside ``hydra.main`` and would
+    otherwise inherit the default WARNING root logger with no handlers.
+    """
+    _configure_worker_logging()
     parser = argparse.ArgumentParser(description="Run a single pipeline step.")
     parser.add_argument(
         "--step",
@@ -90,6 +128,12 @@ def main(argv: list[str] | None = None) -> None:
         type=int,
         default=None,
         help="SLURM array task ID for parallel steps.",
+    )
+    parser.add_argument(
+        "--wave",
+        type=int,
+        default=0,
+        help="Wave index for parallel steps submitted in waves.",
     )
 
     args = parser.parse_args(argv)
@@ -132,6 +176,7 @@ def main(argv: list[str] | None = None) -> None:
         step=step,
         run_dir=run_dir,
         job_number=args.job_number,
+        wave=args.wave,
     )
 
 
@@ -166,20 +211,23 @@ def _execute_step(
     step: Step,
     run_dir: Path,
     job_number: int | None,
+    wave: int = 0,
 ) -> None:
     """Execute a single step's block on a cluster node.
 
-    This function is called from within a SLURM job. The
-    dispatch logic differs from local execution:
+    This function is called from within a SLURM job. It builds the cluster
+    :class:`ExecutionContext` and delegates to the shared :func:`run_step`
+    dispatcher:
 
-    - **Parallel DataGenerator** (``job_number`` is set): uses
-      ``"cluster_array"`` mode so each array task processes one
-      job index.
-    - **Non-parallel DataGenerator**: uses ``"cluster"`` mode
-      with file-lock coordination for multi-node execution.
-    - **Block**: loads ExperimentData, runs ``arm`` + ``call``,
-      and stores the result back to disk.
-    - **callable**: invokes with project context.
+    - **Parallel DataGenerator** with a SLURM array task id: runs as a
+      ``cluster_array`` task owning the slice
+      ``open[wave*W*j:][job_number::W][:j]`` of the open jobs, where
+      ``W = max_array_size`` and ``j = max_jobs_per_task`` (``j=None``:
+      no wave offset and no cap — the whole strided slice
+      ``open[job_number::W]``).
+    - **Every other step** (non-parallel DataGenerator, Block, callable):
+      runs in ``"cluster"`` mode with file-lock coordination for multi-node
+      execution.
 
     Parameters
     ----------
@@ -190,47 +238,22 @@ def _execute_step(
         (``job_dir / step.project_dir``).
     job_number : int | None
         SLURM array task ID, or ``None`` for non-array jobs.
+    wave : int
+        Wave index for parallel steps submitted in waves; ``0``
+        otherwise.
     """
-    block = step.block
-
-    if isinstance(block, DataGenerator):
-        # Load ExperimentData from disk before dispatching.
-        data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        if step.parallel and job_number is not None:
-            # Array job: each SLURM task processes one job index.
-            # The DataGenerator handles the strided access pattern
-            # internally (job_number::max_array_size).
-            max_array_size = step.resources.max_array_size
-            open_experiments = data.select_with_status("open").index.tolist()
-
-            job_numbers = open_experiments[job_number::max_array_size]
-
-            for job_idx in job_numbers:
-                _ = block.call(
-                    data=data,
-                    mode="cluster_array",
-                    job_number=job_idx,
-                    **step.kwargs,
-                )
-        else:
-            # Non-parallel DataGenerator on cluster: use file-lock
-            # coordination so multiple nodes can safely share the
-            # same ExperimentData on disk.
-            block.call(data=data, mode="cluster", **step.kwargs)
-    elif isinstance(block, Block):
-        # Single-node Block execution: load data, transform,
-        # persist.
-        data: ExperimentData = ExperimentData.from_file(project_dir=run_dir)
-        block.arm(data)
-        result: ExperimentData = block.call(data=data, **step.kwargs)
-        result.store(run_dir)
-    elif callable(block):
-        block(project_dir=run_dir, **step.kwargs)
-    else:
-        raise TypeError(
-            f"Step {step.name!r} has an unsupported block type: {type(block)}"
+    if step.parallel and job_number is not None:
+        ctx = ExecutionContext(
+            mode="cluster_array",
+            job_number=job_number,
+            max_array_size=step.resources.max_array_size,
+            wave=wave,
+            max_jobs_per_task=step.resources.max_jobs_per_task,
         )
+    else:
+        ctx = ExecutionContext(mode="cluster")
+
+    run_step(step=step, run_dir=run_dir, ctx=ctx)
 
 
 if __name__ == "__main__":

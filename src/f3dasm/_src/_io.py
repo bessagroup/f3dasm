@@ -16,13 +16,27 @@ from collections.abc import Callable, Mapping
 # Standard
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # Third-party
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
+
+# matplotlib is an optional dependency since issue #301 -- only the
+# `figure_store` / `figure_load` helpers need it, and they fail with a
+# clear ImportError the moment they're called rather than blocking
+# every import of f3dasm.
+try:
+    import matplotlib.pyplot as plt  # type: ignore[import-untyped]
+
+    _HAS_MATPLOTLIB = True
+except ImportError:
+    plt = None  # type: ignore[assignment]
+    _HAS_MATPLOTLIB = False
+
+if TYPE_CHECKING:  # pragma: no cover
+    import matplotlib.pyplot as plt  # noqa: F811
 
 #                                                          Authorship & Credits
 # =============================================================================
@@ -55,6 +69,39 @@ MAX_TRIES = 20
 # =============================================================================
 
 
+def _atomic_write(target: Path, write_fn: Callable[[Path], None]) -> str:
+    """Write to a sibling ``.tmp`` file then POSIX-atomically rename.
+
+    Some f3dasm pipelines run many parallel writers (SLURM array jobs,
+    ``evaluate_multiprocessing``) against a single project directory while
+    a separate driver process reads the same file via ``from_file``. The
+    naive ``to_csv(path)`` / ``np.save(path)`` patterns truncate the
+    target first and then stream the body, so a concurrent reader can
+    catch the file half-written and raise ``pd.errors.EmptyDataError``
+    (see issue #273).
+
+    Writing to a sibling temp path and then calling ``Path.replace`` (an
+    ``os.rename``) means readers always see either the previous fully
+    written file or the new one — never an empty or partial file.
+
+    Parameters
+    ----------
+    target : Path
+        Final path the object should live at (including extension).
+    write_fn : Callable[[Path], None]
+        Callable that writes the object to the path it receives.
+
+    Returns
+    -------
+    str
+        The string form of ``target`` (always with the chosen extension).
+    """
+    tmp = target.with_suffix(target.suffix + ".tmp")
+    write_fn(tmp)
+    tmp.replace(target)
+    return str(target)
+
+
 def pickle_store(object: Any, path: str) -> str:
     """
     Store an object using pickle.
@@ -72,10 +119,12 @@ def pickle_store(object: Any, path: str) -> str:
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".pkl")
-    with open(_path, "wb") as file:
-        pickle.dump(object, file)
 
-    return str(_path)
+    def _write(p: Path) -> None:
+        with open(p, "wb") as file:
+            pickle.dump(object, file)
+
+    return _atomic_write(_path, _write)
 
 
 def pickle_load(path: str) -> Any:
@@ -114,8 +163,14 @@ def numpy_store(object: np.ndarray, path: str) -> str:
         The path to the stored array.
     """
     _path = Path(path).with_suffix(".npy")
-    np.save(file=_path, arr=object)
-    return str(_path)
+
+    def _write(p: Path) -> None:
+        # Pass an open file handle so np.save does not auto-append ".npy"
+        # to the temp path (which would otherwise become "<name>.npy.tmp.npy").
+        with open(p, "wb") as file:
+            np.save(file, object)
+
+    return _atomic_write(_path, _write)
 
 
 def numpy_load(path: str) -> np.ndarray:
@@ -153,8 +208,7 @@ def pandas_store(object: pd.DataFrame, path: str) -> str:
         The path to the stored DataFrame.
     """
     _path = Path(path).with_suffix(".csv")
-    object.to_csv(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_csv(p))
 
 
 def pandas_load(path: str) -> pd.DataFrame:
@@ -192,8 +246,7 @@ def xarray_dataset_store(object: xr.DataArray | xr.Dataset, path: str) -> str:
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".ncs")
-    object.to_netcdf(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_netcdf(p))
 
 
 def xarray_dataarray_store(
@@ -215,8 +268,7 @@ def xarray_dataarray_store(
         The path to the stored object.
     """
     _path = Path(path).with_suffix(".nca")
-    object.to_netcdf(_path)
-    return str(_path)
+    return _atomic_write(_path, lambda p: object.to_netcdf(p))
 
 
 def xarray_dataset_load(path: str) -> xr.DataArray | xr.Dataset:
@@ -272,18 +324,31 @@ def figure_store(object: plt.Figure, path: str) -> str:
     -------
     str
         The path to the stored figure.
+
+    Raises
+    ------
+    ImportError
+        If matplotlib is not installed -- matplotlib is an optional
+        dependency on the `figures` extra (see issue #301).
     """
+    if not _HAS_MATPLOTLIB:
+        raise ImportError(
+            "figure_store requires matplotlib; install with "
+            "`pip install f3dasm[figures]`."
+        )
     _path = Path(path)
 
-    object.savefig(
-        _path.with_suffix(".pdf"),
-        format="pdf",
-        bbox_inches="tight",
-        pad_inches=0.01,
-        transparent=True,
-        dpi=RESOLUTION_MATPLOTLIB_FIGURE,
-    )
+    def _write(p: Path) -> None:
+        object.savefig(
+            p,
+            format="pdf",
+            bbox_inches="tight",
+            pad_inches=0.01,
+            transparent=True,
+            dpi=RESOLUTION_MATPLOTLIB_FIGURE,
+        )
 
+    _atomic_write(_path.with_suffix(".pdf"), _write)
     return str(_path)
 
 
@@ -300,19 +365,33 @@ def figure_load(path: str) -> np.ndarray:
     -------
     np.ndarray
         The loaded figure.
+
+    Raises
+    ------
+    ImportError
+        If matplotlib is not installed -- see :func:`figure_store`.
     """
+    if not _HAS_MATPLOTLIB:
+        raise ImportError(
+            "figure_load requires matplotlib; install with "
+            "`pip install f3dasm[figures]`."
+        )
     _path = Path(path).with_suffix(".pdf")
     return plt.imread(_path)
 
 
-STORE_FUNCTION_MAPPING: Mapping[type, Callable] = {
+STORE_FUNCTION_MAPPING: dict[type, Callable] = {
     np.ndarray: numpy_store,
     pd.DataFrame: pandas_store,
     pd.Series: pandas_store,
     xr.DataArray: xarray_dataarray_store,
     xr.Dataset: xarray_dataset_store,
-    plt.Figure: figure_store,
 }
+# matplotlib is optional (issue #301): register the figure mapping only
+# when it's importable so users without matplotlib still get a working
+# `from f3dasm._src._io import store_object` etc.
+if _HAS_MATPLOTLIB:
+    STORE_FUNCTION_MAPPING[plt.Figure] = figure_store
 
 LOAD_FUNCTION_MAPPING: Mapping[str, Callable] = {
     ".npy": numpy_load,
@@ -428,6 +507,7 @@ def load_object(
     project_dir: Path,
     path: str | Path,
     load_function: Optional[Callable] = None,
+    **load_kwargs: Any,
 ) -> Any:
     """
     Load an object from disk from a given path and storing method.
@@ -440,6 +520,11 @@ def load_object(
         The path to the object.
     load_function : Optional[Callable], optional
         The method to load the object, by default None.
+    **load_kwargs : Any
+        Auxiliary keyword arguments forwarded to ``load_function`` --
+        see ``Parameter(load_kwargs=...)`` and issue #285. The built-in
+        loaders ignore unknown kwargs; a fallback ``pickle_load`` will
+        also receive them.
 
     Returns
     -------
@@ -475,6 +560,8 @@ def load_object(
             load_function = LOAD_FUNCTION_MAPPING[suffix]
 
     # Store the object and return the storage location
+    if load_kwargs:
+        return load_function(_path, **load_kwargs)
     return load_function(_path)
 
 
@@ -552,12 +639,17 @@ class ReferenceValue:
     ----------
     reference : Path
         Path to the stored object, relative to the experiment data subfolder.
-    load_function : Callable[[Path], Any]
-        Callable that accepts the absolute path and returns the loaded object.
+    load_function : Callable[..., Any]
+        Callable that accepts the absolute path (and any
+        ``load_kwargs``) and returns the loaded object.
+    load_kwargs : dict[str, Any], optional
+        Extra keyword arguments forwarded to ``load_function`` on every
+        :meth:`load` call (issue #285). Defaults to None.
     """
 
     reference: Path
-    load_function: Callable[[Path], Any]
+    load_function: Callable[..., Any]
+    load_kwargs: Optional[dict[str, Any]] = None
 
     def load(self, project_dir: Path) -> Any:
         """Load and return the referenced object from disk.
@@ -576,6 +668,7 @@ class ReferenceValue:
             project_dir=project_dir,
             path=self.reference,
             load_function=self.load_function,
+            **(self.load_kwargs or {}),
         )
 
     def copy_to(
@@ -600,7 +693,9 @@ class ReferenceValue:
             self.reference, old_project_dir, new_project_dir
         )
         return ReferenceValue(
-            reference=Path(new_reference), load_function=self.load_function
+            reference=Path(new_reference),
+            load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )
 
     def __hash__(self) -> int:
@@ -615,13 +710,18 @@ class ReferenceValue:
         Returns
         -------
         dict
-            A dict with ``__type__``, ``reference``, and a hex-encoded
-            pickle of ``load_function``.
+            A dict with ``__type__``, ``reference``, and hex-encoded
+            pickles of ``load_function`` and ``load_kwargs`` (if set).
         """
         return {
             "__type__": "ReferenceValue",
             "reference": str(self.reference),
             "load_function": pickle.dumps(self.load_function).hex(),
+            "load_kwargs": (
+                pickle.dumps(self.load_kwargs).hex()
+                if self.load_kwargs is not None
+                else None
+            ),
         }
 
     @classmethod
@@ -638,9 +738,13 @@ class ReferenceValue:
         ReferenceValue
             The reconstructed instance.
         """
+        load_kwargs = None
+        if data.get("load_kwargs"):
+            load_kwargs = pickle.loads(bytes.fromhex(data["load_kwargs"]))
         return cls(
             reference=Path(data["reference"]),
             load_function=pickle.loads(bytes.fromhex(data["load_function"])),
+            load_kwargs=load_kwargs,
         )
 
 
@@ -661,14 +765,19 @@ class ToDiskValue:
         Parameter name used to construct the storage path.
     store_function : Callable[[Any, Path], Path]
         Callable that writes `object` to disk and returns the path.
-    load_function : Callable[[Path], Any]
+    load_function : Callable[..., Any]
         Callable that reads and returns the object from disk.
+    load_kwargs : dict[str, Any], optional
+        Extra keyword arguments forwarded to ``load_function`` when the
+        resulting :class:`ReferenceValue` is later loaded (issue #285).
+        Defaults to None.
     """
 
     object: Any
     name: str
     store_function: Callable[[Any, Path], Path]
-    load_function: Callable[[Path], Any]
+    load_function: Callable[..., Any]
+    load_kwargs: Optional[dict[str, Any]] = None
 
     def store(self, project_dir: Path, idx: int) -> Path:
         """Write the object to disk and return the stored path.
@@ -717,4 +826,5 @@ class ToDiskValue:
         return ReferenceValue(
             reference=reference,
             load_function=self.load_function,
+            load_kwargs=self.load_kwargs,
         )
