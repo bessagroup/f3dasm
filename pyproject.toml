@@ -35,14 +35,14 @@ maintainers = [
 name = "f3dasm"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "2.4.0"
+version = "2.4.1"
 
 [project.optional-dependencies]
 all = [
   "abaqus2py>=1.0.0",
   "matplotlib>=3.7.5",
   "optuna>=4.4.0",
-  "scipy>=1.10.1"
+  "scipy>=1.15"
 ]
 dev = [
   "pre-commit>=4.4.0",
@@ -55,13 +55,13 @@ docs = [
   "mkdocs-material>=9.6.20",
   "mkdocstrings>=0.30.1",
   "mkdocstrings-python>=1.18.2",
-  "pymdown-extensions>=10.16.1"
+  "pymdown-extensions>=10.16.1,<12"
 ]
 figures = [
   "matplotlib>=3.7.5"
 ]
 scipy = [
-  "scipy>=1.10.1"
+  "scipy>=1.15"
 ]
 tests = [
   "hypothesis>=6.138.0",

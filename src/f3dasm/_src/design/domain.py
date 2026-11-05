@@ -709,13 +709,16 @@ class Domain:
             ]
         )
 
-    def _filter(self, type: type[Parameter]) -> Domain:
+    def _filter(
+        self, type: type[Parameter] | tuple[type[Parameter], ...]
+    ) -> Domain:
         """Filter the parameters of the domain by type.
 
         Parameters
         ----------
-        type : type[Parameter]
-            Type of the parameters to be filtered.
+        type : type[Parameter] or tuple of type[Parameter]
+            Type of the parameters to be filtered. A tuple keeps parameters
+            of any of the given types, as with :func:`isinstance`.
 
         Returns
         -------
