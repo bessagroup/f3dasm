@@ -18,8 +18,7 @@ from f3dasm._src.samplers import (
     grid_values_continuous_parameters,
     grid_values_discrete_parameters,
     latin_sample_array_parameters,
-    next_power_of_two,
-    sobol_sample_array_parameters,
+    sobol_sample_continuous_and_array_parameters,
 )
 from f3dasm.design import Domain
 
@@ -121,33 +120,6 @@ def test_create_sampler_grid_rejects_seed():
     for the grid sampler -- the factory must say so eagerly."""
     with pytest.raises(TypeError, match="seed"):
         create_sampler("grid_sampler", seed=42)
-
-
-# ======================= next_power_of_two =======================
-
-
-def test_next_power_of_two_zero():
-    assert next_power_of_two(0) == 1
-
-
-def test_next_power_of_two_one():
-    assert next_power_of_two(1) == 1
-
-
-def test_next_power_of_two_two():
-    assert next_power_of_two(2) == 2
-
-
-def test_next_power_of_two_three():
-    assert next_power_of_two(3) == 4
-
-
-def test_next_power_of_two_1024():
-    assert next_power_of_two(1024) == 1024
-
-
-def test_next_power_of_two_1025():
-    assert next_power_of_two(1025) == 2048
 
 
 # ======================= Random sampler properties =======================
@@ -333,7 +305,7 @@ class TestSobolArraySampling:
         input_space = {
             "arr": ArrayParameter(lower_bound=0.0, upper_bound=1.0, shape=(3,))
         }
-        samples = sobol_sample_array_parameters(
+        samples = sobol_sample_continuous_and_array_parameters(
             input_space=input_space, n_samples=4, seed=42
         )
         assert len(samples) == 4
@@ -347,7 +319,7 @@ class TestSobolArraySampling:
                 lower_bound=0.0, upper_bound=1.0, shape=(2, 2)
             )
         }
-        samples = sobol_sample_array_parameters(
+        samples = sobol_sample_continuous_and_array_parameters(
             input_space=input_space, n_samples=4, seed=42
         )
         assert len(samples) == 4
@@ -390,7 +362,7 @@ class TestGridValueFunctions:
             stepsize_continuous_parameters=0.25,
         )
         assert "x" in result
-        assert len(result["x"]) == 4  # 0.0, 0.25, 0.5, 0.75
+        assert len(result["x"]) == 5  # 0.0, 0.25, 0.5, 0.75, 1.0
 
     def test_grid_values_continuous_with_dict_stepsize(self):
         input_space = {
@@ -401,7 +373,7 @@ class TestGridValueFunctions:
             stepsize_continuous_parameters={"x": 0.5},
         )
         assert "x" in result
-        assert len(result["x"]) == 2  # 0.0, 0.5
+        assert len(result["x"]) == 3  # 0.0, 0.5, 1.0
 
     def test_grid_values_continuous_dict_mismatched_raises(self):
         input_space = {
@@ -467,8 +439,9 @@ def test_grid_sampler_mixed_domain():
     data = ExperimentData(domain=domain)
     grid_sampler = Grid(stepsize_continuous_parameters=0.5)
     result = grid_sampler.call(data=data)
-    # 2 continuous (0.0, 0.5) * 3 discrete (0,1,2) * 2 categorical (a,b) = 12
-    assert len(result) == 12
+    # 3 continuous (0.0, 0.5, 1.0) * 3 discrete (0,1,2) * 2 categorical
+    # (a,b) = 18
+    assert len(result) == 18
 
 
 def test_grid_sampler_continuous_only():
@@ -479,8 +452,8 @@ def test_grid_sampler_continuous_only():
     data = ExperimentData(domain=domain)
     grid_sampler = Grid(stepsize_continuous_parameters=0.5)
     result = grid_sampler.call(data=data)
-    # 2 * 2 = 4
-    assert len(result) == 4
+    # 3 * 3 = 9 (0.0, 0.5, 1.0 per parameter)
+    assert len(result) == 9
 
 
 def test_grid_sampler_constant_domain():

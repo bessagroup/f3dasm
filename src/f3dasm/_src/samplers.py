@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 # Standard
+import inspect
+import warnings
 from collections.abc import Callable
 from itertools import product
-from math import ceil, prod
+from math import isclose, prod
 from typing import Literal, Optional
 
 # Third-party
@@ -17,8 +19,11 @@ import pandas as pd
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from SALib.sample import latin as salib_latin
-from SALib.sample import sobol as salib_sobol
-from SALib.sample import sobol_sequence
+
+try:
+    from scipy.stats import qmc
+except ImportError:  # scipy is an optional extra (issue #301)
+    qmc = None
 
 # Locals
 from .core import Block
@@ -46,7 +51,9 @@ __status__ = "Stable"
 def _sample_by_parameter_type(
     data: ExperimentData,
     n_samples: int,
-    sample_mapping: dict[type[Parameter], Callable],
+    sample_mapping: dict[
+        type[Parameter] | tuple[type[Parameter], ...], Callable
+    ],
     seed: Optional[int],
     **parameters,
 ) -> ExperimentData:
@@ -62,8 +69,9 @@ def _sample_by_parameter_type(
         Provides the domain and project directory for the new samples.
     n_samples : int
         Number of samples to generate.
-    sample_mapping : dict[type[Parameter], callable]
-        Mapping from parameter type to a sampling function.
+    sample_mapping : dict[type[Parameter] | tuple, callable]
+        Mapping from parameter type (or a tuple of types sampled
+        together) to a sampling function.
     seed : int or None
         Random seed forwarded to the sampling functions.
     **parameters : dict
@@ -572,123 +580,115 @@ def latin(seed: Optional[int] = None, **kwargs) -> Block:
 # =============================================================================
 
 
-def sobol_sample_continuous_parameters(
-    input_space: dict[str, ContinuousParameter],
+def sobol_sample_continuous_and_array_parameters(
+    input_space: dict[str, ContinuousParameter | ArrayParameter],
     n_samples: int,
     seed: Optional[int] = None,
     **kwargs,
 ) -> dict[int, ExperimentSample]:
     """
-    Sample continuous parameters with Sobol sequence sampling.
+    Sample continuous and array parameters with a scrambled Sobol sequence.
+
+    All continuous parameters and every element of every array parameter
+    share one Sobol sequence, so the design fills the joint space and no
+    two parameters receive the same coordinates.
 
     Parameters
     ----------
-    input_space : dict[str, ContinuousParameter]
-        A dictionary mapping parameter names to ContinuousParameter objects.
+    input_space : dict[str, ContinuousParameter | ArrayParameter]
+        A dictionary mapping parameter names to ContinuousParameter or
+        ArrayParameter objects.
     n_samples : int
-        The number of samples to generate.
+        The number of samples to generate. Sobol points are best balanced
+        when this is a power of 2; scipy warns otherwise.
     seed : Optional[int], optional
-        The random seed, by default None
+        The random seed for the scrambling. ``None`` draws a fresh
+        scrambling each call. By default None.
 
     Returns
     -------
     dict[int, ExperimentSample]
         A dictionary mapping sample indices to ExperimentSample objects
-        containing the sampled values.
+        containing the sampled values. Continuous parameters hold a float
+        and array parameters an array of the parameter's shape.
+
+    Raises
+    ------
+    ImportError
+        If scipy is not installed or is older than 1.15. scipy is an
+        optional dependency (the ``scipy`` extra).
     """
-    sobol_seq = sobol_sequence.sample(N=n_samples, D=len(input_space))
+    sizes = [
+        prod(param.shape) if isinstance(param, ArrayParameter) else 1
+        for param in input_space.values()
+    ]
+    lower = np.concatenate(
+        [np.ravel(param.lower_bound) for param in input_space.values()]
+    )
+    upper = np.concatenate(
+        [np.ravel(param.upper_bound) for param in input_space.values()]
+    )
 
-    lower = np.array([input_space[name].lower_bound for name in input_space])
-    upper = np.array([input_space[name].upper_bound for name in input_space])
-    samples_array = lower + sobol_seq * (upper - lower)
-
-    samples = {}
-    for i in range(n_samples):
-        sample_values = {
-            name: samples_array[i, idx]
-            for idx, name in enumerate(input_space.keys())
-        }
-        samples[i] = ExperimentSample(_input_data=sample_values)
-
-    return samples
-
-
-def sobol_sample_array_parameters(
-    input_space: dict[str, ArrayParameter],
-    n_samples: int,
-    seed: Optional[int] = None,
-    **kwargs,
-) -> dict[int, ExperimentSample]:
-    """
-    Sample array parameters with Sobol sequence sampling.
-
-    Parameters
-    ----------
-    input_space : dict[str, ArrayParameter]
-        A dictionary mapping parameter names to ArrayParameter objects.
-    n_samples : int
-        The number of samples to generate.
-    seed : Optional[int], optional
-        The random seed, by default None
-
-    Returns
-    -------
-    dict[int, ExperimentSample]
-        A dictionary mapping sample indices to ExperimentSample objects
-        containing the sampled values.
-    """
-    samples = []
-    for name, param in input_space.items():
-        lb = np.ravel(param.lower_bound)
-        ub = np.ravel(param.upper_bound)
-        problem = {
-            "num_vars": prod(param.shape),
-            "names": [f"{name}{i}" for i in range(prod(param.shape))],
-            "bounds": list(zip(lb, ub, strict=False)),
-        }
-
-        N = next_power_of_two(ceil(n_samples / (prod(param.shape) + 2)))
-
-        s = salib_sobol.sample(
-            problem=problem,
-            N=N,
-            seed=seed,
-            calc_second_order=False,
+    # `rng` (scipy >= 1.15) seeds the scrambling.
+    if qmc is None or "rng" not in inspect.signature(qmc.Sobol).parameters:
+        raise ImportError(
+            "The Sobol sampler requires scipy>=1.15; install it with "
+            "`pip install f3dasm[scipy]`."
         )
+    unit_points = qmc.Sobol(d=lower.size, scramble=True, rng=seed).random(
+        n_samples
+    )
+    points = lower + unit_points * (upper - lower)
 
-        s = s[:n_samples].reshape((n_samples,) + param.shape)
-        samples.append(s)
+    columns = {}
+    offset = 0
+    for (name, param), size in zip(input_space.items(), sizes, strict=True):
+        block = points[:, offset : offset + size]
+        offset += size
+        if isinstance(param, ArrayParameter):
+            columns[name] = block.reshape((n_samples,) + param.shape)
+        else:
+            columns[name] = block[:, 0]
 
-    samples_dict = {}
-    for i in range(n_samples):
-        sample_values = {
-            name: samples[idx][i]
-            for idx, name in enumerate(input_space.keys())
-        }
-        samples_dict[i] = ExperimentSample(_input_data=sample_values)
-
-    return samples_dict
+    return {
+        i: ExperimentSample(
+            _input_data={name: values[i] for name, values in columns.items()}
+        )
+        for i in range(n_samples)
+    }
 
 
-sobol_sample_mapping: dict[Parameter, callable] = {
-    ContinuousParameter: sobol_sample_continuous_parameters,
+# Continuous and array parameters are drawn together, so they share one
+# entry; ``Domain._filter`` selects parameters of either type.
+sobol_sample_mapping: dict[
+    type[Parameter] | tuple[type[Parameter], ...], Callable
+] = {
+    (
+        ContinuousParameter,
+        ArrayParameter,
+    ): sobol_sample_continuous_and_array_parameters,
     DiscreteParameter: random_sample_discrete_parameters,
     CategoricalParameter: random_sample_categorical_parameters,
     ConstantParameter: random_sample_constant_parameters,
-    ArrayParameter: sobol_sample_array_parameters,
 }
 
 
 class Sobol(Block):
-    """Sampler block using Sobol quasi-random sequences via SALib.
+    """Sampler block using scrambled Sobol sequences via scipy.
 
-    New samples are appended to the input :class:`ExperimentData` via
+    Continuous and array parameters are drawn together from one scrambled
+    Sobol sequence (:class:`scipy.stats.qmc.Sobol`, which needs the
+    optional ``scipy`` extra). Discrete, categorical and constant
+    parameters are sampled as in the random sampler. New
+    samples are appended to the input :class:`ExperimentData` via
     :meth:`ExperimentData.__add__`.
 
     Parameters
     ----------
     seed : int, optional
-        Random seed for reproducibility.
+        Random seed for the scrambling and for the randomly sampled
+        parameter types. Different seeds give different designs; ``None``
+        gives a fresh design on every call.
     **parameters : dict
         Additional keyword arguments forwarded to the per-type sampling
         functions.
@@ -701,7 +701,9 @@ class Sobol(Block):
         Extra keyword arguments passed to the sampling functions.
     """
 
-    sample_mapping: dict[type[Parameter], Callable] = sobol_sample_mapping
+    sample_mapping: dict[
+        type[Parameter] | tuple[type[Parameter], ...], Callable
+    ] = sobol_sample_mapping
 
     def __init__(self, seed: Optional[int] = None, **parameters):
         self.seed = seed
@@ -759,6 +761,57 @@ def sobol(seed: Optional[int] = None, **kwargs) -> Block:
 # =============================================================================
 
 
+def _grid_axis(
+    name: str, lower_bound: float, upper_bound: float, step: float
+) -> np.ndarray:
+    """Return evenly spaced grid values from ``lower_bound`` to
+    ``upper_bound``, both included.
+
+    The step is rounded to the nearest one that divides the range into a
+    whole number of intervals (ties round towards the smaller step), with
+    at least one interval. A warning is issued when this changes the step.
+
+    Parameters
+    ----------
+    name : str
+        Name of the parameter, used in the warning message.
+    lower_bound : float
+        Lower bound of the parameter; the first grid value.
+    upper_bound : float
+        Upper bound of the parameter; the last grid value.
+    step : float
+        The requested distance between neighbouring grid values.
+
+    Returns
+    -------
+    np.ndarray
+        The grid values, in increasing order.
+
+    Raises
+    ------
+    ValueError
+        If ``step`` is not larger than 0.
+    """
+    if step <= 0:
+        raise ValueError(
+            f"The step size must be larger than 0; got {step} for "
+            f"parameter '{name}'."
+        )
+
+    span = upper_bound - lower_bound
+    n_intervals = max(1, int(np.floor(span / step + 0.5)))
+    if not isclose(n_intervals * step, span, rel_tol=1e-9):
+        warnings.warn(
+            f"Grid stepsize {step} does not divide the range "
+            f"[{lower_bound}, {upper_bound}] of parameter '{name}'; "
+            f"using stepsize {span / n_intervals:g} ({n_intervals} "
+            f"intervals) so that both bounds are in the grid.",
+            UserWarning,
+            stacklevel=2,
+        )
+    return np.linspace(lower_bound, upper_bound, n_intervals + 1)
+
+
 def grid_values_continuous_parameters(
     input_space: dict[str, ContinuousParameter],
     stepsize_continuous_parameters: Optional[dict[str, float] | float] = None,
@@ -766,6 +819,11 @@ def grid_values_continuous_parameters(
 ) -> dict[str, np.ndarray]:
     """
     Return grid values for continuous parameters.
+
+    Each parameter's grid runs from its lower bound to its upper bound,
+    both included. A step that does not divide the range into a whole
+    number of intervals is rounded to the nearest one that does, with a
+    warning.
 
     Parameters
     ----------
@@ -786,46 +844,41 @@ def grid_values_continuous_parameters(
     ValueError
         If `input_space` contains continuous parameters but
         `stepsize_continuous_parameters` is None — the grid sampler cannot
-        discretize a continuous parameter without a stepsize.
+        discretize a continuous parameter without a stepsize — or if a step
+        size is not larger than 0.
     """
     if isinstance(stepsize_continuous_parameters, float | int):
-        return {
-            name: np.arange(
-                start=param.lower_bound,
-                stop=param.upper_bound,
-                step=stepsize_continuous_parameters,
-            )
-            for name, param in input_space.items()
-        }
+        stepsize_continuous_parameters = dict.fromkeys(
+            input_space, stepsize_continuous_parameters
+        )
 
-    if isinstance(stepsize_continuous_parameters, dict):
+    elif isinstance(stepsize_continuous_parameters, dict):
         if len(stepsize_continuous_parameters) != len(input_space):
             raise ValueError(
                 "If you specify the stepsize for continuous parameters, "
                 "stepsize_continuous_parameters should contain all "
                 "continuous parameters"
             )
-        discrete_space = {
-            name: input_space[name].to_discrete(step=step)
-            for name, step in stepsize_continuous_parameters.items()
-        }
-        return {
-            name: np.arange(
-                start=param.lower_bound,
-                stop=param.upper_bound,
-                step=param.step,
-            )
-            for name, param in discrete_space.items()
-        }
 
     # stepsize_continuous_parameters is None
-    if input_space:
+    elif input_space:
         raise ValueError(
             "Grid sampler requires `stepsize_continuous_parameters` when "
             "the domain contains continuous parameters; got None for "
             f"continuous parameters {list(input_space)}."
         )
-    return {}
+    else:
+        return {}
+
+    return {
+        name: _grid_axis(
+            name=name,
+            lower_bound=input_space[name].lower_bound,
+            upper_bound=input_space[name].upper_bound,
+            step=step,
+        )
+        for name, step in stepsize_continuous_parameters.items()
+    }
 
 
 def grid_values_discrete_parameters(
@@ -897,26 +950,6 @@ grid_value_mapping: dict[Parameter, callable] = {
     CategoricalParameter: grid_values_categorical_parameters,
     ConstantParameter: grid_values_constant_parameters,
 }
-
-
-#                                                             Utility functions
-# =============================================================================
-
-
-def next_power_of_two(x: int) -> int:
-    """Return the smallest power of two greater than or equal to x.
-
-    Parameters
-    ----------
-    x : int
-        A positive integer.
-
-    Returns
-    -------
-    int
-        The smallest power of two that is >= x.
-    """
-    return 1 if x <= 1 else 2 ** (x - 1).bit_length()
 
 
 # =============================================================================
@@ -1136,8 +1169,6 @@ def _warn_deprecated_sampler_name(name: str) -> None:
     #289. Lives in a helper so the deprecation can be silenced in tests
     via ``warnings.simplefilter("error", DeprecationWarning)``.
     """
-    import warnings
-
     warnings.warn(
         f"Sampler name {name!r} is deprecated and will be removed in a "
         f"future release; use {name + '_sampler'!r} instead.",

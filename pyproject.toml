@@ -42,7 +42,7 @@ all = [
   "abaqus2py>=1.0.0",
   "matplotlib>=3.7.5",
   "optuna>=4.4.0",
-  "scipy>=1.10.1"
+  "scipy>=1.15"
 ]
 dev = [
   "pre-commit>=4.4.0",
@@ -61,7 +61,7 @@ figures = [
   "matplotlib>=3.7.5"
 ]
 scipy = [
-  "scipy>=1.10.1"
+  "scipy>=1.15"
 ]
 tests = [
   "hypothesis>=6.138.0",
