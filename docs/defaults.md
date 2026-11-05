@@ -88,7 +88,8 @@ The following built-in implementations of samplers can be used in the data-drive
 
 The Sobol sampler scrambles its sequence with the given `seed`, so different
 seeds give different designs. Sobol points are best balanced when the number of
-samples is a power of 2.
+samples is a power of 2. It needs scipy 1.15 or newer, an optional dependency:
+`pip install f3dasm[scipy]`.
 
 The grid sampler includes both bounds of every continuous parameter. If
 `stepsize_continuous_parameters` does not divide a parameter's range into a whole

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 # Standard
+import inspect
 import warnings
 from collections.abc import Callable
 from itertools import product
@@ -18,7 +19,11 @@ import pandas as pd
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from SALib.sample import latin as salib_latin
-from scipy.stats import qmc
+
+try:
+    from scipy.stats import qmc
+except ImportError:  # scipy is an optional extra (issue #301)
+    qmc = None
 
 # Locals
 from .core import Block
@@ -606,6 +611,12 @@ def sobol_sample_continuous_and_array_parameters(
         A dictionary mapping sample indices to ExperimentSample objects
         containing the sampled values. Continuous parameters hold a float
         and array parameters an array of the parameter's shape.
+
+    Raises
+    ------
+    ImportError
+        If scipy is not installed or is older than 1.15. scipy is an
+        optional dependency (the ``scipy`` extra).
     """
     sizes = [
         prod(param.shape) if isinstance(param, ArrayParameter) else 1
@@ -618,6 +629,12 @@ def sobol_sample_continuous_and_array_parameters(
         [np.ravel(param.upper_bound) for param in input_space.values()]
     )
 
+    # `rng` (scipy >= 1.15) seeds the scrambling.
+    if qmc is None or "rng" not in inspect.signature(qmc.Sobol).parameters:
+        raise ImportError(
+            "The Sobol sampler requires scipy>=1.15; install it with "
+            "`pip install f3dasm[scipy]`."
+        )
     unit_points = qmc.Sobol(d=lower.size, scramble=True, rng=seed).random(
         n_samples
     )
@@ -660,8 +677,9 @@ class Sobol(Block):
     """Sampler block using scrambled Sobol sequences via scipy.
 
     Continuous and array parameters are drawn together from one scrambled
-    Sobol sequence (:class:`scipy.stats.qmc.Sobol`). Discrete, categorical
-    and constant parameters are sampled as in the random sampler. New
+    Sobol sequence (:class:`scipy.stats.qmc.Sobol`, which needs the
+    optional ``scipy`` extra). Discrete, categorical and constant
+    parameters are sampled as in the random sampler. New
     samples are appended to the input :class:`ExperimentData` via
     :meth:`ExperimentData.__add__`.
 

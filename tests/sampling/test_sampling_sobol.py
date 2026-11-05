@@ -134,3 +134,29 @@ def test_mixed_domain_samples_every_parameter():
     assert _array_values(df, "a").shape == (4, 2)
     assert df["k"].isin(range(4)).all()
     assert df["c"].isin(["p", "q"]).all()
+
+
+def test_sobol_without_scipy_raises_clear_error(monkeypatch):
+    """scipy is an optional extra (issue #301); the Sobol sampler must say
+    how to install it rather than fail with a bare NameError."""
+    import f3dasm._src.samplers as samplers_mod
+
+    monkeypatch.setattr(samplers_mod, "qmc", None)
+    with pytest.raises(ImportError, match=r"f3dasm\[scipy\]"):
+        _sobol(_float_domain(2), seed=0, n_samples=4)
+
+
+def test_sobol_with_old_scipy_raises_clear_error(monkeypatch):
+    """scipy < 1.15 has no ``rng`` keyword on ``qmc.Sobol``."""
+    import f3dasm._src.samplers as samplers_mod
+
+    class _OldSobol:
+        def __init__(self, d, *, scramble=True, seed=None):
+            pass
+
+    class _OldQmc:
+        Sobol = _OldSobol
+
+    monkeypatch.setattr(samplers_mod, "qmc", _OldQmc)
+    with pytest.raises(ImportError, match=r"scipy>=1\.15"):
+        _sobol(_float_domain(2), seed=0, n_samples=4)
